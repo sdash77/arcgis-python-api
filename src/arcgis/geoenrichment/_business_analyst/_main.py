@@ -1395,17 +1395,6 @@ class BusinessAnalyst(object):
         elif geo_is_df and standard_geography_id_column and not geo_is_dict:
             geographies = geographies[standard_geography_id_column]
 
-        # if providing an iterable and is not Geometries, the only other explanation is standard geography identifiers
-        elif (
-            isinstance(geographies, Iterable)
-            and not any([isinstance(g, Geometry) for g in geographies[:10]])
-            and not geo_is_dict
-        ):
-            assert standard_geography_level is not None, (
-                "If providing an Iterable of standard geograpy identifiers, "
-                "the standard_geography_level must also be provided."
-            )
-
         # ensure if specifying a standard geography id column, the standard geography level is also provided
         if standard_geography_id_column is not None:
             assert standard_geography_level is not None, (
@@ -1448,7 +1437,7 @@ class BusinessAnalyst(object):
             )
 
         # if the geographies is not a path and not a dataframe, convert the iterable to a list for consistency later
-        if not isinstance(geographies, (pd.DataFrame, Path)):
+        if not isinstance(geographies, (pd.DataFrame, Path)) and not isinstance(geographies, str):
             geographies = list(geographies)
 
         # get enrichment variables to validate against depending on the enrichment variable source
@@ -1820,23 +1809,46 @@ class BusinessAnalyst(object):
         ][0]
         batch_size = batch_size if max_batch_size > batch_size else max_batch_size
 
-        # convert boolean to string for payload in correct circumstances
-        retrieve_geometry = (
-            return_geometry is not False and standard_geography_level is not None
-        )
-        params["returnGeometry"] = "true" if retrieve_geometry else "false"
+        # if a string, or list of strings, and no standard geography level is provided, format as address in JSON
+        if isinstance(geographies, str) and standard_geography_level is None:
+            geographies = [geographies]
+        if isinstance(geographies[0], str) and standard_geography_level is None:
+            geographies = [{"address": {"text": addr_str}} for addr_str in geographies]
 
-        # list to store request parameter payloads
-        req_param_lst = []
-
-        # detect and flag if a list of Geometry and dictionary objects passed directly in as iterable
+        # detect and flag if a list of Geometry. string and dictionary objects passed directly in as iterable
         is_dict = False
         is_geom = False
+        is_str = False
         if isinstance(geographies, list):
             if isinstance(geographies[0], Geometry):
                 is_geom = True
             elif isinstance(geographies[0], dict):
                 is_dict = True
+            if isinstance(geographies[0], str):
+                is_str = True
+
+        # convert boolean to string for payload in correct circumstances
+        if return_geometry and (standard_geography_level is not None or (is_dict or is_str)):
+            retrieve_geometry = True
+            params["returnGeometry"] = "true"
+        else:
+            retrieve_geometry = False
+            params["returnGeometry"] = "false"
+
+        # list to store request parameter payloads
+        req_param_lst = []
+
+        # detect and flag if a list of Geometry. string and dictionary objects passed directly in as iterable
+        is_dict = False
+        is_geom = False
+        is_str = False
+        if isinstance(geographies, list):
+            if isinstance(geographies[0], Geometry):
+                is_geom = True
+            elif isinstance(geographies[0], dict):
+                is_dict = True
+            if isinstance(geographies[0], str):
+                is_str = True
 
         # if working with standard geography
         if standard_geography_level is not None:
@@ -1870,11 +1882,11 @@ class BusinessAnalyst(object):
                 # add the payload to the list
                 req_param_lst.append(deepcopy(params))
 
-        # if a list of dictionaries, which are not geometries, is being passed in, just send through directly
-        elif is_dict and not is_geom:
+        # if a list of dictionaries, which are not geometries, or a list of strings is being passed in, just send
+        elif (is_dict and not is_geom) or is_str:
             for idx in range(0, len(geographies), batch_size):
                 geo_btch = geographies[idx : idx + batch_size]
-                params["studyAreas"] = json.dumps(geo_btch)
+                params["studyAreas"] = json.dumps(geo_btch) if is_dict else geo_btch
                 req_param_lst.append(deepcopy(params))
 
         # otherwise, working with geometries, so do this thing

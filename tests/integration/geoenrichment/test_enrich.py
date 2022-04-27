@@ -261,6 +261,7 @@ def test_enrich_usa_variable_name_list_agol(usa_agol, polygon_df):
 def test_enrich_geometry_list_agol(usa_agol, usa_agol_enrich_vars):
     enrich_geometry_list_test(usa_agol, usa_agol_enrich_vars, does_not_raise())
 
+
 @skip_if_no_agol
 def test_enrich_buffer_multiple_addresses(usa_agol, usa_agol_enrich_vars):
 
@@ -270,4 +271,73 @@ def test_enrich_buffer_multiple_addresses(usa_agol, usa_agol_enrich_vars):
         address_lst = ['380 New York St, Redlands CA, 92373', '111 Market St, Olympia WA, 98501']
         mult_df = batch_geocode(address_lst, as_featureset=True).sdf
         enrich_res = usa_agol.enrich(mult_df, enrich_variables=usa_agol_enrich_vars)
+        assert isinstance(enrich_res, pd.DataFrame)
+
+
+@skip_if_no_agol
+def test_enrich_large_json_no_enrich_vars(usa_agol):
+
+    from arcgis.geoenrichment import enrich
+
+    with does_not_raise():
+        raw_json = [
+                        {
+                            "geometry": {"x": -122.435, "y": 37.785},
+                            "attributes": {"id": "1"},
+                        },
+                        {
+                            "geometry": {"x": -122.433, "y": 37.734},
+                            "attributes": {"id": "2"},
+                        },
+                        {
+                            "sourceCountry": "US",
+                            "layer": "US.ZIP5",
+                            "ids": ["92373", "92129"],
+                        },
+                        {
+                            "geometry": {"x": -122.435, "y": 37.785},
+                            "areaType": "NetworkServiceArea",
+                            "bufferUnits": "Hours",
+                            "bufferRadii": [1],
+                            "travel_mode": "Driving",
+                        },
+                        {
+                            "address": {
+                                "text": "12 Concorde Place Toronto ON M3C 3R8",
+                                "sourceCountry": "Canada",
+                            }
+                        },
+                        {
+                            "address": {
+                                "text": "380 New York St Redlands CA 92373",
+                                "sourceCountry": "US",
+                            }
+                        },
+                        {
+                            "geometry": {
+                                "rings": [
+                                    [
+                                        [-117.185412, 34.063170],
+                                        [-122.81, 37.81],
+                                        [-117.200570, 34.057196],
+                                        [-117.185412, 34.063170],
+                                    ]
+                                ],
+                                "spatialReference": {"wkid": 4326},
+                            },
+                            "attributes": {
+                                "id": "3",
+                                "name": "optional polygon area name",
+                            },
+                        },
+                    ]
+        enrich_res = enrich(raw_json, gis=usa_agol._gis)
+        assert isinstance(enrich_res, pd.DataFrame)
+
+
+@skip_if_no_agol
+def test_single_address_string_agol(usa_agol, usa_agol_enrich_vars):
+
+    with does_not_raise():
+        enrich_res = usa_agol.enrich('111 Market St NW, Olympia, WA 98502', enrich_variables=usa_agol_enrich_vars)
         assert isinstance(enrich_res, pd.DataFrame)
