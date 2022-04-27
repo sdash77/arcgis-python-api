@@ -1829,10 +1829,13 @@ class BusinessAnalyst(object):
         # list to store request parameter payloads
         req_param_lst = []
 
-        # detect and flag if a list of dictionary objects passed directly in
+        # detect and flag if a list of Geometry and dictionary objects passed directly in as iterable
         is_dict = False
+        is_geom = False
         if isinstance(geographies, list):
-            if isinstance(geographies[0], dict):
+            if isinstance(geographies[0], Geometry):
+                is_geom = True
+            elif isinstance(geographies[0], dict):
                 is_dict = True
 
         # if working with standard geography
@@ -1867,8 +1870,8 @@ class BusinessAnalyst(object):
                 # add the payload to the list
                 req_param_lst.append(deepcopy(params))
 
-        # if a list of dictionaries is being passed in, just use directly
-        elif is_dict:
+        # if a list of dictionaries, which are not geometries, is being passed in, just send through directly
+        elif is_dict and not is_geom:
             for idx in range(0, len(geographies), batch_size):
                 geo_btch = geographies[idx : idx + batch_size]
                 params["studyAreas"] = json.dumps(geo_btch)
