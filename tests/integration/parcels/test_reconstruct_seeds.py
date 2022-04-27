@@ -43,7 +43,7 @@ class TestShrinkReconstructSeeds(unittest.TestCase):
         fq_version_name = self.edit_version["versionInfo"]["versionName"]
         extent = self.get_aoi_extent()
         ids_to_shrink = [181, 256, 257, 258, 259]
-        where = pfutils.generate_where_in_clause("OBJECTID", ids_to_shrink)
+        where = pfutils._generate_where_in_clause("OBJECTID", ids_to_shrink)
 
         parcels_fl = pfutils.get_feature_layer(self.parcel_fabric_flc, "Tax")
         parcel_features = parcels_fl.query(where=where).features

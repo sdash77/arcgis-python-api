@@ -161,7 +161,7 @@ class ParcelFabricManager(object):
 
     def build(
         self,
-        extent: Optional[dict[str, Any]] = None,
+        extent: Optional[Union[dict, Envelope]] = None,
         moment: Optional[str] = None,
         return_errors: bool = False,
         record: Optional[str] = None,
@@ -1126,7 +1126,7 @@ class ParcelFabricManager(object):
     # ----------------------------------------------------------------------
     def reconstruct_from_seeds(
         self,
-        extent: dict[str, Any],
+        extent: Union[dict, Envelope],
     ):
         """
         The :meth:`~reconstructFromSeeds` operation constructs parcels from seeds enclosed by

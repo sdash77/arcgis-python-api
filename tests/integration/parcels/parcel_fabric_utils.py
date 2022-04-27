@@ -73,7 +73,7 @@ def create_version(vms, version_name=None):
         print(ex)
         return None
 
-def generate_where_in_clause(field_name, feature_list):
+def _generate_where_in_clause(field_name, feature_list):
     """
 
     Args:
