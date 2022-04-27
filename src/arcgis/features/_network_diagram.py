@@ -43,7 +43,7 @@ class NetworkDiagramManager(object):
     _version_guid = None
     _version_name = None
     # ----------------------------------------------------------------------
-    def __init__(self, url, version, gis=None):
+    def __init__(self, url, version=None, gis=None):
         """Constructor"""
         if gis is None:
             gis = env.active_gis
@@ -51,9 +51,12 @@ class NetworkDiagramManager(object):
         self._con = gis._portal.con
         self._url = url
         self._version = version
-        self._version_guid = version._guid
-        self._version_name = version.properties.versionName
-
+        if version:
+            self._version_guid = version._guid
+            self._version_name = version.properties.versionName
+        else:
+            self._version_guid = None
+            self._version_name = None
     # ----------------------------------------------------------------------
     def _init(self):
         """initializer"""
@@ -314,7 +317,7 @@ class NetworkDiagramManager(object):
         ==============================      =====================================================
 
         """
-        url = "%s/templates/%s" % self._url, name
+        url = "%s/templates/%s" % (self._url, name)
         params = {
             "f": "json",
             "gdbVersion": self._version_name,
@@ -361,7 +364,7 @@ class NetworkDiagramManager(object):
         ==============================      =====================================================
 
         """
-        url = "%s/diagrams/%s" % self._url, name
+        url = "%s/diagrams/%s" % (self._url, name)
         return Diagram(url, self._version, self._gis)
 
     # ----------------------------------------------------------------------
@@ -398,7 +401,7 @@ class Diagram(object):
     _version_guid = None
     _version_name = None
     # ----------------------------------------------------------------------
-    def __init__(self, url, version, gis=None):
+    def __init__(self, url, version=None, gis=None):
         """Constructor"""
         if gis is None:
             gis = env.active_gis
@@ -406,8 +409,12 @@ class Diagram(object):
         self._con = gis._portal.con
         self._url = url
         self._version = version
-        self._version_guid = version._guid
-        self._version_name = version.properties.versionName
+        if version:
+            self._version_guid = version._guid
+            self._version_name = version.properties.versionName
+        else:
+            self._version_guid = None
+            self._version_name = None
 
     # ----------------------------------------------------------------------
     def _init(self):
