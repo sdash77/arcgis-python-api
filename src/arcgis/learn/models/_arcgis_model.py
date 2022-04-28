@@ -1457,11 +1457,13 @@ class ArcGISModel(object):
                         "SingleShotDetector",
                         "YOLOv3",
                         "RetinaNet",
+                        "SiamMask",
                     ]
                     if (type(self).__name__) in supported_models:
-                        with warnings.catch_warnings():
-                            warnings.simplefilter("ignore")
-                            script_paths = self._save_pytorch_torchscript(name)
+                        if type(self).__name__ != "SiamMask":
+                            with warnings.catch_warnings():
+                                warnings.simplefilter("ignore")
+                                script_paths = self._save_pytorch_torchscript(name)
                     else:
                         raise Exception(
                             "This pytorch model cannot be saved in torchscript format"

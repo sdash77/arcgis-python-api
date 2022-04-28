@@ -2986,14 +2986,17 @@ class UserManager(object):
             Data Editor         iBBBBBBBBBBBBBBB
             CustomRole          bKrTCjFF9tKbaFk8
 
-            >>> gis.users.create(username='new_user_1',
-                                            password='<strong_password>',
-                                            firstname='New',
-                                            lastname='User',
-                                            email='namee@organization.com',
-                                            description='User with custom role assigned',
-                                            role='bKrTCjFF9tKbaFk8',
-                                            user_type='Creator')
+            >>> user1 = gis.users.create(username='new_user_1',
+                                         password='<strong_password>',
+                                         firstname='New',
+                                         lastname='User',
+                                         email='namee@organization.com',
+                                         description='User with custom role assigned',
+                                         role='bKrTCjFF9tKbaFk8',
+                                         user_type='Creator')
+
+            >>> if user1: # setting the start_page of the newly created user
+            >>>     user1.landing_page = "organization"
 
         """
         if any(
@@ -6820,20 +6823,27 @@ class ContentManager(object):
         elif isinstance(df, pd.DataFrame) and "location_type" not in kwargs:
             # CSV WORKFLOW
             path = "content/features/analyze"
-
+            if kwargs.get("geocode_url", None):
+                geocode_url = kwargs.get("geocode_url")
+            else:
+                locators = [
+                    gc["url"]
+                    for gc in self._gis.properties.helperServices.geocode
+                    if gc.get("batch", False)
+                ]
+                if len(locators) == 0:
+                    raise Exception("No batch geocoding service found.")
+                geocode_url = locators[0]
             postdata = {
                 "f": "pjson",
-                "text": df.to_csv(),
+                "text": df.to_csv(index_label="OBJECTID"),
                 "filetype": "csv",
                 "analyzeParameters": {
                     "enableGlobalGeocoding": "true",
                     "sourceLocale": "en-us",
-                    # "locationType":"address",
                     "sourceCountry": "",
                     "sourceCountryHint": "",
-                    "geocodeServiceUrl": self._gis.properties.helperServices.geocode[0][
-                        "url"
-                    ],
+                    "geocodeServiceUrl": geocode_url,
                 },
             }
 
@@ -6841,23 +6851,19 @@ class ContentManager(object):
                 postdata["analyzeParameters"]["locationType"] = "address"
 
             res = self._portal.con.post(path, postdata)
-            # import json
-            # json.dumps(res)
             if address_fields is not None:
                 res["publishParameters"].update({"addressFields": address_fields})
 
             path = "content/features/generate"
             postdata = {
                 "f": "pjson",
-                "text": df.to_csv(),
+                "text": df.to_csv(index_label="OBJECTID"),
                 "filetype": "csv",
                 "publishParameters": json.dumps(res["publishParameters"]),
             }
             if item_id:
                 postdata["itemIdToCreate"] = item_id
-            res = self._portal.con.post(
-                path, postdata
-            )  # , use_ordered_dict=True) - OrderedDict >36< _mixins.PropertyMap
+            res = self._portal.con.post_multipart(path, postdata)
 
             fc = FeatureCollection(res["featureCollection"]["layers"][0])
             return fc
@@ -6875,13 +6881,8 @@ class ContentManager(object):
                     "sourceCountryHint": kwargs.pop("country_hint", ""),
                     "geocodeServiceUrl": kwargs.pop(
                         "geocode_url",
-                        self._gis.properties.helperServices.geocode[0]["url"],
+                        geocode_url,
                     ),
-                    # "locationType": kwargs.pop('location_type', None),
-                    # "latitudeFieldName" : kwargs.pop("latitude_field", None),
-                    # "longitudeFieldName" : kwargs.pop("longitude_field", None),
-                    # "coordinateFieldName" : kwargs.pop("coordinate_field_name", None),
-                    # "coordinateFieldType" : kwargs.pop("coordinate_field_type", None)
                 },
             }
             update_dict = {}
@@ -10243,7 +10244,7 @@ class User(dict):
             "cultureFormat": culture_format,
             "region": region,
         }
-        if security_answer and security_question:
+        if security_answer and not security_question is None:
             params["securityQuestionIdx"] = security_question
             params["securityAnswer"] = security_answer
         for k, v in copy.copy(params).items():
@@ -10254,8 +10255,8 @@ class User(dict):
             files = {"thumbnail": thumbnail}
         else:
             files = None
-        url = "%s/sharing/rest/community/users/%s/update" % (
-            self._gis._url,
+        url = "%scommunity/users/%s/update" % (
+            self._gis._portal.resturl,
             self._user_id,
         )
         ret = self._gis._con.post(path=url, postdata=params, files=files)
@@ -10281,9 +10282,15 @@ class User(dict):
 
            # Usage example: Setting login page
 
-           >>> user1 = gis.users.get("org_data_viewer")
+           >>> user1 = gis.users.get("org_data_viewer") # approach 1: set via landing_page
 
            >>> user1.landing_page = "map"
+
+           >>> us = user.user_settings # approach 2: set via user_settings
+
+           >>> us['landingPage']['url'] = "webmap/viewer.html"
+
+           >>> user1.user_settings = us
 
         """
         value = self.user_settings.get("landingPage", {}).get("url", "")
@@ -10352,6 +10359,17 @@ class User(dict):
         ================  ==========================================================
 
         :return: dict
+
+        .. code-block:: python
+
+           # Usage example: Getting the current user settings
+
+           >>> us = user.user_settings # similar to setting the landing_page property
+
+           >>> us['landingPage']['url'] = "webmap/viewer.html"
+
+           >>> user1.user_settings = us
+
         """
         url = "%s/sharing/rest/community/users/%s/properties" % (
             self._gis._url,
