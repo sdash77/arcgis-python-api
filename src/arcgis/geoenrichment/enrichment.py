@@ -633,7 +633,7 @@ class Country(object):
 
     def enrich(
         self,
-        geographies: Union[pd.DataFrame, Iterable, Path],
+        study_areas: Union[pd.DataFrame, Iterable, Path],
         enrich_variables: Union[pd.DataFrame, Iterable],
         return_geometry: bool = True,
         standard_geography_level: Optional[Union[int, str]] = None,
@@ -645,7 +645,7 @@ class Country(object):
     ):
         """
         Enrich provides access to a massive dataset describing exactly who people are
-        in a geographic location. The most common way to delineate geographies for
+        in a geographic location. The most common way to delineate study_areas for
         enrichment is using polygons delineated areas, although points and lines can
         be used as well.
 
@@ -661,7 +661,7 @@ class Country(object):
         community, culture, economy and even the natural environment. Succinctly,
         enrich is how to access data for human geography analysis.
 
-        The geographies for enrichment can be provided in a number of forms: a Spatially
+        The study_areas for enrichment can be provided in a number of forms: a Spatially
         Enabled Pandas Data Frame or an Iterable my be provided. The iterable may be
         comprised of :class:`~arcgis.geometry.Geometry` object instances or standard
         geography identifiers. While other values, such as string addresses or
@@ -671,7 +671,7 @@ class Country(object):
         ============================     ====================================================================
         **Argument**                     **Description**
         ----------------------------     --------------------------------------------------------------------
-        geographies                      Required list, FeatureSet or SpatiallyEnabledDataFrame containing
+        study_areas                      Required list, FeatureSet or SpatiallyEnabledDataFrame containing
                                          the input areas to be enriched.
         ----------------------------     --------------------------------------------------------------------
         enrich_variables                 Enrich variables can be specified using either a list of strings or
@@ -691,10 +691,10 @@ class Country(object):
         ----------------------------     --------------------------------------------------------------------
         standard_geography_id_column     If providing a Pandas DataFrame as input, and the DataFrame contains
                                          a column with standard geography identifiers you desire to use for
-                                         specifying the input geographies, please provide the name of the
+                                         specifying the input study_areas, please provide the name of the
                                          column as a string in this parameter.
         ----------------------------     --------------------------------------------------------------------
-        proximity_type                   If providing point geometries as input geographies, you have the
+        proximity_type                   If providing point geometries as input study_areas, you have the
                                          option to provide the method used to create the proximity around the
                                          point based on the available travel modes. These travel modes can
                                          be discovered using the ``Country.travel_modes`` property. Valid
@@ -788,14 +788,14 @@ class Country(object):
 
             # enrich the geometries and get a spatially enabled dataframe
             enrich_df = usa.enrich(
-                geographies=geom_lst,
+                study_areas=geom_lst,
                 enrich_variables=kv_df,
                 proximity_type='driving_time',
                 proximity_value=5,
                 proxmity_metric='minutes'
             )
 
-        Finally, we can also use standard geography identifiers to specify the geographies as well.
+        Finally, we can also use standard geography identifiers to specify the study_areas as well.
 
         .. code-block:: python
 
@@ -838,24 +838,24 @@ class Country(object):
 
             # enrich the geometries and get a spatially enabled dataframe
             enrich_df = usa.enrich(
-                geographies=geom_lst,
+                study_areas=geom_lst,
                 enrich_variables=kv_df,
                 standard_geography_level='block_groups'
             )
 
         """
         # pull out named areas if present
-        if isinstance(geographies, Iterable) and not isinstance(
-            geographies, pd.DataFrame
+        if isinstance(study_areas, Iterable) and not isinstance(
+            study_areas, pd.DataFrame
         ):
-            first_geo = geographies[0]
+            first_geo = study_areas[0]
             if isinstance(first_geo, NamedArea):
-                geographies = [na.area_id for na in geographies]
-                standard_geography_level = first_geo.level
+                study_areas = [na._areaid for na in study_areas]
+                standard_geography_level = first_geo._currlvl
 
         # invoke enrich on the business analyst object
         enrich_res = self._ba_cntry.enrich(
-            geographies,
+            study_areas,
             enrich_variables,
             return_geometry,
             standard_geography_level,
@@ -1420,7 +1420,7 @@ def enrich(
 ):
     """
     Enrich provides access to a massive dataset describing exactly who people are
-    in a geographic location. The most common way to delineate geographies for
+    in a geographic location. The most common way to delineate study_areas for
     enrichment is using polygons delineated areas, although points and lines can
     be used as well.
 
@@ -1479,7 +1479,7 @@ def enrich(
                                   ['percent','index','average','all','*']
     -------------------------     --------------------------------------------------------------------
     comparison_levels             Optional list of layer IDs for which the intersecting
-                                  geographies should be geoenriched.
+                                  study_areas should be geoenriched.
     -------------------------     --------------------------------------------------------------------
     intersecting_geographies      Optional parameter to explicitly define the geographic layers used
                                   to provide geographic context during the enrichment process. For
@@ -1497,18 +1497,18 @@ def enrich(
                                   arcgis.env.active_gis.  This GIS object must be authenticated and
                                   have the ability to consume credits
     -------------------------     --------------------------------------------------------------------
-    proximity_type                If the input geographies are points, retrieving enriched
+    proximity_type                If the input study_areas are points, retrieving enriched
                                   variables requires delineating a zone around each point to use
                                   for apportioning demographic factors to each input geography.
                                   Default is ``straight_line``, and if the input geometry is lines,
                                   ``straight_line`` is the only valid input.
     -------------------------     --------------------------------------------------------------------
-    proximity_value:              If the input geographies are points or lines, this is the value used
+    proximity_value:              If the input study_areas are points or lines, this is the value used
                                   to create a zone around the points for apportioning demographic
                                   factors. For instance, if specifying five miles, this parameter
                                   value will be ``5``. Default is ``1``.
     -------------------------     --------------------------------------------------------------------
-    proximity_metric:             If the input geographies are point or lines, this is the metric
+    proximity_metric:             If the input study_areas are point or lines, this is the metric
                                   defining the proximity value. For instance, if specifying one
                                   kilometer, this value will be ``kilometers``. Default is
                                   ``kilometers``.
@@ -1544,7 +1544,7 @@ def enrich(
 
     # invoke enrich on the business analyst object
     enrich_res = enrich_src.enrich(
-        geographies=study_areas,
+        study_areas=study_areas,
         enrich_variables=enrich_vars,
         proximity_type=proximity_type,
         proximity_value=proximity_value,
