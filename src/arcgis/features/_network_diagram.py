@@ -57,6 +57,7 @@ class NetworkDiagramManager(object):
         else:
             self._version_guid = None
             self._version_name = None
+
     # ----------------------------------------------------------------------
     def _init(self):
         """initializer"""
@@ -84,7 +85,7 @@ class NetworkDiagramManager(object):
         exclude_system_diagrams: bool = False,
     ):
         """
-        The findDiagramNames operation is performed on a Network Diagram Service resource.
+        The find_diagram_names operation is performed on a Network Diagram Service resource.
         The result of this operation is an array of strings, each one corresponding to
         a network diagram's name.
 
@@ -175,7 +176,7 @@ class NetworkDiagramManager(object):
     # ----------------------------------------------------------------------
     def create_diagram_from_features(self, template: str, initial_features: list[str]):
         """
-        The createDiagramFromFeatures operation is performed on a Network Diagram
+        The create_diagram_from_features operation is performed on a Network Diagram
         Service resource. The result of this operation is a Diagram Information JSON object.
 
         It is used to create a new temporary network diagram.
@@ -208,7 +209,7 @@ class NetworkDiagramManager(object):
         self, diagrams_names: list[str], moment: Optional[int] = None
     ):
         """
-        The findDiagramInfos operation is performed on a Network Diagram Service
+        The find_diagram_infos operation is performed on a Network Diagram Service
         resource. The result of this operation is an array of Diagram Information JSON objects.
 
         ==============================      =====================================================
@@ -287,6 +288,7 @@ class NetworkDiagramManager(object):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
+    @property
     def templates(self):
         """
         The Diagram Templates resource represents all the diagram templates
@@ -368,6 +370,7 @@ class NetworkDiagramManager(object):
         return Diagram(url, self._version, self._gis)
 
     # ----------------------------------------------------------------------
+    @property
     def diagram_dataset(self):
         """
         The Diagram Dataset resource regroups the info related to each diagram
@@ -382,6 +385,7 @@ class NetworkDiagramManager(object):
         return self._con.post(url, params)
 
 
+# --------------------------------------------------------------------------
 class Diagram(object):
     """
     The Diagram resource represents a single network diagram under a Network
