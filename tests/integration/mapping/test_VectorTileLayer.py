@@ -1,5 +1,5 @@
 import sys
-sys.path.insert(0, r"C:\Job\repos\geosaurus\src")
+# sys.path.insert(0, r"<path_to_repo>\geosaurus\src")
 
 from arcgis.gis import GIS
 import unittest
