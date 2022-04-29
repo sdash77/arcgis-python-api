@@ -170,7 +170,8 @@ class YOLOv3(ArcGISModel):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function.
+                            `prepare_data` function. YOLOv3 only supports image
+                            sizes in multiples of 32 (e.g. 256, 416, etc.)
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
