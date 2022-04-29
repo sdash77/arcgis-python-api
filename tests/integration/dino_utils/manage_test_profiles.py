@@ -1,9 +1,10 @@
 import json
 from arcgis.gis import login_profiles
+import os
 
 
 # Check if profile exists, else create it
-def create_test_profiles(profile_json_path="../../test_profiles.json"):
+def create_test_profiles(profile_json_path=os.path.join("..", "..", "test_profiles.json")):
 
     with open(profile_json_path, 'r') as file_handle:
         profile_dict = json.load(file_handle)
