@@ -15,7 +15,6 @@ import traceback
 import arcgis
 from arcgis.features import FeatureLayer
 
-
 HAS_AUTO_ML_DEPS = True
 import_exception = None
 
@@ -23,6 +22,7 @@ try:
     from ._arcgis_model import ArcGISModel, _raise_fastai_import_error
     from arcgis.learn._utils.tabular_data import TabularDataObject, add_h3
     from arcgis.learn._utils.common import _get_emd_path
+    from arcgis.learn._utils.utils import arcpy_localization_helper
 
     HAS_FASTAI = True
 except:
@@ -32,6 +32,7 @@ except:
 try:
     import sklearn
     from sklearn import *
+    from sklearn import preprocessing
     import numpy as np
     import pandas as pd
 except Exception as e:
@@ -194,9 +195,12 @@ class AutoML(object):
             if ml_task == "auto":
                 ml_task = self.get_ml_task(self._all_labels)
             if ml_task == "text":
-                raise ValueError(
-                    "Dependent variable has more than 200 unique values more than half of the total records are unique, hence there is not enough information to train a model"
+                msg = arcpy_localization_helper(
+                    "Dependent variable has more than 200 unique values more than half of the total records are unique, hence there is not enough information to train a model",
+                    260154,
+                    "ERROR",
                 )
+                exit(260146)
             if (mode == "Explain") or (mode == "Basic"):
                 explain_level = 2
                 zone_list = ["zone3_id", "zone4_id", "zone5_id", "zone6_id", "zone7_id"]
@@ -263,7 +267,15 @@ class AutoML(object):
         Fits the AutoML model.
         """
         if getattr(self._data, "_is_not_empty", True):
-            self._model.fit(self._all_data_df, self._all_labels)
+            try:
+                self._model.fit(self._all_data_df, self._all_labels)
+            except:
+                msg = arcpy_localization_helper(
+                    "The desired models could not be trained using the input data provided.",
+                    260150,
+                    "ERROR",
+                )
+                exit()
         else:
             raise Exception("Fit can be called only with data.")
         # self.save()
@@ -488,6 +500,10 @@ class AutoML(object):
             emd_params["dependent_variable"] = self._data._dependent_variable
 
         emd_params["continuous_variables"] = self._data._continuous_variables
+        if self._data._feature_field_variables:
+            emd_params["_feature_field_variables"] = self._data._feature_field_variables
+        if self._data._raster_field_variables:
+            emd_params["_raster_field_variables"] = self._data._raster_field_variables
 
         with open(emd_file, "w") as f:
             f.write(json.dumps(emd_params, indent=4))
@@ -785,11 +801,25 @@ class AutoML(object):
                 )
 
         if match_field_names:
+            try:
+                list_of_train_fields = []
+                for key, value in match_field_names.items():
+                    if (not key == value) and (len(str(key)) > 0):
+                        list_of_train_fields.append(value)
+                processed_dataframe = processed_dataframe.drop(
+                    list_of_train_fields, axis=1, errors="ignore"
+                )
+            except:
+                pass
             processed_dataframe.rename(columns=match_field_names, inplace=True)
-
         for field in fields_needed:
             if field not in processed_dataframe.columns:
-                raise Exception(f"Field missing {field}")
+                msg = arcpy_localization_helper(
+                    "Data on which prediction in needed does not have the fields the model was trained on",
+                    260152,
+                    "ERROR",
+                )
+                exit()
 
         for column in processed_dataframe.columns:
             if column not in fields_needed:
@@ -806,6 +836,28 @@ class AutoML(object):
             return dataframe
 
         return dataframe.spatial.to_featurelayer(output_name, gis)
+
+    def _raster_sr(self, raster):
+        try:
+            return raster._engine_obj._raster.spatialReference
+        except:
+            try:
+                import arcpy
+
+                return arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"])
+            except:
+                try:
+                    import arcpy
+
+                    return arcpy.SpatialReference(
+                        raster.extent["spatialReference"]["wkt"]
+                    )
+                except:
+                    msg = arcpy_localization_helper(
+                        "One or more input rasters do not have a valid spatial reference.",
+                        517,
+                        "ERROR",
+                    )
 
     def _predict_rasters(self, output_folder_path, rasters, match_field_names=None):
 
@@ -837,14 +889,8 @@ class AutoML(object):
             self._data._categorical_variables + self._data._continuous_variables
         )
 
-        try:
-            arcpy.env.outputCoordinateSystem = rasters[0].extent["spatialReference"][
-                "wkt"
-            ]
-        except:
-            arcpy.env.outputCoordinateSystem = rasters[0].extent["spatialReference"][
-                "wkid"
-            ]
+        cached_sr = arcpy.env.outputCoordinateSystem
+        arcpy.env.outputCoordinateSystem = self._raster_sr(rasters[0])
 
         xmin = rasters[0].extent["xmin"]
         xmax = rasters[0].extent["xmax"]
@@ -853,119 +899,107 @@ class AutoML(object):
         min_cell_size_x = rasters[0].mean_cell_width
         min_cell_size_y = rasters[0].mean_cell_height
 
-        default_sr = rasters[0].extent["spatialReference"]
+        default_sr = self._raster_sr(rasters[0])
 
         for raster in rasters:
-            # try:
-            point_upper = arcpy.PointGeometry(
+            point_upper_left = arcpy.PointGeometry(
                 arcpy.Point(raster.extent["xmin"], raster.extent["ymax"]),
-                arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"]),
-            ).projectAs(arcpy.SpatialReference(default_sr["wkid"]))
-            point_lower = arcpy.PointGeometry(
+                self._raster_sr(raster),
+            ).projectAs(default_sr)
+
+            point_lower_right = arcpy.PointGeometry(
                 arcpy.Point(raster.extent["xmax"], raster.extent["ymin"]),
-                arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"]),
-            ).projectAs(arcpy.SpatialReference(default_sr["wkid"]))
-            cell_size = arcpy.PointGeometry(
-                arcpy.Point(raster.mean_cell_width, raster.mean_cell_height),
-                arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"]),
-            ).projectAs(arcpy.SpatialReference(default_sr["wkid"]))
+                self._raster_sr(raster),
+            ).projectAs(default_sr)
 
-            if xmin > point_upper.firstPoint.X:
-                xmin = point_upper.firstPoint.X
-            if ymax < point_upper.firstPoint.Y:
-                ymax = point_upper.firstPoint.Y
-            if xmax < point_lower.firstPoint.X:
-                xmax = point_lower.firstPoint.X
-            if ymin > point_lower.firstPoint.Y:
-                ymin = point_lower.firstPoint.Y
+            cell_extent = arcpy.Extent(
+                raster.extent["xmin"],
+                raster.extent["ymin"],
+                raster.extent["xmin"] + raster.mean_cell_width,
+                raster.extent["ymin"] + raster.mean_cell_height,
+                spatial_reference=self._raster_sr(raster),
+            ).projectAs(default_sr)
 
-            if min_cell_size_x > cell_size.firstPoint.X:
-                min_cell_size_x = cell_size.firstPoint.X
+            cx, cy = abs(cell_extent.XMax - cell_extent.XMin), abs(
+                cell_extent.YMax - cell_extent.YMin
+            )
 
-            if min_cell_size_y > cell_size.firstPoint.Y:
-                min_cell_size_y = cell_size.firstPoint.Y
+            if xmin > point_upper_left.firstPoint.X:
+                xmin = point_upper_left.firstPoint.X
+            if ymax < point_upper_left.firstPoint.Y:
+                ymax = point_upper_left.firstPoint.Y
+            if xmax < point_lower_right.firstPoint.X:
+                xmax = point_lower_right.firstPoint.X
+            if ymin > point_lower_right.firstPoint.Y:
+                ymin = point_lower_right.firstPoint.Y
+
+            if min_cell_size_x < cx:
+                min_cell_size_x = cx
+
+            if min_cell_size_y < cy:
+                min_cell_size_y = cy
 
         max_raster_columns = int(abs(math.ceil((xmax - xmin) / min_cell_size_x)))
         max_raster_rows = int(abs(math.ceil((ymax - ymin) / min_cell_size_y)))
+        point_upper = arcpy.PointGeometry(arcpy.Point(xmin, ymax), default_sr)
+        point_lower = arcpy.PointGeometry(arcpy.Point(xmax, ymin), default_sr)
 
-        point_upper = arcpy.PointGeometry(
-            arcpy.Point(xmin, ymax), arcpy.SpatialReference(default_sr["wkid"])
-        )
-        cell_size = arcpy.PointGeometry(
-            arcpy.Point(min_cell_size_x, min_cell_size_y),
-            arcpy.SpatialReference(default_sr["wkid"]),
+        cell_extent = arcpy.Extent(
+            xmin,
+            ymin,
+            xmin + min_cell_size_x,
+            ymin + min_cell_size_y,
+            spatial_reference=default_sr,
         )
 
         raster_data = {}
         for raster in rasters:
             field_name = raster.name
-            point_upper_translated = point_upper.projectAs(
-                arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"])
+
+            point_upper_translated = point_upper.projectAs(self._raster_sr(raster))
+            cell_extent_translated = cell_extent.projectAs(self._raster_sr(raster))
+
+            if field_name not in fields_needed:
+                if match_field_names and match_field_names.get(raster.name):
+                    field_name = match_field_names.get(raster.name)
+
+            ccxx, ccyy = abs(
+                cell_extent_translated.XMax - cell_extent_translated.XMin
+            ), abs(cell_extent_translated.YMax - cell_extent_translated.YMin)
+
+            raster_read = raster.read(
+                origin_coordinate=(
+                    point_upper_translated.firstPoint.X,
+                    point_upper_translated.firstPoint.Y,
+                ),
+                ncols=max_raster_columns,
+                nrows=max_raster_rows,
+                cell_size=(ccxx, ccyy),
             )
-            cell_size_translated = cell_size.projectAs(
-                arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"])
-            )
-            if field_name in fields_needed:
-                raster_read = raster.read(
-                    origin_coordinate=(
-                        point_upper_translated.firstPoint.X,
-                        point_upper_translated.firstPoint.Y,
-                    ),
-                    ncols=max_raster_columns,
-                    nrows=max_raster_rows,
-                    cell_size=(
-                        cell_size_translated.firstPoint.X,
-                        cell_size_translated.firstPoint.Y,
-                    ),
-                )
-                for row in range(max_raster_rows):
-                    for column in range(max_raster_columns):
-                        values = raster_read[row][column]
-                        index = 0
-                        for value in values:
-                            key = field_name
-                            if index != 0:
-                                key = key + f"_{index}"
-                            if not raster_data.get(key):
-                                raster_data[key] = []
-                            index = index + 1
-                            raster_data[key].append(value)
-            elif match_field_names and match_field_names.get(raster.name):
-                field_name = match_field_names.get(raster.name)
-                raster_read = raster.read(
-                    origin_coordinate=(
-                        point_upper_translated.firstPoint.X,
-                        point_upper_translated.firstPoint.Y,
-                    ),
-                    ncols=max_raster_columns,
-                    nrows=max_raster_rows,
-                    cell_size=(
-                        cell_size_translated.firstPoint.X,
-                        cell_size_translated.firstPoint.Y,
-                    ),
-                )
-                for row in range(max_raster_rows):
-                    for column in range(max_raster_columns):
-                        values = raster_read[row][column]
-                        index = 0
-                        for value in values:
-                            key = field_name
-                            if index != 0:
-                                key = key + f"_{index}"
-                            if not raster_data.get(key):
-                                raster_data[key] = []
-                            index = index + 1
-                            raster_data[key].append(value)
-            else:
-                continue
+
+            for row in range(max_raster_rows):
+                for column in range(max_raster_columns):
+                    values = raster_read[row][column]
+                    index = 0
+                    for value in values:
+                        key = field_name
+                        if index != 0:
+                            key = key + f"_{index}"
+                        if not raster_data.get(key):
+                            raster_data[key] = []
+                        index = index + 1
+                        raster_data[key].append(value)
 
         for field in fields_needed:
-            if (
-                field not in list(raster_data.keys())
-                and match_field_names
-                and match_field_names.get(field, None) is None
+            if (field not in list(raster_data.keys())) and (
+                match_field_names and match_field_names.get(field, None) is None
             ):
-                raise Exception(f"Field missing {field}")
+                msg = arcpy_localization_helper(
+                    "Data on which prediction is needed does not have the fields the model was trained on",
+                    260152,
+                    "ERROR",
+                )
+                exit()
 
         processed_data = []
 
@@ -984,9 +1018,24 @@ class AutoML(object):
 
         predictions = self._predict(processed_numpy)
 
-        predictions = np.array(
-            predictions.reshape([max_raster_rows, max_raster_columns]), dtype="float64"
-        )
+        if isinstance(predictions[0], str):
+            processed_df["predictions"] = predictions
+            le = preprocessing.LabelEncoder()
+            le.fit(processed_df["predictions"])
+            le_name_mapping = dict(zip(le.classes_, le.transform(le.classes_)))
+            processed_df["predictions"] = le.transform(processed_df["predictions"])
+
+            predictions = np.array(
+                processed_df["predictions"].values.reshape(
+                    [max_raster_rows, max_raster_columns]
+                ),
+                dtype=np.uint8,
+            )
+        else:
+            predictions = np.array(
+                predictions.reshape([max_raster_rows, max_raster_columns]),
+                dtype="float64",
+            )
 
         processed_raster = arcpy.NumPyArrayToRaster(
             predictions,
@@ -994,6 +1043,18 @@ class AutoML(object):
             x_cell_size=min_cell_size_x,
             y_cell_size=min_cell_size_y,
         )
+        if isinstance(predictions[0], str):
+            arcpy.management.BuildRasterAttributeTable(processed_raster)
+            class_map = le_name_mapping
+            "class_map=" + str(class_map)
+            arcpy.management.CalculateField(
+                processed_raster,
+                "Class",
+                expression="class_map.get(!Value!)",
+                expression_type="PYTHON3",
+                code_block="class_map=" + str(class_map),
+            )
         processed_raster.save(output_folder_path)
+        arcpy.env.outputCoordinateSystem = cached_sr
 
         return True

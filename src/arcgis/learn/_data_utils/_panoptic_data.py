@@ -199,7 +199,7 @@ class PanopticSegmentationLabelList(ImageList):
                 mask_img = torch.unsqueeze(mask_img, 0)
 
             for ch in range(mask_img.shape[0]):
-                unique_instances = torch.unique(mask_img[ch]).max()
+                unique_instances = np.unique(mask_img[ch]).max()
 
                 # For each unique mask id, starting 1, create an individual mask
                 for instance in range(1, unique_instances + 1):
@@ -267,7 +267,7 @@ def compute_n_masks(path):
                 mask_img = torch.unsqueeze(mask_img, 0)
 
             for ch in range(mask_img.shape[0]):
-                unique_instances = torch.unique(mask_img[ch]).max().item()
+                unique_instances = np.unique(mask_img[ch]).max().item()
                 label_count += unique_instances
 
         n_masks = max(n_masks, label_count)
