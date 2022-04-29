@@ -1200,19 +1200,29 @@ class TabularDataObject(object):
                 if isinstance(raster, tuple):
                     if len(raster) == 2:
                         categorical = raster[1]
+                    raster = raster[0]
+                try:
+                    sr = raster._engine_obj._raster.spatialReference
+                except:
                     try:
-                        wkt = raster[0].extent["spatialReference"]["wkt"]
-                        raster = raster[0]
+                        import arcpy
+
+                        sr = arcpy.SpatialReference(
+                            raster.extent["spatialReference"]["wkid"]
+                        )
                     except:
-                        wkt = raster[0].extent["spatialReference"]["wkid"]
-                        raster = raster[0]
-                else:
-                    try:
-                        wkt = raster.extent["spatialReference"]["wkt"]
-                    except:
-                        wkt = raster.extent["spatialReference"]["wkid"]
-                sr = arcpy.SpatialReference()
-                sr.loadFromString(wkt)
+                        try:
+                            import arcpy
+
+                            sr = arcpy.SpatialReference(
+                                raster.extent["spatialReference"]["wkt"]
+                            )
+                        except:
+                            msg = arcpy_localization_helper(
+                                "One or more input rasters do not have a valid spatial reference.",
+                                517,
+                                "ERROR",
+                            )
                 for i in range(raster.band_count):
                     if i == 0:
                         rasters_data[raster.name] = []
@@ -1248,7 +1258,6 @@ class TabularDataObject(object):
                     sdf[raster.name] = rasdf
 
                 elif describe_obj.shapeType == "Point":
-
                     fields = ["SHAPE@X", "SHAPE@Y"]
                     with arcpy.da.SearchCursor(
                         data_source, fields, spatial_reference=sr
@@ -1262,20 +1271,16 @@ class TabularDataObject(object):
                                 )
                                 value = raster_value[0][0]
                             except:
-                                value = None
-
+                                value = [np.NaN]
                             for i in range(len(value)):
                                 if i == 0:
                                     rasters_data[raster.name].append(value[i])
                                 else:
                                     rasters_data[raster.name + f"_{i}"].append(value[i])
-
                     for key, value in rasters_data.items():
                         sdf[key] = value
-
             if index_field in list(sdf.columns.values):
                 index_data = sdf[index_field].values
-
         return sdf, index_data
 
     @staticmethod
