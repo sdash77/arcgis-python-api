@@ -15,7 +15,6 @@ import traceback
 import arcgis
 from arcgis.features import FeatureLayer
 
-
 HAS_AUTO_ML_DEPS = True
 import_exception = None
 
@@ -838,6 +837,28 @@ class AutoML(object):
 
         return dataframe.spatial.to_featurelayer(output_name, gis)
 
+    def _raster_sr(self, raster):
+        try:
+            return raster._engine_obj._raster.spatialReference
+        except:
+            try:
+                import arcpy
+
+                return arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"])
+            except:
+                try:
+                    import arcpy
+
+                    return arcpy.SpatialReference(
+                        raster.extent["spatialReference"]["wkt"]
+                    )
+                except:
+                    msg = arcpy_localization_helper(
+                        "One or more input rasters do not have a valid spatial reference.",
+                        517,
+                        "ERROR",
+                    )
+
     def _predict_rasters(self, output_folder_path, rasters, match_field_names=None):
 
         if not os.path.exists(os.path.dirname(output_folder_path)):
@@ -867,15 +888,9 @@ class AutoML(object):
         fields_needed = (
             self._data._categorical_variables + self._data._continuous_variables
         )
+
         cached_sr = arcpy.env.outputCoordinateSystem
-        try:
-            arcpy.env.outputCoordinateSystem = rasters[0].extent["spatialReference"][
-                "wkt"
-            ]
-        except:
-            arcpy.env.outputCoordinateSystem = rasters[0].extent["spatialReference"][
-                "wkid"
-            ]
+        arcpy.env.outputCoordinateSystem = self._raster_sr(rasters[0])
 
         xmin = rasters[0].extent["xmin"]
         xmax = rasters[0].extent["xmax"]
@@ -884,118 +899,103 @@ class AutoML(object):
         min_cell_size_x = rasters[0].mean_cell_width
         min_cell_size_y = rasters[0].mean_cell_height
 
-        default_sr = rasters[0].extent["spatialReference"]
+        default_sr = self._raster_sr(rasters[0])
 
         for raster in rasters:
-            # try:
-            point_upper = arcpy.PointGeometry(
+            point_upper_left = arcpy.PointGeometry(
                 arcpy.Point(raster.extent["xmin"], raster.extent["ymax"]),
-                arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"]),
-            ).projectAs(arcpy.SpatialReference(default_sr["wkid"]))
-            point_lower = arcpy.PointGeometry(
+                self._raster_sr(raster),
+            ).projectAs(default_sr)
+
+            point_lower_right = arcpy.PointGeometry(
                 arcpy.Point(raster.extent["xmax"], raster.extent["ymin"]),
-                arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"]),
-            ).projectAs(arcpy.SpatialReference(default_sr["wkid"]))
-            cell_size = arcpy.PointGeometry(
-                arcpy.Point(raster.mean_cell_width, raster.mean_cell_height),
-                arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"]),
-            )  # .projectAs(arcpy.SpatialReference(default_sr["wkid"]))
+                self._raster_sr(raster),
+            ).projectAs(default_sr)
 
-            if xmin > point_upper.firstPoint.X:
-                xmin = point_upper.firstPoint.X
-            if ymax < point_upper.firstPoint.Y:
-                ymax = point_upper.firstPoint.Y
-            if xmax < point_lower.firstPoint.X:
-                xmax = point_lower.firstPoint.X
-            if ymin > point_lower.firstPoint.Y:
-                ymin = point_lower.firstPoint.Y
+            cell_extent = arcpy.Extent(
+                raster.extent["xmin"],
+                raster.extent["ymin"],
+                raster.extent["xmin"] + raster.mean_cell_width,
+                raster.extent["ymin"] + raster.mean_cell_height,
+                spatial_reference=self._raster_sr(raster),
+            ).projectAs(default_sr)
 
-            if min_cell_size_x < cell_size.firstPoint.X:
-                min_cell_size_x = cell_size.firstPoint.X
+            cx, cy = abs(cell_extent.XMax - cell_extent.XMin), abs(
+                cell_extent.YMax - cell_extent.YMin
+            )
 
-            if min_cell_size_y < cell_size.firstPoint.Y:
-                min_cell_size_y = cell_size.firstPoint.Y
+            if xmin > point_upper_left.firstPoint.X:
+                xmin = point_upper_left.firstPoint.X
+            if ymax < point_upper_left.firstPoint.Y:
+                ymax = point_upper_left.firstPoint.Y
+            if xmax < point_lower_right.firstPoint.X:
+                xmax = point_lower_right.firstPoint.X
+            if ymin > point_lower_right.firstPoint.Y:
+                ymin = point_lower_right.firstPoint.Y
+
+            if min_cell_size_x < cx:
+                min_cell_size_x = cx
+
+            if min_cell_size_y < cy:
+                min_cell_size_y = cy
 
         max_raster_columns = int(abs(math.ceil((xmax - xmin) / min_cell_size_x)))
         max_raster_rows = int(abs(math.ceil((ymax - ymin) / min_cell_size_y)))
+        point_upper = arcpy.PointGeometry(arcpy.Point(xmin, ymax), default_sr)
+        point_lower = arcpy.PointGeometry(arcpy.Point(xmax, ymin), default_sr)
 
-        point_upper = arcpy.PointGeometry(
-            arcpy.Point(xmin, ymax), arcpy.SpatialReference(default_sr["wkid"])
-        )
-        cell_size = arcpy.PointGeometry(
-            arcpy.Point(min_cell_size_x, min_cell_size_y),
-            arcpy.SpatialReference(default_sr["wkid"]),
+        cell_extent = arcpy.Extent(
+            xmin,
+            ymin,
+            xmin + min_cell_size_x,
+            ymin + min_cell_size_y,
+            spatial_reference=default_sr,
         )
 
         raster_data = {}
         for raster in rasters:
             field_name = raster.name
-            point_upper_translated = point_upper.projectAs(
-                arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"])
+
+            point_upper_translated = point_upper.projectAs(self._raster_sr(raster))
+            cell_extent_translated = cell_extent.projectAs(self._raster_sr(raster))
+
+            if field_name not in fields_needed:
+                if match_field_names and match_field_names.get(raster.name):
+                    field_name = match_field_names.get(raster.name)
+
+            ccxx, ccyy = abs(
+                cell_extent_translated.XMax - cell_extent_translated.XMin
+            ), abs(cell_extent_translated.YMax - cell_extent_translated.YMin)
+
+            raster_read = raster.read(
+                origin_coordinate=(
+                    point_upper_translated.firstPoint.X,
+                    point_upper_translated.firstPoint.Y,
+                ),
+                ncols=max_raster_columns,
+                nrows=max_raster_rows,
+                cell_size=(ccxx, ccyy),
             )
-            cell_size_translated = cell_size.projectAs(
-                arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"])
-            )
-            if field_name in fields_needed:
-                raster_read = raster.read(
-                    origin_coordinate=(
-                        point_upper_translated.firstPoint.X,
-                        point_upper_translated.firstPoint.Y,
-                    ),
-                    ncols=max_raster_columns,
-                    nrows=max_raster_rows,
-                    cell_size=(
-                        cell_size_translated.firstPoint.X,
-                        cell_size_translated.firstPoint.Y,
-                    ),
-                )
-                for row in range(max_raster_rows):
-                    for column in range(max_raster_columns):
-                        values = raster_read[row][column]
-                        index = 0
-                        for value in values:
-                            key = field_name
-                            if index != 0:
-                                key = key + f"_{index}"
-                            if not raster_data.get(key):
-                                raster_data[key] = []
-                            index = index + 1
-                            raster_data[key].append(value)
-            elif match_field_names and match_field_names.get(raster.name):
-                field_name = match_field_names.get(raster.name)
-                raster_read = raster.read(
-                    origin_coordinate=(
-                        point_upper_translated.firstPoint.X,
-                        point_upper_translated.firstPoint.Y,
-                    ),
-                    ncols=max_raster_columns,
-                    nrows=max_raster_rows,
-                    cell_size=(
-                        cell_size_translated.firstPoint.X,
-                        cell_size_translated.firstPoint.Y,
-                    ),
-                )
-                for row in range(max_raster_rows):
-                    for column in range(max_raster_columns):
-                        values = raster_read[row][column]
-                        index = 0
-                        for value in values:
-                            key = field_name
-                            if index != 0:
-                                key = key + f"_{index}"
-                            if not raster_data.get(key):
-                                raster_data[key] = []
-                            index = index + 1
-                            raster_data[key].append(value)
-            else:
-                continue
+
+            for row in range(max_raster_rows):
+                for column in range(max_raster_columns):
+                    values = raster_read[row][column]
+                    index = 0
+                    for value in values:
+                        key = field_name
+                        if index != 0:
+                            key = key + f"_{index}"
+                        if not raster_data.get(key):
+                            raster_data[key] = []
+                        index = index + 1
+                        raster_data[key].append(value)
 
         for field in fields_needed:
             if (field not in list(raster_data.keys())) and (
                 match_field_names and match_field_names.get(field, None) is None
             ):
                 msg = arcpy_localization_helper(
-                    "Data on which prediction in needed does not have the fields the model was trained on",
+                    "Data on which prediction is needed does not have the fields the model was trained on",
                     260152,
                     "ERROR",
                 )

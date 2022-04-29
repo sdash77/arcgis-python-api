@@ -119,7 +119,10 @@ def is_supported(gis: Optional[GIS] = None):
     import arcgis
 
     gis = arcgis.env.active_gis if gis is None else gis
-    if "geoanalytics" in gis.properties.helperServices:
+    if (
+        "geoanalytics" in gis.properties.helperServices
+        and gis._portal.is_arcgisonline == False
+    ):
         return True
     else:
         return False

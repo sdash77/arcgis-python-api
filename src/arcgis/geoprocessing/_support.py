@@ -205,9 +205,9 @@ def _analysis_job_status(gptool, task_url, job_info):
             job_url = "{}/jobs/{}".format(task_url, job_id)
             params = {"f": "json"}
             try:
-                job_response = gptool._con.post(job_url, params, token=gptool._token)
+                job_response = gptool._con.get(job_url, params, token=gptool._token)
             except Exception as e:
-                job_response = gptool._con.post(job_url, params)
+                job_response = gptool._con.get(job_url, params)
 
             # Query and report the Analysis job status.
             #
@@ -216,11 +216,11 @@ def _analysis_job_status(gptool, task_url, job_info):
                 while not job_response.get("jobStatus") == "esriJobSucceeded":
                     time.sleep(1)
                     try:
-                        job_response = gptool._con.post(
+                        job_response = gptool._con.get(
                             job_url, params, token=gptool._token
                         )
                     except Exception as e:
-                        job_response = gptool._con.post(job_url, params)
+                        job_response = gptool._con.get(job_url, params)
 
                     # print(job_response)
                     messages = (
@@ -257,11 +257,11 @@ def _analysis_job_status(gptool, task_url, job_info):
                     while retry_counter < 5:
                         time.sleep(retry_counter + 1)
                         try:
-                            job_response = gptool._con.post(
+                            job_response = gptool._con.get(
                                 job_url, params, token=gptool._token
                             )
                         except Exception as e:
-                            job_response = gptool._con.post(job_url, params)
+                            job_response = gptool._con.get(job_url, params)
                         if "results" in job_response:
                             return job_response
                         retry_counter += 1
@@ -302,11 +302,11 @@ def _analysis_job_results(gptool, task_url, job_info, job_id=None):
                 params = {"f": "json"}
                 _set_env_params(params, {})
                 try:
-                    param_result = gptool._con.post(
+                    param_result = gptool._con.get(
                         result_url, params, token=gptool._token
                     )
                 except:
-                    param_result = gptool._con.post(result_url, params)
+                    param_result = gptool._con.get(result_url, params)
 
                 job_value = param_result.get("value")
                 result_values[key] = job_value
