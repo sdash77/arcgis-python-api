@@ -5420,7 +5420,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             "records_to_match": records_to_match,
             "spatial_relationship": spatial_relationship,
             "spatial_relationship_distance": spatial_relationship_distance,
-            "spatial_relationship_distance_units" : spatial_relationship_distance_units,            
+            "spatial_relationship_distance_units": spatial_relationship_distance_units,
             "future": future,
             "join_type": join_type,
         }
