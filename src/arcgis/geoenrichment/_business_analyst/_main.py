@@ -1437,7 +1437,9 @@ class BusinessAnalyst(object):
             )
 
         # if the geographies is not a path and not a dataframe, convert the iterable to a list for consistency later
-        if not isinstance(geographies, (pd.DataFrame, Path)) and not isinstance(geographies, str):
+        if not isinstance(geographies, (pd.DataFrame, Path)) and not isinstance(
+            geographies, str
+        ):
             geographies = list(geographies)
 
         # get enrichment variables to validate against depending on the enrichment variable source
@@ -1812,8 +1814,9 @@ class BusinessAnalyst(object):
         # if a string, or list of strings, and no standard geography level is provided, format as address in JSON
         if isinstance(geographies, str) and standard_geography_level is None:
             geographies = [geographies]
-        if isinstance(geographies[0], str) and standard_geography_level is None:
-            geographies = [{"address": {"text": addr_str}} for addr_str in geographies]
+        if isinstance(geographies, Iterable) and not isinstance(geographies, pd.DataFrame):
+            if isinstance(geographies[0], str) and standard_geography_level is None:
+                geographies = [{"address": {"text": addr_str}} for addr_str in geographies]
 
         # detect and flag if a list of Geometry. string and dictionary objects passed directly in as iterable
         is_dict = False
@@ -1828,7 +1831,9 @@ class BusinessAnalyst(object):
                 is_str = True
 
         # convert boolean to string for payload in correct circumstances
-        if return_geometry and (standard_geography_level is not None or (is_dict or is_str)):
+        if return_geometry and (
+            standard_geography_level is not None or (is_dict or is_str)
+        ):
             retrieve_geometry = True
             params["returnGeometry"] = "true"
         else:
