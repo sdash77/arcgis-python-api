@@ -1392,7 +1392,7 @@ class Diagram(object):
             "gdbVersion": self._version_name,
             "sessionId": self._version_guid,
             "allLayers": all_layers,
-            "moment": moment
+            "moment": moment,
         }
         return self._con.post(url, params)
 
