@@ -1437,7 +1437,9 @@ class BusinessAnalyst(object):
             )
 
         # if the geographies is not a path and not a dataframe, convert the iterable to a list for consistency later
-        if not isinstance(geographies, (pd.DataFrame, Path)) and not isinstance(geographies, str):
+        if not isinstance(geographies, (pd.DataFrame, Path)) and not isinstance(
+            geographies, str
+        ):
             geographies = list(geographies)
 
         # get enrichment variables to validate against depending on the enrichment variable source
@@ -1828,7 +1830,9 @@ class BusinessAnalyst(object):
                 is_str = True
 
         # convert boolean to string for payload in correct circumstances
-        if return_geometry and (standard_geography_level is not None or (is_dict or is_str)):
+        if return_geometry and (
+            standard_geography_level is not None or (is_dict or is_str)
+        ):
             retrieve_geometry = True
             params["returnGeometry"] = "true"
         else:

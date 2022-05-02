@@ -649,7 +649,7 @@ def add_proximity_to_enrich_feature(
     travel_mode: str = "straight_line",
     proximity_metric: Optional[str] = None,
     proximity_value: int = 1,
-    proximity_area_overlap: bool = True
+    proximity_area_overlap: bool = True,
 ) -> dict:
     """Add proximity metrics onto a feature in a feature set for sending to the enrich REST endpoint."""
     # alias list to standardize the proximity_metric input
@@ -672,7 +672,9 @@ def add_proximity_to_enrich_feature(
 
     # if just doing a buffer, set the correct area type and set variable for travel mode type
     if travel_mode == "straight_line":
-        feature["areaType"] = "RingBuffer" if proximity_area_overlap else "RingBufferBands"
+        feature["areaType"] = (
+            "RingBuffer" if proximity_area_overlap else "RingBufferBands"
+        )
         trvl_md_typ = "distance"
 
     # otherwise, doing a network type and need to figure out what the travel mode is
@@ -689,9 +691,9 @@ def add_proximity_to_enrich_feature(
 
         # tack on polygon area overlap
         if proximity_area_overlap:
-            feature['networkOptions'] = {'polygon_overlap_type': 'Disks'}
+            feature["networkOptions"] = {"polygon_overlap_type": "Disks"}
         else:
-            feature['networkOptions'] = {'polygon_overlap_type': 'Rings'}
+            feature["networkOptions"] = {"polygon_overlap_type": "Rings"}
 
     # if no proximity metric provided, provide default based on travel mode, and also validate if provided
     if proximity_metric is None and trvl_md_typ == "distance":
@@ -723,12 +725,17 @@ def add_proximity_to_enrich_feature_list(
     travel_mode: str = "straight_line",
     proximity_metric: Optional[str] = None,
     proximity_value: int = 1,
-    proximity_area_overlap: bool = True
+    proximity_area_overlap: bool = True,
 ) -> list:
     """Add proxmity metrics to a FeatureSet for sending to the enrich REST endpoint."""
     prx_feat_lst = [
         add_proximity_to_enrich_feature(
-            source, f, travel_mode, proximity_metric, proximity_value, proximity_area_overlap
+            source,
+            f,
+            travel_mode,
+            proximity_metric,
+            proximity_value,
+            proximity_area_overlap,
         )
         for f in feature_list
     ]
