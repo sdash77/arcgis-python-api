@@ -103,7 +103,7 @@ def _tempinput(data):
 ###########################################################################
 class BaseAnalytics(object):
     @lru_cache(maxsize=255)
-    def _validate_token(con: "Connection", url: str, token: str) -> bool:
+    def _validate_token(self, con: "Connection", url: str, token: str) -> bool:
         """validates that a token should be given to the endpoint"""
         resp = con.get(f"{url}?token={token}", try_json=True, return_raw_response=True)
         if resp.text.lower().find("error") == -1:
