@@ -1814,8 +1814,13 @@ class BusinessAnalyst(object):
         # if a string, or list of strings, and no standard geography level is provided, format as address in JSON
         if isinstance(geographies, str) and standard_geography_level is None:
             geographies = [geographies]
-        if isinstance(geographies[0], str) and standard_geography_level is None:
-            geographies = [{"address": {"text": addr_str}} for addr_str in geographies]
+        if isinstance(geographies, Iterable) and not isinstance(
+            geographies, pd.DataFrame
+        ):
+            if isinstance(geographies[0], str) and standard_geography_level is None:
+                geographies = [
+                    {"address": {"text": addr_str}} for addr_str in geographies
+                ]
 
         # detect and flag if a list of Geometry. string and dictionary objects passed directly in as iterable
         is_dict = False

@@ -53,6 +53,6 @@ def test_enrich_single_address_agol(usa_agol, expectation=does_not_raise()):
 
         assert isinstance(enrich_res, pd.DataFrame)
         assert enrich_res.spatial.validate()
-        enrich_var_cols = [pep8ify(val) for val in usa.enrich_variables['enrich_field_name']]
+        enrich_var_cols = [pep8ify(val) for val in usa_agol.enrich_variables['enrich_field_name']]
         enrich_res_cols = list(enrich_res.columns)
         assert all([[enrich_col in enrich_res_cols] for enrich_col in enrich_var_cols])

@@ -1544,7 +1544,7 @@ def enrich(
 
     # invoke enrich on the business analyst object
     enrich_res = enrich_src.enrich(
-        study_areas=study_areas,
+        geographies=study_areas,
         enrich_variables=enrich_vars,
         proximity_type=proximity_type,
         proximity_value=proximity_value,
