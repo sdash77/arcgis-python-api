@@ -224,18 +224,6 @@ def test_enrich_usa_line_agol(usa_agol, line_df, usa_agol_enrich_vars):
 
 
 @skip_if_no_agol
-def test_enrich_usa_point_drivingdistance_wrong_proxiity_metric_agol(usa_agol, point_df, usa_agol_enrich_vars):
-    enrich_test(usa_agol, point_df, usa_agol_enrich_vars, pytest.raises(AssertionError), prx_typ='driving_distance',
-                prx_val=10, prx_mtrc='minutes')
-
-
-@skip_if_no_agol
-def test_enrich_usa_point_drivingtime_wrong_proximity_metric_agol(usa_agol, point_df, usa_agol_enrich_vars):
-    enrich_test(usa_agol, point_df, usa_agol_enrich_vars, pytest.raises(AssertionError), prx_typ='driving_time',
-                prx_val=12, prx_mtrc='kilometers')
-
-
-@skip_if_no_agol
 def test_enrich_usa_point_drivedistance_agol(usa_agol, point_df, usa_agol_enrich_vars):
     enrich_test(usa_agol, point_df, usa_agol_enrich_vars, does_not_raise(), prx_typ='drive_distance',
                 prx_val=10, prx_mtrc='miles')
@@ -263,7 +251,7 @@ def test_enrich_geometry_list_agol(usa_agol, usa_agol_enrich_vars):
 
 
 @skip_if_no_agol
-def test_enrich_buffer_multiple_addresses(usa_agol, usa_agol_enrich_vars):
+def test_enrich_buffer_multiple_addresses_agol(usa_agol, usa_agol_enrich_vars):
 
     from arcgis.geocoding import batch_geocode
 
