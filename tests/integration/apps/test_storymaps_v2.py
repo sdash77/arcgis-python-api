@@ -1,7 +1,7 @@
 import sys
 from unittest.case import SkipTest
 
-sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus\\src")
+sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import unittest
 from arcgis.gis import GIS
 from arcgis.apps.storymap import StoryMap, Themes
@@ -18,7 +18,8 @@ from arcgis.apps.storymap import (
     Sidecar,
 )
 
-gis = GIS(profile="your_online_profile", verify_cert=False)
+#gis = GIS(profile="your_online_profile", verify_cert=False)
+gis = GIS("https://deldev.maps.arcgis.com", "demos_deldev", "DelDevs.1234", verify_cert=True, trust_env=True)
 
 # Folder path for content (insert your own path)
 content = r"C:\ipython_workfolder\Content"
@@ -70,30 +71,34 @@ class TestStoryMap(unittest.TestCase):
 
     def test_add_video(self):
         """Test adding a Video and seeing properties"""
-        vid = Video(content + r"\underwater.mp4")
-        video = story.add(vid)
+        import os
+        if os.path.isfile(content + r"\underwater.mp4"):
+            vid = Video(content + r"\underwater.mp4")
+            video = story.add(vid)
 
-        assert video
-        assert vid.video
+            assert video
+            assert vid.video
 
     def test_add_audio(self):
         """Test adding an Audio and seeing properties"""
         # Node order before adding audio
-        aud = Audio(content + r"\craine.mp3")
-        print("Node Order Before Adding Audio:")
-        print(story.nodes)
-        print("------------------------------------")
-        # Add audio at a certain position
-        audio = story.add(aud, position=2)
-        separator = story.add()
+        import os
+        if os.path.isfile(content + r"\craine.mp3"):
+            aud = Audio(content + r"\craine.mp3")
+            print("Node Order Before Adding Audio:")
+            print(story.nodes)
+            print("------------------------------------")
+            # Add audio at a certain position
+            audio = story.add(aud, position=2)
+            separator = story.add()
+    
+            # See node order after audio was added
+            print("Node Order After Adding Audio:")
+            print(story.nodes)
 
-        # See node order after audio was added
-        print("Node Order After Adding Audio:")
-        print(story.nodes)
-
-        assert audio
-        assert separator
-        assert story.nodes
+            assert audio
+            assert separator
+            assert story.nodes
 
     def test_add_embed(self):
         """Test adding Embed and seeing properties"""
@@ -186,19 +191,21 @@ class TestStoryMap(unittest.TestCase):
         assert emd.link
 
     def test_path_to_url(self):
-        vid = Video(content + r"\underwater.mp4")
-        video = story.add(vid)
+        import os
+        if os.path.isfile(content + r"\underwater.mp4"):
+            vid = Video(content + r"\underwater.mp4")
+            video = story.add(vid)
 
-        new_video = "https://www.youtube.com/embed/G6b7Kgvd0iA"
-        print(vid.video)
+            new_video = "https://www.youtube.com/embed/G6b7Kgvd0iA"
+            print(vid.video)
 
-        vid.caption = "This is now a url"
-        vid.video = new_video
-        print(vid.video)
-        print(vid.caption)
+            vid.caption = "This is now a url"
+            vid.video = new_video
+            print(vid.video)
+            print(vid.caption)
 
-        assert vid.properties
-        assert vid._url
+            assert vid.properties
+            assert vid._url
 
     def test_create_gallery(self):
         """Test creating a gallery and adding images to it"""
