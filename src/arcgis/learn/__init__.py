@@ -292,6 +292,10 @@ def detect_objects(
 
                                              - parallelProcessingFactor - Sets the parallel processing factor. Default is "80%"
 
+                                             - mask: Only cells that fall within the analysis mask will be considered in the operation.
+
+                                             Eg: {"mask": {"url": "<feature_service_url>"}}
+
                                              - processorType - Sets the processor type. "CPU" or "GPU"
 
                                              Eg: {"processorType" : "CPU"}
@@ -1173,7 +1177,7 @@ def train_model(
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    input_folder                             Required string. This is the input location for the training sample data.
+    input_folder                             Required string or list. This is the input location for the training sample data.
                                              It can be the path of output location on the file share raster data store or a
                                              shared file system path.
                                              The training sample data folder needs to be the output of export_training_data function,
@@ -1186,15 +1190,73 @@ def train_model(
 
                                              Shared path example:
                                                - \\serverName\deepLearning\trainingSampleData
+
+                                             The function also support multiple input folders. In this case,
+                                             specify the list of input folders
+
+
+                                             list of file share raster store and datastore path examples:
+                                               -  ["/rasterStores/yourRasterStoreFolderName/trainingSampleDataA", "/rasterStores/yourRasterStoreFolderName/trainingSampleDataB"]
+                                               - ["/fileShares/yourFileShareFolderName/trainingSampleDataA", "/fileShares/yourFileShareFolderName/trainingSampleDataB"]
+
+                                             list of shared path example:
+                                               - ["\\serverName\deepLearning\trainingSampleDataA", "\\serverName\deepLearning\trainingSampleDataB"]
+
+                                             Multiple input folders are supported when all the following conditions are met:
+
+                                              - The metadata format must be one of the following types: Classified_Tiles, Labeled_Tiles, Multi-labeled Tiles, PASCAL_VOC_rectangles, or RCNN_Masks.
+                                              - All training data must have the same metadata format.
+                                              - All training data must have the same number of bands.
+                                              - All training data must have the same tile size.
     ------------------------------------     --------------------------------------------------------------------
     model_type                               Required string. The model type to use for training the deep learning model.
-                                             Possible values: SSD, UNET, FEATURE_CLASSIFIER, PSPNET, RETINANET, MASKRCNN
+                                             Possible values:
                                               - SSD - The Single Shot Detector (SSD) is used for object detection.
                                               - UNET - U-Net is used for pixel classification.
                                               - FEATURE_CLASSIFIER - The Feature Classifier is used for object classification.
                                               - PSPNET - The Pyramid Scene Parsing Network (PSPNET) is used for pixel classification.
                                               - RETINANET - The RetinaNet is used for object detection.
                                               - MASKRCNN - The MarkRCNN is used for object detection
+                                              - YOLOV3 - The YOLOv3 approach will be used to train the model. YOLOv3 is used for object detection.
+                                              - DeepLabV3 - The DeepLabV3 approach will be used to train the model. DeepLab is used for pixel classification.
+                                              - FASTERRCNN - The FasterRCNN approach will be used to train the model. FasterRCNN is used for object detection.
+                                              - BDCN_EDGEDETECTOR -  The Bi-Directional Cascade Network (BDCN) architecture will be used to train the model.
+                                                The BDCN Edge Detector is used for pixel classification. This approach is useful to improve edge detection for objects at different scales.
+                                              - HED_EDGEDETECTOR -  The Holistically-Nested Edge Detection (HED) architecture will be used to train the model.
+                                                The HED Edge Detector is used for pixel classification. This approach is useful to in edge and object boundary detection.
+                                              - MULTITASK_ROADEXTRACTOR -  The Multi Task Road Extractor architecture will be used to train the model.
+                                                The Multi Task Road Extractor is used for pixel classification. This approach is useful for road network extraction from satellite imagery.
+                                              - CONNECTNET - The ConnectNet architecture will be used to train the model. ConnectNet is used for pixel classification.
+                                                This approach is useful for road network extraction from satellite imagery.
+                                              - PIX2PIX - The Pix2Pix approach will be used to train the model. Pix2Pix is used for image-to-image translation.
+                                                This approach creates a model object that generates images of one type to another. The input training data for this
+                                                model type uses the Export Tiles metadata format.
+                                              - CYCLEGAN - The CycleGAN approach will be used to train the model. CycleGAN is used for image-to-image translation.
+                                                This approach creates a model object that generates images of one type to another. This approach is unique in that
+                                                the images to be trained do not need to overlap. The input training data for this model type uses the CycleGAN metadata format.
+                                              - SUPERRESOLUTION - The Super-resolution approach will be used to train the model. Super-resolution is used for
+                                                image-to-image translation. This approach creates a model object that increases the resolution and improves the
+                                                quality of images. The input training data for this model type uses the Export Tiles metadata format.
+                                              - CHANGEDETECTOR - The Change detector approach will be used to train the model. Change detector is used for
+                                                pixel classification. This approach creates a model object that uses two spatial-temporal images to create
+                                                a classified raster of the change. The input training data for this model type uses the Classified Tiles metadata format.
+                                              - IMAGECAPTIONER - The Image captioner approach will be used to train the model. Image captioner is used for
+                                                image-to-text translation. This approach creates a model that generates text captions for an image.
+                                              - SIAMMASK - The Siam Mask approach will be used to train the model. Siam Mask is used for object detection in videos.
+                                                The model is trained using frames of the video and detects the classes and bounding boxes of the objects in each frame.
+                                                The input training data for this model type uses the MaskRCNN metadata format.
+                                              - MMDETECTION - The MMDetection approach will be used to train the model. MMDetection is used for object detection.
+                                                The supported metadata formats are PASCAL Visual Object Class rectangles and KITTI rectangles.
+                                              - MMSEGMENTATION - The MMSegmentation approach will be used to train the model. MMDetection is used for pixel classification.
+                                                The supported metadata format is Classified Tiles.
+                                              - DEEPSORT - The Deep Sort approach will be used to train the model. Deep Sort is used for object detection in videos.
+                                                The model is trained using frames of the video and detects the classes and bounding boxes of the objects in each frame.
+                                                The input training data for this model type uses the Imagenet metadata format.
+                                                Where Siam Mask is useful while tracking an object, Deep Sort is useful in training a model to track multiple objects.
+                                              - PIX2PIXHD - The Pix2PixHD approach will be used to train the model. Pix2PixHD is used for image-to-image translation.
+                                                This approach creates a model object that generates images of one type to another.
+                                                The input training data for this model type uses the Export Tiles metadata format.
+                                              - MAXDEEPLAB - The MAXDEEPLAB approach will be used to train the model. It is used for Panoptic Segmentation.
     ------------------------------------     --------------------------------------------------------------------
     model_arguments                          Optional dictionary. Name-value pairs of arguments and their values that can be customized by the clients.
 
@@ -1226,9 +1288,10 @@ def train_model(
     ------------------------------------     --------------------------------------------------------------------
     backbone_model                           Optional string.
                                              Specifies the preconfigured neural network to be used as an architecture for training the new model.
-                                             Possible values: DENSENET121 , DENSENET161 , DENSENET169 , DENSENET201 , MOBILENET_V2 , MASKRCNN50_FPN ,
-                                                              RESNET18 , RESNET34 , RESNET50 , RESNET101 , RESNET152 , VGG11 , VGG11_BN , VGG13 ,
-                                                              VGG13_BN , VGG16 , VGG16_BN , VGG19 , VGG19_BN
+                                             Possible values: DENSENET121 , DENSENET161 , DENSENET169 , DENSENET201 , MOBILENET_V2 ,
+                                             RESNET18 , RESNET34 , RESNET50 , RESNET101 , RESNET152 , VGG11 , VGG11_BN , VGG13 ,
+                                             VGG13_BN , VGG16 , VGG16_BN , VGG19 , VGG19_BN , DARKNET53 , REID_V1 , REID_V2
+
                                              Example:
                                                 RESNET34
     ------------------------------------     --------------------------------------------------------------------

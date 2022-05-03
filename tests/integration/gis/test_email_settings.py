@@ -10,9 +10,9 @@ from arcgis.gis import GIS, Item, User, UserManager
 
 try:
 
-    url = "https://rpubs16029.ags.esri.com/portal"
-    username = "PAPIadmin"
-    password = "PAPIletmein01"
+    url = "https://dev0019757.esri.com/portal"
+    username = "portaladmin"
+    password = "esri.agp"
     gis = GIS(url, username, password, verify_cert=False)
     ALL_GOOD = True
 except:
@@ -21,15 +21,15 @@ except:
 
 @unittest.skipIf(ALL_GOOD == False, "Could not connect to Portal")
 class TestEmailSettings(unittest.TestCase):
-    """Tests the Email Settings for 10.8.1 Portal"""
+    """Tests the Email Settings for 10.9.1 Portal"""
 
     _gis = None
     # ----------------------------------------------------------------------
     @classmethod
     def setUpClass(cls):
-        url = "https://rpubs16029.ags.esri.com/portal"
-        username = "PAPIadmin"
-        password = "PAPIletmein01"
+        url = "https://dev0019757.esri.com/portal"
+        username = "portaladmin"
+        password = "esri.agp"
         try:
             cls._gis = GIS(url, username, password, verify_cert=False)
         except:

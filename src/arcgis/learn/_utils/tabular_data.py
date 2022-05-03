@@ -7,10 +7,8 @@ import os
 from pathlib import Path
 import traceback
 
-
 import arcgis
 from arcgis.features import FeatureLayer
-
 
 try:
     from fastai.tabular import TabularList
@@ -29,7 +27,6 @@ try:
 except Exception as e:
     import_trace = traceback.format_exc()
     HAS_FASTAI = False
-
 
 HAS_NUMPY = True
 try:
@@ -125,6 +122,12 @@ class TabularDataObject(object):
         ]
         tabular_data._dependent_variable = tabular_data._field_mapping[
             "dependent_variable"
+        ]
+        tabular_data._feature_field_variables = tabular_data._field_mapping[
+            "feature_field_variables"
+        ]
+        tabular_data._raster_field_variables = tabular_data._field_mapping[
+            "raster_field_variables"
         ]
         if (
             tabular_data._dataframe[tabular_data._dependent_variable]
@@ -366,7 +369,6 @@ class TabularDataObject(object):
                 260144,
                 "ERROR",
             )
-            raise ValueError(msg)
 
         unique_labels = labels.unique()
 
@@ -465,7 +467,6 @@ class TabularDataObject(object):
                 260143,
                 "ERROR",
             )
-            raise ValueError(msg)
 
         training_data = processed_data.take(self._training_indexes, axis=0)
         training_labels = None
@@ -946,17 +947,21 @@ class TabularDataObject(object):
         distance_feature_layers = (
             distance_feature_layers if distance_feature_layers else []
         )
-
+        feature_field_variables = []
+        raster_field_variables = []
         continuous_variables = []
         categorical_variables = []
         for field in feature_variables:
             if isinstance(field, tuple):
                 if field[1]:
                     categorical_variables.append(field[0])
+                    feature_field_variables.append(field[0])
                 else:
                     continuous_variables.append(field[0])
+                    feature_field_variables.append(field[0])
             else:
                 continuous_variables.append(field)
+                feature_field_variables.append(field)
 
         rasters = []
         bands = []
@@ -977,24 +982,36 @@ class TabularDataObject(object):
                         for index, band in enumerate(raster[1]):
                             if band == 0:
                                 continuous_variables.append(raster[0].name)
+                                raster_field_variables.append(raster[0].name)
                             else:
                                 continuous_variables.append(raster[0].name + f"_{band}")
+                                raster_field_variables.append(
+                                    raster[0].name + f"_{band}"
+                                )
                     elif isinstance(raster[1], bool):
                         band_count = raster[0].band_count
                         if raster[1]:
                             for index in range(band_count):
                                 if index == 0:
                                     categorical_variables.append(raster[0].name)
+                                    raster_field_variables.append(raster[0].name)
                                 else:
                                     categorical_variables.append(
+                                        raster[0].name + f"_{index}"
+                                    )
+                                    raster_field_variables.append(
                                         raster[0].name + f"_{index}"
                                     )
                         else:
                             for index in range(band_count):
                                 if index == 0:
                                     continuous_variables.append(raster[0].name)
+                                    raster_field_variables.append(raster[0].name)
                                 else:
                                     continuous_variables.append(
+                                        raster[0].name + f"_{index}"
+                                    )
+                                    raster_field_variables.append(
                                         raster[0].name + f"_{index}"
                                     )
                     else:
@@ -1015,24 +1032,34 @@ class TabularDataObject(object):
                         for index, band in enumerate(raster[2]):
                             if band == 0:
                                 categorical_variables.append(raster[0].name)
+                                raster_field_variables.append(raster[0].name)
                             else:
                                 categorical_variables.append(
+                                    raster[0].name + f"_{band}"
+                                )
+                                raster_field_variables.append(
                                     raster[0].name + f"_{band}"
                                 )
                     else:
                         for index, band in enumerate(raster[2]):
                             if band == 0:
                                 continuous_variables.append(raster[0].name)
+                                raster_field_variables.append(raster[0].name)
                             else:
                                 continuous_variables.append(raster[0].name + f"_{band}")
+                                raster_field_variables.append(
+                                    raster[0].name + f"_{band}"
+                                )
             else:
                 rasters.append(raster)
                 band_count = raster.band_count
                 for index in range(band_count):
                     if index == 0:
                         continuous_variables.append(raster.name)
+                        raster_field_variables.append(raster.name)
                     else:
                         continuous_variables.append(raster.name + f"_{index}")
+                        raster_field_variables.append(raster.name + f"_{index}")
 
         dataframe, index_data = TabularDataObject._process_layer(
             input_features,
@@ -1072,9 +1099,10 @@ class TabularDataObject(object):
                 column in categorical_variables
                 and dataframe[column].unique().shape[0] > 20
             ):
-                warnings.warn(
-                    f"Column {column} has more than 20 unique value. Sure this is categorical?"
-                )
+                pass
+                # warnings.warn(
+                #    f"Column {column} has more than 20 unique value. Sure this is categorical?"
+                # )
 
         if date_field:
             date_fields = [
@@ -1114,6 +1142,12 @@ class TabularDataObject(object):
                 if continuous_variables
                 else [],
                 "index_data": index_data,
+                "feature_field_variables": feature_field_variables
+                if feature_field_variables
+                else [],
+                "raster_field_variables": raster_field_variables
+                if raster_field_variables
+                else [],
             },
         )
 
@@ -1153,54 +1187,100 @@ class TabularDataObject(object):
             data_type = arcpy.Describe(input_features).dataType
             if data_type in ["TableView", "TextFile"]:
                 sdf = pd.DataFrame.spatial.from_table(str(input_features))
+            if len(sdf) == 0:
+                msg = arcpy_localization_helper(
+                    "Could not process the data. Your csv or table might contain columns with all null values. ",
+                    260200,
+                    "ERROR",
+                )
         rasters_data = {}
         if data_source:
             for cnt, raster in enumerate(raster_list):
+                categorical = False
                 if isinstance(raster, tuple):
+                    if len(raster) == 2:
+                        categorical = raster[1]
+                    raster = raster[0]
+                try:
+                    sr = raster._engine_obj._raster.spatialReference
+                except:
                     try:
-                        wkt = raster[0].extent["spatialReference"]["wkt"]
-                        raster = raster[0]
+                        import arcpy
+
+                        sr = arcpy.SpatialReference(
+                            raster.extent["spatialReference"]["wkid"]
+                        )
                     except:
-                        wkt = raster[0].extent["spatialReference"]["wkid"]
-                        raster = raster[0]
-                else:
-                    try:
-                        wkt = raster.extent["spatialReference"]["wkt"]
-                    except:
-                        wkt = raster.extent["spatialReference"]["wkid"]
-                sr = arcpy.SpatialReference()
-                sr.loadFromString(wkt)
+                        try:
+                            import arcpy
+
+                            sr = arcpy.SpatialReference(
+                                raster.extent["spatialReference"]["wkt"]
+                            )
+                        except:
+                            msg = arcpy_localization_helper(
+                                "One or more input rasters do not have a valid spatial reference.",
+                                517,
+                                "ERROR",
+                            )
                 for i in range(raster.band_count):
                     if i == 0:
                         rasters_data[raster.name] = []
                     else:
                         rasters_data[raster.name + f"_{i}"] = []
-                fields = ["SHAPE@X", "SHAPE@Y"]
-                with arcpy.da.SearchCursor(
-                    data_source, fields, spatial_reference=sr
-                ) as cursor:
-                    for row in cursor:
-                        # print(u'{0}, {1}'.format(row[0], row[1]))
-                        if arcpy.Describe(data_source).shapeType == "Point":
-                            raster_value = raster.read(
-                                origin_coordinate=(row[0], row[1]), ncols=1, nrows=1
-                            )
-                            value = raster_value[0][0]
-                        else:  # Polygon
-                            import random
 
-                            value = [random.uniform(0.3, 0.7)]
-                        for i in range(len(value)):
-                            if i == 0:
-                                rasters_data[raster.name].append(value[i])
-                            else:
-                                rasters_data[raster.name + f"_{i}"].append(value[i])
-                for key, value in rasters_data.items():
-                    sdf[key] = value
+                describe_obj = arcpy.Describe(data_source)
+                if describe_obj.shapeType == "Polygon":
+                    statistic = "MAJORITY" if categorical else "MEAN"
+                    cached_oo = arcpy.env.overwriteOutput
+                    arcpy.env.overwriteOutput = True
+                    zonetable = arcpy.CreateTable_management("memory", "zonetable")
 
+                    arcpy.sa.ZonalStatisticsAsTable(
+                        data_source,
+                        describe_obj.oidFieldName,
+                        raster.path + raster.name,
+                        zonetable,
+                        "DATA",
+                        statistic,
+                    )
+
+                    table_df = pd.DataFrame.spatial.from_table("memory\\zonetable")
+                    arcpy.env.overwriteOutput = cached_oo
+
+                    oidfield = table_df.columns[1]
+                    new_index = pd.Index(np.arange(1, len(sdf) + 2, 1), name=oidfield)
+                    rasdf = (
+                        table_df.set_index(oidfield)
+                        .reindex(new_index)
+                        .reset_index()[statistic]
+                    )
+                    sdf[raster.name] = rasdf
+
+                elif describe_obj.shapeType == "Point":
+                    fields = ["SHAPE@X", "SHAPE@Y"]
+                    with arcpy.da.SearchCursor(
+                        data_source, fields, spatial_reference=sr
+                    ) as cursor:
+                        for row in cursor:
+                            # print(u'{0}, {1}'.format(row[0], row[1]))
+                            # if arcpy.Describe(data_source).shapeType == "Point":
+                            try:
+                                raster_value = raster.read(
+                                    origin_coordinate=(row[0], row[1]), ncols=1, nrows=1
+                                )
+                                value = raster_value[0][0]
+                            except:
+                                value = [np.NaN]
+                            for i in range(len(value)):
+                                if i == 0:
+                                    rasters_data[raster.name].append(value[i])
+                                else:
+                                    rasters_data[raster.name + f"_{i}"].append(value[i])
+                    for key, value in rasters_data.items():
+                        sdf[key] = value
             if index_field in list(sdf.columns.values):
                 index_data = sdf[index_field].values
-
         return sdf, index_data
 
     @staticmethod
@@ -1893,7 +1973,6 @@ def show_local_interpretation(
 
 
 def global_interpretation(model, plot_type="bar", method="KernelRegressor"):
-
     try:
         import shap
     except:
