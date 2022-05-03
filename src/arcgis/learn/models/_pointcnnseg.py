@@ -414,6 +414,8 @@ class PointCNN(ArcGISModel):
         """
         Displays the results from your model on the validation set
         with ground truth on the left and predictions on the right.
+        Visualization of data, exported in a geographic coordinate system
+        is not yet supported.
 
         =====================   ===========================================
         **Argument**            **Description**
