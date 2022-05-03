@@ -1223,7 +1223,7 @@ class BusinessAnalyst(object):
             )
             enrich_vars_df = enrich_variables
 
-        # otherwise, create a enrich enrich_variables dataframe from the enrich series for a few more checks
+        # otherwise, create an enrich enrich_variables dataframe from the enrich series for a few more checks
         else:
 
             # get the enrich enrich_variables dataframe
@@ -1472,12 +1472,38 @@ class BusinessAnalyst(object):
             country.enrich_variables if country is not None else self.enrich_variables
         )
 
+        # if no variables submitted, provide defaults flexibly based on the parent
+        if enrich_variables is None:
+
+            # pluck out enrich variables into a shorter variable
+            ev = self.enrich_variables
+
+            # get the current year key variables
+            enrich_variables = (
+                ev[
+                    (ev.name.str.lower().str.contains("cy"))
+                    & (ev.data_collection.str.lower().str.contains("key"))
+                ]
+                .drop_duplicates("name")
+                .reset_index(drop=True)
+            )
+
+            # ensure something is found, dropping current year if nothing found
+            if len(enrich_variables.index) == 0:
+                enrich_variables = (
+                    ev[(ev.data_collection.str.lower().str.contains("key"))]
+                    .drop_duplicates("name")
+                    .reset_index(drop=True)
+                )
+
+            # let user know we are grabbing defaults
+            warn(
+                f"Using {len(enrich_variables.index)} enrich variables, key variables, as default "
+                f"since no enrich_variables were provided."
+            )
+
         # if a list of enrichment variables was provided, ensure they are valid
         if not isinstance(enrich_variables, pd.DataFrame):
-            assert isinstance(enrich_variables, Iterable), (
-                "Please provide enrich_variables as an Iterable or "
-                "filtered Pandas DataFrame of enrichment variables."
-            )
 
             # iteratively go through all the columns and try to find matching variables
             for c in ev_df:
