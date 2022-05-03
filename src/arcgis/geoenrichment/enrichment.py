@@ -634,7 +634,7 @@ class Country(object):
     def enrich(
         self,
         study_areas: Union[pd.DataFrame, Iterable, Path],
-        enrich_variables: Union[pd.DataFrame, Iterable],
+        enrich_variables: Optional[Union[pd.DataFrame, Iterable]] = None,
         return_geometry: bool = True,
         standard_geography_level: Optional[Union[int, str]] = None,
         standard_geography_id_column: Optional[str] = None,
@@ -642,6 +642,7 @@ class Country(object):
         proximity_value: Optional[Union[float, int]] = None,
         proximity_metric: Optional[str] = None,
         output_spatial_reference: Union[int, dict, SpatialReference] = 4326,
+        **kwargs,
     ):
         """
         Enrich provides access to a massive dataset describing exactly who people are
@@ -853,6 +854,12 @@ class Country(object):
                 study_areas = [na._areaid for na in study_areas]
                 standard_geography_level = first_geo._currlvl
 
+        # if data collections passed in kwargs, pull enrich variables out
+        if "data_collections" in kwargs.keys():
+            enrich_variables = _preproces_data_colletions_and_analysis_variables(
+                self, kwargs["data_collections"], enrich_variables
+            )
+
         # invoke enrich on the business analyst object
         enrich_res = self._ba_cntry.enrich(
             study_areas,
@@ -864,6 +871,7 @@ class Country(object):
             proximity_value,
             proximity_metric,
             output_spatial_reference,
+            **kwargs,
         )
         return enrich_res
 

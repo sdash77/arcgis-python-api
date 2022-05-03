@@ -253,12 +253,9 @@ def test_enrich_geometry_list_agol(usa_agol, usa_agol_enrich_vars):
 @skip_if_no_agol
 def test_enrich_buffer_multiple_addresses_agol(usa_agol, usa_agol_enrich_vars):
 
-    from arcgis.geocoding import batch_geocode
-
     with does_not_raise():
         address_lst = ['380 New York St, Redlands CA, 92373', '111 Market St, Olympia WA, 98501']
-        mult_df = batch_geocode(address_lst, as_featureset=True).sdf
-        enrich_res = usa_agol.enrich(mult_df, enrich_variables=usa_agol_enrich_vars)
+        enrich_res = usa_agol.enrich(address_lst, enrich_variables=usa_agol_enrich_vars)
         assert isinstance(enrich_res, pd.DataFrame)
 
 
