@@ -139,7 +139,10 @@ def _from_xy(df, x_column, y_column, sr=None):
     df["SHAPE"] = GeoArray(ags_geom)
     df.spatial.name
     for i in range(len(df)):
-        shape = df.loc[i]["SHAPE"]
+        try:
+            shape = df.iloc[i]["SHAPE"]
+        except:
+            shape = df.loc[i]["SHAPE"]
         if "EMPTY" in shape.WKT:
             df.iat[i, df.columns.get_loc("SHAPE")] = None
     return df
@@ -427,7 +430,7 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
                     except:
                         dtypes.append((col, "<U254"))
             elif df[col].dtype.name == "int64":
-                dtypes.append((col, np.int64))
+                dtypes.append((col, np.float))
             elif df[col].dtype.name == "bool":
                 dtypes.append((col, np.int32))
             else:
@@ -498,16 +501,24 @@ def from_featureclass(filename, **kwargs):
     from arcgis.geometry import _types
     import json
 
-    filename = _ensure_path_string(filename)
-    if not isinstance(filename, (str, Path, PurePath)):
-        raise ValueError(
-            f"filename must be a `str`, `Path`, or `PurePath`, not {type(filename)}"
-        )
-    if filename.find("http://") > -1 or filename.find("https://") > -1:
-        res = from_url(url=filename)
-        if len(res) == 1:
-            return res[0]
-        return res
+    if (
+        HASARCPY
+        or isinstance(filename, (arcpy._mp.Layer))
+        and type(filename).__name__.find("arcpy") > -1
+    ):
+        filename = filename
+    else:
+
+        filename = _ensure_path_string(filename)
+        if not isinstance(filename, (str, Path, PurePath)):
+            raise ValueError(
+                f"filename must be a `str`, `Path`, or `PurePath`, not {type(filename)}"
+            )
+        if filename.find("http://") > -1 or filename.find("https://") > -1:
+            res = from_url(url=filename)
+            if len(res) == 1:
+                return res[0]
+            return res
     if HASARCPY:
         sql_clause = kwargs.pop("sql_clause", (None, None))
         where_clause = kwargs.pop("where_clause", None)
@@ -843,7 +854,7 @@ def to_featureclass(
                         except:
                             dtypes.append((col, "<U254"))
                 elif df[col].dtype.name == "int64":
-                    dtypes.append((col, np.int64))
+                    dtypes.append((col, np.float))
                 elif df[col].dtype.name == "bool":
                     dtypes.append((col, np.int32))
                 else:
@@ -989,9 +1000,9 @@ def _pyshp_to_shapefile(df, out_path, out_name):
                         shpfile.field(name=c, size=255)
                     elif isinstance(df[c].loc[idx], (int)):
                         shpfile.field(name=c, fieldType="N", size=5)
-                    elif isinstance(df[c].loc[idx], (np.int, np.int32, np.int64)):
+                    elif isinstance(df[c].loc[idx], (np.int, np.int32)):
                         shpfile.field(name=c, fieldType="N", size=10)
-                    elif isinstance(df[c].loc[idx], (np.float, np.float64)):
+                    elif isinstance(df[c].loc[idx], (np.float, np.float64, np.int64)):
                         shpfile.field(name=c, fieldType="F", size=19, decimal=11)
                     elif (
                         isinstance(df[c].loc[idx], (datetime.datetime, np.datetime64))
@@ -1112,9 +1123,9 @@ def _pyshp2(df, out_path, out_name):
                         shpfile.field(name=c, size=255)
                     elif isinstance(df[c].loc[idx], (int)):
                         shpfile.field(name=c, fieldType="N", size=5)
-                    elif isinstance(df[c].loc[idx], (np.int, np.int32, np.int64)):
+                    elif isinstance(df[c].loc[idx], (np.int, np.int32)):
                         shpfile.field(name=c, fieldType="N", size=10)
-                    elif isinstance(df[c].loc[idx], (np.float, np.float64)):
+                    elif isinstance(df[c].loc[idx], (np.float, np.float64, np.int64)):
                         shpfile.field(name=c, fieldType="F", size=19, decimal=11)
                     elif (
                         isinstance(df[c].loc[idx], (datetime.datetime, np.datetime64))

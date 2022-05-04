@@ -45,7 +45,7 @@ try:
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from ._psp_utils import accuracy
     from ._PointRend import PointRendSemSegHead, PointRend_target_transform
-    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from .._utils.env import is_arcgispronotebook
     import matplotlib.pyplot as plt
 
     HAS_FASTAI = True
@@ -598,19 +598,16 @@ class DeepLab(ArcGISModel):
 
     def _freeze(self):
         "Freezes the pretrained backbone."
-        if self._backbone.__name__ == "resnet101":
-            idx = 68
-        else:
-            for idx, i in enumerate(flatten_model(self.learn.model)):
-                if isinstance(i, (nn.BatchNorm2d)):
-                    continue
-                if hasattr(i, "dilation"):
-                    dilation = i.dilation
-                    dilation = dilation[0] if isinstance(dilation, tuple) else dilation
-                    if dilation > 1:
-                        break
-                for p in i.parameters():
-                    p.requires_grad = False
+        for idx, i in enumerate(flatten_model(self.learn.model.backbone)):
+            if isinstance(i, (nn.BatchNorm2d)):
+                continue
+            if hasattr(i, "dilation"):
+                dilation = i.dilation
+                dilation = dilation[0] if isinstance(dilation, tuple) else dilation
+                if dilation > 1:
+                    break
+            for p in i.parameters():
+                p.requires_grad = False
 
         self.learn.layer_groups = split_model_idx(
             self.learn.model, [idx]
@@ -639,7 +636,7 @@ class DeepLab(ArcGISModel):
         self.learn.show_results(
             rows=rows, ignore_mapped_class=self._ignore_mapped_class, **kwargs
         )
-        if _IS_ARCGISPRONOTEBOOK:
+        if is_arcgispronotebook():
             plt.show()
 
     def _show_results_multispectral(

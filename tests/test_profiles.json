@@ -1,0 +1,34 @@
+{
+  "profiles": {
+    "your_ent_admin_profile": {
+      "url": "https://pythonapi.playground.esri.com/portal",
+      "username": "ArcGISPyAPIBot",
+      "password": "geosaurus_automation123",
+      "verify_cert": false
+    },
+    "your_online_admin_profile": {
+      "url": "https://geosaurus.maps.arcgis.com",
+      "username": "ArcGISPyAPIBot",
+      "password": "geosaurus_automation123",
+      "verify_cert": true
+    },
+    "your_online_profile": {
+      "url": "https://geosaurus.maps.arcgis.com",
+      "username": "arcgis_python",
+      "password": "P@ssword123",
+      "verify_cert": true
+    },
+    "your_enterprise_profile": {
+      "url": "https://pythonapi.playground.esri.com/portal",
+      "username": "arcgis_python",
+      "password": "amazing_arcgis_123",
+      "verify_cert": false
+    },
+    "notebookdev": {
+      "url": "https://datasciencedev.esri.com/portal",
+      "username": "portaladmin",
+      "password": "esri.agp",
+      "verify_cert": false
+    }
+  }
+}

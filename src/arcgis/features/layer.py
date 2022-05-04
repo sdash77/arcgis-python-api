@@ -965,7 +965,7 @@ class FeatureLayer(Layer):
             _fld_lu = {
                 "esriFieldTypeSmallInteger": np.int32,
                 "esriFieldTypeInteger": np.int64,
-                "esriFieldTypeSingle": np.int32,
+                "esriFieldTypeSingle": float,
                 "esriFieldTypeDouble": float,
                 "esriFieldTypeFloat": float,
                 "esriFieldTypeString": str,
@@ -1809,7 +1809,7 @@ class FeatureLayer(Layer):
             _fld_lu = {
                 "esriFieldTypeSmallInteger": np.int32,
                 "esriFieldTypeInteger": np.int64,
-                "esriFieldTypeSingle": np.int32,
+                "esriFieldTypeSingle": float,
                 "esriFieldTypeDouble": float,
                 "esriFieldTypeFloat": float,
                 "esriFieldTypeString": str,
@@ -2553,14 +2553,16 @@ class FeatureLayer(Layer):
         and extent. Layers that support this property will include
         `infoInEstimates` information in the layer's :attr:`~arcgis.features.FeatureLayer.properties`.
 
+        Currently available with ArcGIS Online and Enterprise 10.9.1+
+
         :returns: Dict[str, Any]
 
         """
-
-        if "infoInEstimates" in self.properties:
-            url = self._url + "/getEstimates"
-            params = {"f": "json"}
-            return self._con.get(url, params)
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
+            if "infoInEstimates" in self.properties:
+                url = self._url + "/getEstimates"
+                params = {"f": "json"}
+                return self._con.get(url, params)
         return {}
 
     # ----------------------------------------------------------------------
@@ -2732,6 +2734,34 @@ class FeatureLayer(Layer):
         :return:
             A dictionary by default, or :class:`~arcgis.features._async.EditFeatureJob` if `future=True`.
 
+        .. code-block:: python
+
+            # Usage Example 1:
+
+            feature = [
+            {
+                'attributes': {
+                    'ObjectId': 1,
+                    'UpdateDate': datetime.datetime.now(),
+                }
+            }]
+            lyr.edit_features(updates=feature)
+
+        .. code-block:: python
+
+            # Usage Example 2:
+
+            adds = {"geometry": {"x": 500, "y": 500, "spatialReference":
+                                {"wkid": 102100, "latestWkid": 3857}},
+                    "attributes": {"ADMIN_NAME": "Fake Location"}
+                    }
+            lyr.edit_features(adds=[adds])
+
+        .. code-block:: python
+
+            # Usage Example 3:
+
+            lyr.edit_features(deletes=[2542])
 
         """
         try:
@@ -3146,7 +3176,7 @@ class FeatureLayer(Layer):
             _fld_lu = {
                 "esriFieldTypeSmallInteger": np.int64,
                 "esriFieldTypeInteger": np.int64,
-                "esriFieldTypeSingle": np.int32,
+                "esriFieldTypeSingle": float,
                 "esriFieldTypeDouble": float,
                 "esriFieldTypeFloat": float,
                 "esriFieldTypeString": str,
@@ -3165,7 +3195,7 @@ class FeatureLayer(Layer):
             _fld_lu = {
                 "esriFieldTypeSmallInteger": pd.Int64Dtype(),
                 "esriFieldTypeInteger": pd.Int64Dtype(),
-                "esriFieldTypeSingle": pd.Int32Dtype(),
+                "esriFieldTypeSingle": pd.Float64Dtype(),
                 "esriFieldTypeDouble": pd.Float64Dtype(),
                 "esriFieldTypeFloat": pd.Float64Dtype(),
                 "esriFieldTypeString": str,
@@ -3648,7 +3678,7 @@ class Table(FeatureLayer):
             _fld_lu = {
                 "esriFieldTypeSmallInteger": np.int32,
                 "esriFieldTypeInteger": np.int64,
-                "esriFieldTypeSingle": np.int32,
+                "esriFieldTypeSingle": float,
                 "esriFieldTypeDouble": float,
                 "esriFieldTypeFloat": float,
                 "esriFieldTypeString": str,

@@ -467,7 +467,9 @@ class SSLCertificates(BasePortalAdmin):
         self._init()
 
     # ----------------------------------------------------------------------
-    def update(self, alias: str, protocols: str, cipher_suites: str):
+    def update(
+        self, alias: str, protocols: str, cipher_suites: str, HSTS: bool = False
+    ):
         """
         Use this operation to configure the web server certificate, SSL
         protocols, and cipher suites used by the portal.
@@ -494,6 +496,8 @@ class SSLCertificates(BasePortalAdmin):
                                             - TLS_RSA_WITH_3DES_EDE_CBC_SHA
                                         By default, all of the above options are enabled. Values must be
                                         comma separated.
+        ---------------------------     --------------------------------------------------------------------
+        HSTS                            Optional Boolean. A Boolean value that indicates whether HTTP Strict Transport Security (HSTS) is being used by the portal.
         ===========================     ====================================================================
 
         :return: Dictionary indicating 'success' or 'error'
@@ -501,11 +505,13 @@ class SSLCertificates(BasePortalAdmin):
         """
         self._certs = None
         url = "%s/update" % self._url
+
         params = {
             "f": "json",
             "webServerCertificateAlias": alias,
             "sslProtocols": protocols,
             "cipherSuites": cipher_suites,
+            "HSTSEnabled": HSTS,
         }
         return self._con.post(path=url, postdata=params)
 
@@ -595,9 +601,14 @@ class SSLCertificates(BasePortalAdmin):
             # Need to capture this because method only returns HTML
             # Ignore decoding errors
             self._refresh()
-            return True
-        except:
-            return False
+        except Exception as e:
+            ...
+        return any(
+            [
+                cert.properties.aliasName.lower() == alias.lower()
+                for cert in self.list(True)
+            ]
+        )
 
     # ----------------------------------------------------------------------
     def import_certificate(self, certificate: str, alias: str, norestart: bool = False):
@@ -660,6 +671,7 @@ class SSLCertificates(BasePortalAdmin):
                 postdata=params,
                 files=files,
             )
+            print(res)
         except HTTPError as error:
             if error.code == "408" or error.code == 408:
                 return True
@@ -742,7 +754,7 @@ class SSLCertificates(BasePortalAdmin):
             self._refresh()
             for cert in self.properties.sslCertificates:
                 url = "%s/%s" % (self._url, cert)
-                certs.append(SSLCertificate(url=url, gis=self._gis))
+                certs.append(SSLCertificate(url=url, gis=self._gis, mgr=self))
                 del cert
             self._certs = certs
         return self._certs
@@ -807,6 +819,7 @@ class SSLCertificate(BasePortalAdmin):
     _gis = None
     _con = None
     _url = None
+    _mgr = None
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
@@ -821,6 +834,7 @@ class SSLCertificate(BasePortalAdmin):
             raise ValueError("connection must be of type GIS or Connection")
         if initialize:
             self._init(self._gis)
+        self._mgr = kwargs.pop("mgr", None)
 
     # ----------------------------------------------------------------------
     def generate_csr(self):
@@ -871,15 +885,17 @@ class SSLCertificate(BasePortalAdmin):
         """
         import json
 
+        name = self.properties.aliasName.lower()
         params = {"f": "json"}
         url = "%s/delete" % self._url
         try:
-            self._con.post(path=url, postdata=params)
-            return True
-        except json.JSONDecodeError:
+            self._con.post_multipart(path=url, postdata=params)
             return True
         except:
-            return False
+            ...
+        return not name in [
+            cert.properties.aliasName.lower() for cert in self._mgr.list(True)
+        ]
 
     # ----------------------------------------------------------------------
     def import_signed_certificate(self, file_path: str):

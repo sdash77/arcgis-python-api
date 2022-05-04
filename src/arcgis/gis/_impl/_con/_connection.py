@@ -525,6 +525,8 @@ class Connection(object):
                 pauth = None
                 if self._portal_connection:
                     pauth = self._portal_connection._con._auth
+                if self._token_url is None:
+                    self._check_product()
                 self._session.auth = EsriGenTokenAuth(
                     token_url=self._token_url,
                     referer=self._referer,
@@ -538,6 +540,8 @@ class Connection(object):
                 )
             else:
                 if self._use_gen_token:
+                    if self._token_url is None:
+                        self._check_product()
                     self._session.auth = EsriGenTokenAuth(
                         token_url=self._token_url,
                         referer=self._referer,
@@ -838,8 +842,20 @@ class Connection(object):
             file_name = os.path.join(out_path, file_name)
             if os.path.isfile(file_name):
                 os.remove(file_name)
+            stream_size = 512 * 2
+            if "Content-Length" in resp.headers:
+                max_length = int(resp.headers["Content-Length"])
+                if max_length > stream_size * 2 and max_length < 1024 * 1024:
+                    stream_size = 1024 * 2
+                elif max_length > 5 * (1024 * 1024):
+                    stream_size = 5 * (1024 * 1024)  # 5 mb
+                elif max_length > (1024 * 1024):
+                    stream_size = 1024 * 1024  # 1 mb
+                else:
+                    stream_size = 512 * 2
+
             fp = stream.stream_response_to_file(
-                response=resp, path=file_name, chunksize=512 * 2
+                response=resp, path=file_name, chunksize=stream_size
             )
             return fp
 

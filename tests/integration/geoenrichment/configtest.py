@@ -130,13 +130,13 @@ def gis_pro():
 
 
 @pytest.fixture(scope='session')
-def gis_agol():
+def gis_agol()->GIS:
     gis = GIS(_agol_url, username=_agol_user, password=_agol_pass)
     return gis
 
 
 @pytest.fixture(scope='session')
-def usa_agol():
+def usa_agol()->GIS:
     gis = GIS(_agol_url, username=_agol_user, password=_agol_pass)
     return Country('usa', gis=gis)
 

@@ -4,14 +4,11 @@ or Portal web services. It has implementations for Spatial Analysis tools, GeoAn
 Raster Analysis tools, Geoprocessing tools, Geocoders and Geometry Utility services.
 These tools primarily operate on items and layers from the GIS.
 """
-from __future__ import absolute_import
-from __future__ import division
-from __future__ import print_function
+from __future__ import absolute_import, division, print_function
 
 import json
 import logging
 import os
-import sys
 import random
 import string
 import tempfile
@@ -105,6 +102,16 @@ def _tempinput(data):
 
 ###########################################################################
 class BaseAnalytics(object):
+    @lru_cache(maxsize=255)
+    def _validate_token(self, con: "Connection", url: str, token: str) -> bool:
+        """validates that a token should be given to the endpoint"""
+        resp = con.get(f"{url}?token={token}", try_json=True, return_raw_response=True)
+        if resp.text.lower().find("error") == -1:
+            return True
+        else:
+            return False
+        return False
+
     def _feature_input(self, input_layer):
         from arcgis.features.geo._accessor import _is_geoenabled
 
@@ -220,7 +227,10 @@ class BaseAnalytics(object):
                         token = input_layer.layers[0]._gis._con._create_token(
                             input_layer_url
                         )
-                        input_param.update({"serviceToken": token})
+                        if token and self._validate_token(
+                            input_layer._gis._con, url=input_layer_url, token=token
+                        ):
+                            input_param.update({"serviceToken": token})
                 except:
                     pass
             elif input_layer.type.lower() == "feature collection":
@@ -251,7 +261,10 @@ class BaseAnalytics(object):
                     and "serviceToken" not in input_param.keys()
                 ):
                     token = input_layer._gis._con._create_token(input_layer_url)
-                    input_param.update({"serviceToken": token})
+                    if token and self._validate_token(
+                        input_layer._gis._con, url=input_layer_url, token=token
+                    ):
+                        input_param.update({"serviceToken": token})
             except:
                 pass
 
@@ -941,7 +954,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         point_layer = self._feature_input(point_layer)
         if polygon_layer:
             polygon_layer = self._feature_input(polygon_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -1288,7 +1301,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             required_facilities_layer = self._feature_input(required_facilities_layer)
         if candidate_facilities_layer:
             candidate_facilities_layer = self._feature_input(candidate_facilities_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -1644,7 +1657,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "ConnectOriginsToDestinations"
         origins_layer = self._feature_input(origins_layer)
         destinations_layer = self._feature_input(destinations_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -1926,7 +1939,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "CreateDriveTimeAreas"
 
         input_layer = self._feature_input(input_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -2064,13 +2077,6 @@ class _FeatureAnalysisTools(BaseAnalytics):
         """
         if route_data_item:
             route_data_item = {"itemId": route_data_item.itemid}
-        # if self._gis.version > [9, 2] or self._gis._is_agol:
-        # overwrite = context.pop("overwrite", False) if context else False
-        # else:
-        ## Remove if in context but default to False in all cases.
-        # overwrite = context.pop("overwrite", False) if context else False
-        # overwrite = False
-        # output_name = self._output_name_dict(output_name, overwrite)
 
         if estimate:
             params = {}
@@ -2244,7 +2250,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         task = "CreateBuffers"
         input_layer = self._feature_input(input_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -2402,7 +2408,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "CalculateDensity"
 
         params = {}
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -2603,7 +2609,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         """
         task = "CreateViewshed"
         input_layer = self._feature_input(input_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -2765,7 +2771,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         input_layer = self._feature_input(input_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -3063,7 +3069,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         input_layers_param = []
         for input_lyr in input_layers:
             input_layers_param.append(self._feature_input(input_lyr))
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -3170,7 +3176,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 11+
 
                                                     .. code-block:: python
 
@@ -3318,7 +3324,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                                                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+                                                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 11+
 
 
                                                                                 .. code-block:: python
@@ -3423,55 +3429,55 @@ class _FeatureAnalysisTools(BaseAnalytics):
         The extracted data format can be a file geodatabase, shapefiles, csv, or kml.
         File geodatabases and shapefiles are added to a zip file that can be downloaded.
 
-        ===================================    =========================================================
-        **Argument**                           **Description**
-        -----------------------------------    ---------------------------------------------------------
-        input_layers                           Required list of strings. A list of input layers to be extracted. See :ref:`Feature Input<FeatureInput>`.
-        -----------------------------------    ---------------------------------------------------------
-        extent                                 Optional layer. The extent is the area of interest used to extract the input features. If not specified, all features from each input layer are extracted. See :ref:`Feature Input<FeatureInput>`.
-        -----------------------------------    ---------------------------------------------------------
-        clip                                   Optional boolean. A Boolean value that specifies whether the features within the input layer are clipped
-                                            within the extent. By default, features are not clipped and all features intersecting the extent are returned.
+        ===================================     =========================================================
+        **Argument**                            **Description**
+        -----------------------------------     ---------------------------------------------------------
+        input_layers                            Required list of strings. A list of input layers to be extracted. See :ref:`Feature Input<FeatureInput>`.
+        -----------------------------------     ---------------------------------------------------------
+        extent                                  Optional layer. The extent is the area of interest used to extract the input features. If not specified, all features from each input layer are extracted. See :ref:`Feature Input<FeatureInput>`.
+        -----------------------------------     ---------------------------------------------------------
+        clip                                    Optional boolean. A Boolean value that specifies whether the features within the input layer are clipped
+                                                within the extent. By default, features are not clipped and all features intersecting the extent are returned.
 
-                                            The default is false.
-        -----------------------------------    ---------------------------------------------------------
-        data_format                            Optional string. A keyword defining the output data format for your extracted data.
+                                                The default is false.
+        -----------------------------------     ---------------------------------------------------------
+        data_format                             Optional string. A keyword defining the output data format for your extracted data.
 
-                                            Choice list: ``['FileGeodatabase', 'ShapeFile', 'KML', 'CSV']``
+                                                Choice list: ``['FileGeodatabase', 'ShapeFile', 'KML', 'CSV']``
 
-                                            The default is 'CSV'.
+                                                The default is 'CSV'.
 
-                                            If *FileGeodatase* is specified *and* the input layer has `attachments: <https://enterprise.arcgis.com/en/portal/latest/use/manage-hosted-layers.htm#ESRI_SECTION2_EF4F7A72F7B74E47B5CBCC1F343445E2>`_
+                                                If *FileGeodatase* is specified *and* the input layer has `attachments: <https://enterprise.arcgis.com/en/portal/latest/use/manage-hosted-layers.htm#ESRI_SECTION2_EF4F7A72F7B74E47B5CBCC1F343445E2>`_
 
-                                                * if *clip=False*, the attachments will be extracted to the output file
-                                                * if *clip=True*, the attachments will not be extracted
-        -----------------------------------    ---------------------------------------------------------
-        output_name                            Optional string or dict.
+                                                    * if *clip=False*, the attachments will be extracted to the output file
+                                                    * if *clip=True*, the attachments will not be extracted
+        -----------------------------------     ---------------------------------------------------------
+        output_name                             Optional string or dict.
 
-                                            When ``output_name`` is a string, the output item in your My contents page
-                                            will be named by the value. Other item properties will receive default values.
+                                                When ``output_name`` is a string, the output item in your My contents page
+                                                will be named by the value. Other item properties will receive default values.
 
-                                            .. code-block:: python
+                                                .. code-block:: python
 
-                                                output_name = "my_extracted_item"
+                                                    output_name = "my_extracted_item"
 
-                                            To explicitly provide other item properties, use a dict with the following Syntax.
+                                                To explicitly provide other item properties, use a dict with the following Syntax.
 
-                                            .. code-block:: python
+                                                .. code-block:: python
 
-                                                output_name = {"title": "<title>",
-                                                                "tag": "<tags>",
-                                                                "snippet": "<snippet>",
-                                                                "description": "<description>"}
+                                                    output_name = {"title": "<title>",
+                                                                    "tag": "<tags>",
+                                                                    "snippet": "<snippet>",
+                                                                    "description": "<description>"}
 
-                                            For more information on these and other item properties, see the Item resource page in the `ArcGIS REST API. <https://developers.arcgis.com/rest/users-groups-and-items/item.htm>`_
-        -----------------------------------    ---------------------------------------------------------
-        gis                                    Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-        -----------------------------------    ---------------------------------------------------------
-        estimate                               Optional boolean. If True, the number of credits to run the operation will be returned.
-        -----------------------------------    ---------------------------------------------------------
-        future                                 Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
-        ===================================    =========================================================
+                                                For more information on these and other item properties, see the Item resource page in the `ArcGIS REST API. <https://developers.arcgis.com/rest/users-groups-and-items/item.htm>`_
+        -----------------------------------     ---------------------------------------------------------
+        gis                                     Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+        -----------------------------------     ---------------------------------------------------------
+        estimate                                Optional boolean. If True, the number of credits to run the operation will be returned.
+        -----------------------------------     ---------------------------------------------------------
+        future                                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+        ===================================     =========================================================
 
         :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`Feature Collection <arcgis.features.FeatureCollection>`.
 
@@ -3572,7 +3578,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         input_layer = self._feature_input(input_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -3665,7 +3671,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         input_layer = self._feature_input(input_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -3960,7 +3966,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         input_layers_param = []
         for input_lyr in input_layers:
             input_layers_param.append(self._feature_input(input_lyr))
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -4061,7 +4067,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                                                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+                                                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online Only.
 
                                                                                     .. code-block:: python
 
@@ -4106,7 +4112,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if aggregation_polygon_layer:
             aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -4359,7 +4365,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             line_barrier_layer = self._feature_input(line_barrier_layer)
         if polygon_barrier_layer:
             polygon_barrier_layer = self._feature_input(polygon_barrier_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -4547,7 +4553,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if aggregation_polygon_layer:
             aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -4674,7 +4680,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 11+
 
                                     .. code-block:: python
 
@@ -4826,7 +4832,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                     - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                     - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online Only.
 
                                         .. code-block:: python
 
@@ -4855,7 +4861,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "FindSimilarLocations"
         input_layer = self._feature_input(input_layer)
         search_layer = self._feature_input(search_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -4971,7 +4977,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         """
         if extent_layer:
             extent_layer = self._feature_input(extent_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -5195,7 +5201,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if predict_at_point_layer:
             predict_at_point_layer = self._feature_input(predict_at_point_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -5368,7 +5374,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
         target_layer = self._feature_input(target_layer)
         join_layer = self._feature_input(join_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -5412,6 +5418,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
             "output_name": output_name,
             "context": context,
             "records_to_match": records_to_match,
+            "spatial_relationship": spatial_relationship,
+            "spatial_relationship_distance": spatial_relationship_distance,
+            "spatial_relationship_distance_units": spatial_relationship_distance_units,
             "future": future,
             "join_type": join_type,
         }
@@ -5512,7 +5521,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         input_layer = self._feature_input(input_layer)
         merge_layer = self._feature_input(merge_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -5661,7 +5670,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
         input_layer = self._feature_input(input_layer)
         overlay_layer = self._feature_input(overlay_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -5984,7 +5993,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             start_layer = self._feature_input(start_layer)
         if end_layer:
             end_layer = self._feature_input(end_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -6112,7 +6121,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online Only.
 
                                     .. code-block:: python
 
@@ -6142,7 +6151,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         analysis_layer = self._feature_input(analysis_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -6322,7 +6331,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         if sum_within_layer:
             sum_within_layer = self._feature_input(sum_within_layer)
         summary_layer = self._feature_input(summary_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -6488,7 +6497,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         input_layer = self._feature_input(input_layer)
         if bounding_polygon_layer:
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -6760,7 +6769,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         sum_nearby_layer = self._feature_input(sum_nearby_layer)
         summary_layer = self._feature_input(summary_layer)
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version >= [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -7685,7 +7694,7 @@ class _OrthoMappingTools:
         context=None,
         gis=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
 
@@ -7804,7 +7813,7 @@ class _OrthoMappingTools:
         context=None,
         gis=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         The `compute_control_points` operation is a service tool that's used to compute matching control points between images in an image collection, and for matching control points between the image collection's images and the reference image.
@@ -7896,7 +7905,7 @@ class _OrthoMappingTools:
         context=None,
         gis=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
 
@@ -7991,7 +8000,7 @@ class _OrthoMappingTools:
         context=None,
         gis=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         The `compute_sensor_model` operation is a service that computes the bundle block adjustment for the image collection and applies the frame transformation to the images. It also generates the control point, solution, solution points, and flight path tables, though these tables are not published as portal items.
@@ -8085,7 +8094,7 @@ class _OrthoMappingTools:
         context=None,
         gis=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
 
@@ -8161,7 +8170,7 @@ class _OrthoMappingTools:
         context=None,
         gis=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
 
@@ -8307,7 +8316,7 @@ class _OrthoMappingTools:
         context=None,
         gis=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         The `generate_orthomosaic` is a service tool that's used to generate a single orthorectified, mosaicked image from an image collection after the block adjustment.
@@ -8517,7 +8526,7 @@ class _OrthoMappingTools:
         context=None,
         gis=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         The `match_control_points` is a tool that takes a collection of ground control points in JSON as input, and at least on of the ground control points has matching tie points. The service will compute the remaining matching tie points.
@@ -9343,7 +9352,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         raster_type_params=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
 
         """
@@ -9453,7 +9462,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         value_range=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         Computes the extent of every raster in a mosaic dataset.
@@ -9566,7 +9575,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         context=None,
         input_barriers=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
 
         """
@@ -9655,7 +9664,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_back_direction_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
 
         """
@@ -9849,7 +9858,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         allocation_field=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
 
         """ """
@@ -9928,7 +9937,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         additional_input_raster=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
 
         """
@@ -9995,7 +10004,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         process_all_raster_items=False,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
 
         """
@@ -10124,7 +10133,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         value_field=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
 
         """
@@ -10195,7 +10204,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         create_multipart_features=False,
         max_vertices_per_feature=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         This service tool converts imagery data to feature class vector data.
@@ -10337,7 +10346,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         context=None,
         future=False,
         md_to_upload=None,
-        **kwargs
+        **kwargs,
     ):
 
         """
@@ -10570,7 +10579,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         above_ground_level_output_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
 
         """ """
@@ -10717,7 +10726,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         process_all_raster_items=False,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         Function can be used to generate feature service that contains polygons on detected objects
@@ -10916,7 +10925,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_neighbor_network_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         calculates the optimum cost network from a set of input regions.
@@ -11087,7 +11096,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         path_type=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """DetermineTravelCostPathsToDestinations GPtool"""
         task = "DetermineTravelCostPathsToDestinations"
@@ -11124,7 +11133,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         destination_field=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         Calculates the least cost polyline path between sources and known destinations.
@@ -11329,7 +11338,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         fix_chip_size=True,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         Function is designed to generate training sample image chips from the input imagery data with
@@ -11655,7 +11664,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_drop_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         Replaces cells of a raster corresponding to a mask
@@ -11799,7 +11808,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
 
@@ -11980,7 +11989,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_prediction_error=False,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         This tool allows you to predict values at new locations based on measurements from a collection of points. The tool
@@ -12245,7 +12254,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         remove_tiling_artifacts=False,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         Groups together adjacent pixels having similar spectral and spatial characteristics into
@@ -12404,7 +12413,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         process_as_multidimensional=False,
         percentile_value=90,
         percentile_interpolation_type="AUTO_DETECT",
-        **kwargs
+        **kwargs,
     ):
         """
         Parameters
@@ -12569,7 +12578,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         segment_attributes="COLOR;MEAN",
         dimension_value_field=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
 
@@ -12640,7 +12649,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         return_first_file=False,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
 
         """
@@ -12767,7 +12776,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         raster_type_name=None,
         raster_type_params=None,
         md_to_upload=None,
-        **kwargs
+        **kwargs,
     ):
         """
          input_raster: inputRaster (str). Required parameter.
@@ -12933,7 +12942,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         dimensionless=False,
         percentile_value=90,
         percentile_interpolation_type="NEAREST",
-        **kwargs
+        **kwargs,
     ):
         """
         input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
@@ -13146,7 +13155,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         context=None,
         reference_mean_raster=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
@@ -13282,7 +13291,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         context=None,
         future=False,
         delete_transpose=False,
-        **kwargs
+        **kwargs,
     ):
         """
         input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
@@ -13355,7 +13364,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         slope_p_value=False,
         seasonal_period="DAYS",
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
@@ -13535,7 +13544,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         interval_unit=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
@@ -13674,7 +13683,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         ignore_nodata=True,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         input_raster: inputRaster (str). Required parameter.
@@ -13825,7 +13834,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         value_option=[],
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         input_raster: inputRaster (str). Required parameter.
@@ -13906,7 +13915,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         iteration_unit=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
@@ -14037,7 +14046,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         destination_field=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
 
@@ -14186,7 +14195,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_feature_class=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         Function can be used to output feature service with assigned class label for each feature based on
@@ -14362,7 +14371,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         num_of_bands=None,
         composite_value=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         Parameters
@@ -14418,7 +14427,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         context=None,
         future=False,
         create_network_paths="DESTINATIONS_TO_SOURCES",
-        **kwargs
+        **kwargs,
     ):
         """
         Parameters
@@ -14595,7 +14604,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_neighbor_connections_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         Parameters
@@ -14837,7 +14846,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_source_location_raster_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
 
         """
@@ -15030,7 +15039,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_source_location_raster_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
 
         """
@@ -15226,7 +15235,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
@@ -15316,7 +15325,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         input_change_analysis_raster: inputChangeAnalysisRaster (str). Required parameter.
@@ -15498,7 +15507,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         dimension_description=None,
         dimension_unit=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         target_multidimensional_raster: targetMultidimensionalRaster (str). Required parameter.
@@ -15584,7 +15593,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         generate_feature_class=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         in_rasters: inRasters (str). Required parameter.
@@ -15724,7 +15733,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         mask_features=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         detected_features: detectedFeatures (str). Required parameter.
@@ -15837,7 +15846,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         input_multidimensional_rasters: inputMultidimensionalRasters (str). Required parameter.
@@ -15919,7 +15928,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
@@ -16018,7 +16027,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         Calculates  the values of a raster within the zones of another dataset and reports the results to a table.
@@ -16271,7 +16280,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         input_from_raster: inputFromRaster (str). Required parameter.
@@ -16422,7 +16431,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         overwrite_model=False,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         Function can be used to train a deep learning model using the output from the
@@ -16433,7 +16442,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        input_folder                             Required string. This is the input location for the training sample data.
+        in_folder                                Required string. This is the input location for the training sample data.
                                                  It can be the path of output location on the file share raster data store or a
                                                  shared file system path.
                                                  The training sample data folder needs to be the output of export_training_data function,
@@ -16557,6 +16566,14 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         if isinstance(in_folder, arcgis.gis.Datastore):
             in_folder = in_folder.datapath
+        elif isinstance(in_folder, list):
+            in_folder = [
+                folder.datapath
+                if isinstance(folder, arcgis.gis.Datastore)
+                else str(folder)
+                for folder in in_folder
+            ]
+            in_folder = ",".join(in_folder)
 
         if pretrained_model is not None:
             pretrained_model = self._set_param(pretrained_model)
@@ -16633,7 +16650,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_summary_table_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         Generates a table containing the pixel count for each class, in each slice of an input categorical raster.
@@ -16791,7 +16808,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_importance_table_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         Models the relationship between explanatory variables (independent variables) and a target dataset (dependent variable).
@@ -16972,7 +16989,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_tile_package=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         input_imagery_layer: inputImageryLayer (str). Required parameter.

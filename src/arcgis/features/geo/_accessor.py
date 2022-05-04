@@ -2350,7 +2350,7 @@ class GeoAccessor(object):
 
     # ----------------------------------------------------------------------
     def to_featureclass(
-        self, location, overwrite=True, has_z=None, has_m=None, sanitize_columns=False
+        self, location, overwrite=True, has_z=None, has_m=None, sanitize_columns=True
     ):
         """
         The ``to_featureclass`` exports a spatially enabled dataframe to a feature class.
@@ -2418,7 +2418,7 @@ class GeoAccessor(object):
         ---------------------------     --------------------------------------------------------------------
         sanitize_columns                Optional Boolean. If True, column names will be converted to
                                         string, invalid characters removed and other checks will be
-                                        performed. The default is False.
+                                        performed. The default is True.
         ===========================     ====================================================================
 
         :return: String
@@ -2427,7 +2427,7 @@ class GeoAccessor(object):
         from arcgis.features.geo._io.fileops import to_table
         from ._tools._utils import run_and_hide
 
-        sanitize_columns = kwargs.pop("sanitize_columns", False)
+        sanitize_columns = kwargs.pop("sanitize_columns", True)
         origin_columns = self._data.columns.tolist()
         origin_index = copy.deepcopy(self._data.index)
         location = os.path.abspath(location)
@@ -3018,14 +3018,14 @@ class GeoAccessor(object):
                 fields.append(
                     {"name": col, "type": "esriFieldTypeSmallInteger", "alias": col}
                 )
-            elif (
-                isinstance(col_val, (int, np.int, np.int64, np.int32))
-                and not col in date_cols
-            ):
+            elif isinstance(col_val, (int, np.int, np.int32)) and not col in date_cols:
                 fields.append(
                     {"name": col, "type": "esriFieldTypeInteger", "alias": col}
                 )
-            elif isinstance(col_val, (float, np.float64)) and not col in date_cols:
+            elif (
+                isinstance(col_val, (float, np.float64, np.int64))
+                and not col in date_cols
+            ):
                 fields.append(
                     {"name": col, "type": "esriFieldTypeDouble", "alias": col}
                 )

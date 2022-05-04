@@ -21,7 +21,7 @@ from .._utils.common import (
 )
 from .._utils.env import HAS_GDAL
 from .._utils.pixel_classification import analyze_pred_pixel_classification
-from .._utils.env import _IS_ARCGISPRONOTEBOOK
+from .._utils.env import is_arcgispronotebook
 import torch
 import warnings
 import PIL
@@ -566,7 +566,7 @@ def show_results_multispectral(
         axi[0].axis("off")
         axi[1].axis("off")
     #
-    if _IS_ARCGISPRONOTEBOOK:
+    if is_arcgispronotebook():
         plt.show()
     if return_fig:
         return fig, axs

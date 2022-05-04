@@ -45,7 +45,7 @@ try:
     from ._timm_utils import filter_timm_models, get_backbone
     from .._data_utils._pixel_classifier_data import ClassifiedTilesData
     from .._data_utils._road_orient_data import RoadOrientation
-    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from .._utils.env import is_arcgispronotebook
     from matplotlib import pyplot as plt
 except Exception as e:
     import_exception = "\n".join(
@@ -723,7 +723,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
         self._check_requisites()
         self.return_fig = kwargs.get("return_fig", False)
         fig = self.learn.show_results(rows=rows, **kwargs)
-        if _IS_ARCGISPRONOTEBOOK:
+        if is_arcgispronotebook():
             plt.show()
         if self.return_fig:
             return fig

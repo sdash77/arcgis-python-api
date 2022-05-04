@@ -49,7 +49,7 @@ try:
     )
     from .._video_utils import VideoUtils
     import inspect
-    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from .._utils.env import is_arcgispronotebook
     from matplotlib import pyplot as plt
     import types
     from ._maskrcnn import grid_anchors
@@ -109,10 +109,7 @@ class ModelExtension(ArcGISModel):
             del kwargs["ArcGISLearnVersion"]
 
         super().__init__(data, backbone, **kwargs)
-        if model_conf.__name__ == "CustomDetReg":
-            self._model_conf = model_conf(**kwargs)
-        else:
-            self._model_conf = model_conf()
+        self._model_conf = model_conf()
         self._model_conf_class = model_conf
         self._backend = "pytorch"
         self._kwargs = kwargs
@@ -357,16 +354,14 @@ class ModelExtension(ArcGISModel):
                 data.K = emd["Kwargs"]["n_masks"]
                 data.instance_classes = emd["Kwargs"]["instance_classes"]
         data.resize_to = resize_to
-        if modelconfclass == "CustomDetReg":
-            mextnsn = cls(data, pretrained_path=str(model_file))
-        else:
-            mextnsn = cls(
-                data,
-                model_configuration,
-                backbone,
-                pretrained_path=str(model_file),
-                **kwargs,
-            )
+
+        mextnsn = cls(
+            data,
+            model_configuration,
+            backbone,
+            pretrained_path=str(model_file),
+            **kwargs,
+        )
 
         if not data_passed and dataset_type == "PASCAL_VOC_rectangles":
             mextnsn.learn.data.single_ds.classes = mextnsn._data.classes
@@ -443,14 +438,6 @@ class ModelExtension(ArcGISModel):
         elif self._data.dataset_type == "Panoptic_Segmentation":
             self.show_results = self._show_results_panoptic
             self.panoptic_quality = self._panoptic_quality
-
-        elif hasattr(self, "coco_data"):
-            self.show_results = self._model_conf._show_results
-            self.predict = self._model_conf.predict
-            self.lr_find = self._model_conf.lr_find
-            self.average_precision_score = (
-                self._model_conf.average_precision_score_detreg
-            )
 
         else:
             if self._is_multispectral:
@@ -675,7 +662,7 @@ class ModelExtension(ArcGISModel):
             rows = len(self._data.valid_ds)
 
         ds_type = DatasetType.Valid
-        n_items = rows**2 if self.learn.data.train_ds.x._square_show_res else rows
+        n_items = rows ** 2 if self.learn.data.train_ds.x._square_show_res else rows
         if self.learn.dl(ds_type).batch_size < n_items:
             n_items = self.learn.dl(ds_type).batch_size
         ds = self.learn.dl(ds_type).dataset
@@ -718,7 +705,7 @@ class ModelExtension(ArcGISModel):
             ys = [ds.y.reconstruct(grab_idx(y, i)) for i in range(n_items)]
             zs = [ds.y.reconstruct(z) for z in preds]
         ds.x.show_xyzs(xs, ys, zs, **kwargs)
-        if _IS_ARCGISPRONOTEBOOK:
+        if is_arcgispronotebook():
             plt.show()
 
     def _predict_learn_modified(self, item, **kwargs):

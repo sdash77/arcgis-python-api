@@ -106,11 +106,14 @@ class ServicesDirectory(BaseServer):
         key_file: str = None,
         cert_file: str = None,
         verify_cert: bool = False,
+        proxy: dict = None,
         **kwargs,
     ):
         """Constructor"""
         super(ServicesDirectory, self)
         profile = kwargs.pop("profile", None)
+        if str(url).endswith("/"):
+            url = url[:-1]
         if profile:
             # pm = self._pm
             url, username, password, key_file, cert_file, client_id = self._profile_mgr(
@@ -166,6 +169,7 @@ class ServicesDirectory(BaseServer):
                 portal_connection=self._portal_connection,
                 verify_cert=verify_cert,
                 product="SERVER",
+                proxy=proxy,
                 **kwargs,
             )
         self._gis = kwargs.pop("gis", None)

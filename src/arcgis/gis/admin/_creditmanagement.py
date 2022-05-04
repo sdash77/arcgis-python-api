@@ -43,7 +43,8 @@ class CreditManager(object):
     @property
     def is_enabled(self):
         """
-        boolean that show is credit credit assignment
+        :return:
+            A boolean that shows whether the organization has credit budgeting enabled.
         """
         if "creditAssignments" in self._gis.properties:
             return self._gis.properties.creditAssignments == "enabled"
