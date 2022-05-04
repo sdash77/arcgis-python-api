@@ -140,7 +140,7 @@ class Mission(object):
         self,
         title: str,
         service_name: str,
-        questions: str,
+        questions: list[dict],
         source: str = "user",
         description: Optional[str] = None,
         tags: Optional[Union[list, str]] = None,
@@ -156,6 +156,8 @@ class Mission(object):
         title	               Required String. The name of the report.
         ------------------     --------------------------------------------------------------------
         service_name           Required String. The desired service name for the report.
+                               This value cannot be longer than 87 characters and cannot contain the following values:
+                               #,$, %, ^,*, =, `,{,},[,], , ,{space},:,*, ?, ",<,>,|,\, /, +
         ------------------     --------------------------------------------------------------------
         questions              Required String. A string formatted as a JSON Array containing questions and their fields. If an empty array is passed, the request is rejected. Used to represent the desired questions and their fields. Question types are based on Survey123 question type fields.
                                Available question types: Single Line Text, Single Choice, Number,
