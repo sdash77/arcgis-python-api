@@ -5,6 +5,7 @@ from arcgis.gis.server._service import Service
 from arcgis._impl.backport import cached_property
 from functools import lru_cache
 from typing import Optional, Union
+from __future__ import annotations
 
 ###########################################################################
 class MissionJob(object):
