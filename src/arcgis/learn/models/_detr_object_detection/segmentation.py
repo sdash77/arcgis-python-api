@@ -18,10 +18,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from PIL import Image
 from arcgis.learn._utils.coco_detection_utils import (
-    box_cxcywh_to_xyxy,
     NestedTensor,
     nested_tensor_from_tensor_list,
-    interpolate,
 )
 
 try:
@@ -333,7 +331,7 @@ class PostProcessPanoptic(nn.Module):
             cur_scores = cur_scores[keep]
             cur_classes = cur_classes[keep]
             cur_masks = cur_masks[keep]
-            cur_masks = interpolate(
+            cur_masks = F.interpolate(
                 cur_masks[None], to_tuple(size), mode="bilinear"
             ).squeeze(0)
             cur_boxes = box_ops.box_cxcywh_to_xyxy(cur_boxes[keep])

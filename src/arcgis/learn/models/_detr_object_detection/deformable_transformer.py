@@ -378,7 +378,7 @@ class DeformableTransformer(nn.Module):
                 N_, 1, 1, 2
             )
             grid = (grid.unsqueeze(0).expand(N_, -1, -1, -1) + 0.5) / scale
-            wh = torch.ones_like(grid) * 0.05 * (2.0**lvl)
+            wh = torch.ones_like(grid) * 0.05 * (2.0 ** lvl)
             proposal = torch.cat((grid, wh), -1).view(N_, -1, 4)
             proposals.append(proposal)
             _cur += H_ * W_
@@ -800,4 +800,22 @@ def build_deforamble_transformer(args):
         enc_n_points=args.enc_n_points,
         two_stage=args.two_stage,
         two_stage_num_proposals=args.num_queries,
+    )
+
+
+def build_learn_deforamble_transformer():
+    return DeformableTransformer(
+        d_model=256,
+        nhead=8,
+        num_encoder_layers=6,
+        num_decoder_layers=6,
+        dim_feedforward=1024,
+        dropout=0.1,
+        activation="relu",
+        return_intermediate_dec=True,
+        num_feature_levels=4,
+        dec_n_points=4,
+        enc_n_points=4,
+        two_stage=False,
+        two_stage_num_proposals=100,
     )
