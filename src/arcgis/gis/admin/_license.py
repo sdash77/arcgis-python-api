@@ -490,7 +490,7 @@ class License(object):
                                 u["lastLogin"] / 1000
                             ).strftime("%B %d, %Y")
                         else:
-                            last_used = "unknown"
+                            last_used = None
                         user_list.append({"user": u["username"], "lastUsed": last_used})
                 row = [k, v["num"], counter, v["num"] - counter, user_list]
                 data.append(row)
