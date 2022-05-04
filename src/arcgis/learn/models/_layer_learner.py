@@ -393,7 +393,7 @@ class FullyConnectedNetwork(ArcGISModel):
                                             The index of the dataframe passed to the predict function for which model
                                             interpretability is desired. If the parameter is not passed and if the
                                             explain parameter is set to true, the SHAP plot will be generated for a
-                                            random index of the dataframe.                               
+                                            random index of the dataframe.
         =================================   =========================================================================
 
         :returns Feature Layer if prediction_type='features', dataframe for prediction_type='dataframe' else creates an output raster.

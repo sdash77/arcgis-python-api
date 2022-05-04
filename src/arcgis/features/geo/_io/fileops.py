@@ -139,7 +139,10 @@ def _from_xy(df, x_column, y_column, sr=None):
     df["SHAPE"] = GeoArray(ags_geom)
     df.spatial.name
     for i in range(len(df)):
-        shape = df.loc[i]["SHAPE"]
+        try:
+            shape = df.iloc[i]["SHAPE"]
+        except:
+            shape = df.loc[i]["SHAPE"]
         if "EMPTY" in shape.WKT:
             df.iat[i, df.columns.get_loc("SHAPE")] = None
     return df
