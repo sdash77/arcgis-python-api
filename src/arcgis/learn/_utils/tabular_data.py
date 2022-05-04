@@ -150,6 +150,7 @@ class TabularDataObject(object):
         tabular_data._val_split_pct = val_split_pct
         tabular_data._bs = batch_size
         tabular_data._seed = seed
+        tabular_data._cell_sizes = cell_sizes
 
         validation_indexes = []
         if tabular_data._dependent_variable:
