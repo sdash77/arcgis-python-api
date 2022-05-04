@@ -266,6 +266,7 @@ class MissionCatalog:
         base_map: Optional[dict] = None,
         wm_description: Optional[str] = None,
         webmap_id: Optional[Union[str, Item]] = None,
+        app_id: Optional[str] = None,
     ) -> MissionJob:
         """
 
@@ -302,6 +303,8 @@ class MissionCatalog:
                                See: https://developers.arcgis.com/documentation/common-data-types/basemap.htm
         ------------------     --------------------------------------------------------------------
         wm_description         Optional string. The description of the web map added to the mission.
+        ------------------     --------------------------------------------------------------------
+        app_id                 Optional string. The ID of the app that created the mission.
         ==================     ====================================================================
 
 
@@ -323,6 +326,7 @@ class MissionCatalog:
             "extent": extent or "-180,-90,180,90",
             "locale": locale or "en",
             "baseMap": base_map or "",
+            "appId": app_id or "",
             "webMapDescription": wm_description,
             "templateWebMapId": webmap_id,
             "f": "json",
@@ -350,4 +354,8 @@ class MissionCatalog:
         url = f"{self._url}/services"
         params = {"f": "json"}
         resp = self._con.get(url, params)
-        return [Mission(url=f"{url}/{j['name']}/MissionServer", gis=self._gis) for j in resp["services"] if j["type"] == "MissionServer"]
+        return [
+            Mission(url=f"{url}/{j['name']}/MissionServer", gis=self._gis)
+            for j in resp["services"]
+            if j["type"] == "MissionServer"
+        ]
