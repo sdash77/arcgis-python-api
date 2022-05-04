@@ -11,7 +11,7 @@ from zipfile import ZipFile
 import traceback
 import arcgis
 from arcgis.features import FeatureLayer
-from .._utils.tabular_data import TabularDataObject, explain_prediction
+from .._utils.tabular_data import TabularDataObject, explain_prediction, add_h3
 
 
 try:
@@ -415,6 +415,7 @@ class MLModel(object):
             emd_params["dependent_variable"] = self._data._dependent_variable
 
         emd_params["continuous_variables"] = self._data._continuous_variables
+        emd_params["cell_sizes"] = self._data._cell_sizes
 
         with open(emd_file, "w") as f:
             f.write(json.dumps(emd_params, indent=4))
@@ -463,6 +464,7 @@ class MLModel(object):
         dependent_variable = emd.get("dependent_variable", None)
         continuous_variables = emd["continuous_variables"]
         model_parameters = emd["ModelParameters"]
+        cell_sizes = emd.get("cell_sizes", None)
 
         if emd["version"] != str(sklearn.__version__):
             warnings.warn(
@@ -501,6 +503,7 @@ class MLModel(object):
                 column_transformer,
             )
             data._is_classification = _is_classification
+            data._cell_sizes = cell_sizes
 
         data._emd = emd
 
@@ -832,8 +835,13 @@ class MLModel(object):
         explain=False,
         explain_index=None,
     ):
+        cell_sizes = self._data._cell_sizes
         if isinstance(input_features, FeatureLayer):
-            dataframe = input_features.query().sdf
+            if cell_sizes and not rasters:
+                dataframe = input_features.query(out_sr=4326).sdf
+                dataframe = add_h3(dataframe, cell_sizes)
+            else:
+                dataframe = input_features.query().sdf
         else:
             dataframe = input_features.copy()
 
@@ -890,6 +898,7 @@ class MLModel(object):
                 feature_layer_columns,
                 raster_columns,
                 datefield,
+                cell_sizes,
                 distance_feature_layers,
             )
 

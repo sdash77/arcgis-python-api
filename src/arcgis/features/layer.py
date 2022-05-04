@@ -965,7 +965,7 @@ class FeatureLayer(Layer):
             _fld_lu = {
                 "esriFieldTypeSmallInteger": np.int32,
                 "esriFieldTypeInteger": np.int64,
-                "esriFieldTypeSingle": np.int32,
+                "esriFieldTypeSingle": float,
                 "esriFieldTypeDouble": float,
                 "esriFieldTypeFloat": float,
                 "esriFieldTypeString": str,
@@ -1809,7 +1809,7 @@ class FeatureLayer(Layer):
             _fld_lu = {
                 "esriFieldTypeSmallInteger": np.int32,
                 "esriFieldTypeInteger": np.int64,
-                "esriFieldTypeSingle": np.int32,
+                "esriFieldTypeSingle": float,
                 "esriFieldTypeDouble": float,
                 "esriFieldTypeFloat": float,
                 "esriFieldTypeString": str,
@@ -3176,7 +3176,7 @@ class FeatureLayer(Layer):
             _fld_lu = {
                 "esriFieldTypeSmallInteger": np.int64,
                 "esriFieldTypeInteger": np.int64,
-                "esriFieldTypeSingle": np.int32,
+                "esriFieldTypeSingle": float,
                 "esriFieldTypeDouble": float,
                 "esriFieldTypeFloat": float,
                 "esriFieldTypeString": str,
@@ -3195,7 +3195,7 @@ class FeatureLayer(Layer):
             _fld_lu = {
                 "esriFieldTypeSmallInteger": pd.Int64Dtype(),
                 "esriFieldTypeInteger": pd.Int64Dtype(),
-                "esriFieldTypeSingle": pd.Int32Dtype(),
+                "esriFieldTypeSingle": pd.Float64Dtype(),
                 "esriFieldTypeDouble": pd.Float64Dtype(),
                 "esriFieldTypeFloat": pd.Float64Dtype(),
                 "esriFieldTypeString": str,
@@ -3678,7 +3678,7 @@ class Table(FeatureLayer):
             _fld_lu = {
                 "esriFieldTypeSmallInteger": np.int32,
                 "esriFieldTypeInteger": np.int64,
-                "esriFieldTypeSingle": np.int32,
+                "esriFieldTypeSingle": float,
                 "esriFieldTypeDouble": float,
                 "esriFieldTypeFloat": float,
                 "esriFieldTypeString": str,

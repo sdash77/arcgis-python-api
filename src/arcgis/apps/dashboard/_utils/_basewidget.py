@@ -109,7 +109,7 @@ class _BaseWidget(object):
         Set widget background color.
         """
         if isinstance(value, str):
-            self._text_color = value
+            self._background_color = value
 
     @property
     def height(self):

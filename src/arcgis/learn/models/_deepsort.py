@@ -47,7 +47,7 @@ except Exception as e:
     HAS_FASTAI = False
 
 from ._arcgis_model import ArcGISModel
-from .._utils.env import _IS_ARCGISPRONOTEBOOK
+from .._utils.env import is_arcgispronotebook
 
 
 class DeepSort(ArcGISModel):
@@ -189,7 +189,7 @@ class DeepSort(ArcGISModel):
             rows = min(rows, len(self.learn.data.valid_ds))
 
         self.learn.show_results(rows=rows)
-        if _IS_ARCGISPRONOTEBOOK:
+        if is_arcgispronotebook():
             plt.show()
 
     def _get_emd_params(self, save_inference_file):

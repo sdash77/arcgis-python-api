@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 import matplotlib
 from ..models._maskrcnn_utils import ArcGISImageSegment
 from .common import get_nbatches, kwarg_fill_none, image_batch_stretcher
-from .._utils.env import _IS_ARCGISPRONOTEBOOK
+from .._utils.env import is_arcgispronotebook
 
 
 def show_batch_rcnn_masks(
@@ -147,5 +147,5 @@ def show_batch_rcnn_masks(
                 axi.imshow(y_rgba)
                 axi.axis("off")
             idx += 1
-    if _IS_ARCGISPRONOTEBOOK:
+    if is_arcgispronotebook():
         plt.show()

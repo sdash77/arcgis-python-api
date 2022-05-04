@@ -112,7 +112,7 @@ class AOI(object):
         return ev
 
     def get_enrich_variables_from_iterable(
-        self, enrich_variables: Union[Iterable, pd.Series]
+        self, enrich_variables: Union[Iterable, pd.Series], **kwargs
     ) -> pd.DataFrame:
         """Get a dataframe of enrich enrich_variables associated with the list of enrich_variables
         passed in. This is especially useful when needing aliases (*human readable
@@ -162,7 +162,9 @@ class AOI(object):
             enrich_df.spatial.to_featureclass(new_fc_pth)
         """
         # call the method from the parent business analyst instance
-        ev = self._ba.get_enrich_variables_from_iterable(enrich_variables, country=self)
+        ev = self._ba.get_enrich_variables_from_iterable(
+            enrich_variables, country=self, **kwargs
+        )
 
         return ev
 
@@ -776,7 +778,7 @@ class BusinessAnalyst(object):
         cntry_df = pd.DataFrame(
             cntry_lst,
             columns=[
-                "country_name",
+                "name",
                 "vintage",
                 "iso2",
                 "iso3",
@@ -793,7 +795,7 @@ class BusinessAnalyst(object):
 
         # organize the columns
         cntry_df = cntry_df[
-            ["iso2", "iso3", "country_name", "vintage", "country_id", "data_source_id"]
+            ["iso2", "iso3", "name", "vintage", "country_id", "data_source_id"]
         ]
 
         return cntry_df
@@ -833,38 +835,22 @@ class BusinessAnalyst(object):
             {
                 "id": "iso2",
                 "abbr3": "iso3",
-                "name": "country_name",
                 "altName": "alt_name",
                 "defaultDatasetID": "default_dataset",
             },
             inplace=True,
             axis=1,
         )
-        cntry_df.drop(
-            columns=[
-                "distanceUnits",
-                "esriUnits",
-                "hierarchies",
-                "currencySymbol",
-                "currencyFormat",
-                "defaultDataCollection",
-                "dataCollections",
-                "defaultReportTemplate",
-                "defaultExtent",
-            ],
-            inplace=True,
-        )
-        cntry_df = cntry_df[
-            [
-                "iso2",
-                "iso3",
-                "country_name",
-                "datasets",
-                "default_dataset",
-                "alt_name",
-                "continent",
-            ]
+        keep_cols = [
+            "iso2",
+            "iso3",
+            "name",
+            "alt_name",
+            "datasets",
+            "default_dataset",
+            "continent",
         ]
+        cntry_df = cntry_df[keep_cols]
 
         return cntry_df
 
@@ -876,7 +862,7 @@ class BusinessAnalyst(object):
         # filter functions for getting the iso3 iso3 value
         iso3_fltr = self.countries["iso3"].str.lower() == cntry_str
         iso2_fltr = self.countries["iso2"].str.lower() == cntry_str
-        name_fltr = self.countries["country_name"].str.lower() == cntry_str
+        name_fltr = self.countries["name"].str.lower() == cntry_str
 
         # construct the filter, using alias if working online
         cntry_fltr = iso3_fltr | iso2_fltr | name_fltr
@@ -1167,7 +1153,7 @@ class BusinessAnalyst(object):
                     break
 
         # make sure something was found, but don't break the runtime
-        if len(sel_vars) == 0:
+        if "suppress_warn" not in kwargs.keys() and len(sel_vars) == 0:
             warn(f"It appears none of the input enrich enrich_variables were found.")
 
         return sel_vars
@@ -1221,7 +1207,7 @@ class BusinessAnalyst(object):
             )
             enrich_vars_df = enrich_variables
 
-        # otherwise, create a enrich enrich_variables dataframe from the enrich series for a few more checks
+        # otherwise, create an enrich enrich_variables dataframe from the enrich series for a few more checks
         else:
 
             # get the enrich enrich_variables dataframe
@@ -1409,17 +1395,6 @@ class BusinessAnalyst(object):
         elif geo_is_df and standard_geography_id_column and not geo_is_dict:
             geographies = geographies[standard_geography_id_column]
 
-        # if providing an iterable and is not Geometries, the only other explanation is standard geography identifiers
-        elif (
-            isinstance(geographies, Iterable)
-            and not any([isinstance(g, Geometry) for g in geographies[:10]])
-            and not geo_is_dict
-        ):
-            assert standard_geography_level is not None, (
-                "If providing an Iterable of standard geograpy identifiers, "
-                "the standard_geography_level must also be provided."
-            )
-
         # ensure if specifying a standard geography id column, the standard geography level is also provided
         if standard_geography_id_column is not None:
             assert standard_geography_level is not None, (
@@ -1462,7 +1437,9 @@ class BusinessAnalyst(object):
             )
 
         # if the geographies is not a path and not a dataframe, convert the iterable to a list for consistency later
-        if not isinstance(geographies, (pd.DataFrame, Path)):
+        if not isinstance(geographies, (pd.DataFrame, Path)) and not isinstance(
+            geographies, str
+        ):
             geographies = list(geographies)
 
         # get enrichment variables to validate against depending on the enrichment variable source
@@ -1470,12 +1447,38 @@ class BusinessAnalyst(object):
             country.enrich_variables if country is not None else self.enrich_variables
         )
 
+        # if no variables submitted, provide defaults flexibly based on the parent
+        if enrich_variables is None:
+
+            # pluck out enrich variables into a shorter variable
+            ev = self.enrich_variables
+
+            # get the current year key variables
+            enrich_variables = (
+                ev[
+                    (ev.name.str.lower().str.contains("cy"))
+                    & (ev.data_collection.str.lower().str.contains("key"))
+                ]
+                .drop_duplicates("name")
+                .reset_index(drop=True)
+            )
+
+            # ensure something is found, dropping current year if nothing found
+            if len(enrich_variables.index) == 0:
+                enrich_variables = (
+                    ev[(ev.data_collection.str.lower().str.contains("key"))]
+                    .drop_duplicates("name")
+                    .reset_index(drop=True)
+                )
+
+            # let user know we are grabbing defaults
+            warn(
+                f"Using {len(enrich_variables.index)} enrich variables, key variables, as default "
+                f"since no enrich_variables were provided."
+            )
+
         # if a list of enrichment variables was provided, ensure they are valid
         if not isinstance(enrich_variables, pd.DataFrame):
-            assert isinstance(enrich_variables, Iterable), (
-                "Please provide enrich_variables as an Iterable or "
-                "filtered Pandas DataFrame of enrichment variables."
-            )
 
             # iteratively go through all the columns and try to find matching variables
             for c in ev_df:
@@ -1619,9 +1622,18 @@ class BusinessAnalyst(object):
                 ids_list=std_geo_in,
             )[0]
 
+            # convert to spatially enabled dataframe
+            geographies = GeoAccessor.from_featureclass(geographies)
+
         # otherwise, make sure input in consistent format
         else:
             geographies = get_spatially_enabled_dataframe(geographies)
+
+            # if z-enabled, de-enable so enrich can work...conversion does not work with z-enabled features
+            if geographies[geographies.spatial.name].iloc[0].has_z:
+                geographies[geographies.spatial.name] = geographies[
+                    geographies.spatial.name
+                ].apply(lambda geom: Geometry(geom.__geo_interface__))
 
         # if a proximity type is provided, validate
         if proximity_type is not None:
@@ -1634,7 +1646,7 @@ class BusinessAnalyst(object):
             proximity_metric = (
                 "kilometers" if proximity_metric is None else proximity_metric
             )
-            proximity_value = 1 if proximity_value is 1 else proximity_value
+            proximity_value = 1 if proximity_value == 1 else proximity_value
 
             # ensure if the geometry is lines, the proximity_type is not a network travel mode
             if (
@@ -1677,7 +1689,10 @@ class BusinessAnalyst(object):
         # convert the output to a spatially enabled dataframe
         enrich_df = GeoAccessor.from_featureclass(enrich_res)
 
-        # pep8ify columns to prevent unexpected schema changes when exporting
+        # standardize columns to ensure results are as expected
+        enrich_df.columns = [
+            self._standardize_enrich_column_name(c, country) for c in enrich_df.columns
+        ]
         enrich_df.columns = [pep8ify(c) for c in enrich_df.columns if c != "SHAPE"] + [
             "SHAPE"
         ]
@@ -1688,7 +1703,7 @@ class BusinessAnalyst(object):
         ]
         drop_cols.append(pep8ify(arcpy.Describe(enrich_res).OIDFieldName))
 
-        # get rid of the temproary output to save memory
+        # get rid of the temporary output to save memory
         arcpy.management.Delete(enrich_res)
 
         # if returning geometry
@@ -1757,7 +1772,7 @@ class BusinessAnalyst(object):
         ge_url = f"{self._base_url}/Geoenrichment/Enrich"
 
         # get the enrichment variables as a string ready to submit as a payload parameter
-        evars = self._enrich_variable_preprocessing(enrich_variables)
+        evars = self._enrich_variable_preprocessing(enrich_variables, country=country)
 
         # start building out the package for enrich REST call
         params = {
@@ -1796,20 +1811,53 @@ class BusinessAnalyst(object):
         ][0]
         batch_size = batch_size if max_batch_size > batch_size else max_batch_size
 
+        # if a string, or list of strings, and no standard geography level is provided, format as address in JSON
+        if isinstance(geographies, str) and standard_geography_level is None:
+            geographies = [geographies]
+        if isinstance(geographies, Iterable) and not isinstance(
+            geographies, pd.DataFrame
+        ):
+            if isinstance(geographies[0], str) and standard_geography_level is None:
+                geographies = [
+                    {"address": {"text": addr_str}} for addr_str in geographies
+                ]
+
+        # detect and flag if a list of Geometry. string and dictionary objects passed directly in as iterable
+        is_dict = False
+        is_geom = False
+        is_str = False
+        if isinstance(geographies, list):
+            if isinstance(geographies[0], Geometry):
+                is_geom = True
+            elif isinstance(geographies[0], dict):
+                is_dict = True
+            if isinstance(geographies[0], str):
+                is_str = True
+
         # convert boolean to string for payload in correct circumstances
-        retrieve_geometry = (
-            return_geometry is not False and standard_geography_level is not None
-        )
-        params["returnGeometry"] = "true" if retrieve_geometry else "false"
+        if return_geometry and (
+            standard_geography_level is not None or (is_dict or is_str)
+        ):
+            retrieve_geometry = True
+            params["returnGeometry"] = "true"
+        else:
+            retrieve_geometry = False
+            params["returnGeometry"] = "false"
 
         # list to store request parameter payloads
         req_param_lst = []
 
-        # detect and flag if a list of dictionary objects passed directly in
+        # detect and flag if a list of Geometry. string and dictionary objects passed directly in as iterable
         is_dict = False
+        is_geom = False
+        is_str = False
         if isinstance(geographies, list):
-            if isinstance(geographies[0], dict):
+            if isinstance(geographies[0], Geometry):
+                is_geom = True
+            elif isinstance(geographies[0], dict):
                 is_dict = True
+            if isinstance(geographies[0], str):
+                is_str = True
 
         # if working with standard geography
         if standard_geography_level is not None:
@@ -1843,11 +1891,11 @@ class BusinessAnalyst(object):
                 # add the payload to the list
                 req_param_lst.append(deepcopy(params))
 
-        # if a list of dictionaries is being passed in, just use directly
-        elif is_dict:
+        # if a list of dictionaries, which are not geometries, or a list of strings is being passed in, just send
+        elif (is_dict and not is_geom) or is_str:
             for idx in range(0, len(geographies), batch_size):
                 geo_btch = geographies[idx : idx + batch_size]
-                params["studyAreas"] = json.dumps(geo_btch)
+                params["studyAreas"] = json.dumps(geo_btch) if is_dict else geo_btch
                 req_param_lst.append(deepcopy(params))
 
         # otherwise, working with geometries, so do this thing
@@ -1954,6 +2002,9 @@ class BusinessAnalyst(object):
 
         # proactively change the column names so no surprises if exporting to a feature class later
         enrich_df.columns = [
+            self._standardize_enrich_column_name(c, country) for c in enrich_df.columns
+        ]
+        enrich_df.columns = [
             pep8ify(c) if c != "SHAPE" else c for c in enrich_df.columns
         ]
 
@@ -1962,6 +2013,17 @@ class BusinessAnalyst(object):
         enrich_df.attrs["arcgis_aoi"] = country
 
         return enrich_df
+
+    def _standardize_enrich_column_name(
+        self, column_name: str, country: Optional[Country] = None
+    ):
+        """Helper function to standardize the output column names so is the same no matter the source."""
+        std_src = self if country is None else country
+        col_nm = std_src.get_enrich_variables_from_iterable(
+            column_name, suppress_warn=True
+        )
+        col_nm = col_nm.iloc[0]["name"] if len(col_nm.index) > 0 else column_name
+        return col_nm
 
 
 async def _get_enrich_rest(

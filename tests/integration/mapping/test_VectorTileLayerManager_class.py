@@ -8,8 +8,8 @@ from arcgis.gis import GIS
 from arcgis.mapping._types import VectorTileLayer, VectorTileLayerManager
 
 # Initialize manager
-online_admin = GIS(profile="your_dev_profile", verify_cert=False)
-vector_tile_item = online_admin.content.get("30a5992dda43447e9656028dc7749985")
+online_admin = GIS(profile="your_online_admin_profile", verify_cert=False)
+vector_tile_item = online_admin.content.get("68dcf1fc2cee4b0398e90c164613f98b")
 tile_layer = VectorTileLayer.fromitem(vector_tile_item)
 manager = tile_layer.manager
 

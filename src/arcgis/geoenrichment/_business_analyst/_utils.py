@@ -561,7 +561,7 @@ def pro_at_least_version(version: str) -> bool:
     for idx in range(0, max_len):
 
         # evaluate if the part and if greater, break and report status
-        if v_lst[idx] > in_lst[idx]:
+        if v_lst[idx] < in_lst[idx]:
             at_least = True
             break
 
@@ -649,6 +649,7 @@ def add_proximity_to_enrich_feature(
     travel_mode: str = "straight_line",
     proximity_metric: Optional[str] = None,
     proximity_value: int = 1,
+    proximity_area_overlap: bool = True,
 ) -> dict:
     """Add proximity metrics onto a feature in a feature set for sending to the enrich REST endpoint."""
     # alias list to standardize the proximity_metric input
@@ -671,7 +672,9 @@ def add_proximity_to_enrich_feature(
 
     # if just doing a buffer, set the correct area type and set variable for travel mode type
     if travel_mode == "straight_line":
-        feature["areaType"] = "RingBuffer"
+        feature["areaType"] = (
+            "RingBuffer" if proximity_area_overlap else "RingBufferBands"
+        )
         trvl_md_typ = "distance"
 
     # otherwise, doing a network type and need to figure out what the travel mode is
@@ -686,22 +689,17 @@ def add_proximity_to_enrich_feature(
             source.travel_modes["alias"] == travel_mode
         ].iloc[0]["impedance_category"]
 
+        # tack on polygon area overlap
+        if proximity_area_overlap:
+            feature["networkOptions"] = {"polygon_overlap_type": "Disks"}
+        else:
+            feature["networkOptions"] = {"polygon_overlap_type": "Rings"}
+
     # if no proximity metric provided, provide default based on travel mode, and also validate if provided
     if proximity_metric is None and trvl_md_typ == "distance":
         proximity_metric = "kilometers"
     elif proximity_metric is None and trvl_md_typ == "temporal":
         proximity_metric = "minutes"
-    elif trvl_md_typ == "temporal":
-        assert proximity_metric == "minutes", (
-            "If using a temporal network travel mode, you must use minutes as the "
-            "proximity_metric."
-        )
-    else:
-        assert proximity_metric == "miles" or proximity_metric == "kilometers", (
-            "If using a distance network mode, "
-            "you must use miles or kilometers as "
-            "the proximity_metric."
-        )
 
     # set the buffer units if now populated
     if proximity_metric is not None:
@@ -727,11 +725,17 @@ def add_proximity_to_enrich_feature_list(
     travel_mode: str = "straight_line",
     proximity_metric: Optional[str] = None,
     proximity_value: int = 1,
+    proximity_area_overlap: bool = True,
 ) -> list:
     """Add proxmity metrics to a FeatureSet for sending to the enrich REST endpoint."""
     prx_feat_lst = [
         add_proximity_to_enrich_feature(
-            source, f, travel_mode, proximity_metric, proximity_value
+            source,
+            f,
+            travel_mode,
+            proximity_metric,
+            proximity_value,
+            proximity_area_overlap,
         )
         for f in feature_list
     ]

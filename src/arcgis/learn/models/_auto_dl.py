@@ -378,10 +378,10 @@ class AutoDL:
                             Default is 5 Hr.
     ---------------------   -------------------------------------------
     mode                    Optional Str.
-                            Can be "basic" or "perform".
+                            Can be "basic" or "advanced".
 
                             basic : To to be used when the user wants to train all selected networks.
-                            perform : To be used when the user wants to tune hyper parameters of two
+                            advanced : To be used when the user wants to tune hyper parameters of two
                             best performing models from basic mode.
     ---------------------   -------------------------------------------
     network                 Optional List of str.
@@ -461,9 +461,12 @@ class AutoDL:
             return
         total_time_limit = total_time_limit * 60
         self._training_mode = mode.lower()
+        if self._training_mode == "perform":
+            self._training_mode = "advanced"
+
         if self._training_mode == "basic":
             self._time_in_sec = total_time_limit * 60
-        elif self._training_mode == "perform":
+        elif self._training_mode == "advanced":
             self._time_in_sec = (total_time_limit * 60) // 2
         else:
             print("Please select a vaild mode for training..")
@@ -636,7 +639,7 @@ class AutoDL:
 
         try:
             getattr(self, model).fit(
-                int(epochs), early_stopping=True, callbacks=callbacks
+                int(epochs), early_stopping=True, callbacks=callbacks, checkpoint=False
             )
             if self.verbose:
                 clear_output(wait=True)
@@ -887,7 +890,7 @@ class AutoDL:
                 "average_precision_score", ascending=False
             ).reset_index(drop=True)
 
-        if self._training_mode == "perform":
+        if self._training_mode == "advanced":
             if self.verbose:
                 log_msg = """{date}: Entering into exhaustive mode...""".format(
                     date=dt.now().strftime("%d-%m-%Y %H:%M:%S")
@@ -980,6 +983,11 @@ class AutoDL:
                         selected_bb.append(bb)
                         selected_bb.append(bkbone)
                 supported_backbone = selected_bb[::2]
+                supported_backbone = [
+                    backbone
+                    for backbone in supported_backbone
+                    if "timm" not in backbone
+                ]
                 if self.verbose:
                     log_msg = (
                         """{date}: Selected backbones for {model}: {bb} ...""".format(

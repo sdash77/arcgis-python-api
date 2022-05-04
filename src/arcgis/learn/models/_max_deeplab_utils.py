@@ -1434,9 +1434,6 @@ def show_results_panoptic(model, rows=5, thresh=0.5, **kwargs):
     ax[0, 3].set_title("Classified Pixels\n", fontsize=20)
     plt.tight_layout()
 
-    # if _IS_ARCGISPRONOTEBOOK:
-    #     plt.show()
-
 
 def show_batch_panoptic(data, rows=5, alpha=0.5, **kwargs):
 

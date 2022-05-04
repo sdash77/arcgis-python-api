@@ -12,7 +12,8 @@ from .._utils.env import (
     HAS_TENSORFLOW,
     raise_tensorflow_import_error,
     _LAMBDA_TEXT_CLASSIFICATION,
-    _IS_ARCGISPRONOTEBOOK,
+    is_arcgispronotebook,
+    reload_IPython,
 )
 from warnings import warn
 import contextlib
@@ -1456,11 +1457,13 @@ class ArcGISModel(object):
                         "SingleShotDetector",
                         "YOLOv3",
                         "RetinaNet",
+                        "SiamMask",
                     ]
                     if (type(self).__name__) in supported_models:
-                        with warnings.catch_warnings():
-                            warnings.simplefilter("ignore")
-                            script_paths = self._save_pytorch_torchscript(name)
+                        if type(self).__name__ != "SiamMask":
+                            with warnings.catch_warnings():
+                                warnings.simplefilter("ignore")
+                                script_paths = self._save_pytorch_torchscript(name)
                     else:
                         raise Exception(
                             "This pytorch model cannot be saved in torchscript format"
@@ -1646,11 +1649,13 @@ class ArcGISModel(object):
         zip_name = saved_path.stem
 
         if save_html:
+            # Backup env var
+            bak_IS_ARCGISPRONOTEBOOK = arcgis.learn._utils.env._IS_ARCGISPRONOTEBOOK
+            arcgis.learn._utils.env.switch = False
             try:
-                if _IS_ARCGISPRONOTEBOOK:
-                    from IPython import get_ipython
-
-                    get_ipython().run_line_magic("matplotlib", "auto")
+                # Do not call plt.show()
+                arcgis.learn._utils.env._IS_ARCGISPRONOTEBOOK = False
+                #
                 self._save_model_characteristics(
                     saved_path.parent.absolute() / model_characteristics_folder
                 )
@@ -1658,10 +1663,9 @@ class ArcGISModel(object):
             except:
                 pass
             finally:
-                if _IS_ARCGISPRONOTEBOOK:
-                    from IPython import get_ipython
-
-                    get_ipython().run_line_magic("matplotlib", "inline")
+                # Restore env var
+                arcgis.learn._utils.env._IS_ARCGISPRONOTEBOOK = bak_IS_ARCGISPRONOTEBOOK
+                is_arcgispronotebook()
 
         if _emd_template.get("ModelConfigurationFile", False):
             with open(

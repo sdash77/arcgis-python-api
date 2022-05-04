@@ -923,7 +923,7 @@ class ArcGISImageClassifier:
             }
         ]
         params = self.child_image_classifier.getParameterInfo(required_parameters)
-        if 0 not in self.class_values:
+        if 0 not in self.class_values and len(self.class_values)>1:
             for param in params:
                 if param['name'] == 'predict_background':
                     param['value'] = 'False'
