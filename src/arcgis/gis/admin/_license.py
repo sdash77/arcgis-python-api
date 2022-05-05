@@ -485,7 +485,7 @@ class License(object):
                 for u in self.all():
                     if k in u["entitlements"]:
                         counter += 1
-                        if u["lastLogin"] in [None, -1]:
+                        if u["lastLogin"] not in [None, -1]:
                             last_used = datetime.datetime.fromtimestamp(
                                 u["lastLogin"] / 1000
                             ).strftime("%B %d, %Y")
