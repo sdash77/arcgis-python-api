@@ -312,7 +312,86 @@ def snap_tracks(
     gis: Optional[GIS] = None,
     future: bool = False,
 ):
-    """TODO write this stuff"""
+    """
+    The `snap_tracks` method matches track points to polylines.
+
+    ============================   ===============================================================
+    **Argument**                   **Description**
+    ----------------------------   ---------------------------------------------------------------
+    point_layer                    Required layer. The track point features that will be matched
+                                   to polylines. See :ref:`Feature Input<gaxFeatureInput>`.
+    ----------------------------   ---------------------------------------------------------------
+    polyline_layer                 Required layer. The polyline features to which track points
+                                   will be matched. See :ref:`Feature Input<gaxFeatureInput>`.
+    ----------------------------   ---------------------------------------------------------------
+    track_fields                   Required string. The fields used to identify distinct tracks.
+                                   There can be multiple ``track_fields``.
+    ----------------------------   ---------------------------------------------------------------
+    connectivity_field_matching    Required Dict[str,Any]. The polyline layer fields that will be
+                                   used to define the connectivity of the input polyline features.
+
+                                   The following values are required:
+
+                                   -  polylineID - The unique identifier for the line
+                                   -  fromNodeID - The node where the travel along a line is moving away from
+                                   -  toNodeID - The node where the travel along a line is moving to
+
+    ----------------------------   ---------------------------------------------------------------
+    search_distance                Required float. The maximum distance allowed between a point
+                                   and any polyline in order to be considered a match. It is
+                                   recommended to use values less than or equal to 50 meters.
+                                   Larger distances will result in a longer process time and less
+                                   accurate results.
+    ----------------------------   ---------------------------------------------------------------
+    search_distance_unit           Required String. The unit of the `search_distance`.
+    ----------------------------   ---------------------------------------------------------------
+    distance_method                Optional String. The method used to calculate search distances
+                                   between points and lines. There are two methods to choose from:
+                                   `Geodesic` and `Planar`. The Geodesic method calculates
+                                   distances geodesically and will allow tracks to cross the
+                                   anti-meridian. This method is appropriate for large areas and
+                                   any geographic coordinate system. The Planar method calculates
+                                   distances using a plane method and will not cross the
+                                   anti-meridian.
+                                   The default is 'Planar'.
+    ----------------------------   ---------------------------------------------------------------
+    output_mode                    Optional string. Determines which features are returned.
+
+                                   Choice list: [AllFeatures', 'Incidents']
+
+                                   - ``AllFeatures`` - All of the input features are returned.
+                                   - ``Incidents`` - Only features that were found to be incidents
+                                     are returned.
+
+                                   The default value is 'AllFeatures'.
+    ----------------------------   ---------------------------------------------------------------
+    polyline_fields_to_include     Optional String. One or more fields from the polyine layer that
+                                   will be included in the output result.
+    ----------------------------   ---------------------------------------------------------------
+    direction_field_matching       Optional dict[str, Any]. The polyline layer field and attribute
+                                   values that will be used to define the direction of the input
+                                   polyline features.
+    ----------------------------   ---------------------------------------------------------------
+    output_name                    Optional string, The task will create a feature service of the
+                                   results. You define the name of the service.
+    ----------------------------   ---------------------------------------------------------------
+    gis                            Optional GIS, the GIS on which this tool runs. If not
+                                   specified, the active GIS is used.
+    ----------------------------   ---------------------------------------------------------------
+    context                        Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
+
+                                   #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                   #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
+                                   #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                   #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+    ----------------------------   ---------------------------------------------------------------
+    future                         Optional boolean. If True, a GPJob is returned instead of
+                                   results. The GPJob can be queried on the status of the execution.
+
+                                   The default value is 'False'.
+    ============================   ===============================================================
+
+    """
     _gis = gis or _arcgis.env.active_gis
     point_layer = _prevent_bds_item(point_layer)
     polyline_layer = _prevent_bds_item(polyline_layer)
