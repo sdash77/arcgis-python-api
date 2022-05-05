@@ -1805,6 +1805,7 @@ class GroupMigrationManager(object):
         :return:
             A dictionary --or-- :class:`~arcgis.gis._impl._jb.StatusJob` when `future=True`
         """
+
         assert isinstance(epk_item, Item)
         if isinstance(item_ids, list):
             item_ids = ",".join([i.id if isinstance(i, Item) else i for i in item_ids])
@@ -1823,7 +1824,7 @@ class GroupMigrationManager(object):
                 self._status, **{"job_id": res["jobId"], "key": res["key"]}
             )
             executor.shutdown(False)
-            job = StatusJob(
+            job = arcgis.gis._impl._jb.StatusJob(
                 future=futureobj,
                 op="Export Group Content",
                 jobid=res["jobId"],
