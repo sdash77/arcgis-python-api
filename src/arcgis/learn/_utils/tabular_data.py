@@ -1087,6 +1087,15 @@ class TabularDataObject(object):
         if dependent_variable:
             fields_to_keep = fields_to_keep + [dependent_variable]
 
+        try:
+            for col in fields_to_keep:
+                if not col in dataframe.columns:
+                    msg = arcpy_localization_helper(
+                        "Field does not exist within table", 728, "ERROR", str(col)
+                    )
+        except:
+            pass
+
         for column in dataframe_columns:
             if column not in fields_to_keep:
                 dataframe = dataframe.drop(column, axis=1)
@@ -1237,14 +1246,30 @@ class TabularDataObject(object):
                     arcpy.env.overwriteOutput = True
                     zonetable = arcpy.CreateTable_management("memory", "zonetable")
 
-                    arcpy.sa.ZonalStatisticsAsTable(
-                        data_source,
-                        describe_obj.oidFieldName,
-                        raster.path + raster.name,
-                        zonetable,
-                        "DATA",
-                        statistic,
-                    )
+                    try:
+                        arcpy.sa.ZonalStatisticsAsTable(
+                            data_source,
+                            describe_obj.oidFieldName,
+                            raster.path + raster.name,
+                            zonetable,
+                            "DATA",
+                            statistic,
+                        )
+                    except:
+                        if statistic == "MAJORITY":
+                            err_code = 110212
+                            param = raster.name
+                        else:
+                            err_code = 10162
+                            param = None
+
+                        msg = arcpy_localization_helper(
+                            "Pixel type of raster is float, which cannot be used as a categorical variable.",
+                            err_code,
+                            "ERROR",
+                            param,
+                        )
+                        exit()
 
                     table_df = pd.DataFrame.spatial.from_table("memory\\zonetable")
                     arcpy.env.overwriteOutput = cached_oo
