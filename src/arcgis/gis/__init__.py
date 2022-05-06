@@ -12520,13 +12520,13 @@ class Item(dict):
             files = []
             files.append(("file", file_path, os.path.basename(file_path)))
         elif encoded_image:
-            params['data'] = encoded_image
+            params["data"] = encoded_image
         elif url:
-            params['url'] = url
+            params["url"] = url
         if encoded_image and file_name is None:
-            params['filename'] = 'thumbnail.png'
+            params["filename"] = "thumbnail.png"
         elif file_name:
-            params['filename'] = file_name
+            params["filename"] = file_name
         resp = self._gis._con.post(rest_url, params, files=files)
         if resp.get("success", False):
             self._hydrated = False
