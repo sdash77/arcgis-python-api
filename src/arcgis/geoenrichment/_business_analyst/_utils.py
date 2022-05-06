@@ -452,7 +452,7 @@ def get_spatially_enabled_dataframe(
 
     # if a feature set in a single length list, pull the feature set out and let user know cannot handle multiple
     if isinstance(input_object, Iterable):
-        assert len(input_object) == 1, 'Only one FeatureSet can be used for input'
+        assert len(input_object) == 1, "Only one FeatureSet can be used for input"
         if isinstance(input_object[0], FeatureSet):
             input_object = input_object[0]
 
