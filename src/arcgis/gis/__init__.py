@@ -2719,7 +2719,7 @@ class UserManager(object):
         res = self._gis._con.get(url, params)
         results = res["userLicenseTypes"]
         while res["nextStart"] > -1:
-            params["start"] += 255
+            params["start"] = res["nextStart"]
             res = self._gis._con.get(url, params)
             results += res["userLicenseTypes"]
         return results
