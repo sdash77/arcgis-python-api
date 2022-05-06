@@ -962,11 +962,20 @@ class GIS(object):
             raise Exception("Hub is currently only compatible with ArcGIS Online.")
 
     @_lazy_property
+    def sites(self):
+        """
+        The ``sites`` property is the resource manager for Enterprise Sites. See :class:`~arcgis.apps.sites` for more information.
+        """
+        if not self._portal.is_arcgisonline:
+            return arcgis.apps.hub.SiteManager(self)
+        else:
+            raise Exception("Please access your ArcGIS Online sites through your Hub.")
+
+    @_lazy_property
     def notebook_server(self) -> "list[NotebookServer]":
         """
         The ``notebook_server`` property provides access to the :class:`~arcgis.gis.nb.NotebookServer` registered
         with the organization or enterprise.
-
         :return: `List <https://docs.python.org/3/library/stdtypes.html#lists>`_ [`NotebookServer`]
         """
         if self._portal.is_arcgisonline:
@@ -996,13 +1005,10 @@ class GIS(object):
     def datastore(self):
         """
         The ``datastore`` property is the resource manager for GIS datastores.
-
         .. note::
             This is only available with ArcGIS Enterprise 10.7+.
             See :class:`~arcgis.gis._impl._datastores.PortalDataStore` for more information.
-
         :return: A :class:`~arcgis.gis._impl._datastores.PortalDataStore` object
-
         """
         if self.version >= [7, 1] and not self._portal.is_arcgisonline:
             from arcgis.gis._impl._datastores import PortalDataStore
