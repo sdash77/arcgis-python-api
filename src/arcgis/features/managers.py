@@ -3,7 +3,6 @@ Helper classes for managing feature layers and datasets.  These class are not cr
 Instances of this class, are available as a properties of feature layers and make it easier to manage them.
 """
 from __future__ import absolute_import, annotations
-from distutils.version import Version
 import os
 import json
 import time
@@ -12,6 +11,7 @@ import tempfile
 import collections
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.features.layer import FeatureLayer
+from arcgis.features._version import Version
 from arcgis.gis import GIS, _GISResource, Item
 import concurrent.futures as _cf
 from typing import Optional, Any, Union
