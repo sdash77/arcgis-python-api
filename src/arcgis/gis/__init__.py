@@ -622,11 +622,17 @@ class GIS(object):
             and self._portal.is_arcgisonline == False
         ):
             try:
-                from .admin.portaladmin import PortalAdminManager
+                if self._portal.is_kubernetes:
+                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
+                    url = self._portal.url + "/admin"
+                    self.admin = KubernetesAdmin(url=url, gis=self)
+                else:
+                    
+                    from .admin.portaladmin import PortalAdminManager
 
-                self.admin = PortalAdminManager(
-                    url="%s/portaladmin" % self._portal.url, gis=self, is_admin=False
-                )
+                    self.admin = PortalAdminManager(
+                        url="%s/portaladmin" % self._portal.url, gis=self, is_admin=False
+                    )
             except:
                 pass
         elif (
