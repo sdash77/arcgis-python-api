@@ -69,7 +69,6 @@ class UtilityNetworkManager(object):
         self,
         locations: list[dict],
         trace_type: str,
-        fields: Optional[list[str]] = None,
         moment: Optional[int] = None,
         configuration: Optional[dict] = None,
         result_type: Optional[str] = None,

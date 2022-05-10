@@ -8,8 +8,9 @@ from arcgis.features._utility import UtilityNetworkManager
 gis = GIS("https://utilitynetwork.esri.com/portal", "AChapkowski", "AChapkowski1")
 # Create Topographic Service
 try:
+    # Server gets updated at 2:30PM PST Everyday. Do not test around then.
     utility_nm = UtilityNetworkManager(
-        "https://utilitynetwork.esri.com/server/rest/services/GettingToKnow_Postgres_1/UtilityNetworkServer",
+        "https://utilitynetwork.esri.com/server/rest/services/NapervilleElectric_SQLServer/UtilityNetworkServer",
         gis=gis,
     )
     assert utility_nm
@@ -19,10 +20,7 @@ except:
     module_skip = True
 
 
-@unittest.skipIf(
-    module_skip, "No Utility Network Service Found. Skipping Test."
-)
-
+@unittest.skipIf(module_skip, "No Utility Network Service Found. Skipping Test.")
 class TestUtilityNetworkManager(unittest.TestCase):
     """Tests the Utility Network Service"""
 
@@ -171,7 +169,7 @@ class TestUtilityNetworkManager(unittest.TestCase):
         assert len(updated_query["traceConfigurations"]) == number_trace_configs
 
     def validate_topology(self):
-        """Test validate topology method"""
+        """Test validate topology method. Validate edit made to network. If improper then gets marked as dirty rather than clean."""
         validate = utility_nm.validate_topology(
             envelope={
                 "xmin": 1034659.2752358826,
@@ -182,10 +180,12 @@ class TestUtilityNetworkManager(unittest.TestCase):
             },
             return_edits=True,
         )
-    
+
     def query_network(self):
         """Test query network method"""
-        query1 = utility_nm.query_network_moments(moments_to_return=["enableTopology","initialEnableTopology"])
+        query1 = utility_nm.query_network_moments(
+            moments_to_return=["enableTopology", "initialEnableTopology"]
+        )
         assert query1
         assert len(query1["networkMoments"]) == 2
 
@@ -195,36 +195,69 @@ class TestUtilityNetworkManager(unittest.TestCase):
 
     def synthesize_association_geometries(self):
         """Test the method"""
-        sag = utility_nm.synthesize_association_geometries(connectivity_associations=True,
-                count=25,
-                extent=
-                {	
+        sag = utility_nm.synthesize_association_geometries(
+            connectivity_associations=True,
+            count=25,
+            extent={
                 "xmin": 6814287.099790375,
-                    "ymin": 1847003.4894856418,
-                    "xmax": 6814425.830360317,
-                    "ymax": 1847091.4713699604,
-                    "spatialReference": {
-                        "wkid": 3498,
-                        "latestWkid": 3498	
-                }
-                })
+                "ymin": 1847003.4894856418,
+                "xmax": 6814425.830360317,
+                "ymax": 1847091.4713699604,
+                "spatialReference": {"wkid": 3498, "latestWkid": 3498},
+            },
+        )
         assert sag
         assert sag["success"] is True
-    
+
     def trace_test(self):
         """
         Test using trace method with the Utility Network Service
         """
-        trace = utility_nm.trace(locations=[
+        trace = utility_nm.trace(
+            locations=[
                 {
-                "traceLocationType": "startingPoint",
-                "globalId": "{BBF88249-6BAD-438F-9DBB-0E48DD89EECA}",
+                    "traceLocationType": "startingPoint",
+                    "globalId": "{2F82291C-ED2E-40F5-AB36-FEB0C50E3353}",
+                    "terminalId": 16,
                 }
-                ], trace_type="subnetwork")
-    
+            ],
+            trace_type="subnetwork",
+            configuration={
+                "domainNetworkName": "Electric",
+                "tierName": "Electric Distribution",
+                "conditionBarriers": [
+                    {
+                        "name": "E:Device Status",
+                        "type": "networkAttribute",
+                        "operator": "equal",
+                        "value": 1,
+                        "combineUsingOr": True,
+                        "isSpecificValue": True,
+                    },
+                    {
+                        "name": "Lifecycle Status",
+                        "type": "networkAttribute",
+                        "operator": "doesNotIncludeAny",
+                        "value": 24,
+                        "combineUsingOr": False,
+                        "isSpecificValue": True,
+                    },
+                ],
+            },
+        )
+        assert trace
+        assert trace["success"] is True
+
     def export_subnetwork(self):
         """Test export of subnetwork"""
-        export = utility_nm.export_subnetwork(domain_name="Electric", tier_name="Electric Distribution", subnetwork_name="RMT001")
+        export = utility_nm.export_subnetwork(
+            domain_name="electric",
+            tier_name="Electric Distribution",
+            subnetwork_name="RMT001",
+        )
+        assert export
+        assert export["success"] is True
+
 
 if __name__ == "__main__":
     unittest.main()
