@@ -12657,7 +12657,7 @@ class Item(dict):
                     {
                         "id": "%s" % lyr["id"],
                         "title": lyr["title"],
-                        "opacity": lyr["opacity"],
+                        "opacity": lyr["opacity"] if "opacity" in lyr else None,
                         "minScale": flyr.properties.minScale,
                         "maxScale": flyr.properties.maxScale,
                         "layerDefinition": {
@@ -12668,16 +12668,20 @@ class Item(dict):
                     }
                 )
                 del lyr
+
             wmjs = {
                 "mapOptions": {
                     "showAttribution": False,
-                    "extent": dict(container.properties.initialExtent),
-                    "spatialReference": dict(container.properties.spatialReference),
+                    "extent": dict(container.properties.initialExtent)
+                    if container
+                    else dict(self._gis.properties.defaultExtent),
+                    "spatialReference": dict(container.properties.spatialReference)
+                    if container
+                    else dict(self._gis.properties.defaultExtent.spatialReference),
                 },
                 "operationalLayers": layers,
                 "exportOptions": {"outputSize": [600, 400], "dpi": 96},
             }
-            print()
         else:
             return None
         if (
