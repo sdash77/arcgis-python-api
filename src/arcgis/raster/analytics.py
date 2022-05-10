@@ -8849,7 +8849,7 @@ def summarize_categorical_raster(
 
     """
     Generates a table containing the pixel count for each class, in each slice of an input categorical raster.
-    Function available in ArcGIS Image Server 10.9.1 and higher.
+    Function available in ArcGIS Image Server 10.9.1 and higher (not available in ArcGIS Online).
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -8937,6 +8937,12 @@ def summarize_categorical_raster(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+
+    if gis._con._product == "AGOL":
+        raise RuntimeError(
+            "summarize_categorical_raster() is not supported on ArcGIS Online"
+        )
+
     return gis._tools.rasteranalysis.summarize_categorical_raster(
         input_categorical_raster=input_categorical_raster,
         dimension=dimension,
@@ -8972,7 +8978,7 @@ def train_random_trees_regression_model(
 
     """
     Models the relationship between explanatory variables (independent variables) and a target dataset (dependent variable).
-    Function available in ArcGIS Image Server 10.9.1 and higher.
+    Function available in ArcGIS Image Server 10.9.1 and higher (not available in ArcGIS Online).
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -9097,6 +9103,12 @@ def train_random_trees_regression_model(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+
+    if gis._con._product == "AGOL":
+        raise RuntimeError(
+            "train_random_trees_regression_model() is not supported on ArcGIS Online"
+        )
+
     return gis._tools.rasteranalysis.train_random_trees_regression_model(
         input_rasters=input_rasters,
         input_target_data=input_target_data,
