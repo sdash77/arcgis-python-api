@@ -193,7 +193,8 @@ class _DeepCloner:
             admin_layer_info = None
 
             has_admin_info = (
-                layer._con.token
+                layer._token
+                or layer._con.token
                 and layer.manager
                 and layer.manager.properties
                 and "adminLayerInfo" in layer.manager.properties
