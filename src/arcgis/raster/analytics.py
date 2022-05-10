@@ -7991,7 +7991,7 @@ def merge_multidimensional_rasters(
 
     """
     Function merges several multidimensional rasters spatially, or across variables and dimensions into one.
-    Function available in ArcGIS Image Server 10.9 and higher.
+    Function available in ArcGIS Image Server 10.9 and higher (not available in ArcGIS Online).
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -8108,6 +8108,12 @@ def merge_multidimensional_rasters(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+
+    if gis._con._product == "AGOL":
+        raise RuntimeError(
+            "merge_multidimensional_rasters() is not supported on ArcGIS Online"
+        )
+
     return gis._tools.rasteranalysis.merge_multidimensional_rasters(
         input_multidimensional_rasters=input_multidimensional_rasters,
         resolve_overlap_method=resolve_overlap_method,
