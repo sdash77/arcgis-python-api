@@ -350,6 +350,7 @@ class UtilityNetworkManager(object):
         result_type: Optional[str] = None,
         result_types: Optional[list[dict]] = None,
         moment: Optional[int] = None,
+        run_async: bool = False,
     ):
         """
         The `export_subnetwork` operation is used to export information
@@ -410,8 +411,12 @@ class UtilityNetworkManager(object):
             "subnetworkName": subnetwork_name,
             "exportAcknowledgement": export_acknowledgement,
             "traceConfiguration": trace_configuration,
-            "resultTypes": result_types,
+            "async": run_async,
         }
+        if self._gis.version <= [7, 3]:
+            params["resultType"] = result_type
+        else:
+            params["resultTypes"] = result_types
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------

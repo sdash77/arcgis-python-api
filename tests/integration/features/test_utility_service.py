@@ -7,11 +7,21 @@ from arcgis.features._utility import UtilityNetworkManager
 
 gis = GIS("https://utilitynetwork.esri.com/portal", "AChapkowski", "AChapkowski1")
 # Create Topographic Service
-utility_nm = UtilityNetworkManager(
-    "https://utilitynetwork.esri.com/server/rest/services/GettingToKnow_Hana/UtilityNetworkServer",
-    gis=gis,
-)
+try:
+    utility_nm = UtilityNetworkManager(
+        "https://utilitynetwork.esri.com/server/rest/services/GettingToKnow_Postgres_1/UtilityNetworkServer",
+        gis=gis,
+    )
+    assert utility_nm
+    module_skip = False
+except:
+    print("No valid service found. Please try another service.")
+    module_skip = True
 
+
+@unittest.skipIf(
+    module_skip, "No Utility Network Service Found. Skipping Test."
+)
 
 class TestUtilityNetworkManager(unittest.TestCase):
     """Tests the Utility Network Service"""
@@ -201,6 +211,20 @@ class TestUtilityNetworkManager(unittest.TestCase):
         assert sag
         assert sag["success"] is True
     
+    def trace_test(self):
+        """
+        Test using trace method with the Utility Network Service
+        """
+        trace = utility_nm.trace(locations=[
+                {
+                "traceLocationType": "startingPoint",
+                "globalId": "{BBF88249-6BAD-438F-9DBB-0E48DD89EECA}",
+                }
+                ], trace_type="subnetwork")
+    
+    def export_subnetwork(self):
+        """Test export of subnetwork"""
+        export = utility_nm.export_subnetwork(domain_name="Electric", tier_name="Electric Distribution", subnetwork_name="RMT001")
 
 if __name__ == "__main__":
     unittest.main()
