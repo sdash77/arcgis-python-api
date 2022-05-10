@@ -13810,7 +13810,7 @@ class Item(dict):
             serviceitem_id = self._check_publish_status(ret, folder)
         return Item(self._gis, serviceitem_id)
 
-    def move(self, folder: str, owner: Optional[str] = None):
+    def move(self, folder: str):
         """
         The ``move`` method moves the current item to the name of the folder passed when ``move`` is called.
 
@@ -13821,9 +13821,6 @@ class Item(dict):
                           Use '/' for the root folder. For other folders, pass in the
                           folder name as a string, or a dictionary containing the folder ID,
                           such as the dictionary obtained from the folders property.
-        ----------------  ---------------------------------------------------------------
-        owner             Optional string or Owner object.  The name of the user to
-                          move to.
         ================  ===============================================================
 
         :return:
