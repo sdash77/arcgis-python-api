@@ -72,17 +72,21 @@ class TestUtilityNetworkManager(unittest.TestCase):
 
     def trace_configurations(self):
         """Test getting trace configurations and the methods associated with them."""
-        # Get
-        assert utility_nm.trace_configurations()
+        # Get trace config manager
+        manager = utility_nm.trace_configurations()
+        assert manager
+
+        configs = manager.list()
+        assert configs
 
         # Query
-        trace_configs = utility_nm.query_trace_configurations()
+        trace_configs = manager.query()
         number_trace_configs = len(trace_configs["traceConfigurations"])
         assert trace_configs
         assert trace_configs["success"] is True
 
         # Create
-        created = utility_nm.create_trace_configurations(
+        created = manager.create(
             name="Connected_IncludeContainers",
             description="Connected trace example with containers",
             trace_type="connected",
@@ -135,11 +139,11 @@ class TestUtilityNetworkManager(unittest.TestCase):
             tags=["Connected", "Include_Containers"],
         )
         assert created
-        updated_query = utility_nm.query_trace_configurations()
+        updated_query = manager.query()
         assert len(updated_query["traceConfigurations"]) == number_trace_configs + 1
 
         # Alter
-        alteration = utility_nm.alter_trace_configurations(
+        alteration = manager.alter(
             global_id=updated_query["traceConfigurations"][0]["globalId"],
             name="Connected_IncludeContainers_update",
             description="Connected trace example with containers (updated 112020)",
@@ -155,17 +159,17 @@ class TestUtilityNetworkManager(unittest.TestCase):
             ],
         )
         assert alteration
-        updated_query = utility_nm.query_trace_configurations()
+        updated_query = manager.query()
         assert (
             updated_query["traceConfigurations"][0]["name"]
             == "Connected_IncludeContainers_update"
         )
 
         # Delete
-        assert utility_nm.delete_trace_configurations(
+        assert manager.delete(
             [updated_query["traceConfigurations"][0]["globalId"]]
         )
-        updated_query = utility_nm.query_trace_configurations()
+        updated_query = manager.query()
         assert len(updated_query["traceConfigurations"]) == number_trace_configs
 
     def validate_topology(self):

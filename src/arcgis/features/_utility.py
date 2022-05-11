@@ -32,6 +32,7 @@ class UtilityNetworkManager(object):
     _property = None
     _version_guid = None
     _version_name = None
+    _version = None
     # ----------------------------------------------------------------------
     def __init__(self, url, version=None, gis=None):
         """Constructor"""
@@ -41,9 +42,11 @@ class UtilityNetworkManager(object):
         self._con = gis._portal.con
         self._url = url
         if version:
+            self._version = version
             self._version_guid = version._guid
             self._version_name = version.properties.versionName
         else:
+            self._version = None
             self._version_guid = None
             self._version_name = None
 
@@ -69,10 +72,10 @@ class UtilityNetworkManager(object):
         self,
         locations: list[dict],
         trace_type: str,
-        moment: Optional[int] = None,
-        configuration: Optional[dict] = None,
-        result_type: Optional[str] = None,
-        result_types: Optional[list[dict]] = None,
+        moment: int | None = None,
+        configuration: dict | None = None,
+        result_type: str | None = None,
+        result_types: list[dict] | None = None,
     ):
         """
         A trace refers to a pre-configured algorithm that systematically
@@ -285,9 +288,9 @@ class UtilityNetworkManager(object):
         terminal_id: str,
         subnetwork_controller_name: str,
         tier_name: str,
-        subnetwork_name: Optional[str] = None,
-        description: Optional[str] = None,
-        notes: Optional[str] = None,
+        subnetwork_name: str | None = None,
+        description: str | None = None,
+        notes: str | None = None,
     ):
         """
         A subnetwork controller is the origin (or destination) of resource
@@ -343,12 +346,11 @@ class UtilityNetworkManager(object):
         domain_name: str,
         tier_name: str,
         subnetwork_name: str,
-        trace_configuration: Optional[dict] = None,
+        trace_configuration: dict | None = None,
         export_acknowledgement: bool = False,
-        fields: Optional[list[str]] = None,
-        result_type: Optional[str] = None,
-        result_types: Optional[list[dict]] = None,
-        moment: Optional[int] = None,
+        result_type: str | None = None,
+        result_types: list[dict] | None = None,
+        moment: int | None = None,
         run_async: bool = False,
     ):
         """
@@ -421,8 +423,8 @@ class UtilityNetworkManager(object):
     # ----------------------------------------------------------------------
     def query_network_moments(
         self,
-        moments_to_return: Optional[list[str]] = ["all"],
-        moment: Optional[int] = None,
+        moments_to_return: list[str] | None = None,
+        moment: int | None = None,
     ):
         """
         The `query_network_moments` operation returns the moments related
@@ -451,7 +453,7 @@ class UtilityNetworkManager(object):
             "f": "json",
             "gdbVersion": self._version_name,
             "sessionId": self._version_guid,
-            "momentsToReturn": moments_to_return,
+            "momentsToReturn": moments_to_return if moments_to_return is not None else ["all"],
             "moment": moment,
         }
         return self._con.post(url, params)
@@ -492,9 +494,9 @@ class UtilityNetworkManager(object):
         connectivity_associations: bool = False,
         containment_associations: bool = False,
         count: int = 200,
-        extent: dict = {},
-        out_sr: Optional[Union[int, dict[str, Any]]] = None,
-        moment: Optional[int] = None,
+        extent: dict = None,
+        out_sr: int | dict[str, Any] |None = None,
+        moment: int | None = None,
     ):
         """
         The `synthesize_association_geometries` operation is used to export
@@ -576,10 +578,10 @@ class UtilityNetworkManager(object):
         self,
         domain_name: str,
         tier_name: str,
-        subnetwork_name: Optional[str] = None,
+        subnetwork_name: str | None = None,
         all_subnetwork_tier: bool = False,
         continue_on_failure: bool = False,
-        trace_configuration: Optional[dict] = None,
+        trace_configuration: dict | None = None,
     ):
         """
         A subnetwork is updated by calling the `update_subnetwork` operation.
@@ -635,7 +637,7 @@ class UtilityNetworkManager(object):
         envelope: dict[str, Any],
         run_async: bool = False,
         return_edits: bool = False,
-        validate_set: Optional[list[dict]] = None,
+        validate_set: list[dict] | None = None,
     ):
         """
         Validating the network topology for a utility network maintains
@@ -758,9 +760,9 @@ class UtilityNetworkManager(object):
     # ----------------------------------------------------------------------
     def query_associations(
         self,
-        elements: Optional[list[dict]] = None,
-        moment: Optional[int] = None,
-        types: Optional[list[str]] = ["all"],
+        elements: list[dict] | None = None,
+        moment: int | None = None,
+        types: list[str] | None = None,
         return_deletes: bool = False,
     ):
         """
@@ -802,7 +804,7 @@ class UtilityNetworkManager(object):
                 "gdbVersion": self._version_name,
                 "elements": elements,
                 "moment": moment,
-                "types": types,
+                "types": types if types is not None else ["all"],
                 "returnDeletes": return_deletes,
             }
             return self._con.post(url, params)
@@ -811,13 +813,13 @@ class UtilityNetworkManager(object):
     def traverse_associations(
         self,
         elements: list[dict],
-        moment: Optional[int] = None,
-        type: Optional[str] = "unspecified",
+        moment: int | None = None,
+        type: str = "unspecified",
         direction: str = "descending",
         dirty_filter: str = "none",
         error_filter: str = "none",
         stop_at_first_spatial: bool = True,
-        max_depth: Optional[int] = None,
+        max_depth: int | None = None,
     ):
         """
         The `traverse_associations` operation allows you to obtain and extract useful
@@ -939,12 +941,12 @@ class UtilityNetworkManager(object):
         self,
         elements: list[dict],
         max_geom_count: int,
-        moment: Optional[int] = None,
+        moment: int | None = None,
         attachment_associations: bool = False,
         connectivity_associations: bool = False,
         containment_associations: bool = False,
         locations: bool = False,
-        out_sr: Optional[Union[int, dict]] = None,
+        out_sr: int | dict | None = None,
     ):
         """
         The query operation queries the locatability of the provided set of objects
@@ -1015,19 +1017,196 @@ class UtilityNetworkManager(object):
 
         if self._gis.version >= [9, 2]:
             url = "%s/traceConfigurations" % self._url
-            params = {"f": "json"}
-            return self._con.post(url, params)
+            return TraceConfigurationsManager(url, version=self._version, gis=self._gis, service_url=self._url)
 
     # ----------------------------------------------------------------------
-    def alter_trace_configurations(
+
+class TraceConfigurationsManager(object):
+    """
+    The traceConfigurations resource provides access to all trace configuration 
+    operations for a utility network. It is returned as an array of named trace 
+    configurations with the creator, name, and global ID for each.
+
+    The TraceConfigurationsManager allows methods to be done on a trace configuration.
+    """
+    _con = None
+    _gis = None
+    _url = None
+    _property = None
+    _version_guid = None
+    _version_name = None
+    _service_url = None
+
+    # ----------------------------------------------------------------------
+    def __init__(self, url, version=None, gis=None, service_url=None):
+        """Constructor"""
+        if gis is None:
+            gis = env.active_gis
+        self._gis = gis
+        self._con = gis._portal.con
+        self._url = url
+        self._service_url = service_url
+        if version:
+            self._version = version
+            self._version_guid = version._guid
+            self._version_name = version.properties.versionName
+        else:
+            self._version = None
+            self._version_guid = None
+            self._version_name = None
+
+    # ----------------------------------------------------------------------
+    def list(self):
+        """
+        List of all trace configurations in a service.
+        """
+        return self._con.post(self._url, {"f":"json"})
+
+    # ----------------------------------------------------------------------
+    def get(self, global_id:str):
+        """
+        Get a specific trace configuration by passing its global id.
+        """
+        configs = self.list()
+        for config in configs["traceConfigurations"]:
+            if config["globalId"] is global_id:
+                return config
+        
+    # ----------------------------------------------------------------------
+    def query(
+        self,
+        global_ids: list[str] | None = None,
+        creators: list[str] | None = None,
+        tags: list[str] | None = None,
+        names: list[str] | None = None,
+    ):
+        """
+        The query operation returns all properties from one or more
+        named trace configurations in a utility network.
+
+        ========================    ===========================================
+        **Argument**                **Description**
+        ------------------------    -------------------------------------------
+        global_ids                  Optional list of strings. Specify the global
+                                    IDs of the named trace configs to be queried.
+        ------------------------    -------------------------------------------
+        creators                    Optional list of strings. The creators of
+                                    the named trace configurations to be queried.
+        ------------------------    -------------------------------------------
+        tags                        Optional list of strings. The user tags of
+                                    the named trace configurations to be queried.
+        ------------------------    -------------------------------------------
+        names                       Optional list of strings. The names of the
+                                    named trace configurations to be queried.
+        ========================    ===========================================
+        """
+        if self._gis.version >= [9, 2]:
+            url = "%s/query" % self._url
+            params = {
+                "f": "json",
+                "globalIds": global_ids,
+                "creators": creators,
+                "tags": tags,
+                "names": names,
+            }
+            return self._con.post(url, params)
+    # ----------------------------------------------------------------------
+    def delete(self, global_ids: list[str]):
+        """
+        The delete operation provides the ability to delete one or more named
+        trace configurations in a utility network. A named trace configuration
+        can only be deleted by an administrator or its creator.
+        """
+        if self._gis.version >= [9, 2]:
+            url = "%s/delete" % self._url
+            params = {
+                "f": "json",
+                "globalIds": global_ids,
+            }
+            return self._con.post(url, params)
+    # ----------------------------------------------------------------------
+    def create(
+        self,
+        name: str,
+        trace_type: str,
+        trace_config: dict,
+        description: str | None = None,
+        result_types: list[dict] | None = None,
+        tags: list[str] | None = None,
+    ):
+        """
+        The create operation on the traceConfigurations resource provides the
+        ability to create a single named trace configuration. Named trace
+        configurations store the properties of a complex trace in a utility
+        network and can be shared through a map service consumed by a web map
+        or field app. Multiple parameters and properties are provided with
+        the create operation that support the analytic workflows associated
+        with the trace operation.
+
+        ======================      ===============================================
+        **Argument**                **Description**
+        ----------------------      -----------------------------------------------
+        name                        Required String. The altered name of the trace
+                                    configuration.
+        ----------------------      -----------------------------------------------
+        trace_type                  Required String. Specify the core algorithm that
+                                    will be used to analyze the network. Trace types
+                                    can be configured using the `trace_config` parameter.
+
+                                    `Values: "connected" | "subnetwork" | "upstream" |
+                                    "subnetworkController" | "downstream" | "loops" |
+                                    "shortenPath" | "isolation"`
+        ----------------------      -----------------------------------------------
+        trace_config                Required Dictionary. Specify the collection of
+                                    altered trace configuration properties.
+
+                                    See: `Properties <https://developers.arcgis.com/rest/services-reference/enterprise/trace-utility-network-server-.htm#GUID-F0C932FD-B403-4223-9B00-E44D156C7DF9/>`_
+        ----------------------      -----------------------------------------------
+        description                 Optional String. Specify the altered description
+                                    of the trace configuration.
+        ----------------------      -----------------------------------------------
+        result_types                Optional List of Dictionary. Specify the altered
+                                    types of results to return.
+
+                                    .. code-block:: python
+                                        [{
+                                            "type" : "elements" | "aggregatedGeometry",
+                                            "includeGeometry" : true | false,
+                                            "includePropagatedValues": true | false,
+                                            "networkAttributeNames" :["attribute1Name","attribute2Name",...],
+                                            "diagramTemplateName": <value>,
+                                            "resultTypeFields":[{"networkSourceId":<long>,"fieldname":<value>},...]
+                                        },...]
+
+        ----------------------      -----------------------------------------------
+        tags                        Optional List of String(s). Specify the altered
+                                    user-provided tags.
+        ======================      ===============================================
+
+        """
+        if self._gis.version >= [9, 2]:
+            url = "%s/create" % self._url
+            params = {
+                "f": "json",
+                "gdbVersion": self._version_name,
+                "name": name,
+                "description": description,
+                "traceType": trace_type,
+                "traceConfiguration": trace_config,
+                "resultTypes": result_types,
+                "tags": tags,
+            }
+            return self._con.post(url, params)
+    # ----------------------------------------------------------------------
+    def alter(
         self,
         global_id: str,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
+        name: str | None = None,
+        description: str | None = None,
         trace_type: str = "connected",
-        trace_config: Optional[dict] = {},
-        result_types: Optional[list[dict]] = None,
-        tags: Optional[list[str]] = None,
+        trace_config: dict | None = None,
+        result_types: list[dict] | None = None,
+        tags: list[str] | None = None,
     ):
         """
         The alter operation provides the ability to alter a single named
@@ -1085,7 +1264,7 @@ class UtilityNetworkManager(object):
         """
 
         if self._gis.version >= [9, 2]:
-            url = "%s/traceConfigurations/alter" % self._url
+            url = "%s/alter" % self._url
             params = {
                 "f": "json",
                 "globalId": global_id,
@@ -1098,132 +1277,5 @@ class UtilityNetworkManager(object):
             }
             return self._con.post(url, params)
 
-    # ----------------------------------------------------------------------
-    def create_trace_configurations(
-        self,
-        name: str,
-        trace_type: str,
-        trace_config: dict,
-        description: Optional[str] = None,
-        result_types: Optional[list[dict]] = None,
-        tags: Optional[list[str]] = None,
-    ):
-        """
-        The create operation on the traceConfigurations resource provides the
-        ability to create a single named trace configuration. Named trace
-        configurations store the properties of a complex trace in a utility
-        network and can be shared through a map service consumed by a web map
-        or field app. Multiple parameters and properties are provided with
-        the create operation that support the analytic workflows associated
-        with the trace operation.
-
-        ======================      ===============================================
-        **Argument**                **Description**
-        ----------------------      -----------------------------------------------
-        name                        Required String. The altered name of the trace
-                                    configuration.
-        ----------------------      -----------------------------------------------
-        trace_type                  Required String. Specify the core algorithm that
-                                    will be used to analyze the network. Trace types
-                                    can be configured using the `trace_config` parameter.
-
-                                    `Values: "connected" | "subnetwork" | "upstream" |
-                                    "subnetworkController" | "downstream" | "loops" |
-                                    "shortenPath" | "isolation"`
-        ----------------------      -----------------------------------------------
-        trace_config                Required Dictionary. Specify the collection of
-                                    altered trace configuration properties.
-
-                                    See: `Properties <https://developers.arcgis.com/rest/services-reference/enterprise/trace-utility-network-server-.htm#GUID-F0C932FD-B403-4223-9B00-E44D156C7DF9/>`_
-        ----------------------      -----------------------------------------------
-        description                 Optional String. Specify the altered description
-                                    of the trace configuration.
-        ----------------------      -----------------------------------------------
-        result_types                Optional List of Dictionary. Specify the altered
-                                    types of results to return.
-
-                                    .. code-block:: python
-                                        [{
-                                            "type" : "elements" | "aggregatedGeometry",
-                                            "includeGeometry" : true | false,
-                                            "includePropagatedValues": true | false,
-                                            "networkAttributeNames" :["attribute1Name","attribute2Name",...],
-                                            "diagramTemplateName": <value>,
-                                            "resultTypeFields":[{"networkSourceId":<long>,"fieldname":<value>},...]
-                                        },...]
-
-        ----------------------      -----------------------------------------------
-        tags                        Optional List of String(s). Specify the altered
-                                    user-provided tags.
-        ======================      ===============================================
-
-        """
-        if self._gis.version >= [9, 2]:
-            url = "%s/traceConfigurations/create" % self._url
-            params = {
-                "f": "json",
-                "gdbVersion": self._version_name,
-                "name": name,
-                "description": description,
-                "traceType": trace_type,
-                "traceConfiguration": trace_config,
-                "resultTypes": result_types,
-                "tags": tags,
-            }
-            return self._con.post(url, params)
-
-    # ----------------------------------------------------------------------
-    def delete_trace_configurations(self, global_ids: list[str]):
-        """
-        The delete operation provides the ability to delete one or more named
-        trace configurations in a utility network. A named trace configuration
-        can only be deleted by an administrator or its creator.
-        """
-        if self._gis.version >= [9, 2]:
-            url = "%s/traceConfigurations/delete" % self._url
-            params = {
-                "f": "json",
-                "globalIds": global_ids,
-            }
-            return self._con.post(url, params)
-
-    # ----------------------------------------------------------------------
-    def query_trace_configurations(
-        self,
-        global_ids: Optional[list[str]] = None,
-        creators: Optional[list[str]] = None,
-        tags: Optional[list[str]] = None,
-        names: Optional[list[str]] = None,
-    ):
-        """
-        The query operation returns all properties from one or more
-        named trace configurations in a utility network.
-
-        ========================    ===========================================
-        **Argument**                **Description**
-        ------------------------    -------------------------------------------
-        global_ids                  Optional list of strings. Specify the global
-                                    IDs of the named trace configs to be queried.
-        ------------------------    -------------------------------------------
-        creators                    Optional list of strings. The creators of
-                                    the named trace configurations to be queried.
-        ------------------------    -------------------------------------------
-        tags                        Optional list of strings. The user tags of
-                                    the named trace configurations to be queried.
-        ------------------------    -------------------------------------------
-        names                       Optional list of strings. The names of the
-                                    named trace configurations to be queried.
-        ========================    ===========================================
-        """
-        if self._gis.version >= [9, 2]:
-            url = "%s/traceConfigurations/query" % self._url
-            params = {
-                "f": "json",
-                "globalIds": global_ids,
-                "creators": creators,
-                "tags": tags,
-                "names": names,
-            }
-            return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
