@@ -453,7 +453,9 @@ class UtilityNetworkManager(object):
             "f": "json",
             "gdbVersion": self._version_name,
             "sessionId": self._version_guid,
-            "momentsToReturn": moments_to_return if moments_to_return is not None else ["all"],
+            "momentsToReturn": moments_to_return
+            if moments_to_return is not None
+            else ["all"],
             "moment": moment,
         }
         return self._con.post(url, params)
@@ -495,7 +497,7 @@ class UtilityNetworkManager(object):
         containment_associations: bool = False,
         count: int = 200,
         extent: dict = None,
-        out_sr: int | dict[str, Any] |None = None,
+        out_sr: int | dict[str, Any] | None = None,
         moment: int | None = None,
     ):
         """
@@ -1017,18 +1019,22 @@ class UtilityNetworkManager(object):
 
         if self._gis.version >= [9, 2]:
             url = "%s/traceConfigurations" % self._url
-            return TraceConfigurationsManager(url, version=self._version, gis=self._gis, service_url=self._url)
+            return TraceConfigurationsManager(
+                url, version=self._version, gis=self._gis, service_url=self._url
+            )
 
     # ----------------------------------------------------------------------
 
+
 class TraceConfigurationsManager(object):
     """
-    The traceConfigurations resource provides access to all trace configuration 
-    operations for a utility network. It is returned as an array of named trace 
+    The traceConfigurations resource provides access to all trace configuration
+    operations for a utility network. It is returned as an array of named trace
     configurations with the creator, name, and global ID for each.
 
     The TraceConfigurationsManager allows methods to be done on a trace configuration.
     """
+
     _con = None
     _gis = None
     _url = None
@@ -1060,10 +1066,10 @@ class TraceConfigurationsManager(object):
         """
         List of all trace configurations in a service.
         """
-        return self._con.post(self._url, {"f":"json"})
+        return self._con.post(self._url, {"f": "json"})
 
     # ----------------------------------------------------------------------
-    def get(self, global_id:str):
+    def get(self, global_id: str):
         """
         Get a specific trace configuration by passing its global id.
         """
@@ -1071,7 +1077,7 @@ class TraceConfigurationsManager(object):
         for config in configs["traceConfigurations"]:
             if config["globalId"] is global_id:
                 return config
-        
+
     # ----------------------------------------------------------------------
     def query(
         self,
@@ -1110,6 +1116,7 @@ class TraceConfigurationsManager(object):
                 "names": names,
             }
             return self._con.post(url, params)
+
     # ----------------------------------------------------------------------
     def delete(self, global_ids: list[str]):
         """
@@ -1124,6 +1131,7 @@ class TraceConfigurationsManager(object):
                 "globalIds": global_ids,
             }
             return self._con.post(url, params)
+
     # ----------------------------------------------------------------------
     def create(
         self,
@@ -1197,6 +1205,7 @@ class TraceConfigurationsManager(object):
                 "tags": tags,
             }
             return self._con.post(url, params)
+
     # ----------------------------------------------------------------------
     def alter(
         self,
@@ -1276,6 +1285,5 @@ class TraceConfigurationsManager(object):
                 "tags": tags,
             }
             return self._con.post(url, params)
-
 
     # ----------------------------------------------------------------------
