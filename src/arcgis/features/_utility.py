@@ -114,7 +114,7 @@ class UtilityNetworkManager(object):
                                     [{
                                         "traceLocationType" : "startingPoint" | "barrier",
                                         "globalId" : <guid>,
-                                        "terminalId" : <long>,   // optional
+                                        "terminalId" : <int>,   // optional
                                         “percentAlong” : <double>, // optional
                                         "isFilterBarrier" : true | false // optional Introduced at 10.8.1
                                     }]
@@ -151,7 +151,7 @@ class UtilityNetworkManager(object):
                                         "includePropagatedValues": true | false,
                                         "networkAttributeNames" :["attribute1Name","attribute2Name",...],
                                         "diagramTemplateName": <value>,
-                                        "resultTypeFields":[{"networkSourceId":<long>,"fieldname":<value>},...]
+                                        "resultTypeFields":[{"networkSourceId":<int>,"fieldname":<value>},...]
                                     },...]
         ====================    ==================================================
         """
@@ -390,7 +390,7 @@ class UtilityNetworkManager(object):
                                                                 "includeDomainDescriptions": true | false,
                                                                 "networkAttributeNames" :["attribute1Name","attribute2Name",...],
                                                                 "diagramTemplateName": <value>,
-                                                                "resultTypeFields":[{"networkSourceId":<long>,"fieldname":<value>},...]
+                                                                "resultTypeFields":[{"networkSourceId":<int>,"fieldname":<value>},...]
                                                             },...
                                                         ]
         ------------------------------------        --------------------------------------------------------------------
@@ -693,7 +693,7 @@ class UtilityNetworkManager(object):
                                                     .. code-block:: python
                                                         [
                                                             {
-                                                                "sourceId": <long>,
+                                                                "sourceId": <int>,
                                                                 "globalIds": [<guid>]
                                                             }
                                                         ]
@@ -781,9 +781,9 @@ class UtilityNetworkManager(object):
 
                                                     .. code-block:: python
                                                         [{
-                                                            "networkSourceId": <long>,
+                                                            "networkSourceId": <int>,
                                                             "globalId" : <guid>,
-                                                            "terminalId": <long> //optional
+                                                            "terminalId": <int> //optional
                                                         }]
         ------------------------------------        --------------------------------------------------------------------
         moment                                      Optional Epoch time in milliseconds. Specify if you do not want to
@@ -864,9 +864,9 @@ class UtilityNetworkManager(object):
 
                                                     .. code-block:: python
                                                         [{
-                                                            "networkSourceId": <long>,
+                                                            "networkSourceId": <int>,
                                                             "globalId" : <guid>,
-                                                            "terminalId": <long> //optional
+                                                            "terminalId": <int> //optional
                                                         }]
         ------------------------------------        --------------------------------------------------------------------
         moment                                      Optional Epoch time in milliseconds. Specify if you do not want to
@@ -963,7 +963,7 @@ class UtilityNetworkManager(object):
 
                                                     .. code-block:: python
                                                         [{
-                                                            "sourceId": <long>,
+                                                            "sourceId": <int>,
                                                             "globalIds" : [<guid>],
                                                         }]
         ------------------------------------        --------------------------------------------------------------------
@@ -1183,7 +1183,7 @@ class TraceConfigurationsManager(object):
                                             "includePropagatedValues": true | false,
                                             "networkAttributeNames" :["attribute1Name","attribute2Name",...],
                                             "diagramTemplateName": <value>,
-                                            "resultTypeFields":[{"networkSourceId":<long>,"fieldname":<value>},...]
+                                            "resultTypeFields":[{"networkSourceId":<int>,"fieldname":<value>},...]
                                         },...]
 
         ----------------------      -----------------------------------------------
@@ -1262,7 +1262,7 @@ class TraceConfigurationsManager(object):
                                             "includePropagatedValues": true | false,
                                             "networkAttributeNames" :["attribute1Name","attribute2Name",...],
                                             "diagramTemplateName": <value>,
-                                            "resultTypeFields":[{"networkSourceId":<long>,"fieldname":<value>},...]
+                                            "resultTypeFields":[{"networkSourceId":<int>,"fieldname":<value>},...]
                                         },...]
 
         ----------------------      -----------------------------------------------
