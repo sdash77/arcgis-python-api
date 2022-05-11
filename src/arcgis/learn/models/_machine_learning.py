@@ -102,13 +102,13 @@ class MLModel(object):
         if data._cell_sizes:
             for res in data._cell_sizes:
                 zone = f"zone{res}_id"
-                if zone in data._field_mapping['categorical_variables']:
-                    data._field_mapping['categorical_variables'].remove(zone)
+                if zone in data._field_mapping["categorical_variables"]:
+                    data._field_mapping["categorical_variables"].remove(zone)
                 if zone in data._dataframe:
-                    data._dataframe = data._dataframe.drop(zone , axis=1)
+                    data._dataframe = data._dataframe.drop(zone, axis=1)
                 # data._categorical_variables.remove(zone)
             data._cell_sizes = None
-        
+
         self._data = data
         (
             self._training_data,
