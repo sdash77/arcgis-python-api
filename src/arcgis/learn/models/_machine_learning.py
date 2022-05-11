@@ -99,6 +99,16 @@ class MLModel(object):
         if not HAS_ML_DEPS:
             raise Exception(missing_deps_trace)
 
+        if data._cell_sizes:
+            for res in data._cell_sizes:
+                zone = f"zone{res}_id"
+                if zone in data._field_mapping['categorical_variables']:
+                    data._field_mapping['categorical_variables'].remove(zone)
+                if zone in data._dataframe:
+                    data._dataframe = data._dataframe.drop(zone , axis=1)
+                # data._categorical_variables.remove(zone)
+            data._cell_sizes = None
+        
         self._data = data
         (
             self._training_data,
@@ -835,13 +845,8 @@ class MLModel(object):
         explain=False,
         explain_index=None,
     ):
-        cell_sizes = self._data._cell_sizes
         if isinstance(input_features, FeatureLayer):
-            if cell_sizes and not rasters:
-                dataframe = input_features.query(out_sr=4326).sdf
-                dataframe = add_h3(dataframe, cell_sizes)
-            else:
-                dataframe = input_features.query().sdf
+            dataframe = input_features.query().sdf
         else:
             dataframe = input_features.copy()
 
@@ -898,7 +903,6 @@ class MLModel(object):
                 feature_layer_columns,
                 raster_columns,
                 datefield,
-                cell_sizes,
                 distance_feature_layers,
             )
 
