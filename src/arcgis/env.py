@@ -91,7 +91,7 @@ cell_size
 
 .. py:data:: cell_size
 
-Tasks that honor the Cell size environment setting set the output raster cell size, or resolution,
+Tasks that honor the cell_size environment setting set the output raster cell size, or resolution,
 for the operation.  The default output resolution is determined by the largest cell size of
 all the input rasters.
 (For more information about this environment setting,
@@ -116,6 +116,27 @@ Tasks that honor the parallel_processing_factor environment will divide and perf
 multiple processes.
 (For more information about this environment setting,
 please refer to http://pro.arcgis.com/en/pro-app/tool-reference/environment-settings/parallel-processing-factor.htm)
+
+union_dimension
+==========================
+
+.. py:data:: union_dimension
+
+Tasks (Raster functions present in :mod:`arcgis.raster.functions` module) that honor the union_dimension environment
+will generate a multidimensional raster that includes all the dimensions from the input multidimensional rasters.
+(For more information about this environment setting,
+please refer to https://pro.arcgis.com/en/pro-app/latest/tool-reference/environment-settings/union-dimension.htm)
+
+match_variables
+==========================
+
+.. py:data:: match_variables
+
+Tasks (Raster functions present in :mod:`arcgis.raster.functions` module) that honor the match_variables environment
+will generate a multidimensional raster only if the input multidimensional rasters share at least one variable
+with the same name.
+(For more information about this environment setting,
+please refer to https://pro.arcgis.com/en/pro-app/latest/tool-reference/environment-settings/match-multidimensional-variable.htm)
 """
 
 #: The currently active GIS, that is used for analysis functions unless explicitly specified.
