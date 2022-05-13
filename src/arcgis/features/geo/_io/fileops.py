@@ -56,21 +56,21 @@ def _fc2pandas_dtypes(describe: dict) -> dict:
         "Integer": np.int32,
         "Single": float,
         "Double": float,
-        "String": '<U',  # Don't forget length here
-        "Blob": 'O',
-        "Guid": '<U38',
-        "Raster": 'O',
-        "Date": '<M8[us]',
+        "String": "<U",  # Don't forget length here
+        "Blob": "O",
+        "Guid": "<U38",
+        "Raster": "O",
+        "Date": "<M8[us]",
     }
     dtypes = None
-    if 'fields' in describe:
+    if "fields" in describe:
         dtypes = {}
-        for field in describe['fields']:
-            if field.type.lower() in ['TEXT', "string"]:
+        for field in describe["fields"]:
+            if field.type.lower() in ["TEXT", "string"]:
                 dtypes[field.name] = f"{_lu_types['String']}{field.length}"
             elif field.type in _lu_types.keys():
                 dtypes[field.name] = _lu_types[field.type]
-            elif field.type.lower() == 'geometry':
+            elif field.type.lower() == "geometry":
                 pass  # Skip value
             else:
                 dtypes[field.name] = object
