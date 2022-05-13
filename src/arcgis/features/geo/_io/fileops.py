@@ -50,18 +50,32 @@ def _fc2pandas_dtypes(describe: dict) -> dict:
     """
     if describe is None:
         return None
-    _lu_types = {
-        "OID": np.int64,
-        "SmallInteger": np.int32,
-        "Integer": np.int32,
-        "Single": float,
-        "Double": float,
-        "String": "<U",  # Don't forget length here
-        "Blob": "O",
-        "Guid": "<U38",
-        "Raster": "O",
-        "Date": "<M8[us]",
-    }
+    if [float(i) for i in pd.__version__.split(".")] < [1, 0, 0]:
+        _lu_types = {
+            "OID": np.int64,
+            "SmallInteger": np.int32,
+            "Integer": np.int32,
+            "Single": float,
+            "Double": float,
+            "String": "<U",
+            "Blob": "O",
+            "Guid": "<U38",
+            "Raster": "O",
+            "Date": "<M8[us]",
+        }
+    else:
+        _lu_types = {
+            "OID": pd.Int64Dtype(),
+            "SmallInteger": pd.Int32Dtype(),
+            "Integer": pd.Int32Dtype(),
+            "Single": float,
+            "Double": float,
+            "String": "<U",
+            "Blob": "O",
+            "Guid": "<U38",
+            "Raster": "O",
+            "Date": "<M8[us]",
+        }
     dtypes = None
     if "fields" in describe:
         dtypes = {}
