@@ -118,7 +118,7 @@ multiple processes.
 please refer to http://pro.arcgis.com/en/pro-app/tool-reference/environment-settings/parallel-processing-factor.htm)
 
 union_dimension
-==========================
+===============
 
 .. py:data:: union_dimension
 
@@ -128,7 +128,7 @@ will generate a multidimensional raster that includes all the dimensions from th
 please refer to https://pro.arcgis.com/en/pro-app/latest/tool-reference/environment-settings/union-dimension.htm)
 
 match_variables
-==========================
+===============
 
 .. py:data:: match_variables
 
