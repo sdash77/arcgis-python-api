@@ -129,19 +129,20 @@ class TabularDataObject(object):
         tabular_data._raster_field_variables = tabular_data._field_mapping[
             "raster_field_variables"
         ]
-        if (
-            tabular_data._dataframe[tabular_data._dependent_variable]
-            .isnull()
-            .values.any()
-        ):
-            msg = arcpy_localization_helper(
-                "Rows having null values in dependent variable are removed and model will be trained with remaining data",
-                260145,
-                "WARNING",
-            )
-            tabular_data._dataframe = tabular_data._dataframe[
-                ~tabular_data._dataframe[tabular_data._dependent_variable].isna()
-            ]
+        if tabular_data._dependent_variable:
+            if (
+                tabular_data._dataframe[tabular_data._dependent_variable]
+                .isnull()
+                .values.any()
+            ):
+                msg = arcpy_localization_helper(
+                    "Rows having null values in dependent variable are removed and model will be trained with remaining data",
+                    260145,
+                    "WARNING",
+                )
+                tabular_data._dataframe = tabular_data._dataframe[
+                    ~tabular_data._dataframe[tabular_data._dependent_variable].isna()
+                ]
         tabular_data._index_data = tabular_data._field_mapping["index_data"]
         tabular_data._index_field = index_field
 
