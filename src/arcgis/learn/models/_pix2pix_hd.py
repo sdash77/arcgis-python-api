@@ -192,7 +192,7 @@ class Pix2PixHD(ArcGISModel):
         chip_size = emd["ImageHeight"]
         norm_stats = emd.get("norm_stats")
         kwargs = emd.get("Kwargs", {})
-        if emd.get("ArcGISLearnVersion") < '2.0.1':
+        if emd.get("ArcGISLearnVersion") < "2.0.1":
             if "gen_network" not in kwargs:
                 kwargs["gen_network"] = "global"
 

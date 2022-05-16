@@ -557,7 +557,9 @@ def detect_object_mask(
         inst_cls = torch.where(
             inst_cls == i, torch.tensor(-1).to(classes.device), inst_cls
         )
-    keep_pred_instances = torch.where(torch.logical_and(inst_cls == -1, class_confidence > threshold))
+    keep_pred_instances = torch.where(
+        torch.logical_and(inst_cls == -1, class_confidence > threshold)
+    )
 
     pred_instances = []
     pred_classes = []
@@ -635,6 +637,6 @@ def classify_image(
 
     preds = model_configuration.post_process(
         pred_batch, thres=threshold, thinning=thinning, prob_raster=prob_raster
-        )
-    
+    )
+
     return preds, pred_batch
