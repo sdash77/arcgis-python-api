@@ -42,8 +42,9 @@ class Pix2PixHD(ArcGISModel):
     n_gen_filters           Optional int. Number of gen filters in first conv layer.
                             Default: 64
     ---------------------   -------------------------------------------
-    gen_network             Optional string. Selects model to use for generator.
-                            Default: "global"
+    gen_network             Optional string (global/local). Selects model to use for generator.
+                            Use global if gpu memory is less.
+                            Default: "local"
     ---------------------   -------------------------------------------
     n_downsample_global     Optional int. Number of downsampling layers in gen_network
                             Default: 4
