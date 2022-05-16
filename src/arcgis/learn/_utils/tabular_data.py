@@ -452,12 +452,20 @@ class TabularDataObject(object):
                 labelEncoder = OrdinalEncoder(
                     handle_unknown="use_encoded_value", unknown_value=-1
                 )
-                dataframe[variable] = np.array(
-                    labelEncoder.fit_transform(
-                        dataframe[variable].values.reshape(-1, 1)
-                    ),
-                    dtype="int64",
-                )
+                try:
+                    dataframe[variable] = np.array(
+                        labelEncoder.fit_transform(
+                            dataframe[variable].values.reshape(-1, 1)
+                        ),
+                        dtype="int64",
+                    )
+                except:
+                    dataframe[variable] = np.array(
+                        labelEncoder.fit_transform(
+                            dataframe[variable].values.to_numpy().reshape(-1, 1)
+                        ),
+                        dtype="int64",
+                    )
                 mapping[variable] = labelEncoder
             self._encoder_mapping = mapping
 

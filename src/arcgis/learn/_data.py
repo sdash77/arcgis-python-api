@@ -1986,6 +1986,7 @@ def prepare_data(
             return x.parents[1] / "labels" / (x.stem + ".{}".format(ext))
 
         from ._data_utils._panoptic_data import PanopticSegmentationItemList
+        inst_class_mapping = {i["Value"]: i["Name"] for i in emd["Panoptic_Segmentation_Instance_Classes"]}
 
         data = (
             PanopticSegmentationItemList.from_folder(path / "images")
@@ -1998,6 +1999,7 @@ def prepare_data(
                 class_mapping=class_mapping,
                 color_mapping=color_mapping,
                 n_masks=kwargs.get("n_masks", 30),
+                inst_class_mapping=inst_class_mapping,
             )
         )
 

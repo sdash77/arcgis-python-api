@@ -1214,6 +1214,10 @@ def display_instances(
         _, ax = plt.subplots(1, figsize=figsize)
         auto_show = True
 
+    # Add black color for NoData
+    if color_mapping:
+        color_mapping[0] = [0,0,0]
+
     # Generate random colors for instance classes in ground truth and instance predictions
     # and use color mapping for semantic classes
     colors = []
@@ -1319,28 +1323,29 @@ def show_results_panoptic(model, rows=5, thresh=0.5, **kwargs):
     semantic = F.softmax(preds[2], dim=1).argmax(dim=1)
 
     bsz = model.learn.dl(ds_type).batch_size
+    # Limit batch size to validation dataset size
+    if (len(model.learn.data.valid_dl)) < bsz:
+        bsz = len(model.learn.data.valid_dl)
     category_dict = model._data.class_mapping
-    instance_classes = model._data.instance_classes
-    instance_classes = [0] + instance_classes
     category_dict[0] = "NoData"
+    instance_classes = model._data.instance_classes
 
     # Remap to original class mapping if non-contiguous classes
     is_contig = is_contiguous(sorted([0] + list(category_dict.keys())))
     if not is_contig:
-        pixel_mapping = [0] + list(category_dict.keys())
+        pixel_mapping = sorted(list(category_dict.keys()))
         idx2pixel = {i: d for i, d in enumerate(pixel_mapping)}
         semantic = remap(semantic, idx2pixel)
         classes = remap(classes, idx2pixel)
         y[1] = remap(y[1], idx2pixel)
 
     # Filter predictions for instances
+    inst_cls = classes
     for i in instance_classes:
         inst_cls = torch.where(
-            classes == int(i), classes, torch.tensor(-1).to(classes.device)
+            inst_cls == i, torch.tensor(-1).to(classes.device), inst_cls
         )
-    # filter out low confidence instances from predictions
-    # keep_pred_instances = torch.where(torch.logical_and(classes > 0, class_confidence > 0.07)) # TODO: Use this with latest Pytorch
-    keep_pred_instances = torch.where((inst_cls > -1) & (class_confidence > thresh))
+    keep_pred_instances = torch.where(torch.logical_and(inst_cls == -1, class_confidence > thresh))
 
     pred_instances = []
     pred_classes = []
