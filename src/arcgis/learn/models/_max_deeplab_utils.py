@@ -1216,7 +1216,7 @@ def display_instances(
 
     # Add black color for NoData
     if color_mapping:
-        color_mapping[0] = [0,0,0]
+        color_mapping[0] = [0, 0, 0]
 
     # Generate random colors for instance classes in ground truth and instance predictions
     # and use color mapping for semantic classes
@@ -1345,7 +1345,9 @@ def show_results_panoptic(model, rows=5, thresh=0.5, **kwargs):
         inst_cls = torch.where(
             inst_cls == i, torch.tensor(-1).to(classes.device), inst_cls
         )
-    keep_pred_instances = torch.where(torch.logical_and(inst_cls == -1, class_confidence > thresh))
+    keep_pred_instances = torch.where(
+        torch.logical_and(inst_cls == -1, class_confidence > thresh)
+    )
 
     pred_instances = []
     pred_classes = []
