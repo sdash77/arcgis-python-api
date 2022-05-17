@@ -552,10 +552,9 @@ def from_featureclass(filename, **kwargs):
     from arcgis.geometry import _types
     import json
 
-    if (
-        HASARCPY
-        or isinstance(filename, (arcpy._mp.Layer))
-        and type(filename).__name__.find("arcpy") > -1
+    if HASARCPY and (
+        isinstance(filename, (arcpy._mp.Layer))
+        or type(filename).__name__.find("arcpy") > -1
     ):
         filename = filename
     else:
