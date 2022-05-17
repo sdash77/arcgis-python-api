@@ -963,19 +963,19 @@ class FeatureLayer(Layer):
             from datetime import datetime as _datetime
 
             _fld_lu = {
-                "esriFieldTypeSmallInteger": np.int32,
-                "esriFieldTypeInteger": np.int64,
-                "esriFieldTypeSingle": float,
-                "esriFieldTypeDouble": float,
-                "esriFieldTypeFloat": float,
-                "esriFieldTypeString": str,
+                "esriFieldTypeSmallInteger": pd.Int32Dtype(),
+                "esriFieldTypeInteger": pd.Int32Dtype(),
+                "esriFieldTypeSingle": pd.Float64Dtype(),
+                "esriFieldTypeDouble": pd.Float64Dtype(),
+                "esriFieldTypeFloat": pd.Float64Dtype(),
+                "esriFieldTypeString": pd.StringDtype(),
                 "esriFieldTypeDate": _datetime,
-                "esriFieldTypeOID": np.int64,
+                "esriFieldTypeOID": pd.Int64Dtype(),
                 "esriFieldTypeGeometry": object,
                 "esriFieldTypeBlob": object,
                 "esriFieldTypeRaster": object,
-                "esriFieldTypeGUID": str,
-                "esriFieldTypeGlobalID": str,
+                "esriFieldTypeGUID": pd.StringDtype(),
+                "esriFieldTypeGlobalID": pd.StringDtype(),
                 "esriFieldTypeXML": object,
             }
 
@@ -1807,19 +1807,19 @@ class FeatureLayer(Layer):
             import pandas as pd
 
             _fld_lu = {
-                "esriFieldTypeSmallInteger": np.int32,
-                "esriFieldTypeInteger": np.int32,
-                "esriFieldTypeSingle": float,
-                "esriFieldTypeDouble": float,
-                "esriFieldTypeFloat": float,
-                "esriFieldTypeString": str,
+                "esriFieldTypeSmallInteger": pd.Int32Dtype(),
+                "esriFieldTypeInteger": pd.Int32Dtype(),
+                "esriFieldTypeSingle": pd.Float64Dtype(),
+                "esriFieldTypeDouble": pd.Float64Dtype(),
+                "esriFieldTypeFloat": pd.Float64Dtype(),
+                "esriFieldTypeString": pd.StringDtype(),
                 "esriFieldTypeDate": np.datetime64,
-                "esriFieldTypeOID": np.int64,
+                "esriFieldTypeOID": pd.Int64Dtype(),
                 "esriFieldTypeGeometry": object,
                 "esriFieldTypeBlob": object,
                 "esriFieldTypeRaster": object,
-                "esriFieldTypeGUID": str,
-                "esriFieldTypeGlobalID": str,
+                "esriFieldTypeGUID": pd.StringDtype(),
+                "esriFieldTypeGlobalID": pd.StringDtype(),
                 "esriFieldTypeXML": object,
             }
             columns = {}
@@ -3193,19 +3193,19 @@ class FeatureLayer(Layer):
             from datetime import datetime as _datetime
 
             _fld_lu = {
-                "esriFieldTypeSmallInteger": np.int32,
-                "esriFieldTypeInteger": np.int32,
-                "esriFieldTypeSingle": np.float64,
-                "esriFieldTypeDouble": np.float64,
-                "esriFieldTypeFloat": np.float64,
-                "esriFieldTypeString": str,
+                "esriFieldTypeSmallInteger": pd.Int32Dtype(),
+                "esriFieldTypeInteger": pd.Int32Dtype(),
+                "esriFieldTypeSingle": pd.Float64Dtype(),
+                "esriFieldTypeDouble": pd.Float64Dtype(),
+                "esriFieldTypeFloat": pd.Float64Dtype(),
+                "esriFieldTypeString": pd.StringDtype(),
                 "esriFieldTypeDate": object,
-                "esriFieldTypeOID": np.int64,
+                "esriFieldTypeOID": pd.Int64Dtype(),
                 "esriFieldTypeGeometry": object,
                 "esriFieldTypeBlob": object,
                 "esriFieldTypeRaster": object,
-                "esriFieldTypeGUID": str,
-                "esriFieldTypeGlobalID": str,
+                "esriFieldTypeGUID": pd.StringDtype(),
+                "esriFieldTypeGlobalID": pd.StringDtype(),
                 "esriFieldTypeXML": object,
             }
 
@@ -3676,19 +3676,19 @@ class Table(FeatureLayer):
             import pandas as pd
 
             _fld_lu = {
-                "esriFieldTypeSmallInteger": np.int32,
-                "esriFieldTypeInteger": np.int64,
-                "esriFieldTypeSingle": float,
-                "esriFieldTypeDouble": float,
-                "esriFieldTypeFloat": float,
-                "esriFieldTypeString": str,
+                "esriFieldTypeSmallInteger": pd.Int32Dtype(),
+                "esriFieldTypeInteger": pd.Int32Dtype(),
+                "esriFieldTypeSingle": pd.Float64Dtype(),
+                "esriFieldTypeDouble": pd.Float64Dtype(),
+                "esriFieldTypeFloat": pd.Float64Dtype(),
+                "esriFieldTypeString": pd.StringDtype(),
                 "esriFieldTypeDate": np.datetime64,
-                "esriFieldTypeOID": np.int64,
+                "esriFieldTypeOID": pd.Int64Dtype(),
                 "esriFieldTypeGeometry": object,
                 "esriFieldTypeBlob": object,
                 "esriFieldTypeRaster": object,
-                "esriFieldTypeGUID": str,
-                "esriFieldTypeGlobalID": str,
+                "esriFieldTypeGUID": pd.StringDtype(),
+                "esriFieldTypeGlobalID": pd.StringDtype(),
                 "esriFieldTypeXML": object,
             }
             columns = {}
