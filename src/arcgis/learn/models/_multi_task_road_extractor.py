@@ -87,7 +87,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
     ---------------------   -----------------------------------------------------
     backbone                Optional String. Backbone CNN model to be used for
                             creating the base. If hourglass is chosen as
-                            the `mtl_model` (Architecture), then this parameter 
+                            the `mtl_model` (Architecture), then this parameter
                             is ignored as hourglass uses a special customised
                             architecture.
                             This parameter is to be used with
@@ -108,7 +108,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
     **Argument**                    **Description**
     -----------------------------   ---------------------------------------------
     mtl_model                       Optional String. It is used to create model
-                                    from linknet or 
+                                    from linknet or
                                     hourglass based neural architectures.
                                     Supported: 'linknet', 'hourglass'.
                                     Default: 'hourglass'

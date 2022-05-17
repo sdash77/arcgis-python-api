@@ -15,7 +15,7 @@ class ConnectNet(MultiTaskRoadExtractor):
     ---------------------   -----------------------------------------------------
     backbone                Optional String. Backbone CNN model to be used for
                             creating the base. If hourglass is chosen as
-                            the `mtl_model` (Architecture), then this parameter 
+                            the `mtl_model` (Architecture), then this parameter
                             is ignored as hourglass uses a special customised
                             architecture.
                             This parameter is to be used with
@@ -36,13 +36,13 @@ class ConnectNet(MultiTaskRoadExtractor):
     **Argument**                    **Description**
     -----------------------------   ---------------------------------------------
     mtl_model                       Optional String. It is used to create model
-                                    from linknet or 
+                                    from linknet or
                                     hourglass based neural architectures.
                                     Supported: 'linknet', 'hourglass'.
                                     Default: 'hourglass'
     -----------------------------   ---------------------------------------------
     gaussian_thresh                 Optional float. Sets the gaussian threshold
-                                    which allows to set the required width of 
+                                    which allows to set the required width of
                                     the linear feature.
                                     Range: 0.0 to 1.0
                                     Default: 0.76
