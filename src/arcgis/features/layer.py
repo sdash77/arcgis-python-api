@@ -1808,7 +1808,7 @@ class FeatureLayer(Layer):
 
             _fld_lu = {
                 "esriFieldTypeSmallInteger": np.int32,
-                "esriFieldTypeInteger": np.int64,
+                "esriFieldTypeInteger": np.int32,
                 "esriFieldTypeSingle": float,
                 "esriFieldTypeDouble": float,
                 "esriFieldTypeFloat": float,
@@ -3174,8 +3174,8 @@ class FeatureLayer(Layer):
 
         if [float(i) for i in pd.__version__.split(".")] < [1, 0, 0]:
             _fld_lu = {
-                "esriFieldTypeSmallInteger": np.int64,
-                "esriFieldTypeInteger": np.int64,
+                "esriFieldTypeSmallInteger": np.int32,
+                "esriFieldTypeInteger": np.int32,
                 "esriFieldTypeSingle": float,
                 "esriFieldTypeDouble": float,
                 "esriFieldTypeFloat": float,
@@ -3193,14 +3193,14 @@ class FeatureLayer(Layer):
             from datetime import datetime as _datetime
 
             _fld_lu = {
-                "esriFieldTypeSmallInteger": pd.Int64Dtype(),
-                "esriFieldTypeInteger": pd.Int64Dtype(),
-                "esriFieldTypeSingle": pd.Float64Dtype(),
-                "esriFieldTypeDouble": pd.Float64Dtype(),
-                "esriFieldTypeFloat": pd.Float64Dtype(),
+                "esriFieldTypeSmallInteger": np.int32,
+                "esriFieldTypeInteger": np.int32,
+                "esriFieldTypeSingle": np.float64,
+                "esriFieldTypeDouble": np.float64,
+                "esriFieldTypeFloat": np.float64,
                 "esriFieldTypeString": str,
                 "esriFieldTypeDate": object,
-                "esriFieldTypeOID": pd.Int64Dtype(),
+                "esriFieldTypeOID": np.int64,
                 "esriFieldTypeGeometry": object,
                 "esriFieldTypeBlob": object,
                 "esriFieldTypeRaster": object,

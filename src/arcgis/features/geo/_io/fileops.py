@@ -40,6 +40,57 @@ except:
     HASPYSHP = False
 
 _logging = logging.getLogger(__name__)
+
+
+def _fc2pandas_dtypes(describe: dict) -> dict:
+    """
+    returns a dtypes to cast the final dataframe to the proper datatypes (if possible).
+
+    :returns: Dict[str, Any]
+    """
+    if describe is None:
+        return None
+    if [float(i) for i in pd.__version__.split(".")] < [1, 0, 0]:
+        _lu_types = {
+            "OID": np.int64,
+            "SmallInteger": np.int32,
+            "Integer": np.int32,
+            "Single": float,
+            "Double": float,
+            "String": "<U",
+            "Blob": "O",
+            "Guid": "<U38",
+            "Raster": "O",
+            "Date": "<M8[us]",
+        }
+    else:
+        _lu_types = {
+            "OID": np.int64,
+            "SmallInteger": np.int32,
+            "Integer": np.int32,
+            "Single": float,
+            "Double": float,
+            "String": "<U",
+            "Blob": "O",
+            "Guid": "<U38",
+            "Raster": "O",
+            "Date": "<M8[us]",
+        }
+    dtypes = None
+    if "fields" in describe:
+        dtypes = {}
+        for field in describe["fields"]:
+            if field.type.lower() in ["TEXT", "string"]:
+                dtypes[field.name] = f"{_lu_types['String']}{field.length}"
+            elif field.type in _lu_types.keys():
+                dtypes[field.name] = _lu_types[field.type]
+            elif field.type.lower() == "geometry":
+                pass  # Skip value
+            else:
+                dtypes[field.name] = object
+    return dtypes
+
+
 # --------------------------------------------------------------------------
 def _infer_type(df, col):
     """
@@ -535,6 +586,7 @@ def from_featureclass(filename, **kwargs):
             desc = {"fields": desc.fields, "shapeType": desc.shapeType}
             area_field = getattr(desc, "areaFieldName", None)
             length_field = getattr(desc, "lengthFieldName", None)
+        pandas_dtypes = _fc2pandas_dtypes(desc)
 
         if spatial_filter:
             _sf_lu = {
@@ -614,7 +666,10 @@ def from_featureclass(filename, **kwargs):
         df.loc[none_q, "SHAPE"] = None
         df.spatial.set_geometry("SHAPE")
         df.spatial._meta.source = filename
-        return df
+        try:
+            return df.astype(pandas_dtypes)
+        except:
+            return df
     elif HASARCPY == False and HASPYSHP == True and filename.lower().find(".shp") > -1:
         geoms = []
         records = []
