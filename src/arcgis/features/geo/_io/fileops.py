@@ -65,9 +65,9 @@ def _fc2pandas_dtypes(describe: dict) -> dict:
         }
     else:
         _lu_types = {
-            "OID": pd.Int64Dtype(),
-            "SmallInteger": pd.Int32Dtype(),
-            "Integer": pd.Int32Dtype(),
+            "OID": np.int64,
+            "SmallInteger": np.int32,
+            "Integer": np.int32,
             "Single": float,
             "Double": float,
             "String": "<U",
