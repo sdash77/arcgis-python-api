@@ -715,7 +715,14 @@ class ProfileManager(object):
         if self._keyring_version() >= [23, 0, 0]:
             supported_keyrings = [type(r) for r in keyring.backend.get_all_keyring()]
         else:
-
+            try:
+                import keyring.backends.OS_X
+                import keyring.backends.kwallet
+                import keyring.backends.chainer
+                import keyring.backends.Windows
+                import keyring.backends.SecretService
+            except Exception as keyringex:
+                print(f"Error importing keyring {str(keyringex)}")
             supported_keyrings = [
                 keyring.backends.OS_X.Keyring,
                 keyring.backends.SecretService.Keyring,
