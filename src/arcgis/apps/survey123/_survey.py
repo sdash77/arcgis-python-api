@@ -1,10 +1,14 @@
+from __future__ import annotations
 import os
 import json
 import time
 import uuid
 import tempfile
 from urllib.parse import urlparse
-from typing import List
+from typing import Optional, Union, Any
+from .exceptions import ServerError
+
+import pandas as pd
 from arcgis.gis import GIS, Item
 
 ########################################################################
@@ -38,7 +42,7 @@ class SurveyManager:
 
     # ----------------------------------------------------------------------
     @property
-    def surveys(self) -> List:
+    def surveys(self) -> list:
         """returns a list of existing Survey"""
         query = (
             'type:"Form" AND NOT tags:"noxlsform"'
@@ -59,7 +63,7 @@ class SurveyManager:
         return [Survey(item=i, sm=self) for i in items]
 
     # ----------------------------------------------------------------------
-    def get(self, survey_id):
+    def get(self, survey_id: Union[Item, str]):
         """returns a single `Survey` object from and Item ID or Item"""
         if isinstance(survey_id, Item):
             survey_id = survey_id.id
@@ -67,7 +71,7 @@ class SurveyManager:
         return Survey(item=item, sm=self)
 
     # ----------------------------------------------------------------------
-    def _xform2webform(self, xform):
+    def _xform2webform(self, xform: str):
         """
         converts the xform xml to JSON for the item
 
@@ -87,7 +91,7 @@ class SurveyManager:
         )
 
     # ----------------------------------------------------------------------
-    def _xls2xform(self, file_path):
+    def _xls2xform(self, file_path: str):
         """
         Converts a XLSForm spreadsheet to XForm XML. The spreadsheet must be in Excel XLS(X) format
 
@@ -154,7 +158,7 @@ class Survey:
     _ssi = None
     _baseurl = None
     # ----------------------------------------------------------------------
-    def __init__(self, item, sm, baseurl=None):
+    def __init__(self, item, sm, baseurl: Optional[str] = None):
         """Constructor"""
         if baseurl is None:
             baseurl = "survey123.arcgis.com"
@@ -181,7 +185,9 @@ class Survey:
         return self.__str__()
 
     # ----------------------------------------------------------------------
-    def download(self, export_format: str, save_folder: str = None) -> str:
+    def download(
+        self, export_format: str, save_folder: Optional[str] = None
+    ) -> Union[str, pd.Dataframe]:
         """
         Exports the Survey's data to other format
 
@@ -218,18 +224,18 @@ class Survey:
         report_template: Item,
         where: str = "1=1",
         utc_offset: str = "+00:00",
-        report_title: str = None,
-        package_name: str = None,
+        report_title: Optional[str] = None,
+        package_name: Optional[str] = None,
         output_format: str = "docx",
-        folder_id: str = None,
-        merge_files: str = None,
-        survey_item: "Item" = None,
-        webmap_item: "Item" = None,
-        map_scale: float = None,
+        folder_id: Optional[str] = None,
+        merge_files: Optional[str] = None,
+        survey_item: Optional[Item] = None,
+        webmap_item: Optional[Item] = None,
+        map_scale: Optional[float] = None,
         locale: str = "en",
     ) -> str:
         """
-        Creates a MS Word Report.  The `generate_report` method allows users to either save the
+        Creates a MS Word Report or PDF.  The `generate_report` method allows users to either save the
         report to the enterprise or export it directly to disk.
 
         To save to disk, do not specify a `folder_id`.
@@ -296,6 +302,15 @@ class Survey:
         url = "https://{base}/api/featureReport/createReport/submitJob".format(
             base=self._baseurl
         )
+
+        try:
+            if self._ssi.layers[0].properties['isView'] == True:
+                view_url = self._ssi.layers[0].url[:-1]
+                view_layer_id = self._ssi.layers[0].properties['id']
+                fl_url = self._find_parent(view_url, self._si._gis._con) + "/{}".format(view_layer_id)
+        except KeyError:
+            fl_url = self._ssi.layers[0]._url
+
         params = {
             "outputFormat": output_format,
             "queryParameters": where,
@@ -304,7 +319,7 @@ class Survey:
             "outputReportName": report_title,
             "outputPackageName": package_name,
             "surveyItemId": self._si.id,
-            "featureLayerUrl": self._ssi.layers[0]._url,
+            "featureLayerUrl": fl_url,
             "utcOffset": utc_offset,
             "uploadInfo": json.dumps(None),
             "f": "json",
@@ -335,7 +350,7 @@ class Survey:
 
     # ----------------------------------------------------------------------
     @property
-    def report_templates(self) -> List:
+    def report_templates(self) -> list:
         """
         Returns a list of saved report items
 
@@ -349,7 +364,7 @@ class Survey:
         return report_templates
 
     @property
-    def reports(self) -> List:
+    def reports(self) -> list:
         """returns a list of generated reports"""
         return self._si._gis.content.search(
             'owner: %s AND type:"Microsoft Word" AND tags:"Survey 123"'
@@ -359,7 +374,8 @@ class Survey:
         )
 
     # ----------------------------------------------------------------------
-    def create_report_template(self, template_type: str = None):
+    def create_report_template(self, template_type: Optional[str] = None, template_name: Optional[str] = None,
+                               save_folder: Optional[str] = None):
         """
         The `create_report_template` creates a simple default template that
         can be downloaded locally, editted and uploaded back up as a report
@@ -371,10 +387,25 @@ class Survey:
         template_type     Optional String. Specify which sections to include in the template.
                           Acceptable types are `individual`, `summary`, and `summaryIndividual`.
                           Default is `individual`.
+        ----------------  ---------------------------------------------------------------
+        template_name     Optional String. Specify the name of the output template file without file extension.
+        ----------------  ---------------------------------------------------------------
+        save_folder       Optional String. The full save path.
         ================  ===============================================================
 
         :returns: string
         """
+
+        if template_name:
+            file_name = f"{template_name}.docx"
+        else:
+            file_name = f"template_{uuid.uuid4().hex[:5]}.docx"
+
+        if save_folder:
+            out_folder = save_folder
+        else:
+            out_folder = tempfile.gettempdir()
+
 
         url = "https://{base}/api/featureReport/createSampleTemplate".format(
             base=self._baseurl
@@ -393,14 +424,14 @@ class Survey:
             url,
             params,
             try_json=False,
-            out_folder=tempfile.gettempdir(),
-            file_name=f"template_{uuid.uuid4().hex[:5]}",
+            out_folder=out_folder,
+            file_name=file_name,
         )
         return res
 
     # ----------------------------------------------------------------------
 
-    def check_template_syntax(self, template_file: str = None):
+    def check_template_syntax(self, template_file: Optional[str] = None):
         """
         A sync operation to check any syntax which will lead to a failure
         when generating reports in the given feature.
@@ -434,7 +465,7 @@ class Survey:
     # ----------------------------------------------------------------------
 
     def upload_report_template(
-        self, template_file: str = None, template_name: str = None
+        self, template_file: Optional[str] = None, template_name: Optional[str] = None
     ):
         """
         Check report template syntax to idenfify any syntax which will lead to a failure
@@ -453,32 +484,13 @@ class Survey:
         :returns: item {Success) or string (Failure}
         """
 
-        url = "https://{base}/api/featureReport/checkTemplateSyntax".format(
-            base=self._baseurl
-        )
-        file = {
-            "templateFile": (os.path.basename(template_file), open(template_file, "rb"))
-        }
-        gis = self._si._gis
-        params = {
-            "featureLayerUrl": self._ssi.layers[0].url,
-            "surveyItemId": self._si.id,
-            "portalUrl": self._si._gis._url,
-            "f": "json",
-        }
-
-        check = gis._con.post(url, params, files=file)
-
-        def findTemplateName(template_file):
-            part = template_file.split("\\")
-            name = part[-1].split(".")[0]
-            return name
+        check = self.check_template_syntax(template_file)
 
         if check["success"] == True:
             if template_name:
                 file_name = template_name
             else:
-                file_name = findTemplateName(template_file)
+                file_name = os.path.splitext(os.path.basename(template_file))[0]
 
             properties = {
                 "title": file_name,
@@ -488,6 +500,7 @@ class Survey:
                 "snippet": "Report template",
             }
             survey_folder_id = self._si.ownerFolder
+            gis = self._si._gis
             user = gis.users.get(gis.properties.user.username)
             user_folders = user.folders
             survey_folder = next(
@@ -506,7 +519,7 @@ class Survey:
 
     # ----------------------------------------------------------------------
 
-    def update_report_template(self, template_file: str = None):
+    def update_report_template(self, template_file: Optional[str] = None):
         """
         Check report template syntax to idenfify any syntax which will lead to a failure
         when generating reports in the given feature and updates existing Report template Org item.
@@ -521,29 +534,11 @@ class Survey:
         :returns: item {Success) or string (Failure}
         """
 
-        url = "https://{base}/api/featureReport/checkTemplateSyntax".format(
-            base=self._baseurl
-        )
-        file = {
-            "templateFile": (os.path.basename(template_file), open(template_file, "rb"))
-        }
-        gis = self._si._gis
-        params = {
-            "featureLayerUrl": self._ssi.layers[0].url,
-            "surveyItemId": self._si.id,
-            "portalUrl": self._si._gis._url,
-            "f": "json",
-        }
-
-        check = gis._con.post(url, params, files=file)
-
-        def findTemplateName(template_file):
-            part = template_file.split("\\")
-            name = part[-1].split(".")[0]
-            return name
+        check = self.check_template_syntax(template_file)
 
         if check["success"] == True:
-            file_name = findTemplateName(template_file)
+            file_name = os.path.splitext(os.path.basename(template_file))[0]
+            gis = self._si._gis
             template_item = gis.content.search(
                 query="title:" + file_name, item_type="Microsoft Word"
             )
@@ -601,11 +596,11 @@ class Survey:
         report_template: Item,
         where: str = "1=1",
         utc_offset: str = "+00:00",
-        report_title: str = None,
-        merge_files: str = None,
-        survey_item: "Item" = None,
-        webmap_item: "Item" = None,
-        map_scale: float = None,
+        report_title: Optional[str] = None,
+        merge_files: Optional[str] = None,
+        survey_item: Optional[Item] = None,
+        webmap_item: Optional[Item] = None,
+        map_scale: Optional[float] = None,
         locale: str = "en",
     ) -> str:
 
@@ -626,12 +621,12 @@ class Survey:
                           users timezone. Example: EST - "+04:00"
         ----------------  ---------------------------------------------------------------
         report_title      Optional String. Specify the file name (without extension) of the
-                          result report file. For example, if outputFormat is .pdf, input:
+                          result report file. For example, if outputFormat is .pdf, input:
                           "abc" -> output: "abc.pdf"; input: "abc.docx" -> output: "abc.docx.pdf".
 
-                          If packageFiles is true, outputReportName will be used for report files
-                          inside the packaged file. If mergeFiles is either nextPage or continuous,
-                          outputReportName will be used as the merged file name.
+                          If packageFiles is true, outputReportName will be used for report files
+                          inside the packaged file. If mergeFiles is either nextPage or continuous,
+                          outputReportName will be used as the merged file name.
         ----------------  ---------------------------------------------------------------
         merge_files       Optional String. Specify if print multiple records into a single
                           report file (merged mode) or multiple files (split mode), and if
@@ -664,12 +659,21 @@ class Survey:
         url = "https://{base}/api/featureReport/createSampleReport/submitJob".format(
             base=self._baseurl
         )
+
+        try:
+            if self._ssi.layers[0].properties['isView'] == True:
+                view_url = self._ssi.layers[0].url[:-1]
+                view_layer_id = self._ssi.layers[0].properties['id']
+                fl_url = self._find_parent(view_url, self._si._gis._con) + "/{}".format(view_layer_id)
+        except KeyError:
+            fl_url = self._ssi.layers[0]._url
+
         params = {
             "queryParameters": where,
             "portalUrl": self._si._gis._url,
             "templateItemId": report_template.id,
             "surveyItemId": self._si.id,
-            "featureLayerUrl": self._ssi.layers[0].url,
+            "featureLayerUrl": fl_url,
             "utcOffset": utc_offset,
             "f": "json",
             "locale": locale,
@@ -767,4 +771,15 @@ class Survey:
                         return files[0]
                     else:
                         return files
-            return
+            elif res['jobStatus'] == 'esriJobPartialSucceeded' or res['jobStatus'] == 'esriJobFailed':
+                raise ServerError(res['messages'][0])
+            # return
+
+# ----------------------------------------------------------------------
+    def _find_parent(self, view_url, gis):
+        """ Finds the parent feature layer for a feature layer view """
+        url = view_url + "/sources?f=json"
+        # headers = {"X-Esri-Authorization": "Bearer {}".format(token)}
+        response = self._si._gis._con.get(url)
+        return response['services'][0]['url']
+                     
