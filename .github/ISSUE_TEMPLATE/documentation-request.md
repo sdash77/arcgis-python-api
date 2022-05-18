@@ -4,7 +4,7 @@ about: Allows for reporting issues, enhancements, and/or questions about the doc
   samples and guides
 title: "[Documentation]"
 labels: a-Documentation
-assignees: AtmaMani
+assignees: jyaistMap
 
 ---
 
