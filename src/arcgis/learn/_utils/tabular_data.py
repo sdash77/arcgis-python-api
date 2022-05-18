@@ -1730,6 +1730,12 @@ def explain_prediction(
         "DecisionTreeRegressor",
         "ExtraTreeClassifier",
         "ExtraTreeRegressor",
+        "LGBMRegressor",
+        "LGBMClassifier",
+        "XGBRegressor",
+        "XGBClassifier",
+        "CatBoostRegressor",
+        "CatBoostClassifier",
     ]
     sklearn_regressors = [
         "LinearRegression",
@@ -2076,7 +2082,11 @@ def global_interpretation(model, plot_type="bar", method="KernelRegressor"):
         return
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", UserWarning)
-        shap_values = explainer.shap_values(df, approximate=True)
+        approximate = True
+        if hasattr(model, "_model_type"):
+            if model._model_type.startswith("lightgbm.") or model._model_type.startswith("catboost."):
+                approximate = False
+        shap_values = explainer.shap_values(df, approximate=approximate)
     if plot_type == "bar":
         return shap.summary_plot(shap_values, df, plot_type="bar")
     else:

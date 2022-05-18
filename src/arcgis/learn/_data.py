@@ -1043,7 +1043,7 @@ def prepare_tabulardata(
                             explanatory variables to the model. If a spatial dataframe is passed
                             as input_features, ensure that the spatial reference is 4326,
                             and the geometry type is Point. Not applicable when explanatory_rasters
-                            are provided.
+                            are provided. Not applicable for MLModel.
     ---------------------   -------------------------------------------
     distance_features       Optional list of Feature Layer objects.
                             Distance is calculated from features in these layers
