@@ -2084,7 +2084,9 @@ def global_interpretation(model, plot_type="bar", method="KernelRegressor"):
         warnings.simplefilter("ignore", UserWarning)
         approximate = True
         if hasattr(model, "_model_type"):
-            if model._model_type.startswith("lightgbm.") or model._model_type.startswith("catboost."):
+            if model._model_type.startswith(
+                "lightgbm."
+            ) or model._model_type.startswith("catboost."):
                 approximate = False
         shap_values = explainer.shap_values(df, approximate=approximate)
     if plot_type == "bar":

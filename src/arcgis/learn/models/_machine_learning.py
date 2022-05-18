@@ -54,7 +54,7 @@ def _get_model_type(model_type):
             raise Exception("Invalid model_type.")
 
         model = getattr(getattr(sklearn, module), model)
-    
+
     elif model_type.startswith("xgboost."):
         model_type = model_type.replace("xgboost.", "")
         if len(model_type.split(".")) > 0:
@@ -87,7 +87,6 @@ def _get_model_type(model_type):
             raise Exception("Invalid model_type.")
 
         model = getattr(catboost, model)
-
 
     return model
 
@@ -128,7 +127,7 @@ class MLModel(object):
     **kwargs                model_type specific arguments.
                             Refer Parameters section
                             https://scikit-learn.org/stable/supervised_learning.html#supervised-learning for scikit-learn,
-                            
+
                             lgbm
                             https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html
                             https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html
@@ -157,7 +156,7 @@ class MLModel(object):
                     data._dataframe = data._dataframe.drop(zone, axis=1)
                 # data._categorical_variables.remove(zone)
             data._cell_sizes = None
-            
+
         self._model_type = model_type
         self._data = data
         (
@@ -469,7 +468,7 @@ class MLModel(object):
         elif self._model_type.startswith("catboost."):
             emd_params["version"] = str(catboost.__version__)
         else:
-            emd_params["version"] = 'Not Available'
+            emd_params["version"] = "Not Available"
         if not self._data._is_unsupervised:
             if self._data._is_empty:
                 emd_params["score"] = self._data._emd["score"]
@@ -538,7 +537,12 @@ class MLModel(object):
         model_parameters = emd["ModelParameters"]
         cell_sizes = emd.get("cell_sizes", None)
 
-        if emd["version"] == str(sklearn.__version__) or emd["version"] == str(xgboost.__version__) or emd["version"] == str(lightgbm.__version__) or emd["version"] == str(catboost.__version__):
+        if (
+            emd["version"] == str(sklearn.__version__)
+            or emd["version"] == str(xgboost.__version__)
+            or emd["version"] == str(lightgbm.__version__)
+            or emd["version"] == str(catboost.__version__)
+        ):
             pass
         else:
             warnings.warn(
