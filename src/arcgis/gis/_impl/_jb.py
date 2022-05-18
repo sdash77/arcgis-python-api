@@ -90,7 +90,7 @@ class StatusJob(object):
         url = f"{self._gis._portal.resturl}portals/self/jobs/%s" % self._jobid
         params = {"f": "json"}
         if self._key:
-            params['key'] = self._key
+            params["key"] = self._key
         res = self._gis._con.post(url, params)
         if "definition" in res:
             return res["definition"]
@@ -149,7 +149,7 @@ class StatusJob(object):
         url = f"{self._gis._portal.resturl}portals/self/jobs/%s" % self._jobid
         params = {"f": "json"}
         if self._key:
-            params['key'] = self._key
+            params["key"] = self._key
         res = self._gis._con.post(url, params)
         if "status" in res:
             return res["status"]
@@ -167,7 +167,7 @@ class StatusJob(object):
         url = f"{self._gis._portal.resturl}portals/self/jobs/%s" % self._jobid
         params = {"f": "json"}
         if self._key:
-            params['key'] = self._key
+            params["key"] = self._key
         res = self._gis._con.post(url, params)
         if "messages" in res:
             return res["messages"]
