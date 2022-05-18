@@ -48,8 +48,11 @@ class StatusJob(object):
     _start_time = None
     _end_time = None
     _item_properties = None
+    _key = None
     # ----------------------------------------------------------------------
-    def __init__(self, future, op, jobid, gis, notify=False, extra_marker="Group"):
+    def __init__(
+        self, future, op, jobid, gis, notify=False, extra_marker="Group", key=None
+    ):
         """
         initializer
         """
@@ -60,6 +63,7 @@ class StatusJob(object):
         if notify:
             self._future.add_done_callback(self._notify)
         self._future.add_done_callback(self._set_end_time)
+        self._key = key
         self._op = op
         self._jobid = jobid
         self._gis = gis
@@ -85,6 +89,8 @@ class StatusJob(object):
         """
         url = f"{self._gis._portal.resturl}portals/self/jobs/%s" % self._jobid
         params = {"f": "json"}
+        if self._key:
+            params['key'] = self._key
         res = self._gis._con.post(url, params)
         if "definition" in res:
             return res["definition"]
@@ -142,6 +148,8 @@ class StatusJob(object):
 
         url = f"{self._gis._portal.resturl}portals/self/jobs/%s" % self._jobid
         params = {"f": "json"}
+        if self._key:
+            params['key'] = self._key
         res = self._gis._con.post(url, params)
         if "status" in res:
             return res["status"]
@@ -158,6 +166,8 @@ class StatusJob(object):
 
         url = f"{self._gis._portal.resturl}portals/self/jobs/%s" % self._jobid
         params = {"f": "json"}
+        if self._key:
+            params['key'] = self._key
         res = self._gis._con.post(url, params)
         if "messages" in res:
             return res["messages"]

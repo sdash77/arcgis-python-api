@@ -1731,6 +1731,8 @@ class GroupMigrationManager(object):
         if job_id:
             url = f"{self._gis._portal.resturl}portals/self/jobs/{job_id}"
             params["f"] = "json"
+            if key:
+                params['key'] = key
             res = self._con.post(url, params)
             while res["status"] not in ["completed", "complete"]:
                 res = self._con.post(url, params)
