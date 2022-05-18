@@ -1796,6 +1796,7 @@ class GroupMigrationManager(object):
                 jobid=res["jobId"],
                 gis=self._gis,
                 notify=arcgis_env.verbose,
+                key=res.get("key", None),
             )
             if future:
                 return job
@@ -1869,6 +1870,7 @@ class GroupMigrationManager(object):
                 jobid=res["jobId"],
                 gis=self._gis,
                 notify=arcgis_env.verbose,
+                key=res.get("key", None),
             )
             if future:
                 return job

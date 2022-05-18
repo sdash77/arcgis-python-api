@@ -103,6 +103,7 @@ class PortalDataStore(object):
             gis=self._gis,
             notify=_env.verbose,
             extra_marker="",
+            key=res.get("key", None),
         )
 
     # ----------------------------------------------------------------------
@@ -381,6 +382,7 @@ class PortalDataStore(object):
             gis=self._gis,
             notify=_env.verbose,
             extra_marker="",
+            key=res.get("key", None),
         )
 
     # ----------------------------------------------------------------------
