@@ -223,6 +223,7 @@ class Pix2PixHD(ArcGISModel):
             data._is_empty = True
             data.resize_to = chip_size
             data.norm_stats = norm_stats
+            data.imagery_type = emd.get("ImageryType")
 
         return cls(data, **model_params, pretrained_path=str(model_file), **kwargs)
 
