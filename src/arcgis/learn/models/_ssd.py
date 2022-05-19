@@ -437,7 +437,9 @@ class SingleShotDetector(ArcGISModel):
                 self._create_anchors(grids, zooms, ratios)
 
                 feature_sizes = _get_feature_size(
-                    self._backbone,
+                    self._orig_backbone
+                    if hasattr(self, "_orig_backbone")
+                    else self._backbone,
                     cut=backbone_cut,
                     chip_size=(data.chip_size, data.chip_size),
                 )
@@ -449,6 +451,7 @@ class SingleShotDetector(ArcGISModel):
                     grids[0] > 8
                     and abs(num_features - grids[0]) > 4
                     and backbone_name == "res"
+                    and "bit" not in self._backbone.__name__
                 ):
                     num_features = feature_sizes[-2][-1]
                     num_channels = feature_sizes[-2][1]

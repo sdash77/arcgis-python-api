@@ -188,4 +188,4 @@ class MaXDeepLab(ModelExtension):
         Computes the maximum number of class labels and masks in any chip in the entire dataset.
         Note: It might take long time for larger datasets.
         """
-        return compute_n_masks(self._data.path)
+        return compute_n_masks(self._data.orig_path)

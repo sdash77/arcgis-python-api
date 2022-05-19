@@ -1026,7 +1026,7 @@ def compute_accuracy_for_object_detection(
     """
     Function can be used to calculate the accuracy of a deep learning model by comparing the detected objects from
     the detect_objects function to ground truth data.
-    Function available in ArcGIS Image Server 10.9 and higher.
+    Function available in ArcGIS Image Server 10.9 and higher (not available in ArcGIS Online).
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -1130,6 +1130,12 @@ def compute_accuracy_for_object_detection(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+
+    if gis._con._product == "AGOL":
+        raise RuntimeError(
+            "compute_accuracyfor_object_detection() is not supported on ArcGIS Online"
+        )
+
     return gis._tools.rasteranalysis.compute_accuracyfor_object_detection(
         detected_features=detected_features,
         ground_truth_features=ground_truth_features,

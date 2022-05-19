@@ -129,19 +129,20 @@ class TabularDataObject(object):
         tabular_data._raster_field_variables = tabular_data._field_mapping[
             "raster_field_variables"
         ]
-        if (
-            tabular_data._dataframe[tabular_data._dependent_variable]
-            .isnull()
-            .values.any()
-        ):
-            msg = arcpy_localization_helper(
-                "Rows having null values in dependent variable are removed and model will be trained with remaining data",
-                260145,
-                "WARNING",
-            )
-            tabular_data._dataframe = tabular_data._dataframe[
-                ~tabular_data._dataframe[tabular_data._dependent_variable].isna()
-            ]
+        if tabular_data._dependent_variable:
+            if (
+                tabular_data._dataframe[tabular_data._dependent_variable]
+                .isnull()
+                .values.any()
+            ):
+                msg = arcpy_localization_helper(
+                    "Rows having null values in dependent variable are removed and model will be trained with remaining data",
+                    260145,
+                    "WARNING",
+                )
+                tabular_data._dataframe = tabular_data._dataframe[
+                    ~tabular_data._dataframe[tabular_data._dependent_variable].isna()
+                ]
         tabular_data._index_data = tabular_data._field_mapping["index_data"]
         tabular_data._index_field = index_field
 
@@ -150,6 +151,7 @@ class TabularDataObject(object):
         tabular_data._val_split_pct = val_split_pct
         tabular_data._bs = batch_size
         tabular_data._seed = seed
+        tabular_data._cell_sizes = cell_sizes
 
         validation_indexes = []
         if tabular_data._dependent_variable:
@@ -450,12 +452,20 @@ class TabularDataObject(object):
                 labelEncoder = OrdinalEncoder(
                     handle_unknown="use_encoded_value", unknown_value=-1
                 )
-                dataframe[variable] = np.array(
-                    labelEncoder.fit_transform(
-                        dataframe[variable].values.reshape(-1, 1)
-                    ),
-                    dtype="int64",
-                )
+                try:
+                    dataframe[variable] = np.array(
+                        labelEncoder.fit_transform(
+                            dataframe[variable].values.reshape(-1, 1)
+                        ),
+                        dtype="int64",
+                    )
+                except:
+                    dataframe[variable] = np.array(
+                        labelEncoder.fit_transform(
+                            dataframe[variable].values.to_numpy().reshape(-1, 1)
+                        ),
+                        dtype="int64",
+                    )
                 mapping[variable] = labelEncoder
             self._encoder_mapping = mapping
 
@@ -1086,6 +1096,15 @@ class TabularDataObject(object):
         if dependent_variable:
             fields_to_keep = fields_to_keep + [dependent_variable]
 
+        try:
+            for col in fields_to_keep:
+                if not col in dataframe.columns:
+                    msg = arcpy_localization_helper(
+                        "Field does not exist within table", 728, "ERROR", str(col)
+                    )
+        except:
+            pass
+
         for column in dataframe_columns:
             if column not in fields_to_keep:
                 dataframe = dataframe.drop(column, axis=1)
@@ -1236,14 +1255,30 @@ class TabularDataObject(object):
                     arcpy.env.overwriteOutput = True
                     zonetable = arcpy.CreateTable_management("memory", "zonetable")
 
-                    arcpy.sa.ZonalStatisticsAsTable(
-                        data_source,
-                        describe_obj.oidFieldName,
-                        raster.path + raster.name,
-                        zonetable,
-                        "DATA",
-                        statistic,
-                    )
+                    try:
+                        arcpy.sa.ZonalStatisticsAsTable(
+                            data_source,
+                            describe_obj.oidFieldName,
+                            raster.path + raster.name,
+                            zonetable,
+                            "DATA",
+                            statistic,
+                        )
+                    except:
+                        if statistic == "MAJORITY":
+                            err_code = 110212
+                            param = raster.name
+                        else:
+                            err_code = 10162
+                            param = None
+
+                        msg = arcpy_localization_helper(
+                            "Pixel type of raster is float, which cannot be used as a categorical variable.",
+                            err_code,
+                            "ERROR",
+                            param,
+                        )
+                        exit()
 
                     table_df = pd.DataFrame.spatial.from_table("memory\\zonetable")
                     arcpy.env.overwriteOutput = cached_oo
@@ -1695,6 +1730,12 @@ def explain_prediction(
         "DecisionTreeRegressor",
         "ExtraTreeClassifier",
         "ExtraTreeRegressor",
+        "LGBMRegressor",
+        "LGBMClassifier",
+        "XGBRegressor",
+        "XGBClassifier",
+        "CatBoostRegressor",
+        "CatBoostClassifier",
     ]
     sklearn_regressors = [
         "LinearRegression",
@@ -2041,7 +2082,13 @@ def global_interpretation(model, plot_type="bar", method="KernelRegressor"):
         return
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", UserWarning)
-        shap_values = explainer.shap_values(df, approximate=True)
+        approximate = True
+        if hasattr(model, "_model_type"):
+            if model._model_type.startswith(
+                "lightgbm."
+            ) or model._model_type.startswith("catboost."):
+                approximate = False
+        shap_values = explainer.shap_values(df, approximate=approximate)
     if plot_type == "bar":
         return shap.summary_plot(shap_values, df, plot_type="bar")
     else:

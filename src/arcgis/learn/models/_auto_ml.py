@@ -920,8 +920,9 @@ class AutoML(object):
                 spatial_reference=self._raster_sr(raster),
             ).projectAs(default_sr)
 
-            cx, cy = abs(cell_extent.XMax - cell_extent.XMin), abs(
-                cell_extent.YMax - cell_extent.YMin
+            cx, cy = (
+                abs(cell_extent.XMax - cell_extent.XMin),
+                abs(cell_extent.YMax - cell_extent.YMin),
             )
 
             if xmin > point_upper_left.firstPoint.X:
@@ -963,9 +964,10 @@ class AutoML(object):
                 if match_field_names and match_field_names.get(raster.name):
                     field_name = match_field_names.get(raster.name)
 
-            ccxx, ccyy = abs(
-                cell_extent_translated.XMax - cell_extent_translated.XMin
-            ), abs(cell_extent_translated.YMax - cell_extent_translated.YMin)
+            ccxx, ccyy = (
+                abs(cell_extent_translated.XMax - cell_extent_translated.XMin),
+                abs(cell_extent_translated.YMax - cell_extent_translated.YMin),
+            )
 
             raster_read = raster.read(
                 origin_coordinate=(

@@ -801,3 +801,21 @@ def build_deforamble_transformer(args):
         two_stage=args.two_stage,
         two_stage_num_proposals=args.num_queries,
     )
+
+
+def build_learn_deforamble_transformer():
+    return DeformableTransformer(
+        d_model=256,
+        nhead=8,
+        num_encoder_layers=6,
+        num_decoder_layers=6,
+        dim_feedforward=1024,
+        dropout=0.1,
+        activation="relu",
+        return_intermediate_dec=True,
+        num_feature_levels=4,
+        dec_n_points=4,
+        enc_n_points=4,
+        two_stage=False,
+        two_stage_num_proposals=100,
+    )
