@@ -1,4 +1,3 @@
-from turtle import back
 from ._arcgis_model import ArcGISModel
 from ._arcgis_model import _EmptyData, _change_tail
 

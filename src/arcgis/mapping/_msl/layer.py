@@ -1095,7 +1095,7 @@ class MapFeatureLayer(Layer):
             _fld_lu = {
                 "esriFieldTypeSmallInteger": np.int32,
                 "esriFieldTypeInteger": np.int64,
-                "esriFieldTypeSingle": np.int32,
+                "esriFieldTypeSingle": float,
                 "esriFieldTypeDouble": float,
                 "esriFieldTypeFloat": float,
                 "esriFieldTypeString": str,
@@ -1515,7 +1515,7 @@ class MapFeatureLayer(Layer):
             _fld_lu = {
                 "esriFieldTypeSmallInteger": np.int32,
                 "esriFieldTypeInteger": np.int64,
-                "esriFieldTypeSingle": np.int32,
+                "esriFieldTypeSingle": float,
                 "esriFieldTypeDouble": float,
                 "esriFieldTypeFloat": float,
                 "esriFieldTypeString": str,
@@ -1534,7 +1534,7 @@ class MapFeatureLayer(Layer):
             _fld_lu = {
                 "esriFieldTypeSmallInteger": np.int32,
                 "esriFieldTypeInteger": np.int64,
-                "esriFieldTypeSingle": np.int32,
+                "esriFieldTypeSingle": float,
                 "esriFieldTypeDouble": float,
                 "esriFieldTypeFloat": float,
                 "esriFieldTypeString": str,
@@ -2163,7 +2163,7 @@ class MapTable(MapFeatureLayer):
             _fld_lu = {
                 "esriFieldTypeSmallInteger": np.int32,
                 "esriFieldTypeInteger": np.int64,
-                "esriFieldTypeSingle": np.int32,
+                "esriFieldTypeSingle": float,
                 "esriFieldTypeDouble": float,
                 "esriFieldTypeFloat": float,
                 "esriFieldTypeString": str,

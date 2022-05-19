@@ -40,6 +40,57 @@ except:
     HASPYSHP = False
 
 _logging = logging.getLogger(__name__)
+
+
+def _fc2pandas_dtypes(describe: dict) -> dict:
+    """
+    returns a dtypes to cast the final dataframe to the proper datatypes (if possible).
+
+    :returns: Dict[str, Any]
+    """
+    if describe is None:
+        return None
+    if [float(i) for i in pd.__version__.split(".")] < [1, 0, 0]:
+        _lu_types = {
+            "OID": np.int64,
+            "SmallInteger": np.int32,
+            "Integer": np.int32,
+            "Single": float,
+            "Double": float,
+            "String": "<U",
+            "Blob": "O",
+            "Guid": "<U38",
+            "Raster": "O",
+            "Date": "<M8[us]",
+        }
+    else:
+        _lu_types = {
+            "OID": np.int64,
+            "SmallInteger": np.int32,
+            "Integer": np.int32,
+            "Single": float,
+            "Double": float,
+            "String": "<U",
+            "Blob": "O",
+            "Guid": "<U38",
+            "Raster": "O",
+            "Date": "<M8[us]",
+        }
+    dtypes = None
+    if "fields" in describe:
+        dtypes = {}
+        for field in describe["fields"]:
+            if field.type.lower() in ["TEXT", "string"]:
+                dtypes[field.name] = f"{_lu_types['String']}{field.length}"
+            elif field.type in _lu_types.keys():
+                dtypes[field.name] = _lu_types[field.type]
+            elif field.type.lower() == "geometry":
+                pass  # Skip value
+            else:
+                dtypes[field.name] = object
+    return dtypes
+
+
 # --------------------------------------------------------------------------
 def _infer_type(df, col):
     """
@@ -139,7 +190,10 @@ def _from_xy(df, x_column, y_column, sr=None):
     df["SHAPE"] = GeoArray(ags_geom)
     df.spatial.name
     for i in range(len(df)):
-        shape = df.loc[i]["SHAPE"]
+        try:
+            shape = df.iloc[i]["SHAPE"]
+        except:
+            shape = df.loc[i]["SHAPE"]
         if "EMPTY" in shape.WKT:
             df.iat[i, df.columns.get_loc("SHAPE")] = None
     return df
@@ -498,10 +552,9 @@ def from_featureclass(filename, **kwargs):
     from arcgis.geometry import _types
     import json
 
-    if (
-        HASARCPY
-        or isinstance(filename, (arcpy._mp.Layer))
-        and type(filename).__name__.find("arcpy") > -1
+    if HASARCPY and (
+        isinstance(filename, (arcpy._mp.Layer))
+        or type(filename).__name__.find("arcpy") > -1
     ):
         filename = filename
     else:
@@ -532,6 +585,7 @@ def from_featureclass(filename, **kwargs):
             desc = {"fields": desc.fields, "shapeType": desc.shapeType}
             area_field = getattr(desc, "areaFieldName", None)
             length_field = getattr(desc, "lengthFieldName", None)
+        pandas_dtypes = _fc2pandas_dtypes(desc)
 
         if spatial_filter:
             _sf_lu = {
@@ -611,7 +665,10 @@ def from_featureclass(filename, **kwargs):
         df.loc[none_q, "SHAPE"] = None
         df.spatial.set_geometry("SHAPE")
         df.spatial._meta.source = filename
-        return df
+        try:
+            return df.astype(pandas_dtypes)
+        except:
+            return df
     elif HASARCPY == False and HASPYSHP == True and filename.lower().find(".shp") > -1:
         geoms = []
         records = []

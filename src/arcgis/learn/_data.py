@@ -1043,7 +1043,7 @@ def prepare_tabulardata(
                             explanatory variables to the model. If a spatial dataframe is passed
                             as input_features, ensure that the spatial reference is 4326,
                             and the geometry type is Point. Not applicable when explanatory_rasters
-                            are provided.
+                            are provided. Not applicable for MLModel.
     ---------------------   -------------------------------------------
     distance_features       Optional list of Feature Layer objects.
                             Distance is calculated from features in these layers
@@ -1987,6 +1987,10 @@ def prepare_data(
 
         from ._data_utils._panoptic_data import PanopticSegmentationItemList
 
+        inst_class_mapping = {
+            i["Value"]: i["Name"] for i in emd["Panoptic_Segmentation_Instance_Classes"]
+        }
+
         data = (
             PanopticSegmentationItemList.from_folder(path / "images")
             .filter_by_func(remove_image_without_label)
@@ -1998,6 +2002,7 @@ def prepare_data(
                 class_mapping=class_mapping,
                 color_mapping=color_mapping,
                 n_masks=kwargs.get("n_masks", 30),
+                inst_class_mapping=inst_class_mapping,
             )
         )
 

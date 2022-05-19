@@ -7,12 +7,12 @@ properly with the Spatially enabled DataFrame.
 import pytest
 import os, sys
 
-# sys.path.append(r"D:\SVN\git_hub\ArcGIS\geo_public")
+# sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import shutil, datetime
 import tempfile
 from arcgis.gis import GIS
 from arcgis.features.geo._array import GeoArray, GeoType
-from arcgis.features.geo import from_featureclass
+import arcgis.features.geo
 from arcgis.geometry import Geometry
 import copy
 from arcgis.features.geo import _io
@@ -138,7 +138,7 @@ def test_content_import_data():
     """
     try:
 
-        df = from_featureclass(filename=r"./world30.shp")
+        df = arcgis.features.geo.from_featureclass(filename=r"./world30.shp")
         gis = GIS(username=USERNAME, password=PASSWORD)
         item = gis.content.import_data(df)
         assert item.type == "Feature Service"
@@ -192,9 +192,7 @@ if __name__ == "__main__":
         test_content_import_data()
         print("   Testing content.import_data finished")
         print("################################################################")
-        print("   Testing GeoEnrichment")
-        test_enrichment()
-        print("   Testing GeoEnrichment finished")
+
     print("################################################################")
     print("   Testing FeatureSet.sdf")
     test_featureset_df()

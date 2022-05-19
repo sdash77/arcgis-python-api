@@ -147,6 +147,7 @@ class KbertnetesPy(object):
                     timeout=self._timeout,
                     proxy=kwargs.get("proxy", None),
                     custom_adapter=custom_adapter,
+                    use_gen_token=kwargs.get("use_gen_token", False),
                 )
             else:
                 if token == api_key:
@@ -173,6 +174,7 @@ class KbertnetesPy(object):
                     timeout=self._timeout,
                     proxy=kwargs.get("proxy", None),
                     custom_adapter=custom_adapter,
+                    use_gen_token=kwargs.get("use_gen_token", False),
                 )
         # self.get_version(True)
         self.get_properties(True)
