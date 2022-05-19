@@ -451,6 +451,7 @@ class SingleShotDetector(ArcGISModel):
                     grids[0] > 8
                     and abs(num_features - grids[0]) > 4
                     and backbone_name == "res"
+                    and "bit" not in self._backbone.__name__
                 ):
                     num_features = feature_sizes[-2][-1]
                     num_channels = feature_sizes[-2][1]
