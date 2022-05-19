@@ -129,19 +129,20 @@ class TabularDataObject(object):
         tabular_data._raster_field_variables = tabular_data._field_mapping[
             "raster_field_variables"
         ]
-        if (
-            tabular_data._dataframe[tabular_data._dependent_variable]
-            .isnull()
-            .values.any()
-        ):
-            msg = arcpy_localization_helper(
-                "Rows having null values in dependent variable are removed and model will be trained with remaining data",
-                260145,
-                "WARNING",
-            )
-            tabular_data._dataframe = tabular_data._dataframe[
-                ~tabular_data._dataframe[tabular_data._dependent_variable].isna()
-            ]
+        if tabular_data._dependent_variable:
+            if (
+                tabular_data._dataframe[tabular_data._dependent_variable]
+                .isnull()
+                .values.any()
+            ):
+                msg = arcpy_localization_helper(
+                    "Rows having null values in dependent variable are removed and model will be trained with remaining data",
+                    260145,
+                    "WARNING",
+                )
+                tabular_data._dataframe = tabular_data._dataframe[
+                    ~tabular_data._dataframe[tabular_data._dependent_variable].isna()
+                ]
         tabular_data._index_data = tabular_data._field_mapping["index_data"]
         tabular_data._index_field = index_field
 
@@ -451,12 +452,20 @@ class TabularDataObject(object):
                 labelEncoder = OrdinalEncoder(
                     handle_unknown="use_encoded_value", unknown_value=-1
                 )
-                dataframe[variable] = np.array(
-                    labelEncoder.fit_transform(
-                        dataframe[variable].values.reshape(-1, 1)
-                    ),
-                    dtype="int64",
-                )
+                try:
+                    dataframe[variable] = np.array(
+                        labelEncoder.fit_transform(
+                            dataframe[variable].values.reshape(-1, 1)
+                        ),
+                        dtype="int64",
+                    )
+                except:
+                    dataframe[variable] = np.array(
+                        labelEncoder.fit_transform(
+                            dataframe[variable].values.to_numpy().reshape(-1, 1)
+                        ),
+                        dtype="int64",
+                    )
                 mapping[variable] = labelEncoder
             self._encoder_mapping = mapping
 
@@ -1721,6 +1730,12 @@ def explain_prediction(
         "DecisionTreeRegressor",
         "ExtraTreeClassifier",
         "ExtraTreeRegressor",
+        "LGBMRegressor",
+        "LGBMClassifier",
+        "XGBRegressor",
+        "XGBClassifier",
+        "CatBoostRegressor",
+        "CatBoostClassifier",
     ]
     sklearn_regressors = [
         "LinearRegression",
@@ -2067,7 +2082,13 @@ def global_interpretation(model, plot_type="bar", method="KernelRegressor"):
         return
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", UserWarning)
-        shap_values = explainer.shap_values(df, approximate=True)
+        approximate = True
+        if hasattr(model, "_model_type"):
+            if model._model_type.startswith(
+                "lightgbm."
+            ) or model._model_type.startswith("catboost."):
+                approximate = False
+        shap_values = explainer.shap_values(df, approximate=approximate)
     if plot_type == "bar":
         return shap.summary_plot(shap_values, df, plot_type="bar")
     else:

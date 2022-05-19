@@ -59,6 +59,8 @@ class PanopticSegmentationLabelList(ImageList):
     ):
         # max number of masks (K in ground truth, N  in predictions)
         self.K = kwargs.pop("n_masks")
+        self.inst_class_mapping = kwargs.pop("inst_class_mapping")
+        self.inv_inst_class_mapping = {v: k for k, v in self.inst_class_mapping.items()}
 
         super().__init__(items, **kwargs)
         self.class_mapping = class_mapping
@@ -72,10 +74,7 @@ class PanopticSegmentationLabelList(ImageList):
         self.inst_lbl_path = self.items[0].parent.parent / "labels2"
 
         # Create a list of instance class values
-        instance_classes = os.listdir(self.inst_lbl_path)
-        self.instance_classes = sorted(
-            [k for k, v in class_mapping.items() if v in instance_classes]
-        )
+        self.instance_classes = list(self.inst_class_mapping.keys())
 
         ## Check whether the class values are contiguous and create contiguous mapping
         self.is_contiguous = is_contiguous(
@@ -188,7 +187,8 @@ class PanopticSegmentationLabelList(ImageList):
             mask_img = torch.from_numpy(
                 ArcGISMSImage.read_image(Path(mask_file)).astype("int16")
             )
-            lbl_name = int(Path(mask_file).parent.name)
+            lbl_name = Path(mask_file).parent.name
+            lbl_value = self.inv_inst_class_mapping[lbl_name]
 
             # Ensure a channel dimension exists
             if (
@@ -205,7 +205,7 @@ class PanopticSegmentationLabelList(ImageList):
                 for instance in range(1, unique_instances + 1):
                     instance_mask = (mask_img[ch] == instance).to(torch.uint8)
                     masks.append(instance_mask)
-                    labels.append(lbl_name)
+                    labels.append(lbl_value)
 
         masks = torch.stack(masks)
         labels = torch.tensor(labels)

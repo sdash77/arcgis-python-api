@@ -8,6 +8,7 @@ from itertools import product
 import threading
 from typing import Any, AnyStr, Iterable, Optional, Tuple, Union
 
+from arcgis.features import FeatureSet
 from arcgis.gis import GIS, User
 from arcgis.geometry import Geometry, SpatialReference
 import numpy as np
@@ -448,6 +449,16 @@ def get_spatially_enabled_dataframe(
         input_object, pd.DataFrame
     ):
         input_object = pd.Series(input_object)
+
+    # if a feature set in a single length list, pull the feature set out and let user know cannot handle multiple
+    if isinstance(input_object, Iterable):
+        assert len(input_object) == 1, "Only one FeatureSet can be used for input"
+        if isinstance(input_object[0], FeatureSet):
+            input_object = input_object[0]
+
+    # convert a FeatureSet to an SeDF
+    if isinstance(input_object, FeatureSet):
+        input_object = input_object.sdf
 
     # at this juncture, the only real options are either a Series or DataFrame, so if Series, make into DataFrame
     if isinstance(input_object, pd.Series):

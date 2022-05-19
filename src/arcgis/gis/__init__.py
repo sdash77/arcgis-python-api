@@ -208,7 +208,9 @@ class GIS(object):
     expiration          Optional Integer.  The default is 60 minutes.  The expiration
                         time for a given token.  This is used for user provided tokens
                         and API Keys.
-
+    ----------------    ---------------------------------------------------------------
+    validate_url        Optional Boolean. The default is False. A user can choose to
+                        validate the URL on an `Item`'s url.
     ================    ===============================================================
 
     .. code-block:: python
@@ -281,6 +283,7 @@ class GIS(object):
     _product_version = None
     _is_agol = None
     _pds = None
+    _validate_item_url = None
     """If 'True', the GIS instance is a GIS('home') from hosted nbs"""
     # admin = None
     # oauth = None
@@ -319,6 +322,7 @@ class GIS(object):
         certificate verification in the Python process. However, this should not be done in production environments and is
         strongly discouraged.
         """
+        self._validate_item_url = kwargs.pop("validate_url", False)
         self._use_gen_token = kwargs.pop("use_gen_token", False)
         self._proxy_host = kwargs.pop("proxy_host", None)
         self._proxy_port = kwargs.pop("proxy_port", 80)
@@ -622,11 +626,20 @@ class GIS(object):
             and self._portal.is_arcgisonline == False
         ):
             try:
-                from .admin.portaladmin import PortalAdminManager
+                if self._portal.is_kubernetes:
+                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
 
-                self.admin = PortalAdminManager(
-                    url="%s/portaladmin" % self._portal.url, gis=self, is_admin=False
-                )
+                    url = self._portal.url + "/admin"
+                    self.admin = KubernetesAdmin(url=url, gis=self)
+                else:
+
+                    from .admin.portaladmin import PortalAdminManager
+
+                    self.admin = PortalAdminManager(
+                        url="%s/portaladmin" % self._portal.url,
+                        gis=self,
+                        is_admin=False,
+                    )
             except:
                 pass
         elif (
@@ -650,13 +663,19 @@ class GIS(object):
                     can_publish = False
             if can_publish:
                 try:
-                    from .admin.portaladmin import PortalAdminManager
+                    if self.properties.isPortal and self._portal.is_kubernetes:
+                        from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
 
-                    self.admin = PortalAdminManager(
-                        url="%s/portaladmin" % self._portal.url,
-                        gis=self,
-                        is_admin=False,
-                    )
+                        url = self._portal.url + "/admin"
+                        self.admin = KubernetesAdmin(url=url, gis=self)
+                    else:
+                        from .admin.portaladmin import PortalAdminManager
+
+                        self.admin = PortalAdminManager(
+                            url="%s/portaladmin" % self._portal.url,
+                            gis=self,
+                            is_admin=False,
+                        )
                 except:
                     pass
         if (
@@ -667,11 +686,19 @@ class GIS(object):
             and self._portal.is_arcgisonline == False
         ):
             try:
-                from .admin.portaladmin import PortalAdminManager
+                if self.properties.isPortal and self._portal.is_kubernetes:
+                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
 
-                self.admin = PortalAdminManager(
-                    url="%s/portaladmin" % self._portal.url, gis=self, is_admin=False
-                )
+                    url = self._portal.url + "/admin"
+                    self.admin = KubernetesAdmin(url=url, gis=self)
+                else:
+                    from .admin.portaladmin import PortalAdminManager
+
+                    self.admin = PortalAdminManager(
+                        url="%s/portaladmin" % self._portal.url,
+                        gis=self,
+                        is_admin=False,
+                    )
             except:
                 pass
         # self._tools = _Tools(self)
@@ -1704,6 +1731,8 @@ class GroupMigrationManager(object):
         if job_id:
             url = f"{self._gis._portal.resturl}portals/self/jobs/{job_id}"
             params["f"] = "json"
+            if key:
+                params["key"] = key
             res = self._con.post(url, params)
             while res["status"] not in ["completed", "complete"]:
                 res = self._con.post(url, params)
@@ -1752,6 +1781,10 @@ class GroupMigrationManager(object):
 
             params["async"] = json.dumps(True)
             res = self._gis._con.post(url, params)
+            if not "jobId" in res:
+                raise Exception(
+                    f"Either group has no items, or items failed or were skipped: {res}"
+                )
             executor = concurrent.futures.ThreadPoolExecutor(1)
             futureobj = executor.submit(
                 self._status, **{"job_id": res["jobId"], "key": res["key"]}
@@ -1763,6 +1796,7 @@ class GroupMigrationManager(object):
                 jobid=res["jobId"],
                 gis=self._gis,
                 notify=arcgis_env.verbose,
+                key=res.get("key", None),
             )
             if future:
                 return job
@@ -1836,6 +1870,7 @@ class GroupMigrationManager(object):
                 jobid=res["jobId"],
                 gis=self._gis,
                 notify=arcgis_env.verbose,
+                key=res.get("key", None),
             )
             if future:
                 return job
@@ -11318,6 +11353,9 @@ class Item(dict):
                 except:
                     pass
                 return self["tables"]
+        elif name == "url" and self._gis._validate_item_url:
+            url = dict.__getitem__(self, "url")
+            return self._validate_url(url)
         return super(Item, self).__getattribute__(name)
 
     def __getattr__(self, name):  # support item attributes
@@ -11348,7 +11386,7 @@ class Item(dict):
 
         :return: bool
         """
-        url = f"{self._portal.resturl}content/users/{self._gis.users.me.username}/items/{self.itemid}/canDelete"
+        url = f"{self._portal.resturl}content/users/{self.owner}/items/{self.itemid}/canDelete"
         params = {"f": "json"}
         try:
             return self._gis._con.get(url, params).get("success", False)
@@ -12657,7 +12695,7 @@ class Item(dict):
                     {
                         "id": "%s" % lyr["id"],
                         "title": lyr["title"],
-                        "opacity": lyr["opacity"],
+                        "opacity": lyr["opacity"] if "opacity" in lyr else None,
                         "minScale": flyr.properties.minScale,
                         "maxScale": flyr.properties.maxScale,
                         "layerDefinition": {
@@ -12668,16 +12706,20 @@ class Item(dict):
                     }
                 )
                 del lyr
+
             wmjs = {
                 "mapOptions": {
                     "showAttribution": False,
-                    "extent": dict(container.properties.initialExtent),
-                    "spatialReference": dict(container.properties.spatialReference),
+                    "extent": dict(container.properties.initialExtent)
+                    if container
+                    else dict(self._gis.properties.defaultExtent),
+                    "spatialReference": dict(container.properties.spatialReference)
+                    if container
+                    else dict(self._gis.properties.defaultExtent.spatialReference),
                 },
                 "operationalLayers": layers,
                 "exportOptions": {"outputSize": [600, 400], "dpi": 96},
             }
-            print()
         else:
             return None
         if (
@@ -13806,7 +13848,7 @@ class Item(dict):
             serviceitem_id = self._check_publish_status(ret, folder)
         return Item(self._gis, serviceitem_id)
 
-    def move(self, folder: str, owner: Optional[str] = None):
+    def move(self, folder: str):
         """
         The ``move`` method moves the current item to the name of the folder passed when ``move`` is called.
 
@@ -13817,9 +13859,6 @@ class Item(dict):
                           Use '/' for the root folder. For other folders, pass in the
                           folder name as a string, or a dictionary containing the folder ID,
                           such as the dictionary obtained from the folders property.
-        ----------------  ---------------------------------------------------------------
-        owner             Optional string or Owner object.  The name of the user to
-                          move to.
         ================  ===============================================================
 
         :return:
@@ -14940,6 +14979,61 @@ class Item(dict):
             return self._portal.con.get(url, params)
         except:
             return {}
+
+    # ----------------------------------------------------------------------
+    @functools.lru_cache(maxsize=255)
+    def _validate_url(
+        self, url: str | None = None, return_type: str | None = None
+    ) -> str:
+        """checks if the URL endpoint is reachable via public and/or private url
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        url                 Optional String. URL to check. If `None` it is obtained from the Item['url'] key
+        ---------------     --------------------------------------------------------------------
+        return_type         Option String. The options are "BOTH", "PUBLIC_ONLY", "PRIVATE_ONLY".
+                            When "BOTH" is selected, which is defualt first the public URL is
+                            validated if that fails, then the private URL is given. For
+                            "PUBLIC_ONLY", the public URL is given back. For "PRIVATE_ONLY" only
+                            the private URL is given. If no private URL exists, then the public is
+                            returned.
+
+        ===============     ====================================================================
+
+        :returns: string
+        """
+        if return_type is None:
+            return_type = "BOTH"
+        elif str(return_type).upper() in ["BOTH", "PRIVATE_ONLY", "PUBLIC_ONLY"]:
+            return_type = str(return_type).upper()
+        else:
+            raise ValueError("Invalid `return_type`.")
+        if url is None:
+            url = self["url"]
+        res = self._gis._private_service_url(url)
+        private_url = res.get("privateServiceUrl", None)
+        public_url = res.get("serviceUrl", None)
+        if return_type == "BOTH":
+            if private_url is None and public_url:
+                return public_url
+            elif private_url is None and public_url is None:
+                return url
+            elif public_url == private_url:
+                return public_url
+            elif public_url != private_url:
+                for purl in [public_url, private_url]:
+                    try:
+                        if purl:
+                            self._gis._con.get(purl)
+                            return purl
+                    except:
+                        ...
+        elif return_type == "PUBLIC_ONLY":
+            return public_url
+        elif return_type == "PRIVATE_ONLY":
+            return private_url or public_url
+        return url
 
 
 ########################################################################
