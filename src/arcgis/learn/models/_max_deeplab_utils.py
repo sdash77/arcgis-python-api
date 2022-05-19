@@ -1322,10 +1322,6 @@ def show_results_panoptic(model, rows=5, thresh=0.5, **kwargs):
     class_confidence, classes = F.softmax(preds[1], dim=-1).max(-1)
     semantic = F.softmax(preds[2], dim=1).argmax(dim=1)
 
-    bsz = model.learn.dl(ds_type).batch_size
-    # Limit batch size to validation dataset size
-    if (len(model.learn.data.valid_dl)) < bsz:
-        bsz = len(model.learn.data.valid_dl)
     category_dict = model._data.class_mapping
     category_dict[0] = "NoData"
     instance_classes = model._data.instance_classes
@@ -1354,7 +1350,7 @@ def show_results_panoptic(model, rows=5, thresh=0.5, **kwargs):
     pred_class_names = []
     pred_scores = []
 
-    for index in range(bsz):
+    for index in range(n_items):
         keep_pred = keep_pred_instances[1][keep_pred_instances[0] == index]
         pred_instances.append(instances.detach()[index, keep_pred].cpu().numpy())
         pred_classes.append(classes.detach()[index, keep_pred].cpu().numpy())
@@ -1372,7 +1368,7 @@ def show_results_panoptic(model, rows=5, thresh=0.5, **kwargs):
     pred_semantic_classes = []
     pred_semantic_class_names = []
 
-    for index in range(bsz):
+    for index in range(n_items):
         keep_gt = keep_gt_instances[1][keep_gt_instances[0] == index]
         gt_instances.append(y[0].detach()[index, keep_gt].cpu().numpy())
         gt_classes.append(y[1].detach()[index, keep_gt].cpu().numpy())
@@ -1395,9 +1391,9 @@ def show_results_panoptic(model, rows=5, thresh=0.5, **kwargs):
     else:
         color_mapping = model._data.color_mapping
 
-    f, ax = plt.subplots(bsz, 4, figsize=(18, 6 * bsz), squeeze=False)
+    f, ax = plt.subplots(n_items, 4, figsize=(18, 6 * n_items), squeeze=False)
 
-    for index in range(bsz):
+    for index in range(n_items):
         # Display image
         display_image = roll_image(x.detach().cpu().numpy()[index])
         ax[index, 0].imshow(display_image)
