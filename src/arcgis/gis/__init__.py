@@ -11386,7 +11386,7 @@ class Item(dict):
 
         :return: bool
         """
-        url = f"{self._portal.resturl}content/users/{self._gis.users.me.username}/items/{self.itemid}/canDelete"
+        url = f"{self._portal.resturl}content/users/{self.owner}/items/{self.itemid}/canDelete"
         params = {"f": "json"}
         try:
             return self._gis._con.get(url, params).get("success", False)
