@@ -1,6 +1,7 @@
 """
 Entry point to working with licensing on Portal or ArcGIS Online
 """
+from __future__ import annotations
 import datetime
 from .._impl._con import Connection
 from ..._impl.common._mixins import PropertyMap
@@ -624,7 +625,7 @@ class License(object):
     def assign(
         self,
         username: str,
-        entitlements: list,
+        entitlements: list[str] | str,
         suppress_email: bool = True,
         overwrite: bool = True,
     ):
@@ -634,17 +635,17 @@ class License(object):
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
-        username            required string, the name of the user you wish to
+        username            Required string, the name of the user you wish to
                             assign an entitlement to.
         ---------------     ----------------------------------------------------
-        entitlements        required list/str, a list of entitlements values
+        entitlements        Required list of strings or strings, of entitlements values.
         ---------------     ----------------------------------------------------
-        suppress_email      optional boolean, if True, the org will not notify
+        suppress_email      Optional boolean, if True, the org will not notify
                             a user that their entitlements has changed (default)
                             If False, the org will send an email notifying a
                             user that their entitlements have changed.
         ---------------     ----------------------------------------------------
-        overwrite           optional boolean, if True, existing entitlements
+        overwrite           Optional boolean, if True, existing entitlements
                             for the user are dropped
         ===============     ====================================================
 
@@ -679,20 +680,22 @@ class License(object):
         return res
 
     # ----------------------------------------------------------------------
-    def revoke(self, username: str, entitlements: list, suppress_email: bool = True):
+    def revoke(
+        self, username: str, entitlements: list[str] | str, suppress_email: bool = True
+    ):
         """
         removes a specific license from a given entitlement
 
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
-        username            required string, the name of the user you wish to
+        username            Required string, the name of the user you wish to
                             assign an entitlement to.
         ---------------     ----------------------------------------------------
-        entitlments         required list, a list of entitlements values,
+        entitlments         Required list of strings or string, a list of entitlements values,
                             if * is given, all entitlements will be revoked
         ---------------     ----------------------------------------------------
-        suppress_email      optional boolean, if True, the org will not notify
+        suppress_email      Optional boolean, if True, the org will not notify
                             a user that their entitlements has changed (default)
                             If False, the org will send an email notifying a
                             user that their entitlements have changed.
@@ -705,7 +708,9 @@ class License(object):
             return self.assign(
                 username=username, entitlements=[], suppress_email=suppress_email
             )
-        elif isinstance(entitlements, list):
+        if isinstance(entitlements, str):
+            entitlements = entitlements.split(",")
+        if isinstance(entitlements, list):
             es = self.check(user=username)
 
             if len(es) > 0:
