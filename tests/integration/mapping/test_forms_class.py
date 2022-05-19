@@ -846,6 +846,5 @@ class Test_Forms(unittest.TestCase):
             self.fail("Error during test: " + testException.__str__())
 
 
-# TestModule
-def tearDownModule():
-    print("**End GIS module Tests**")
+if __name__ == "__main__":
+    unittest.main()
