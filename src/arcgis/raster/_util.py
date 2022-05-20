@@ -1312,24 +1312,25 @@ def _get_stac_metadata_file(item):
     :param item: input STAC Item (JSON dictionary)
     :return string (URL of the STAC Item metadata file)
     """
-    if "metadata" in item["assets"]:
-        href = item["assets"]["metadata"]["href"]
-        return href
-    elif "MTL" in item["assets"]:
-        href = item["assets"]["MTL"]["href"]
-        return href
-    elif "data" in item["assets"]:
-        data_href = item["assets"]["data"]["href"]
-        mtl_file = item["id"] + "_MTL.txt"
-        href = data_href.replace("index.html", mtl_file)
-        return href
+
+    href = None
+    if item["collection"] == "sentinel-s2-l2a-cogs":
+        href = item["links"][1]["href"] + "\Multiband"
     else:
-        links = item["links"]
-        for i in range(len(links)):
-            if links[i]["rel"] == "metadata":
-                href = links[i]["href"]
-                return href
-        return None
+        if "metadata" in item["assets"]:
+            href = item["assets"]["metadata"]["href"]
+        elif "MTL" in item["assets"]:
+            href = item["assets"]["MTL"]["href"]
+        elif "data" in item["assets"]:
+            data_href = item["assets"]["data"]["href"]
+            mtl_file = item["id"] + "_MTL.txt"
+            href = data_href.replace("index.html", mtl_file)
+        else:
+            links = item["links"]
+            for i in range(len(links)):
+                if links[i]["rel"] == "metadata":
+                    href = links[i]["href"]
+    return href
 
 
 def _get_stac_links(stac_json, rel):
