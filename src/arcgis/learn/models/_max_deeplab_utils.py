@@ -1322,7 +1322,7 @@ def show_results_panoptic(model, rows=5, thresh=0.5, **kwargs):
     class_confidence, classes = F.softmax(preds[1], dim=-1).max(-1)
     semantic = F.softmax(preds[2], dim=1).argmax(dim=1)
 
-    category_dict = model._data.class_mapping
+    category_dict = model._data.class_mapping.copy()
     category_dict[0] = "NoData"
     instance_classes = model._data.instance_classes
 

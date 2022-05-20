@@ -2930,9 +2930,9 @@ def prepare_data(
         data.valid_ds.x._div = 255.0
         data.is_normalized = True
 
-        if dataset_type == "Panoptic_Segmentation":
-            data.c = len(data.classes)
-            data.show_batch = types.MethodType(show_batch_panoptic, data)
+    if dataset_type == "Panoptic_Segmentation":
+        data.c = len(data.classes)
+        data.show_batch = types.MethodType(show_batch_panoptic, data)
 
     if dataset_type in ["PASCAL_VOC_rectangles", "KITTI_rectangles"]:
         data.show_batch = types.MethodType(show_batch_object_detection, data)

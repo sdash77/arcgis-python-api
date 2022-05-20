@@ -85,13 +85,14 @@ class MaXDeepLabConfig:
 class MaXDeepLab(ModelExtension):
     """
     Creates a ``MaXDeepLab`` panoptic segmentation model.
-    This model supports only RGB imagery.
 
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data
                             object from ``prepare_data`` function.
+                            MaXDeepLab only supports image sizes in
+                            multiples of 16 (e.g. 256, 416, etc.).
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained
                             model is saved.
@@ -102,9 +103,8 @@ class MaXDeepLab(ModelExtension):
 
     def __init__(self, data, backbone=None, pretrained_path=None, **kwargs):
         self._check_dataset_support(data)
-        data.c = len(data.class_mapping) + 1
-        super().__init__(data, MaXDeepLabConfig, pretrained_path, **kwargs)
-        self._backbone = backbone
+        super().__init__(data, MaXDeepLabConfig, pretrained_path=pretrained_path, **kwargs)
+        self._backbone = None
 
     @property
     def supported_datasets(self):
