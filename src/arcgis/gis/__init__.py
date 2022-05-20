@@ -3864,7 +3864,25 @@ class UserManager(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        query                  Required String.  The search query.
+        query                  Required String.  The search query. When the search filters
+                               contain two or more clauses, the recommended schema is to have
+                               clauses separated by blank, or `AND`, e.g.
+
+                               :Usage Example:
+
+
+                               gis.users.advanced_search(query='owner:USERNAME type:map')
+                               # or
+                               gis.users.advanced_search(query='type:map AND owner:USERNAME')
+
+                               .. warning::
+                               When the clauses are separated by comma, the filtering condition
+                               for `owner` should not be placed at the first position, e.g.
+                               `gis.users.advanced_search(query='type:map, owner:USERNAME')`
+                               is allowed, while
+                               `gis.users.advanced_search(query='owner:USERNAME, type:map')`
+                               is not. For more, please check
+                               https://developers.arcgis.com/rest/users-groups-and-items/search-reference.htm
         ------------------     --------------------------------------------------------------------
         return_count           Optional Boolean.  If True, the number of users found by the query
                                string is returned.
@@ -5889,7 +5907,27 @@ class ContentManager(object):
         ================    ===============================================================
         **Argument**        **Description**
         ----------------    ---------------------------------------------------------------
-        query               Required String.  The search query.
+        query               Required String.  The search query. When the search filters
+                            contain two or more clauses, the recommended schema is to have
+                            clauses separated by blank, or `AND`, e.g.
+
+                            :Usage Example:
+
+
+                            gis.content.advanced_search(query='owner:USERNAME type:map')
+                            # or
+                            gis.content.advanced_search(query='type:map AND owner:USERNAME')
+
+
+                            .. warning::
+                            When the clauses are separated by comma, the filtering condition
+                            for `owner` should not be placed at the first position, e.g.
+                            `gis.content.advanced_search(query='type:map, owner:USERNAME')`
+                            is allowed, while
+                            `gis.content.advanced_search(query='owner:USERNAME, type:map')`
+                            is not. For more, please check
+                            https://developers.arcgis.com/rest/users-groups-and-items/search-reference.htm
+
         ----------------    ---------------------------------------------------------------
         bbox                Optional String/List. This is the xmin,ymin,xmax,ymax bounding
                             box to limit the search in.  Items like documents do not have
@@ -6166,7 +6204,24 @@ class ContentManager(object):
         ================  ==========================================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------------------------
-        query             Required string. A query string.  See notes above.
+        query             Required string. A query string.  See notes above. When the search filters
+                          contain two or more clauses, the recommended schema is to have clauses
+                          separated by blank, or `AND`, e.g.
+
+                          :Usage Example:
+
+
+                          gis.content.search(query='owner:USERNAME type:map')
+                          # or
+                          gis.content.search(query='type:map AND owner:USERNAME')
+
+                          .. warning::
+                          When the clauses are separated by comma, the filtering condition
+                          for `owner` should not be placed at the first position, e.g.
+                          `gis.content.search(query='type:map, owner:USERNAME')`
+                          is recommended, while
+                          `gis.content.search(query='owner:USERNAME, type:map')`
+                          is not.
         ----------------  --------------------------------------------------------------------------
         item_type         Optional string. The type of item to search. See `Items and item types <https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm>`_
                           for comprehensive list of values (the type column).
@@ -8171,7 +8226,25 @@ class Group(dict):
         ================    ===============================================================
         **Argument**        **Description**
         ----------------    ---------------------------------------------------------------
-        query               Required String.  The search query.
+        query               Required String.  The search query. When the search filters
+                            contain two or more clauses, the recommended schema is to have
+                            clauses separated by blank, or `AND`, e.g.
+
+                            :Usage Example:
+
+
+                            group.search(query='owner:USERNAME type:map')
+                            # or
+                            group.search(query='type:map AND owner:USERNAME')
+
+                            .. warning::
+                            When the clauses are separated by comma, the filtering condition
+                            for `owner` should not be placed at the first position, e.g.
+                            `group.search(query='type:map, owner:USERNAME')`
+                            is allowed, while
+                            `group.search(query='owner:USERNAME, type:map')`
+                            is not. For more, please check
+                            https://developers.arcgis.com/rest/users-groups-and-items/search-reference.htm
         ----------------    ---------------------------------------------------------------
         bbox                Optional String/List. This is the xmin,ymin,xmax,ymax bounding
                             box to limit the search in.  Items like documents do not have
