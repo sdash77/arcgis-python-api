@@ -862,6 +862,9 @@ class _ImageryUploaderAGOL:
                     )
 
                 url = blob.url.split("?", 1)[0]
+                url_suffix = (
+                    "arcgis.com" if "arcgis.com" in url else "blob.core.windows.net"
+                )
 
                 if is_dir:
                     if self.file_list[i]["single_image"]:
@@ -878,7 +881,10 @@ class _ImageryUploaderAGOL:
                                         0 : url.find(folder_match) + len(folder_match)
                                     ]
                                     target = folder_url.replace(
-                                        folder_url[0 : folder_url.find(".net") + 4],
+                                        folder_url[
+                                            0 : folder_url.find(url_suffix)
+                                            + len(url_suffix)
+                                        ],
                                         "/vsiaz",
                                     )
 
@@ -899,7 +905,7 @@ class _ImageryUploaderAGOL:
                             source = os.path.dirname(file_name)
                             target = os.path.dirname(
                                 url.replace(
-                                    url[0 : url.find(".net") + 4],
+                                    url[0 : url.find(url_suffix) + len(url_suffix)],
                                     "/vsiaz",
                                 )
                             )
