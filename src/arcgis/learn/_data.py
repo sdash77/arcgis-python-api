@@ -1209,7 +1209,8 @@ def prepare_data(
     chip_size               Optional integer, default 224. Size of the image to train the model.
                             Images are cropped to the specified chip_size.
                             If image size is less than chip_size, the image size is
-                            used as chip_size. Not supported for SuperResolution,
+                            used as chip_size. A chip size that is a multiple of 32 pixels
+                            is recommended. Not supported for SuperResolution,
                             SiamMask, WNet_cGAN, Pix2Pix and CycleGAN.
     ---------------------   -------------------------------------------
     val_split_pct           Optional float. Percentage of training data to keep
