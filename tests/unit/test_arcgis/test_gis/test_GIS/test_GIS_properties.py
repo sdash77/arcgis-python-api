@@ -1,6 +1,3 @@
-import pytest
-from pytest_blockage import MockHttpCall
-
 from utils.mocks import *
 
 

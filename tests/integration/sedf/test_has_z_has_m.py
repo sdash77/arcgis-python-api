@@ -12,7 +12,6 @@ from arcgis.features import GeoAccessor, GeoSeriesAccessor
 from arcgis.geometry import Geometry
 
 import unittest
-import pytest
 
 SAMPLE_GEOMETRY_HASZ_HASM = {
     "hasZ": True,

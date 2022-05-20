@@ -1,4 +1,3 @@
-import pytest
 import os, sys
 
 # sys.path.append(r"D:\SVN\git_hub\ArcGIS\geo_public")

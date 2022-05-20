@@ -7,7 +7,6 @@ import os
 import sys
 
 # sys.path.append(r"D:\SVN\git_hub\ArcGIS\geo_public")
-import pytest
 import pandas as pd
 import datetime
 from arcgis.geometry import Geometry
