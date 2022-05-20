@@ -7708,10 +7708,10 @@ class Raster:
                               API Item URL.
 
                               .. note::
-                                Currently only Landsat-8 STAC Items are supported for this method.
+                                Currently only Sentinel-2 Cloud-Optimized GeoTIFFs (COGs) STAC Items are supported for this method.
 
                               Example:
-                                    "https://landsat-stac.s3.amazonaws.com/landsat-8-l1/010/117/2015-01-02/LC80101172015002LGN00.json"
+                                    "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/12/S/YJ/2020/10/S2A_12SYJ_20201006_0_L2A/S2A_12SYJ_20201006_0_L2A.json"
         -----------------     --------------------------------------------------------------------
         request_params        Optional dictionary. This parameter can be used to set the properties
                               for making the STAC Item request. These are the `requests.get() method <https://requests.readthedocs.io/en/master/api/#requests.get>`__
@@ -7734,7 +7734,7 @@ class Raster:
 
                               .. note::
                                 When using ``image_server`` engine, RasterRendering service should be enabled \
-                                in the active GIS connection.
+                                in the active GIS connection (Supported in 11.0 onwards).
         -----------------     --------------------------------------------------------------------
         gis                   Optional :class:`~arcgis.gis.GIS` object. The GIS of the Raster object.
         =================     ====================================================================
@@ -11955,7 +11955,7 @@ class RasterCollection:
                               the search needs to be performed.
 
                               .. note::
-                                Currently only Landsat-8 STAC Item queries are supported for this method.
+                                Currently only Sentinel-2 Cloud-Optimized GeoTIFFs (COGs) STAC Item queries are supported for this method.
 
                               Example:
                                     "https://earth-search.aws.element84.com/v0"
@@ -11971,11 +11971,11 @@ class RasterCollection:
 
                               Example:
                                     | {
-                                    |   "collections": ["landsat-8-l1-c1"],
+                                    |   "collections": ["sentinel-s2-l2a-cogs"],
                                     |   "bbox": [-110,39.5,-105,40.5],
-                                    |   "query": {"eo:cloud_cover": {"lt": 30}},
-                                    |   "datetime": "2020-10-05T00:00:00Z/2020-10-18T12:31:12Z",
-                                    |   "limit": 10
+                                    |   "query": {"eo:cloud_cover": {"lt": 0.5}},
+                                    |   "datetime": "2020-10-05T00:00:00Z/2020-10-10T12:31:12Z",
+                                    |   "limit": 100
                                     | }
         -----------------     --------------------------------------------------------------------
         attribute_dict        Optional dictionary. The attribute information to be added to each
@@ -11994,6 +11994,7 @@ class RasterCollection:
                                     |   "Sensor":"platform",
                                     |   "StdTime":"datetime",
                                     |   "Cloud Cover":"eo:cloud_cover",
+                                    |   "Spatial Reference":"proj:epsg",
                                     |   "Extent":"bbox"
                                     | }
 
@@ -12037,7 +12038,7 @@ class RasterCollection:
                               .. note:: 
                               
                                 When using ``image_server`` engine, RasterRendering service should be enabled \
-                                in the active GIS connection.
+                                in the active GIS connection (Supported in 11.0 onwards).
         -----------------     --------------------------------------------------------------------
         gis                   Optional :class:`~arcgis.gis.GIS` object. The GIS of the RasterCollection object.
         =================     ====================================================================
@@ -12050,11 +12051,11 @@ class RasterCollection:
 
             rc = RasterCollection.from_stac_api(stac_api=stac_api_url,
                                                 query={
-                                                        "collections": ["landsat-8-l1-c1"],
+                                                        "collections": ["sentinel-s2-l2a-cogs"],
                                                         "bbox": [-110,39.5,-105,40.5],
-                                                        "query": {"eo:cloud_cover": {"lt": 30}},
-                                                        "datetime": "2020-10-05T00:00:00Z/2020-10-18T12:31:12Z",
-                                                        "limit": 10
+                                                        "query": {"eo:cloud_cover": {"lt": 0.5}},
+                                                        "datetime": "2020-10-05T00:00:00Z/2020-10-10T12:31:12Z",
+                                                        "limit": 100
                                                       },
                                                 attribute_dict={
                                                                 "Name":"id",
