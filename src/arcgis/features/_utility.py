@@ -76,7 +76,7 @@ class UtilityNetworkManager(object):
         configuration: dict | None = None,
         result_type: str | None = None,
         result_types: list[dict] | None = None,
-    ):
+    ) -> dict:
         """
         A trace refers to a pre-configured algorithm that systematically
         travels a network to return results. Generalized traces allow you to
@@ -154,6 +154,20 @@ class UtilityNetworkManager(object):
                                         "resultTypeFields":[{"networkSourceId":<int>,"fieldname":<value>},...]
                                     },...]
         ====================    ==================================================
+
+        :return:
+            A dictionary with keys and value types of:
+            {
+                "traceResults": {
+                    "elements": list,
+                    "diagramName": str,
+                    "globalFunctionResults": list,
+                    "kFeaturesForKNNFound": bool,
+                    "startingPointsIgnored" bool,
+                    "warnings": list
+                }
+                "success": bool
+            }
         """
         url = "%s/trace" % self._url
 
@@ -174,7 +188,7 @@ class UtilityNetworkManager(object):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def disable_topology(self):
+    def disable_topology(self) -> dict:
         """
         Disables the network topology for a utility network. When the
         topology is disabled, feature and association edits do not generate
@@ -205,7 +219,7 @@ class UtilityNetworkManager(object):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def enable_topology(self, error_count: int = 10000):
+    def enable_topology(self, error_count: int = 10000) -> dict:
         """
         Enabling the network topology for a utility network is done on the
         **DEFAULT** version. Enabling is **not** supported in named versions.
@@ -244,7 +258,7 @@ class UtilityNetworkManager(object):
     # ----------------------------------------------------------------------
     def disable_subnetwork_controller(
         self, network_source_id: str, global_id: str, terminal_id: str
-    ):
+    ) -> dict:
         """
         A subnetwork controller (or simply, a source or a sink) is the
         origin (or destination) of resource flow for a subpart of the
@@ -291,7 +305,7 @@ class UtilityNetworkManager(object):
         subnetwork_name: str | None = None,
         description: str | None = None,
         notes: str | None = None,
-    ):
+    ) -> dict:
         """
         A subnetwork controller is the origin (or destination) of resource
         flow for a subpart of the network (e.g., a circuit breaker in
@@ -352,7 +366,7 @@ class UtilityNetworkManager(object):
         result_types: list[dict] | None = None,
         moment: int | None = None,
         run_async: bool = False,
-    ):
+    ) -> dict:
         """
         The `export_subnetwork` operation is used to export information
         about a subnetwork into a JSON file. That information can then be
@@ -398,7 +412,14 @@ class UtilityNetworkManager(object):
                                                     the current moment.
         ====================================        ====================================================================
 
-
+        :return:
+            A dictionary with keys and value types of:
+            {
+                "moment": int,
+                "url": str,
+                "subnetworkHasBeenDeleted": bool,
+                "success": bool
+            }
         """
 
         url = "%s/exportSubnetwork" % self._url
@@ -425,7 +446,7 @@ class UtilityNetworkManager(object):
         self,
         moments_to_return: list[str] | None = None,
         moment: int | None = None,
-    ):
+    ) -> dict:
         """
         The `query_network_moments` operation returns the moments related
         to the network topology and operations against the topology. This
@@ -447,6 +468,8 @@ class UtilityNetworkManager(object):
                                                     the current moment.
         ====================================        ====================================================================
 
+        :return:
+            A dictionary with keys and value types of: {"networkMoments": list, "validateNetworkTopology": bool, "success": bool}
         """
         url = "%s/queryNetworkMoments" % self._url
         params = {
@@ -499,7 +522,7 @@ class UtilityNetworkManager(object):
         extent: dict = None,
         out_sr: int | dict[str, Any] | None = None,
         moment: int | None = None,
-    ):
+    ) -> dict:
         """
         The `synthesize_association_geometries` operation is used to export
         geometries representing associations that are synthesized as line
@@ -542,7 +565,8 @@ class UtilityNetworkManager(object):
                                                     the current moment.
         ====================================        ====================================================================
 
-
+        :return:
+            A dictionary with keys and value types of: {"maxGeometryCountExceeded": bool, "associations": list, "success": bool}
         """
         url = "%s/synthesizeAssociationGeometries" % self._url
         params = {
@@ -560,7 +584,7 @@ class UtilityNetworkManager(object):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def update_is_connected(self):
+    def update_is_connected(self) -> dict:
         """
 
         Utility network features have an attribute called IsConnected that
@@ -584,7 +608,7 @@ class UtilityNetworkManager(object):
         all_subnetwork_tier: bool = False,
         continue_on_failure: bool = False,
         trace_configuration: dict | None = None,
-    ):
+    ) -> dict:
         """
         A subnetwork is updated by calling the `update_subnetwork` operation.
         With this operation, one or all of the subnetworks in a single tier
@@ -640,7 +664,7 @@ class UtilityNetworkManager(object):
         run_async: bool = False,
         return_edits: bool = False,
         validate_set: list[dict] | None = None,
-    ):
+    ) -> dict:
         """
         Validating the network topology for a utility network maintains
         consistency between feature editing space and network topology space.
@@ -743,7 +767,7 @@ class UtilityNetworkManager(object):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def associations(self):
+    def associations(self) -> dict:
         """
         The associations resource provides access to operations that
         allow you to query and extract useful information from the
@@ -751,7 +775,7 @@ class UtilityNetworkManager(object):
 
         Available starting at Enterprise 10.9.1
 
-        :return: "success" if able to reach associations, else "error"
+        :return: A dictionary with two keys {"associations":list, "success": bool}
         """
 
         if self._gis.version >= [9, 2]:
@@ -766,7 +790,7 @@ class UtilityNetworkManager(object):
         moment: int | None = None,
         types: list[str] | None = None,
         return_deletes: bool = False,
-    ):
+    ) -> dict:
         """
         The query operation allows you to query the associations table
         and return association information for network features in a utility network.
@@ -822,7 +846,7 @@ class UtilityNetworkManager(object):
         error_filter: str = "none",
         stop_at_first_spatial: bool = True,
         max_depth: int | None = None,
-    ):
+    ) -> dict:
         """
         The `traverse_associations` operation allows you to obtain and extract useful
         information from the associations table in a utility network.
@@ -922,7 +946,7 @@ class UtilityNetworkManager(object):
             return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def locations(self):
+    def locations(self) -> dict:
         """
         The `locations` resource provides access to an operation that allows
         you to query the locatability of a provided set of objects and
@@ -930,7 +954,7 @@ class UtilityNetworkManager(object):
 
         Introduced at Enterprise 10.9.1
 
-        :return: "success" if able to reach associations, else "error"
+        :return: "success" if able to reach locations, else "error"
         """
 
         if self._gis.version >= [9, 2]:
@@ -949,7 +973,7 @@ class UtilityNetworkManager(object):
         containment_associations: bool = False,
         locations: bool = False,
         out_sr: int | dict | None = None,
-    ):
+    ) -> dict:
         """
         The query operation queries the locatability of the provided set of objects
         and optionally synthesizes geometry to be returned for each object in a
@@ -989,6 +1013,8 @@ class UtilityNetworkManager(object):
         out_sr                                      Optional Dictionary or Integer. The output spatial reference.
         ====================================        ====================================================================
 
+        :return:
+            A dictionary with keys and value types of {"exceededTransferLimit": bool, "objects": list, "associations": list, "success": bool}
         """
 
         if self._gis.version >= [9, 2]:
@@ -1009,12 +1035,14 @@ class UtilityNetworkManager(object):
             return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def trace_configurations(self):
+    def trace_configurations(self) -> dict:
         """
         The `trace_configurations` resource provides access to all trace
         configuration operations for a utility network.
         It is returned as an array of named trace configurations with the creator,
         name, and global ID for each.
+
+        :return: An instance of TraceConfigurationsManager Class
         """
 
         if self._gis.version >= [9, 2]:
@@ -1062,20 +1090,25 @@ class TraceConfigurationsManager(object):
             self._version_name = None
 
     # ----------------------------------------------------------------------
-    def list(self):
+    def list(self) -> dict:
         """
         List of all trace configurations in a service.
+
+        :return:
+            A dictionary with two keys: {"traceConfigurations": list, "success": bool}
         """
         return self._con.post(self._url, {"f": "json"})
 
     # ----------------------------------------------------------------------
-    def get(self, global_id: str):
+    def get(self, global_id: str) -> dict:
         """
         Get a specific trace configuration by passing its global id.
+
+        :return: A dictionary depicting the trace configuration if found, else None.
         """
-        configs = self.list()
+        configs = self.query()
         for config in configs["traceConfigurations"]:
-            if config["globalId"] is global_id:
+            if config["globalId"] == global_id:
                 return config
 
     # ----------------------------------------------------------------------
@@ -1085,7 +1118,7 @@ class TraceConfigurationsManager(object):
         creators: list[str] | None = None,
         tags: list[str] | None = None,
         names: list[str] | None = None,
-    ):
+    ) -> dict:
         """
         The query operation returns all properties from one or more
         named trace configurations in a utility network.
@@ -1105,6 +1138,9 @@ class TraceConfigurationsManager(object):
         names                       Optional list of strings. The names of the
                                     named trace configurations to be queried.
         ========================    ===========================================
+
+        :return:
+            A dictionary with two keys: {"traceConfigurations": list, "success": bool}
         """
         if self._gis.version >= [9, 2]:
             url = "%s/query" % self._url
@@ -1118,11 +1154,13 @@ class TraceConfigurationsManager(object):
             return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def delete(self, global_ids: list[str]):
+    def delete(self, global_ids: list[str]) -> dict:
         """
         The delete operation provides the ability to delete one or more named
         trace configurations in a utility network. A named trace configuration
         can only be deleted by an administrator or its creator.
+
+        :return: A dictionary with key "success" indicating True or False.
         """
         if self._gis.version >= [9, 2]:
             url = "%s/delete" % self._url
@@ -1141,7 +1179,7 @@ class TraceConfigurationsManager(object):
         description: str | None = None,
         result_types: list[dict] | None = None,
         tags: list[str] | None = None,
-    ):
+    ) -> dict:
         """
         The create operation on the traceConfigurations resource provides the
         ability to create a single named trace configuration. Named trace
@@ -1150,6 +1188,8 @@ class TraceConfigurationsManager(object):
         or field app. Multiple parameters and properties are provided with
         the create operation that support the analytic workflows associated
         with the trace operation.
+
+        If your trace configuration already exists, use the query method to find it.
 
         ======================      ===============================================
         **Argument**                **Description**
@@ -1191,6 +1231,7 @@ class TraceConfigurationsManager(object):
                                     user-provided tags.
         ======================      ===============================================
 
+        :return: A dictionary with key "success" indicating True or False.
         """
         if self._gis.version >= [9, 2]:
             url = "%s/create" % self._url
@@ -1216,7 +1257,7 @@ class TraceConfigurationsManager(object):
         trace_config: dict | None = None,
         result_types: list[dict] | None = None,
         tags: list[str] | None = None,
-    ):
+    ) -> dict:
         """
         The alter operation provides the ability to alter a single named
         trace configuration. A named trace configuration can only be altered
@@ -1270,6 +1311,7 @@ class TraceConfigurationsManager(object):
                                     user-provided tags.
         ======================      ===============================================
 
+        :return: A dictionary with key "success" indicating True or False.
         """
 
         if self._gis.version >= [9, 2]:
