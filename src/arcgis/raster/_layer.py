@@ -7709,7 +7709,7 @@ class Raster:
 
                               .. note::
                                 Currently only Sentinel-2 Cloud-Optimized GeoTIFFs (COGs) STAC Items
-                                are supported for this method (Supported in 11.0 onwards).
+                                are supported for this method (Available in 11.0 onwards).
 
                               Example:
                                     "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/12/S/YJ/2020/10/S2A_12SYJ_20201006_0_L2A/S2A_12SYJ_20201006_0_L2A.json"
@@ -11957,7 +11957,7 @@ class RasterCollection:
 
                               .. note::
                                 Currently only Sentinel-2 Cloud-Optimized GeoTIFFs (COGs) STAC Item queries
-                                are supported for this method (Supported in 11.0 onwards).
+                                are supported for this method (Available in 11.0 onwards).
 
                               Example:
                                     "https://earth-search.aws.element84.com/v0"
