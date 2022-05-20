@@ -9777,7 +9777,7 @@ def _raster_item(raster: Union[Raster, ImageryLayer], raster_id=None):
                 ) or not hasattr(raster, "_lazy_token"):
                     from .utility import _generate_layer_token
 
-                    raster._lazy_token = _generate_layer_token(raster)
+                    raster._lazy_token = _generate_layer_token(raster, url)
                 if isinstance(raster._lazy_token, str):
                     url = url + "?token=" + raster._lazy_token
             except:
