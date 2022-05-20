@@ -7708,7 +7708,8 @@ class Raster:
                               API Item URL.
 
                               .. note::
-                                Currently only Sentinel-2 Cloud-Optimized GeoTIFFs (COGs) STAC Items are supported for this method.
+                                Currently only Sentinel-2 Cloud-Optimized GeoTIFFs (COGs) STAC Items
+                                are supported for this method (Supported in 11.0 onwards).
 
                               Example:
                                     "https://sentinel-cogs.s3.us-west-2.amazonaws.com/sentinel-s2-l2a-cogs/12/S/YJ/2020/10/S2A_12SYJ_20201006_0_L2A/S2A_12SYJ_20201006_0_L2A.json"
@@ -7734,7 +7735,7 @@ class Raster:
 
                               .. note::
                                 When using ``image_server`` engine, RasterRendering service should be enabled \
-                                in the active GIS connection (Supported in 11.0 onwards).
+                                in the active GIS connection.
         -----------------     --------------------------------------------------------------------
         gis                   Optional :class:`~arcgis.gis.GIS` object. The GIS of the Raster object.
         =================     ====================================================================
@@ -11955,7 +11956,8 @@ class RasterCollection:
                               the search needs to be performed.
 
                               .. note::
-                                Currently only Sentinel-2 Cloud-Optimized GeoTIFFs (COGs) STAC Item queries are supported for this method.
+                                Currently only Sentinel-2 Cloud-Optimized GeoTIFFs (COGs) STAC Item queries
+                                are supported for this method (Supported in 11.0 onwards).
 
                               Example:
                                     "https://earth-search.aws.element84.com/v0"
@@ -12038,7 +12040,7 @@ class RasterCollection:
                               .. note:: 
                               
                                 When using ``image_server`` engine, RasterRendering service should be enabled \
-                                in the active GIS connection (Supported in 11.0 onwards).
+                                in the active GIS connection.
         -----------------     --------------------------------------------------------------------
         gis                   Optional :class:`~arcgis.gis.GIS` object. The GIS of the RasterCollection object.
         =================     ====================================================================
