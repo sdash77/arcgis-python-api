@@ -555,7 +555,6 @@ class ArcGISModel(object):
 
         if not hasattr(self, "_backbone"):
             self._backbone = models.resnet34
-            logger.warning("unsupported backbone, reverting to ResNet34.")
 
         if hasattr(data, "_is_multispectral"):  # multispectral support
             self._is_multispectral = getattr(data, "_is_multispectral")
