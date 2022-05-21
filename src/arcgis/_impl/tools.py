@@ -11336,6 +11336,10 @@ class _RasterAnalysisTools(BaseAnalytics):
         process_all_raster_items=False,
         blacken_around_feature=False,
         fix_chip_size=True,
+        additional_input_raster=None,
+        input_instance_data=None,
+        instance_class_value_field=None,
+        min_polygon_overlap_ratio=0,
         context=None,
         future=False,
         **kwargs,
@@ -11526,6 +11530,11 @@ class _RasterAnalysisTools(BaseAnalytics):
                 "Classified_Tiles",
                 "RCNN_Masks",
                 "Labeled_Tiles",
+                "MultiLabeled_Tiles",
+                "Export_Tiles",
+                "CycleGAN",
+                "Imagenet",
+                "Panoptic_Segmentation",
             ]
             if not metadata_format in metadataFormatAllowedValues:
                 raise RuntimeError(
@@ -11545,7 +11554,42 @@ class _RasterAnalysisTools(BaseAnalytics):
                     + str(reference_system_allowed_values)
                 )
 
+        if additional_input_raster is not None:
+            additional_input_raster = self._layer_input(
+                input_layer=additional_input_raster
+            )
+
+        if input_instance_data is not None:
+            input_instance_data = self._layer_input(input_layer=input_instance_data)
+
         if (
+            "currentVersion" in self._gis._tools.rasteranalysis.properties.keys()
+        ) and self._gis._tools.rasteranalysis.properties["currentVersion"] >= 11.0:
+            gpjob = self._tbx.export_training_datafor_deep_learning(
+                input_raster=input_raster,
+                output_location=output_location,
+                input_class_data=input_class_data,
+                chip_format=chip_format,
+                tile_size=tile_size,
+                stride_size=stride_size,
+                metadata_format=metadata_format,
+                class_value_field=class_value_field,
+                buffer_radius=buffer_radius,
+                input_mask_polygons=input_mask_polygons,
+                rotation_angle=rotation_angle,
+                reference_system=reference_system,
+                process_all_raster_items=process_all_raster_items,
+                blacken_around_feature=blacken_around_feature,
+                fix_chip_size=fix_chip_size,
+                additional_input_raster=additional_input_raster,
+                input_instance_data=input_instance_data,
+                instance_class_value_field=instance_class_value_field,
+                min_polygon_overlap_ratio=min_polygon_overlap_ratio,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
+        elif (
             "currentVersion" in self._gis._tools.rasteranalysis.properties.keys()
         ) and self._gis._tools.rasteranalysis.properties["currentVersion"] >= 10.8:
             gpjob = self._tbx.export_training_datafor_deep_learning(
