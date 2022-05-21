@@ -103,7 +103,9 @@ class MaXDeepLab(ModelExtension):
 
     def __init__(self, data, backbone=None, pretrained_path=None, **kwargs):
         self._check_dataset_support(data)
-        super().__init__(data, MaXDeepLabConfig, pretrained_path=pretrained_path, **kwargs)
+        super().__init__(
+            data, MaXDeepLabConfig, pretrained_path=pretrained_path, **kwargs
+        )
         self._backbone = None
 
     @property
