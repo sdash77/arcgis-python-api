@@ -106,7 +106,7 @@ class RetinaNet(ArcGISModel):
                             model used for feature extraction, which
                             is `resnet50` by default.
                             Supported backbones: ResNet family and specified Timm
-                            models from :func:`~arcgis.learn.RetinaNet.backbones`.
+                            models(experimental support) from :func:`~arcgis.learn.RetinaNet.backbones`.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.

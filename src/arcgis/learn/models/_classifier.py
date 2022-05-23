@@ -132,7 +132,7 @@ class FeatureClassifier(ArcGISModel):
                             model used for feature extraction, which is ``resnet34``
                             by default.
                             Supported backbones: ResNet family and specified Timm
-                            models from :func:`~arcgis.learn.FeatureClassifier.backbones`.
+                            models(experimental support) from :func:`~arcgis.learn.FeatureClassifier.backbones`.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -209,7 +209,7 @@ class FeatureClassifier(ArcGISModel):
 
                 class MultLabelFbetaModified(MultiLabelFbeta):
                     def fbeta_score(self, precision, recall):
-                        beta2 = self.beta**2
+                        beta2 = self.beta ** 2
                         fbeta = (
                             (1 + beta2)
                             * (precision * recall)
