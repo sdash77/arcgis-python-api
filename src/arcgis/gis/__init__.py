@@ -5911,23 +5911,31 @@ class ContentManager(object):
                             contain two or more clauses, the recommended schema is to have
                             clauses separated by blank, or `AND`, e.g.
 
-                            :Usage Example:
+                            .. code-block:: python
+                            
+                               #Usage Example:
 
 
-                            gis.content.advanced_search(query='owner:USERNAME type:map')
-                            # or
-                            gis.content.advanced_search(query='type:map AND owner:USERNAME')
+                                >>> gis.content.advanced_search(query='owner:USERNAME type:map')
+                                # or
+                                >>> gis.content.advanced_search(query='type:map AND owner:USERNAME')
 
 
                             .. warning::
-                            When the clauses are separated by comma, the filtering condition
-                            for `owner` should not be placed at the first position, e.g.
-                            `gis.content.advanced_search(query='type:map, owner:USERNAME')`
-                            is allowed, while
-                            `gis.content.advanced_search(query='owner:USERNAME, type:map')`
-                            is not. For more, please check
-                            https://developers.arcgis.com/rest/users-groups-and-items/search-reference.htm
-
+                                When the clauses are separated by comma, the filtering condition
+                                for `owner` should not be placed at the first position, e.g.
+                                
+                                .. code-block:: python
+                                
+                                    >>> gis.content.advanced_search(query='type:map, owner:USERNAME')*
+                                
+                                is allowed, while
+                                
+                                .. code-block:: python
+                                    
+                                    >>> gis.content.advanced_search(query='owner:USERNAME, type:map')
+                                
+                                is not.  For more information, please check `Users, groups and items <https://developers.arcgis.com/rest/users-groups-and-items/search-reference.htm>`_.
         ----------------    ---------------------------------------------------------------
         bbox                Optional String/List. This is the xmin,ymin,xmax,ymax bounding
                             box to limit the search in.  Items like documents do not have
