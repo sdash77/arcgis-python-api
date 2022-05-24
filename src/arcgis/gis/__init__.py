@@ -5927,7 +5927,7 @@ class ContentManager(object):
                                 
                                 .. code-block:: python
                                 
-                                    >>> gis.content.advanced_search(query='type:map, owner:USERNAME')*
+                                    >>> gis.content.advanced_search(query='type:map, owner:USERNAME')
                                 
                                 is allowed, while
                                 
