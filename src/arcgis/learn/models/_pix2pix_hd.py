@@ -39,54 +39,76 @@ class Pix2PixHD(ArcGISModel):
     **kwargs**
 
     =====================   ===========================================
-    n_gen_filters           Number of gen filters in first conv layer.
+    n_gen_filters           Optional int. Number of gen filters in first conv layer.
+                            Default: 64
     ---------------------   -------------------------------------------
-    gen_network             Selects model to use for generator.
+    gen_network             Optional string (global/local). Selects model to use for generator.
+                            Use global if gpu memory is less.
+                            Default: "local"
     ---------------------   -------------------------------------------
-    n_downsample_global     Number of downsampling layers in gen_network
+    n_downsample_global     Optional int. Number of downsampling layers in gen_network
+                            Default: 4
     ---------------------   -------------------------------------------
-    n_blocks_global         Number of residual blocks in the global
+    n_blocks_global         Optional int. Number of residual blocks in the global
                             generator network.
+                            Default: 9
     ---------------------   -------------------------------------------
-    n_local_enhancers       Number of local enhancers to use.
+    n_local_enhancers       Optional int. Number of local enhancers to use.
+                            Default: 1
     ---------------------   -------------------------------------------
-    n_blocks_local          number of residual blocks in the local
+    n_blocks_local          Optional int. number of residual blocks in the local
                             enhancer network.
+                            Default: 3
     ---------------------   -------------------------------------------
-    norm                    instance normalization or batch normalization
+    norm                    Optional string. instance normalization or batch normalization
+                            Default: "instance"
     ---------------------   -------------------------------------------
-    lsgan                   Use least square GAN, if True,
+    lsgan                   Optional bool. Use least square GAN, if True,
                             use vanilla GAN.
+                            Default: True
     ---------------------   -------------------------------------------
-    n_dscr_filters          number of discriminator filters in first conv layer.
+    n_dscr_filters          Optional int. number of discriminator filters in first conv layer.
+                            Default: 64
     ---------------------   -------------------------------------------
-    n_layers_dscr           only used if which_model_net_dscr==n_layers.
+    n_layers_dscr           Optional int. only used if which_model_net_dscr==n_layers.
+                            Default: 3
     ---------------------   -------------------------------------------
-    n_dscr                  number of discriminators to use.
+    n_dscr                  Optional int. number of discriminators to use.
+                            Default: 2
     ---------------------   -------------------------------------------
-    feat_loss               if 'True', use discriminator
+    feat_loss               Optional bool. if 'True', use discriminator
                             feature matching loss.
+                            Default: True
     ---------------------   -------------------------------------------
-    vgg_loss                if 'True', use VGG feature matching loss.
+    vgg_loss                Optional bool. if 'True', use VGG feature matching loss.
+                            Default: True (supported for 3 band imagery only).
     ---------------------   -------------------------------------------
-    lambda_feat             weight for feature matching loss.
+    lambda_feat             Optional int. weight for feature matching loss.
+                            Default: 10
+    ---------------------   -------------------------------------------
+    lambda_l1               Optional int. weight for feature matching loss.
+                            Default: 100 (not supported for 3 band imagery)
     =====================   ===========================================
 
     :return: `Pix2PixHD` Object
     """
 
     def __init__(self, data, pretrained_path=None, *args, **kwargs):
-        super().__init__(data)
+        super().__init__(data, pretrained_path=None, *args, **kwargs)
         self._check_dataset_support(data)
         # input_nc=3, output_nc=3,
+        self.kwargs = kwargs
         vgg_loss = kwargs.get("vgg_loss", True)
         lambda_feat = kwargs.get("lambda_feat", 10.0)
+        l1_loss = kwargs.get("l1_loss", False)
+        lambda_l1 = kwargs.get("lambda_l1", 100)
 
         self.input_nc, self.output_nc = 3, 3
         label_nc = self._data.label_nc
         if self._data._is_multispectral:
             self.input_nc, self.output_nc = self._data.n_channel, self._data.n_channel
             vgg_loss = False
+            l1_loss = True
         elif self._data.label_nc:
             self.input_nc = label_nc
         pix2pix_hd = Pix2PixHDModel(label_nc, self.input_nc, self.output_nc, **kwargs)
@@ -94,7 +116,9 @@ class Pix2PixHD(ArcGISModel):
         self.learn = Learner(
             data,
             pix2pix_hd,
-            loss_func=Pix2PixHDLoss(pix2pix_hd, vgg_loss, lambda_feat),
+            loss_func=Pix2PixHDLoss(
+                pix2pix_hd, vgg_loss, lambda_feat, l1_loss, lambda_l1
+            ),
             callback_fns=[Pix2PixHDTrainer],
             opt_func=partial(optim.Adam, betas=(0.5, 0.99)),
         )
@@ -120,6 +144,13 @@ class Pix2PixHD(ArcGISModel):
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
+        =====================   ===========================================
+
+        **kwargs**
+
+        =====================   ===========================================
+        rgb_bands               Optional list of integers (band numbers)
+                                to be considered for rgb visualization.
         =====================   ===========================================
 
         """
@@ -160,6 +191,10 @@ class Pix2PixHD(ArcGISModel):
         resize_to = emd.get("resize_to")
         chip_size = emd["ImageHeight"]
         norm_stats = emd.get("norm_stats")
+        kwargs = emd.get("Kwargs", {})
+        if emd.get("ArcGISLearnVersion") < "2.0.1":
+            if "gen_network" not in kwargs:
+                kwargs["gen_network"] = "global"
 
         if data is None:
             data = _EmptyData(
@@ -188,8 +223,9 @@ class Pix2PixHD(ArcGISModel):
             data._is_empty = True
             data.resize_to = chip_size
             data.norm_stats = norm_stats
+            data.imagery_type = emd.get("ImageryType")
 
-        return cls(data, **model_params, pretrained_path=str(model_file))
+        return cls(data, **model_params, pretrained_path=str(model_file), **kwargs)
 
     def _get_emd_params(self, save_inference_file):
         _emd_template = {}
@@ -201,6 +237,7 @@ class Pix2PixHD(ArcGISModel):
         _emd_template["label_nc"] = self._data.label_nc
         if self._data.label_nc != 0:
             _emd_template["mask_map"] = self._data.mask_map.tolist()
+        _emd_template["Kwargs"] = self.kwargs
         # _emd_template["input_nc"] = self.input_nc
 
         norm_stats = []

@@ -1,4 +1,5 @@
 import json
+from typing import Optional, Union
 import pandas as pd
 import arcgis
 from arcgis.gis import GIS
@@ -105,7 +106,13 @@ class _GeoEnrichment(object):
     _url_enrich_data = "/Geoenrichment/Enrich"
     _url_data_collection = "/Geoenrichment/dataCollections"
     # ----------------------------------------------------------------------
-    def __init__(self, gis, url=None, product="bao", language_code=None):
+    def __init__(
+        self,
+        gis: GIS,
+        url: Optional[str] = None,
+        product: str = "bao",
+        language_code: Optional[str] = None,
+    ):
         """initializer"""
         # if gis._portal.is_logged_in == False:
         #     raise Exception('User must be logged in to use the '+ \
@@ -190,7 +197,7 @@ class _GeoEnrichment(object):
             )
 
     # ----------------------------------------------------------------------
-    def countries(self, as_df=False):
+    def countries(self, as_df: bool = False):
         """
         returns a list or Pandas' DataFrame of available countries that have GeoEnrichment data.
         """
@@ -209,17 +216,20 @@ class _GeoEnrichment(object):
             return self._countries_dict
 
     # ----------------------------------------------------------------------
-    def country_info(self, country, as_dict=False):
+    def country_info(self, country: str, as_dict=False):
         """
         Returns report information for a desired country using the country code.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        country                Required string. lets the user supply and optional name of a country
+        country                Required string. lets the user supply an optional name of a country
                                in order to get information about the data collections in that given
                                country. This can be the two letter country code or the coutries
                                full name.
+        ------------------     --------------------------------------------------------------------
+        as_dict                Optional bool. If True then will return as a dictionary. Default is
+                               False and a pandas DataFrame will be returned.
         ==================     ====================================================================
 
         :return: Pandas' DataFrame or Dictionary (as_dict == True)
@@ -250,7 +260,7 @@ class _GeoEnrichment(object):
         return
 
     # ----------------------------------------------------------------------
-    def report_metadata(self, country):
+    def report_metadata(self, country: str):
         """
         This method returns information about a given country's available reports and provides
         detailed metadata about each report.
@@ -263,7 +273,7 @@ class _GeoEnrichment(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        country                Required string. lets the user supply and optional name of a country
+        country                Required string. lets the user supply an optional name of a country
                                in order to get information about the data collections in that given
                                country. This can be the two letter country code or the coutries
                                full name.
@@ -273,17 +283,6 @@ class _GeoEnrichment(object):
         """
         import pandas as pd
 
-        # countries = self.countries()
-        # if len(country) > 2:
-        #     q = self.countries()['Full_Name'].str.upper() == str(country).upper()
-        #     if len(countries[q]) == 0:
-        #         raise ValueError("Invalid Country Name: %s" % country)
-        #     country = countries[q]['Country_Code'].tolist()[0]
-        # else:
-        #     q = self.countries()['Country_Code'] == str(country).upper()
-        #     if len(countries[q]) == 0:
-        #         raise ValueError("Invalid Country Code: %s" % country)
-        #     country = countries[q]['Country_Code'].tolist()[0]
         params = {"f": "json"}
         if self._gis._con.token:
             params["token"] = self._gis._con.token
@@ -303,7 +302,7 @@ class _GeoEnrichment(object):
         return pd.DataFrame(meta)
 
     # ----------------------------------------------------------------------
-    def report_info(self, country, report_id, as_dict=False):
+    def report_info(self, country: str, report_id: str, as_dict: bool = False):
         """
         Returns a detailed description of a given report for a given country
         """
@@ -332,12 +331,12 @@ class _GeoEnrichment(object):
     # ----------------------------------------------------------------------
     def data_collections(
         self,
-        country=None,
-        collection_name=None,
-        variables=None,
-        out_fields="*",
-        hide_nulls=True,
-        as_dict=False,
+        country: Optional[str] = None,
+        collection_name: Optional[str] = None,
+        variables: Optional[Union[str, list]] = None,
+        out_fields: str = "*",
+        hide_nulls: bool = True,
+        as_dict: bool = False,
     ):
         """
         The GeoEnrichment class uses the concept of a data collection to define the data
@@ -355,7 +354,7 @@ class _GeoEnrichment(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        country                optional string. lets the user supply and optional name of a country
+        country                optional string. lets the user supply an optional name of a country
                                in order to get information about the data collections in that given
                                country.
         ------------------     --------------------------------------------------------------------
@@ -371,9 +370,12 @@ class _GeoEnrichment(object):
                                in the output response. Adding the optional suppress_nulls parameter
                                to any data collections discovery method will reduce the size of the
                                output that is returned.
+        ------------------     --------------------------------------------------------------------
+        as_dict                Optional bool. If True then will return as a dictionary. Default is
+                               False and a pandas DataFrame will be returned.
         ==================     ====================================================================
 
-        :return: dictionary, describing the requested return data.
+        :return: A Pandas DataFrame unless as_dict=True then a dictionary, describing the requested return data.
         """
         import pandas as pd
 
@@ -413,17 +415,20 @@ class _GeoEnrichment(object):
         return res
 
     # ----------------------------------------------------------------------
-    def find_report(self, country, as_df=False):
+    def find_report(self, country: str, as_df: bool = False):
         """
         Returns a list of reports by a country code
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        country                optional string. lets the user supply and optional name of a country
+        country                Optional string. lets the user supply an optional name of a country
                                in order to get information about the data collections in that given
                                country. This should be a two country code name.
                                Example: United States as US
+        ------------------     --------------------------------------------------------------------
+        as_dict                Optional bool. If True then will return as a dictionary. Default is
+                               False and a pandas DataFrame will be returned.
         ==================     ====================================================================
 
         :return: Panda's DataFrame
@@ -447,19 +452,19 @@ class _GeoEnrichment(object):
     # ----------------------------------------------------------------------
     def enrich(
         self,
-        study_areas,
-        data_collections=None,
-        analysis_variables=None,
-        add_derivative_variables=None,
-        options=None,
-        use_data=None,
-        intersecting_geographies=None,
-        return_geometry=True,
-        in_sr=None,
-        out_sr=None,
-        suppress_nulls=False,
-        for_storage=True,
-        as_featureset=False,
+        study_areas: Union[list, dict],
+        data_collections: Optional[list] = None,
+        analysis_variables: Optional[list] = None,
+        add_derivative_variables: Optional[list] = None,
+        options: Optional[dict] = None,
+        use_data: Optional[dict] = None,
+        intersecting_geographies: Optional[dict] = None,
+        return_geometry: bool = True,
+        in_sr: Optional[int] = None,
+        out_sr: Optional[int] = None,
+        suppress_nulls: bool = False,
+        for_storage: bool = True,
+        as_featureset: bool = False,
     ):
         """
         The GeoEnrichment class uses the concept of a study area to
@@ -620,7 +625,13 @@ class _GeoEnrichment(object):
                 return res
 
     # ----------------------------------------------------------------------
-    def get_variables(self, country, dataset=None, text=None, as_dict=False):
+    def get_variables(
+        self,
+        country: str,
+        dataset: Optional[Union[str, list]] = None,
+        text: Optional[str] = None,
+        as_dict: bool = False,
+    ):
         """
         The GeoEnrichment get_variables method allows you to search the data
         collections for variables that contain specific keywords.
@@ -645,7 +656,7 @@ class _GeoEnrichment(object):
                                    and a number of European countries. Other countries will be added
                                    in the near future.
         ----------------------     --------------------------------------------------------------------
-        dataset                    optional string/list. Optional parameter to specify a specific
+        dataset                    Optional string/list. Optional parameter to specify a specific
                                    dataset within a defined country. This parameter will not be used
                                    in the Beta release. In the future, some countries may have two or
                                    more datasets that may have different vintages and standard
@@ -693,18 +704,18 @@ class _GeoEnrichment(object):
     # ----------------------------------------------------------------------
     def select_businesses(
         self,
-        type_filters=None,
-        feature_limit=1000,
-        feature_offset=0,
-        exact_match=False,
-        search_string=None,
-        spatial_filter=None,
-        simple_search=False,
-        dataset_id=None,
-        full_error_message=False,
-        out_sr=4326,
-        return_geometry=False,
-        as_featureset=False,
+        type_filters: Optional[list] = None,
+        feature_limit: int = 1000,
+        feature_offset: int = 0,
+        exact_match: bool = False,
+        search_string: Optional[str] = None,
+        spatial_filter: Optional[dict] = None,
+        simple_search: bool = False,
+        dataset_id: Optional[str] = None,
+        full_error_message: bool = False,
+        out_sr: int = 4326,
+        return_geometry: bool = False,
+        as_featureset: bool = False,
     ):
         """
         The select_businesses method returns business points matching a given search criteria.
@@ -813,16 +824,16 @@ class _GeoEnrichment(object):
     # ----------------------------------------------------------------------
     def create_report(
         self,
-        study_areas,
-        report=None,
-        export_format="pdf",
-        report_fields=None,
-        options=None,
-        return_type=None,
-        use_data=None,
-        in_sr=4326,
-        out_folder=None,
-        out_name=None,
+        study_areas: list,
+        report: Optional[str] = None,
+        export_format: str = "pdf",
+        report_fields: Optional[str] = None,
+        options: Optional[dict] = None,
+        return_type: Optional[dict] = None,
+        use_data: Optional[dict] = None,
+        in_sr: int = 4326,
+        out_folder: Optional[str] = None,
+        out_name: Optional[str] = None,
     ):
         """
         The Create Report method allows you to create many types of high quality reports for a
@@ -839,10 +850,10 @@ class _GeoEnrichment(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        study_areas            required list. Required parameter: Study areas may be defined by
+        study_areas            Required list. Required parameter: Study areas may be defined by
                                input points, polygons, administrative boundaries or addresses.
         ------------------     --------------------------------------------------------------------
-        report                 optional string. identify the id of the report. This may be one of
+        report                 Optional string. identify the id of the report. This may be one of
                                the many default reports available along with our demographic data
                                collections or a customized report. Custom report templates are
                                stored in an ArcGIS Online organization as a Report Template item.
@@ -939,10 +950,19 @@ class _GeoEnrichment(object):
         )
 
     # ----------------------------------------------------------------------
-    def standard_geography_levels(self, country):
+    def standard_geography_levels(self, country: str):
         """
         For a given country, the standard geography level returns information
         relating to the area in question.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        country                Required string. lets the user supply an optional name of a country
+                               in order to get information about the data collections in that given
+                               country. This can be the two letter country code or the coutries
+                               full name.
+        ==================     ====================================================================
 
         :return: dictionary
 
@@ -969,8 +989,22 @@ class _GeoEnrichment(object):
         return res
 
     # ----------------------------------------------------------------------
-    def standard_geography_level_info(self, country, hierarchy):
-        """ """
+    def standard_geography_level_info(self, country: str, hierarchy: str):
+        """
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        country                Required string. lets the user supply an optional name of a country
+                               in order to get information about the data collections in that given
+                               country. This can be the two letter country code or the coutries
+                               full name.
+        ------------------     --------------------------------------------------------------------
+        hierarchy              Optional parameter to specify a specific hierarchy within a defined country.
+        ==================     ====================================================================
+
+        :return: A dictionary
+        """
         as_dict = True
         countries = self.countries()
         if len(country) > 2:
@@ -1022,21 +1056,21 @@ class _GeoEnrichment(object):
     # ----------------------------------------------------------------------
     def standard_geography_query(
         self,
-        source_country=None,
-        country_dataset=None,
-        layers=None,
-        ids=None,
-        geoquery=None,
-        return_sub_geography=False,
-        sub_geography_layer=None,
-        sub_geography_query=None,
-        out_sr=4326,
-        return_geometry=False,
-        return_centroids=False,
-        generalization_level=0,
-        use_fuzzy_search=False,
-        feature_limit=5000,
-        as_featureset=False,
+        source_country: Optional[str] = None,
+        country_dataset: Optional[str] = None,
+        layers: Optional[Union[list, str]] = None,
+        ids: Optional[Union[list, str]] = None,
+        geoquery: Optional[Union[list, str]] = None,
+        return_sub_geography: bool = False,
+        sub_geography_layer: Optional[Union[list, str]] = None,
+        sub_geography_query: Optional[str] = None,
+        out_sr: int = 4326,
+        return_geometry: bool = False,
+        return_centroids: bool = False,
+        generalization_level: int = 0,
+        use_fuzzy_search: bool = False,
+        feature_limit: int = 5000,
+        as_featureset: bool = False,
     ):
         """
         The GeoEnrichment class provides a helper method that returns standard geography IDs and

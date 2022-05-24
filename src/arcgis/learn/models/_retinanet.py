@@ -1,4 +1,5 @@
 from ._arcgis_model import ArcGISModel, _get_device
+from ._timm_utils import timm_config, filter_timm_models
 from pathlib import Path
 import json
 from ._codetemplate import code
@@ -15,6 +16,7 @@ HAS_FASTAI = True
 # Exception will turn the HAS_FASTAI flag to false so that relevant exception can be raised
 try:
     import torch
+    from torch import Tensor
     import numpy as np
     import pandas as pd
     import PIL
@@ -34,10 +36,11 @@ try:
         compute_class_AP,
         get_predictions,
         AveragePrecision,
+        _process_bboxes_jit,
     )
     from fastai.callbacks import EarlyStoppingCallback
     from fastai.basic_train import Learner
-    from ._arcgis_model import SaveModelCallback, _resnet_family
+    from ._arcgis_model import _resnet_family
     from .._image_utils import (
         _get_image_chips,
         _get_transformed_predictions,
@@ -47,7 +50,7 @@ try:
     from .._video_utils import VideoUtils
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from fastprogress.fastprogress import progress_bar
-    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from .._utils.env import is_arcgispronotebook
     import matplotlib.pyplot as plt
 except Exception as e:
     import_exception = "\n".join(
@@ -59,6 +62,27 @@ try:
     import cv2
 except:
     HAS_OPENCV = False
+
+from typing import Tuple, List
+
+
+class RetinaNetTracer(torch.nn.Module):
+    def __init__(self, model, device, sizes, ratios, scales):
+        super().__init__()
+        self.model = model.to(device)
+        self.crit_vals = [
+            torch.tensor(sizes),
+            torch.tensor(ratios),
+            torch.tensor(scales),
+        ]
+
+    def _process_bboxes(self, output: List[Tensor]) -> Tuple[Tensor, Tensor, Tensor]:
+        return _process_bboxes_jit(output, self.crit_vals)
+
+    def forward(self, inp: List[Tensor]):
+        out = self.model(inp)
+        out_final = self._process_bboxes(out)
+        return out_final
 
 
 class RetinaNet(ArcGISModel):
@@ -78,10 +102,11 @@ class RetinaNet(ArcGISModel):
     ratios                  Optional list of float values. Aspect ratios of anchor
                             boxes.
     ---------------------   -------------------------------------------
-    backbone                Optional function. Backbone CNN model to be used for
-                            creating the base of the `RetinaNet`, which
+    backbone                Optional string. Backbone convolutional neural network
+                            model used for feature extraction, which
                             is `resnet50` by default.
-                            Compatible backbones: 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152'
+                            Supported backbones: ResNet family and specified Timm
+                            models(experimental support) from :func:`~arcgis.learn.RetinaNet.backbones`.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -133,12 +158,19 @@ class RetinaNet(ArcGISModel):
         self._data = data
         self._chip_size = (data.chip_size, data.chip_size)
 
+        if "timm" in self._backbone.__module__:
+            backbone_cut = timm_config(self._backbone)["cut"]
+        else:
+            backbone_cut = None
+
         # Cut-off the backbone before the penultimate layer
-        self._encoder = create_body(self._backbone, backbone_pretrained)
+        self._encoder = create_body(self._backbone, backbone_pretrained, backbone_cut)
 
         # Initialize the model, loss function and the Learner object
         self._model = RetinaNetModel(
-            self._encoder,
+            self._backbone,
+            backbone_pretrained,
+            backbone_cut,
             n_classes=data.c - 1,
             final_bias=-4,
             chip_size=self._chip_size,
@@ -153,7 +185,13 @@ class RetinaNet(ArcGISModel):
         )
         self.learn = Learner(data, self._model, loss_func=self._loss_f)
         self.learn.metrics = [AveragePrecision(self, data.c - 1)]
-        self.learn.split([self._model.encoder[6], self._model.c5top5])
+        if (
+            "resnet" in self._backbone.__name__
+            and "timm" not in self._backbone.__module__
+        ):
+            self.learn.split([self._model.encoder[6], self._model.c5top5])
+        else:
+            self.learn.split([self._model.c5top5])
         self.learn.freeze()
         if pretrained_path is not None:
             self.load(str(pretrained_path))
@@ -165,6 +203,123 @@ class RetinaNet(ArcGISModel):
     def __repr__(self):
         return "<%s>" % (type(self).__name__)
 
+    def _save_device_model(self, model, device, save_path):
+        model.eval()
+        if hasattr(self._data, "chip_size"):
+            chip_size = self._data.chip_size
+            if not isinstance(chip_size, tuple):
+                chip_size = (chip_size, chip_size)
+        num_input_channels = list(self.learn.model.parameters())[0].shape[1]
+        inp = torch.rand(1, num_input_channels, chip_size[0], chip_size[1]).to(device)
+
+        ratios = [float(ratio) for ratio in self.ratios]
+        scales = [float(ratio) for ratio in self.scales]
+        sizes = self._model.sizes
+        model = RetinaNetTracer(model, device, sizes, ratios, scales)
+        model = model.to(device)
+        traced_model = None
+        with torch.no_grad():
+            traced_model = self._trace(model, inp, True)  # TODO: more ease of use
+        torch.jit.save(traced_model, save_path)
+
+        return traced_model
+
+    def _save_pytorch_torchscript(self, name, save=True):
+        traced_model_cpu = None
+        traced_model_gpu = None
+
+        model = self.learn.model
+        model.eval()
+        device = self._device
+
+        cpu = torch.device("cpu")
+        save_path_cpu = (
+            self.learn.path / self.learn.model_dir / f"{name}-cpu.pt"
+        ).__str__()
+        traced_model_cpu = self._save_device_model(model, cpu, save_path_cpu)
+        save_path_cpu = f"{name}-cpu.pt"
+
+        save_path_gpu = ""
+        if torch.cuda.is_available():
+            gpu = torch.device("cuda")
+            save_path_gpu = (
+                self.learn.path / self.learn.model_dir / f"{name}-gpu.pt"
+            ).__str__()
+            traced_model_gpu = self._save_device_model(model, gpu, save_path_gpu)
+            save_path_gpu = f"{name}-gpu.pt"
+
+        model.to(device)
+
+        if not save:
+            return [traced_model_cpu, traced_model_gpu]
+        return [save_path_cpu, save_path_gpu]
+
+    def _save_pytorch_tflite(self, name):
+        import tensorflow as tf
+        import logging
+
+        tf.get_logger().setLevel(logging.ERROR)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            import onnx
+            import onnx_tf
+            from onnx_tf.backend import prepare
+
+        traced_models = self._save_pytorch_torchscript(name, False)
+        if traced_models[0] is None:
+            return ["", ""]
+        cpu = torch.device("cpu")
+        device = cpu
+        traced_model = traced_models[0].to(device)
+
+        if hasattr(self._data, "chip_size"):
+            chip_size = self._data.chip_size
+            if not isinstance(chip_size, tuple):
+                chip_size = (chip_size, chip_size)
+        num_input_channels = list(self.learn.model.parameters())[0].shape[1]
+        inp = torch.randn([1, num_input_channels, chip_size[0], chip_size[1]]).to(
+            device
+        )
+
+        save_path_tflite = self.learn.path / self.learn.model_dir / f"{name}.tflite"
+        save_path_onnx = self.learn.path / self.learn.model_dir / f"{name}.onnx"
+        save_path_pb = self.learn.path / self.learn.model_dir / f"{name}"
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            torch.onnx.export(
+                traced_model,
+                inp,
+                save_path_onnx,
+                export_params=True,
+                do_constant_folding=False,
+                verbose=True,
+                input_names=["input"],
+                output_names=["output"],
+                opset_version=11,
+            )
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            arcgis_onnx = onnx.load(save_path_onnx)
+            tf_onnx = prepare(arcgis_onnx, logging_level="ERROR")
+            tf_onnx.export_graph(str(save_path_pb))
+
+        converter = tf.lite.TFLiteConverter.from_saved_model(str(save_path_pb))
+        converter.experimental_new_converter = True
+        converter.optimizations = [tf.compat.v1.lite.Optimize.DEFAULT]
+        converter.target_ops = [
+            tf.lite.OpsSet.TFLITE_BUILTINS_INT8,
+            tf.lite.OpsSet.SELECT_TF_OPS,
+        ]
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            tflite_model = converter.convert()
+        with tf.io.gfile.GFile(save_path_tflite, "wb") as f:
+            f.write(tflite_model)
+
+        return [save_path_tflite, save_path_onnx]
+
     @staticmethod
     def _available_metrics():
         return ["valid_loss", "average_precision"]
@@ -172,12 +327,19 @@ class RetinaNet(ArcGISModel):
     # Return a list of supported backbones names
     @property
     def supported_backbones(self):
-        """Supported torchvision backbones for this model."""
+        """Supported list of backbones for this model."""
+        return RetinaNet._supported_backbones()
+
+    @staticmethod
+    def backbones():
+        """Supported list of backbones for this model."""
         return RetinaNet._supported_backbones()
 
     @staticmethod
     def _supported_backbones():
-        return [*_resnet_family]
+        timm_models = filter_timm_models()
+        timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
+        return [*_resnet_family] + timm_backbones
 
     @property
     def supported_datasets(self):
@@ -337,7 +499,7 @@ class RetinaNet(ArcGISModel):
         self.learn.show_results(
             rows=rows, thresh=thresh, nms_overlap=nms_overlap, model=self
         )
-        if _IS_ARCGISPRONOTEBOOK:
+        if is_arcgispronotebook():
             plt.show()
 
     def _show_results_multispectral(

@@ -151,17 +151,29 @@ class LinkNetMultiTaskModel(nn.Module):
     Reference: https://arxiv.org/pdf/1707.03718.pdf
     """
 
-    def __init__(self, encoder, task1_classes, task2_classes, chip_size, n_bands=3):
+    def __init__(
+        self, encoder, task1_classes, task2_classes, chip_size, n_bands=3, is_timm=False
+    ):
         super(LinkNetMultiTaskModel, self).__init__()
 
         self.chip_size = chip_size
-        # Fetch the sizes of various activation layers of the backbone
-        sfs_sizes = model_sizes(encoder, size=self.chip_size)
-        filters = [x[1] for x in sfs_sizes[-4:]]
-
-        # Encoder
+        self._is_timm = is_timm
         self.encoder = encoder
-        self.encoder_outputs = hook_outputs(self.encoder)
+
+        if self._is_timm:
+            from ._hed_utils import get_hooks
+
+            if len(self.encoder) < 2:
+                self.encoder = self.encoder[0]
+            hooks = get_hooks(self.encoder, chip_size[0])
+            self.encoder_outputs = hook_outputs(hooks)[1:]
+            model_sizes(self.encoder, size=chip_size)
+            filters = [k.stored.shape[1] for k in self.encoder_outputs]
+        else:
+            # Fetch the sizes of various activation layers of the backbone
+            sfs_sizes = model_sizes(encoder, size=self.chip_size)
+            filters = [x[1] for x in sfs_sizes[-4:]]
+            self.encoder_outputs = hook_outputs(self.encoder)
 
         # Decoder for Road Segmentation
         self.decoder4 = DecoderBlock(filters[3], filters[2], self.encoder_outputs[-2])
@@ -209,8 +221,14 @@ class LinkNetMultiTaskModel(nn.Module):
         rows = x.size()[2]
         cols = x.size()[3]
 
-        e = self.encoder(x)
-
+        if self._is_timm:
+            if x.shape[0] < 2 and self.training:
+                e = self.encoder(torch.cat((x, x)))
+            else:
+                e = self.encoder(x)
+            e = self.encoder_outputs[-1].stored
+        else:
+            e = self.encoder(x)
         # Decoder - Road Segmentation
         d4 = self.decoder4(e)
         d3 = self.decoder3(d4)
@@ -236,6 +254,10 @@ class LinkNetMultiTaskModel(nn.Module):
         o_f3 = self.o_finalconv2(o_f2)
         o_f4 = self.o_finalrelu2(o_f3)
         o_f5 = self.o_finalconv3(o_f4)
+
+        if self._is_timm and x.shape[0] < 2 and self.training:
+            f5 = f5[0][None]
+            o_f5 = o_f5[0][None]
 
         return f5[:, :, :rows, :cols], o_f5[:, :, :rows, :cols]
 

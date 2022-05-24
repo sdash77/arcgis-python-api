@@ -42,6 +42,12 @@ try:
     from scipy.optimize import linear_sum_assignment
     from ..models._unet_utils import is_contiguous
     from ._inferencing.util import remap
+    from .._utils.common import (
+        get_nbatches,
+        get_symbology_bands,
+        dynamic_range_adjustment,
+        kwarg_fill_none,
+    )
 
     HAS_FASTAI = True
 except Exception as e:
@@ -61,9 +67,11 @@ class _MaXDeepLabModel:
 
 
 class MaXDeepLabS(nn.Module):
-    def __init__(self, im_size=224, n_heads=8, n_classes=80, n_masks=50):
+    def __init__(self, im_size=224, n_heads=8, n_classes=80, n_masks=50, in_channels=3):
         super(MaXDeepLabS, self).__init__()
-        self.encoder = MaXDeepLabSEncoder(im_size=im_size, n_heads=n_heads)
+        self.encoder = MaXDeepLabSEncoder(
+            im_size=im_size, n_heads=n_heads, in_channels=in_channels
+        )
         self.decoder = MaXDeepLabSDecoder(
             im_size=im_size, n_heads=n_heads, n_classes=n_classes, n_masks=n_masks
         )
@@ -1206,6 +1214,10 @@ def display_instances(
         _, ax = plt.subplots(1, figsize=figsize)
         auto_show = True
 
+    # Add black color for NoData
+    if color_mapping:
+        color_mapping[0] = [0, 0, 0]
+
     # Generate random colors for instance classes in ground truth and instance predictions
     # and use color mapping for semantic classes
     colors = []
@@ -1250,6 +1262,9 @@ def show_results_panoptic(model, rows=5, thresh=0.5, **kwargs):
 
     alpha = kwargs.get("alpha", 0.5)
     do_random_color = kwargs.get("random_colors", False)
+    statistics_type = kwarg_fill_none(
+        kwargs, "statistics_type", "dataset"
+    )  # Accepted Values `dataset`, `DRA`
 
     ds_type = DatasetType.Valid
     n_items = rows
@@ -1258,19 +1273,37 @@ def show_results_panoptic(model, rows=5, thresh=0.5, **kwargs):
         n_items = model.learn.dl(ds_type).batch_size
 
     # Fetch a batch, apply transforms and get predictions through the model
-    ds = model.learn.dl(ds_type).dataset
-    xb, yb = model.learn.data.one_batch(ds_type, detach=False, denorm=False)
+    data = model.learn.data
+    xb, yb = data.one_batch(ds_type, detach=False, denorm=False)
     transform_kwargs, kwargs = split_kwargs_by_func(
         kwargs, model._model_conf.transform_input
     )
 
     # Put images and labels/masks on cpu and denorm
     x, y = to_cpu(xb), to_cpu(yb)
-    norm = getattr(model.learn.data, "norm", False)
+    norm = getattr(data, "norm", False)
     if norm:
-        x = model.learn.data.denorm(x)
+        x = data.denorm(x)
         if norm.keywords.get("do_y", False):
-            y = model.learn.data.denorm(y, do_x=True)
+            y = data.denorm(y, do_x=True)
+
+    # For multispectral data
+    symbology_bands = [0, 1, 2]
+    if data._is_multispectral:
+        # Get RGB Bands for plotting
+        rgb_bands = kwarg_fill_none(kwargs, "rgb_bands", data._symbology_rgb_bands)
+
+        # Get Symbology bands
+        symbology_bands = get_symbology_bands(
+            rgb_bands, data._extract_bands, data._bands
+        )
+
+        # Extract RGB Bands for plotting
+        x = x[:, symbology_bands]
+
+    # Apply Image Strecthing
+    if statistics_type == "DRA":
+        x = dynamic_range_adjustment(x)
 
     model.learn.model.eval()
     with torch.no_grad():
@@ -1289,34 +1322,35 @@ def show_results_panoptic(model, rows=5, thresh=0.5, **kwargs):
     class_confidence, classes = F.softmax(preds[1], dim=-1).max(-1)
     semantic = F.softmax(preds[2], dim=1).argmax(dim=1)
 
-    bsz = model.learn.dl(ds_type).batch_size
-    category_dict = model._data.class_mapping
+    category_dict = model._data.class_mapping.copy()
+    category_dict[0] = "NoData"
     instance_classes = model._data.instance_classes
 
     # Remap to original class mapping if non-contiguous classes
     is_contig = is_contiguous(sorted([0] + list(category_dict.keys())))
     if not is_contig:
-        pixel_mapping = [0] + list(category_dict.keys())
+        pixel_mapping = sorted(list(category_dict.keys()))
         idx2pixel = {i: d for i, d in enumerate(pixel_mapping)}
         semantic = remap(semantic, idx2pixel)
         classes = remap(classes, idx2pixel)
         y[1] = remap(y[1], idx2pixel)
 
     # Filter predictions for instances
+    inst_cls = classes
     for i in instance_classes:
         inst_cls = torch.where(
-            classes == int(i), classes, torch.tensor(0).to(classes.device)
+            inst_cls == i, torch.tensor(-1).to(classes.device), inst_cls
         )
-    # filter out low confidence instances from predictions
-    # keep_pred_instances = torch.where(torch.logical_and(classes > 0, class_confidence > 0.07)) # TODO: Use this with latest Pytorch
-    keep_pred_instances = torch.where((inst_cls > 0) & (class_confidence > thresh))
+    keep_pred_instances = torch.where(
+        torch.logical_and(inst_cls == -1, class_confidence > thresh)
+    )
 
     pred_instances = []
     pred_classes = []
     pred_class_names = []
     pred_scores = []
 
-    for index in range(bsz):
+    for index in range(n_items):
         keep_pred = keep_pred_instances[1][keep_pred_instances[0] == index]
         pred_instances.append(instances.detach()[index, keep_pred].cpu().numpy())
         pred_classes.append(classes.detach()[index, keep_pred].cpu().numpy())
@@ -1334,7 +1368,7 @@ def show_results_panoptic(model, rows=5, thresh=0.5, **kwargs):
     pred_semantic_classes = []
     pred_semantic_class_names = []
 
-    for index in range(bsz):
+    for index in range(n_items):
         keep_gt = keep_gt_instances[1][keep_gt_instances[0] == index]
         gt_instances.append(y[0].detach()[index, keep_gt].cpu().numpy())
         gt_classes.append(y[1].detach()[index, keep_gt].cpu().numpy())
@@ -1357,9 +1391,9 @@ def show_results_panoptic(model, rows=5, thresh=0.5, **kwargs):
     else:
         color_mapping = model._data.color_mapping
 
-    f, ax = plt.subplots(bsz, 4, figsize=(18, 6 * bsz), squeeze=False)
+    f, ax = plt.subplots(n_items, 4, figsize=(18, 6 * n_items), squeeze=False)
 
-    for index in range(bsz):
+    for index in range(n_items):
         # Display image
         display_image = roll_image(x.detach().cpu().numpy()[index])
         ax[index, 0].imshow(display_image)
@@ -1403,16 +1437,13 @@ def show_results_panoptic(model, rows=5, thresh=0.5, **kwargs):
     ax[0, 3].set_title("Classified Pixels\n", fontsize=20)
     plt.tight_layout()
 
-    # if _IS_ARCGISPRONOTEBOOK:
-    #     plt.show()
-
-
-from .._utils.common import get_nbatches
-
 
 def show_batch_panoptic(data, rows=5, alpha=0.5, **kwargs):
 
     do_random_color = kwargs.get("random_colors", False)
+    statistics_type = kwarg_fill_none(
+        kwargs, "statistics_type", "dataset"
+    )  # Accepted Values `dataset`, `DRA`
 
     type_data_loader = kwargs.get(
         "data_loader", "training"
@@ -1452,6 +1483,24 @@ def show_batch_panoptic(data, rows=5, alpha=0.5, **kwargs):
     norm = getattr(data, "norm", False)
     if norm:
         x = data.denorm(x)
+
+    # For multispectral data
+    symbology_bands = [0, 1, 2]
+    if data._is_multispectral:
+        # Get RGB Bands for plotting
+        rgb_bands = kwarg_fill_none(kwargs, "rgb_bands", data._symbology_rgb_bands)
+
+        # Get Symbology bands
+        symbology_bands = get_symbology_bands(
+            rgb_bands, data._extract_bands, data._bands
+        )
+
+        # Extract RGB Bands for plotting
+        x = x[:, symbology_bands]
+
+    # Apply Image Strecthing
+    if statistics_type == "DRA":
+        x = dynamic_range_adjustment(x)
 
     # remove padding instances in gt
     keep_gt_instances = torch.where(y[1] > 0)  # y[1] are labels

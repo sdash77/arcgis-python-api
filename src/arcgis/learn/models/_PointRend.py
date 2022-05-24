@@ -640,7 +640,9 @@ class StandardPointHead(nn.Module):
     takes both fine-grained and coarse prediction features as its input.
     """
 
-    def __init__(self, num_classes, input_channels, coarse_pred_each_layer=False):
+    def __init__(
+        self, num_classes, input_channels, coarse_pred_each_layer=False, **kwargs
+    ):
         """
         The following attributes are parsed from config:
             fc_dim: the output dimension of each FC layers
@@ -649,7 +651,7 @@ class StandardPointHead(nn.Module):
                 layer's input
         """
         super(StandardPointHead, self).__init__()
-        fc_dim = 256
+        fc_dim = int(kwargs.get("fc_dim", 256))
         num_fc = 3
         cls_agnostic_mask = False
         self.coarse_pred_each_layer = coarse_pred_each_layer

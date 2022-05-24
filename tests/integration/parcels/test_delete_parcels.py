@@ -35,8 +35,10 @@ class TestDeleteParcels(unittest.TestCase):
 
     def test_delete_multiple_parcels(self):
         fq_version_name = pfutils.create_version(self.vms)
-        parcel_features = [{"id": "{509D74F0-3309-4D86-9BCE-C231E96D822E}", "layerId": 15},
-                           {"id": "{B35D8021-28DA-4D8A-B352-57E4C049089B}", "layerId": 15}]
+        parcel_features = [
+            {"id": "{509D74F0-3309-4D86-9BCE-C231E96D822E}", "layerId": 15},
+            {"id": "{B35D8021-28DA-4D8A-B352-57E4C049089B}", "layerId": 15},
+        ]
 
         with self.vms.get(fq_version_name, "read") as version:
             self.parcelFabric = ParcelFabricManager(
@@ -49,17 +51,25 @@ class TestDeleteParcels(unittest.TestCase):
             delete_parcels = self.parcelFabric.delete(parcels=parcel_features)
             edits = delete_parcels.get("serviceEdits")
             self.assertEqual(4, len(edits), "Missing layer edits")
-            records_edits = [e["editedFeatures"] for e in edits if e["id"] == 1][0].get("updates")
-            parcels_edits = [e["editedFeatures"] for e in edits if e["id"] == 15][0].get("deletes")
-            parcel_lines_edits = [e["editedFeatures"] for e in edits if e["id"] == 14][0].get("deletes")
+            records_edits = [e["editedFeatures"] for e in edits if e["id"] == 1][0].get(
+                "updates"
+            )
+            parcels_edits = [e["editedFeatures"] for e in edits if e["id"] == 15][
+                0
+            ].get("deletes")
+            parcel_lines_edits = [e["editedFeatures"] for e in edits if e["id"] == 14][
+                0
+            ].get("deletes")
             self.assertIsNotNone(records_edits, "No Records edits found")
             self.assertIsNotNone(parcels_edits, "No Parcels edits found")
             self.assertIsNotNone(parcel_lines_edits, "No Parcel Lines edits found")
 
     def test_delete_multiple_parcels_wrong_layerid(self):
         fq_version_name = pfutils.create_version(self.vms)
-        parcel_features = [{"id": "{BEC4C8B2-C381-4E5C-95A3-DCE12549EBF1}", "layerId": 99},
-                           {"id": "{03255D2E-4306-40F0-882F-9991735AAF64}", "layerId": 99}]
+        parcel_features = [
+            {"id": "{BEC4C8B2-C381-4E5C-95A3-DCE12549EBF1}", "layerId": 99},
+            {"id": "{03255D2E-4306-40F0-882F-9991735AAF64}", "layerId": 99},
+        ]
 
         with self.vms.get(fq_version_name, "read") as version:
             self.parcelFabric = ParcelFabricManager(

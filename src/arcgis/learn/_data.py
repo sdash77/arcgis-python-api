@@ -643,6 +643,9 @@ def merge_emd_and_stats(data_folders):
     # Create master EMD and esri_accumulated_stats
     emd = emd_store[emd_keys[0]]
     eas = stats_store[emd_keys[0]]
+    if not "NumTilesAsDouble" in eas:
+        eas["NumTilesAsDouble"] = eas["NumTiles"]
+        del eas["NumTiles"]
     _class_hash = {x["Value"]: x for x in emd["Classes"]}
     for k in emd_keys[1:]:
         _emd = emd_store[k]
@@ -671,8 +674,10 @@ def merge_emd_and_stats(data_folders):
                 eas["BandStatsState"][i]["Num"] + _eas["BandStatsState"][i]["Num"]
             )  # Number of pixels
         eas["NumClasses"] = max(eas["NumClasses"], _eas["NumClasses"])
-        eas["NumTiles"] += _eas["NumTiles"]
-        #
+        if "NumTiles" in _eas:
+            eas["NumTilesAsDouble"] += _eas["NumTiles"]
+        else:
+            eas["NumTilesAsDouble"] += _eas["NumTilesAsDouble"]
         stats_key1 = None
         stats_key1_1 = None
         stats_key2 = None
@@ -966,6 +971,7 @@ def prepare_tabulardata(
     explanatory_variables=None,
     explanatory_rasters=None,
     date_field=None,
+    cell_sizes=[3, 4, 5, 6, 7],
     distance_features=None,
     preprocessors=None,
     val_split_pct=0.1,
@@ -1031,6 +1037,13 @@ def prepare_tabulardata(
                             to the prepared data as columns.
                             All fields other than elapsed and dayofyear are treated
                             as categorical.
+    ---------------------   -------------------------------------------
+    cell_sizes              Size of H3 cells (specified as H3 resolution) for spatially
+                            aggregating input features and passing in the cell ids as additional
+                            explanatory variables to the model. If a spatial dataframe is passed
+                            as input_features, ensure that the spatial reference is 4326,
+                            and the geometry type is Point. Not applicable when explanatory_rasters
+                            are provided. Not applicable for MLModel.
     ---------------------   -------------------------------------------
     distance_features       Optional list of Feature Layer objects.
                             Distance is calculated from features in these layers
@@ -1133,6 +1146,7 @@ def prepare_tabulardata(
         feature_variables=explanatory_variables,
         raster_variables=explanatory_rasters,
         date_field=date_field,
+        cell_sizes=cell_sizes,
         distance_feature_layers=distance_features,
         procs=preprocessors,
         val_split_pct=val_split_pct,
@@ -1182,7 +1196,7 @@ def prepare_data(
     -For feature categorization use Labelled Tiles or Imagenet format.
     -For pixel classification, use Classified Tiles format.
     -For DeepSort, use Imagenet format.
-    -For panoptic segmentation, use Panoptic format.
+    -For panoptic segmentation, use Panoptic_Segmentation format.
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -1195,7 +1209,8 @@ def prepare_data(
     chip_size               Optional integer, default 224. Size of the image to train the model.
                             Images are cropped to the specified chip_size.
                             If image size is less than chip_size, the image size is
-                            used as chip_size. Not supported for SuperResolution,
+                            used as chip_size. A chip size that is a multiple of 32 pixels
+                            is recommended. Not supported for SuperResolution,
                             SiamMask, WNet_cGAN, Pix2Pix and CycleGAN.
     ---------------------   -------------------------------------------
     val_split_pct           Optional float. Percentage of training data to keep
@@ -1228,14 +1243,11 @@ def prepare_data(
                             'Labeled_Tiles', 'MultiLabeled_Tiles', 'Imagenet',
                             'PointCloud', 'ImageCaptioning', 'ChangeDetection',
                             'superres', 'CycleGAN', 'Pix2Pix', 'WNet_cGAN',
-                            'Panoptic', and 'ObjectTracking'.
+                            'Panoptic_Segmentation', and 'ObjectTracking'.
                             This parameter is mandatory for data which are not
                             exported by ArcGIS Pro / Enterprise which includes
                             'PointCloud', 'ImageCaptioning', 'ChangeDetection',
                             'CycleGAN', 'Pix2Pix', 'WNet_cGAN' and 'ObjectTracking'.
-                            This parameter is mandatory while preparing data
-                            for 'MaXDeepLab' panoptic segmentation model.
-                            Accepted data format is 'Panoptic'.
     ---------------------   -------------------------------------------
     resize_to               Optional integer or tuple of integers.
                             A tuple should be of the form (height, width).
@@ -1534,8 +1546,7 @@ def prepare_data(
     ):
         with open(stats_file) as f:
             stats = json.load(f)
-            if dataset_type != "Panoptic":
-                dataset_type = stats["MetaDataMode"]
+            dataset_type = stats["MetaDataMode"]
 
         with open(path / "map.txt") as f:
             while True:
@@ -1944,7 +1955,7 @@ def prepare_data(
         kwargs_transforms["tfm_y"] = True
 
     ## Create databunch for Panoptic Segmentation
-    elif dataset_type == "Panoptic":
+    elif dataset_type == "Panoptic_Segmentation":
 
         if class_mapping.get(0):
             del class_mapping[0]
@@ -1977,6 +1988,10 @@ def prepare_data(
 
         from ._data_utils._panoptic_data import PanopticSegmentationItemList
 
+        inst_class_mapping = {
+            i["Value"]: i["Name"] for i in emd["Panoptic_Segmentation_Instance_Classes"]
+        }
+
         data = (
             PanopticSegmentationItemList.from_folder(path / "images")
             .filter_by_func(remove_image_without_label)
@@ -1988,6 +2003,7 @@ def prepare_data(
                 class_mapping=class_mapping,
                 color_mapping=color_mapping,
                 n_masks=kwargs.get("n_masks", 30),
+                inst_class_mapping=inst_class_mapping,
             )
         )
 
@@ -2013,6 +2029,7 @@ def prepare_data(
             kwargs_transforms["size"] = chip_size
 
         kwargs_transforms["tfm_y"] = True
+        _show_batch_multispectral = show_batch_panoptic
 
     elif dataset_type == "Classified_Tiles":
 
@@ -2913,9 +2930,9 @@ def prepare_data(
         data.valid_ds.x._div = 255.0
         data.is_normalized = True
 
-        if dataset_type == "Panoptic":
-            data.c = len(data.classes)
-            data.show_batch = types.MethodType(show_batch_panoptic, data)
+    if dataset_type == "Panoptic_Segmentation":
+        data.c = len(data.classes)
+        data.show_batch = types.MethodType(show_batch_panoptic, data)
 
     if dataset_type in ["PASCAL_VOC_rectangles", "KITTI_rectangles"]:
         data.show_batch = types.MethodType(show_batch_object_detection, data)
@@ -2946,7 +2963,6 @@ def prepare_data(
         "ChangeDetection",
         "superres",
         "Imagenet",
-        "Panoptic",
     ]:
         data._dataset_type = stats["MetaDataMode"]
     else:
@@ -3128,9 +3144,9 @@ def prepare_data(
         data.path = Path(os.path.dirname(os.path.abspath(data.path)))
     _prepare_working_dir(data.path)
 
-    from ._utils.env import _IS_ARCGISPRONOTEBOOK
+    from ._utils.env import is_arcgispronotebook
 
-    if _IS_ARCGISPRONOTEBOOK:
+    if is_arcgispronotebook():
         from functools import wraps
         from matplotlib import pyplot as plt
 

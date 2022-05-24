@@ -1925,6 +1925,8 @@ def clip(
     geometry=None,
     clip_outside: bool = True,
     astype: Optional[str] = None,
+    clipping_raster: Optional[Union[Raster, ImageryLayer]] = None,
+    use_input_geometry: bool = True,
 ):
 
     """
@@ -1938,17 +1940,26 @@ def clip(
     --------------------------------     --------------------------------------------------------------------
     raster                                   Required input Raster/ImageryLayer object
     --------------------------------     --------------------------------------------------------------------
-    goemetry                                 Required clipping geometry
+    goemetry                                 Optional dictionary. Specifies the geometry for clipping.
     --------------------------------     --------------------------------------------------------------------
     clip_outside                             Optional boolean, If True, the imagery outside the extents will be removed, else the imagery within the clipping geometry will be removed.
     --------------------------------     --------------------------------------------------------------------
     astype                                   Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    --------------------------------     --------------------------------------------------------------------
+    clipping_raster                          Optional Raster/ImageryLayer object. Specifies the raster from which the extent needs to be used for clipping.
+    --------------------------------     --------------------------------------------------------------------
+    use_input_geometry                       Optional boolean. If True, the function uses the clip geometry defined by the geometry parameter. This is the default.
+                                             If False, the function uses the extent of the clip geometry defined by the geometry parameter.
     ================================     ====================================================================
 
     :return: The clipped raster.
 
     """
     layer, raster, raster_ra = _raster_input(raster)
+
+    layer2 = None
+    if clipping_raster is not None:
+        layer2, raster_2, raster_ra2 = _raster_input(raster, clipping_raster)
 
     template_dict = {
         "rasterFunction": "Clip",
@@ -1962,7 +1973,47 @@ def clip(
     if astype is not None:
         template_dict["outputPixelType"] = astype.upper()
 
-    return _clone_layer(layer, template_dict, raster_ra)
+    extent_envelope = None
+
+    if clipping_raster is not None and isinstance(
+        clipping_raster, (Raster, ImageryLayer)
+    ):
+        extent_envelope = dict(clipping_raster.extent)
+
+    try:
+        from arcgis.geometry import Envelope, Geometry
+
+        if geometry is not None:
+            if not isinstance(geometry, Geometry):
+                geometry = Geometry(geometry)
+
+            extent_envelope = _json.loads(geometry.envelope.JSON)
+
+        if not use_input_geometry:
+            template_dict["rasterFunctionArguments"][
+                "ClippingGeometry"
+            ] = extent_envelope
+
+        geom_dict = template_dict["rasterFunctionArguments"]["ClippingGeometry"]
+
+        template_dict["rasterFunctionArguments"]["Extent"] = extent_envelope
+        if (geom_dict) and not isinstance(
+            Geometry(geom_dict), Envelope
+        ):  # for release after 2.0.1 remove this code that sets Extent to None
+            template_dict["rasterFunctionArguments"]["Extent"] = None
+
+    except:
+        pass
+
+    if clipping_raster is not None:
+        template_dict["rasterFunctionArguments"]["ClippingRaster"] = raster_2
+
+    function_chain_ra = copy.deepcopy(template_dict)
+    function_chain_ra["rasterFunctionArguments"]["Raster"] = raster_ra
+    if clipping_raster is not None:
+        function_chain_ra["rasterFunctionArguments"]["ClippingRaster"] = raster_ra2
+
+    return _clone_layer_without_copy(layer, template_dict, function_chain_ra)
 
 
 def colormap(
@@ -4962,7 +5013,7 @@ def majority(
     process_as_multiband: Optional[bool] = None,
 ):
     """
-    The majority function calculates focal statistics for each pixel of an image based on the majority value, or the value that occurs most frequently, of the pixels within the neighborhood.
+    The majority function determines the value that occurs most often from multiple rasters, on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
@@ -5035,7 +5086,7 @@ def max(
     process_as_multiband: Optional[bool] = None,
 ):
     """
-    The max function calculates focal statistics for each pixel of an image based on the maximum value of the pixels within the neighborhood.
+    The max function determines the maximum value from multiple rasters, on a pixel-by-pixel basis. .
 
     The arguments for this function are as follows:
 
@@ -5113,7 +5164,7 @@ def mean(
     process_as_multiband: Optional[bool] = None,
 ):
     """
-    The mean function calculates the average of a raster on a pixel-by-pixel basis.
+    The mean function determines the average value from multiple rasters, on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
@@ -5183,7 +5234,7 @@ def med(
     percentile_interpolation_type: str = "AUTO_DETECT",
 ):
     """
-    The med function calculates the middle value of the pixels on a pixel-by-pixel basis.
+    The med function calculates the middle value of the pixels from multiple rasters, on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
@@ -5268,7 +5319,7 @@ def min(
     process_as_multiband: Optional[bool] = None,
 ):
     """
-    The min function determines the smallest value of the pixels on a pixel-by-pixel basis.
+    The min function determines the smallest value from multiple rasters, on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
@@ -5336,7 +5387,7 @@ def minority(
     process_as_multiband: Optional[bool] = None,
 ):
     """
-    The miniority function determines the value that occurs least often on a pixel-by-pixel basis.
+    The miniority function determines the value that occurs least often from multiple rasters, on a pixel-by-pixel basis.
 
     The arguments for this function are as follows:
 
@@ -9724,7 +9775,9 @@ def _raster_item(raster: Union[Raster, ImageryLayer], raster_id=None):
                 if (
                     (hasattr(raster, "_lazy_token")) and raster._lazy_token is None
                 ) or not hasattr(raster, "_lazy_token"):
-                    raster._lazy_token = raster._gis._con._create_token(url)
+                    from .utility import _generate_layer_token
+
+                    raster._lazy_token = _generate_layer_token(raster, url)
                 if isinstance(raster._lazy_token, str):
                     url = url + "?token=" + raster._lazy_token
             except:
@@ -13866,7 +13919,7 @@ class RFT:
                         G.edge(
                             str(dict_arg.get(k_check)),
                             str(childnode),
-                            color="silver",
+                            color="#BEBEBE",
                             arrowsize="0.9",
                             penwidth="1",
                         )
@@ -13886,7 +13939,7 @@ class RFT:
                 G.edge(
                     str(nodenumber),
                     str(childnode),
-                    color="silver",
+                    color="#BEBEBE",
                     arrowsize="0.9",
                     penwidth="1",
                 )
@@ -13922,7 +13975,7 @@ class RFT:
                             G.edge(
                                 str(nodenumber),
                                 str(childnode),
-                                color="silver",
+                                color="#BEBEBE",
                                 arrowsize="0.9",
                                 penwidth="1",
                             )
@@ -13944,7 +13997,7 @@ class RFT:
                             G.edge(
                                 str(nodenumber),
                                 str(childnode),
-                                color="silver",
+                                color="#BEBEBE",
                                 arrowsize="0.9",
                                 penwidth="1",
                             )
@@ -13974,7 +14027,7 @@ class RFT:
                             G.edge(
                                 str(nodenumber),
                                 str(childnode),
-                                color="silver",
+                                color="#BEBEBE",
                                 arrowsize="0.9",
                                 penwidth="1",
                             )
@@ -14001,7 +14054,7 @@ class RFT:
                             G.edge(
                                 str(nodenumber),
                                 str(childnode),
-                                color="silver",
+                                color="#BEBEBE",
                                 arrowsize="0.9",
                                 penwidth="1",
                             )
@@ -14021,7 +14074,7 @@ class RFT:
                             G.edge(
                                 str(nodenumber),
                                 str(childnode),
-                                color="silver",
+                                color="#BEBEBE",
                                 arrowsize="0.9",
                                 penwidth="1",
                             )
@@ -14051,7 +14104,7 @@ class RFT:
                                 G.edge(
                                     str(nodenumber),
                                     str(childnode),
-                                    color="silver",
+                                    color="#BEBEBE",
                                     arrowsize="0.9",
                                     penwidth="1",
                                 )
@@ -14071,7 +14124,7 @@ class RFT:
                     G.edge(
                         str(nodenumber),
                         str(childnode),
-                        color="silver",
+                        color="#BEBEBE",
                         arrowsize="0.9",
                         penwidth="1",
                     )
@@ -14091,7 +14144,7 @@ class RFT:
                 G.edge(
                     str(nodenumber),
                     str(childnode),
-                    color="silver",
+                    color="#BEBEBE",
                     arrowsize="0.9",
                     penwidth="1",
                 )
@@ -14111,7 +14164,7 @@ class RFT:
                 G.edge(
                     str(nodenumber),
                     str(childnode),
-                    color="silver",
+                    color="#BEBEBE",
                     arrowsize="0.9",
                     penwidth="1",
                 )
@@ -14161,7 +14214,7 @@ class RFT:
                                 G.edge(
                                     str(nodenumber),
                                     str(childnode),
-                                    color="silver",
+                                    color="#BEBEBE",
                                     arrowsize="0.9",
                                     penwidth="1",
                                 )

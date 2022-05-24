@@ -119,7 +119,7 @@ class Gauge(_BaseWidget):
         self._datasets = []
         self._data_statistic_defintion = []
         self._mindata_statistic_defintion = []
-        self._mazdata_statistic_defintion = []
+        self._maxdata_statistic_defintion = []
 
         if self._gauge.style == "meter":
             self._arrows.append(

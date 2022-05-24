@@ -35,8 +35,7 @@ class TestVersionManager(unittest.TestCase):
 
         cls.vms = cls.parcel_fabric_flc.versions
 
-        cls.records_fl = pfutils.get_feature_layer(
-            cls.parcel_fabric_flc, "Records")
+        cls.records_fl = pfutils.get_feature_layer(cls.parcel_fabric_flc, "Records")
 
         cls.timestamp = int(time.time())
         cls.record_name = f"api-{cls.timestamp}"
@@ -67,12 +66,11 @@ class TestVersionManager(unittest.TestCase):
         fq_version_name = f"admin.{_version_name_txt}"
 
         # Add a single feature to a feature layer
-        new_feature = pfutils.create_parcel_record(self.parcel_fabric_flc,
-                                                         fq_version_name,
-                                                         f"api-{self.timestamp}")
+        new_feature = pfutils.create_parcel_record(
+            self.parcel_fabric_flc, fq_version_name, f"api-{self.timestamp}"
+        )
 
-        self.assertIsNotNone(new_feature.get("addResults"),
-                             "Did not insert a feature")
+        self.assertIsNotNone(new_feature.get("addResults"), "Did not insert a feature")
 
         with self.vms.get(fq_version_name, "read") as version:
             version.mode = "edit"
@@ -90,7 +88,7 @@ class TestVersionManager(unittest.TestCase):
 
             did_post = version.post()
             self.assertTrue(did_post, "Posting to default failed")
-    
+
     @classmethod
     def tearDownClass(cls):
         pfutils.clean_up_versions(cls.vms)

@@ -375,6 +375,14 @@ class PointCNN(ArcGISModel):
         _emd_template["DataAttributes"][
             "background_classcode"
         ] = self._data.background_classcode
+
+        if hasattr(self.learn.data, "statistics") and self.learn.data.statistics[
+            "parameters"
+        ].get("excludedClasses", False):
+            _emd_template["excludedClasses"] = self.learn.data.statistics["parameters"][
+                "excludedClasses"
+            ]
+
         if self._data.pc_type == "PointCloud_TF":
             _emd_template["DataAttributes"][
                 "extra_feat_indexes"
@@ -406,6 +414,8 @@ class PointCNN(ArcGISModel):
         """
         Displays the results from your model on the validation set
         with ground truth on the left and predictions on the right.
+        Visualization of data, exported in a geographic coordinate system
+        is not yet supported.
 
         =====================   ===========================================
         **Argument**            **Description**

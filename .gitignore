@@ -13,6 +13,7 @@ src/geosaurus/__pycache__/
 src/arcgis.egg-info/
 src/.eggs/
 src/dist/
+src/build/
 .vs/
 *.pyproj
 *.sln

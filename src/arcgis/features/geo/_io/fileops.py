@@ -40,6 +40,57 @@ except:
     HASPYSHP = False
 
 _logging = logging.getLogger(__name__)
+
+
+def _fc2pandas_dtypes(describe: dict) -> dict:
+    """
+    returns a dtypes to cast the final dataframe to the proper datatypes (if possible).
+
+    :returns: Dict[str, Any]
+    """
+    if describe is None:
+        return None
+    if [float(i) for i in pd.__version__.split(".")] < [1, 0, 0]:
+        _lu_types = {
+            "OID": np.int64,
+            "SmallInteger": np.int32,
+            "Integer": np.int32,
+            "Single": float,
+            "Double": float,
+            "String": "<U",
+            "Blob": "O",
+            "Guid": "<U38",
+            "Raster": "O",
+            "Date": "<M8[us]",
+        }
+    else:
+        _lu_types = {
+            "OID": np.int64,
+            "SmallInteger": np.int32,
+            "Integer": np.int32,
+            "Single": float,
+            "Double": float,
+            "String": "<U",
+            "Blob": "O",
+            "Guid": "<U38",
+            "Raster": "O",
+            "Date": "<M8[us]",
+        }
+    dtypes = None
+    if "fields" in describe:
+        dtypes = {}
+        for field in describe["fields"]:
+            if field.type.lower() in ["TEXT", "string"]:
+                dtypes[field.name] = f"{_lu_types['String']}{field.length}"
+            elif field.type in _lu_types.keys():
+                dtypes[field.name] = _lu_types[field.type]
+            elif field.type.lower() == "geometry":
+                pass  # Skip value
+            else:
+                dtypes[field.name] = object
+    return dtypes
+
+
 # --------------------------------------------------------------------------
 def _infer_type(df, col):
     """
@@ -139,7 +190,10 @@ def _from_xy(df, x_column, y_column, sr=None):
     df["SHAPE"] = GeoArray(ags_geom)
     df.spatial.name
     for i in range(len(df)):
-        shape = df.loc[i]["SHAPE"]
+        try:
+            shape = df.iloc[i]["SHAPE"]
+        except:
+            shape = df.loc[i]["SHAPE"]
         if "EMPTY" in shape.WKT:
             df.iat[i, df.columns.get_loc("SHAPE")] = None
     return df
@@ -427,7 +481,7 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
                     except:
                         dtypes.append((col, "<U254"))
             elif df[col].dtype.name == "int64":
-                dtypes.append((col, np.int64))
+                dtypes.append((col, np.float))
             elif df[col].dtype.name == "bool":
                 dtypes.append((col, np.int32))
             else:
@@ -498,16 +552,23 @@ def from_featureclass(filename, **kwargs):
     from arcgis.geometry import _types
     import json
 
-    filename = _ensure_path_string(filename)
-    if not isinstance(filename, (str, Path, PurePath)):
-        raise ValueError(
-            f"filename must be a `str`, `Path`, or `PurePath`, not {type(filename)}"
-        )
-    if filename.find("http://") > -1 or filename.find("https://") > -1:
-        res = from_url(url=filename)
-        if len(res) == 1:
-            return res[0]
-        return res
+    if HASARCPY and (
+        isinstance(filename, (arcpy._mp.Layer))
+        or type(filename).__name__.find("arcpy") > -1
+    ):
+        filename = filename
+    else:
+
+        filename = _ensure_path_string(filename)
+        if not isinstance(filename, (str, Path, PurePath)):
+            raise ValueError(
+                f"filename must be a `str`, `Path`, or `PurePath`, not {type(filename)}"
+            )
+        if filename.find("http://") > -1 or filename.find("https://") > -1:
+            res = from_url(url=filename)
+            if len(res) == 1:
+                return res[0]
+            return res
     if HASARCPY:
         sql_clause = kwargs.pop("sql_clause", (None, None))
         where_clause = kwargs.pop("where_clause", None)
@@ -524,6 +585,7 @@ def from_featureclass(filename, **kwargs):
             desc = {"fields": desc.fields, "shapeType": desc.shapeType}
             area_field = getattr(desc, "areaFieldName", None)
             length_field = getattr(desc, "lengthFieldName", None)
+        pandas_dtypes = _fc2pandas_dtypes(desc)
 
         if spatial_filter:
             _sf_lu = {
@@ -603,7 +665,10 @@ def from_featureclass(filename, **kwargs):
         df.loc[none_q, "SHAPE"] = None
         df.spatial.set_geometry("SHAPE")
         df.spatial._meta.source = filename
-        return df
+        try:
+            return df.astype(pandas_dtypes)
+        except:
+            return df
     elif HASARCPY == False and HASPYSHP == True and filename.lower().find(".shp") > -1:
         geoms = []
         records = []
@@ -843,7 +908,7 @@ def to_featureclass(
                         except:
                             dtypes.append((col, "<U254"))
                 elif df[col].dtype.name == "int64":
-                    dtypes.append((col, np.int64))
+                    dtypes.append((col, np.float))
                 elif df[col].dtype.name == "bool":
                     dtypes.append((col, np.int32))
                 else:
@@ -989,9 +1054,9 @@ def _pyshp_to_shapefile(df, out_path, out_name):
                         shpfile.field(name=c, size=255)
                     elif isinstance(df[c].loc[idx], (int)):
                         shpfile.field(name=c, fieldType="N", size=5)
-                    elif isinstance(df[c].loc[idx], (np.int, np.int32, np.int64)):
+                    elif isinstance(df[c].loc[idx], (np.int, np.int32)):
                         shpfile.field(name=c, fieldType="N", size=10)
-                    elif isinstance(df[c].loc[idx], (np.float, np.float64)):
+                    elif isinstance(df[c].loc[idx], (np.float, np.float64, np.int64)):
                         shpfile.field(name=c, fieldType="F", size=19, decimal=11)
                     elif (
                         isinstance(df[c].loc[idx], (datetime.datetime, np.datetime64))
@@ -1112,9 +1177,9 @@ def _pyshp2(df, out_path, out_name):
                         shpfile.field(name=c, size=255)
                     elif isinstance(df[c].loc[idx], (int)):
                         shpfile.field(name=c, fieldType="N", size=5)
-                    elif isinstance(df[c].loc[idx], (np.int, np.int32, np.int64)):
+                    elif isinstance(df[c].loc[idx], (np.int, np.int32)):
                         shpfile.field(name=c, fieldType="N", size=10)
-                    elif isinstance(df[c].loc[idx], (np.float, np.float64)):
+                    elif isinstance(df[c].loc[idx], (np.float, np.float64, np.int64)):
                         shpfile.field(name=c, fieldType="F", size=19, decimal=11)
                     elif (
                         isinstance(df[c].loc[idx], (datetime.datetime, np.datetime64))

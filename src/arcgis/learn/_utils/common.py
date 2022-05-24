@@ -455,7 +455,7 @@ def image_tensor_checks_plotting(imagetensor_batch):
     if symbology_x_batch.mean() < 1:
         symbology_x_batch = symbology_x_batch.clamp(0, 1)
 
-    # Squeeze channels if single channel (1, 224, 224) -> (224, 224)
+    # Squeeze channels if single channel (224, 224, 1) -> (224, 224)
     if symbology_x_batch.shape[-1] == 1:
         symbology_x_batch = symbology_x_batch.squeeze(-1)
     return symbology_x_batch
@@ -624,7 +624,7 @@ def load_model(emd_path, data=None):
 
     with open(_emd_path) as f:
         emd = json.load(f)
-    model_name = emd["ModelName"]
+    model_name = "".join(char for char in emd["ModelName"] if char.isalnum())
     model_cls = getattr(models, model_name, None)
 
     if model_cls is None:

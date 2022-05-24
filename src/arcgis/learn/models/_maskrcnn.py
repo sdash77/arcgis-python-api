@@ -4,36 +4,31 @@ from ._arcgis_model import _EmptyData, _change_tail
 HAS_OPENCV = True
 try:
     from pathlib import Path
+    import warnings
     import json
     import math
     import PIL
     import torch
-    from fastai.vision.learner import cnn_learner
-    from fastai.callbacks.hooks import model_sizes
+    import torch.nn as nn
+    from collections import OrderedDict
     from fastai.vision.learner import create_body
-    from fastai.vision.image import open_image
+    from fastai.callbacks.hooks import num_features_model
     from fastai.vision import flatten_model
     from fastai.vision.image import pil2tensor
-    from fastai.core import has_arg, split_kwargs_by_func
-    from torchvision.models import resnet34
+    from fastai.core import split_kwargs_by_func
     from torchvision import models
     from skimage.measure import find_contours
-    from arcgis.learn.models._inferencing.util import nms
     from ._codetemplate import instance_detector_prf
     from arcgis.learn.models._deepsort_predict_utils import non_max_suppression
     import numpy as np
     import types
-    from .._data import prepare_data, _raise_fastai_import_error
-    from fastai.callbacks import EarlyStoppingCallback
     from ._arcgis_model import (
-        SaveModelCallback,
-        _set_multigpu_callback,
         _get_backbone_meta,
         _resnet_family,
         _set_ddp_multigpu,
         _isnotebook,
     )
-    import torchvision
+    from ._timm_utils import timm_config, filter_timm_models, _get_feature_size
     from torchvision import models
     from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
     from torchvision.models.detection.mask_rcnn import MaskRCNNPredictor
@@ -52,11 +47,9 @@ try:
     import matplotlib.pyplot as plt
     import matplotlib.patches as patches
     import matplotlib
-    from fastai.basic_data import DatasetType
     from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
-    import os as arcgis_os
     from .._utils.common import get_nbatches, image_batch_stretcher, read_image
-    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from .._utils.env import is_arcgispronotebook
 
     HAS_FASTAI = True
 except Exception as e:
@@ -67,6 +60,39 @@ try:
     import cv2
 except Exception:
     HAS_OPENCV = False
+
+
+class TimmFPNBackbone(nn.Module):
+    def __init__(self, backbone, chip_size=224):
+        from fastai.callbacks.hooks import hook_outputs
+        from fastai.callbacks.hooks import model_sizes
+        from torchvision.ops.feature_pyramid_network import (
+            FeaturePyramidNetwork,
+            LastLevelMaxPool,
+        )
+        from ._hed_utils import get_hooks
+
+        super().__init__()
+        self.backbone = backbone
+        hooks = get_hooks(self.backbone, chip_size)
+        self.hook = hook_outputs(hooks[1:])
+        model_sizes(self.backbone, size=(chip_size, chip_size))
+        layer_num_channels = [k.stored.shape[1] for k in self.hook]
+        self.fpn = FeaturePyramidNetwork(
+            in_channels_list=layer_num_channels,
+            out_channels=256,
+            extra_blocks=LastLevelMaxPool(),
+        )
+        self.out_channels = 256
+
+    def forward(self, x):
+        x = self.backbone(x)
+        out = OrderedDict()
+        features = self.hook.stored
+        for k, v in enumerate(features):
+            out[str(k)] = v
+        x = self.fpn(out)
+        return x
 
 
 def chips_to_batch(chips, model_height, model_width, batch_size=1):
@@ -119,6 +145,25 @@ def grid_anchors(self, grid_sizes, strides):
     return anchors
 
 
+class MaskRCNNTracer(torch.nn.Module):
+    def __init__(self, model):
+        super().__init__()
+        self.model = model
+        self.model.eval()
+
+    def _dict_to_tuple(self, out_dict):
+        return (
+            out_dict["boxes"],
+            out_dict["scores"],
+            out_dict["labels"],
+            out_dict["masks"],
+        )
+
+    def forward(self, inp):
+        out = self.model(inp)
+        return self._dict_to_tuple(out[0])
+
+
 class MaskRCNN(ArcGISModel):
     """
     Model architecture from https://arxiv.org/abs/1703.06870.
@@ -131,10 +176,11 @@ class MaskRCNN(ArcGISModel):
     data                    Required fastai Databunch. Returned data object from
                             ``prepare_data`` function.
     ---------------------   -------------------------------------------
-    backbone                Optional function. Backbone CNN model to be used for
-                            creating the base of the `MaskRCNN`, which
+    backbone                Optional string. Backbone convolutional neural network
+                            model used for feature extraction, which
                             is `resnet50` by default.
-                            Compatible backbones: 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152'
+                            Supported backbones: ResNet family and specified Timm
+                            models(experimental support) from :func:`~arcgis.learn.MaskRCNN.backbones`.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -262,7 +308,10 @@ class MaskRCNN(ArcGISModel):
             kwargs, models.detection.MaskRCNN.__init__
         )
 
-        if self._backbone.__name__ == "resnet50":
+        if (
+            self._backbone.__name__ == "resnet50"
+            and "timm" not in self._backbone.__module__
+        ):
             model = models.detection.maskrcnn_resnet50_fpn(
                 pretrained=pretrained_backbone,
                 pretrained_backbone=False,
@@ -275,7 +324,11 @@ class MaskRCNN(ArcGISModel):
                 model.backbone = _change_tail(model.backbone, data)
                 model.transform.image_mean = scaled_mean_values
                 model.transform.image_std = scaled_std_values
-        elif self._backbone.__name__ in ["resnet18", "resnet34"] and not pointrend:
+        elif (
+            self._backbone.__name__ in ["resnet18", "resnet34"]
+            and not pointrend
+            and "timm" not in self._backbone.__module__
+        ):
             if self._is_multispectral:
                 backbone_small = create_body(
                     self._backbone_ms,
@@ -308,9 +361,26 @@ class MaskRCNN(ArcGISModel):
                 grid_anchors, model.rpn.anchor_generator
             )
         else:
-            backbone_fpn = resnet_fpn_backbone(
-                self._backbone.__name__, pretrained=pretrained_backbone
-            )
+            if "timm" in self._backbone.__module__:
+                backbone_cut = timm_config(self._backbone)["cut"]
+                backbone_fpn = create_body(
+                    self._backbone, pretrained_backbone, backbone_cut
+                )
+                try:
+                    backbone_fpn = TimmFPNBackbone(backbone_fpn, data.chip_size)
+                except:
+                    if "tresnet" in self._backbone.__module__:
+                        backbone_fpn.out_channels = _get_feature_size(
+                            self._backbone, backbone_cut
+                        )[-1][1]
+                    else:
+                        backbone_fpn.out_channels = num_features_model(
+                            torch.nn.Sequential(*backbone_fpn.children())
+                        )
+            else:
+                backbone_fpn = resnet_fpn_backbone(
+                    self._backbone.__name__, pretrained=pretrained_backbone
+                )
             if self._is_multispectral:
                 backbone_fpn = _change_tail(backbone_fpn, data)
                 model = models.detection.MaskRCNN(
@@ -329,6 +399,10 @@ class MaskRCNN(ArcGISModel):
                     min_size=1.5 * data.chip_size,
                     max_size=2 * data.chip_size,
                     **self.maskrcnn_kwargs,
+                )
+            if "timm" in self._backbone.__module__:
+                model.rpn.anchor_generator.grid_anchors = types.MethodType(
+                    grid_anchors, model.rpn.anchor_generator
                 )
 
         in_features = model.roi_heads.box_predictor.cls_score.in_features
@@ -359,9 +433,7 @@ class MaskRCNN(ArcGISModel):
         self.learn.c_device = self._device
 
         # fixes for zero division error when slice is passed
-        idx = 27
-        if self._backbone.__name__ in ["resnet18", "resnet34"]:
-            idx = self._freeze()
+        idx = self._freeze()
         self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
         self.learn.create_opt(lr=3e-3)
 
@@ -400,12 +472,19 @@ class MaskRCNN(ArcGISModel):
 
     @property
     def supported_backbones(self):
-        """Supported torchvision backbones for this model."""
+        """Supported list of backbones for this model."""
+        return MaskRCNN._supported_backbones()
+
+    @staticmethod
+    def backbones():
+        """Supported list of backbones for this model."""
         return MaskRCNN._supported_backbones()
 
     @staticmethod
     def _supported_backbones():
-        return [*_resnet_family]
+        timm_models = filter_timm_models()
+        timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
+        return [*_resnet_family] + timm_backbones
 
     @property
     def supported_datasets(self):
@@ -472,6 +551,104 @@ class MaskRCNN(ArcGISModel):
         return cls(
             data, **model_params, pretrained_path=str(model_file), **maskrcnn_kwargs
         )
+
+    def _save_pytorch_torchscript(self, name, save=True):
+        model = self.learn.model
+        model.eval()
+
+        cpu = torch.device("cpu")
+        device = cpu
+        model = model.to(cpu)
+
+        if hasattr(self._data, "chip_size"):
+            chip_size = self._data.chip_size
+            if not isinstance(chip_size, tuple):
+                chip_size = (chip_size, chip_size)
+        inp = torch.rand(1, 3, chip_size[0], chip_size[1]).to(cpu)
+
+        model = MaskRCNNTracer(model)
+
+        traced_model = None
+        try:
+            with torch.no_grad():
+                traced_model = self._trace(model, inp, True)
+        except:
+            with torch.no_grad():
+                traced_model = self._trace(model, inp, True)
+
+        model.to(device)
+        saved_path_cpu = (
+            self.learn.path / self.learn.model_dir / f"{name}-cpu.pt"
+        ).__str__()
+        saved_path_gpu = ""
+        torch.jit.save(traced_model, saved_path_cpu)
+
+        if not save:
+            [traced_model, traced_model]
+        return [f"{name}-cpu.pt", saved_path_gpu]
+
+    def _save_pytorch_tflite(self, name):
+        import tensorflow as tf
+        import logging
+
+        tf.get_logger().setLevel(logging.ERROR)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            import onnx
+            import onnx_tf
+            from onnx_tf.backend import prepare
+
+        traced_models = self._save_pytorch_torchscript(name, False)
+        if traced_models[0] is None:
+            return ["", ""]
+
+        cpu = torch.device("cpu")
+        device = cpu
+        traced_model = traced_models[0].to(device)
+
+        if hasattr(self._data, "chip_size"):
+            chip_size = self._data.chip_size
+            if not isinstance(chip_size, tuple):
+                chip_size = (chip_size, chip_size)
+        num_input_channels = list(self.learn.model.parameters())[0].shape[1]
+        inp = torch.randn([1, num_input_channels, chip_size[0], chip_size[1]]).to(
+            device
+        )
+
+        save_path_tflite = self.learn.path / self.learn.model_dir / f"{name}.tflite"
+        save_path_onnx = self.learn.path / self.learn.model_dir / f"{name}.onnx"
+        save_path_pb = self.learn.path / self.learn.model_dir / f"{name}"
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            torch.onnx.export(
+                traced_model,
+                inp,
+                save_path_onnx,
+                export_params=True,
+                do_constant_folding=False,
+                verbose=True,
+                input_names=["input"],
+                output_names=["output"],
+                opset_version=11,
+            )
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            arcgis_onnx = onnx.load(save_path_onnx)
+            tf_onnx = prepare(arcgis_onnx, logging_level="ERROR")
+            tf_onnx.export_graph(str(save_path_pb))
+
+        model = tf.saved_model.load(save_path_pb)
+        concrete_func = model.signatures[
+            tf.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY
+        ]
+        converter = tf.lite.TFLiteConverter.from_concrete_functions([concrete_func])
+        converter.optimizations = [tf.lite.Optimize.DEFAULT]  # for full accuracy
+        tf_lite_model = converter.convert()
+        open(save_path_tflite, "wb").write(tf_lite_model)
+
+        return [save_path_tflite, save_path_onnx]
 
     def _get_emd_params(self, save_inference_file):
         import random
@@ -760,7 +937,7 @@ class MaskRCNN(ArcGISModel):
         if self._device == torch.device("cuda"):
             torch.cuda.empty_cache()
 
-        if _IS_ARCGISPRONOTEBOOK:
+        if is_arcgispronotebook():
             plt.show()
         if return_fig:
             return fig

@@ -679,6 +679,8 @@ def show_point_cloud_batch(self, rows=2, figsize=(6, 12), color_mapping=None, **
 
     """
     It will plot 3d point cloud data you exported in the notebook.
+    Visualization of data, exported in a geographic coordinate system
+    is not yet supported.
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -849,6 +851,8 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
 
     """
     It will plot 3d point cloud data you exported in the notebook.
+    Visualization of data, exported in a geographic coordinate system
+    is not yet supported.
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -2473,6 +2477,8 @@ def show_results(self, rows, color_mapping=None, **kwargs):
     """
     It will plot results from your trained model with ground truth on the
     left and predictions on the right.
+    Visualization of data, exported in a geographic coordinate system
+    is not yet supported.
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -3050,9 +3056,11 @@ def predict_batch_h5(self, dl, output_path, progressor):
             tile = tile[None]
 
         fname = np.array(dl.dataset.filenames)[tile[:, 0]]
-        fname, unique_index = np.unique(fname, return_index=True)
+        _, unique_index = np.unique(fname, return_index=True)
+        # get unique name form sorted index in actual array
+        fname = [fname[i] for i in np.sort(unique_index)]
         # add batch_size for spliting prediction till last batch number
-        unique_index = list(unique_index) + [dl.batch_size]
+        unique_index = list(np.sort(unique_index)) + [dl.batch_size]
         for i, ufname in enumerate(fname):
 
             if ufname != current_file_name:
@@ -3168,6 +3176,8 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
     """
     It will plot results from your trained model with ground truth on the
     left and predictions on the right.
+    Visualization of data, exported in a geographic coordinate system
+    is not yet supported.
 
     =====================   ===========================================
     **Argument**            **Description**

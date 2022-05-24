@@ -315,6 +315,9 @@ class train_callback(LearnerCallback):
     def on_batch_begin(self, last_input, last_target, **kwargs):
         "Handle new batch `xb`,`yb` in `train` or validation."
         target_list = mask_to_dict(last_target, self.c_device)
+        if last_input.shape[0] < 2:
+            last_input = torch.cat((last_input, last_input))
+            target_list.append(target_list[0])
         self.learn.model.train()
         last_input = [list(last_input), target_list]
         last_target = [torch.tensor([1]) for i in last_target]
