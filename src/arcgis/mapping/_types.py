@@ -1778,6 +1778,9 @@ class WebMap(HasTraits, collections.OrderedDict):
         :return: Bookmarks in the WebMap item.
 
         .. code-block:: python
+        
+            # Usage Example:
+            
             from arcgis.mapping import WebMap
             from arcgis.gis import GIS
 
