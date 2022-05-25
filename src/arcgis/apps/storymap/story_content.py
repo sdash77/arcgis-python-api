@@ -1444,16 +1444,15 @@ class Text(object):
     ------------------      --------------------------------------------------------------------
     text                    Required String. The text that will be shown in the story.
 
+                            .. code-block:: python
+                            
+                                # Usage Example for paragraph:
+                                
+                                >>> text = Text("Paragraph with <strong>bold</strong>, <em>italic</em> and <a href=\"https://www.google.com\" rel=\"noopener noreferrer\" target=\"_blank\">hyperlink</a> and a <span class=\"sm-text-color-080\">custom color</span>"
 
-                                Example:
-                                "Paragraph with <strong>bold</strong>,
-                                <em>italic</em> and
-                                <a href=\"https://www.google.com\" rel=\"noopener noreferrer\"
-                                target=\"_blank\">hyperlink</a> and a
-                                <span class=\"sm-text-color-080\">custom color</span>"
-
-                                Example for a numbered list:
-                                "<li>List Item1</li> <li>List Item2</li> <li>List Item3</li>"
+                                # Usage Example for numbered list:
+                                
+                                >>> text = Text("<li>List Item1</li> <li>List Item2</li> <li>List Item3</li>")
     ------------------      --------------------------------------------------------------------
     style                   Optional TextStyles type. There are 7 different styles of text that can be
                             added to a story.
