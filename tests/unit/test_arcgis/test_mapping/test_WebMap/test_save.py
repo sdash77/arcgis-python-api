@@ -1,7 +1,5 @@
 from unittest.mock import patch
 
-import pytest
-
 from utils.mocks import MockWebMap
 from arcgis.mapping import WebMap
 
@@ -22,9 +20,10 @@ def test_noarg_save():
     a dict with the 'title', 'snippet', 'tags' keys
     """
     mock_webmap = MockWebMap()
-    with pytest.raises(RuntimeError) as e:
+    try:
         WebMap.save(mock_webmap, {})
-    assert "title" in str(e.value) and "required" in str(e.value)
+    except RuntimeError as e:
+        assert "title" in str(e) and "required" in str(e)
 
 
 def test_process_extent_called_correctly():

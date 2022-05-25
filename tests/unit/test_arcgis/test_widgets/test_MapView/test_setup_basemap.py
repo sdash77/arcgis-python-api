@@ -1,7 +1,5 @@
 from unittest.mock import patch, MagicMock
 
-import pytest
-
 from utils.mocks import MockMapView
 from arcgis.widgets import MapView
 

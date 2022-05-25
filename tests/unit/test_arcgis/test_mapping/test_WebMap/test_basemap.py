@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import patch
 
 from utils.mocks import MockMapView
@@ -14,9 +13,10 @@ def test_set_basemap_to_invalid_string():
     from arcgis.mapping import WebMap
 
     wm = WebMap()
-    with pytest.raises(RuntimeError) as e:
+    try:
         wm.basemap = "hello"
-    assert "Basemap 'hello' isn't valid" in str(e.value)
+    except RuntimeError as e:
+        assert "Basemap 'hello' isn't valid" in str(e)
 
 
 @patch("arcgis.widgets.MapView", MockMapView)

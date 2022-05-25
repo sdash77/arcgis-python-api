@@ -133,9 +133,11 @@ def test_enrich_single_address_agol(usa_agol, expectation=does_not_raise()):
 @skip_if_no_agol
 def test_enrich_feature_set_direct_enrich_wrong_data_colleciton_agol(usa_agol):
     from arcgis.geoenrichment import enrich
-    with pytest.raises(AssertionError):
+    try:
         enrich_res = enrich(study_areas=[test_feature_set], data_collections=['Age'], gis=usa_agol._gis)
         assert_enrich_results(enrich_res, usa_agol)
+    except AssertionError as e:
+        assert "data collections you requested is not available" in str(e)
 
 
 @skip_if_no_agol

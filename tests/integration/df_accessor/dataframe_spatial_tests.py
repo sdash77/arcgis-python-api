@@ -90,7 +90,6 @@ geoms = [
         }
     ),
 ]
-import pytest
 import pandas as pd
 from arcgis.features.geo import GeoAccessor
 from arcgis.features.geo import _io
@@ -177,11 +176,13 @@ def test_set_geometry_accessor_string():
 
 def test_set_geometry_accessor_string_not_valid():
     """set geometry to a column that does not exist"""
-    with pytest.raises(Exception) as e_info:
-        data = [[1, 2, 3, 4]] * len(geoms)
-        columns = ["A", "B", "C", "D"]
-        df = pd.DataFrame(data=data, columns=columns)
+    data = [[1, 2, 3, 4]] * len(geoms)
+    columns = ["A", "B", "C", "D"]
+    df = pd.DataFrame(data=data, columns=columns)
+    try:
         df.spatial.set_geometry("FISH")
+    except ValueError as e:
+        assert "Column FISH does not exist" in str(e)
 
 
 ##-------------------------------------------------------------------------
@@ -189,11 +190,13 @@ def test_set_geometry_accessor_string_not_valid():
 ##-------------------------------------------------------------------------
 def test_plot_no_geom_set():
     """plots without setting geometry"""
-    with pytest.raises(Exception, message="Expecting ValueError"):
-        data = [[1, 2, 3, 4]] * len(geoms)
-        columns = ["A", "B", "C", "D"]
-        df = pd.DataFrame(data=data, columns=columns)
+    data = [[1, 2, 3, 4]] * len(geoms)
+    columns = ["A", "B", "C", "D"]
+    df = pd.DataFrame(data=data, columns=columns)
+    try:
         df.spatial.plot(map_widget=mw)
+    except Exception as e:
+        assert "name 'mw' is not defined" in str(e)
 
 
 # -------------------------------------------------------------------------
@@ -212,7 +215,8 @@ def test_plot():
 # -------------------------------------------------------------------------
 def test_plot_not_mapwidget_obj():
     """tests plot with invalid map widget"""
-    from arcgis.mapping._types import WebMap, MapView
+    from arcgis.mapping._types import WebMap
+    from arcgis.widgets import MapView
 
     v = GeoArray(geoms)
     data = [[1, 2, 3, 4]] * len(geoms)
