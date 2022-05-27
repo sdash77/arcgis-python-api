@@ -5,6 +5,7 @@ import asyncio
 from functools import wraps, lru_cache
 import importlib
 from itertools import product
+import re
 import threading
 from typing import Any, AnyStr, Iterable, Optional, Tuple, Union
 
@@ -244,7 +245,7 @@ def has_networkanalysis_gis(
             f'the list of network functions [{", ".join(ntwrk_fn_lst)}.'
         )
 
-    # privileges may no be available
+    # privileges may not be available
     _assert_privileges_access(user)
 
     # get the network analysis capabilities from the privileges
@@ -434,31 +435,74 @@ def validate_spatial_reference(
     return sr
 
 
+def is_dict_geometry(in_dict: dict) -> bool:
+    """Determine if input dictionary is a Geometry object."""
+    if (
+        ("x" in in_dict.keys() and "y" in in_dict.keys())
+        or ("points" in in_dict.keys())
+        or ("ringCurves" in in_dict.keys())
+        or ("rings" in in_dict.keys())
+        or ("paths" in in_dict.keys())
+        or ("pathCurves" in in_dict.keys())
+    ):
+        is_geometry = True
+    else:
+        is_geometry = False
+    return is_geometry
+
+
+def is_dict_featureset(in_dict: dict) -> bool:
+    """Determine if input dictionary is a FeatureSet."""
+    if isinstance(in_dict, dict):
+        is_featureset = "features" in in_dict.keys() and "fields" in in_dict.keys()
+    else:
+        is_featureset = False
+    return is_featureset
+
+
 def get_spatially_enabled_dataframe(
-    input_object: Union[pd.DataFrame, pd.Series, Geometry, Iterable, np.ndarray],
+    input_object: Union[
+        pd.DataFrame, pd.Series, Geometry, FeatureSet, Iterable, np.ndarray
+    ],
     spatial_column: str = "SHAPE",
 ) -> pd.DataFrame:
     """Garbage disposal taking variety of possible inputs and outputting, if possible, a Pandas Spatially Enabled
     DataFrame."""
-    # if just a geometry passed in, we need to get it into an iterable
-    if isinstance(input_object, Geometry):
+    # ensure only one FeatureSet getting passed in if an iterable is passed in
+    if isinstance(input_object, Iterable) and not isinstance(
+        input_object, pd.DataFrame
+    ):
+        if is_dict_featureset(input_object[0]) or isinstance(input_object, FeatureSet):
+            assert len(input_object) == 1, "Only one FeatureSet can be used for input"
+
+            # pop out the FeatureSet if this is passed in
+            if isinstance(input_object[0], FeatureSet):
+                input_object = input_object[0]
+
+    # check if is FeatureSet dict and convert to FeatureSet object if it is
+    if is_dict_featureset(input_object):
+        input_object = FeatureSet(input_object)
+
+    # if a FeatureSet, convert to spatially enabled data frame
+    if isinstance(input_object, FeatureSet):
+        input_object = input_object.sdf
+
+    # if just a single geometry passed in, we need to get it into a list
+    if isinstance(input_object, (Geometry, dict)):
         input_object = [input_object]
 
-    # now, if any type of iterable other than a series, make into a series
+    # if any type of iterable other than a series, make into a series
     if isinstance(input_object, (Iterable, np.ndarray)) and not isinstance(
         input_object, pd.DataFrame
     ):
+
+        # Geometry objects may be passed in as an iterable of dicts - convert to Geometry if this is the case
+        first_obj = input_object[0]
+        if isinstance(first_obj, dict):
+            if is_dict_geometry(first_obj):
+                input_object = [Geometry(obj) for obj in input_object]
+
         input_object = pd.Series(input_object)
-
-    # if a feature set in a single length list, pull the feature set out and let user know cannot handle multiple
-    if isinstance(input_object, Iterable):
-        assert len(input_object) == 1, "Only one FeatureSet can be used for input"
-        if isinstance(input_object[0], FeatureSet):
-            input_object = input_object[0]
-
-    # convert a FeatureSet to an SeDF
-    if isinstance(input_object, FeatureSet):
-        input_object = input_object.sdf
 
     # at this juncture, the only real options are either a Series or DataFrame, so if Series, make into DataFrame
     if isinstance(input_object, pd.Series):
@@ -525,8 +569,6 @@ def get_top_codes(codes: Union[pd.Series, list, tuple], threshold: float = 0.5) 
 
 def pep8ify(name):
     """PEP8ify name"""
-    import re
-
     if name is None:
         res = None
     else:

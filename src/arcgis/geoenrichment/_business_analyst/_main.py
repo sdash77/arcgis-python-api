@@ -22,6 +22,8 @@ from ._utils import (
     get_helper_service_url,
     get_sanitized_names,
     get_spatially_enabled_dataframe,
+    is_dict_geometry,
+    is_dict_featureset,
     local_vs_gis,
     pep8ify,
     pro_at_least_version,
@@ -1369,6 +1371,25 @@ class BusinessAnalyst(object):
         if isinstance(geographies, Geometry):
             geographies = [geographies]
 
+        # if a dict is passed directly in, check if it is Geometry or a FeatureSet
+        if isinstance(geographies, dict):
+            if is_dict_geometry(geographies):
+                geographies = Geometry(geographies)
+            elif is_dict_featureset(geographies):
+                geographies = FeatureSet(geographies)
+
+        # if a list of geometries is passed in dict form, convert to Geometry objects
+        if isinstance(geographies, Iterable) and not isinstance(
+            geographies, pd.DataFrame
+        ):
+            if isinstance(geographies[0], dict):
+                if is_dict_geometry(geographies[0]):
+                    geographies = [Geometry(g_dict) for g_dict in geographies]
+
+        # if a FeatureSet, convert to spatially enabled data frame
+        if isinstance(geographies, FeatureSet):
+            geographies = geographies.sdf
+
         # flag if a dataframe
         geo_is_df = isinstance(geographies, pd.DataFrame)
 
@@ -1383,7 +1404,7 @@ class BusinessAnalyst(object):
             if isinstance(first_geo, dict):
                 geo_is_dict = True
 
-        # check if a spatially enabled dataframe if standard geography identifiers are not provided
+        # check if a spatially enabled dataframe, if standard geography identifiers are not provided
         if geo_is_df and standard_geography_id_column is None and not geo_is_dict:
             assert geographies.spatial.validate(), (
                 "If providing a Pandas DataFrame for enrichment, you must either "
@@ -1774,6 +1795,10 @@ class BusinessAnalyst(object):
         # get the enrichment variables as a string ready to submit as a payload parameter
         evars = self._enrich_variable_preprocessing(enrich_variables, country=country)
 
+        # properly format the output spatial reference
+        if isinstance(output_spatial_reference, (int, str)):
+            output_spatial_reference = SpatialReference(output_spatial_reference)
+
         # start building out the package for enrich REST call
         params = {
             "f": "json",
@@ -1822,22 +1847,8 @@ class BusinessAnalyst(object):
                     {"address": {"text": addr_str}} for addr_str in geographies
                 ]
 
-        # detect and flag if a list of Geometry. string and dictionary objects passed directly in as iterable
-        is_dict = False
-        is_geom = False
-        is_str = False
-        if isinstance(geographies, list):
-            if isinstance(geographies[0], Geometry):
-                is_geom = True
-            elif isinstance(geographies[0], dict):
-                is_dict = True
-            if isinstance(geographies[0], str):
-                is_str = True
-
         # convert boolean to string for payload in correct circumstances
-        if return_geometry and (
-            standard_geography_level is not None or (is_dict or is_str)
-        ):
+        if return_geometry:
             retrieve_geometry = True
             params["returnGeometry"] = "true"
         else:
@@ -1847,7 +1858,7 @@ class BusinessAnalyst(object):
         # list to store request parameter payloads
         req_param_lst = []
 
-        # detect and flag if a list of Geometry. string and dictionary objects passed directly in as iterable
+        # detect and flag if a list of Geometry. String and dictionary objects passed directly in as iterable
         is_dict = False
         is_geom = False
         is_str = False
@@ -1907,6 +1918,9 @@ class BusinessAnalyst(object):
             # tack on the spatial reference to make sure it comes along for the ride
             params["insr"] = json.dumps(geographies.spatial.sr)
 
+            # tack on the output spatial reference as well
+            params["outsr"] = json.dumps(output_spatial_reference)
+
             # check to make sure a valid geometry is present
             geom_typ_lst = [
                 gt for gt in geographies.spatial.geometry_type if isinstance(gt, str)
@@ -1915,9 +1929,9 @@ class BusinessAnalyst(object):
                 geom_typ_lst
             ), "The Dataframe does not appear to have a valid geometry type."
 
-            # do not return geography if already in source data (or could be)
-            if standard_geography_level is None:
-                params["returnGeometry"] = "false"
+            # make sure there is a unique identifier for combining data later if more than just geometries provided
+            if isinstance(geographies, pd.DataFrame):
+                geographies["enrich_idx"] = geographies.index
 
             # use the count of features and the max bach size to create a list of param payloads
             total_cnt = (
@@ -1932,7 +1946,7 @@ class BusinessAnalyst(object):
                     in_batch_df = geographies.iloc[idx : idx + batch_size]
 
                     # format the features for sending - keep it light, just the geometry
-                    batch_df = in_batch_df[in_batch_df.spatial.name].to_frame()
+                    batch_df = in_batch_df[[in_batch_df.spatial.name, "enrich_idx"]]
                     batch_df.spatial.set_geometry(geographies.spatial.name)
                     batch_features = batch_df.spatial.to_featureset().features
                     feature_lst = [f.as_dict for f in batch_features]
@@ -1969,14 +1983,19 @@ class BusinessAnalyst(object):
         ]
         enrich_res_df.drop(columns=drop_cols, inplace=True, errors="ignore")
 
-        # if the input dataframe has geometry, but the geometry is not desired from the output, get rid of it
-        if isinstance(geographies, pd.DataFrame) and return_geometry is False:
-            if geographies.spatial.validate():
-                geographies.drop(columns=geographies.spatial.name, inplace=True)
-
         # if more than just a list of standard geography id's was the input, combine the input with the results
         if isinstance(geographies, pd.DataFrame):
-            enrich_df = pd.concat([geographies, enrich_res_df], axis=1, sort=False)
+            src_drop_cols = [geographies.spatial.name] + [
+                c for c in geographies.columns if c.lower().startswith("shape_")
+            ]
+            enrich_df = enrich_res_df.join(
+                geographies.drop(columns=src_drop_cols).set_index("enrich_idx"),
+                on="enrich_idx",
+            ).drop(columns="enrich_idx")
+            cols_in_order = [
+                c for c in geographies.columns if c not in src_drop_cols
+            ] + list(enrich_res_df.columns)
+            enrich_df = enrich_df[[c for c in cols_in_order if c != "enrich_idx"]]
         else:
             enrich_df = enrich_res_df
 
@@ -1996,9 +2015,6 @@ class BusinessAnalyst(object):
 
             # set the geometry
             enrich_df.spatial.set_geometry("SHAPE")
-
-            # set to output spatial reference
-            enrich_df = change_spatial_reference(enrich_df, output_spatial_reference)
 
         # proactively change the column names so no surprises if exporting to a feature class later
         enrich_df.columns = [
