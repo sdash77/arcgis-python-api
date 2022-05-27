@@ -1,3 +1,4 @@
+from __future__ import annotations
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 
@@ -13,7 +14,7 @@ class BaseMissionServer(object):
     _properties = None
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None):
-        self._url = url
+        self._url = url![](../../../../../../../AppData/Local/Temp/1/download.jpg)
         if gis is None:
             from arcgis import env
 
