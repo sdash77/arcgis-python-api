@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
@@ -155,7 +156,7 @@ class SystemManager(object):
 ########################################################################
 class DirectoryManager(object):
     """
-    A manages and maintains a collection of all server directories.
+    Manages and maintains a collection of all server directories.
     """
 
     _url = None
