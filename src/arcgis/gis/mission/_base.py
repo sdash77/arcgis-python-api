@@ -14,7 +14,7 @@ class BaseMissionServer(object):
     _properties = None
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None):
-        self._url = url![](../../../../../../../AppData/Local/Temp/1/download.jpg)
+        self._url = url
         if gis is None:
             from arcgis import env
 
