@@ -32,6 +32,9 @@ jobs:
       run: |
         cd ./build
         python update_build_number.py "${{ github.run_number }}" "./arcgis/meta.yaml"
+    - name: Clean PYD/SO Files and Folders
+      run: |
+        python ./build/clean_up_so_pyd.py "./src"
     - name: Install Conda-Build
       run: |
         cd ./build

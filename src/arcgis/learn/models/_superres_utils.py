@@ -48,7 +48,7 @@ class FeatureLoss(nn.Module):
         self.hooks = hook_outputs(self.loss_features, detach=False)
         self.wgts = layer_wgts
         self.metric_names = [
-            "pixel",
+            "pixel_loss",
         ]
 
     def make_features(self, x, clone=False):

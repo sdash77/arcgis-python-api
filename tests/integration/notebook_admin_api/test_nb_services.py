@@ -49,7 +49,7 @@ class TestNotebookService(unittest.TestCase):
     def test_services_add_ops(self):
         """tests the create notebook service tool"""
         nb_item = gis.content.add(
-            item_properties={'type': "Notebook", "title": "nb_title", "text": json_data}
+            item_properties={"type": "Notebook", "title": "nb_title", "text": json_data}
         )
         servers = gis.admin.servers.list()
         for s in servers:

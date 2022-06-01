@@ -23,7 +23,7 @@ try:
     from fastai.tabular.transform import FillMissing, Categorify, Normalize
     from fastai.basic_train import Learner, load_learner
     from fastprogress.fastprogress import progress_bar
-    from .._utils.tabular_data import TabularDataObject, explain_prediction
+    from .._utils.tabular_data import TabularDataObject, explain_prediction, add_h3
     from .._utils.common import _get_emd_path
     from fastai.torch_core import split_model_idx
     import torch
@@ -164,12 +164,14 @@ class FullyConnectedNetwork(ArcGISModel):
             _is_classification = True
 
         layers = emd["layers"]
+        cell_sizes = emd.get("cell_sizes", None)
         if data is None:
 
             data = TabularDataObject._empty(
                 categorical_variables, continuous_variables, dependent_variable, None
             )
             data._is_classification = _is_classification
+            data._cell_sizes = cell_sizes
             class_object = cls(data, pretrained_path=emd_path)
             class_object._data.emd = emd
             class_object._data.emd_path = emd_path
@@ -277,6 +279,7 @@ class FullyConnectedNetwork(ArcGISModel):
         _emd_template["_is_classification"] = (
             "classification" if self._data._is_classification else "regression"
         )
+        _emd_template["cell_sizes"] = self._data._cell_sizes
 
         return _emd_template
 
@@ -456,8 +459,13 @@ class FullyConnectedNetwork(ArcGISModel):
         explain=False,
         explain_index=None,
     ):
+        cell_sizes = self._data._cell_sizes
         if isinstance(input_features, FeatureLayer):
-            dataframe = input_features.query().sdf
+            if cell_sizes and not rasters:
+                dataframe = input_features.query(out_sr=4326).sdf
+                dataframe = add_h3(dataframe, cell_sizes)
+            else:
+                dataframe = input_features.query().sdf
         else:
             dataframe = input_features.copy()
 
@@ -513,6 +521,7 @@ class FullyConnectedNetwork(ArcGISModel):
                 feature_layer_columns,
                 raster_columns,
                 datefield,
+                cell_sizes,
                 distance_feature_layers,
             )
 

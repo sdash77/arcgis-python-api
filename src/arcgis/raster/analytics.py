@@ -7991,7 +7991,7 @@ def merge_multidimensional_rasters(
 
     """
     Function merges several multidimensional rasters spatially, or across variables and dimensions into one.
-    Function available in ArcGIS Image Server 10.9 and higher.
+    Function available in ArcGIS Image Server 10.9 and higher (not available in ArcGIS Online).
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -8108,6 +8108,12 @@ def merge_multidimensional_rasters(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+
+    if gis._con._product == "AGOL":
+        raise RuntimeError(
+            "merge_multidimensional_rasters() is not supported on ArcGIS Online"
+        )
+
     return gis._tools.rasteranalysis.merge_multidimensional_rasters(
         input_multidimensional_rasters=input_multidimensional_rasters,
         resolve_overlap_method=resolve_overlap_method,
@@ -8843,7 +8849,7 @@ def summarize_categorical_raster(
 
     """
     Generates a table containing the pixel count for each class, in each slice of an input categorical raster.
-    Function available in ArcGIS Image Server 10.9.1 and higher.
+    Function available in ArcGIS Image Server 10.9.1 and higher (not available in ArcGIS Online).
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -8931,6 +8937,12 @@ def summarize_categorical_raster(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+
+    if gis._con._product == "AGOL":
+        raise RuntimeError(
+            "summarize_categorical_raster() is not supported on ArcGIS Online"
+        )
+
     return gis._tools.rasteranalysis.summarize_categorical_raster(
         input_categorical_raster=input_categorical_raster,
         dimension=dimension,
@@ -8966,7 +8978,7 @@ def train_random_trees_regression_model(
 
     """
     Models the relationship between explanatory variables (independent variables) and a target dataset (dependent variable).
-    Function available in ArcGIS Image Server 10.9.1 and higher.
+    Function available in ArcGIS Image Server 10.9.1 and higher (not available in ArcGIS Online).
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -9091,6 +9103,12 @@ def train_random_trees_regression_model(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+
+    if gis._con._product == "AGOL":
+        raise RuntimeError(
+            "train_random_trees_regression_model() is not supported on ArcGIS Online"
+        )
+
     return gis._tools.rasteranalysis.train_random_trees_regression_model(
         input_rasters=input_rasters,
         input_target_data=input_target_data,
@@ -9106,6 +9124,49 @@ def train_random_trees_regression_model(
         output_sample_features_name=output_sample_features_name,
         output_importance_table_name=output_importance_table_name,
         context=context,
+        future=future,
+        **kwargs,
+    )
+
+
+def export_to_tile_package(
+    input_data, output_name=None, *, gis=None, future=False, **kwargs
+):
+    """
+
+    Exports a Tiled ImageryLayer portal item to tile package.
+
+    .. note::
+        Currently supported only on ArcGIS online.
+
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    input_data          Required Tiled ImageryLayer portal item to be exported as tile package.
+    ---------------     --------------------------------------------------------------------
+    output_name         Optional string. Name of the Tile Package to be created.
+                        If not provided, a Tile Package is created by the method and used as the output.
+    ---------------     --------------------------------------------------------------------
+    gis                 Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ---------------     --------------------------------------------------------------------
+    future              Optional Boolean. If True, the result will be a GPJob object and
+                        results will be returned asynchronously.
+    ===============     ====================================================================
+
+    :return: The exported tile package item
+
+    .. code-block:: python
+
+        # Usage Example
+
+        exported_item = export_to_tile_package(input_data = item, output_name = "exported_tile_package")
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.export_to_tile_package(
+        input_imagery_layer=input_data,
+        output_tile_package=output_name,
         future=future,
         **kwargs,
     )

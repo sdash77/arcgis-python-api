@@ -1,11 +1,12 @@
 """
 Entry point to working with licensing on Portal or ArcGIS Online
 """
+from __future__ import annotations
+import datetime
 from .._impl._con import Connection
 from ..._impl.common._mixins import PropertyMap
-from ...gis import GIS, User, Item
+from ...gis import GIS, User
 from ._base import BasePortalAdmin
-from typing import Union
 
 ########################################################################
 class LicenseManager(BasePortalAdmin):
@@ -415,9 +416,9 @@ class License(object):
     ===============     ====================================================
     **Argument**        **Description**
     ---------------     ----------------------------------------------------
-    gis                 required GIS, the gis connection object
+    gis                 Required GIS, the gis connection object
     ---------------     ----------------------------------------------------
-    info                required dictionary, the information provided by
+    info                Required dictionary, the information provided by
                         the organization's site containing the provision
                         and listing information.
     ===============     ====================================================
@@ -472,16 +473,27 @@ class License(object):
         import pandas as pd
 
         data = []
-        columns = ["Entitlement", "Total", "Assigned", "Remaining"]
-        if "provision" in self.properties:
+        columns = ["Entitlement", "Total", "Assigned", "Remaining", "Users"]
+        if (
+            "provision" in self.properties
+            and "orgEntitlements" in self.properties["provision"]
+        ):
             for k, v in self.properties["provision"]["orgEntitlements"][
                 "entitlements"
             ].items():
                 counter = 0
+                user_list = []
                 for u in self.all():
                     if k in u["entitlements"]:
                         counter += 1
-                row = [k, v["num"], counter, v["num"] - counter]
+                        if u["lastLogin"] not in [None, -1]:
+                            last_used = datetime.datetime.fromtimestamp(
+                                u["lastLogin"] / 1000
+                            ).strftime("%B %d, %Y")
+                        else:
+                            last_used = None
+                        user_list.append({"user": u["username"], "lastUsed": last_used})
+                row = [k, v["num"], counter, v["num"] - counter, user_list]
                 data.append(row)
                 del k, v
         return pd.DataFrame(data=data, columns=columns)
@@ -541,7 +553,7 @@ class License(object):
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
-        user                required string, the name of the user you want to
+        user                Required string, the name of the user you want to
                             examine the entitlements for.
         ===============     ====================================================
 
@@ -574,12 +586,12 @@ class License(object):
     # ----------------------------------------------------------------------
     def user_entitlement(self, username: str):
         """
-        checks if a user has the entitlement assigned to them
+        Checks if a user has the entitlement assigned to them
 
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
-        username            required string, the name of the user you want to
+        username            Required string, the name of the user you want to
                             examine the entitlements for.
         ===============     ====================================================
 
@@ -613,7 +625,7 @@ class License(object):
     def assign(
         self,
         username: str,
-        entitlements: list,
+        entitlements: list[str] | str,
         suppress_email: bool = True,
         overwrite: bool = True,
     ):
@@ -623,17 +635,17 @@ class License(object):
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
-        username            required string, the name of the user you wish to
+        username            Required string, the name of the user you wish to
                             assign an entitlement to.
         ---------------     ----------------------------------------------------
-        entitlements        required list, a list of entitlements values
+        entitlements        Required list of strings or strings, of entitlements values.
         ---------------     ----------------------------------------------------
-        suppress_email      optional boolean, if True, the org will not notify
+        suppress_email      Optional boolean, if True, the org will not notify
                             a user that their entitlements has changed (default)
                             If False, the org will send an email notifying a
                             user that their entitlements have changed.
         ---------------     ----------------------------------------------------
-        overwrite           optional boolean, if True, existing entitlements
+        overwrite           Optional boolean, if True, existing entitlements
                             for the user are dropped
         ===============     ====================================================
 
@@ -668,20 +680,22 @@ class License(object):
         return res
 
     # ----------------------------------------------------------------------
-    def revoke(self, username: str, entitlements: list, suppress_email: bool = True):
+    def revoke(
+        self, username: str, entitlements: list[str] | str, suppress_email: bool = True
+    ):
         """
         removes a specific license from a given entitlement
 
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
-        username            required string, the name of the user you wish to
+        username            Required string, the name of the user you wish to
                             assign an entitlement to.
         ---------------     ----------------------------------------------------
-        entitlments         required list, a list of entitlements values,
+        entitlments         Required list of strings or string, a list of entitlements values,
                             if * is given, all entitlements will be revoked
         ---------------     ----------------------------------------------------
-        suppress_email      optional boolean, if True, the org will not notify
+        suppress_email      Optional boolean, if True, the org will not notify
                             a user that their entitlements has changed (default)
                             If False, the org will send an email notifying a
                             user that their entitlements have changed.
@@ -694,7 +708,9 @@ class License(object):
             return self.assign(
                 username=username, entitlements=[], suppress_email=suppress_email
             )
-        elif isinstance(entitlements, list):
+        if isinstance(entitlements, str):
+            entitlements = entitlements.split(",")
+        if isinstance(entitlements, list):
             es = self.check(user=username)
 
             if len(es) > 0:

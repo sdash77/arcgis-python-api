@@ -120,7 +120,7 @@ class TestNBAuthLogic(unittest.TestCase):
             "expiration": 10080,
         }
         fp = os.path.join(tempfile.gettempdir(), ".nbauth_test")
-        with open(fp, 'w') as writer:
+        with open(fp, "w") as writer:
             writer.write(json.dumps(json_template))
         with mock.patch("socket.gethostname", return_value=hostname):
             assert decrypt_token == get_token(fp)
@@ -144,7 +144,7 @@ class TestNBAuthLogic(unittest.TestCase):
             "expiration": 10080,
         }
         fp = os.path.join(tempfile.gettempdir(), ".nbauth_test")
-        with open(fp, 'w') as writer:
+        with open(fp, "w") as writer:
             writer.write(json.dumps(json_template))
         with mock.patch("socket.gethostname", return_value=hostname):
             assert decrypt_token == get_token(fp)
@@ -168,7 +168,7 @@ class TestNBAuthLogic(unittest.TestCase):
             "expiration": 10080,
         }
         fp = os.path.join(tempfile.gettempdir(), ".nbauth_test")
-        with open(fp, 'w') as writer:
+        with open(fp, "w") as writer:
             writer.write(json.dumps(json_template))
         with mock.patch("socket.gethostname", return_value=hostname):
             assert decrypt_token == get_token(fp)

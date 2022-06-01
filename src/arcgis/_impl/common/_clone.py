@@ -194,6 +194,7 @@ class _DeepCloner:
 
             has_admin_info = (
                 layer._token
+                or layer._con.token
                 and layer.manager
                 and layer.manager.properties
                 and "adminLayerInfo" in layer.manager.properties
@@ -2644,14 +2645,14 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 elif guid in self._clone_mapping["Item IDs"]:
                     name = name.replace(guid, self._clone_mapping["Item IDs"][guid])
                 else:
-                    new_guid = str(uuid.uuid4()).replace("-", "")
+                    new_guid = uuid.uuid4().hex[0:5]
                     name = name.replace(guid, new_guid)
 
             while True:
                 if target.content.is_service_name_available(name, "featureService"):
                     break
 
-                guid = str(uuid.uuid4()).replace("-", "")
+                guid = uuid.uuid4().hex[0:5]
                 ends_with_guid = re.findall("_[0-9A-F]{32}$", name, re.IGNORECASE)
                 if len(ends_with_guid) > 0:
                     name = name[: len(name) - 32] + guid
@@ -2659,7 +2660,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     name = "{0}_{1}".format(name, guid)
 
         else:
-            guid = str(uuid.uuid4()).replace("-", "")
+            guid = uuid.uuid4().hex[0:5]
             ends_with_guid = re.findall("_[0-9A-F]{32}$", name, re.IGNORECASE)
             if len(ends_with_guid) > 0:
                 name = name[: len(name) - 32] + guid
@@ -4997,8 +4998,13 @@ class _FormDefinition(_ItemDefinition):
                                         )
 
                 elif os.path.splitext(path)[1].lower() == ".webform":
-                    with open(os.path.join(zip_dir, path)) as file:
-                        payload = json.loads(file.read())
+                    try:
+                        with open(os.path.join(zip_dir, path)) as file:
+                            payload = json.loads(file.read())
+                    except UnicodeDecodeError:
+                        with open(os.path.join(zip_dir, path), "rb") as file:
+                            payload = json.load(file)
+
                     file_changed = False
 
                     # Find related service mapping and replace in webform

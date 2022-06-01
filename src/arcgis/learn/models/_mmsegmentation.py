@@ -1,7 +1,13 @@
+from enum import unique
 from pathlib import Path
 import json
+
+import numpy
 from ._model_extension import ModelExtension
 from ._arcgis_model import _EmptyData
+import logging
+
+logger = logging.getLogger()
 
 try:
     from fastai.vision import flatten_model
@@ -43,7 +49,7 @@ class MMSegmentationConfig:
 
         config = kwargs.get("model", False)
         checkpoint = kwargs.get("model_weight", False)
-
+        class_weight = kwargs.get("class_weight", None)
         if self.os.path.exists(self.pathlib.Path(config)):
             cfg = mmcv.Config.fromfile(config)
             cfg.model.pretrained = None
@@ -73,15 +79,19 @@ class MMSegmentationConfig:
         if isinstance(cfg.model.decode_head, list):
             for dcd_head in cfg.model.decode_head:
                 dcd_head.num_classes = data.c
+                dcd_head.loss_decode.class_weight = class_weight
         else:
             cfg.model.decode_head.num_classes = data.c
+            cfg.model.decode_head.loss_decode.class_weight = class_weight
 
         if hasattr(cfg.model, "auxiliary_head"):
             if isinstance(cfg.model.auxiliary_head, list):
                 for aux_head in cfg.model.auxiliary_head:
                     aux_head.num_classes = data.c
+                    aux_head.loss_decode.class_weight = class_weight
             else:
                 cfg.model.auxiliary_head.num_classes = data.c
+                cfg.model.auxiliary_head.loss_decode.class_weight = class_weight
         if cfg.model.backbone.type == "CGNet" and getattr(
             data, "_is_multispectral", False
         ):
@@ -218,6 +228,18 @@ class MMSegmentation(ModelExtension):
                             saved.
     =====================   ===========================================
 
+    **kwargs**
+
+    =====================   ===========================================
+    class_balancing         Optional boolean. If True, it will balance the
+                            cross-entropy loss inverse to the frequency
+                            of pixels per class. Default: False.
+    ---------------------   -------------------------------------------
+    ignore_classes          Optional list. It will contain the list of class
+                            values on which model will not incur loss.
+                            Default: []
+    =====================   ===========================================
+
     :return: ``MMSegmentation`` Object
     """
 
@@ -225,12 +247,63 @@ class MMSegmentation(ModelExtension):
 
         self._check_dataset_support(data)
 
+        self._ignore_classes = kwargs.get("ignore_classes", [])
+        self.class_balancing = kwargs.get("class_balancing", False)
+        if self._ignore_classes != [] and len(data.classes) <= 2:
+            raise Exception(
+                f"`ignore_classes` parameter can only be used when the dataset has more than 2 classes."
+            )
+
+        data_classes = list(data.class_mapping.keys())
+        if 0 not in list(data.class_mapping.values()):
+            self._ignore_mapped_class = [
+                data_classes.index(k) + 1 for k in self._ignore_classes if k != 0
+            ]
+        else:
+            self._ignore_mapped_class = [
+                data_classes.index(k) + 1 for k in self._ignore_classes
+            ]
+        if self._ignore_classes != []:
+            if 0 not in self._ignore_mapped_class:
+                self._ignore_mapped_class.insert(0, 0)
+
+        class_weight = None
+        if self.class_balancing:
+            if data.class_weight is not None:
+                # Handle condition when nodata is already at pixel value 0 in data
+                if (data.c - 1) == data.class_weight.shape[0]:
+                    class_weight = [
+                        data.class_weight.mean()
+                    ] + data.class_weight.tolist()
+                else:
+                    class_weight = data.class_weight.tolist()
+            else:
+                if getattr(data, "overflow_encountered", False):
+                    logger.warning(
+                        "Overflow Encountered. Ignoring `class_balancing` parameter."
+                    )
+                    class_weight = [1.0] * len(data.classes)
+                else:
+                    logger.warning(
+                        "Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter."
+                    )
+
+        if self._ignore_classes != []:
+            if not self.class_balancing:
+                class_weight = [1.0] * data.c
+            for idx in self._ignore_mapped_class:
+                class_weight[idx] = 0.0
+
+        self._final_class_weight = class_weight
+
         super().__init__(
             data,
             MMSegmentationConfig,
             pretrained_path=pretrained_path,
             model=model,
             model_weight=model_weight,
+            ignore_class=self._ignore_mapped_class,
+            class_weight=self._final_class_weight,
         )
         idx = self._freeze()
         self.learn.layer_groups = split_model_idx(self.learn.model, [idx])

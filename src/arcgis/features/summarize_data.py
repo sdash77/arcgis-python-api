@@ -115,7 +115,7 @@ def aggregate_points(
                                             If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     ------------------------------------    --------------------------------------------------------------------
     context                                 Optional dict. Additional settings such as processing extent and output spatial reference.
-                                            For aggregate_points, there are three settings.
+                                            For aggregate_points, there are three settings (`overwrite` is required).
 
                                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.

@@ -59,6 +59,8 @@ class PanopticSegmentationLabelList(ImageList):
     ):
         # max number of masks (K in ground truth, N  in predictions)
         self.K = kwargs.pop("n_masks")
+        self.inst_class_mapping = kwargs.pop("inst_class_mapping")
+        self.inv_inst_class_mapping = {v: k for k, v in self.inst_class_mapping.items()}
 
         super().__init__(items, **kwargs)
         self.class_mapping = class_mapping
@@ -72,10 +74,7 @@ class PanopticSegmentationLabelList(ImageList):
         self.inst_lbl_path = self.items[0].parent.parent / "labels2"
 
         # Create a list of instance class values
-        instance_classes = os.listdir(self.inst_lbl_path)
-        self.instance_classes = sorted(
-            [k for k, v in class_mapping.items() if v in instance_classes]
-        )
+        self.instance_classes = list(self.inst_class_mapping.keys())
 
         ## Check whether the class values are contiguous and create contiguous mapping
         self.is_contiguous = is_contiguous(
@@ -150,17 +149,19 @@ class PanopticSegmentationLabelList(ImageList):
     # Method to convert the semantics to individual masks and labels
     def create_semantic_masks(self, semantic):
 
-        # Change the instance class pixels to 0
+        # Change the instance class pixels to -1
         for inst_cls in self.indexed_inst_classes:
-            semantic = torch.where(semantic == int(inst_cls), torch.tensor(0), semantic)
+            semantic = torch.where(
+                semantic == int(inst_cls), torch.tensor(-1), semantic
+            )
 
         semantic_np = np.asarray(semantic.cpu())
         labels = np.unique(semantic.cpu())
 
         ## TODO: investigate this
-        # Remove the label 0 (instance classes/No data)
-        # if labels[0] == 0:
-        #     labels = labels[1:]
+        # Remove the label -1 (instance classes)
+        if labels[0] == -1:
+            labels = labels[1:]
 
         semantic_labels = torch.tensor(labels, dtype=torch.long)
 
@@ -186,7 +187,8 @@ class PanopticSegmentationLabelList(ImageList):
             mask_img = torch.from_numpy(
                 ArcGISMSImage.read_image(Path(mask_file)).astype("int16")
             )
-            lbl_name = int(Path(mask_file).parent.name)
+            lbl_name = Path(mask_file).parent.name
+            lbl_value = self.inv_inst_class_mapping[lbl_name]
 
             # Ensure a channel dimension exists
             if (
@@ -197,13 +199,13 @@ class PanopticSegmentationLabelList(ImageList):
                 mask_img = torch.unsqueeze(mask_img, 0)
 
             for ch in range(mask_img.shape[0]):
-                unique_instances = torch.unique(mask_img[ch]).max()
+                unique_instances = np.unique(mask_img[ch]).max()
 
                 # For each unique mask id, starting 1, create an individual mask
                 for instance in range(1, unique_instances + 1):
                     instance_mask = (mask_img[ch] == instance).to(torch.uint8)
                     masks.append(instance_mask)
-                    labels.append(lbl_name)
+                    labels.append(lbl_value)
 
         masks = torch.stack(masks)
         labels = torch.tensor(labels)
@@ -265,7 +267,7 @@ def compute_n_masks(path):
                 mask_img = torch.unsqueeze(mask_img, 0)
 
             for ch in range(mask_img.shape[0]):
-                unique_instances = torch.unique(mask_img[ch]).max().item()
+                unique_instances = np.unique(mask_img[ch]).max().item()
                 label_count += unique_instances
 
         n_masks = max(n_masks, label_count)

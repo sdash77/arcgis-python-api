@@ -1,3 +1,6 @@
+import sys
+
+sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8072\src")
 import datetime
 import copy
 import os
@@ -7,7 +10,7 @@ from pathlib import Path
 import tempfile
 
 
-from arcgis.features.geo import from_featureclass, _io
+from arcgis.features.geo._io.fileops import from_featureclass
 from arcgis.features.geo._array import GeoArray, GeoType
 from arcgis.geometry import Geometry
 import pandas as pd
@@ -90,6 +93,7 @@ geoms = [
 import pytest
 import pandas as pd
 from arcgis.features.geo import GeoAccessor
+from arcgis.features.geo import _io
 
 ##-------------------------------------------------------------------------
 ## Constructor Tests
@@ -173,7 +177,7 @@ def test_set_geometry_accessor_string():
 
 def test_set_geometry_accessor_string_not_valid():
     """set geometry to a column that does not exist"""
-    with pytest.raises(ValueError, message="Expecting ValueError"):
+    with pytest.raises(Exception) as e_info:
         data = [[1, 2, 3, 4]] * len(geoms)
         columns = ["A", "B", "C", "D"]
         df = pd.DataFrame(data=data, columns=columns)

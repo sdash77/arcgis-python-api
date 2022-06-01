@@ -643,6 +643,9 @@ def merge_emd_and_stats(data_folders):
     # Create master EMD and esri_accumulated_stats
     emd = emd_store[emd_keys[0]]
     eas = stats_store[emd_keys[0]]
+    if not "NumTilesAsDouble" in eas:
+        eas["NumTilesAsDouble"] = eas["NumTiles"]
+        del eas["NumTiles"]
     _class_hash = {x["Value"]: x for x in emd["Classes"]}
     for k in emd_keys[1:]:
         _emd = emd_store[k]
@@ -671,8 +674,10 @@ def merge_emd_and_stats(data_folders):
                 eas["BandStatsState"][i]["Num"] + _eas["BandStatsState"][i]["Num"]
             )  # Number of pixels
         eas["NumClasses"] = max(eas["NumClasses"], _eas["NumClasses"])
-        eas["NumTiles"] += _eas["NumTiles"]
-        #
+        if "NumTiles" in _eas:
+            eas["NumTilesAsDouble"] += _eas["NumTiles"]
+        else:
+            eas["NumTilesAsDouble"] += _eas["NumTilesAsDouble"]
         stats_key1 = None
         stats_key1_1 = None
         stats_key2 = None
@@ -712,8 +717,8 @@ def merge_emd_and_stats(data_folders):
 def prepare_textdata(
     path,
     task,
-    text_columns,
-    label_columns,
+    text_columns=None,
+    label_columns=None,
     train_file="train.csv",
     valid_file=None,
     val_split_pct=0.1,
@@ -723,6 +728,8 @@ def prepare_textdata(
     remove_html_tags=False,
     remove_urls=False,
     working_dir=None,
+    dataset_type=None,
+    class_mapping=None,
     **kwargs,
 ):
     """
@@ -738,16 +745,20 @@ def prepare_textdata(
     task                    Required string.
                             The task for which the dataset is prepared.
                             Available choice at this point is
-                            "classification" and "sequence_translation".
+                            "classification", "sequence_translation" or "entity_recognition".
     ---------------------   -------------------------------------------
-    text_columns            Required string.
-                            The column that will be used as feature.
+    text_columns            Optional string.
+                            This parameter is mandatory when task is "classification"
+                             or "sequence_translation".
+                            The column that will contain the input text.
     ---------------------   -------------------------------------------
-    label_columns           Required list.
+    label_columns           Optional list.
+                            This parameter is mandatory when task is "classification"
+                             or "sequence_translation".
                             The list of columns denoting the class
                             label/translated text to predict. Provide
                             a list of columns in case of multi-label
-                            classification problem
+                            classification problem.
     ---------------------   -------------------------------------------
     train_file              Optional string.
                             The file name containing the training data.
@@ -796,6 +807,22 @@ def prepare_textdata(
     working_dir             Optional string.
                             Sets the default path to be used as a prefix
                             for saving trained models and checkpoints.
+    ---------------------   -------------------------------------------
+    dataset_type            Optional list.
+                            This parameter is mandatory when task is "entity_recognition"
+                            Accepted data format
+                            for this model are - 'ner_json','BIO' or 'LBIOU'
+    ---------------------   -------------------------------------------
+    class_mapping           Optional dictionary. Mapping from id to
+                            its string label.
+                            For dataset_type=IOB, BILUO or ner_json:
+                                Provide address field as class mapping
+                                in below format:
+                                class_mapping={'address_tag':'address_field'}.
+                                Field defined as 'address_tag' will be treated
+                                as a location. In cases where trained model extracts
+                                multiple locations from a single document, that
+                                document will be replicated for each location.
     =====================   ===========================================
 
     **Keyword Arguments**
@@ -810,6 +837,11 @@ def prepare_textdata(
                             val_split_pct.
                             The default value is True.
                             Note: Applies only to single-label text classification.
+    ---------------------   -------------------------------------------
+    encoding                Optional string.
+                            Applicable only when task is entity_recognition:
+                            The encoding to read the csv/json file.
+                            Default is 'UTF-8'
     =====================   ===========================================
 
     :returns: `TextData` object
@@ -825,51 +857,105 @@ def prepare_textdata(
     # if task not in allowed_tasks:
     #     raise Exception(f"Wrong task choosen. Allowed tasks are {allowed_tasks}")
 
-    if isinstance(label_columns, (str, bytes)):
-        label_columns = [label_columns]
-
     force_cpu = arcgis.learn.models._arcgis_model._device_check()
 
     if hasattr(arcgis, "env") and force_cpu == 1:
         arcgis.env._processorType = "CPU"
 
     if task == "classification":
-        data = TextDataObject.prepare_data_for_classification(
-            path,
-            text_columns,
-            label_columns,
-            train_file=train_file,
-            valid_file=valid_file,
-            val_split_pct=val_split_pct,
-            seed=seed,
-            batch_size=batch_size,
-            process_labels=process_labels,
-            remove_html_tags=remove_html_tags,
-            remove_urls=remove_urls,
-            **kwargs,
-        )
+        if text_columns == None or label_columns == None:
+            logger = logging.getLogger()
+            logger.error(
+                f"For classification task the `text_columns` and `label_columns` parameters are required."
+            )
+            raise Exception(
+                f"For classification task the `text_columns` and `label_columns` parameters are required."
+            )
+        else:
+            if isinstance(label_columns, (str, bytes)):
+                label_columns = [label_columns]
+            data = TextDataObject.prepare_data_for_classification(
+                path,
+                text_columns,
+                label_columns,
+                train_file=train_file,
+                valid_file=valid_file,
+                val_split_pct=val_split_pct,
+                seed=seed,
+                batch_size=batch_size,
+                process_labels=process_labels,
+                remove_html_tags=remove_html_tags,
+                remove_urls=remove_urls,
+                **kwargs,
+            )
 
     elif task.lower() == "sequence_translation":
-        data = TextDataObject.prepare_data_for_seq2seq(
-            path,
-            text_columns,
-            label_columns,
-            train_file=train_file,
-            val_split_pct=val_split_pct,
-            seed=seed,
-            batch_size=batch_size,
-            process_labels=process_labels,
-            remove_html_tags=remove_html_tags,
-            remove_urls=remove_urls,
-        )
+        if text_columns == None or label_columns == None:
+            logger = logging.getLogger()
+            logger.error(
+                f"For sequence translation task the `text_columns` and `label_columns` parameters are required."
+            )
+            raise Exception(
+                f"For sequence translation task the `text_columns` and `label_columns` parameters are required."
+            )
+        else:
+            if isinstance(label_columns, (str, bytes)):
+                label_columns = [label_columns]
+            data = TextDataObject.prepare_data_for_seq2seq(
+                path,
+                text_columns,
+                label_columns,
+                train_file=train_file,
+                val_split_pct=val_split_pct,
+                seed=seed,
+                batch_size=batch_size,
+                process_labels=process_labels,
+                remove_html_tags=remove_html_tags,
+                remove_urls=remove_urls,
+            )
+    elif task.lower() == "entity_recognition":
+        if dataset_type in ["ner_json", "BIO", "IOB", "LBIOU", "BILUO"]:
+            from ._utils._ner_utils import _NERData
+
+            if batch_size == 64:
+                batch_size = 8
+            encoding = kwargs.get("encoding", "UTF-8")
+            ner_architecture = kwargs.get("ner_architecture", "spacy")
+            data = _NERData(
+                dataset_type=dataset_type,
+                path=path,
+                class_mapping=class_mapping,
+                seed=seed,
+                val_split_pct=val_split_pct,
+                batch_size=batch_size,
+                encoding=encoding,
+            )
+            if working_dir is not None:
+                data.working_dir = path = Path(os.path.abspath(working_dir))
+            else:
+                path = os.path.abspath(data.path)
+                data.working_dir = None
+            if os.path.isfile(path):
+                path = os.path.dirname(path)
+            _prepare_working_dir(path)
+
+            return data
+        else:
+            logger = logging.getLogger()
+            logger.error(
+                f"For entity recognition task the `dataset_type` parameter is required. dataset_type supported values are `ner_json`, `IO`, `IOB`, `LBIOU`, `BILUO`"
+            )
+            raise Exception(
+                f"For entity recognition task the `dataset_type` parameter is required. dataset_type supported values are `ner_json`, `IO`, `IOB`, `LBIOU`, `BILUO`"
+            )
 
     else:
         logger = logging.getLogger()
         logger.error(
-            f"Wrong task - {task} provided. This function can handle only `classification` and 'sequence_translation' task currently"
+            f"Wrong task - {task} provided. This function can handle only `classification`, 'sequence_translation' and 'entity_recognition' task currently"
         )
         raise Exception(
-            f"Wrong task - {task} provided. This function can handle only `classification` and 'sequence_translation' task currently"
+            f"Wrong task - {task} provided. This function can handle only `classification`, 'sequence_translation' and 'entity_recognition' task currently"
         )
 
     if working_dir is None:
@@ -885,6 +971,7 @@ def prepare_tabulardata(
     explanatory_variables=None,
     explanatory_rasters=None,
     date_field=None,
+    cell_sizes=[3, 4, 5, 6, 7],
     distance_features=None,
     preprocessors=None,
     val_split_pct=0.1,
@@ -950,6 +1037,13 @@ def prepare_tabulardata(
                             to the prepared data as columns.
                             All fields other than elapsed and dayofyear are treated
                             as categorical.
+    ---------------------   -------------------------------------------
+    cell_sizes              Size of H3 cells (specified as H3 resolution) for spatially
+                            aggregating input features and passing in the cell ids as additional
+                            explanatory variables to the model. If a spatial dataframe is passed
+                            as input_features, ensure that the spatial reference is 4326,
+                            and the geometry type is Point. Not applicable when explanatory_rasters
+                            are provided. Not applicable for MLModel.
     ---------------------   -------------------------------------------
     distance_features       Optional list of Feature Layer objects.
                             Distance is calculated from features in these layers
@@ -1052,6 +1146,7 @@ def prepare_tabulardata(
         feature_variables=explanatory_variables,
         raster_variables=explanatory_rasters,
         date_field=date_field,
+        cell_sizes=cell_sizes,
         distance_feature_layers=distance_features,
         procs=preprocessors,
         val_split_pct=val_split_pct,
@@ -1100,9 +1195,8 @@ def prepare_data(
     -For object detection, use Pascal_VOC_rectangles or KITTI_rectangles format.
     -For feature categorization use Labelled Tiles or Imagenet format.
     -For pixel classification, use Classified Tiles format.
-    -For entity extraction from text, use IOB, BILUO or ner_json formats.
     -For DeepSort, use Imagenet format.
-    -For panoptic segmentation, use Panoptic format.
+    -For panoptic segmentation, use Panoptic_Segmentation format.
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -1111,20 +1205,12 @@ def prepare_data(
     ---------------------   -------------------------------------------
     class_mapping           Optional dictionary. Mapping from id to
                             its string label.
-                            For dataset_type=IOB, BILUO or ner_json:
-                                Provide address field as class mapping
-                                in below format:
-                                class_mapping={'address_tag':'address_field'}.
-                                Field defined as 'address_tag' will be treated
-                                as a location. In cases where trained model extracts
-                                multiple locations from a single document, that
-                                document will be replicated for each location.
-
     ---------------------   -------------------------------------------
     chip_size               Optional integer, default 224. Size of the image to train the model.
                             Images are cropped to the specified chip_size.
                             If image size is less than chip_size, the image size is
-                            used as chip_size. Not supported for SuperResolution,
+                            used as chip_size. A chip size that is a multiple of 32 pixels
+                            is recommended. Not supported for SuperResolution,
                             SiamMask, WNet_cGAN, Pix2Pix and CycleGAN.
     ---------------------   -------------------------------------------
     val_split_pct           Optional float. Percentage of training data to keep
@@ -1157,17 +1243,11 @@ def prepare_data(
                             'Labeled_Tiles', 'MultiLabeled_Tiles', 'Imagenet',
                             'PointCloud', 'ImageCaptioning', 'ChangeDetection',
                             'superres', 'CycleGAN', 'Pix2Pix', 'WNet_cGAN',
-                            'Panoptic', and 'ObjectTracking'.
+                            'Panoptic_Segmentation', and 'ObjectTracking'.
                             This parameter is mandatory for data which are not
                             exported by ArcGIS Pro / Enterprise which includes
                             'PointCloud', 'ImageCaptioning', 'ChangeDetection',
                             'CycleGAN', 'Pix2Pix', 'WNet_cGAN' and 'ObjectTracking'.
-                            This parameter is mandatory while preparing data
-                            for 'EntityRecognizer' model. Accepted data format
-                            for this model are - ['ner_json','BIO', 'LBIOU'].
-                            This parameter is mandatory while preparing data
-                            for 'MaXDeepLab' panoptic segmentation model.
-                            Accepted data format is 'Panoptic'.
     ---------------------   -------------------------------------------
     resize_to               Optional integer or tuple of integers.
                             A tuple should be of the form (height, width).
@@ -1199,11 +1279,6 @@ def prepare_data(
                             for example: if value is 2 and image size 256x256,
                             it will create label images of size 128x128.
                             Default is 4
-    ---------------------   -------------------------------------------
-    encoding                Optional string.
-                            Applicable only when dataset_type=IOB, BILUO or ner_json:
-                            The encoding to read the csv/json file.
-                            Default is 'UTF-8'
     ---------------------   -------------------------------------------
     min_points              Optional int. Filtering based on minimum number
                             of points in a block.
@@ -1471,8 +1546,7 @@ def prepare_data(
     ):
         with open(stats_file) as f:
             stats = json.load(f)
-            if dataset_type != "Panoptic":
-                dataset_type = stats["MetaDataMode"]
+            dataset_type = stats["MetaDataMode"]
 
         with open(path / "map.txt") as f:
             while True:
@@ -1881,7 +1955,7 @@ def prepare_data(
         kwargs_transforms["tfm_y"] = True
 
     ## Create databunch for Panoptic Segmentation
-    elif dataset_type == "Panoptic":
+    elif dataset_type == "Panoptic_Segmentation":
 
         if class_mapping.get(0):
             del class_mapping[0]
@@ -1914,6 +1988,10 @@ def prepare_data(
 
         from ._data_utils._panoptic_data import PanopticSegmentationItemList
 
+        inst_class_mapping = {
+            i["Value"]: i["Name"] for i in emd["Panoptic_Segmentation_Instance_Classes"]
+        }
+
         data = (
             PanopticSegmentationItemList.from_folder(path / "images")
             .filter_by_func(remove_image_without_label)
@@ -1925,6 +2003,7 @@ def prepare_data(
                 class_mapping=class_mapping,
                 color_mapping=color_mapping,
                 n_masks=kwargs.get("n_masks", 30),
+                inst_class_mapping=inst_class_mapping,
             )
         )
 
@@ -1950,6 +2029,7 @@ def prepare_data(
             kwargs_transforms["size"] = chip_size
 
         kwargs_transforms["tfm_y"] = True
+        _show_batch_multispectral = show_batch_panoptic
 
     elif dataset_type == "Classified_Tiles":
 
@@ -2850,9 +2930,9 @@ def prepare_data(
         data.valid_ds.x._div = 255.0
         data.is_normalized = True
 
-        if dataset_type == "Panoptic":
-            data.c = len(data.classes)
-            data.show_batch = types.MethodType(show_batch_panoptic, data)
+    if dataset_type == "Panoptic_Segmentation":
+        data.c = len(data.classes)
+        data.show_batch = types.MethodType(show_batch_panoptic, data)
 
     if dataset_type in ["PASCAL_VOC_rectangles", "KITTI_rectangles"]:
         data.show_batch = types.MethodType(show_batch_object_detection, data)
@@ -2883,7 +2963,6 @@ def prepare_data(
         "ChangeDetection",
         "superres",
         "Imagenet",
-        "Panoptic",
     ]:
         data._dataset_type = stats["MetaDataMode"]
     else:
@@ -3065,9 +3144,9 @@ def prepare_data(
         data.path = Path(os.path.dirname(os.path.abspath(data.path)))
     _prepare_working_dir(data.path)
 
-    from ._utils.env import _IS_ARCGISPRONOTEBOOK
+    from ._utils.env import is_arcgispronotebook
 
-    if _IS_ARCGISPRONOTEBOOK:
+    if is_arcgispronotebook():
         from functools import wraps
         from matplotlib import pyplot as plt
 

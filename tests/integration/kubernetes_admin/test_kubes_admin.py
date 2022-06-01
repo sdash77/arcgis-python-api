@@ -1,6 +1,6 @@
 import sys
 
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
+sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import unittest
 
 from arcgis.gis import GIS
@@ -12,12 +12,30 @@ profiles = [
 ]  # profile names go here #'your_online_profile', 'your_enterprise_profile',
 VERIFY_CERT = False  # Boolean T/F
 
+(
+    GIS(
+        url="https://1100pubbi-1100pubbi.apps.openshift48release.esri.com/web",
+        username="ACadmin",
+        password="ACadmin82",
+        verify_cert=VERIFY_CERT,
+        trust_env=True,
+        use_gen_token=True,
+    ).users.me.update(security_question=1, security_answer="TheAnswerIs5")
+)
+
 
 class TestKubernetesAdmin(unittest.TestCase):
     """General Test Cases for Kubernetes"""
 
     def setUp(self):
-        self._gis = GIS(url="https://1091pubbi-1091pubbi.apps.openshift46release.esri.com/web", username="ACadmin", password="ACadmin82", verify_cert=VERIFY_CERT, trust_env=True)
+
+        self._gis = GIS(
+            url="https://1100pubbi-1100pubbi.apps.openshift48release.esri.com/web",
+            username="ACadmin",
+            password="ACadmin82",
+            verify_cert=VERIFY_CERT,
+            trust_env=True,
+        )
 
     def test_properties(self):
         """tests the properties off of the GIS Kubernetes Admin Class"""
@@ -42,7 +60,7 @@ class TestKubernetesAdmin(unittest.TestCase):
         assert admin.uploads
         assert admin.usage
         assert admin.jobs
-        
+
     def test_scheduled_task(self):
         admin = self._gis.admin
         assert isinstance(admin, KubernetesAdmin)
@@ -50,6 +68,7 @@ class TestKubernetesAdmin(unittest.TestCase):
 
     def test_jobs(self):
         from arcgis.gis.kubernetes._admin._jobs import JobManager
+
         admin = self._gis.admin
         assert isinstance(admin, KubernetesAdmin)
         assert isinstance(admin.jobs, JobManager)

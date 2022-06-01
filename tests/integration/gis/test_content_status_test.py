@@ -30,7 +30,7 @@ class TestItemContentStatus(unittest.TestCase):
             if item:
                 assert isinstance(item, Item)
                 orig_status = item.content_status
-                for cs in ("authoritative", "deprecated", None):
+                for cs in ( "deprecated", None):
                     item.content_status = cs
                     if cs in ["authoritative", "deprecated"]:
                         assert item.content_status in [
@@ -75,7 +75,7 @@ class TestItemContentStatus(unittest.TestCase):
             if item:
                 assert isinstance(item, Item)
                 orig_status = item.content_status
-                for cs in ("authoritative", "deprecated", None):
+                for cs in ( "deprecated", None):
                     item.content_status = cs
                     if cs in ["authoritative", "deprecated"]:
                         assert item.content_status in [
