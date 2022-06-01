@@ -13292,6 +13292,49 @@ class RasterCollection:
         """
         return self._ras_coll_engine_obj.map(func=func, context=context)
 
+    def reduce(self, func, func_args={}): 
+        """
+        The ``reduce`` method composite all the images in the collection to a single image based on a reducer function. 
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        func                                     Required. The Python function to reduce the raster collection.
+                                                 The function should accept a list of rasters and return a single reduced raster
+        ------------------------------------     --------------------------------------------------------------------
+        func_args                                Optional dictionary. Additional paramters to be passed the reducer function.
+        ====================================     ====================================================================
+
+        :return: a ``Raster`` object
+
+        .. code-block:: python
+
+            # Usage Example 1: This snippet reduces a raster collection based on a reducer function from arcgis.raster.functions module.
+
+            rc = RasterCollection("https://myserver/arcgis/rest/services/ImageServiceName/ImageServer")
+            from arcgis.raster.functions import max
+            max_raster = rc.reduce(func=max, func_args = {"cellsize_type":"MinOf"})
+
+            # Usage Example 2: This snippet reduces a raster collection based on a custom reducer function.
+
+            rc = RasterCollection("https://myserver/arcgis/rest/services/ImageServiceName/ImageServer")
+            from arcgis.raster.functions import max
+            max_raster = rc.reduce(func=max, func_args = {"cellsize_type":"MinOf"})
+
+            def skewness(ras_list):
+                from arcgis.raster.functions import mean, std, med
+                cs_mean = mean(ras_list, process_as_multiband="MULTI_BAND")
+                cs_stddev  = std(ras_list, process_as_multiband="MULTI_BAND")
+                cs_median = med(ras_list, process_as_multiband="MULTI_BAND")
+                out_skewness = 3*(cs_mean - cs_median)/cs_stddev
+                return out_skewness
+
+            skewness = rc.reduce(func=out_skewness)
+
+        """
+        return self._ras_coll_engine_obj.reduce(func=func, func_args=func_args)
+
+
     def _as_df(
         self, result_offset=None, result_record_count=None, return_all_records=False
     ):
@@ -13721,6 +13764,11 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
                     attribute_dict[key].append(value)
 
         return RasterCollection(rasters, attribute_dict, context=context)
+
+    def reduce(self, func, func_args={}): 
+        rasters = self._rasters_list
+        reduced_raster = func(rasters, **func_args)
+        return reduced_raster
 
     def _as_df(
         self, result_offset=None, result_record_count=None, return_all_records=False
@@ -14406,6 +14454,11 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
                         attribute_dict[key].append(value)
 
             return RasterCollection(rasters, attribute_dict, context=context)
+
+    def reduce(self, func, func_args={}): 
+        rasters = self._rasters_list
+        reduced_raster = func(rasters, **func_args)
+        return reduced_raster
 
     def _as_df(
         self, result_offset=None, result_record_count=None, return_all_records=False
@@ -15114,8 +15167,8 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
                 ].append(ele[ele_field])
         fn = lyr._engine_obj._fn["rasterFunctionArguments"]["Raster"]
         fnra = lyr._engine_obj._fnra["rasterFunctionArguments"]["Raster"]
-        lyr._engine_obj._fn["rasterFunctionArguments"]["Raster"] = json.dumps(fn)
-        lyr._engine_obj._fnra["rasterFunctionArguments"]["Raster"] = json.dumps(fnra)
+        lyr._engine_obj._fn["rasterFunctionArguments"]["Raster"] = fn
+        lyr._engine_obj._fnra["rasterFunctionArguments"]["Raster"] = fnra
         return lyr
 
     def max(self, ignore_nodata=True):
@@ -15268,6 +15321,11 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
                     attribute_dict[key].append(value)
 
         return RasterCollection(rasters, attribute_dict, context=context)
+
+    def reduce(self, func, func_args={}): 
+        rasters = self._rasters_list
+        reduced_raster = func(rasters, **func_args)
+        return reduced_raster
 
     def _as_df(
         self, result_offset=None, result_record_count=None, return_all_records=False
