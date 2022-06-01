@@ -1,5 +1,4 @@
-from arcgis.gis import GIS
-from arcgis.features import FeatureLayer
+from __future__ import annotations
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
 from datetime import datetime
@@ -8,6 +7,8 @@ from urllib.parse import urlparse
 import requests
 import json
 import os
+
+from arcgis.gis import Item
 
 
 def _lazy_property(fn):
@@ -30,11 +31,11 @@ class Site(OrderedDict):
     web accessible content.
     """
 
-    def __init__(self, gis, siteItem):
+    def __init__(self, gis, site_item: Item):
         """
         Constructs an empty Site object
         """
-        self.item = siteItem
+        self.item = site_item
         self._gis = gis
         try:
             self._sitedict = self.item.get_data()
@@ -50,21 +51,21 @@ class Site(OrderedDict):
         )
 
     @property
-    def itemid(self):
+    def itemid(self) -> str:
         """
         Returns the item id of the site item
         """
         return self.item.id
 
     @property
-    def title(self):
+    def title(self) -> str:
         """
         Returns the title of the site item
         """
         return self.item.title
 
     @property
-    def description(self):
+    def description(self) -> str:
         """
         Getter/Setter for the site description
         """
@@ -75,14 +76,14 @@ class Site(OrderedDict):
         self.item.description = value
 
     @property
-    def owner(self):
+    def owner(self) -> str:
         """
         Returns the owner of the site item
         """
         return self.item.owner
 
     @property
-    def tags(self):
+    def tags(self) -> str:
         """
         Returns the tags of the site item
         """
@@ -93,14 +94,14 @@ class Site(OrderedDict):
         self.item.tags = value
 
     @property
-    def url(self):
+    def url(self) -> str:
         """
         Returns the url of the site
         """
         return self.item.url
 
     @property
-    def content_group_id(self):
+    def content_group_id(self) -> str:
         """
         Returns the groupId for the content group
         """
@@ -110,7 +111,7 @@ class Site(OrderedDict):
             return self.initiative.content_group_id
 
     @property
-    def collab_group_id(self):
+    def collab_group_id(self) -> str:
         """
         Returns the groupId for the collaboration group
         """
@@ -120,28 +121,28 @@ class Site(OrderedDict):
             return self.initiative.collab_group_id
 
     @property
-    def catalog_groups(self):
+    def catalog_groups(self) -> str:
         """
         Return Site catalog groups
         """
         return self.definition["catalog"]["groups"]
 
     @property
-    def layout(self):
+    def layout(self) -> InsensitiveDict:
         """
         Return layout of a site
         """
         return InsensitiveDict(self.definition["values"]["layout"])
 
     @_lazy_property
-    def pages(self):
+    def pages(self) -> PageManager:
         """
         The resource manager for an Initiative's indicators.
         See :class:`~hub.sites.PageManager`.
         """
         return PageManager(self._gis, self)
 
-    def add_content(self, items_list):
+    def add_content(self, items_list: list):
         """
         Adds a batch of items to the site content library.
 
@@ -160,7 +161,7 @@ class Site(OrderedDict):
             items_list, groups=[_collab_group, _content_group]
         )
 
-    def add_catalog_group(self, group_id):
+    def add_catalog_group(self, group_id: str):
         """
 
         ===============     ====================================================================
@@ -174,7 +175,7 @@ class Site(OrderedDict):
             self.item.update(item_properties={"text": self.definition})
             return self.catalog_groups
 
-    def delete_catalog_group(self, group_id):
+    def delete_catalog_group(self, group_id: str):
         """
 
         ===============     ====================================================================
@@ -193,7 +194,7 @@ class Site(OrderedDict):
         self.item.update(item_properties={"text": self.definition})
         return self.catalog_groups
 
-    def delete(self):
+    def delete(self) -> bool:
         """
         Deletes the Enterprise site. If unable to delete, raises a RuntimeException.
 
@@ -272,7 +273,7 @@ class Site(OrderedDict):
             else:
                 return _delete_domain.content
 
-    def reassign_to(self, target_owner):
+    def reassign_to(self, target_owner: str):
         """
         Allows the administrator to reassign the Enterprise site object from one
         user to another.
@@ -356,7 +357,7 @@ class Site(OrderedDict):
         content_team.reassign_to(target_owner)
         return self._gis.content.get(self.itemid)
 
-    def search(self, query=None, item_type=None):
+    def search(self, query: str | None = None, item_type: list | None = None) -> list:
         """
         Search and filter content for a site.
 
@@ -398,7 +399,13 @@ class Site(OrderedDict):
             result = [item for item in result if item.type == item_type]
         return result
 
-    def update(self, site_properties=None, data=None, thumbnail=None, metadata=None):
+    def update(
+        self,
+        site_properties: dict | None = None,
+        data: str | None = None,
+        thumbnail: str | None = None,
+        metadata: str | None = None,
+    ) -> bool:
         """Updates the site.
 
         .. note::
@@ -438,7 +445,7 @@ class Site(OrderedDict):
                 _site_data[key] = value
             return self.item.update(_site_data, data, thumbnail, metadata)
 
-    def update_layout(self, layout):
+    def update_layout(self, layout: dict) -> bool:
         """Updates the layout of the site.
 
         .. note::
@@ -608,7 +615,7 @@ class SiteManager(object):
         # site_data['values']['theme'] = self._gis.properties['portalProperties']['sharedTheme']
         return site_data
 
-    def add(self, title):
+    def add(self, title: str) -> Site:
         """
         Adds a new site.
 
@@ -636,7 +643,6 @@ class SiteManager(object):
             site1.item
         """
 
-        siteId = None
         collab_group_id = None
         subdomain = title.replace(" ", "-").lower()
         # Check if initiative or site needs to be created for this gis
@@ -833,7 +839,7 @@ class SiteManager(object):
         site.update(item_properties={"text": _data, "url": domain})
         return Site(self._gis, site)
 
-    def clone(self, site, pages=True, title=None):
+    def clone(self, site: Site, pages: bool = True, title: str | None = None) -> Site:
         """
         Clone allows for the creation of a site that is derived from the current site.
 
@@ -988,7 +994,7 @@ class SiteManager(object):
 
         return new_site
 
-    def get(self, site_id):
+    def get(self, site_id: str) -> Site:
         """Returns the site object for the specified site_id.
 
         =======================    =============================================================
@@ -1013,7 +1019,7 @@ class SiteManager(object):
         else:
             raise TypeError("Item is not a valid site or is inaccessible.")
 
-    def get_by_domain(self, domain_url):
+    def get_by_domain(self, domain_url: str) -> Site | None:
         """Returns the site object for the specified domain url.
 
         =======================    =============================================================
@@ -1070,7 +1076,14 @@ class SiteManager(object):
                 sitelist.append(Site(self._gis, item))
             return sitelist
 
-    def search(self, title=None, owner=None, created=None, modified=None, tags=None):
+    def search(
+        self,
+        title: str | None = None,
+        owner: str | None = None,
+        created: str | None = None,
+        modified: str | None = None,
+        tags: str | None = None,
+    ):
         """
         Searches for sites.
 
@@ -1128,11 +1141,11 @@ class Page(OrderedDict):
     content that can be rendered within the context of a Site
     """
 
-    def __init__(self, gis, pageItem):
+    def __init__(self, gis, page_item: Item):
         """
         Constructs an empty Page object
         """
-        self.item = pageItem
+        self.item = page_item
         self._gis = gis
         try:
             self._pagedict = self.item.get_data()
@@ -1149,21 +1162,21 @@ class Page(OrderedDict):
         )
 
     @property
-    def itemid(self):
+    def itemid(self) -> str:
         """
         Returns the item id of the page item
         """
         return self.item.id
 
     @property
-    def title(self):
+    def title(self) -> str:
         """
         Returns the title of the page item
         """
         return self.item.title
 
     @property
-    def description(self):
+    def description(self) -> str:
         """
         Getter/Setter for the page description
         """
@@ -1174,21 +1187,21 @@ class Page(OrderedDict):
         self.item.description = value
 
     @property
-    def layout(self):
+    def layout(self) -> InsensitiveDict:
         """
         Return layout of a page
         """
         return InsensitiveDict(self.definition["values"]["layout"])
 
     @property
-    def owner(self):
+    def owner(self) -> str:
         """
         Returns the owner of the page item
         """
         return self.item.owner
 
     @property
-    def tags(self):
+    def tags(self) -> str:
         """
         Returns the tags of the page item
         """
@@ -1199,15 +1212,20 @@ class Page(OrderedDict):
         self.item.tags = value
 
     @property
-    def slug(self):
+    def slug(self) -> str:
         """
         Returns the page slug
         """
         return self.title.replace(" ", "-").lower()
 
     def update(
-        self, page_properties=None, slug=None, data=None, thumbnail=None, metadata=None
-    ):
+        self,
+        page_properties: dict | None = None,
+        slug: str | None = None,
+        data: str | None = None,
+        thumbnail: str | None = None,
+        metadata: str | None = None,
+    ) -> bool:
         """Updates the page.
 
         .. note::
@@ -1269,13 +1287,15 @@ class Page(OrderedDict):
             _page_data["title"] = slug
         return self.item.update(_page_data, data, thumbnail, metadata)
 
-    def update_layout(self, layout):
+    def update_layout(self, layout: dict) -> bool:
         """Updates the layout of the page.
+
         =====================     ====================================================================
         **Argument**              **Description**
         ---------------------     --------------------------------------------------------------------
         layout                    Required dictionary. The new layout dictionary to update to the page.
         =====================     ====================================================================
+
         :return:
            A boolean indicating success (True) or failure (False).
         .. code-block:: python
@@ -1289,7 +1309,7 @@ class Page(OrderedDict):
         # Calling the update layout method for site with this page object
         Site.update_layout(self, layout)
 
-    def delete(self):
+    def delete(self) -> bool:
         """
         Deletes the page. If unable to delete, raises a RuntimeException.
 
@@ -1328,7 +1348,7 @@ class PageManager(object):
     call methods on this 'pages' object to manipulate (add, get, search, etc) pages for a site.
     """
 
-    def __init__(self, gis, site=None):
+    def __init__(self, gis, site: Site | None = None):
         # self._hub = hub
         # self._gis = self._hub.gis
         # If accessed from the gis route
@@ -1344,7 +1364,7 @@ class PageManager(object):
             self._gis = self._hub.gis
         self._site = site
 
-    def add(self, title, site=None):
+    def add(self, title: str, site: Site | None = None) -> Page:
         """
         Returns the pages linked to the specific site.
 
@@ -1353,7 +1373,7 @@ class PageManager(object):
         -----------------------    -------------------------------------------------------------
         title                      Required string. The title of the new page.
         -----------------------    -------------------------------------------------------------
-        site                       Optional string. The site object to add the page to.
+        site                       Optional Site. The site object to add the page to.
         =======================    =============================================================
 
         :return:
@@ -1445,7 +1465,7 @@ class PageManager(object):
         if status:
             return page
 
-    def clone(self, page, site=None):
+    def clone(self, page: Page, site: Site | None = None) -> Page:
         """
         Clone allows for the creation of a page that is derived from the current page.
 
@@ -1497,7 +1517,7 @@ class PageManager(object):
         _cloned_page.item.update(item_properties={"text": _cloned_page.definition})
         return Page(self._gis, _cloned_page.item)
 
-    def get(self, page_id):
+    def get(self, page_id: str) -> Page:
         """
         Returns the page object for the specified page_id.
 
@@ -1522,7 +1542,9 @@ class PageManager(object):
         else:
             raise TypeError("Item is not a valid page or is inaccessible.")
 
-    def link(self, page, site=None, slug=None):
+    def link(
+        self, page: Page, site: Site | None = None, slug: str | None = None
+    ) -> bool:
         """
         Links the page to the specific site.
 
@@ -1531,7 +1553,7 @@ class PageManager(object):
         -----------------------    -------------------------------------------------------------
         page                       Required string. The page object to link.
         -----------------------    -------------------------------------------------------------
-        site                       Optional string. The site object to link page to.
+        site                       Optional Site. The site object to link page to.
         -----------------------    -------------------------------------------------------------
         slug                       Optional string. The slug reference of the page in this site.
         =======================    =============================================================
@@ -1583,16 +1605,16 @@ class PageManager(object):
         page.item.update(item_properties={"text": _page_data})
         return site.item.update(item_properties={"text": _site_data})
 
-    def unlink(self, page, site=None):
+    def unlink(self, page: Page, site: Site | None = None) -> bool:
         """
         Unlinks the page from the specific site.
 
         =======================    =============================================================
         **Argument**               **Description**
         -----------------------    -------------------------------------------------------------
-        page                       Required string. The page object to unlink.
+        page                       Required Page. The page object to unlink.
         -----------------------    -------------------------------------------------------------
-        site                       Optional string. The site object to unlink page from.
+        site                       Optional Site. The site object to unlink page from.
         =======================    =============================================================
 
         :return:
@@ -1642,7 +1664,14 @@ class PageManager(object):
         # Update site data to reflect unlinking
         return site.item.update(item_properties={"text": _site_data})
 
-    def search(self, title=None, owner=None, created=None, modified=None, tags=None):
+    def search(
+        self,
+        title: str | None = None,
+        owner: str | None = None,
+        created: str | None = None,
+        modified: str | None = None,
+        tags: str | None = None,
+    ):
         """
         Searches for pages.
 
