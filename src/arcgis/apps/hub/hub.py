@@ -929,7 +929,8 @@ class InitiativeManager(object):
             return new_site
 
     def get(self, initiative_id: str) -> str:
-        """Returns the initiative object for the specified initiative_id.
+        """
+        Returns the initiative object for the specified initiative_id.
 
         =======================    =============================================================
         **Argument**               **Description**
