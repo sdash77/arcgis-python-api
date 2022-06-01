@@ -1349,9 +1349,6 @@ class PageManager(object):
     """
 
     def __init__(self, gis, site: Site | None = None):
-        # self._hub = hub
-        # self._gis = self._hub.gis
-        # If accessed from the gis route
         try:
             gis._portal
             self._gis = gis
@@ -1513,7 +1510,6 @@ class PageManager(object):
         _cloned_page.definition["values"]["layout"] = page.definition["values"][
             "layout"
         ]
-        # _data = json.dumps(_cloned_page.definition)
         _cloned_page.item.update(item_properties={"text": _cloned_page.definition})
         return Page(self._gis, _cloned_page.item)
 
