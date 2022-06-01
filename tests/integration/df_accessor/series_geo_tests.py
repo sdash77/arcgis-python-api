@@ -92,7 +92,6 @@ pt_single_geoms = [
     Geometry({"x": -110.75, "y": 31.80, "spatialReference": {"wkid": 4326}}),
     Geometry({"x": -100.0, "y": 32.80, "spatialReference": {"wkid": 4326}}),
 ]
-import pytest
 import pandas as pd
 
 MIXED_GEOMS = GeoArray(geoms)

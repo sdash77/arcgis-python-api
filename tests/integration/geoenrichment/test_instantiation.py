@@ -2,7 +2,6 @@ from typing import Optional
 
 from arcgis.gis import GIS
 from arcgis.geoenrichment import Country
-import pytest
 
 from .configtest import (
     skip_if_no_agol,

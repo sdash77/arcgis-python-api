@@ -1,4 +1,3 @@
-import pytest
 import os, sys
 
 sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8072\src")
