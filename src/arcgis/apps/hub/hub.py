@@ -1,5 +1,5 @@
+from __future__ import annotations
 from arcgis.gis import GIS
-from arcgis.features import FeatureLayer
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.geocoding import geocode
 from arcgis.apps.hub.sites import SiteManager, Site, PageManager
@@ -43,7 +43,7 @@ class Hub(object):
 
     """
 
-    def __init__(self, gis):
+    def __init__(self, gis: GIS):
         self.gis = gis
         try:
             self._gis_id = self.gis.properties.id
@@ -62,7 +62,7 @@ class Hub(object):
             return False
 
     @property
-    def enterprise_org_id(self):
+    def enterprise_org_id(self) -> str:
         """
         Returns the AGOL org id of the Enterprise Organization associated with this Premium Hub.
         """
@@ -86,7 +86,7 @@ class Hub(object):
             raise Exception("Hub does not exist or is inaccessible.")
 
     @property
-    def community_org_id(self):
+    def community_org_id(self) -> str:
         """
         Returns the AGOL org id of the Community Organization associated with this Premium Hub.
         """
@@ -109,7 +109,7 @@ class Hub(object):
             raise Exception("Hub does not exist or is inaccessible.")
 
     @property
-    def enterprise_org_url(self):
+    def enterprise_org_url(self) -> str:
         """
         Returns the AGOL org url of the Enterprise Organization associated with this Premium Hub.
         """
@@ -133,7 +133,7 @@ class Hub(object):
             raise Exception("Hub does not exist or is inaccessible.")
 
     @property
-    def community_org_url(self):
+    def community_org_url(self) -> str:
         """
         Returns the AGOL org id of the Community Organization associated with this Premium Hub.
         """
@@ -218,28 +218,28 @@ class Initiative(OrderedDict):
         )
 
     @property
-    def itemid(self):
+    def itemid(self) -> str:
         """
         Returns the item id of the initiative item
         """
         return self.item.id
 
     @property
-    def title(self):
+    def title(self) -> str:
         """
         Returns the title of the initiative item
         """
         return self.item.title
 
     @property
-    def description(self):
+    def description(self) -> str:
         """
         Returns the initiative description
         """
         return self.item.description
 
     @property
-    def snippet(self):
+    def snippet(self) -> str:
         """
         Getter/Setter for the initiative snippet
         """
@@ -250,21 +250,21 @@ class Initiative(OrderedDict):
         self.item.snippet = value
 
     @property
-    def owner(self):
+    def owner(self) -> str:
         """
         Returns the owner of the initiative item
         """
         return self.item.owner
 
     @property
-    def tags(self):
+    def tags(self) -> str:
         """
         Returns the tags of the initiative item
         """
         return self.item.tags
 
     @property
-    def url(self):
+    def url(self) -> str:
         """
         Returns the url of the initiative site
         """
@@ -274,9 +274,9 @@ class Initiative(OrderedDict):
             return self.item.url
 
     @property
-    def site_id(self):
+    def site_id(self) -> str:
         """
-        Returns the itemid of the initiative site
+        Returns the item id of the initiative site
         """
         try:
             return self.item.properties["siteId"]
@@ -284,7 +284,7 @@ class Initiative(OrderedDict):
             return self._initiativedict["steps"][0]["itemIds"][0]
 
     @property
-    def site_url(self):
+    def site_url(self) -> str:
         """
         Getter/Setter for the url of the initiative site
         """
@@ -298,16 +298,16 @@ class Initiative(OrderedDict):
         self.item.url = value
 
     @property
-    def content_group_id(self):
+    def content_group_id(self) -> str:
         """
-        Returns the groupId for the content group
+        Returns the group id for the content group
         """
         return self.item.properties["contentGroupId"]
 
     @property
-    def collab_group_id(self):
+    def collab_group_id(self) -> str:
         """
-        Getter/Setter for the groupId for the collaboration group
+        Getter/Setter for the group id for the collaboration group
         """
         try:
             return self.item.properties["collaborationGroupId"]
@@ -319,14 +319,14 @@ class Initiative(OrderedDict):
         self.item.properties["collaborationGroupId"] = value
 
     @property
-    def followers_group_id(self):
+    def followers_group_id(self) -> str:
         """
-        Returns the groupId for the followers group
+        Returns the group id for the followers group
         """
         return self.item.properties["followersGroupId"]
 
     @_lazy_property
-    def sites(self):
+    def sites(self) -> SiteManager:
         """
         The resource manager for an Initiative's sites.
         See :class:`~hub.sites.SiteManager`.
@@ -341,7 +341,7 @@ class Initiative(OrderedDict):
         return self._gis.hub.events.search(initiative_id=self.item.id)
 
     @_lazy_property
-    def followers(self):
+    def followers(self) -> list:
         """
         Fetches the list of followers for initiative.
         """
@@ -351,7 +351,7 @@ class Initiative(OrderedDict):
         )
         return _followers_group.get_members()
 
-    def add_content(self, items_list):
+    def add_content(self, items_list: list):
         """
         Adds a batch of items to the initiative content library.
         =====================     ====================================================================
@@ -369,7 +369,7 @@ class Initiative(OrderedDict):
             items_list, groups=[_collab_group, _content_group]
         )
 
-    def delete(self):
+    def delete(self) -> bool:
         """
         Deletes the initiative, its site and associated groups.
         If unable to delete, raises a RuntimeException.
@@ -413,7 +413,7 @@ class Initiative(OrderedDict):
             _content_group.delete()
             return self.item.delete()
 
-    def reassign_to(self, target_owner):
+    def reassign_to(self, target_owner: str):
         """
         Allows the administrator to reassign the initiative object from one
         user to another.
@@ -506,8 +506,12 @@ class Initiative(OrderedDict):
         return self._gis.content.get(self.itemid)
 
     def share(
-        self, everyone=False, org=False, groups=None, allow_members_to_edit=False
-    ):
+        self,
+        everyone: bool = False,
+        org: bool = False,
+        groups: list | None = None,
+        allow_members_to_edit: bool = False,
+    ) -> dict:
         """
         Shares an initiative and associated site with the specified list of groups.
 
@@ -547,14 +551,14 @@ class Initiative(OrderedDict):
         print(result1)
         return result2
 
-    def unshare(self, groups):
+    def unshare(self, groups: list) -> dict:
         """
         Stops sharing of the initiative and its associated site with the specified list of groups.
 
         ================  =========================================================================================
         **Argument**      **Description**
         ----------------  -----------------------------------------------------------------------------------------
-        groups            Optional list of group names as strings, or a list of arcgis.gis.Group objects,
+        groups            Required list of group names as strings, or a list of arcgis.gis.Group objects,
                           or a comma-separated list of group IDs.
         ================  =========================================================================================
 
@@ -568,8 +572,12 @@ class Initiative(OrderedDict):
         return result2
 
     def update(
-        self, initiative_properties=None, data=None, thumbnail=None, metadata=None
-    ):
+        self,
+        initiative_properties: dict | None = None,
+        data: str | None = None,
+        thumbnail: str | None = None,
+        metadata: str | None = None,
+    ) -> bool:
         """Updates the initiative.
 
 
@@ -643,7 +651,14 @@ class InitiativeManager(object):
         self._hub = hub
         self._gis = self._hub.gis
 
-    def add(self, title, description=None, site=None, data=None, thumbnail=None):
+    def add(
+        self,
+        title: str,
+        description: str | None = None,
+        site: Site | None = None,
+        data: str | None = None,
+        thumbnail: str | None = None,
+    ):
         """
         Adds a new initiative to the Hub.
         ===============     ====================================================================
@@ -830,7 +845,12 @@ class InitiativeManager(object):
         item.update(item_properties={"text": _data})
         return Initiative(self._gis, item)
 
-    def clone(self, initiative, origin_hub=None, title=None):
+    def clone(
+        self,
+        initiative: Initiative,
+        origin_hub: Hub | None = None,
+        title: str | None = None,
+    ) -> Initiative:
         """
         Clone allows for the creation of an initiative that is derived from the current initiative.
 
@@ -908,8 +928,9 @@ class InitiativeManager(object):
             new_site = self._hub.sites.clone(site, pages=True, title=title)
             return new_site
 
-    def get(self, initiative_id):
-        """Returns the initiative object for the specified initiative_id.
+    def get(self, initiative_id: str) -> str:
+        """
+        Returns the initiative object for the specified initiative_id.
 
         =======================    =============================================================
         **Argument**               **Description**
@@ -935,8 +956,14 @@ class InitiativeManager(object):
             raise TypeError("Item is not a valid initiative or is inaccessible.")
 
     def search(
-        self, scope=None, title=None, owner=None, created=None, modified=None, tags=None
-    ):
+        self,
+        scope: str | None = None,
+        title: str | None = None,
+        owner=None,
+        created: str | None = None,
+        modified: str | None = None,
+        tags: str | None = None,
+    ) -> list:
         """
         Searches for initiatives.
 
@@ -1010,15 +1037,15 @@ class Event(OrderedDict):
     as well as gather and archive content during the event for later retrieval or analysis.
     """
 
-    def __init__(self, gis, eventObject):
+    def __init__(self, gis, event_object):
         """
         Constructs an empty Event object
         """
         self._gis = gis
         self._hub = self._gis.hub
-        self._eventdict = eventObject["attributes"]
+        self._eventdict = event_object["attributes"]
         try:
-            self._eventdict["geometry"] = eventObject["geometry"]
+            self._eventdict["geometry"] = event_object["geometry"]
         except KeyError:
             self._eventdict["geometry"] = {"x": 0.00, "y": 0.00}
         pmap = PropertyMap(self._eventdict)
@@ -1032,118 +1059,118 @@ class Event(OrderedDict):
         )
 
     @property
-    def event_id(self):
+    def event_id(self) -> str:
         """
         Returns the unique identifier of the event
         """
         return self._eventdict["OBJECTID"]
 
     @property
-    def title(self):
+    def title(self) -> str:
         """
         Returns the title of the event
         """
         return self._eventdict["title"]
 
     @property
-    def venue(self):
+    def venue(self) -> str:
         """
         Returns the location of the event
         """
         return self._eventdict["venue"]
 
     @property
-    def address(self):
+    def address(self) -> str:
         """
         Returns the street address for the venue of the event
         """
         return self._eventdict["address1"]
 
     @property
-    def initiative_id(self):
+    def initiative_id(self) -> str:
         """
         Returns the initiative id of the initiative the event belongs to
         """
         return self._eventdict["initiativeId"]
 
     @property
-    def organizers(self):
+    def organizers(self) -> str:
         """
         Returns the name and email of the event organizers
         """
         return self._eventdict["organizers"]
 
     @property
-    def description(self):
+    def description(self) -> str:
         """
         Returns description of the event
         """
         return self._eventdict["description"]
 
     @property
-    def start_date(self):
+    def start_date(self) -> str:
         """
         Returns start date of the event in milliseconds since UNIX epoch
         """
         return self._eventdict["startDate"]
 
     @property
-    def end_date(self):
+    def end_date(self) -> str:
         """
         Returns end date of the event in milliseconds since UNIX epoch
         """
         return self._eventdict["endDate"]
 
     @property
-    def creator(self):
+    def creator(self) -> str:
         """
         Returns creator of the event
         """
         return self._eventdict["Creator"]
 
     @property
-    def capacity(self):
+    def capacity(self) -> int:
         """
         Returns attendance capacity for attendees of the event
         """
         return self._eventdict["capacity"]
 
     @property
-    def attendance(self):
+    def attendance(self) -> int:
         """
         Returns attendance count for a past event
         """
         return self._eventdict["attendance"]
 
     @property
-    def access(self):
+    def access(self) -> str:
         """
         Returns access permissions of the event
         """
         return self._eventdict["status"]
 
     @property
-    def group_id(self):
+    def group_id(self) -> str:
         """
         Returns groupId for the event
         """
         return self._eventdict["groupId"]
 
     @property
-    def is_cancelled(self):
+    def is_cancelled(self) -> bool:
         """
         Check if event is Cancelled
         """
         return self._eventdict["isCancelled"]
 
     @property
-    def geometry(self):
+    def geometry(self) -> dict:
         """
         Returns co-ordinates of the event location
         """
         return self._eventdict["geometry"]
 
-    def delete(self):
+    def delete(self) -> bool:
         """
         Deletes an event
 
@@ -1175,7 +1202,7 @@ class Event(OrderedDict):
         )
         return delete_event["deleteResults"][0]["success"]
 
-    def update(self, event_properties):
+    def update(self, event_properties: dict) -> bool:
         """
         Updates properties of an event
 
@@ -1248,7 +1275,7 @@ class EventManager(object):
             events.append(Event(self._gis, event))
         return events
 
-    def add(self, event_properties):
+    def add(self, event_properties: dict) -> Event:
         """
         Adds an event for an initiative.
 
@@ -1388,7 +1415,13 @@ class EventManager(object):
         except:
             return add_event
 
-    def search(self, initiative_id=None, title=None, venue=None, organizer_name=None):
+    def search(
+        self,
+        initiative_id: str | None = None,
+        title: str | None = None,
+        venue: str | None = None,
+        organizer_name: str | None = None,
+    ) -> list:
         """
         Searches for events within a Hub.
 
@@ -1421,7 +1454,7 @@ class EventManager(object):
             events = [event for event in events if organizer_name in event.organizers]
         return events
 
-    def get(self, event_id):
+    def get(self, event_id: int) -> Event:
         """Get the event for the specified event_id.
 
         =======================    =============================================================
