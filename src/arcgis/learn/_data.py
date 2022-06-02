@@ -1209,7 +1209,8 @@ def prepare_data(
     chip_size               Optional integer, default 224. Size of the image to train the model.
                             Images are cropped to the specified chip_size.
                             If image size is less than chip_size, the image size is
-                            used as chip_size. Not supported for SuperResolution,
+                            used as chip_size. A chip size that is a multiple of 32 pixels
+                            is recommended. Not supported for SuperResolution,
                             SiamMask, WNet_cGAN, Pix2Pix and CycleGAN.
     ---------------------   -------------------------------------------
     val_split_pct           Optional float. Percentage of training data to keep
@@ -2929,9 +2930,9 @@ def prepare_data(
         data.valid_ds.x._div = 255.0
         data.is_normalized = True
 
-        if dataset_type == "Panoptic_Segmentation":
-            data.c = len(data.classes)
-            data.show_batch = types.MethodType(show_batch_panoptic, data)
+    if dataset_type == "Panoptic_Segmentation":
+        data.c = len(data.classes)
+        data.show_batch = types.MethodType(show_batch_panoptic, data)
 
     if dataset_type in ["PASCAL_VOC_rectangles", "KITTI_rectangles"]:
         data.show_batch = types.MethodType(show_batch_object_detection, data)

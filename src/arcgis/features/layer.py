@@ -1011,19 +1011,19 @@ class FeatureLayer(Layer):
             from datetime import datetime as _datetime
 
             _fld_lu = {
-                "esriFieldTypeSmallInteger": np.int32,
-                "esriFieldTypeInteger": np.int64,
-                "esriFieldTypeSingle": float,
-                "esriFieldTypeDouble": float,
-                "esriFieldTypeFloat": float,
-                "esriFieldTypeString": str,
+                "esriFieldTypeSmallInteger": pd.Int32Dtype(),
+                "esriFieldTypeInteger": pd.Int32Dtype(),
+                "esriFieldTypeSingle": pd.Float64Dtype(),
+                "esriFieldTypeDouble": pd.Float64Dtype(),
+                "esriFieldTypeFloat": pd.Float64Dtype(),
+                "esriFieldTypeString": pd.StringDtype(),
                 "esriFieldTypeDate": _datetime,
-                "esriFieldTypeOID": np.int64,
+                "esriFieldTypeOID": pd.Int64Dtype(),
                 "esriFieldTypeGeometry": object,
                 "esriFieldTypeBlob": object,
                 "esriFieldTypeRaster": object,
-                "esriFieldTypeGUID": str,
-                "esriFieldTypeGlobalID": str,
+                "esriFieldTypeGUID": pd.StringDtype(),
+                "esriFieldTypeGlobalID": pd.StringDtype(),
                 "esriFieldTypeXML": object,
             }
 
@@ -1855,19 +1855,19 @@ class FeatureLayer(Layer):
             import pandas as pd
 
             _fld_lu = {
-                "esriFieldTypeSmallInteger": np.int32,
-                "esriFieldTypeInteger": np.int32,
-                "esriFieldTypeSingle": float,
-                "esriFieldTypeDouble": float,
-                "esriFieldTypeFloat": float,
-                "esriFieldTypeString": str,
+                "esriFieldTypeSmallInteger": pd.Int32Dtype(),
+                "esriFieldTypeInteger": pd.Int32Dtype(),
+                "esriFieldTypeSingle": pd.Float64Dtype(),
+                "esriFieldTypeDouble": pd.Float64Dtype(),
+                "esriFieldTypeFloat": pd.Float64Dtype(),
+                "esriFieldTypeString": pd.StringDtype(),
                 "esriFieldTypeDate": np.datetime64,
-                "esriFieldTypeOID": np.int64,
+                "esriFieldTypeOID": pd.Int64Dtype(),
                 "esriFieldTypeGeometry": object,
                 "esriFieldTypeBlob": object,
                 "esriFieldTypeRaster": object,
-                "esriFieldTypeGUID": str,
-                "esriFieldTypeGlobalID": str,
+                "esriFieldTypeGUID": pd.StringDtype(),
+                "esriFieldTypeGlobalID": pd.StringDtype(),
                 "esriFieldTypeXML": object,
             }
             columns = {}
@@ -2353,14 +2353,14 @@ class FeatureLayer(Layer):
                                    not be returned.  This alters the output to be a tuple consisting of
                                    a (Boolean, Dictionary).
         ------------------------   --------------------------------------------------------------------
-        future                     Optional Boolean.  When true, the response is returned as a
-                                   :class:`~concurrent.futures.Future` object.
+        future                     Optional boolean. If True, a future object will be returned and the process
+                                   will not wait for the task to complete. The default is False, which means wait for results.
         ========================   ====================================================================
 
         :return:
             A boolean indicating success (True), or failure (False). When ``return_messages`` is True, the
             response messages will be return in addition to the boolean as a `tuple`.
-            If ``future`` = True, then the result is a `Future` object. Call ``result()`` to get the response.
+            If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         .. code-block:: python
 
@@ -2496,13 +2496,13 @@ class FeatureLayer(Layer):
                                    is returned per deleted row when the deleteFeatures operation is run.
                                    The default is true.
         ----------------------     --------------------------------------------------------------------
-        future                     Optional Boolean.  If future=True, then the operation will occur
-                                   asynchronously else the operation will occur synchronously.  False
-                                   is the default.
+        future                     Optional boolean. If True, a future object will be returned and the process
+                                   will not wait for the task to complete. The default is False, which means wait for results.
         ======================     ====================================================================
 
         :return:
-            A dictionary if future=False (default), else a :class:`~concurrent.futures.Future` object.
+            A dictionary if future=False (default), else If ``future = True``,
+            then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         .. code-block:: python
 
@@ -2588,7 +2588,7 @@ class FeatureLayer(Layer):
             time.sleep(2)
             future = executor.submit(
                 self._status_via_url,
-                *(self._con, res["statusUrl"], {"f": "json"}),
+                *(self._con, res["statusUrl"], {"f": "json"}, True),
             )
             executor.shutdown(False)
 
@@ -2614,7 +2614,7 @@ class FeatureLayer(Layer):
         return {}
 
     # ----------------------------------------------------------------------
-    def _status_via_url(self, con, url, params):
+    def _status_via_url(self, con, url, params, ignore_error=False):
         """
         performs the asynchronous check to see if the operation finishes
         """
@@ -2637,7 +2637,9 @@ class FeatureLayer(Layer):
             ]
         ]
         time.sleep(0.5)
-        status = con.get(url, params)
+        status = con.get(url, params, ignore_error_key=ignore_error)
+        if not "status" in status and ignore_error:
+            return status
         while (
             status["status"].lower() in status_allowed
             and status["status"].lower() != "completed"
@@ -2650,7 +2652,7 @@ class FeatureLayer(Layer):
                 break
             elif "error" in status["status"].lower():
                 break
-            status = con.get(url, params)
+            status = con.get(url, params, ignore_error_key=ignore_error)
         return status
 
     # ----------------------------------------------------------------------
@@ -2775,12 +2777,13 @@ class FeatureLayer(Layer):
                                     ===========     ===================================
 
         ---------------------   --------------------------------------------------------------------------------------
-        future                  Optional Boolean.  If `True` and the `FeatureLayer` has `supportsAsyncApplyEdits` set
-                                to `True`, then edits can be applied asynchronously.
+        future                  Optional Boolean.  If the `FeatureLayer` has `supportsAsyncApplyEdits` set
+                                to `True`, then edits can be applied asynchronously. If True, a future object will be returned and the process
+                                will not wait for the task to complete. The default is False, which means wait for results.
         =====================   ======================================================================================
 
         :return:
-            A dictionary by default, or :class:`~arcgis.features._async.EditFeatureJob` if `future=True`.
+            A dictionary by default, or If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         .. code-block:: python
 
@@ -2984,7 +2987,7 @@ class FeatureLayer(Layer):
                 res = self._con.post_multipart(path=edit_url, postdata=params)
                 future = executor.submit(
                     self._status_via_url,
-                    *(self._con, res["statusUrl"], {"f": "json"}),
+                    *(self._con, res["statusUrl"], {"f": "json"}, True),
                 )
                 executor.shutdown(False)
 
@@ -3064,9 +3067,10 @@ class FeatureLayer(Layer):
                                 `isDataBranchVersioned` property of the layer is
                                 true.
         ---------------------   ----------------------------------------------------
-        future                  Optional Boolean.  If True, the result is returned
-                                as a future object and the results are obtained in
-                                an asynchronous fashion.  False is the default.
+        future                  Optional boolean. If True, a future object will be
+                                returned and the process
+                                will not wait for the task to complete. The default is
+                                False, which means wait for results.
 
                                 **This applies to 10.8+ only**
 
@@ -3078,6 +3082,8 @@ class FeatureLayer(Layer):
              'updatedFeatureCount': 1,
              'success': True
              }
+
+            If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         .. code-block:: python
 
@@ -3241,19 +3247,19 @@ class FeatureLayer(Layer):
             from datetime import datetime as _datetime
 
             _fld_lu = {
-                "esriFieldTypeSmallInteger": np.int32,
-                "esriFieldTypeInteger": np.int32,
-                "esriFieldTypeSingle": np.float64,
-                "esriFieldTypeDouble": np.float64,
-                "esriFieldTypeFloat": np.float64,
-                "esriFieldTypeString": str,
+                "esriFieldTypeSmallInteger": pd.Int32Dtype(),
+                "esriFieldTypeInteger": pd.Int32Dtype(),
+                "esriFieldTypeSingle": pd.Float64Dtype(),
+                "esriFieldTypeDouble": pd.Float64Dtype(),
+                "esriFieldTypeFloat": pd.Float64Dtype(),
+                "esriFieldTypeString": pd.StringDtype(),
                 "esriFieldTypeDate": object,
-                "esriFieldTypeOID": np.int64,
+                "esriFieldTypeOID": pd.Int64Dtype(),
                 "esriFieldTypeGeometry": object,
                 "esriFieldTypeBlob": object,
                 "esriFieldTypeRaster": object,
-                "esriFieldTypeGUID": str,
-                "esriFieldTypeGlobalID": str,
+                "esriFieldTypeGUID": pd.StringDtype(),
+                "esriFieldTypeGlobalID": pd.StringDtype(),
                 "esriFieldTypeXML": object,
             }
 
@@ -3724,19 +3730,19 @@ class Table(FeatureLayer):
             import pandas as pd
 
             _fld_lu = {
-                "esriFieldTypeSmallInteger": np.int32,
-                "esriFieldTypeInteger": np.int64,
-                "esriFieldTypeSingle": float,
-                "esriFieldTypeDouble": float,
-                "esriFieldTypeFloat": float,
-                "esriFieldTypeString": str,
+                "esriFieldTypeSmallInteger": pd.Int32Dtype(),
+                "esriFieldTypeInteger": pd.Int32Dtype(),
+                "esriFieldTypeSingle": pd.Float64Dtype(),
+                "esriFieldTypeDouble": pd.Float64Dtype(),
+                "esriFieldTypeFloat": pd.Float64Dtype(),
+                "esriFieldTypeString": pd.StringDtype(),
                 "esriFieldTypeDate": np.datetime64,
-                "esriFieldTypeOID": np.int64,
+                "esriFieldTypeOID": pd.Int64Dtype(),
                 "esriFieldTypeGeometry": object,
                 "esriFieldTypeBlob": object,
                 "esriFieldTypeRaster": object,
-                "esriFieldTypeGUID": str,
-                "esriFieldTypeGlobalID": str,
+                "esriFieldTypeGUID": pd.StringDtype(),
+                "esriFieldTypeGlobalID": pd.StringDtype(),
                 "esriFieldTypeXML": object,
             }
             columns = {}

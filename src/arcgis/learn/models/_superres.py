@@ -48,7 +48,7 @@ class SuperResolution(ArcGISModel):
                             `prepare_data` function.
     ---------------------   -------------------------------------------
     backbone                Optional function. Backbone CNN model to be used for
-                            creating the base of the `UnetClassifier`, which
+                            creating the base of the `SuperResolution`, which
                             is `resnet34` by default.
                             Compatible backbones: 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152'
     ---------------------   -------------------------------------------

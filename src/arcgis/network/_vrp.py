@@ -3169,8 +3169,8 @@ def solve_vehicle_routing_problem(
                                               * JSON File - The output features are returned as a compressed file containing the JSON representation of the outputs. When this option is specified, the output is a single file (with a .zip extension) that contains one or more JSON files (with a .json extension) for each of the outputs created by the service.
                                               * GeoJSON File - The output features are returned as a compressed file containing the GeoJSON representation of the outputs. When this option is specified, the output is a single file (with a .zip extension) that contains one or more GeoJSON files (with a .geojson extension) for each of the outputs created by the service.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    future                                  Optional boolean. If True, a GPJob is returned instead of results.
-                                            The GPJob can be queried on the status of the execution.
+    future                                  Optional boolean. If True, a future object will be returned and the process
+                                            will not wait for the task to complete. The default is False, which means wait for results.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     ignore_invalid_order_locations          Specifies whether invalid orders will be ignored when solving the vehicle routing problem.
 

@@ -130,8 +130,8 @@ def geocode_locations(
                                  Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
                                  Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     --------------------------   ---------------------------------------------------------------
-    future                       Optional boolean. If True, a GPJob is returned instead of
-                                 results. The GPJob can be queried on the status of the execution.
+    future                       Optional boolean. If True, a future object will be returned and the process
+                                 will not wait for the task to complete. The default is False, which means wait for results.
     ==========================   ===============================================================
 
 
@@ -583,10 +583,8 @@ def detect_incidents(
                                  #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
                                  #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     --------------------------   ---------------------------------------------------------------
-    future                       optional boolean. If True, a GPJob is returned instead of
-                                 results. The GPJob can be queried on the status of the execution.
-
-                                 The default value is 'False'.
+    future                       Optional boolean. If True, a future object will be returned and the process
+                                 will not wait for the task to complete. The default is False, which means wait for results.
     ==========================   ===============================================================
 
     :return: result_layer : Output Features as :class:`~arcgis.features.FeatureLayerCollection`.
@@ -821,9 +819,8 @@ def find_dwell_locations(
                                  #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
                                  #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     --------------------------   ---------------------------------------------------------------
-    future                       Optional boolean. If 'True', a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
-
-                                 The default value is 'False'.
+    future                       Optional boolean. If True, a future object will be returned and the process
+                                 will not wait for the task to complete. The default is False, which means wait for results.
     --------------------------   ---------------------------------------------------------------
     time_boundary_split          Optional integer. A time boundary to detect and incident. A time
                                  boundary allows your to analyze values within a defined time span.
@@ -1068,9 +1065,8 @@ def find_similar_locations(
                                  #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
                                  #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     --------------------------   ---------------------------------------------------------------
-    future                       Optional boolean. If 'True', a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
-
-                                 The default value is 'False'.
+    future                       Optional boolean. If True, a future object will be returned and the process
+                                 will not wait for the task to complete. The default is False, which means wait for results.
     --------------------------   ---------------------------------------------------------------
     return_tuple                 Optional boolean. If 'True', a named tuple with multiple output keys is returned.
 

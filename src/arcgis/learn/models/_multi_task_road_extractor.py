@@ -85,17 +85,15 @@ class MultiTaskRoadExtractor(ArcGISModel):
     data                    Required fastai Databunch. Returned data object from
                             ``prepare_data`` function.
     ---------------------   -----------------------------------------------------
-    backbone                Optional String. Backbone CNN model to be used for
-                            creating the base. If hourglass is chosen as
-                            the `mtl_model` (Architecture), then this parameter
-                            is ignored as hourglass uses a special customised
+    backbone                Optional String. Backbone convolutional neural network
+                            model used for feature extraction. If hourglass is chosen as
+                            the mtl_model (Architecture), then this parameter is
+                            ignored as hourglass uses a special customised
                             architecture.
-                            This parameter is to be used with
-                            `linknet` architecture.
+                            This parameter is used with `linknet` model.
                             Default: 'resnet34'
-
-                            Use `supported_backbones` property to get the list
-                            of all the supported backbones.
+                            Supported backbones: ResNet family and specified Timm
+                            models(experimental support) from :func:`~arcgis.learn.MultiTaskRoadExtractor.backbones`.
     ---------------------   -----------------------------------------------------
     pretrained_path         Optional String. Path where a compatible pre-trained
                             model is saved. Accepts a Deep Learning Package

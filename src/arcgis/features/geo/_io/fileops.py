@@ -65,14 +65,14 @@ def _fc2pandas_dtypes(describe: dict) -> dict:
         }
     else:
         _lu_types = {
-            "OID": np.int64,
-            "SmallInteger": np.int32,
-            "Integer": np.int32,
+            "OID": pd.Int64Dtype(),
+            "SmallInteger": pd.Int32Dtype(),
+            "Integer": pd.Int32Dtype(),
             "Single": float,
             "Double": float,
-            "String": "<U",
+            "String": pd.StringDtype(),
             "Blob": "O",
-            "Guid": "<U38",
+            "Guid": pd.StringDtype(),
             "Raster": "O",
             "Date": "<M8[us]",
         }
@@ -80,9 +80,9 @@ def _fc2pandas_dtypes(describe: dict) -> dict:
     if "fields" in describe:
         dtypes = {}
         for field in describe["fields"]:
-            if field.type.lower() in ["TEXT", "string"]:
-                dtypes[field.name] = f"{_lu_types['String']}{field.length}"
-            elif field.type in _lu_types.keys():
+            # if field.type.lower() in ["TEXT", "string"]:
+            #    dtypes[field.name] = f"{_lu_types['String']}{field.length}"
+            if field.type in _lu_types.keys():
                 dtypes[field.name] = _lu_types[field.type]
             elif field.type.lower() == "geometry":
                 pass  # Skip value

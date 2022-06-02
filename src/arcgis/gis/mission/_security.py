@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
