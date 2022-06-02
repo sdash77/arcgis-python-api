@@ -2540,7 +2540,7 @@ class FeatureLayer(Layer):
             time.sleep(2)
             future = executor.submit(
                 self._status_via_url,
-                *(self._con, res["statusUrl"], {"f": "json"}),
+                *(self._con, res["statusUrl"], {"f": "json"}, True),
             )
             executor.shutdown(False)
 
@@ -2566,7 +2566,7 @@ class FeatureLayer(Layer):
         return {}
 
     # ----------------------------------------------------------------------
-    def _status_via_url(self, con, url, params):
+    def _status_via_url(self, con, url, params, ignore_error=False):
         """
         performs the asynchronous check to see if the operation finishes
         """
@@ -2589,7 +2589,9 @@ class FeatureLayer(Layer):
             ]
         ]
         time.sleep(0.5)
-        status = con.get(url, params)
+        status = con.get(url, params, ignore_error_key=ignore_error)
+        if not "status" in status and ignore_error:
+            return status
         while (
             status["status"].lower() in status_allowed
             and status["status"].lower() != "completed"
@@ -2602,7 +2604,7 @@ class FeatureLayer(Layer):
                 break
             elif "error" in status["status"].lower():
                 break
-            status = con.get(url, params)
+            status = con.get(url, params, ignore_error_key=ignore_error)
         return status
 
     # ----------------------------------------------------------------------
@@ -2937,7 +2939,7 @@ class FeatureLayer(Layer):
                 res = self._con.post_multipart(path=edit_url, postdata=params)
                 future = executor.submit(
                     self._status_via_url,
-                    *(self._con, res["statusUrl"], {"f": "json"}),
+                    *(self._con, res["statusUrl"], {"f": "json"}, True),
                 )
                 executor.shutdown(False)
 
