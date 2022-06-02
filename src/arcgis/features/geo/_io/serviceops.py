@@ -32,39 +32,21 @@ else:
     from datetime import datetime as _datetime
 
     _look_up_types = {
-        "esriFieldTypeSmallInteger": np.int32,
-        "esriFieldTypeInteger": np.int32,
-        "esriFieldTypeSingle": np.float64,
-        "esriFieldTypeDouble": np.float64,
-        "esriFieldTypeFloat": np.float64,
-        "esriFieldTypeString": str,
+        "esriFieldTypeSmallInteger": pd.Int32Dtype(),
+        "esriFieldTypeInteger": pd.Int32Dtype(),
+        "esriFieldTypeSingle": pd.Float64Dtype(),
+        "esriFieldTypeDouble": pd.Float64Dtype(),
+        "esriFieldTypeFloat": pd.Float64Dtype(),
+        "esriFieldTypeString": pd.StringDtype(),
         "esriFieldTypeDate": "<M8[us]",
-        "esriFieldTypeOID": np.int64,
+        "esriFieldTypeOID": pd.Int64Dtype(),
         "esriFieldTypeGeometry": object,
         "esriFieldTypeBlob": object,
         "esriFieldTypeRaster": object,
-        "esriFieldTypeGUID": str,
-        "esriFieldTypeGlobalID": str,
+        "esriFieldTypeGUID": pd.StringDtype(),
+        "esriFieldTypeGlobalID": pd.StringDtype(),
         "esriFieldTypeXML": object,
     }
-
-# --------------------------------------------------------------------------
-_look_up_types_old = {
-    "esriFieldTypeBlob": object,
-    "esriFieldTypeDate": "<M8[us]",
-    "esriFieldTypeInteger": np.int32,
-    "esriFieldTypeSmallInteger": np.int32,
-    "esriFieldTypeDouble": float,
-    "esriFieldTypeFloat": float,
-    "esriFieldTypeSingle": float,
-    "esriFieldTypeString": str,
-    "esriFieldTypeGeometry": "O",
-    "esriFieldTypeOID": np.int64,
-    "esriFieldTypeGlobalID": str,
-    "esriFieldTypeRaster": "O",
-    "esriFieldTypeGUID": str,
-    "esriFieldTypeXML": "O",
-}
 
 # --------------------------------------------------------------------------
 def to_featureset(df):

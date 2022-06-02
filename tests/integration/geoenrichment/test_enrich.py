@@ -1,5 +1,7 @@
 from typing import Union, Iterable
 
+from arcgis.features import FeatureSet
+from arcgis.features.geo import _is_geoenabled
 from arcgis.geometry import Point
 from arcgis.geoenrichment import Country
 from arcgis.geoenrichment._business_analyst._utils import pep8ify
@@ -27,6 +29,32 @@ def enrich_test(enrich_src: Country, geom: Union[pd.DataFrame, pd.Series, Iterab
                 std_geo_id_col: str = None, prx_typ: str = None, prx_val: Union[int, float] = None,
                 prx_mtrc: str = None) -> None:
     with expectation:
+
+        enrich_res = enrich_src.enrich(geom, enrich_vars, standard_geography_level=std_geo_lvl,
+                                       standard_geography_id_column=std_geo_id_col,
+                                       proximity_type=prx_typ,
+                                       proximity_value=prx_val,
+                                       proximity_metric=prx_mtrc)
+
+        assert isinstance(enrich_res, pd.DataFrame)
+
+        assert enrich_res.spatial.validate()
+
+        if isinstance(enrich_vars, list):
+            enrich_vars = enrich_src._ba_cntry.get_enrich_variables_from_iterable(enrich_vars)
+        enrich_var_cols = [pep8ify(val) for val in enrich_vars['name']]
+        enrich_res_cols = list(enrich_res.columns)
+        assert all([[enrich_col in enrich_res_cols] for enrich_col in enrich_var_cols])
+
+
+def enrich_feature_set_test(enrich_src: Country, geom: Union[pd.DataFrame, FeatureSet],
+                enrich_vars: Union[pd.DataFrame, list], expectation: object, std_geo_lvl: Union[str, int] = None,
+                std_geo_id_col: str = None, prx_typ: str = None, prx_val: Union[int, float] = None,
+                prx_mtrc: str = None) -> None:
+    with expectation:
+
+        if isinstance(geom, FeatureSet):
+            geom = geom.spatial.to_featurset()
 
         enrich_res = enrich_src.enrich(geom, enrich_vars, standard_geography_level=std_geo_lvl,
                                        standard_geography_id_column=std_geo_id_col,
@@ -219,6 +247,11 @@ def test_enrich_usa_poly_agol(usa_agol, polygon_df, usa_agol_enrich_vars):
 
 
 @skip_if_no_agol
+def test_enrich_feature_set_usa_poly_agol(usa_agol, polygon_df, usa_agol_enrich_vars):
+    enrich_feature_set_test(usa_agol, polygon_df, usa_agol_enrich_vars, does_not_raise())
+
+
+@skip_if_no_agol
 def test_enrich_usa_line_agol(usa_agol, line_df, usa_agol_enrich_vars):
     enrich_test(usa_agol, line_df, usa_agol_enrich_vars, does_not_raise())
 
@@ -326,3 +359,17 @@ def test_single_address_string_agol(usa_agol, usa_agol_enrich_vars):
     with does_not_raise():
         enrich_res = usa_agol.enrich('111 Market St NW, Olympia, WA 98502', enrich_variables=usa_agol_enrich_vars)
         assert isinstance(enrich_res, pd.DataFrame)
+
+
+@skip_if_no_agol
+def test_enrich_sedf_from_agol_layer_global_defaults(usa_agol):
+
+    from arcgis.geoenrichment import enrich
+    from arcgis.gis import GIS
+
+    with does_not_raise():
+        lyr = GIS().content.get('07bd93b6aba249b2b5972f7e2b9117a9').layers[0]
+        df = lyr.query(as_df=True)
+        enrich_res = enrich(df, gis=usa_agol._gis)
+        assert isinstance(enrich_res, pd.DataFrame)
+        assert _is_geoenabled(enrich_res)

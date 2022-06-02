@@ -2,7 +2,12 @@ from typing import Union, Optional, ClassVar
 from dataclasses import dataclass
 
 from arcgis.realtime import Velocity
-from arcgis.realtime.velocity.feeds.kafka_authentication_type import NoAuth, SASLPlain
+from arcgis.realtime.velocity.feeds.kafka_authentication_type import (
+    NoAuth,
+    SASLPlain,
+    SaslScramSha256,
+    SaslScramSha512,
+)
 from arcgis.realtime.velocity.feeds._feed_template import _FeedTemplate
 from arcgis.realtime.velocity.feeds.geometry import (
     _HasGeometry,
@@ -26,22 +31,22 @@ class Kafka(_FeedTemplate, _HasTime, _HasGeometry):
     Receive event data from a Kafka broker. This data class can be used to define the feed configuration and to
     create the feed.
 
-    ==================      ====================================================================
+    ==================      ============================================================================================
     **Argument**            **Description**
-    ------------------      --------------------------------------------------------------------
+    ------------------      --------------------------------------------------------------------------------------------
     label                   str. Unique label for this feed instance.
-    ------------------      --------------------------------------------------------------------
+    ------------------      --------------------------------------------------------------------------------------------
     description             str. Feed description.
-    ------------------      --------------------------------------------------------------------
+    ------------------      --------------------------------------------------------------------------------------------
     brokers                 str. Comma-separated list of Kafka brokers, including the port, such as
                             host1.domain.com:9092,host2.domain.com:9092.
 
                             For example: kafkaServer1.hostname.com:9092,kafkaServer2.hostname.com:9092
-    ------------------      --------------------------------------------------------------------
+    ------------------      --------------------------------------------------------------------------------------------
     topics                  str. Topic to which the output will send messages.
-    ------------------      --------------------------------------------------------------------
-    authentication          Union[NoAuth, SASLPlain]. Kafka authentication type.
-    ==================      ====================================================================
+    ------------------      --------------------------------------------------------------------------------------------
+    authentication          Union[NoAuth, SASLPlain, SaslScramSha256, SaslScramSha512]. Kafka authentication type.
+    ==================      ============================================================================================
 
     =====================   ============================================================================================
     **Optional Argument**   **Description**
@@ -100,7 +105,7 @@ class Kafka(_FeedTemplate, _HasTime, _HasGeometry):
     # Kafka specific properties
     brokers: str
     topics: str
-    authentication: Union[NoAuth, SASLPlain]
+    authentication: Union[NoAuth, SASLPlain, SaslScramSha256, SaslScramSha512]
     consumer_group_id: Optional[str] = None
 
     # user can define these properties even after initialization

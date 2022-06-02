@@ -342,6 +342,7 @@ class UnetClassifier(ArcGISModel):
                 "*hrnet*",
                 "nasnetalarge",
                 "pnasnet5large",
+                "*repvgg*",
                 "*selecsls*",
                 "*tresnet*",
             ]
