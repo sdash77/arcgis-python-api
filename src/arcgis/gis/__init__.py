@@ -15234,6 +15234,43 @@ class Item(dict):
         return res["success"]
 
     # ----------------------------------------------------------------------
+    def package_info(self, folder: Optional[str] = None) -> str:
+        """
+        Items will have a package info file available only if that item is
+        an ArcGIS package (for example, a layer package or map package). It
+        contains information that is used by clients (ArcGIS Pro, ArcGIS
+        Explorer, and so on) to work appropriately with downloaded
+        packages. Navigating to the URL will result in a package info file
+        (.pkinfo) being downloaded.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        folder              Optional string. The save location of the pkinfo file.
+        ===============     ====================================================================
+
+        :returns: str
+        """
+
+        url = f"{self._gis._portal.resturl}content/items/{self.itemid}/item.pkinfo"
+        res = self._portal.con.get(url, {}, try_json=False, out_folder=folder)
+        return res
+
+    # ----------------------------------------------------------------------
+    @property
+    def item_card(self) -> str:
+        """
+        Returns an XML representation of the Item
+
+        :returns: A string path to the downloaded XML file.
+        """
+        url = (
+            f"{self._gis._portal.resturl}content/items/{self.itemid}/info/iteminfo.xml"
+        )
+        res = self._portal.con.get(url, {"f": "json"})
+        return res
+
+    # ----------------------------------------------------------------------
     @property
     def app_info(self):
         """
