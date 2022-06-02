@@ -88,6 +88,10 @@ class Image(object):
                 self._url = True
 
     # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Image"
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -407,6 +411,10 @@ class Video(object):
                 self.resource_node = "r-" + uuid.uuid4().hex[0:6]
 
     # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Video"
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -701,6 +709,10 @@ class Audio(object):
             self.resource_node = "r-" + uuid.uuid4().hex[0:6]
 
     # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Audio"
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -935,6 +947,10 @@ class Embed(object):
             return {
                 "node_dict": self._story._properties["nodes"][self.node],
             }
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Embed"
 
     # ----------------------------------------------------------------------
     @property
@@ -1192,6 +1208,10 @@ class Map(object):
                 self._lighting_date = map_item["initialState"]["environment"][
                     "lighting"
                 ]["datetime"]
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "%s" % self._type
 
     # ----------------------------------------------------------------------
     @property
@@ -1547,6 +1567,10 @@ class Text(object):
                 self._color = None
 
     # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Text"
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -1655,6 +1679,10 @@ class Button(object):
             self.node = "n-" + uuid.uuid4().hex[0:6]
             self._link = link
             self._text = text
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Button"
 
     # ----------------------------------------------------------------------
     @property
@@ -1782,6 +1810,10 @@ class Gallery(object):
             # Create new empty instance
             self._children = []
             self.node = "n-" + uuid.uuid4().hex[0:6]
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Image Gallery"
 
     # ----------------------------------------------------------------------
     @property
@@ -2022,6 +2054,10 @@ class Swipe(object):
             self._media_type = ""
 
     # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Swipe"
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -2179,6 +2215,10 @@ class Sidecar(object):
             raise Exception("This node is not of type sidecar.")
         self._subtype = story._properties["nodes"][node]["data"]["subtype"]
         self._slides = story._properties["nodes"][node]["children"]
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Sidecar"
 
     # ----------------------------------------------------------------------
     @property
@@ -2420,6 +2460,10 @@ class Timeline(object):
             raise Exception("This node is not of type timeline.")
         self._subtype = story._properties["nodes"][node]["data"]["type"]
         self._events = story._properties["nodes"][node]["children"]
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Timeline"
 
     # ----------------------------------------------------------------------
     @property
