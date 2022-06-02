@@ -9777,7 +9777,7 @@ def _raster_item(raster: Union[Raster, ImageryLayer], raster_id=None):
                 ) or not hasattr(raster, "_lazy_token"):
                     from .utility import _generate_layer_token
 
-                    raster._lazy_token = _generate_layer_token(raster)
+                    raster._lazy_token = _generate_layer_token(raster, url)
                 if isinstance(raster._lazy_token, str):
                     url = url + "?token=" + raster._lazy_token
             except:
@@ -10323,10 +10323,10 @@ def s1_radiometric_calibration(
     --------------------------------     --------------------------------------------------------------------
     calibration_type                        Optional string or int. one of four calibration types:
 
-                                            - "beta_nought" (0) - produces an output containing the radar brightness coefficient.
-                                            - "sigma_nought" (1) - the backscatter returned to the antenna from a unit area on the ground, related to ground range.
-                                            - "gamma" (2) - measurement of emitted and returned energy useful for determining antenna patterns.
-                                            - None - Specify None to not apply a correction. This is the default.
+                                            - "beta_nought" (0) - Calibrates the reflectivity returned to the sensor from a unit area on the slant range.
+                                            - "sigma_nought" (1) - Calibrates the backscatter returned to the sensor from a unit area on the ground with the plane locally tangent to the ellipsoid. Sigma nought values vary due to incidence angle, wavelength, polarization, terrain, and surface scattering properties.
+                                            - "gamma_nought" (2) - Calibrates the backscatter returned to the sensor from a unit area aligned with plane perpendicular to the slant range. This normalizes sigma nought using the incidence angle relative to the ellipsoid. Gamma nought values vary due to wavelength, polarization, terrain, and surface scattering properties.
+                                            - None - No calibration is applied. This is the default.
     ================================     ====================================================================
 
     :return: The output raster.
@@ -10340,10 +10340,10 @@ def s1_radiometric_calibration(
         },
     }
 
-    calibration_type_dict = {"beta_nought": 0, "sigma_nought": 1, "gamma": 2}
+    calibration_type_dict = {"beta_nought": 0, "sigma_nought": 1, "gamma_nought": 2}
     if calibration_type is not None:
         if isinstance(calibration_type, str):
-            calibration_type = calibration_type_dict[calibration_type.upper()]
+            calibration_type = calibration_type_dict[calibration_type.lower()]
             template_dict["rasterFunctionArguments"][
                 "CalibrationType"
             ] = calibration_type

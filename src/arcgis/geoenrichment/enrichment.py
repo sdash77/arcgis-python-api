@@ -1544,6 +1544,19 @@ def enrich(
             standard_geography_level = first_geo._currlvl
             enrich_src = first_geo._country
 
+    # check if data collections used as input parameter against available data collections
+    if data_collections is not None:
+        avail_data_coll = enrich_src.enrich_variables.data_collection.unique()
+        unavail_data_coll = [dc for dc in data_collections if dc not in avail_data_coll]
+        assert len(unavail_data_coll) == 0, (
+            "One or more of the data collections you requested is not available. The "
+            'only data\ncollection available globally is "KeyGlobalFacts". For '
+            "working with data specific to a country, you\ncan discover available "
+            "data collections using "
+            "Country.enrich_variables.data_collection.unique(),\nand enrich using "
+            "the Country.enrich method."
+        )
+
     # get all possible requested enrich variables
     src = enrich_src._ba_cntry if isinstance(enrich_src, Country) else enrich_src
     enrich_vars = _preproces_data_colletions_and_analysis_variables(

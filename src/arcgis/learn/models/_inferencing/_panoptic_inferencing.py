@@ -26,7 +26,6 @@ import arcgis
 from arcgis.learn import ModelExtension
 from skimage.measure import find_contours
 
-# from models._inferencing.util import predictions
 
 try:
     import arcpy
@@ -254,11 +253,15 @@ class ChildPanopticSegmenter:
         self.model.eval()
 
         class_values = [clas["Value"] for clas in self.json_info["Classes"]]
+        self.instance_classes = self.json_info["Kwargs"]["instance_classes"]
         self.is_contig = is_contiguous([0] + class_values)
         self.idx2pixel = None
         if not self.is_contig:
             pixel_mapping = [0] + class_values
             self.idx2pixel = {i: d for i, d in enumerate(pixel_mapping)}
+            pixel2idx = {v: k for k, v in self.idx2pixel.items()}
+            mapped_instcls = [pixel2idx[i] for i in self.instance_classes]
+            self.instance_classes = mapped_instcls
 
         self.activations = None
 
@@ -386,7 +389,7 @@ class ChildPanopticSegmenter:
             batch_size=self.batch_size,
             model_info=self.json_info,
             threshold=self.thres,
-            idx2pixel=self.idx2pixel,
+            instance_classes=self.instance_classes,
             is_contig=self.is_contig,
             pred_batch=self.activations,
         )
@@ -401,39 +404,18 @@ class ChildPanopticSegmenter:
             normalized_image_tensor, kernel_size, stride
         )
 
-        if (
-            self.json_info.get("ArcGISLearnVersion", "1.9.1") < "2.0.0"
-        ):  # handle old models
-            if "NormalizationStats" in self.json_info:
-                batch_input = (
-                    self.model_extension._model_conf.transform_input_multispectral(
-                        patches
-                    )
-                )
-            else:
-                batch_input = self.model_extension._model_conf.transform_input(patches)
-
-            with torch.no_grad():
-                pred_batch = self.model(batch_input)
-
-            if self.json_info["ModelName"] in ["HEDEdgeDetector", "BDCNEdgeDetector"]:
-                output = pred_batch[-1]
-            else:  # including MMSegmentation
-                output = pred_batch
-
-        else:
-            output, self.activations = classify_image(
-                self.model_extension._model_conf,
-                self.model,
-                patches,
-                self.device,
-                self.predict_background,
-                self.json_info,
-                self.json_emd_file,
-                thinning=False,
-                threshold=self.thres,
-                prob_raster=True,
-            )
+        output, self.activations = classify_image(
+            self.model_extension._model_conf,
+            self.model,
+            patches,
+            self.device,
+            self.predict_background,
+            self.json_info,
+            self.json_emd_file,
+            thinning=False,
+            threshold=self.thres,
+            prob_raster=True,
+        )
 
         interpolation_mask = create_interpolation_mask(
             kernel_size, 0, self.device, "hann"
@@ -515,19 +497,9 @@ class ChildPanopticSegmenter:
         if self.probability_raster:
             predictions = activations.unsqueeze(0)
         else:
-            if (
-                self.json_info.get("ArcGISLearnVersion", "1.9.1") < "2.0.0"
-                and not self.thinning
-                and (
-                    self.json_info["ModelName"]
-                    in ["HEDEdgeDetector", "BDCNEdgeDetector"]
-                )
-            ):  # handle old edge detection models that use preds[-1]
-                predictions = (activations.unsqueeze(0) > self.thres).byte()
-            else:
-                predictions = self.model_extension._model_conf.post_process(
-                    activations.unsqueeze(0), thres=self.thres, thinning=self.thinning
-                )
+            predictions = self.model_extension._model_conf.post_process(
+                activations.unsqueeze(0), thres=self.thres, thinning=self.thinning
+            )
 
             if not self.is_contig:
                 predictions = remap(predictions, self.idx2pixel)
@@ -546,7 +518,7 @@ def detect_object_mask(
     batch_size,
     model_info,
     threshold,
-    idx2pixel,
+    instance_classes,
     is_contig,
     pred_batch,
 ):
@@ -554,7 +526,6 @@ def detect_object_mask(
     tile_height, tile_width = images.shape[2], images.shape[3]
     side = math.sqrt(batch_size)
     N = model_info["Kwargs"]["n_masks"]
-    instance_classes = model_info["Kwargs"]["instance_classes"]
 
     if pred_batch is None:
         if "NormalizationStats" in model_info:
@@ -576,17 +547,15 @@ def detect_object_mask(
     instances = F.one_hot(instances, num_classes=N).permute(0, 3, 1, 2)
     class_confidence, classes = F.softmax(preds[1], dim=-1).max(-1)
 
-    # Remap classes if non-contiguous
-    if not is_contig:
-        classes = remap(classes, idx2pixel)
-
     # Filter predictions for instances
+    inst_cls = classes.detach().clone()
     for i in instance_classes:
         inst_cls = torch.where(
-            classes == int(i), classes, torch.tensor(0).to(classes.device)
+            inst_cls == i, torch.tensor(-1).to(classes.device), inst_cls
         )
-    # filter out low confidence instances from predictions
-    keep_pred_instances = torch.where((inst_cls > 0) & (class_confidence > threshold))
+    keep_pred_instances = torch.where(
+        torch.logical_and(inst_cls == -1, class_confidence > threshold)
+    )
 
     pred_instances = []
     pred_classes = []
@@ -662,27 +631,8 @@ def classify_image(
     with torch.no_grad():
         pred_batch = model(batch_input)
 
-    if thinning == None:
-        preds = model_configuration.post_process(pred_batch)
-        # if model_info["DatasetType"] == "Panoptic":
-        #     preds = F.softmax(preds[2], dim=1).argmax(dim=1)
-        #     preds = preds.unsqueeze(1)
-        if isinstance(preds, (tuple, list)):
-            return torch.stack(preds)
-        return preds
-    else:
-        if model_info.get("ArcGISLearnVersion", "1.9.1") < "2.0.0":  # handle old models
-            if prob_raster:
-                preds = pred_batch[-1].detach()
-            else:
-                preds = model_configuration.post_process(
-                    pred_batch, thres=threshold, thinning=thinning
-                )
-        else:
-            preds = model_configuration.post_process(
-                pred_batch, thres=threshold, thinning=thinning, prob_raster=prob_raster
-            )
-        if thinning:
-            return torch.stack(preds)
-        else:
-            return preds, pred_batch
+    preds = model_configuration.post_process(
+        pred_batch, thres=threshold, thinning=thinning, prob_raster=prob_raster
+    )
+
+    return preds, pred_batch

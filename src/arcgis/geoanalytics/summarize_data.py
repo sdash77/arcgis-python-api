@@ -97,7 +97,8 @@ def summarize_center_and_dispersion(
                                                                            #. Output Spatial Reference (``outSR``) - the features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
                                                                            #. Data store (``dataStore``) Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    future                                                                 optional Boolean. If True, a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
+    future                                                                 Optional boolean. If True, a future object will be returned and the process
+                                                                           will not wait for the task to complete. The default is False, which means wait for results.
     ===================================================================    =============================================================================
 
 
@@ -338,7 +339,8 @@ def build_multivariable_grid(
                                                                            #. Output Spatial Reference (``outSR``) - the features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
                                                                            #. Data store (``dataStore``) Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    future                                                                 optional Boolean. If True, a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
+    future                                                                 Optional boolean. If True, a future object will be returned and the process
+                                                                           will not wait for the task to complete. The default is False, which means wait for results.
     ===================================================================    =============================================================================
 
     :return: boolean
@@ -617,8 +619,8 @@ def aggregate_points(
                                                               * Output Spatial Reference (``outSR``) - the features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
                                                               * Data store (``dataStore``) Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     -------------------------------------------------     ------------------------------------------------------------------------
-    future                                                optional Boolean. If True, a GPJob is returned instead of
-                                                          results. The GPJob can be queried on the status of the execution.
+    future                                                Optional boolean. If True, a future object will be returned and the process
+                                                          will not wait for the task to complete. The default is False, which means wait for results.
     =================================================     ========================================================================
 
     :return: result_layer : Output Features as :class:`~arcgis.features.FeatureLayer`.
@@ -782,8 +784,8 @@ def describe_dataset(
                       #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
                       #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     ----------------  ---------------------------------------------------------------
-    future            Optional boolean. If True, a GPJob is returned instead of
-                      results. The GPJob can be queried on the status of the execution.
+    future            Optional boolean. If True, a future object will be returned and the process
+                      will not wait for the task to complete. The default is False, which means wait for results.
     ================  ===============================================================
 
     :return: a named tuple with the following keys if ``return_tuple`` is set to 'True':
@@ -1814,7 +1816,8 @@ def summarize_within(
     ---------------------------------------------------------------------------  ---------------------------------------------------------------
     gis                                                                          Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ---------------------------------------------------------------------------  ---------------------------------------------------------------
-    future                                                                       Optional boolean. If 'True', a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
+    future                                                                       Optional boolean. If True, a future object will be returned and the process
+                                                                                 will not wait for the task to complete. The default is False, which means wait for results.
     ===========================================================================  ===============================================================
 
     :return: result_layer : Output Features as :class:`~arcgis.features.FeatureLayer`.

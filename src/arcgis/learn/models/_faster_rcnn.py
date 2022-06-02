@@ -112,7 +112,7 @@ class MyFasterRCNN:
                 backbone, pretrained_backbone, backbone_cut
             )
             if "timm" in backbone.__module__:
-                from ._maskrcnn import TimmFPNBackbone
+                from arcgis.learn.models._maskrcnn import TimmFPNBackbone
 
                 try:
                     backbone_small = TimmFPNBackbone(backbone_small, data.chip_size)
@@ -458,7 +458,7 @@ class FasterRCNN(ModelExtension):
                                     model used for feature extraction, which
                                     is `resnet50` by default.
                                     Supported backbones: ResNet family and specified Timm
-                                    models from :func:`~arcgis.learn.FasterRCNN.backbones`.
+                                    models(experimental support) from :func:`~arcgis.learn.FasterRCNN.backbones`.
     -----------------------------   ---------------------------------------------
     pretrained_path                 Optional string. Path where pre-trained model is
                                     saved.
@@ -599,7 +599,7 @@ class FasterRCNN(ModelExtension):
 
     @staticmethod
     def _supported_backbones():
-        timm_models = filter_timm_models()
+        timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         return [*_resnet_family] + timm_backbones
 

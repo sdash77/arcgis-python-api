@@ -265,7 +265,7 @@ class SingleShotDetector(ArcGISModel):
                             model used for feature extraction, which
                             is `resnet34` by default.
                             Supported backbones: ResNet, DenseNet, VGG families
-                            and specified Timm models from
+                            and specified Timm models(experimental support) from
                             :func:`~arcgis.learn.SingleShotDetector.backbones`.
     ---------------------   -------------------------------------------
     dropout                 Optional float. Dropout probability. Increase it to
@@ -437,7 +437,9 @@ class SingleShotDetector(ArcGISModel):
                 self._create_anchors(grids, zooms, ratios)
 
                 feature_sizes = _get_feature_size(
-                    self._backbone,
+                    self._orig_backbone
+                    if hasattr(self, "_orig_backbone")
+                    else self._backbone,
                     cut=backbone_cut,
                     chip_size=(data.chip_size, data.chip_size),
                 )
@@ -449,6 +451,7 @@ class SingleShotDetector(ArcGISModel):
                     grids[0] > 8
                     and abs(num_features - grids[0]) > 4
                     and backbone_name == "res"
+                    and "bit" not in self._backbone.__name__
                 ):
                     num_features = feature_sizes[-2][-1]
                     num_channels = feature_sizes[-2][1]
@@ -517,7 +520,7 @@ class SingleShotDetector(ArcGISModel):
     @staticmethod
     def _supported_backbones():
 
-        timm_models = filter_timm_models()
+        timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
 
         return [

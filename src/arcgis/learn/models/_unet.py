@@ -61,7 +61,7 @@ class UnetClassifier(ArcGISModel):
                             model used for feature extraction, which
                             is `resnet34` by default.
                             Supported backbones: ResNet family and specified Timm
-                            models from :func:`~arcgis.learn.UnetClassifier.backbones`.
+                            models(experimental support) from :func:`~arcgis.learn.UnetClassifier.backbones`.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -342,6 +342,7 @@ class UnetClassifier(ArcGISModel):
                 "*hrnet*",
                 "nasnetalarge",
                 "pnasnet5large",
+                "*repvgg*",
                 "*selecsls*",
                 "*tresnet*",
             ]
