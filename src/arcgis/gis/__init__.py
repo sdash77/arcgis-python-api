@@ -6554,7 +6554,7 @@ class ContentManager(object):
         -------------------  --------------------------------------------------------------------------
         future               Optional Boolean.  This allows the operation to run asynchronously allowing
                              the user to not pause the thread and continue to perform multiple operations.
-                             The default is `True`.  When `True` the result of the method will be a
+                             The default is `False`.  When `True` the result of the method will be a
                              concurrent `Future` object.  The `result` of the method can be obtained
                              using the `result()` on the `Future` object.  When `False`, and Item is
                              returned. Future == True is only supported for 'shapefiles' and 'gpx' files.
@@ -6562,7 +6562,7 @@ class ContentManager(object):
 
         :return:
             The method has 3 potential returns:
-                1. A `Future` object when `future==True`,
+                1. A `Future` object when `future==True`, Call ``results()`` to get the response.
                 2. An :class:`~arcgis.gis.Item` object when `future==False`
                 3. A dictionary of error messages when Exceptions are raised
 

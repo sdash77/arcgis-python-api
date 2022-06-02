@@ -2305,14 +2305,14 @@ class FeatureLayer(Layer):
                                    not be returned.  This alters the output to be a tuple consisting of
                                    a (Boolean, Dictionary).
         ------------------------   --------------------------------------------------------------------
-        future                     Optional Boolean.  When true, the response is returned as a
-                                   :class:`~concurrent.futures.Future` object.
+        future                     Optional boolean. If True, a future object will be returned and the process
+                                   will not wait for the task to complete. The default is False, which means wait for results.
         ========================   ====================================================================
 
         :return:
             A boolean indicating success (True), or failure (False). When ``return_messages`` is True, the
             response messages will be return in addition to the boolean as a `tuple`.
-            If ``future`` = True, then the result is a `Future` object. Call ``result()`` to get the response.
+            If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         .. code-block:: python
 
@@ -2448,13 +2448,13 @@ class FeatureLayer(Layer):
                                    is returned per deleted row when the deleteFeatures operation is run.
                                    The default is true.
         ----------------------     --------------------------------------------------------------------
-        future                     Optional Boolean.  If future=True, then the operation will occur
-                                   asynchronously else the operation will occur synchronously.  False
-                                   is the default.
+        future                     Optional boolean. If True, a future object will be returned and the process
+                                   will not wait for the task to complete. The default is False, which means wait for results.
         ======================     ====================================================================
 
         :return:
-            A dictionary if future=False (default), else a :class:`~concurrent.futures.Future` object.
+            A dictionary if future=False (default), else If ``future = True``,
+            then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         .. code-block:: python
 
@@ -2727,12 +2727,13 @@ class FeatureLayer(Layer):
                                     ===========     ===================================
 
         ---------------------   --------------------------------------------------------------------------------------
-        future                  Optional Boolean.  If `True` and the `FeatureLayer` has `supportsAsyncApplyEdits` set
-                                to `True`, then edits can be applied asynchronously.
+        future                  Optional Boolean.  If the `FeatureLayer` has `supportsAsyncApplyEdits` set
+                                to `True`, then edits can be applied asynchronously. If True, a future object will be returned and the process
+                                will not wait for the task to complete. The default is False, which means wait for results.
         =====================   ======================================================================================
 
         :return:
-            A dictionary by default, or :class:`~arcgis.features._async.EditFeatureJob` if `future=True`.
+            A dictionary by default, or If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         .. code-block:: python
 
@@ -3016,9 +3017,10 @@ class FeatureLayer(Layer):
                                 `isDataBranchVersioned` property of the layer is
                                 true.
         ---------------------   ----------------------------------------------------
-        future                  Optional Boolean.  If True, the result is returned
-                                as a future object and the results are obtained in
-                                an asynchronous fashion.  False is the default.
+        future                  Optional boolean. If True, a future object will be
+                                returned and the process
+                                will not wait for the task to complete. The default is
+                                False, which means wait for results.
 
                                 **This applies to 10.8+ only**
 
@@ -3030,6 +3032,8 @@ class FeatureLayer(Layer):
              'updatedFeatureCount': 1,
              'success': True
              }
+
+            If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         .. code-block:: python
 

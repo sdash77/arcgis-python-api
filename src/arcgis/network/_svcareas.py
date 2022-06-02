@@ -1225,8 +1225,8 @@ def generate_service_areas(
     -------------------------------------------------     ------------------------------------------------------------------------
     gis                                                   Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------------------------------     ------------------------------------------------------------------------
-    future                                                Optional boolean. If True, a GPJob is returned instead of results.
-                                                          The GPJob can be queried on the status of the execution.
+    future                                                Optional boolean. If True, a future object will be returned and the process
+                                                          will not wait for the task to complete. The default is False, which means wait for results.
     =================================================     ========================================================================
 
     : returns: the following as a named tuple:
