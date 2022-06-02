@@ -3,7 +3,7 @@ from unittest.case import SkipTest
 
 sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import unittest
-from arcgis.gis import GIS
+from arcgis.gis import GIS, Item
 from arcgis.apps.storymap import StoryMap, Themes
 from arcgis.apps.storymap import (
     Image,
@@ -15,7 +15,7 @@ from arcgis.apps.storymap import (
     Text,
     TextStyles,
     Gallery,
-    Sidecar,
+    Scales
 )
 
 #gis = GIS(profile="your_online_profile", verify_cert=False)
@@ -23,6 +23,10 @@ gis = GIS("https://deldev.maps.arcgis.com", "demos_deldev", "DelDevs.1234", veri
 
 # Folder path for content (insert your own path)
 content = r"C:\ipython_workfolder\Content"
+
+# Websites for content to download:
+# video to name 'recipe': https://www.nps.gov/media/video/view.htm?id=36B5A4F5-512E-41A7-B202-0B9AF784E937
+# audio to name 'leader': https://www.nps.gov/media/video/view.htm?id=443AC283-8B43-49EE-9065-D769559B3623
 # Create new storymap to use
 story = StoryMap()
 
@@ -127,15 +131,16 @@ class TestStoryMap(unittest.TestCase):
         Test adding a Map and seeing the properties
         Map id can be changed if not found.
         """
-        map_content = Map("006c10be294f4f64a5c9e5202cfa64c3")
+        map_content = Map("df41bd54ae6044a8843f5063a26315ff")
         map = story.add(
-            map_content, caption="This has nothing to do with parks but I needed a map"
+            map_content, caption="This is a map that has nothing special on it."
         )
-
+        map = story.get(map)
         assert map
         assert map_content.properties
-        assert map_content.map
+        assert isinstance(map_content.map, Item)
         assert map_content.caption
+        assert isinstance(map.set_viewpoint(scale=Scales.CONTINENT), dict)
 
     def test_add_text(self):
         """Test adding Text of different styles and seeing properties"""
@@ -145,7 +150,7 @@ class TestStoryMap(unittest.TestCase):
         )
         heading = story.add(welcome, position=2)
         park_quote = Text(
-            text="I encourage everybody to hop on Google and type in ‘national park’ in whatever state they live in and see the beauty that lies in their own backyard. It’s that simple.",
+            text="I encourage everybody to hop on Google and type in 'national park' in whatever state they live in and see the beauty that lies in their own backyard. It's that simple.",
             style=TextStyles.QUOTE,
         )
         quote = story.add(park_quote, position=4)
@@ -165,7 +170,7 @@ class TestStoryMap(unittest.TestCase):
     def test_delete(self):
         """Test delete method on an Audio node. Each content has this delete method"""
         # Audio through URL
-        aud_dlt = Audio(content + r"\craine.mp3")
+        aud_dlt = Audio(content + r"\leader.mp3")
         story.add(aud_dlt)
         assert aud_dlt.properties
 
