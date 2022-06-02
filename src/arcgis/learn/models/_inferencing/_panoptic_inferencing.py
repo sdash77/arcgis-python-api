@@ -253,11 +253,15 @@ class ChildPanopticSegmenter:
         self.model.eval()
 
         class_values = [clas["Value"] for clas in self.json_info["Classes"]]
+        self.instance_classes = self.json_info["Kwargs"]["instance_classes"]
         self.is_contig = is_contiguous([0] + class_values)
         self.idx2pixel = None
         if not self.is_contig:
             pixel_mapping = [0] + class_values
             self.idx2pixel = {i: d for i, d in enumerate(pixel_mapping)}
+            pixel2idx = {v: k for k, v in self.idx2pixel.items()}
+            mapped_instcls = [pixel2idx[i] for i in self.instance_classes]
+            self.instance_classes = mapped_instcls
 
         self.activations = None
 
@@ -385,7 +389,7 @@ class ChildPanopticSegmenter:
             batch_size=self.batch_size,
             model_info=self.json_info,
             threshold=self.thres,
-            idx2pixel=self.idx2pixel,
+            instance_classes=self.instance_classes,
             is_contig=self.is_contig,
             pred_batch=self.activations,
         )
@@ -514,7 +518,7 @@ def detect_object_mask(
     batch_size,
     model_info,
     threshold,
-    idx2pixel,
+    instance_classes,
     is_contig,
     pred_batch,
 ):
@@ -522,7 +526,6 @@ def detect_object_mask(
     tile_height, tile_width = images.shape[2], images.shape[3]
     side = math.sqrt(batch_size)
     N = model_info["Kwargs"]["n_masks"]
-    instance_classes = model_info["Kwargs"]["instance_classes"]
 
     if pred_batch is None:
         if "NormalizationStats" in model_info:
@@ -544,16 +547,9 @@ def detect_object_mask(
     instances = F.one_hot(instances, num_classes=N).permute(0, 3, 1, 2)
     class_confidence, classes = F.softmax(preds[1], dim=-1).max(-1)
 
-    # Remap classes if non-contiguous
-    # if not is_contig:
-    #     classes = remap(classes, idx2pixel)
-
-    pixel2idx = {v: k for k, v in idx2pixel.items()}
-    mapped_instcls = [pixel2idx[i] for i in instance_classes]
-
     # Filter predictions for instances
-    inst_cls = classes
-    for i in mapped_instcls:
+    inst_cls = classes.detach().clone()
+    for i in instance_classes:
         inst_cls = torch.where(
             inst_cls == i, torch.tensor(-1).to(classes.device), inst_cls
         )

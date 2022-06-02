@@ -73,9 +73,9 @@ class StoryMap(object):
             self._gis = gis
         else:
             self._gis = gis
-        if gis._portal.is_logged_in is False:
+        if gis is None or gis._portal.is_logged_in is False:
             # check to see if user is authenticated
-            raise Exception("Must be logged into an Enterprise Account")
+            raise Exception("Must be logged into a Portal Account")
         if item and isinstance(item, str):
             # get item using the item id
             item = gis.content.get(item)
@@ -189,7 +189,7 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return json.dumps(self._properties)
+        return self._url
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -296,6 +296,21 @@ class StoryMap(object):
         """
         Get main nodes in order of appearance in the story.
         """
+        # node_dict contains key-value pairs where the value is the class instance
+        node_dict = self._create_node_dict()
+        # make the value the string representation of the class
+        nodes = []
+        for node in node_dict:
+            nodes.append({k: str(node[k]) for k in node})
+        return nodes
+
+    # ----------------------------------------------------------------------
+    def _create_node_dict(self):
+        """
+        Method called by the nodes property and the get method. However, the nodes
+        property will transform the keys whereas the get method needs they keys
+        to be class instances.
+        """
         # get rood node id since it is story node id
         root_id = self._properties["root"]
         # get list of children from story node
@@ -305,6 +320,7 @@ class StoryMap(object):
         node_order = []
         # for each node assign correct class type to be accessed if needed by user
         for child in children:
+            # get only the main nodes and not the subnodes to be returned
             if child in nodes:
                 node = self._assign_node_class(child)
                 node_order.append({child: node})
@@ -375,13 +391,18 @@ class StoryMap(object):
         """
         spec_type = []
         node_id = node
-
+        if node_id and node_id not in self.properties["nodes"]:
+            raise ValueError(
+                "This node value is not in the story. "
+                + "Please check that you have entered the correct node id. "
+                + "To see all main nodes and their ids use the nodes property."
+            )
         if type is None and node_id is None:
             # return all nodes in order
             return self.nodes
         elif node_id is not None:
             # return a specific node
-            all_nodes = self.nodes
+            all_nodes = self._create_node_dict()
             # find the node in the list and return it
             for node in all_nodes:
                 id = list(node.keys())[0]
@@ -389,7 +410,7 @@ class StoryMap(object):
                     return list(node.values())[0]
         else:
             # return all nodes of a certain type
-            all_nodes = self.nodes
+            all_nodes = self._create_node_dict()
             for node in all_nodes:
                 keyword = list(node.values())[0]
                 if isinstance(keyword, str):
@@ -1263,5 +1284,5 @@ class StoryMap(object):
                 node = subtype
         else:
             # if not of type story content then just return name of type
-            node = node_type
+            node = node_type.capitalize()
         return node
