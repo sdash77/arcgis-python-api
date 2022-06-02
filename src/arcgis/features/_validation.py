@@ -129,6 +129,8 @@ class ValidationManager(object):
         }
         if len(kwargs) > 0:
             params.update(kwargs)
+        if not return_edits is None:
+            params["returnEdits"] = return_edits
         res = self._con.post(url, params)
         return res
 
