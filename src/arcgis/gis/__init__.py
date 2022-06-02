@@ -7884,6 +7884,7 @@ class ResourceManager(object):
         folder_name: Optional[str] = None,
         file_name: Optional[str] = None,
         text: Optional[str] = None,
+        properties: Optional[dict[Any, Any]] = None,
     ):
         """The ``update`` operation allows you to update existing file resources of an item.
         File resources use storage space from your quota and are scanned for viruses. The item size
@@ -7911,6 +7912,9 @@ class ResourceManager(object):
         ----------------  ---------------------------------------------------------------
         text              Optional string. Text input to be added as a file resource,
                           used together with file_name.
+        ----------------  ---------------------------------------------------------------
+        properties        Optional Dictionary. Set the properties for the resources such
+                          as the `editInfo`.
         ================  ===============================================================
 
         :return:
@@ -7958,7 +7962,8 @@ class ResourceManager(object):
             params["fileName"] = file_name
         if text is not None:
             params["text"] = text
-
+        if isinstance(properties, dict):
+            params["properties"] = properties
         resp = self._portal.con.post(query_url, params, files=files)
         return resp
 
