@@ -198,7 +198,7 @@ class DeepLab(ArcGISModel):
                             is `resnet101` by default since it is pretrained in
                             torchvision.
                             Supported backbones: ResNet, DenseNet, VGG family and
-                            specified Timm models from
+                            specified Timm models(experimental support) from
                             :func:`~arcgis.learn.DeepLab.backbones`.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is

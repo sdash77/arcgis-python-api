@@ -1330,6 +1330,61 @@ class GeoAccessor(object):
                 ).format(view_box, width, height, transform, svg)
         return
 
+    # ----------------------------------------------------------------------
+    @staticmethod
+    def from_parquet(path: str, columns: list = None, **kwargs) -> pd.DataFrame:
+        """
+        Load a Parquet object from the file path, returning a Spatially Enabled DataFrame.
+
+        You can read a subset of columns in the file using the ``columns`` parameter.
+        However, the structure of the returned Spatially Enabled DataFrame will depend on which
+        columns you read:
+
+        * if no geometry columns are read, this will raise a ``ValueError`` - you
+          should use the pandas `read_parquet` method instead.
+        * if the primary geometry column saved to this file is not included in
+          columns, the first available geometry column will be set as the geometry
+          column of the returned Spatially Enabled DataFrame.
+
+        Requires 'pyarrow'.
+
+        .. versionadded:: arcgis 1.9
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        path                   Required String. path object
+        ------------------     --------------------------------------------------------------------
+        columns                Optional List[str]. The defaulti s `None`. If not None, only these
+                               columns will be read from the file.  If the primary geometry column
+                               is not included, the first secondary geometry read from the file will
+                               be set as the geometry column of the returned Spatially Enabled
+                               DataFrame.  If no geometry columns are present, a ``ValueError``
+                               will be raised.
+        ------------------     --------------------------------------------------------------------
+        **kwargs               Optional dict. Any additional kwargs that can be given to the
+                               `pyarrow.parquet.read_table` method.
+        ==================     ====================================================================
+
+
+
+        :returns: Spatially Enabled DataFrame
+
+        Examples
+        --------
+        >>> df = pd.DataFrame.spatial.read_parquet("data.parquet")  # doctest: +SKIP
+
+        Specifying columns to read:
+
+        >>> df = pd.DataFrame.spatial.read_parquet(
+        ...     "data.parquet",
+        ...     columns=["SHAPE", "pop_est"]
+        ... )  # doctest: +SKIP
+        """
+        from ._io._arrow import _read_parquet
+
+        return _read_parquet(path=path, columns=columns, **kwargs)
+
     @staticmethod
     def from_feather(path, spatial_column="SHAPE", columns=None, use_threads=True):
         """
@@ -2350,7 +2405,7 @@ class GeoAccessor(object):
 
     # ----------------------------------------------------------------------
     def to_featureclass(
-        self, location, overwrite=True, has_z=None, has_m=None, sanitize_columns=False
+        self, location, overwrite=True, has_z=None, has_m=None, sanitize_columns=True
     ):
         """
         The ``to_featureclass`` exports a spatially enabled dataframe to a feature class.
@@ -2418,7 +2473,7 @@ class GeoAccessor(object):
         ---------------------------     --------------------------------------------------------------------
         sanitize_columns                Optional Boolean. If True, column names will be converted to
                                         string, invalid characters removed and other checks will be
-                                        performed. The default is False.
+                                        performed. The default is True.
         ===========================     ====================================================================
 
         :return: String
@@ -2427,7 +2482,7 @@ class GeoAccessor(object):
         from arcgis.features.geo._io.fileops import to_table
         from ._tools._utils import run_and_hide
 
-        sanitize_columns = kwargs.pop("sanitize_columns", False)
+        sanitize_columns = kwargs.pop("sanitize_columns", True)
         origin_columns = self._data.columns.tolist()
         origin_index = copy.deepcopy(self._data.index)
         location = os.path.abspath(location)
@@ -2443,6 +2498,56 @@ class GeoAccessor(object):
         self._data.columns = origin_columns
         self._data.index = origin_index
         return table
+
+    # ----------------------------------------------------------------------
+    def to_parquet(
+        self, path: str, index: bool = None, compression: str = "gzip", **kwargs
+    ) -> str:
+        """
+        Write a Spatially Enabled DataFrame to the Parquet format.
+
+        Any geometry columns present are serialized to WKB format in the file.
+
+        Requires 'pyarrow'.
+
+        WARNING: this is an initial implementation of Parquet file support and
+        associated metadata.  This is tracking version 0.1.0 of the metadata
+        specification at:
+        https://github.com/geopandas/geo-arrow-spec
+
+        This metadata specification does not yet make stability promises.  As such,
+        we do not yet recommend using this in a production setting unless you are
+        able to rewrite your Parquet files.
+
+
+        .. versionadded:: 2.1.0
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        path                   Required String. The save file path
+        ------------------     --------------------------------------------------------------------
+        index                  Optional Bool. If ``True``, always include the dataframe's
+                               index(es) as columns in the file output.
+                               If ``False``, the index(es) will not be written to the file.
+                               If ``None``, the index(ex) will be included as columns in the file
+                               output except `RangeIndex` which is stored as metadata only.
+        ------------------     --------------------------------------------------------------------
+        compression            Optional string. {'snappy', 'gzip', 'brotli', None}, default 'gzip'
+                               Name of the compression to use. Use ``None`` for no compression.
+        ------------------     --------------------------------------------------------------------
+        **kwargs               Optional dict. Any additional kwargs that can be given to the
+                               `pyarrow.parquet.write_table` method.
+        ==================     ====================================================================
+
+        :returns: string
+
+        """
+        from ._io._arrow import _to_parquet
+
+        return _to_parquet(
+            df=self._data, path=path, index=index, compression=compression, **kwargs
+        )
 
     # ----------------------------------------------------------------------
     def to_featurelayer(

@@ -11,13 +11,15 @@ from zipfile import ZipFile
 import traceback
 import arcgis
 from arcgis.features import FeatureLayer
-from .._utils.tabular_data import TabularDataObject, explain_prediction
-
+from .._utils.tabular_data import TabularDataObject, explain_prediction, add_h3
 
 try:
     import sklearn
     from sklearn import *
     import pandas as pd
+    import xgboost
+    import lightgbm
+    import catboost
 
     HAS_ML_DEPS = True
 except:
@@ -40,22 +42,51 @@ def _get_model_type(model_type):
     if not isinstance(model_type, str):
         return model_type
 
-    if not model_type.startswith("sklearn."):
-        raise Exception("Invalid model_type.")
+    if model_type.startswith("sklearn."):
+        # raise Exception("Invalid model_type.")
+        model_type = model_type.replace("sklearn.", "")
+        module = model_type.split(".")[0]
+        if len(model_type.split(".")) > 1:
+            model = model_type.split(".")[1]
+        else:
+            raise Exception("Invalid model_type.")
+        if not hasattr(sklearn, module) or not hasattr(getattr(sklearn, module), model):
+            raise Exception("Invalid model_type.")
 
-    model_type = model_type.replace("sklearn.", "")
+        model = getattr(getattr(sklearn, module), model)
 
-    module = model_type.split(".")[0]
+    elif model_type.startswith("xgboost."):
+        model_type = model_type.replace("xgboost.", "")
+        if len(model_type.split(".")) > 0:
+            model = model_type.split(".")[0]
+        else:
+            raise Exception("Invalid model_type.")
+        if not hasattr(xgboost, model):
+            raise Exception("Invalid model_type.")
 
-    if len(model_type.split(".")) > 1:
-        model = model_type.split(".")[1]
-    else:
-        raise Exception("Invalid model_type.")
+        model = getattr(xgboost, model)
 
-    if not hasattr(sklearn, module) or not hasattr(getattr(sklearn, module), model):
-        raise Exception("Invalid model_type.")
+    elif model_type.startswith("lightgbm."):
+        model_type = model_type.replace("lightgbm.", "")
+        if len(model_type.split(".")) > 0:
+            model = model_type.split(".")[0]
+        else:
+            raise Exception("Invalid model_type.")
+        if not hasattr(lightgbm, model):
+            raise Exception("Invalid model_type.")
 
-    model = getattr(getattr(sklearn, module), model)
+        model = getattr(lightgbm, model)
+
+    elif model_type.startswith("catboost."):
+        model_type = model_type.replace("catboost.", "")
+        if len(model_type.split(".")) > 0:
+            model = model_type.split(".")[0]
+        else:
+            raise Exception("Invalid model_type.")
+        if not hasattr(catboost, model):
+            raise Exception("Invalid model_type.")
+
+        model = getattr(catboost, model)
 
     return model
 
@@ -66,9 +97,13 @@ def raise_data_exception():
 
 class MLModel(object):
     """
-    Creates a machine learning model based on its implementation from scikit-learn.
+    Creates a machine learning model based on its implementation from scikit-learn, xgboost, lightgbm, catboost.
     For supervised learning:
-    Refer https://scikit-learn.org/stable/supervised_learning.html#supervised-learning
+    Refer https://scikit-learn.org/stable/supervised_learning.html#supervised-learning for scikit-learn,
+    https://xgboost.readthedocs.io/en/stable/python/python_api.html for xgboost,
+    https://lightgbm.readthedocs.io/en/latest/Python-API.html# for lightgbm,
+    https://catboost.ai/en/docs/concepts/python-quickstart for catboost.
+
     For unsupervised learning:
     1. Clustering Models
     2. Gaussian Mixture Models
@@ -86,10 +121,23 @@ class MLModel(object):
                                 sklearn.svm.SVR or sklearn.svm.SVC
                             For tree:
                                 sklearn.tree.DecisionTreeRegressor or sklearn.tree.DecisionTreeClassifier
+                            For gradient boosting:
+                                lightgbm.LGBMRegressor or lightgbm.LGBMClassifier
     ---------------------   -------------------------------------------
     **kwargs                model_type specific arguments.
                             Refer Parameters section
-                            https://scikit-learn.org/stable/supervised_learning.html#supervised-learning
+                            https://scikit-learn.org/stable/supervised_learning.html#supervised-learning for scikit-learn,
+
+                            lgbm
+                            https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMRegressor.html
+                            https://lightgbm.readthedocs.io/en/latest/pythonapi/lightgbm.LGBMClassifier.html
+
+                            catboost
+                            https://catboost.ai/en/docs/concepts/python-reference_catboostregressor
+                            https://catboost.ai/en/docs/concepts/python-reference_catboostclassifier
+
+                            xgboost
+                            https://xgboost.readthedocs.io/en/stable/python/python_api.html#module-xgboost.sklearn
     =====================   ===========================================
 
     :return: `MLModel` Object
@@ -99,6 +147,17 @@ class MLModel(object):
         if not HAS_ML_DEPS:
             raise Exception(missing_deps_trace)
 
+        if data._cell_sizes:
+            for res in data._cell_sizes:
+                zone = f"zone{res}_id"
+                if zone in data._field_mapping["categorical_variables"]:
+                    data._field_mapping["categorical_variables"].remove(zone)
+                if zone in data._dataframe:
+                    data._dataframe = data._dataframe.drop(zone, axis=1)
+                # data._categorical_variables.remove(zone)
+            data._cell_sizes = None
+
+        self._model_type = model_type
         self._data = data
         (
             self._training_data,
@@ -130,7 +189,10 @@ class MLModel(object):
         if self._data._is_unsupervised:
             self._model.fit(self._training_data)
         else:
-            self._model.fit(self._training_data, self._training_labels)
+            try:
+                self._model.fit(self._training_data, self._training_labels)
+            except:
+                raise Exception("Model is incompatible with the training data")
 
     def show_results(self, rows=5):
         """
@@ -397,7 +459,16 @@ class MLModel(object):
     def _write_emd(self, path, base_file_name):
         emd_file = os.path.join(path, base_file_name + ".emd")
         emd_params = {}
-        emd_params["version"] = str(sklearn.__version__)
+        if self._model_type.startswith("sklearn."):
+            emd_params["version"] = str(sklearn.__version__)
+        elif self._model_type.startswith("xgboost."):
+            emd_params["version"] = str(xgboost.__version__)
+        elif self._model_type.startswith("lightgbm."):
+            emd_params["version"] = str(lightgbm.__version__)
+        elif self._model_type.startswith("catboost."):
+            emd_params["version"] = str(catboost.__version__)
+        else:
+            emd_params["version"] = "Not Available"
         if not self._data._is_unsupervised:
             if self._data._is_empty:
                 emd_params["score"] = self._data._emd["score"]
@@ -415,6 +486,7 @@ class MLModel(object):
             emd_params["dependent_variable"] = self._data._dependent_variable
 
         emd_params["continuous_variables"] = self._data._continuous_variables
+        emd_params["cell_sizes"] = self._data._cell_sizes
 
         with open(emd_file, "w") as f:
             f.write(json.dumps(emd_params, indent=4))
@@ -463,10 +535,18 @@ class MLModel(object):
         dependent_variable = emd.get("dependent_variable", None)
         continuous_variables = emd["continuous_variables"]
         model_parameters = emd["ModelParameters"]
+        cell_sizes = emd.get("cell_sizes", None)
 
-        if emd["version"] != str(sklearn.__version__):
+        if (
+            emd["version"] == str(sklearn.__version__)
+            or emd["version"] == str(xgboost.__version__)
+            or emd["version"] == str(lightgbm.__version__)
+            or emd["version"] == str(catboost.__version__)
+        ):
+            pass
+        else:
             warnings.warn(
-                f"Sklearn version has changed. Model Trained using version {emd['version']}"
+                f"Sklearn/xgboost/lightgbm/catboost version has changed. Model Trained using version {emd['version']}"
             )
 
         _is_classification = True
@@ -501,6 +581,7 @@ class MLModel(object):
                 column_transformer,
             )
             data._is_classification = _is_classification
+            data._cell_sizes = cell_sizes
 
         data._emd = emd
 

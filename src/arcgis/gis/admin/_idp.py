@@ -58,9 +58,11 @@ class IdentityProviderManager(object):
         """returns the properties of the IDP configuration"""
         if self._properties is None:
             params = {"f": "json"}
-            res = self._gis._con.get(path=self._url, params=params)
+            res = self._gis._con.get(
+                path=self._url, params=params, return_raw_response=True
+            )
             try:
-                self._properties = PropertyMap(res)
+                self._properties = PropertyMap(res.json())
             except:
                 self._properties = PropertyMap({})
         return self._properties

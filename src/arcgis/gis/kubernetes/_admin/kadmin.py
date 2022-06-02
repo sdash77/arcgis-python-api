@@ -248,7 +248,7 @@ class KubernetesAdmin(_BaseKube):
     @property
     def _location_tracking(self):
         """
-        The manager for Location Tracking. See :class:`~arcgis.apps.tracker.LocationTrackingManager'.
+        The manager for Location Sharing. See :class:`~arcgis.apps.tracker.LocationTrackingManager'.
         """
         return LocationTrackingManager(self._gis)
 

@@ -555,7 +555,6 @@ class ArcGISModel(object):
 
         if not hasattr(self, "_backbone"):
             self._backbone = models.resnet34
-            logger.warning("unsupported backbone, reverting to ResNet34.")
 
         if hasattr(data, "_is_multispectral"):  # multispectral support
             self._is_multispectral = getattr(data, "_is_multispectral")
@@ -1438,10 +1437,6 @@ class ArcGISModel(object):
                 if self._backend != "tensorflow" and _framework == "tflite":
                     supported_models = [
                         "FeatureClassifier",
-                        "MaskRCNN",
-                        "SingleShotDetector",
-                        "YOLOv3",
-                        "RetinaNet",
                     ]
                     if (type(self).__name__) in supported_models:
                         with warnings.catch_warnings():
@@ -1457,11 +1452,13 @@ class ArcGISModel(object):
                         "SingleShotDetector",
                         "YOLOv3",
                         "RetinaNet",
+                        "SiamMask",
                     ]
                     if (type(self).__name__) in supported_models:
-                        with warnings.catch_warnings():
-                            warnings.simplefilter("ignore")
-                            script_paths = self._save_pytorch_torchscript(name)
+                        if type(self).__name__ != "SiamMask":
+                            with warnings.catch_warnings():
+                                warnings.simplefilter("ignore")
+                                script_paths = self._save_pytorch_torchscript(name)
                     else:
                         raise Exception(
                             "This pytorch model cannot be saved in torchscript format"
@@ -1504,7 +1501,7 @@ class ArcGISModel(object):
 
         if self._backend != "tensorflow" and framework.lower() == "tflite":
             if len(tflite_paths) != 0:
-                _script_save_params = {"GPU": tflite_paths[0], "CPU": tflite_paths[0]}
+                _script_save_params = {"tf": tflite_paths[0], "sm": tflite_paths[1]}
                 _emd_template["TFLite"] = _script_save_params
 
         # TODO: merge all
@@ -1910,8 +1907,8 @@ class ArcGISModel(object):
                                 Only models saved with the default framework
                                 (PyTorch) can be loaded using `from_model`.
                                 ``tflite`` framework (experimental support) is
-                                supported by ``SingleShotDetector``,
-                                ``FeatureClassifier`` and ``RetinaNet``.
+                                supported by ``SingleShotDetector - tensorflow backend only``,
+                                ``FeatureClassifier`` and ``RetinaNet - tensorflow backend only``.
                                 ``torchscript`` format is supported by
                                 ``SiamMask``, ``MaskRCNN``, ``SingleShotDetector``,
                                 ``YOLOv3`` and ``RetinaNet``.

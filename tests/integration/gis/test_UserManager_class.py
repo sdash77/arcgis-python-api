@@ -2,6 +2,11 @@
 # Name:        UserManager class tests
 # Purpose:     Sanity tests for ArcGIS Python API
 # -------------------------------------------------------------------------------
+
+# Insert path to tests package so relative imports work
+#import sys
+#sys.path.insert(0, r"C:\Job\repos\geosaurus\tests")
+
 import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils
@@ -119,8 +124,8 @@ class Test_UserManager_portal_builtin(unittest.TestCase):
         thumbnail_path = os.path.join(self.qalab_cls_path, "Basemaps.png")
         try:
             # Create user data
-            user_name = "user3"
-            user_password = "sharing.1"
+            user_name = "user3x"
+            user_password = "IL0veMyGI$_4Ever"
             last_name = "dino"
             role_list = ["org_publisher"]
             thumbnail = thumbnail_path
@@ -190,7 +195,7 @@ class Test_UserManager_portal_builtin(unittest.TestCase):
 
         if self._testMethodName == "test_createUser_has_thumbnail":
 
-            user_name = "user3"
+            user_name = "user3x"
 
             try:
 
@@ -225,3 +230,6 @@ class Test_UserManager_portal_builtin(unittest.TestCase):
 # TestModule
 def tearDownModule():
     print("**End User Manager Tests**")
+    
+if __name__ == "__main__":
+    unittest.main()
