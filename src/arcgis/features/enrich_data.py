@@ -120,10 +120,13 @@ def enrich_layer(
 
                                                                               The default value is False.
     ---------------------------------------------------------------------     --------------------------------------------------------------------
-    future                                                                    Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                                                                    Optional, If True, a future object will be returned and the process
+                                                                              will not wait for the task to complete.
+                                                                              The default is False, which means wait for results.
     =====================================================================     ====================================================================
 
     :returns :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
+    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 

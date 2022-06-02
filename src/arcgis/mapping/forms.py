@@ -68,7 +68,7 @@ class FormCollection:
 
     def __next__(self):
         if self._index >= len(self.forms):
-            return StopIteration
+            raise StopIteration
         else:
             self._index += 1
             return self.forms[self._index - 1]
@@ -130,7 +130,22 @@ class FormCollection:
         """This is a shared method which creates an array of forms if given an array of layers."""
         # we save parent here into the form in order to distinguish between whether from_item or from_webmap was used and to get a usable GIS
         for layer in layers:
-            forms.append(FormInfo(layer, parent))
+            FormCollection._get_forms_within_group_layer(forms, layer, parent)
+
+    @staticmethod
+    def _get_forms_within_group_layer(forms, layer, parent, subtype_gl_layer=None):
+        if layer.layerType == "GroupLayer":
+            for sub_layer in reversed(layer.layers):
+                FormCollection._get_forms_within_group_layer(forms, sub_layer, parent)
+        elif layer.layerType == "SubtypeGroupLayer":
+            for sub_layer in reversed(layer.layers):
+                FormCollection._get_forms_within_group_layer(
+                    forms, sub_layer, parent, subtype_gl_layer=layer
+                )
+        elif layer.layerType == "ArcGISFeatureLayer" and not hasattr(
+            layer, "featureCollection"
+        ):
+            forms.append(FormInfo(layer, parent, subtype_gl_layer))
 
     def _get_forms_from_item(self, item):
         """Populates self.forms given an item."""
@@ -167,6 +182,11 @@ class FormInfo:
                            This is the object which contains the layer, either an item of type
                            `Feature Layer Collection` or a webmap. This is needed to save your
                            form changes to the backend.
+    ------------------     --------------------------------------------------------------------
+    subtype_gl_data        Optional :class:`PropertyMap` or :class:`dict`. This is the
+                           operational layer representing a subtype group layer which contains
+                           the layer containing the form. It can be retrieved from a webmap
+                           using `arcgis.mapping.WebMap(item).layers[0]`
     ==================     ====================================================================
 
     .. code-block:: python
@@ -202,11 +222,17 @@ class FormInfo:
             form_info.update()
     """
 
-    def __init__(self, layer_data, parent):
+    def __init__(self, layer_data, parent, subtype_gl_data=None, **kwargs):
         if not isinstance(layer_data, (dict, PropertyMap)):
             raise ValueError(
                 "Incorrect layer type passed to FormInfo class. Please pass in a property map"
             )
+        if subtype_gl_data and not isinstance(subtype_gl_data, (dict, PropertyMap)):
+            raise ValueError(
+                "Incorrect subtype group layer type passed to FormInfo class. Please pass in a property map"
+            )
+        self._kwargs = kwargs
+        self._subtype_group_layer_data = subtype_gl_data
         self._original_layer = layer_data
         self._layer_data = copy.deepcopy(layer_data)
         self._form = self._layer_data.get("formInfo", {})
@@ -218,6 +244,7 @@ class FormInfo:
                 expression=exp.get("expression"),
                 name=exp.get("name"),
                 title=exp.get("title"),
+                return_type=exp.get("returnType"),
             )
             self._expression_infos.append(expression)
         self._form_elements = self._get_form_element_objects(
@@ -225,7 +252,10 @@ class FormInfo:
         )
         self._parent = parent
         try:
-            url = self._original_layer["url"]
+            if self._subtype_group_layer_data:
+                url = self._subtype_group_layer_data["url"]
+            else:
+                url = self._original_layer["url"]
             self.feature_layer = FeatureLayer(url=url, gis=self._parent._gis)
             self._fields = self._get_fields()
             self._edit_fields = self._get_edit_fields()
@@ -357,6 +387,8 @@ class FormInfo:
             data["description"] = self._description
         if self._title:
             data["title"] = self._title
+        for key, value in self._kwargs.items():
+            data[key] = value
         return data
 
     def add_all_attributes(self):
@@ -403,6 +435,7 @@ class FormInfo:
         if index is None:
             index = len(self._form_elements)
         self._form_elements.insert(index, element)
+        self._hydrate_expression_infos()
         return element
 
     def add_field(
@@ -417,6 +450,8 @@ class FormInfo:
         input_type: Optional[Union[str, dict]] = None,
         required_expression=None,
         index: Optional[int] = None,
+        editable_expression=None,
+        value_expression=None,
         **kwargs,
     ):
         """
@@ -462,6 +497,14 @@ class FormInfo:
         index                      Optional :class:`int`.
                                    The index where you'd like the element in the form. If not provided,
                                    this function will add the new element to the end of the form.
+        ----------------------     --------------------------------------------------------------------
+        editable_expression        Optional :class:`arcgis.mapping.forms.FormExpressionInfo`.
+                                   The Arcade expression determining the
+                                   editablity of the form element during data collection
+        ----------------------     --------------------------------------------------------------------
+        value_expression           Optional :class:`arcgis.mapping.forms.FormExpressionInfo`.
+                                   The Arcade expression which calculates a value for the form
+                                   element during data collection
         ======================     ====================================================================
 
         :return: The element that was added - :class:`arcgis.mapping.forms.FormGroupElement`
@@ -478,6 +521,8 @@ class FormInfo:
             hint=hint,
             input_type=input_type,
             required_expression=required_expression,
+            editable_expression=editable_expression,
+            value_expression=value_expression,
             **kwargs,
         )
         return self.add(element, index=index)
@@ -553,6 +598,7 @@ class FormInfo:
             element = self.get(label=label)
         try:
             self._form_elements.remove(element)
+            self._hydrate_expression_infos()
             return element
         except Exception:
             return False
@@ -731,6 +777,10 @@ class FormInfo:
             return []
 
     @staticmethod
+    def _get_expression_info(form, expression_name):
+        return next((e for e in form.expressions if e.name == expression_name), None)
+
+    @staticmethod
     def _get_form_element_objects(form_elements, form=None):
         """Shared between FormInfo and FormGroupElement to construct an array of FormElement objects from dictionaries for external usage."""
         elements = []
@@ -746,7 +796,21 @@ class FormInfo:
                     field_name=element.get("fieldName"),
                     hint=element.get("hint"),
                     input_type=element.get("inputType"),
-                    required_expression=element.get("requiredExpression"),
+                    required_expression=FormInfo._get_expression_info(
+                        form, element.get("requiredExpression")
+                    )
+                    if form
+                    else None,
+                    editable_expression=FormInfo._get_expression_info(
+                        form, element.get("editableExpression")
+                    )
+                    if form
+                    else None,
+                    value_expression=FormInfo._get_expression_info(
+                        form, element.get("valueExpression")
+                    )
+                    if form
+                    else None,
                 )
             elif element["type"] == "group":
                 el = FormGroupElement(
@@ -755,7 +819,11 @@ class FormInfo:
                     initial_state=element.get("initialState"),
                     description=element.get("description"),
                     label=element.get("label"),
-                    visibility_expression=element.get("visibilityExpression"),
+                    visibility_expression=FormInfo._get_expression_info(
+                        form, element.get("visibilityExpression")
+                    )
+                    if form
+                    else None,
                 )
             else:
                 el = FormElement(
@@ -763,17 +831,14 @@ class FormInfo:
                     element_type=element.get("type"),
                     description=element.get("description"),
                     label=element.get("label"),
-                    visibility_expression=element.get("visibilityExpression"),
+                    visibility_expression=FormInfo._get_expression_info(
+                        form, element.get("visibilityExpression")
+                    )
+                    if form
+                    else None,
                 )
             elements.append(el)
         return elements
-
-    def _get_expression_info(self, name):
-        """Returns expression info based on name."""
-        for expression in self._expression_infos:
-            if expression.name == name:
-                return expression
-        return None
 
     def _hydrate_expression_infos(self):
         for form_el in self._form_elements:
@@ -788,20 +853,60 @@ class FormInfo:
         if element.visibility_expression:
             if isinstance(element.visibility_expression, FormExpressionInfo):
                 if (
-                    self._get_expression_info(element.visibility_expression.name)
+                    self._get_expression_info(self, element.visibility_expression.name)
                     is None
                 ):
                     self._expression_infos.append(element.visibility_expression)
             else:
-                if self._get_expression_info(element.visibility_expression) is None:
+                if (
+                    self._get_expression_info(self, element.visibility_expression)
+                    is None
+                ):
                     element._visibility_expression = None
-        if element.element_type == "field" and element.required_expression:
-            if isinstance(element.required_expression, FormExpressionInfo):
-                if self._get_expression_info(element.required_expression.name) is None:
-                    self._expression_infos.append(element.required_expression)
-            else:
-                if self._get_expression_info(element.required_expression) is None:
-                    element._required_expression = None
+        if element.element_type == "field":
+            if element.required_expression:
+                if isinstance(element.required_expression, FormExpressionInfo):
+                    if (
+                        self._get_expression_info(
+                            self, element.required_expression.name
+                        )
+                        is None
+                    ):
+                        self._expression_infos.append(element.required_expression)
+                else:
+                    if (
+                        self._get_expression_info(self, element.required_expression)
+                        is None
+                    ):
+                        element._required_expression = None
+            if element.editable_expression:
+                if isinstance(element.editable_expression, FormExpressionInfo):
+                    if (
+                        self._get_expression_info(
+                            self, element.editable_expression.name
+                        )
+                        is None
+                    ):
+                        self._expression_infos.append(element.editable_expression)
+                else:
+                    if (
+                        self._get_expression_info(self, element.editable_expression)
+                        is None
+                    ):
+                        element._editable_expression = None
+            if element.value_expression:
+                if isinstance(element.value_expression, FormExpressionInfo):
+                    if (
+                        self._get_expression_info(self, element.value_expression.name)
+                        is None
+                    ):
+                        self._expression_infos.append(element.value_expression)
+                else:
+                    if (
+                        self._get_expression_info(self, element.value_expression)
+                        is None
+                    ):
+                        element._value_expression = None
 
     def _get_required_fields(self):
         required_fields = []
@@ -909,10 +1014,7 @@ class FormElement:
         if self._element_type:
             el_dict["type"] = self._element_type
         if self._visibility_expression:
-            try:
-                el_dict["visibilityExpression"] = self._visibility_expression.name
-            except AttributeError:
-                el_dict["visibilityExpression"] = self._visibility_expression
+            el_dict["visibilityExpression"] = self._visibility_expression.name
         for key, value in self._kwargs.items():
             el_dict[key] = value
         return el_dict
@@ -999,6 +1101,8 @@ class FormFieldElement(FormElement):
         hint=None,
         input_type=None,
         required_expression=None,
+        editable_expression=None,
+        value_expression=None,
         **kwargs,
     ):
         super().__init__(
@@ -1013,8 +1117,10 @@ class FormFieldElement(FormElement):
         self._editable = editable
         self._field_name = field_name
         self._hint = hint
-        self._input_type = input_type
+        self.input_type = input_type
         self._required_expression = required_expression
+        self._editable_expression = editable_expression
+        self._value_expression = value_expression
 
     def __repr__(self):
         if self._label:
@@ -1077,17 +1183,17 @@ class FormFieldElement(FormElement):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        value               Required string.
+        value               Required string or dictionary.
                             Values: "text-area" | "text-box" | "barcode-scanner" | "combo-box" |
                                     "radio-buttons" | "datetime-picker"
         ===============     ====================================================================
 
-        :return: String that represents the input type
+        :return: dictionary that represents the input type
         """
         return self._input_type
 
     @input_type.setter
-    def input_type(self, value: str):
+    def input_type(self, value: Union[str, dict]):
         if value in [
             "text-area",
             "text-box",
@@ -1111,6 +1217,30 @@ class FormFieldElement(FormElement):
         else:
             raise ValueError("Please pass a FormExpressionInfo object")
 
+    @property
+    def editable_expression(self):
+        """Gets/sets the editable expression of the form element. Takes an object of FormExpressionInfo."""
+        return self._editable_expression
+
+    @editable_expression.setter
+    def editable_expression(self, value):
+        if isinstance(value, FormExpressionInfo) or value is None:
+            self._editable_expression = value
+        else:
+            raise ValueError("Please pass a FormExpressionInfo object")
+
+    @property
+    def value_expression(self):
+        """Gets/sets the value expression of the form element. Takes an object of FormExpressionInfo."""
+        return self._value_expression
+
+    @value_expression.setter
+    def value_expression(self, value):
+        if isinstance(value, FormExpressionInfo) or value is None:
+            self._value_expression = value
+        else:
+            raise ValueError("Please pass a FormExpressionInfo object")
+
     def to_dict(self):
         el_dict = super().to_dict()
         if self._domain:
@@ -1124,10 +1254,11 @@ class FormFieldElement(FormElement):
         if self._input_type:
             el_dict["inputType"] = self._input_type
         if self._required_expression:
-            try:
-                el_dict["requiredExpression"] = self._required_expression.name
-            except AttributeError:
-                el_dict["requiredExpression"] = self._required_expression
+            el_dict["requiredExpression"] = self._required_expression.name
+        if self._editable_expression:
+            el_dict["editableExpression"] = self._editable_expression.name
+        if self._value_expression:
+            el_dict["valueExpression"] = self._value_expression.name
         return el_dict
 
 
@@ -1266,6 +1397,7 @@ class FormGroupElement(FormElement):
         if index is None:
             index = len(self._form_elements)
         self._form_elements.insert(index, element)
+        self._form._hydrate_expression_infos()
         return element
 
     def add_field(
@@ -1280,6 +1412,8 @@ class FormGroupElement(FormElement):
         input_type: Optional[Union[dict, str]] = None,
         required_expression=None,
         index: Optional[int] = None,
+        editable_expression=None,
+        value_expression=None,
         **kwargs,
     ):
         """
@@ -1325,6 +1459,14 @@ class FormGroupElement(FormElement):
         index                      Optional :class:`int`.
                                    The index where you'd like the element in the form. If not provided,
                                    this function will add the new element to the end of the form.
+        ----------------------     --------------------------------------------------------------------
+        editable_expression        Optional :class:`arcgis.mapping.forms.FormExpressionInfo`.
+                                   The Arcade expression determining the
+                                   editablity of the form element during data collection
+        ----------------------     --------------------------------------------------------------------
+        value_expression           Optional :class:`arcgis.mapping.forms.FormExpressionInfo`.
+                                   The Arcade expression which calculates a value for the form
+                                   element during data collection
         ======================     ====================================================================
 
         """
@@ -1339,6 +1481,8 @@ class FormGroupElement(FormElement):
             hint=hint,
             input_type=input_type,
             required_expression=required_expression,
+            editable_expression=editable_expression,
+            value_expression=value_expression,
             **kwargs,
         )
         return self.add(element, index=index)
@@ -1467,14 +1611,20 @@ class FormExpressionInfo:
     ------------------     --------------------------------------------------------------------
     title                  Optional :class:`int`.
                            The user friendly name for the expressionInfo
+    ------------------     --------------------------------------------------------------------
+    return_type            Optional :class:`str`.
+                           The return type of the expression in expressionInfo
     ==================     ====================================================================
     """
 
-    def __init__(self, expression=None, name=None, title=None):
+    def __init__(
+        self, expression=None, name=None, title=None, return_type="boolean", **kwargs
+    ):
         self._expression = expression
         self._name = name
-        self._return_type = "boolean"
+        self._return_type = return_type
         self._title = title
+        self._kwargs = kwargs
 
     def __repr__(self):
         if self._title:
@@ -1534,4 +1684,6 @@ class FormExpressionInfo:
             exp_dict["expression"] = self._expression
         if self._return_type:
             exp_dict["returnType"] = self._return_type
+        for key, value in self._kwargs.items():
+            exp_dict[key] = value
         return exp_dict

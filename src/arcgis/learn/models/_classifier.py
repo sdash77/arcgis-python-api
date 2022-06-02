@@ -106,6 +106,17 @@ def _prediction_function(predictions):
     return max_prediction_class, max_prediction_value
 
 
+class FeatureClassifierTF(torch.nn.Module):
+    def __init__(self, head):
+        super(FeatureClassifierTF, self).__init__()
+        self._head = head
+
+    def forward(self, x):
+        x = self._head(x)
+        x = torch.nn.functional.softmax(x[0], dim=0)
+        return x
+
+
 class FeatureClassifier(ArcGISModel):
     """
     Creates an image classifier to classify the area occupied by a
@@ -121,7 +132,7 @@ class FeatureClassifier(ArcGISModel):
                             model used for feature extraction, which is ``resnet34``
                             by default.
                             Supported backbones: ResNet family and specified Timm
-                            models from :func:`~arcgis.learn.FeatureClassifier.backbones`.
+                            models(experimental support) from :func:`~arcgis.learn.FeatureClassifier.backbones`.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -283,7 +294,7 @@ class FeatureClassifier(ArcGISModel):
 
     @staticmethod
     def _supported_backbones():
-        timm_models = filter_timm_models()
+        timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         return [*_resnet_family, models.mobilenet_v2.__name__] + timm_backbones
 
@@ -390,51 +401,64 @@ class FeatureClassifier(ArcGISModel):
             import onnx
             import onnx_tf
             from onnx_tf.backend import prepare
-        device = torch.device("cpu")
-        torch_model = self.learn.model
-        torch_model = torch_model.eval()
+
+        model = self.learn.model
+        model.eval()
+        device = self._device
+        cpu = torch.device("cpu")
+        model.to(cpu)
+
         if hasattr(self._data, "chip_size"):
             chip_size = self._data.chip_size
             if not isinstance(chip_size, tuple):
                 chip_size = (chip_size, chip_size)
         num_input_channels = list(self.learn.model.parameters())[0].shape[1]
-        dummy_input = torch.randn(
-            [1, num_input_channels, chip_size[0], chip_size[1]]
-        ).to(device)
-        saved_path = self.learn.path / self.learn.model_dir / f"{name}.tflite"
-        saved_path_onnx = self.learn.path / self.learn.model_dir / f"{name}.onnx"
-        saved_path_pb = self.learn.path / self.learn.model_dir / f"{name}"
+        inp = torch.randn([1, num_input_channels, chip_size[0], chip_size[1]]).to(cpu)
+        inp_np = inp.detach().cpu().numpy()
+        base = f"{name}-base"
+        path_base_onnx = self.learn.path / self.learn.model_dir / f"{base}.onnx"
+        path_save_pb = self.learn.path / self.learn.model_dir / f"{name}-pb"
+
+        activated_model = FeatureClassifierTF(model)
+        activated_model.eval()
+        activated_model.to(cpu)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             torch.onnx.export(
-                torch_model,
-                dummy_input,
-                saved_path_onnx,
+                model=activated_model,
+                args=inp,
+                f=path_base_onnx,
+                verbose=False,
                 export_params=True,
+                do_constant_folding=True,  # fold constant values for optimization
                 input_names=["input"],
                 output_names=["output"],
-                opset_version=11,
+                opset_version=12,
             )
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            arcgis_onnx = onnx.load(saved_path_onnx)
-            tf_onnx = prepare(arcgis_onnx, logging_level="ERROR")
-            tf_onnx.export_graph(str(saved_path_pb))
 
-        converter = tf.lite.TFLiteConverter.from_saved_model(str(saved_path_pb))
-        converter.experimental_new_converter = True
-        converter.optimizations = [tf.compat.v1.lite.Optimize.DEFAULT]
-        converter.target_ops = [
-            tf.lite.OpsSet.TFLITE_BUILTINS_INT8,
-            tf.lite.OpsSet.SELECT_TF_OPS,
-        ]
+            onnx_base_model = onnx.load(str(path_base_onnx))
+            tf_rep_base = prepare(onnx_base_model)
+            tf_rep_base.export_graph(str(path_save_pb))
+
+        model.to(device)
+
+        path_save_tflite = self.learn.path / self.learn.model_dir / f"{name}.tflite"
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
+            tf_model = tf.saved_model.load(str(path_save_pb))
+            infer = tf_model.signatures["serving_default"]
+            concrete_func = tf_model.signatures[
+                tf.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY
+            ]
+            converter = tf.lite.TFLiteConverter.from_concrete_functions([concrete_func])
             tflite_model = converter.convert()
-        with tf.io.gfile.GFile(saved_path, "wb") as f:
-            f.write(tflite_model)
 
-        return [saved_path, saved_path_onnx]
+            # Save the model
+            with open(path_save_tflite, "wb") as f:
+                f.write(tflite_model)
+
+        return [f"{name}.tflite", f"{name}-pb"]
 
     def _get_emd_params(self, save_inference_file):
         _emd_template = {}

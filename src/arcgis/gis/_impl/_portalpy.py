@@ -17,7 +17,7 @@ from ..._impl.common._utils import _to_utf8
 from urllib import request
 from urllib.parse import urlparse
 
-__version__ = "2.0.1"
+__version__ = "2.1.0"
 
 _log = logging.getLogger(__name__)
 
@@ -1264,6 +1264,7 @@ class Portal(object):
 
         # If we've never retrieved the properties before, or the caller is
         # forcing a check of the server, then check the server
+        resp = None
         if not self._properties or force:
             path = "accounts/self" if self._is_pre_162 else "portals/self"
             resp = None

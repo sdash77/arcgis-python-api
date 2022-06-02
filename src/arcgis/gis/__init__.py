@@ -14,6 +14,7 @@ import io
 import os
 import re
 import time
+import shutil
 import tempfile
 import zipfile
 import configparser
@@ -3864,7 +3865,25 @@ class UserManager(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        query                  Required String.  The search query.
+        query                  Required String.  The search query. When the search filters
+                               contain two or more clauses, the recommended schema is to have
+                               clauses separated by blank, or `AND`, e.g.
+
+                               :Usage Example:
+
+
+                               gis.users.advanced_search(query='owner:USERNAME type:map')
+                               # or
+                               gis.users.advanced_search(query='type:map AND owner:USERNAME')
+
+                               .. warning::
+                               When the clauses are separated by comma, the filtering condition
+                               for `owner` should not be placed at the first position, e.g.
+                               `gis.users.advanced_search(query='type:map, owner:USERNAME')`
+                               is allowed, while
+                               `gis.users.advanced_search(query='owner:USERNAME, type:map')`
+                               is not. For more, please check
+                               https://developers.arcgis.com/rest/users-groups-and-items/search-reference.htm
         ------------------     --------------------------------------------------------------------
         return_count           Optional Boolean.  If True, the number of users found by the query
                                string is returned.
@@ -5889,7 +5908,27 @@ class ContentManager(object):
         ================    ===============================================================
         **Argument**        **Description**
         ----------------    ---------------------------------------------------------------
-        query               Required String.  The search query.
+        query               Required String.  The search query. When the search filters
+                            contain two or more clauses, the recommended schema is to have
+                            clauses separated by blank, or `AND`, e.g.
+
+                            :Usage Example:
+
+
+                            gis.content.advanced_search(query='owner:USERNAME type:map')
+                            # or
+                            gis.content.advanced_search(query='type:map AND owner:USERNAME')
+
+
+                            .. warning::
+                            When the clauses are separated by comma, the filtering condition
+                            for `owner` should not be placed at the first position, e.g.
+                            `gis.content.advanced_search(query='type:map, owner:USERNAME')`
+                            is allowed, while
+                            `gis.content.advanced_search(query='owner:USERNAME, type:map')`
+                            is not. For more, please check
+                            https://developers.arcgis.com/rest/users-groups-and-items/search-reference.htm
+
         ----------------    ---------------------------------------------------------------
         bbox                Optional String/List. This is the xmin,ymin,xmax,ymax bounding
                             box to limit the search in.  Items like documents do not have
@@ -6166,7 +6205,24 @@ class ContentManager(object):
         ================  ==========================================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------------------------
-        query             Required string. A query string.  See notes above.
+        query             Required string. A query string.  See notes above. When the search filters
+                          contain two or more clauses, the recommended schema is to have clauses
+                          separated by blank, or `AND`, e.g.
+
+                          :Usage Example:
+
+
+                          gis.content.search(query='owner:USERNAME type:map')
+                          # or
+                          gis.content.search(query='type:map AND owner:USERNAME')
+
+                          .. warning::
+                          When the clauses are separated by comma, the filtering condition
+                          for `owner` should not be placed at the first position, e.g.
+                          `gis.content.search(query='type:map, owner:USERNAME')`
+                          is recommended, while
+                          `gis.content.search(query='owner:USERNAME, type:map')`
+                          is not.
         ----------------  --------------------------------------------------------------------------
         item_type         Optional string. The type of item to search. See `Items and item types <https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm>`_
                           for comprehensive list of values (the type column).
@@ -6498,7 +6554,7 @@ class ContentManager(object):
         -------------------  --------------------------------------------------------------------------
         future               Optional Boolean.  This allows the operation to run asynchronously allowing
                              the user to not pause the thread and continue to perform multiple operations.
-                             The default is `True`.  When `True` the result of the method will be a
+                             The default is `False`.  When `True` the result of the method will be a
                              concurrent `Future` object.  The `result` of the method can be obtained
                              using the `result()` on the `Future` object.  When `False`, and Item is
                              returned. Future == True is only supported for 'shapefiles' and 'gpx' files.
@@ -6506,7 +6562,7 @@ class ContentManager(object):
 
         :return:
             The method has 3 potential returns:
-                1. A `Future` object when `future==True`,
+                1. A `Future` object when `future==True`, Call ``results()`` to get the response.
                 2. An :class:`~arcgis.gis.Item` object when `future==False`
                 3. A dictionary of error messages when Exceptions are raised
 
@@ -7829,6 +7885,7 @@ class ResourceManager(object):
         folder_name: Optional[str] = None,
         file_name: Optional[str] = None,
         text: Optional[str] = None,
+        properties: Optional[dict[Any, Any]] = None,
     ):
         """The ``update`` operation allows you to update existing file resources of an item.
         File resources use storage space from your quota and are scanned for viruses. The item size
@@ -7856,6 +7913,9 @@ class ResourceManager(object):
         ----------------  ---------------------------------------------------------------
         text              Optional string. Text input to be added as a file resource,
                           used together with file_name.
+        ----------------  ---------------------------------------------------------------
+        properties        Optional Dictionary. Set the properties for the resources such
+                          as the `editInfo`.
         ================  ===============================================================
 
         :return:
@@ -7903,7 +7963,8 @@ class ResourceManager(object):
             params["fileName"] = file_name
         if text is not None:
             params["text"] = text
-
+        if isinstance(properties, dict):
+            params["properties"] = properties
         resp = self._portal.con.post(query_url, params, files=files)
         return resp
 
@@ -8171,7 +8232,25 @@ class Group(dict):
         ================    ===============================================================
         **Argument**        **Description**
         ----------------    ---------------------------------------------------------------
-        query               Required String.  The search query.
+        query               Required String.  The search query. When the search filters
+                            contain two or more clauses, the recommended schema is to have
+                            clauses separated by blank, or `AND`, e.g.
+
+                            :Usage Example:
+
+
+                            group.search(query='owner:USERNAME type:map')
+                            # or
+                            group.search(query='type:map AND owner:USERNAME')
+
+                            .. warning::
+                            When the clauses are separated by comma, the filtering condition
+                            for `owner` should not be placed at the first position, e.g.
+                            `group.search(query='type:map, owner:USERNAME')`
+                            is allowed, while
+                            `group.search(query='owner:USERNAME, type:map')`
+                            is not. For more, please check
+                            https://developers.arcgis.com/rest/users-groups-and-items/search-reference.htm
         ----------------    ---------------------------------------------------------------
         bbox                Optional String/List. This is the xmin,ymin,xmax,ymax bounding
                             box to limit the search in.  Items like documents do not have
@@ -12046,9 +12125,232 @@ class Item(dict):
             return thumbnail_url_path
 
     # ----------------------------------------------------------------------
+    def create_thumbnail(self, update: bool = True):
+        """
+        The ``create_thumbnail`` method creates a Thumbnail for a feature service portal item using the service's
+        symbology and the print service registered for the enterprise.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        update              Optional boolean. When set to True, the item will be updated with the
+                            thumbnail generated in this call, else it will not update the item.
+                            The default is True.
+        ===============     ====================================================================
+
+        :return: A :class:`~arcgis.geoprocessing._types.DataFile` object
+
+        """
+        from arcgis.geoprocessing._tool import Toolbox
+        from arcgis.features import FeatureLayer, FeatureLayerCollection
+        from arcgis.gis.server._service import Service
+
+        props = self._gis.properties
+        gp_url = os.path.dirname(self._gis.properties.helperServices.printTask.url)
+
+        if self.type == "Feature Service":
+            layers = []
+            container = self.layers[0].container
+            extent = container.properties.initialExtent
+            for lyr in self.layers:
+                layers.append(
+                    {
+                        "id": "%s_%s"
+                        % (lyr.properties.serviceItemId, lyr.properties.id),
+                        "title": lyr.properties.name,
+                        "opacity": 1,
+                        "minScale": lyr.properties.minScale,
+                        "maxScale": lyr.properties.maxScale,
+                        "layerDefinition": {
+                            "drawingInfo": dict(lyr.properties.drawingInfo)
+                        },
+                        "token": self._gis._con.token,
+                        "url": lyr._url,
+                    }
+                )
+                del lyr
+            wmjs = {
+                "mapOptions": {
+                    "showAttribution": False,
+                    "extent": dict(extent),
+                    "spatialReference": dict(container.properties.spatialReference),
+                },
+                "operationalLayers": layers,
+                "exportOptions": {"outputSize": [600, 400], "dpi": 96},
+            }
+
+        elif self.type == "Web Map":
+            import json
+
+            layers = []
+            mapjson = self.get_data()
+            container = None
+            for lyr in mapjson["baseMap"]["baseMapLayers"]:
+                del lyr["layerType"]
+                layers.append(lyr)
+            for lyr in mapjson["operationalLayers"]:
+                flyr = Service(url=lyr["url"], server=self._gis._con)
+                if container is None and isinstance(flyr, FeatureLayer):
+                    container = FeatureLayerCollection(
+                        url=os.path.dirname(flyr._url), gis=self._gis
+                    )
+                layers.append(
+                    {
+                        "id": "%s" % lyr["id"],
+                        "title": lyr["title"],
+                        "opacity": lyr["opacity"] if "opacity" in lyr else None,
+                        "minScale": flyr.properties.minScale,
+                        "maxScale": flyr.properties.maxScale,
+                        "layerDefinition": {
+                            "drawingInfo": dict(flyr.properties.drawingInfo)
+                        },
+                        "token": self._gis._con.token,
+                        "url": lyr["url"],
+                    }
+                )
+                del lyr
+
+            wmjs = {
+                "mapOptions": {
+                    "showAttribution": False,
+                    "extent": dict(container.properties.initialExtent)
+                    if container
+                    else dict(self._gis.properties.defaultExtent),
+                    "spatialReference": dict(container.properties.spatialReference)
+                    if container
+                    else dict(self._gis.properties.defaultExtent.spatialReference),
+                },
+                "operationalLayers": layers,
+                "exportOptions": {"outputSize": [600, 400], "dpi": 96},
+            }
+        else:
+            return None
+        if (
+            isinstance(self._gis._portal, _portalpy.Portal)
+            and self._gis._portal.is_arcgisonline
+        ):
+            tbx = Toolbox(url=gp_url)
+        else:
+            tbx = Toolbox(url=gp_url, gis=self._gis)
+        res = tbx.export_web_map_task(web_map_as_json=wmjs, format="png32")
+        if update:
+            self.update(item_properties={"thumbnailUrl": res.url})
+        return res
+
+    # ----------------------------------------------------------------------
+    def delete_thumbnail(self) -> bool:
+        """
+        Deletes the item's thumbnail
+
+        :returns: bool
+        """
+        url = f"{self._gis._portal.resturl}content/users/{self.owner}/items/{self.itemid}/deleteThumbnail"
+        params = {"f": "json"}
+        res = self._gis._con.post(url, params)
+        if res.get("success", False):
+            self._hydrated = False
+            self._hydrate()
+            return True
+        return res
+
+    # ----------------------------------------------------------------------
+    def update_thumbnail(
+        self,
+        file_path: str | None = None,
+        encoded_image: str | None = None,
+        file_name: str | None = None,
+        url: str | None = None,
+    ) -> bool:
+        """
+        The `update_thumbnail` updates the thumbnail of any ArcGIS item in your organization. The updated thumbnail
+        can be provided in a variety of formats, as either a file to be uploaded as part of a multipart request,
+        a direct URL to the thumbnail file, or as a Base64 encoded image.
+
+        ================  =========================================================================================
+        **Argument**      **Description**
+        ----------------  -----------------------------------------------------------------------------------------
+        file_path         Optional String. The local path to the thumbnail.
+        ----------------  -----------------------------------------------------------------------------------------
+        encoded_image     Optional String. A base64 encoded image as a string.
+        ----------------  -----------------------------------------------------------------------------------------
+        file_name         Optional String. This is required with `encoded_image` is used. It is the name of the file
+                          with extension.  Example thumbnail.png
+        ----------------  -----------------------------------------------------------------------------------------
+        url               Optional String. A URL location of a thumbnail.
+        ================  =========================================================================================
+
+
+        .. code-block:: python
+
+            # Usage Example 1: Using a base64 encoded image
+
+            gis = GIS(profile='your_profile')
+            item = gis.content.get(<item id>)
+            base64_img = (
+                'data:image/png;base64,'
+                'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAAsTAAA'
+                'LEwEAmpwYAAAB1klEQVQ4jY2TTUhUURTHf+fy/HrjhNEX2KRGiyIXg8xgSURuokX'
+                'LxFW0qDTaSQupkHirthK0qF0WQQQR0UCbwCQyw8KCiDbShEYLJQdmpsk3895p4aS'
+                'v92ass7pcfv/zP+fcc4U6kXKe2pTY3tjSUHjtnFgB0VqchC/SY8/293S23f+6VEj'
+                '9KKwCoPDNIJdmr598GOZNJKNWTic7tqb27WwNuuwGvVWrAit84fsmMzE1P1+1TiK'
+                'MVKvYUjdBvzPZXCwXzyhyWNBgVYkgrIow09VJMznpyebWE+Tdn9cEroBSc1JVPS+'
+                '6moh5Xyjj65vEgBxafGzWetTh+rr1eE/c/TMYg8hlAOvI6JP4KmwLgJ4qD0TIbli'
+                'TB+sunjkbeLekKsZ6Zc8V027aBRoBRHVoduDiSypmGFG7CrcBEyDHA0ZNfNphC0D'
+                '6amYa6ANw3YbWD4Pn3oIc+EdL36V3od0A+MaMAXmA8x2Zyn+IQeQeBDfRcUw3B+2'
+                'PxwZ/EdtTDpCPQLMh9TKx0k3pXipEVlknsf5KoNzGyOe1sz8nvYtTQT6yyvTjIax'
+                'smHGB9pFx4n3jIEfDePQvCIrnn0J4B/gA5J4XcRfu4JZuRAw3C51OtOjM3l2bMb8'
+                'Br5eXCsT/w/EAAAAASUVORK5CYII='
+            )
+            res = item.update_thumbnail(encoded_image=base64_img, file_name="thumbnail.png")
+
+        .. code-block:: python
+
+            # Usage Example 2: URL image
+
+            gis = GIS(profile='your_profile')
+            item = gis.content.get(<item id>)
+            img_url = "https://www.esri.com/content/dam/esrisites/en-us/common/icons/product-logos/ArcGIS-Pro.png"
+            res = item.update_thumbnail(url=img_url)
+
+        .. code-block:: python
+
+            # Usage Example 3: Using a local file
+
+            gis = GIS(profile='your_profile')
+            item = gis.content.get(<item id>)
+            fp = "c:/images/ArcGIS-Pro.png"
+            res = item.update_thumbnail(file_path=fp)
+
+        :returns: bool
+        """
+        if file_path is None and encoded_image is None and url is None:
+            return False
+        files = None
+        rest_url = f"{self._gis._portal.resturl}content/users/{self.owner}/items/{self.itemid}/updateThumbnail"
+        params = {
+            "f": "json",
+        }
+        if file_path and os.path.isfile(file_path):
+            files = []
+            files.append(("file", file_path, os.path.basename(file_path)))
+        elif encoded_image:
+            params["data"] = encoded_image
+        elif url:
+            params["url"] = url
+        if encoded_image and file_name is None:
+            params["filename"] = "thumbnail.png"
+        elif file_name:
+            params["filename"] = file_name
+        resp = self._gis._con.post(rest_url, params, files=files)
+        if resp.get("success", False):
+            self._hydrated = False
+            self._hydrate()
+            return True
+        return False
+        
+    # ----------------------------------------------------------------------
     @property
     def metadata(self):
-
         """The ``metadata`` property gets and sets the item metadata for the specified item.
         ``metadata`` returns None if the item does not have metadata.
 
@@ -12074,18 +12376,19 @@ class Item(dict):
         """
         See main ``metadata`` property docstring
         """
-        import shutil
-        from six import string_types
-
         xml_file = os.path.join(tempfile.gettempdir(), "metadata.xml")
         if os.path.isfile(xml_file) == True:
             os.remove(xml_file)
-        if os.path.isfile(value) == True and str(value).lower().endswith(".xml"):
+        if (
+            str(value).lower().endswith(".xml")
+            and len(value) <= 32767
+            and os.path.isfile(value) == True
+        ):
             if os.path.basename(value).lower() != "metadata.xml":
                 shutil.copy(value, xml_file)
             else:
                 xml_file = value
-        elif isinstance(value, string_types):
+        elif isinstance(value, str):
             with open(xml_file, mode="w") as writer:
                 writer.write(value)
                 writer.close()
@@ -12676,135 +12979,6 @@ class Item(dict):
                 return {"can_delete": False, "details": error_dict}
         else:
             return self._portal.delete_item(self.itemid, self._user_id, folder, force)
-
-    # ----------------------------------------------------------------------
-    def create_thumbnail(self, update: bool = True):
-        """
-        The ``create_thumbnail`` method creates a Thumbnail for a feature service portal item using the service's
-        symbology and the print service registered for the enterprise.
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        update              Optional boolean. When set to True, the item will be updated with the
-                            thumbnail generated in this call, else it will not update the item.
-                            The default is True.
-        ===============     ====================================================================
-
-        :return: A :class:`~arcgis.geoprocessing._types.DataFile` object
-
-        """
-        from arcgis.geoprocessing._tool import Toolbox
-        from arcgis.features import FeatureLayer, FeatureLayerCollection
-        from arcgis.gis.server._service import Service
-
-        props = self._gis.properties
-        gp_url = os.path.dirname(self._gis.properties.helperServices.printTask.url)
-
-        if self.type == "Feature Service":
-            layers = []
-            container = self.layers[0].container
-            extent = container.properties.initialExtent
-            for lyr in self.layers:
-                layers.append(
-                    {
-                        "id": "%s_%s"
-                        % (lyr.properties.serviceItemId, lyr.properties.id),
-                        "title": lyr.properties.name,
-                        "opacity": 1,
-                        "minScale": lyr.properties.minScale,
-                        "maxScale": lyr.properties.maxScale,
-                        "layerDefinition": {
-                            "drawingInfo": dict(lyr.properties.drawingInfo)
-                        },
-                        "token": self._gis._con.token,
-                        "url": lyr._url,
-                    }
-                )
-                del lyr
-            wmjs = {
-                "mapOptions": {
-                    "showAttribution": False,
-                    "extent": dict(extent),
-                    "spatialReference": dict(container.properties.spatialReference),
-                },
-                "operationalLayers": layers,
-                "exportOptions": {"outputSize": [600, 400], "dpi": 96},
-            }
-
-        elif self.type == "Web Map":
-            import json
-
-            layers = []
-            mapjson = self.get_data()
-            container = None
-            for lyr in mapjson["baseMap"]["baseMapLayers"]:
-                del lyr["layerType"]
-                layers.append(lyr)
-            for lyr in mapjson["operationalLayers"]:
-                flyr = Service(url=lyr["url"], server=self._gis._con)
-                if container is None and isinstance(flyr, FeatureLayer):
-                    container = FeatureLayerCollection(
-                        url=os.path.dirname(flyr._url), gis=self._gis
-                    )
-                layers.append(
-                    {
-                        "id": "%s" % lyr["id"],
-                        "title": lyr["title"],
-                        "opacity": lyr["opacity"] if "opacity" in lyr else None,
-                        "minScale": flyr.properties.minScale,
-                        "maxScale": flyr.properties.maxScale,
-                        "layerDefinition": {
-                            "drawingInfo": dict(flyr.properties.drawingInfo)
-                        },
-                        "token": self._gis._con.token,
-                        "url": lyr["url"],
-                    }
-                )
-                del lyr
-
-            wmjs = {
-                "mapOptions": {
-                    "showAttribution": False,
-                    "extent": dict(container.properties.initialExtent)
-                    if container
-                    else dict(self._gis.properties.defaultExtent),
-                    "spatialReference": dict(container.properties.spatialReference)
-                    if container
-                    else dict(self._gis.properties.defaultExtent.spatialReference),
-                },
-                "operationalLayers": layers,
-                "exportOptions": {"outputSize": [600, 400], "dpi": 96},
-            }
-        else:
-            return None
-        if (
-            isinstance(self._gis._portal, _portalpy.Portal)
-            and self._gis._portal.is_arcgisonline
-        ):
-            tbx = Toolbox(url=gp_url)
-        else:
-            tbx = Toolbox(url=gp_url, gis=self._gis)
-        res = tbx.export_web_map_task(web_map_as_json=wmjs, format="png32")
-        if update:
-            self.update(item_properties={"thumbnailUrl": res.url})
-        return res
-
-    # ----------------------------------------------------------------------
-    def delete_thumbnail(self) -> bool:
-        """
-        Deletes the item's thumbnail
-
-        :returns: bool
-        """
-        url = f"{self._gis._portal.resturl}content/users/{self.owner}/items/{self.itemid}/deleteThumbnail"
-        params = {"f": "json"}
-        res = self._gis._con.post(url, params)
-        if res.get("success", False):
-            self._hydrated = False
-            self._hydrate()
-            return True
-        return res
 
     # ----------------------------------------------------------------------
     def update(

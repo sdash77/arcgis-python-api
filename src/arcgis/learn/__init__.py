@@ -575,6 +575,10 @@ def export_training_data(
     process_all_raster_items=False,
     blacken_around_feature=False,
     fix_chip_size=True,
+    additional_input_raster=None,
+    input_instance_data=None,
+    instance_class_value_field=None,
+    min_polygon_overlap_ratio=0,
     *,
     gis=None,
     future=False,
@@ -585,13 +589,15 @@ def export_training_data(
     Function is designed to generate training sample image chips from the input imagery data with
     labeled vector data or classified images. The output of this service tool is the data store string
     where the output image chips, labels and metadata files are going to be stored.
+
     .. note::
             This function is supported with ArcGIS Enterprise (Image Server)
 
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    input_raster                             Required. Raster layer that needs to be exported for training.
+    input_raster                             Required :class:`~arcgis.raster.ImageryLayer`/:class:`~arcgis.raster.Raster`/:class:`~arcgis.gis.Item`/String (URL).
+                                             Raster layer that needs to be exported for training.
     ------------------------------------     --------------------------------------------------------------------
     input_class_data                         Labeled data, either a feature layer or image layer.
                                              Vector inputs should follow a training sample format as
@@ -652,13 +658,25 @@ def export_training_data(
                                                   This format is used for image classification.
                                                   This format can be used with FeatureClassifier model.
 
-                                                - ``Multi-labeled Tiles``: Each output tile will be labeled with one or more classes.
+                                                - ``MultiLabeled_Tiles``: Each output tile will be labeled with one or more classes.
                                                   For example, a tile may be labeled agriculture and also cloudy. This format is used for object classification.
                                                   This format can be used with FeatureClassifier model.
 
-                                                - ``Export Tiles``: The output will be image chips with no label.
+                                                - ``Export_Tiles``: The output will be image chips with no label.
                                                   This format is used for image enhancement techniques such as Super Resolution and Change Detection.
                                                   This format can be used with ChangeDetector, CycleGAN, Pix2Pix and SuperResolution models.
+
+                                                - ``CycleGAN``: The output will be image chips with no label. This format is used for image
+                                                  translation technique CycleGAN, which is used to train images that do not overlap.
+
+                                                - ``Imagenet``: Each output tile will be labeled with a specific class. This format is used
+                                                  for object classification; however, it can also be used for object tracking when the Deep Sort
+                                                  model type is used during training.
+
+                                                - ``Panoptic_Segmentation``: The output will be one classified image chip and one instance per
+                                                  input image chip. The output will also have image chips that mask the areas where the sample exists;
+                                                  these image chips will be stored in a different folder. This format is used for both pixel classification
+                                                  and instance segmentation, therefore there will be two output labels folders.
     ------------------------------------     --------------------------------------------------------------------
     classvalue_field                         Optional string. Specifies the field which contains the class values. If no field is specified,
                                              the system will look for a 'value' or 'classvalue' field. If this feature does
@@ -672,12 +690,11 @@ def export_training_data(
                                              Example:
 
                                                 Server datastore path -
-                                                ``/fileShares/deeplearning/rooftoptrainingsamples``
-                                                ``/rasterStores/rasterstorename/rooftoptrainingsamples``
-                                                ``/cloudStores/cloudstorename/rooftoptrainingsamples``
+                                                    * ``/fileShares/deeplearning/rooftoptrainingsamples``
+                                                    * ``/rasterStores/rasterstorename/rooftoptrainingsamples``
 
                                                 File share path -
-                                                ``\\\\servername\\deeplearning\\rooftoptrainingsamples``
+                                                    * ``\\\\servername\\deeplearning\\rooftoptrainingsamples``
     ------------------------------------     --------------------------------------------------------------------
     context                                  Optional dictionary. Context contains additional settings that affect task execution.
                                              Dictionary can contain value for following keys:
@@ -744,6 +761,37 @@ def export_training_data(
 
                                                 - False : Exported tiles will be cropped such that the bounding geometry surrounds only the feature in the tile.
     ------------------------------------     --------------------------------------------------------------------
+    additional_input_raster                  Optional :class:`~arcgis.raster.ImageryLayer`/:class:`~arcgis.raster.Raster`/:class:`~arcgis.gis.Item`/String (URL).
+                                             An additional input imagery source that will be used for image translation methods.
+
+                                             This parameter is valid when the metadata_format parameter is set to Classified_Tiles, Export_Tiles, or CycleGAN.
+    ------------------------------------     --------------------------------------------------------------------
+    input_instance_data                      Optional. The training sample data collected that contains classes for instance segmentation.
+
+                                             The input can also be a point feature without a class value field or an integer raster without any class information.
+
+                                             This parameter is only valid when the metadata_format parameter is set to Panoptic_Segmentation.
+    ------------------------------------     --------------------------------------------------------------------
+    instance_class_value_field               Optional string. The field that contains the class values for instance segmentation.
+                                             If no field is specified, the tool will use a value or class value field, if one is present.
+                                             If the feature does not contain a class field, the tool will determine that all records belong to one class.
+
+                                             This parameter is only valid when the metadata_format parameter is set to Panoptic_Segmentation.
+    ------------------------------------     --------------------------------------------------------------------
+    min_polygon_overlap_ratio                Optional float. The minimum overlap percentage for a feature to be included in the training data.
+                                             If the percentage overlap is less than the value specified, the feature will be excluded from the
+                                             training chip, and will not be added to the label file.
+
+                                             The percent value is expressed as a decimal. For example, to specify an overlap of 20 percent,
+                                             use a value of 0.2. The default value is 0, which means that all features will be included.
+
+                                             This parameter improves the performance of the tool and also improves inferencing.
+                                             The speed is improved since less training chips are created. Inferencing is improved
+                                             since the model is trained to only detect large patches of objects and ignores small
+                                             corners of features.
+
+                                             This parameter is honoured only when the input_class_data parameter value is a feature service.
+    ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
@@ -780,6 +828,10 @@ def export_training_data(
         process_all_raster_items=process_all_raster_items,
         blacken_around_feature=blacken_around_feature,
         fix_chip_size=fix_chip_size,
+        additional_input_raster=additional_input_raster,
+        input_instance_data=input_instance_data,
+        instance_class_value_field=instance_class_value_field,
+        min_polygon_overlap_ratio=min_polygon_overlap_ratio,
         context=context,
         future=future,
         **kwargs

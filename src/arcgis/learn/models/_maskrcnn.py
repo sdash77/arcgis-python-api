@@ -180,7 +180,7 @@ class MaskRCNN(ArcGISModel):
                             model used for feature extraction, which
                             is `resnet50` by default.
                             Supported backbones: ResNet family and specified Timm
-                            models from :func:`~arcgis.learn.MaskRCNN.backbones`.
+                            models(experimental support) from :func:`~arcgis.learn.MaskRCNN.backbones`.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -482,7 +482,7 @@ class MaskRCNN(ArcGISModel):
 
     @staticmethod
     def _supported_backbones():
-        timm_models = filter_timm_models()
+        timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         return [*_resnet_family] + timm_backbones
 
