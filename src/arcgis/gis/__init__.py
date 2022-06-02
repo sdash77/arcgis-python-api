@@ -12564,6 +12564,100 @@ class Item(dict):
         self._hydrate()
         return res
 
+    def update_thumbnail(
+        self,
+        file_path: str | None = None,
+        encoded_image: str | None = None,
+        file_name: str | None = None,
+        url: str | None = None,
+    ) -> bool:
+        """
+        The `update_thumbnail` updates the thumbnail of any ArcGIS item in your organization. The updated thumbnail
+        can be provided in a variety of formats, as either a file to be uploaded as part of a multipart request,
+        a direct URL to the thumbnail file, or as a Base64 encoded image.
+
+        ================  =========================================================================================
+        **Argument**      **Description**
+        ----------------  -----------------------------------------------------------------------------------------
+        file_path         Optional String. The local path to the thumbnail.
+        ----------------  -----------------------------------------------------------------------------------------
+        encoded_image     Optional String. A base64 encoded image as a string.
+        ----------------  -----------------------------------------------------------------------------------------
+        file_name         Optional String. This is required with `encoded_image` is used. It is the name of the file
+                          with extension.  Example thumbnail.png
+        ----------------  -----------------------------------------------------------------------------------------
+        url               Optional String. A URL location of a thumbnail.
+        ================  =========================================================================================
+
+
+        .. code-block:: python
+
+            # Usage Example 1: Using a base64 encoded image
+
+            gis = GIS(profile='your_profile')
+            item = gis.content.get(<item id>)
+            base64_img = (
+                'data:image/png;base64,'
+                'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAAsTAAA'
+                'LEwEAmpwYAAAB1klEQVQ4jY2TTUhUURTHf+fy/HrjhNEX2KRGiyIXg8xgSURuokX'
+                'LxFW0qDTaSQupkHirthK0qF0WQQQR0UCbwCQyw8KCiDbShEYLJQdmpsk3895p4aS'
+                'v92ass7pcfv/zP+fcc4U6kXKe2pTY3tjSUHjtnFgB0VqchC/SY8/293S23f+6VEj'
+                '9KKwCoPDNIJdmr598GOZNJKNWTic7tqb27WwNuuwGvVWrAit84fsmMzE1P1+1TiK'
+                'MVKvYUjdBvzPZXCwXzyhyWNBgVYkgrIow09VJMznpyebWE+Tdn9cEroBSc1JVPS+'
+                '6moh5Xyjj65vEgBxafGzWetTh+rr1eE/c/TMYg8hlAOvI6JP4KmwLgJ4qD0TIbli'
+                'TB+sunjkbeLekKsZ6Zc8V027aBRoBRHVoduDiSypmGFG7CrcBEyDHA0ZNfNphC0D'
+                '6amYa6ANw3YbWD4Pn3oIc+EdL36V3od0A+MaMAXmA8x2Zyn+IQeQeBDfRcUw3B+2'
+                'PxwZ/EdtTDpCPQLMh9TKx0k3pXipEVlknsf5KoNzGyOe1sz8nvYtTQT6yyvTjIax'
+                'smHGB9pFx4n3jIEfDePQvCIrnn0J4B/gA5J4XcRfu4JZuRAw3C51OtOjM3l2bMb8'
+                'Br5eXCsT/w/EAAAAASUVORK5CYII='
+            )
+            res = item.update_thumbnail(encoded_image=base64_img, file_name="thumbnail.png")
+
+        .. code-block:: python
+
+            # Usage Example 2: URL image
+
+            gis = GIS(profile='your_profile')
+            item = gis.content.get(<item id>)
+            img_url = "https://www.esri.com/content/dam/esrisites/en-us/common/icons/product-logos/ArcGIS-Pro.png"
+            res = item.update_thumbnail(url=img_url)
+
+        .. code-block:: python
+
+            # Usage Example 3: Using a local file
+
+            gis = GIS(profile='your_profile')
+            item = gis.content.get(<item id>)
+            fp = "c:/images/ArcGIS-Pro.png"
+            res = item.update_thumbnail(file_path=fp)
+
+        :returns: bool
+        """
+        if file_path is None and encoded_image is None and url is None:
+            return False
+        files = None
+        rest_url = f"{self._gis._portal.resturl}content/users/{self.owner}/items/{self.itemid}/updateThumbnail"
+        params = {
+            "f": "json",
+        }
+        if file_path and os.path.isfile(file_path):
+            files = []
+            files.append(("file", file_path, os.path.basename(file_path)))
+        elif encoded_image:
+            params["data"] = encoded_image
+        elif url:
+            params["url"] = url
+        if encoded_image and file_name is None:
+            params["filename"] = "thumbnail.png"
+        elif file_name:
+            params["filename"] = file_name
+        resp = self._gis._con.post(rest_url, params, files=files)
+        if resp.get("success", False):
+            self._hydrated = False
+            self._hydrate()
+            return True
+        return False
+
     def unshare(self, groups: Union[list[str], list[Group]]):
         """
         The ``unshare`` method stops sharing of the Item with the specified list of groups.
