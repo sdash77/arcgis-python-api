@@ -10,6 +10,7 @@ from requests.cookies import extract_cookies_to_jar
 from ._schain import SupportMultiAuth
 from ..tools._lazy import LazyLoader
 from ..tools import parse_url
+from .._error import ArcGISLoginError
 
 re = LazyLoader("re")
 json = LazyLoader("json")
@@ -355,6 +356,8 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         # After authenticating, ArcGIS Online/Enterprise can prompt for a
         # terms and conditions acceptance.
         #
+        if response.text.find("OAUTH_0015") > -1:
+            raise ArcGISLoginError()
         callback_url = response.headers["location"]
         if callback_url.find("acceptTermsAndConditions") > -1:
             parsed = parse_url(response.headers["location"])
@@ -400,7 +403,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         content = requests.get(
             self._authorization_url, verify=self._verify_cert, proxies=self.proxies
         ).text
-
+        oauth_info = None
         pattern = self._re_expressions["step-1a"]
         if len(pattern.findall(content)) == 0:
             pattern = self._re_expressions["step-1b"]
@@ -415,7 +418,13 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
                 except:
                     oauth_info = json.loads(js_object + "}")
                 break
-        oauth_state = oauth_info["oauth_state"]
+        if oauth_info:
+
+            oauth_state = oauth_info["oauth_state"]
+        else:
+            raise ArcGISLoginError(
+                "Could not login. Please ensure you have valid credentials and set your security login question."
+            )
 
         signin_params = {
             "oauth_state": oauth_state,

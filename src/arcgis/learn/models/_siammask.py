@@ -191,10 +191,15 @@ class SiamMask(ArcGISModel):
     def _available_metrics():
         return ["valid_loss", "mIOU"]
 
+    @staticmethod
+    def _supported_backbones():
+        """Supported torchvision backbones for this model."""
+        return ["resnet50"]
+
     @property
     def supported_backbones(self):
         """Supported torchvision backbones for this model."""
-        return ["resnet50"]
+        return SiamMask._supported_backbones()
 
     @classmethod
     def from_model(cls, emd_path, data=None):

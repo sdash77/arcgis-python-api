@@ -42,8 +42,9 @@ class Pix2PixHD(ArcGISModel):
     n_gen_filters           Optional int. Number of gen filters in first conv layer.
                             Default: 64
     ---------------------   -------------------------------------------
-    gen_network             Optional string. Selects model to use for generator.
-                            Default: "global"
+    gen_network             Optional string (global/local). Selects model to use for generator.
+                            Use global if gpu memory is less.
+                            Default: "local"
     ---------------------   -------------------------------------------
     n_downsample_global     Optional int. Number of downsampling layers in gen_network
                             Default: 4
@@ -191,6 +192,9 @@ class Pix2PixHD(ArcGISModel):
         chip_size = emd["ImageHeight"]
         norm_stats = emd.get("norm_stats")
         kwargs = emd.get("Kwargs", {})
+        if emd.get("ArcGISLearnVersion") < "2.0.1":
+            if "gen_network" not in kwargs:
+                kwargs["gen_network"] = "global"
 
         if data is None:
             data = _EmptyData(
@@ -219,6 +223,7 @@ class Pix2PixHD(ArcGISModel):
             data._is_empty = True
             data.resize_to = chip_size
             data.norm_stats = norm_stats
+            data.imagery_type = emd.get("ImageryType")
 
         return cls(data, **model_params, pretrained_path=str(model_file), **kwargs)
 

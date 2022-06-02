@@ -679,6 +679,8 @@ def show_point_cloud_batch(self, rows=2, figsize=(6, 12), color_mapping=None, **
 
     """
     It will plot 3d point cloud data you exported in the notebook.
+    Visualization of data, exported in a geographic coordinate system
+    is not yet supported.
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -849,6 +851,8 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
 
     """
     It will plot 3d point cloud data you exported in the notebook.
+    Visualization of data, exported in a geographic coordinate system
+    is not yet supported.
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -2473,6 +2477,8 @@ def show_results(self, rows, color_mapping=None, **kwargs):
     """
     It will plot results from your trained model with ground truth on the
     left and predictions on the right.
+    Visualization of data, exported in a geographic coordinate system
+    is not yet supported.
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -3170,6 +3176,8 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
     """
     It will plot results from your trained model with ground truth on the
     left and predictions on the right.
+    Visualization of data, exported in a geographic coordinate system
+    is not yet supported.
 
     =====================   ===========================================
     **Argument**            **Description**

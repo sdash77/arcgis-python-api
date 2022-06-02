@@ -14,23 +14,20 @@ try:
     import torch
     import torch.nn.functional as F
     from torch import nn
+    import torch.distributed as dist
     import math
     from arcgis.learn._utils.coco_detection_utils import (
         box_cxcywh_to_xyxy,
         generalized_box_iou,
     )
-    from .._detreg_detector import get_world_size
     from arcgis.learn._utils.coco_detection_utils import (
         NestedTensor,
         nested_tensor_from_tensor_list,
-        interpolate,
-        is_dist_avail_and_initialized,
         accuracy,
         inverse_sigmoid,
     )
     from .backbone import build_backbone
     from .matcher import build_matcher
-    from .matcher2 import HungarianMatcher, generalized_box_iou
     from .segmentation import (
         DETRsegm,
         PostProcessPanoptic,
@@ -46,6 +43,20 @@ except:
 
 def _get_clones(module, N):
     return nn.ModuleList([copy.deepcopy(module) for i in range(N)])
+
+
+def is_dist_avail_and_initialized():
+    if not dist.is_available():
+        return False
+    if not dist.is_initialized():
+        return False
+    return True
+
+
+def get_world_size():
+    if not is_dist_avail_and_initialized():
+        return 1
+    return dist.get_world_size()
 
 
 class DeformableDETR(nn.Module):
@@ -76,6 +87,7 @@ class DeformableDETR(nn.Module):
             two_stage: two-stage Deformable DETR
         """
         super().__init__()
+        self.backbone = backbone
         self.num_queries = num_queries
         self.transformer = transformer
         self.object_embedding_loss = object_embedding_loss
@@ -122,7 +134,7 @@ class DeformableDETR(nn.Module):
                     )
                 ]
             )
-        self.backbone = backbone
+
         self.aux_loss = aux_loss
         self.with_box_refine = with_box_refine
         self.two_stage = two_stage
@@ -290,7 +302,7 @@ class SetCriterion(nn.Module):
             focal_alpha: alpha in Focal Loss
         """
         super().__init__()
-        self.matcher2 = HungarianMatcher()
+        # self.matcher2 = HungarianMatcher()
         self.num_classes = num_classes
         self.matcher = matcher
         self.weight_dict = weight_dict
@@ -437,7 +449,7 @@ class SetCriterion(nn.Module):
 
         src_masks = src_masks[src_idx]
         # upsample predictions to the target size
-        src_masks = interpolate(
+        src_masks = F.interpolate(
             src_masks[:, None],
             size=target_masks.shape[-2:],
             mode="bilinear",
