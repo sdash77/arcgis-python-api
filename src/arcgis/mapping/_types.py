@@ -7,6 +7,7 @@ from warnings import warn
 from contextlib import contextmanager
 from typing import Any, Optional, Union
 from arcgis.auth.tools import LazyLoader
+from arcgis.gis import Error
 
 collections = LazyLoader("collections")
 json = LazyLoader("json")
@@ -345,6 +346,85 @@ class WebMap(HasTraits, collections.OrderedDict):
         if not isinstance(table, _arcgis_features.Table):
             raise Exception("Type of object passed in must of type 'Table'")
         self.add_layer(table, options)
+
+    def move_to_basemap(self, layer: dict):
+        """
+        Move a layer to be a basemap layer.
+        A basemap layer is a layer that provides geographic context to the map.
+        A web map always contains a basemap. The following is a list of possible basemap layer types:
+        * Image Service Layer
+        * Image Service Vector Layer
+        * Map Service Layer
+        * Tiled Image Service Layer
+        * Tiled Map Service Layer
+        * Vector Tile Layer
+
+        =====================       ===================================================================
+        **Argument**                **Definition**
+        ---------------------       -------------------------------------------------------------------
+        layer                       Required Dictionary. The layer dictionary that will be sent to
+                                    basemap layers. This dictionary is found when calling the `layers`
+                                    property on the WebMap. The layer must already be in the WebMap.
+        =====================       ===================================================================
+
+        :return: The WebMap definition if successful, else an error.
+
+        .. code-block:: python
+
+            wm = WebMap(<webmap_item_id>)
+            layer = wm.layers[0] # A vector tile layer
+            wm.move_to_basemap(layer)
+            wm.update()
+        """
+        layer_types = [
+            "ArcGISTiledMapServiceLayer",
+            "ArcGISImageServiceLayer",
+            "ArcGISImageServiceVectorLayer",
+            "ArcGISMapServiceLayer",
+            "ArcGISTiledImageServiceLayer",
+            "ArcGISVectorTileLayer",
+        ]
+        if layer in self.layers and layer["layerType"] in layer_types:
+            self._webmapdict["baseMap"]["baseMapLayers"].append(layer)
+            self._webmapdict["operationalLayers"].remove(layer)
+            self.definition = _mixins.PropertyMap(self._webmapdict)
+            return self.definition
+        else:
+            raise Error(
+                "Layer must be part of WebMap's Operational Layers in order to add it as a basemap"
+            )
+
+    def move_from_basemap(self, layer):
+        """
+        Move a layer from the basemap layers to the operational layers. The reverse process of
+        `move_to_basemap`.
+
+        =====================       ===================================================================
+        **Argument**                **Definition**
+        ---------------------       -------------------------------------------------------------------
+        layer                       Required Dictionary. The layer dictionary that will be sent to
+                                    operational layers. This dictionary is found when calling the `definition`
+                                    property on the WebMap. The layer must already be a part of the baseMapLayers.
+        =====================       ===================================================================
+
+        :return: The WebMap definition if successful, else an error.
+
+        .. code-block:: python
+
+            wm = WebMap(<webmap_item_id>)
+            layer = wm.definition["baseMap"]["baseMapLayer"][0]
+            wm.move_from_basemap(layer)
+            wm.update()
+        """
+        if layer in self.definition["baseMap"]["baseMapLayers"]:
+            self._webmapdict["baseMap"]["baseMapLayers"].remove(layer)
+            self._webmapdict["operationalLayers"].append(layer)
+            self.definition = _mixins.PropertyMap(self._webmapdict)
+            return self.definition
+        else:
+            raise Error(
+                "Layer must be part of WebMap's BaseMap Layers in order to add it as an Operational Layer"
+            )
 
     def add_layer(
         self,
