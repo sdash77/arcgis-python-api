@@ -1,6 +1,6 @@
 import sys
 
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
+sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import unittest
 
 from arcgis.gis import GIS
@@ -12,13 +12,25 @@ profiles = [
 ]  # profile names go here #'your_online_profile', 'your_enterprise_profile',
 VERIFY_CERT = False  # Boolean T/F
 
+(
+    GIS(
+        url="https://1100pubbi-1100pubbi.apps.openshift48release.esri.com/web",
+        username="ACadmin",
+        password="ACadmin82",
+        verify_cert=VERIFY_CERT,
+        trust_env=True,
+        use_gen_token=True,
+    ).users.me.update(security_question=1, security_answer="TheAnswerIs5")
+)
+
 
 class TestKubernetesAdmin(unittest.TestCase):
     """General Test Cases for Kubernetes"""
 
     def setUp(self):
+
         self._gis = GIS(
-            url="https://1091pubbi-1091pubbi.apps.openshift46release.esri.com/web",
+            url="https://1100pubbi-1100pubbi.apps.openshift48release.esri.com/web",
             username="ACadmin",
             password="ACadmin82",
             verify_cert=VERIFY_CERT,

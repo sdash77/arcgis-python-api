@@ -3,9 +3,11 @@ import sys
 sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7210\src")
 import unittest
 from arcgis.gis import GIS, User, UserManager
+from integration.dino_utils.manage_test_profiles import create_test_profiles
 
-PROFILES = ["your_enterprise_profile", "your_online_profile"]
-
+# check if profiles exist, else create them
+PROFILES = ["your_ent_admin_profile", "your_online_admin_profile"]  # profiles added to tests/test_profile.json
+create_test_profiles()  # creates profiles in tests/test_profiles.json
 
 class TestUserExpirePassword(unittest.TestCase):
     """

@@ -103,6 +103,7 @@ class PortalDataStore(object):
             gis=self._gis,
             notify=_env.verbose,
             extra_marker="",
+            key=res.get("key", None),
         )
 
     # ----------------------------------------------------------------------
@@ -116,6 +117,8 @@ class PortalDataStore(object):
         if job_id:
             url = f"{self._gis._portal.resturl}portals/self/jobs/{job_id}"
             params["f"] = "json"
+            if key:
+                params["key"] = key
             res = self._con.post(url, params)
             while res["status"] not in ["completed", "complete", "succeeded"]:
                 res = self._con.post(url, params)
@@ -379,6 +382,7 @@ class PortalDataStore(object):
             gis=self._gis,
             notify=_env.verbose,
             extra_marker="",
+            key=res.get("key", None),
         )
 
     # ----------------------------------------------------------------------

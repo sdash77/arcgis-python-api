@@ -17,7 +17,7 @@ try:
     from torch import nn
     from torchvision.models._utils import IntermediateLayerGetter
     from typing import Dict, List
-    from arcgis.learn._utils.coco_detection_utils import NestedTensor, is_main_process
+    from arcgis.learn._utils.coco_detection_utils import NestedTensor
 
     from .position_encoding import build_position_encoding
     from .swav_resnet50 import ResNet, resnet50
@@ -85,12 +85,7 @@ class BackboneBase(nn.Module):
     ):
         super().__init__()
         for name, parameter in backbone.named_parameters():
-            if (
-                not train_backbone
-                or "layer2" not in name
-                and "layer3" not in name
-                and "layer4" not in name
-            ):
+            if not train_backbone or "layer3" not in name and "layer4" not in name:
                 parameter.requires_grad_(False)
         if return_interm_layers:
             # return_layers = {"layer1": "0", "layer2": "1", "layer3": "2", "layer4": "3"}
@@ -177,6 +172,21 @@ class Joiner(nn.Sequential):
             pos.append(self[1](x).to(x.tensors.dtype))
 
         return out, pos
+
+
+def build_leran_backbone(backbone_name="resnet50", hidden_dim=128):
+    from .position_encoding import PositionEmbeddingSine
+
+    position_embedding = PositionEmbeddingSine(hidden_dim, normalize=True)
+    backbone = Backbone(
+        backbone_name,
+        True,
+        True,
+        False,
+        load_backbone="swav",
+    )
+    model = Joiner(backbone, position_embedding)
+    return model
 
 
 def build_backbone(args):

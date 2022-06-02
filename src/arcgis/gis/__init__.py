@@ -14,6 +14,7 @@ import io
 import os
 import re
 import time
+import shutil
 import tempfile
 import zipfile
 import configparser
@@ -208,7 +209,9 @@ class GIS(object):
     expiration          Optional Integer.  The default is 60 minutes.  The expiration
                         time for a given token.  This is used for user provided tokens
                         and API Keys.
-
+    ----------------    ---------------------------------------------------------------
+    validate_url        Optional Boolean. The default is False. A user can choose to
+                        validate the URL on an `Item`'s url.
     ================    ===============================================================
 
     .. code-block:: python
@@ -281,6 +284,7 @@ class GIS(object):
     _product_version = None
     _is_agol = None
     _pds = None
+    _validate_item_url = None
     """If 'True', the GIS instance is a GIS('home') from hosted nbs"""
     # admin = None
     # oauth = None
@@ -319,6 +323,7 @@ class GIS(object):
         certificate verification in the Python process. However, this should not be done in production environments and is
         strongly discouraged.
         """
+        self._validate_item_url = kwargs.pop("validate_url", False)
         self._use_gen_token = kwargs.pop("use_gen_token", False)
         self._proxy_host = kwargs.pop("proxy_host", None)
         self._proxy_port = kwargs.pop("proxy_port", 80)
@@ -622,11 +627,20 @@ class GIS(object):
             and self._portal.is_arcgisonline == False
         ):
             try:
-                from .admin.portaladmin import PortalAdminManager
+                if self._portal.is_kubernetes:
+                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
 
-                self.admin = PortalAdminManager(
-                    url="%s/portaladmin" % self._portal.url, gis=self, is_admin=False
-                )
+                    url = self._portal.url + "/admin"
+                    self.admin = KubernetesAdmin(url=url, gis=self)
+                else:
+
+                    from .admin.portaladmin import PortalAdminManager
+
+                    self.admin = PortalAdminManager(
+                        url="%s/portaladmin" % self._portal.url,
+                        gis=self,
+                        is_admin=False,
+                    )
             except:
                 pass
         elif (
@@ -650,13 +664,19 @@ class GIS(object):
                     can_publish = False
             if can_publish:
                 try:
-                    from .admin.portaladmin import PortalAdminManager
+                    if self.properties.isPortal and self._portal.is_kubernetes:
+                        from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
 
-                    self.admin = PortalAdminManager(
-                        url="%s/portaladmin" % self._portal.url,
-                        gis=self,
-                        is_admin=False,
-                    )
+                        url = self._portal.url + "/admin"
+                        self.admin = KubernetesAdmin(url=url, gis=self)
+                    else:
+                        from .admin.portaladmin import PortalAdminManager
+
+                        self.admin = PortalAdminManager(
+                            url="%s/portaladmin" % self._portal.url,
+                            gis=self,
+                            is_admin=False,
+                        )
                 except:
                     pass
         if (
@@ -667,11 +687,19 @@ class GIS(object):
             and self._portal.is_arcgisonline == False
         ):
             try:
-                from .admin.portaladmin import PortalAdminManager
+                if self.properties.isPortal and self._portal.is_kubernetes:
+                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
 
-                self.admin = PortalAdminManager(
-                    url="%s/portaladmin" % self._portal.url, gis=self, is_admin=False
-                )
+                    url = self._portal.url + "/admin"
+                    self.admin = KubernetesAdmin(url=url, gis=self)
+                else:
+                    from .admin.portaladmin import PortalAdminManager
+
+                    self.admin = PortalAdminManager(
+                        url="%s/portaladmin" % self._portal.url,
+                        gis=self,
+                        is_admin=False,
+                    )
             except:
                 pass
         # self._tools = _Tools(self)
@@ -962,11 +990,20 @@ class GIS(object):
             raise Exception("Hub is currently only compatible with ArcGIS Online.")
 
     @_lazy_property
+    def sites(self):
+        """
+        The ``sites`` property is the resource manager for Enterprise Sites. See :class:`~arcgis.apps.sites` for more information.
+        """
+        if not self._portal.is_arcgisonline:
+            return arcgis.apps.hub.SiteManager(self)
+        else:
+            raise Exception("Please access your ArcGIS Online sites through your Hub.")
+
+    @_lazy_property
     def notebook_server(self) -> "list[NotebookServer]":
         """
         The ``notebook_server`` property provides access to the :class:`~arcgis.gis.nb.NotebookServer` registered
         with the organization or enterprise.
-
         :return: `List <https://docs.python.org/3/library/stdtypes.html#lists>`_ [`NotebookServer`]
         """
         if self._portal.is_arcgisonline:
@@ -996,13 +1033,10 @@ class GIS(object):
     def datastore(self):
         """
         The ``datastore`` property is the resource manager for GIS datastores.
-
         .. note::
             This is only available with ArcGIS Enterprise 10.7+.
             See :class:`~arcgis.gis._impl._datastores.PortalDataStore` for more information.
-
         :return: A :class:`~arcgis.gis._impl._datastores.PortalDataStore` object
-
         """
         if self.version >= [7, 1] and not self._portal.is_arcgisonline:
             from arcgis.gis._impl._datastores import PortalDataStore
@@ -1698,6 +1732,8 @@ class GroupMigrationManager(object):
         if job_id:
             url = f"{self._gis._portal.resturl}portals/self/jobs/{job_id}"
             params["f"] = "json"
+            if key:
+                params["key"] = key
             res = self._con.post(url, params)
             while res["status"] not in ["completed", "complete"]:
                 res = self._con.post(url, params)
@@ -1746,6 +1782,10 @@ class GroupMigrationManager(object):
 
             params["async"] = json.dumps(True)
             res = self._gis._con.post(url, params)
+            if not "jobId" in res:
+                raise Exception(
+                    f"Either group has no items, or items failed or were skipped: {res}"
+                )
             executor = concurrent.futures.ThreadPoolExecutor(1)
             futureobj = executor.submit(
                 self._status, **{"job_id": res["jobId"], "key": res["key"]}
@@ -1757,6 +1797,7 @@ class GroupMigrationManager(object):
                 jobid=res["jobId"],
                 gis=self._gis,
                 notify=arcgis_env.verbose,
+                key=res.get("key", None),
             )
             if future:
                 return job
@@ -1805,6 +1846,7 @@ class GroupMigrationManager(object):
         :return:
             A dictionary --or-- :class:`~arcgis.gis._impl._jb.StatusJob` when `future=True`
         """
+
         assert isinstance(epk_item, Item)
         if isinstance(item_ids, list):
             item_ids = ",".join([i.id if isinstance(i, Item) else i for i in item_ids])
@@ -1823,12 +1865,13 @@ class GroupMigrationManager(object):
                 self._status, **{"job_id": res["jobId"], "key": res["key"]}
             )
             executor.shutdown(False)
-            job = StatusJob(
+            job = arcgis.gis._impl._jb.StatusJob(
                 future=futureobj,
                 op="Export Group Content",
                 jobid=res["jobId"],
                 gis=self._gis,
                 notify=arcgis_env.verbose,
+                key=res.get("key", None),
             )
             if future:
                 return job
@@ -2718,7 +2761,7 @@ class UserManager(object):
         res = self._gis._con.get(url, params)
         results = res["userLicenseTypes"]
         while res["nextStart"] > -1:
-            params["start"] += 255
+            params["start"] = res["nextStart"]
             res = self._gis._con.get(url, params)
             results += res["userLicenseTypes"]
         return results
@@ -3903,7 +3946,25 @@ class UserManager(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        query                  Required String.  The search query.
+        query                  Required String.  The search query. When the search filters
+                               contain two or more clauses, the recommended schema is to have
+                               clauses separated by blank, or `AND`, e.g.
+
+                               :Usage Example:
+
+
+                               gis.users.advanced_search(query='owner:USERNAME type:map')
+                               # or
+                               gis.users.advanced_search(query='type:map AND owner:USERNAME')
+
+                               .. warning::
+                               When the clauses are separated by comma, the filtering condition
+                               for `owner` should not be placed at the first position, e.g.
+                               `gis.users.advanced_search(query='type:map, owner:USERNAME')`
+                               is allowed, while
+                               `gis.users.advanced_search(query='owner:USERNAME, type:map')`
+                               is not. For more, please check
+                               https://developers.arcgis.com/rest/users-groups-and-items/search-reference.htm
         ------------------     --------------------------------------------------------------------
         return_count           Optional Boolean.  If True, the number of users found by the query
                                string is returned.
@@ -5928,7 +5989,27 @@ class ContentManager(object):
         ================    ===============================================================
         **Argument**        **Description**
         ----------------    ---------------------------------------------------------------
-        query               Required String.  The search query.
+        query               Required String.  The search query. When the search filters
+                            contain two or more clauses, the recommended schema is to have
+                            clauses separated by blank, or `AND`, e.g.
+
+                            :Usage Example:
+
+
+                            gis.content.advanced_search(query='owner:USERNAME type:map')
+                            # or
+                            gis.content.advanced_search(query='type:map AND owner:USERNAME')
+
+
+                            .. warning::
+                            When the clauses are separated by comma, the filtering condition
+                            for `owner` should not be placed at the first position, e.g.
+                            `gis.content.advanced_search(query='type:map, owner:USERNAME')`
+                            is allowed, while
+                            `gis.content.advanced_search(query='owner:USERNAME, type:map')`
+                            is not. For more, please check
+                            https://developers.arcgis.com/rest/users-groups-and-items/search-reference.htm
+
         ----------------    ---------------------------------------------------------------
         bbox                Optional String/List. This is the xmin,ymin,xmax,ymax bounding
                             box to limit the search in.  Items like documents do not have
@@ -6205,7 +6286,24 @@ class ContentManager(object):
         ================  ==========================================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------------------------
-        query             Required string. A query string.  See notes above.
+        query             Required string. A query string.  See notes above. When the search filters
+                          contain two or more clauses, the recommended schema is to have clauses
+                          separated by blank, or `AND`, e.g.
+
+                          :Usage Example:
+
+
+                          gis.content.search(query='owner:USERNAME type:map')
+                          # or
+                          gis.content.search(query='type:map AND owner:USERNAME')
+
+                          .. warning::
+                          When the clauses are separated by comma, the filtering condition
+                          for `owner` should not be placed at the first position, e.g.
+                          `gis.content.search(query='type:map, owner:USERNAME')`
+                          is recommended, while
+                          `gis.content.search(query='owner:USERNAME, type:map')`
+                          is not.
         ----------------  --------------------------------------------------------------------------
         item_type         Optional string. The type of item to search. See `Items and item types <https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm>`_
                           for comprehensive list of values (the type column).
@@ -6537,7 +6635,7 @@ class ContentManager(object):
         -------------------  --------------------------------------------------------------------------
         future               Optional Boolean.  This allows the operation to run asynchronously allowing
                              the user to not pause the thread and continue to perform multiple operations.
-                             The default is `True`.  When `True` the result of the method will be a
+                             The default is `False`.  When `True` the result of the method will be a
                              concurrent `Future` object.  The `result` of the method can be obtained
                              using the `result()` on the `Future` object.  When `False`, and Item is
                              returned. Future == True is only supported for 'shapefiles' and 'gpx' files.
@@ -6545,7 +6643,7 @@ class ContentManager(object):
 
         :return:
             The method has 3 potential returns:
-                1. A `Future` object when `future==True`,
+                1. A `Future` object when `future==True`, Call ``results()`` to get the response.
                 2. An :class:`~arcgis.gis.Item` object when `future==False`
                 3. A dictionary of error messages when Exceptions are raised
 
@@ -6904,7 +7002,17 @@ class ContentManager(object):
         elif isinstance(df, pd.DataFrame) and "location_type" not in kwargs:
             # CSV WORKFLOW
             path = "content/features/analyze"
-
+            if kwargs.get("geocode_url", None):
+                geocode_url = kwargs.get("geocode_url")
+            else:
+                locators = [
+                    gc["url"]
+                    for gc in self._gis.properties.helperServices.geocode
+                    if gc.get("batch", False)
+                ]
+                if len(locators) == 0:
+                    raise Exception("No batch geocoding service found.")
+                geocode_url = locators[0]
             postdata = {
                 "f": "pjson",
                 "text": df.to_csv(index_label="OBJECTID"),
@@ -6912,12 +7020,9 @@ class ContentManager(object):
                 "analyzeParameters": {
                     "enableGlobalGeocoding": "true",
                     "sourceLocale": "en-us",
-                    # "locationType":"address",
                     "sourceCountry": "",
                     "sourceCountryHint": "",
-                    "geocodeServiceUrl": self._gis.properties.helperServices.geocode[0][
-                        "url"
-                    ],
+                    "geocodeServiceUrl": geocode_url,
                 },
             }
 
@@ -6925,8 +7030,6 @@ class ContentManager(object):
                 postdata["analyzeParameters"]["locationType"] = "address"
 
             res = self._portal.con.post(path, postdata)
-            # import json
-            # json.dumps(res)
             if address_fields is not None:
                 res["publishParameters"].update({"addressFields": address_fields})
 
@@ -6939,9 +7042,7 @@ class ContentManager(object):
             }
             if item_id:
                 postdata["itemIdToCreate"] = item_id
-            res = self._portal.con.post_multipart(
-                path, postdata
-            )  # , use_ordered_dict=True) - OrderedDict >36< _mixins.PropertyMap
+            res = self._portal.con.post_multipart(path, postdata)
 
             fc = FeatureCollection(res["featureCollection"]["layers"][0])
             return fc
@@ -6959,13 +7060,8 @@ class ContentManager(object):
                     "sourceCountryHint": kwargs.pop("country_hint", ""),
                     "geocodeServiceUrl": kwargs.pop(
                         "geocode_url",
-                        self._gis.properties.helperServices.geocode[0]["url"],
+                        geocode_url,
                     ),
-                    # "locationType": kwargs.pop('location_type', None),
-                    # "latitudeFieldName" : kwargs.pop("latitude_field", None),
-                    # "longitudeFieldName" : kwargs.pop("longitude_field", None),
-                    # "coordinateFieldName" : kwargs.pop("coordinate_field_name", None),
-                    # "coordinateFieldType" : kwargs.pop("coordinate_field_type", None)
                 },
             }
             update_dict = {}
@@ -7870,6 +7966,7 @@ class ResourceManager(object):
         folder_name: Optional[str] = None,
         file_name: Optional[str] = None,
         text: Optional[str] = None,
+        properties: Optional[dict[Any, Any]] = None,
     ):
         """The ``update`` operation allows you to update existing file resources of an item.
         File resources use storage space from your quota and are scanned for viruses. The item size
@@ -7897,6 +7994,9 @@ class ResourceManager(object):
         ----------------  ---------------------------------------------------------------
         text              Optional string. Text input to be added as a file resource,
                           used together with file_name.
+        ----------------  ---------------------------------------------------------------
+        properties        Optional Dictionary. Set the properties for the resources such
+                          as the `editInfo`.
         ================  ===============================================================
 
         :return:
@@ -7944,7 +8044,8 @@ class ResourceManager(object):
             params["fileName"] = file_name
         if text is not None:
             params["text"] = text
-
+        if isinstance(properties, dict):
+            params["properties"] = properties
         resp = self._portal.con.post(query_url, params, files=files)
         return resp
 
@@ -8212,7 +8313,25 @@ class Group(dict):
         ================    ===============================================================
         **Argument**        **Description**
         ----------------    ---------------------------------------------------------------
-        query               Required String.  The search query.
+        query               Required String.  The search query. When the search filters
+                            contain two or more clauses, the recommended schema is to have
+                            clauses separated by blank, or `AND`, e.g.
+
+                            :Usage Example:
+
+
+                            group.search(query='owner:USERNAME type:map')
+                            # or
+                            group.search(query='type:map AND owner:USERNAME')
+
+                            .. warning::
+                            When the clauses are separated by comma, the filtering condition
+                            for `owner` should not be placed at the first position, e.g.
+                            `group.search(query='type:map, owner:USERNAME')`
+                            is allowed, while
+                            `group.search(query='owner:USERNAME, type:map')`
+                            is not. For more, please check
+                            https://developers.arcgis.com/rest/users-groups-and-items/search-reference.htm
         ----------------    ---------------------------------------------------------------
         bbox                Optional String/List. This is the xmin,ymin,xmax,ymax bounding
                             box to limit the search in.  Items like documents do not have
@@ -11401,6 +11520,9 @@ class Item(dict):
                 except:
                     pass
                 return self["tables"]
+        elif name == "url" and self._gis._validate_item_url:
+            url = dict.__getitem__(self, "url")
+            return self._validate_url(url)
         return super(Item, self).__getattribute__(name)
 
     def __getattr__(self, name):  # support item attributes
@@ -11431,7 +11553,7 @@ class Item(dict):
 
         :return: bool
         """
-        url = f"{self._portal.resturl}content/users/{self._gis.users.me.username}/items/{self.itemid}/canDelete"
+        url = f"{self._portal.resturl}content/users/{self.owner}/items/{self.itemid}/canDelete"
         params = {"f": "json"}
         try:
             return self._gis._con.get(url, params).get("success", False)
@@ -12048,7 +12170,6 @@ class Item(dict):
 
     @property
     def metadata(self):
-
         """The ``metadata`` property gets and sets the item metadata for the specified item.
         ``metadata`` returns None if the item does not have metadata.
 
@@ -12074,18 +12195,19 @@ class Item(dict):
         """
         See main ``metadata`` property docstring
         """
-        import shutil
-        from six import string_types
-
         xml_file = os.path.join(tempfile.gettempdir(), "metadata.xml")
         if os.path.isfile(xml_file) == True:
             os.remove(xml_file)
-        if os.path.isfile(value) == True and str(value).lower().endswith(".xml"):
+        if (
+            str(value).lower().endswith(".xml")
+            and len(value) <= 32767
+            and os.path.isfile(value) == True
+        ):
             if os.path.basename(value).lower() != "metadata.xml":
                 shutil.copy(value, xml_file)
             else:
                 xml_file = value
-        elif isinstance(value, string_types):
+        elif isinstance(value, str):
             with open(xml_file, mode="w") as writer:
                 writer.write(value)
                 writer.close()
@@ -12740,7 +12862,7 @@ class Item(dict):
                     {
                         "id": "%s" % lyr["id"],
                         "title": lyr["title"],
-                        "opacity": lyr["opacity"],
+                        "opacity": lyr["opacity"] if "opacity" in lyr else None,
                         "minScale": flyr.properties.minScale,
                         "maxScale": flyr.properties.maxScale,
                         "layerDefinition": {
@@ -12751,16 +12873,20 @@ class Item(dict):
                     }
                 )
                 del lyr
+
             wmjs = {
                 "mapOptions": {
                     "showAttribution": False,
-                    "extent": dict(container.properties.initialExtent),
-                    "spatialReference": dict(container.properties.spatialReference),
+                    "extent": dict(container.properties.initialExtent)
+                    if container
+                    else dict(self._gis.properties.defaultExtent),
+                    "spatialReference": dict(container.properties.spatialReference)
+                    if container
+                    else dict(self._gis.properties.defaultExtent.spatialReference),
                 },
                 "operationalLayers": layers,
                 "exportOptions": {"outputSize": [600, 400], "dpi": 96},
             }
-            print()
         else:
             return None
         if (
@@ -12773,6 +12899,21 @@ class Item(dict):
         res = tbx.export_web_map_task(web_map_as_json=wmjs, format="png32")
         if update:
             self.update(item_properties={"thumbnailUrl": res.url})
+        return res
+
+    def delete_thumbnail(self) -> bool:
+        """
+        Deletes the item's thumbnail
+
+        :returns: bool
+        """
+        url = f"{self._gis._portal.resturl}content/users/{self.owner}/items/{self.itemid}/deleteThumbnail"
+        params = {"f": "json"}
+        res = self._gis._con.post(url, params)
+        if res.get("success", False):
+            self._hydrated = False
+            self._hydrate()
+            return True
         return res
 
     def update(
@@ -13889,7 +14030,7 @@ class Item(dict):
             serviceitem_id = self._check_publish_status(ret, folder)
         return Item(self._gis, serviceitem_id)
 
-    def move(self, folder: str, owner: Optional[str] = None):
+    def move(self, folder: str):
         """
         The ``move`` method moves the current item to the name of the folder passed when ``move`` is called.
 
@@ -13900,9 +14041,6 @@ class Item(dict):
                           Use '/' for the root folder. For other folders, pass in the
                           folder name as a string, or a dictionary containing the folder ID,
                           such as the dictionary obtained from the folders property.
-        ----------------  ---------------------------------------------------------------
-        owner             Optional string or Owner object.  The name of the user to
-                          move to.
         ================  ===============================================================
 
         :return:
@@ -15023,6 +15161,61 @@ class Item(dict):
             return self._portal.con.get(url, params)
         except:
             return {}
+
+    # ----------------------------------------------------------------------
+    @functools.lru_cache(maxsize=255)
+    def _validate_url(
+        self, url: str | None = None, return_type: str | None = None
+    ) -> str:
+        """checks if the URL endpoint is reachable via public and/or private url
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        url                 Optional String. URL to check. If `None` it is obtained from the Item['url'] key
+        ---------------     --------------------------------------------------------------------
+        return_type         Option String. The options are "BOTH", "PUBLIC_ONLY", "PRIVATE_ONLY".
+                            When "BOTH" is selected, which is defualt first the public URL is
+                            validated if that fails, then the private URL is given. For
+                            "PUBLIC_ONLY", the public URL is given back. For "PRIVATE_ONLY" only
+                            the private URL is given. If no private URL exists, then the public is
+                            returned.
+
+        ===============     ====================================================================
+
+        :returns: string
+        """
+        if return_type is None:
+            return_type = "BOTH"
+        elif str(return_type).upper() in ["BOTH", "PRIVATE_ONLY", "PUBLIC_ONLY"]:
+            return_type = str(return_type).upper()
+        else:
+            raise ValueError("Invalid `return_type`.")
+        if url is None:
+            url = self["url"]
+        res = self._gis._private_service_url(url)
+        private_url = res.get("privateServiceUrl", None)
+        public_url = res.get("serviceUrl", None)
+        if return_type == "BOTH":
+            if private_url is None and public_url:
+                return public_url
+            elif private_url is None and public_url is None:
+                return url
+            elif public_url == private_url:
+                return public_url
+            elif public_url != private_url:
+                for purl in [public_url, private_url]:
+                    try:
+                        if purl:
+                            self._gis._con.get(purl)
+                            return purl
+                    except:
+                        ...
+        elif return_type == "PUBLIC_ONLY":
+            return public_url
+        elif return_type == "PRIVATE_ONLY":
+            return private_url or public_url
+        return url
 
 
 ########################################################################

@@ -14,7 +14,7 @@ from .mqtt import MQTT
 from .rabbit_mq import RabbitMQ
 from .verizon_connect_reveal import VerizonConnectReveal
 from .web_socket import WebSocket
-from .kafka_authentication_type import NoAuth, SASLPlain
+from .kafka_authentication_type import NoAuth, SASLPlain, SaslScramSha256, SaslScramSha512
 from .geometry import XYZGeometry, SingleFieldGeometry
 from .time import TimeInstant, TimeInterval
 from .run_interval import RunInterval

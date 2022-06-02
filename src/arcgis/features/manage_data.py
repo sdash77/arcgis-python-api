@@ -85,7 +85,8 @@ def generate_tessellation(
     ------------------------------------     --------------------------------------------------------------------
     estimate                                 Optional Boolean. If True, the number of credits to run the operation will be returned.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                                   Optional boolean. If True, a future object will be returned and the process
+                                             will not wait for the task to complete. The default is False, which means wait for results.
     ====================================     ====================================================================
 
     .. note::
@@ -93,7 +94,8 @@ def generate_tessellation(
 
     :return:
         :class:`~arcgis.features.FeatureLayer` if out_put name specified or
-        a :class:`~arcgis.features.FeatureLayerCollection`
+        a :class:`~arcgis.features.FeatureLayerCollection`.
+        If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     """
 
@@ -232,10 +234,12 @@ def dissolve_boundaries(
 
                                              The default value is ``True``.
     ------------------------------------     -------------------------------------------------------------------------------------
-    future                                   Optional boolean. If True, the result will be a :class:`~arcgis.geoprocessing.GPJob` object and results will be returned asynchronously.
+    future                                   Optional boolean. If True, a future object will be returned and the process
+                                             will not wait for the task to complete. The default is False, which means wait for results.
     ====================================     =====================================================================================
 
     :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`Feature Collection <arcgis.features.FeatureCollection>`.
+    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
 
     .. code-block:: python
@@ -346,10 +350,12 @@ def extract_data(
     -----------------------------------    ---------------------------------------------------------
     estimate                               Optional boolean. If True, the number of credits to run the operation will be returned.
     -----------------------------------    ---------------------------------------------------------
-    future                                 Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                                 Optional boolean. If True, a future object will be returned and the process
+                                           will not wait for the task to complete. The default is False, which means wait for results.
     ===================================    =========================================================
 
     :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`Feature Collection <arcgis.features.FeatureCollection>`.
+    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 
@@ -397,7 +403,7 @@ def merge_layers(
         str,
         dict[str, Any],
     ],
-    merging_attributes: Union[list[str]] = [],
+    merging_attributes: list[str] = [],
     output_name: Optional[Union[str, FeatureLayer]] = None,
     context: Optional[dict] = None,
     gis: Optional[GIS] = None,
@@ -473,10 +479,12 @@ def merge_layers(
     ----------------    ---------------------------------------------------------------
     estimate            Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
     ----------------    ---------------------------------------------------------------
-    future              Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future              Optional boolean. If True, a future object will be returned and the process
+                        will not wait for the task to complete. The default is False, which means wait for results.
     ================    ===============================================================
 
     :return: result_layer : :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else Feature Collection.
+    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 
@@ -626,10 +634,12 @@ def overlay_layers(
     ----------------    ---------------------------------------------------------------
     gis                 Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ----------------    ---------------------------------------------------------------
-    future              Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future              Optional boolean. If True, a future object will be returned and the process
+                        will not wait for the task to complete. The default is False, which means wait for results.
     ================    ===============================================================
 
     :return: result_layer : :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else Feature Collection.
+    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
 
     .. code-block:: python
@@ -716,10 +726,12 @@ def create_route_layers(
     -------------------------    ---------------------------------------------------------
     estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
     -------------------------    ---------------------------------------------------------
-    future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                       Optional boolean. If True, a future object will be returned and the process
+                                 will not wait for the task to complete. The default is False, which means wait for results.
     =========================    =========================================================
 
-    :return: result_layer : A list (items) or an :class:`~arcgis.gis.Item`
+    :return: result_layer : A list (items) or an :class:`~arcgis.gis.Item`.
+    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 
