@@ -1,8 +1,6 @@
-import os
-import sys
+from __future__ import annotations
 import json
 import datetime
-from typing import Optional
 from arcgis.gis import GIS, User, Item
 from arcgis._impl.common._isd import InsensitiveDict
 from arcgis._impl.common._utils import local_time_to_online
@@ -23,16 +21,16 @@ class BaseTask(object):
         self._gis = gis
 
     # ----------------------------------------------------------------------
-    def __str__(self):
+    def __str__(self) -> str:
         return f"<{self.__class__.__name__}>"
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
     # ----------------------------------------------------------------------
     @property
-    def properties(self):
+    def properties(self) -> InsensitiveDict:
         if self._properties is None:
             params = {"f": "json"}
             res = self._gis._con.get(self._url, params)
@@ -63,11 +61,11 @@ class Run(BaseTask):
         self._gis = gis
 
     # ----------------------------------------------------------------------
-    def __str__(self):
+    def __str__(self) -> str:
         return f"<{self.__class__.__name__} @ {self.properties.runId}>"
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
     # ----------------------------------------------------------------------
@@ -86,7 +84,7 @@ class Run(BaseTask):
         return res
 
     # ----------------------------------------------------------------------
-    def update(self, status: Optional[str] = None, description: Optional[str] = None):
+    def update(self, status: str | None = None, description: str | None = None) -> bool:
         """
         Updates the Run's Status Message and Result Message.
 
@@ -150,11 +148,11 @@ class Task(BaseTask):
         self._gis = gis
 
     # ----------------------------------------------------------------------
-    def __str__(self):
+    def __str__(self) -> str:
         return f"<Task @ {self.properties.id}>"
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
     # ----------------------------------------------------------------------
@@ -222,16 +220,16 @@ class Task(BaseTask):
     # ----------------------------------------------------------------------
     def update(
         self,
-        item: Optional[Item] = None,
-        cron: Optional[str] = None,
-        task_type: Optional[str] = None,
+        item: Item | None = None,
+        cron: str | None = None,
+        task_type: str | None = None,
         occurences: int = 10,
-        start_date: Optional[datetime.datetime] = None,
-        end_date: Optional[datetime.datetime] = None,
-        title: Optional[str] = None,
-        parameters: Optional[dict] = None,
-        task_url: Optional[str] = None,
-        is_active: Optional[bool] = None,
+        start_date: datetime.datetime | None = None,
+        end_date: datetime.datetime | None = None,
+        title: str | None = None,
+        parameters: dict | None = None,
+        task_url: str | None = None,
+        is_active: bool | None = None,
     ) -> bool:
         """
         Updates the current Task
@@ -343,7 +341,7 @@ class Task(BaseTask):
 
     # ----------------------------------------------------------------------
     @property
-    def runs(self):
+    def runs(self) -> list:
         """
         Returns the Runs for the Task.  The maximum number of runs returned is 30
 
@@ -390,20 +388,20 @@ class TaskManager(object):
         self._gis = gis
 
     # ----------------------------------------------------------------------
-    def __str__(self):
+    def __str__(self) -> str:
         return f"<User {self._user.username} Tasks>"
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__str__()
 
     # ----------------------------------------------------------------------
     def search(
         self,
-        item: Optional[Item] = None,
-        active: Optional[bool] = None,
-        types: Optional[str] = None,
-    ):
+        item: Item | None = None,
+        active: bool | None = None,
+        types: str | None = None,
+    ) -> list[Task]:
         """
         This property allows users to search for tasks based on criteria.
 
@@ -456,10 +454,10 @@ class TaskManager(object):
         cron: str,
         task_type: str,
         occurences: int = 10,
-        start_date: Optional[datetime.datetime] = None,
-        end_date: Optional[datetime.datetime] = None,
-        title: Optional[str] = None,
-        parameters: Optional[dict] = None,
+        start_date: datetime.datetime | None = None,
+        end_date: datetime.datetime | None = None,
+        title: str | None = None,
+        parameters: dict | None = None,
     ) -> Task:
         """
         Creates a new scheduled task for a notebook `Item`.
