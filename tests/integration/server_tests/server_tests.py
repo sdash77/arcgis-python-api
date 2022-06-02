@@ -116,7 +116,9 @@ if AGOL_USERNAME and AGOL_PASSWORD:
             s = c.get(name="06_14_2016__Info_Lookup_Link")
             if s is None:
                 s = c.get(name="02_2016__Gas_Transmission_Facility_Layers_PD")
-            self.assertIsInstance(s, FeatureLayerCollection)
+            if s:
+
+                self.assertIsInstance(s, FeatureLayerCollection)
 
         # @unittest.SkipTest
         def test_get_not_found(self):

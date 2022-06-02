@@ -123,7 +123,7 @@ class HEDEdgeDetector(ModelExtension):
                             model used for feature extraction, which is `vgg19` by
                             default.
                             Supported backbones: ResNet, Vgg family and specified Timm
-                            models from :func:`~arcgis.learn.HEDEdgeDetector.backbones`.
+                            models(experimental support) from :func:`~arcgis.learn.HEDEdgeDetector.backbones`.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.

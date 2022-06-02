@@ -194,6 +194,7 @@ class _DeepCloner:
 
             has_admin_info = (
                 layer._token
+                or layer._con.token
                 and layer.manager
                 and layer.manager.properties
                 and "adminLayerInfo" in layer.manager.properties
@@ -1918,6 +1919,7 @@ class _ItemDefinition(CloneNode):
         self.owner = owner
         self.item_extent = item_extent
         self.created_items = []
+        self.metadata_xml = portal_item.metadata
 
     @property
     def data(self):
@@ -1943,13 +1945,21 @@ class _ItemDefinition(CloneNode):
             owner=self.owner,
             item_id=item_id,
         )
+        if self.metadata_xml:
+            new_item.metadata = self.metadata_xml
         self.created_items.append(new_item)
         self._clone_resources(new_item)
         return new_item
 
     def _clone_resources(self, new_item):
         """Add the resources to the new item"""
+
         if self.portal_item:
+            try:
+                if self.portal_item.metadata:
+                    new_item.update(metadata=self.portal_item.download_metadata())
+            except:
+                ...
             resources = self.portal_item.resources
             resource_list = resources.list()
             if len(resource_list) > 0:

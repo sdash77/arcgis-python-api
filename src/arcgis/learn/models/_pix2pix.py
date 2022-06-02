@@ -134,7 +134,7 @@ class Pix2Pix(ArcGISModel):
         if data is None:
             if emd.get("IsMultispectral", False):
                 data = _EmptyData(
-                    path=emd_path.parent, loss_func=None, c=2, chip_size=resize_to
+                    path=emd_path.parent, loss_func=None, c=2, chip_size=chip_size
                 )
                 data = get_multispectral_data_params_from_emd(data, emd)
                 data._is_multispectral = emd.get("IsMultispectral", False)
@@ -148,7 +148,7 @@ class Pix2Pix(ArcGISModel):
 
             else:
                 data = _EmptyData(
-                    path=emd_path.parent, loss_func=None, c=2, chip_size=resize_to
+                    path=emd_path.parent, loss_func=None, c=2, chip_size=chip_size
                 )
 
             data.n_channel = emd.get("n_intput_channel", None)

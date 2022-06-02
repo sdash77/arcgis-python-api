@@ -13,6 +13,11 @@ try:
     url = "https://dev0019757.esri.com/portal"
     username = "portaladmin"
     password = "esri.agp"
+    (
+        GIS(
+            url, username, password, verify_cert=False, use_gen_token=True
+        ).users.me.update(security_question=1, security_answer="Dark and stormy night")
+    )
     gis = GIS(url, username, password, verify_cert=False)
     ALL_GOOD = True
 except:
@@ -56,12 +61,12 @@ class TestEmailSettings(unittest.TestCase):
                 em.delete()
             assert em.properties is None
             assert em.update(
-                server="mail.smtpbucket.com",
-                from_email="jasmine@puppydawg.com",
+                server="SMTP2.esri.com",
+                from_email="arcgispyapibot@esri.com",
                 require_auth=False,
-                email_label="Woof I'm a Dog",
-                port=8025,
-                encryption="NONE",
+                email_label="Test Email",
+                port=25,
+                encryption="SSL",
             )
             isinstance(em.properties, PropertyMap)
 
@@ -78,14 +83,14 @@ class TestEmailSettings(unittest.TestCase):
                 em.delete()
             assert em.properties is None
             assert em.update(
-                server="mail.smtpbucket.com",
-                from_email="jasmine@puppydawg.com",
+                server="SMTP2.esri.com",
+                from_email="arcgispyapibot@esri.com",
                 require_auth=False,
-                email_label="Woof I'm a Dog",
-                port=8025,
+                email_label="Test Email",
+                port=25,
                 encryption="SSL",
             )
-            assert em.test(email="will.smith@fakeemailaccount.com")
+            assert em.test(email="arcgispyapibot@esri.com")
             assert em.delete()
 
 

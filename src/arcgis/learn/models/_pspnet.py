@@ -55,7 +55,7 @@ class PSPNetClassifier(ArcGISModel):
                             model used for feature extraction, which
                             is `resnet50` by default.
                             Supported backbones: ResNet, DenseNet, VGG families
-                            and specified Timm models from
+                            and specified Timm models(experimental support) from
                             :func:`~arcgis.learn.PSPNetClassifier.backbones`.
     ---------------------   -------------------------------------------
     use_unet                Optional Bool. Specify whether to use Unet-Decoder or not,

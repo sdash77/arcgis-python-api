@@ -591,7 +591,7 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
     v = []
     if isinstance(sdf_or_list, pd.DataFrame) and "trans_info_field" in kwargs:
         trans_info_field = kwargs["trans_info_field"]
-        data = sdf_or_list[trans_info_field].unique().tolist()
+        data = list(sdf_or_list[trans_info_field].unique())
     elif isinstance(sdf_or_list, (tuple, list)):
         data = list(set(sdf_or_list))
 
@@ -1170,7 +1170,10 @@ def generate_renderer(
                 renderer["field%s" % c] = f
                 c += 1
             if len(fields) == 1:
-                uvals = sdf_or_series[fields[0]].unique().tolist()
+                try:
+                    uvals = list(sdf_or_series[fields[0]].unique())
+                except:
+                    uvals = sdf_or_series[fields[0]].unique().tolist()
             else:
                 uvals = (
                     sdf_or_series.groupby(fields)
