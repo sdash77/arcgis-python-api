@@ -1906,7 +1906,6 @@ class WebMap(HasTraits, collections.OrderedDict):
 
             # set new bookmark
             wm.bookmarks = [bookmark1, bookmark2]
-
         """
         if "bookmarks" not in self._webmapdict:
             self._webmapdict["bookmarks"] = []
