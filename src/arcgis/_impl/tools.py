@@ -46,6 +46,25 @@ try:
 except ImportError:
     _FEATURE_INPUTS = (Feature, FeatureSet, FeatureLayer, FeatureCollection)
 
+
+def _is_dask(df):
+    """check if dask DataFrame"""
+    try:
+        import dask.dataframe as dd
+
+        if (
+            isinstance(df, dd.DataFrame)
+            and hasattr(df, "spatial")
+            and getattr(df.spatial, "name")
+        ):
+            return True
+        else:
+            return False
+    except Exception as e:
+        return False
+    return False
+
+
 __all__ = [
     "_GeoanalyticsTools",
     "_FeatureAnalysisTools",
@@ -274,6 +293,10 @@ class BaseAnalytics(object):
             input_param = point_fs
             input_param["featureSet"]["features"][0]["geometry"]["x"] = input_layer[1]
             input_param["featureSet"]["features"][0]["geometry"]["y"] = input_layer[0]
+        elif _is_dask(input_layer):
+            input_param = (
+                input_layer.spatial.to_feature_collection().compute()._lyr_dict
+            )
 
         elif isinstance(
             input_layer, dict
