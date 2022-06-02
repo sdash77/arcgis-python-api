@@ -1,3 +1,4 @@
+from __future__ import annotations
 from arcgis.gis._impl._con import Connection
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import Item
@@ -5,11 +6,13 @@ from arcgis.gis.server._service import Service
 from arcgis._impl.backport import cached_property
 from functools import lru_cache
 from typing import Optional, Union
-from __future__ import annotations
+
 
 ###########################################################################
 class MissionJob(object):
-    """Represents a Single `Job` operation for Mission Server"""
+    """
+    Represents a Single `Job` operation for Mission Server
+    """
 
     _properties = None
     _url = None
@@ -202,7 +205,6 @@ class Mission(object):
 class MissionCatalog:
     """
     The ArcGIS Mission Server catalog.
-
     """
 
     _con = None
