@@ -137,7 +137,7 @@ class TopographicProductionManager(object):
         out_sr: str,
     ):
         """
-        The calculateExtent operation calculates a custom area of interest (AOI)
+        The calculate_extent operation calculates a custom area of interest (AOI)
         for a given product and version. The result can be specified as the value for the customAoi parameter of the generateProduct operation.
 
         ======================      =====================================================
@@ -428,15 +428,31 @@ class TopographicProductionManager(object):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def jobs(self):
+    def jobs_manager(self):
         """
-        Retrieve the current jobs.
+        Retrieve the Topographic Production Job Manager class. With this manager
+        you can retrieve all jobs, a single job, query or cancel a job.
         """
         url = "%s/jobs" % self._url
+        return TopographicProductionJobManager(url, self._gis)
+
+
+# ============================================================================
+class TopographicProductionJobManager(object):
+    def __init__(self, url: str, gis: GIS):
+        self._url = url
+        self._gis = gis
+        self._con = gis._con
+
+    # ----------------------------------------------------------------------
+    def jobs(self):
+        """
+        Retrieve all the jobs for the service.
+        """
         params = {
             "f": "json",
         }
-        return self._con.post(url, params)
+        return self._con.post(self.url, params)
 
     # ----------------------------------------------------------------------
     def job(self, job_id: str, msg_level: str = None):
@@ -464,6 +480,7 @@ class TopographicProductionManager(object):
 
         :return:
             A Json response with syntax:
+
             ```
             {
                 "status": <untranslated string representing general status of the job>,
@@ -485,7 +502,7 @@ class TopographicProductionManager(object):
             }
             ```
         """
-        url = "%s/jobs/job/%s" % (self._url, job_id)
+        url = "%s/job/%s" % (self._url, job_id)
         params = {"f": "json", "msgLevel": msg_level}
         return self._con.post(url, params)
 
@@ -503,7 +520,7 @@ class TopographicProductionManager(object):
 
         :return: Success (true) or Failure (false)
         """
-        url = "%s/jobs/cancel" % self._url
+        url = "%s/cancel" % self._url
         params = {"f": "json", "jobId": job_id}
         return self._con.post(url, params)
 
@@ -564,7 +581,7 @@ class TopographicProductionManager(object):
                                     the response by default.
         ====================    ==========================================
         """
-        url = "%s/jobs/query" % self._url
+        url = "%s/query" % self._url
         params = {
             "f": "json",
             "status": status,
@@ -573,5 +590,3 @@ class TopographicProductionManager(object):
             "msgLevel": msg_level,
         }
         return self._con.post(url, params)
-
-    # ----------------------------------------------------------------------
