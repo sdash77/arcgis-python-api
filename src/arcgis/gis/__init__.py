@@ -5100,7 +5100,7 @@ class ContentManager(object):
 
         Available in ArcGIS Enterprise 10.9.1+
 
-        :returns: DependencyManager or None for ArcGIS Online.
+        :returns: :class:`~arcgis.gis.sharing.DependencyManager` or None for ArcGIS Online.
         """
         if self._depmgr is None and self._gis._portal.is_arcgisonline == False:
             from arcgis.gis.sharing._dependency import DependencyManager
