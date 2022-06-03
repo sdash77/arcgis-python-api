@@ -890,7 +890,7 @@ class Geometry(BaseGeometry):
         """
         Creates a Python API Geometry object from a Shapely geometry object.
 
-        ..note::
+        .. note::
             Must have shapely installed
 
         =================   ====================================================================
