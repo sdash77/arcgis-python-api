@@ -61,7 +61,7 @@ class StreamLayer(Layer):
         Allows Python scripts to subscribe to the feature data streamed from the GIS using ArcGIS
         GeoEvent Server or ArcGIS Velocity. Subscribing to the streamed data can be used to perform continuous processing and
         analysis of real-time data as it is received.
-        
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -76,7 +76,7 @@ class StreamLayer(Layer):
         ---------------     --------------------------------------------------------------------
         on_error            callback function called if the connection recieves an error.
         ===============     ====================================================================
-        
+
         """
         try:
             import sys
