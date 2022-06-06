@@ -235,6 +235,59 @@ class MarketPlaceManager:
         return self._gis._portal.con.post(url, params)
 
     # ----------------------------------------------------------------------
+    def provision_org_entitlements(
+        self,
+        itemid: str,
+        purchaser_org_id: str,
+        purchaser_subscription_id: str | None = None,
+        org_entitlements: dict | None = None,
+    ) -> dict:
+        """
+        For a license-by-user listing, selling organization administrator
+        or members can use this operation to provision entitlements to a
+        purchasing organization. It can only be made if the item has already
+        been purchased, or is being tried by the purchasing org.
+
+        This operation is HTTPS only for Esri apps that require a signature,
+        otherwise it can be either for provider apps.
+
+        It can only be invoked by org admins or members with request
+        purchase information privilege.
+
+        ==========================      ==================================================================================
+        **Argument**                    **Description**
+        --------------------------      ----------------------------------------------------------------------------------
+        itemid                          Required String. The item id.
+        --------------------------      ----------------------------------------------------------------------------------
+        purchaser_org_id                Required String. The org ID of the purchasing organization
+        --------------------------      ----------------------------------------------------------------------------------
+        purchaser_subscription_id       Optional String. The subscription(SMS) ID of the purchasing organization.
+        --------------------------      ----------------------------------------------------------------------------------
+        org_entitlements                Required Dictionary. A JSON object representing the set of entitlements available to the purchasing org.
+
+                                        Example:
+                                        {
+                                            "maxUsers": 10,
+                                            "entitlements": {
+                                                "standard": {"num": 8},  //'standard' is an entitlement string that uniquely identifies entitlement, listingID is used typically for provider apps
+                                                "advanced": {"num": 2},
+                                                "spatialAnalyst": {"num": 2}
+                                        }
+                                        }
+        ==========================      ==================================================================================
+
+        :return: A dictionary of the provision item.
+        """
+        params = {
+            "f": "json",
+            "purchaserOrgId": purchaser_org_id,
+            "purchaserSubscriptionId": purchaser_subscription_id,
+            "orgEntitlements": org_entitlements,
+        }
+        url = f"{self._url}/listings/{itemid}"
+        return self._gis._portal.con.post(url, params)
+
+    # ----------------------------------------------------------------------
     def provision_user_entitlements(self, itemid: str, user_entitlements: dict) -> bool:
         """
         For a license-by-user listing, purchasing organization administrator
@@ -277,6 +330,30 @@ class MarketPlaceManager:
         url = f"{self._url}/listings/{itemid}"
         res = self._gis._portal.con.post(url, params)
         return res["success"]
+
+    # ----------------------------------------------------------------------
+    def purchases(self, status: str = "active") -> dict:
+        """
+        The purchases resource returns a list of purchases, trials, and
+        interests expressed by this organization for items in the marketplace.
+
+        =====================       ==================================================================================
+        **Argument**                **Description**
+        ---------------------       ----------------------------------------------------------------------------------
+        status                      Optional String. Status of the listings to be returned. The default value is active.
+
+                                    Accepted values are:
+
+                                    * active: Only listings that are currently active will be returned
+                                    * expired: Only listings that have already expired will be returned
+                                    * all: Both active and expired listings will be returned
+        =====================       ==================================================================================
+
+        :return: A dictionary depicting the purchases, trials, and interests.
+        """
+        params = {"f": "json", "status": status}
+        url = f"{self._gis._portal.resturl}portals/self/purchases"
+        return self._gis._portal.con.post(url, params)
 
     # ----------------------------------------------------------------------
     def purchase(
@@ -334,14 +411,129 @@ class MarketPlaceManager:
         Only admins or members with request purchase information privilege of
         purchasing orgs can invoke this operation.
 
-        =====================       ==================================================================================
+        =====================       =================================
         **Argument**                **Description**
-        ---------------------       ----------------------------------------------------------------------------------
+        ---------------------       ---------------------------------
         itemid                      Required String. The item id.
-        =====================       ==================================================================================
+        =====================       =================================
 
         :return: A dictionary of the provision item.
         """
         params = {"f": "json"}
         url = f"{self._url}/listings/{itemid}/trial"
         return self._gis._portal.con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def user_entitlements(self, itemid: str) -> dict:
+        """
+        This operation allows purchasing organization administrators or a
+        user with Manage Licenses privilege to retrieve all user entitlements
+        assigned to users in their organization.
+
+        =====================       ==============================
+        **Argument**                **Description**
+        ---------------------       ------------------------------
+        itemid                      Required String. The item id.
+        =====================       ==============================
+
+        :return: A JSON document representing the set of entitlements assigned to the specified set of users.
+        """
+        params = {"f": "json"}
+        url = f"{self._url}/listings/{itemid}/userEntitlements"
+        return self._gis._portal.con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def user_entitlement(self, itemid: str, username: str) -> dict:
+        """
+        This resource allows user, purchasing organization administrator, and
+        members with the manage licenses privilege to retrieve entitlements assigned to the user.
+
+        =====================       ==============================
+        **Argument**                **Description**
+        ---------------------       ------------------------------
+        itemid                      Required String.
+        ---------------------       ------------------------------
+        username                    Required String.
+        =====================       ==============================
+        """
+        params = {"f": "json"}
+        url = f"{self._url}/listings/{itemid}/userEntitlements/{username}"
+        return self._gis._portal.con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def customer_list(
+        self,
+        itemid: str,
+        orgname: str,
+        status: str = "all",
+        type: str = "PURCHASE",
+        modified: str | None = None,
+        sort_fields: str | None = None,
+        sort_order: str = "asc",
+        include_listing: bool = True,
+        num: int = 10,
+        start: int = 1,
+    ) -> dict:
+        """
+        The customers_list resource returns a list of purchases, trials, and
+        interests expressed by customers for items listed by this organization
+        in the marketplace. This operation allows filtering and sorting of provisions.
+
+        =====================       ==================================================================================
+        **Argument**                **Description**
+        ---------------------       ----------------------------------------------------------------------------------
+        itemid                      Required String. The item id of the provision to be returned.
+        ---------------------       ----------------------------------------------------------------------------------
+        orgname                     Required String. Purchaser organization name of the provisions to be returned.
+        ---------------------       ----------------------------------------------------------------------------------
+        status                      Optional String. Status of the listings to be returned. The default value is active.
+
+                                    Accepted values are:
+
+                                    * active: Only listings that are currently active will be returned
+                                    * expired: Only listings that have already expired will be returned
+                                    * all: Both active and expired listings will be returned
+        ---------------------       ----------------------------------------------------------------------------------
+        type                        Optional String. Access type of the provisions to be returned:
+
+                                    * REQUEST: Only provisions that have been requested will be returned.
+                                    * TRIAL: Only trial provisions will be returned.
+                                    * PURCHASE: Only subscription provisions will be returned.
+                                    * REQUESTANDTRIAL: Both provisions that have been requested and trial provisions will be returned.
+                                    * REQUESTANDPURCHASE: Both provisions that have been requested and subscriptions will be returned.
+                                    * TRIALANDPURCHASE: Both trial provisions and subscriptions will be returned.
+
+                                    Values: "REQUEST" | "TRIAL" | "PURCHASE" | "REQUESTANDTRIAL" | "REQUESTANDPURCHASE" | "TRIALANDPURCHASE"
+        ---------------------       ----------------------------------------------------------------------------------
+        modified
+        ---------------------       ----------------------------------------------------------------------------------
+        sort_field
+        ---------------------       ----------------------------------------------------------------------------------
+        sort_order
+        ---------------------       ----------------------------------------------------------------------------------
+        include_listing
+        ---------------------       ----------------------------------------------------------------------------------
+        num
+        ---------------------       ----------------------------------------------------------------------------------
+        start
+        =====================       ==================================================================================
+
+        :return: A dictionary.
+        """
+        params = {
+            "f": "json",
+            "status": status,
+            "type": type,
+            "itemId": itemid,
+            "orgname": orgname,
+            "modified": modified,
+            "sortFields": sort_fields,
+            "sortOrder": sort_order,
+            "includeListing": include_listing,
+            "num": num,
+            "start": start,
+        }
+        url = f"{self._gis._portal.resturl}portals/self/customersList"
+        return self._gis._portal.con.get(url, params)
+
+    # ----------------------------------------------------------------------
