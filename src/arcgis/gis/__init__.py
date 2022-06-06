@@ -9717,15 +9717,15 @@ class User(dict):
         try:
             count = 0
             while count < 5:
-                
+
                 item = Item(self._gis, res["itemId"])
                 if item:
                     break
                 count += 1
-            
+
             if item is None:
                 raise Exception(f"Cannot find Item: {res['itemID']}")
-                
+
             status = item.status()
             counter = 1
             while not status["status"] in ["completed", "failed"]:
