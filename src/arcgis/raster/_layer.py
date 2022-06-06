@@ -15165,8 +15165,8 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
                 ].append(ele[ele_field])
         fn = lyr._engine_obj._fn["rasterFunctionArguments"]["Raster"]
         fnra = lyr._engine_obj._fnra["rasterFunctionArguments"]["Raster"]
-        lyr._engine_obj._fn["rasterFunctionArguments"]["Raster"] = fn
-        lyr._engine_obj._fnra["rasterFunctionArguments"]["Raster"] = fnra
+        lyr._engine_obj._fn["rasterFunctionArguments"]["Raster"] = json.dumps(fn)
+        lyr._engine_obj._fnra["rasterFunctionArguments"]["Raster"] = json.dumps(fnra)
         return lyr
 
     def max(self, ignore_nodata=True):
