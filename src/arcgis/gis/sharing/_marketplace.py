@@ -424,6 +424,13 @@ class MarketPlaceManager:
         return self._gis._portal.con.post(url, params)
 
     # ----------------------------------------------------------------------
+    def comments(self, itemid: str):
+        """ """
+        params = {"f": "json"}
+        url = f"{self._url}/listings/{itemid}/comments"
+        return self._gis._portal.con.post(url, params)
+
+    # ----------------------------------------------------------------------
     def user_entitlements(self, itemid: str) -> dict:
         """
         This operation allows purchasing organization administrators or a
@@ -440,7 +447,10 @@ class MarketPlaceManager:
         """
         params = {"f": "json"}
         url = f"{self._url}/listings/{itemid}/userEntitlements"
-        return self._gis._portal.con.post(url, params)
+        try:
+            return self._gis._portal.con.post(url, params)
+        except:
+            return None
 
     # ----------------------------------------------------------------------
     def user_entitlement(self, itemid: str, username: str) -> dict:
@@ -463,8 +473,8 @@ class MarketPlaceManager:
     # ----------------------------------------------------------------------
     def customer_list(
         self,
-        itemid: str,
-        orgname: str,
+        itemid: str | None = None,
+        orgname: str | None = None,
         status: str = "all",
         type: str = "PURCHASE",
         modified: str | None = None,
@@ -482,9 +492,9 @@ class MarketPlaceManager:
         =====================       ==================================================================================
         **Argument**                **Description**
         ---------------------       ----------------------------------------------------------------------------------
-        itemid                      Required String. The item id of the provision to be returned.
+        itemid                      Optional String. The item id of the provision to be returned.
         ---------------------       ----------------------------------------------------------------------------------
-        orgname                     Required String. Purchaser organization name of the provisions to be returned.
+        orgname                     Optional String. Purchaser organization name of the provisions to be returned.
         ---------------------       ----------------------------------------------------------------------------------
         status                      Optional String. Status of the listings to be returned. The default value is active.
 
@@ -505,17 +515,28 @@ class MarketPlaceManager:
 
                                     Values: "REQUEST" | "TRIAL" | "PURCHASE" | "REQUESTANDTRIAL" | "REQUESTANDPURCHASE" | "TRIALANDPURCHASE"
         ---------------------       ----------------------------------------------------------------------------------
-        modified
+        modified                    Optional String. The last modified date of the provisions to be returned. The date
+                                    specified should be in milliseconds from epoch.
         ---------------------       ----------------------------------------------------------------------------------
-        sort_field
+        sort_field                  Optional String. The fields to sort provisions by. The allowed sort field names are
+                                    orgname, created, endDate, and modified.
         ---------------------       ----------------------------------------------------------------------------------
-        sort_order
+        sort_order                  Optional String. Describe whether the order returns in ascending (asc) or
+                                    descending (desc) order. The default is asc.
         ---------------------       ----------------------------------------------------------------------------------
-        include_listing
+        include_listing             Optional Boolean. If True, listing objects are included in the provision response.
+                                    The default is True.
         ---------------------       ----------------------------------------------------------------------------------
-        num
+        num                         Optional Integer. The maximum number of provisions to be included in the result
+                                    set response. The default value is 10, and the maximum allowed value is 100.
+                                    The start parameter, along with the num parameter, can be used to paginate the
+                                    query results. Note that the actual number of returned results may be less than num.
+                                    This happens when the number of results remaining after start is less than num.
         ---------------------       ----------------------------------------------------------------------------------
-        start
+        start                       Optional Integer. The number of the first entry in the result set response. The
+                                    index number is 1-based. The default value of start is 1. (i.e. the first search result).
+                                    The start parameter, along with the num parameter, can be used to paginate the
+                                    query results.
         =====================       ==================================================================================
 
         :return: A dictionary.
@@ -533,7 +554,7 @@ class MarketPlaceManager:
             "num": num,
             "start": start,
         }
-        url = f"{self._gis._portal.resturl}portals/self/customersList"
+        url = f"{self._gis._portal.resturl}portals/self/customers"
         return self._gis._portal.con.get(url, params)
 
     # ----------------------------------------------------------------------
