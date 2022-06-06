@@ -624,7 +624,7 @@ def load_model(emd_path, data=None):
 
     with open(_emd_path) as f:
         emd = json.load(f)
-    model_name = emd["ModelName"]
+    model_name = "".join(char for char in emd["ModelName"] if char.isalnum())
     model_cls = getattr(models, model_name, None)
 
     if model_cls is None:

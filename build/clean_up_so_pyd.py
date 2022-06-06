@@ -4,7 +4,7 @@ import shutil
 import platform
 
 
-def clean_up_unneeded_files(path: str):
+def clean_up_unneeded_files(path):
     """
     Removes unneeded .so/.pyd files for each build
 

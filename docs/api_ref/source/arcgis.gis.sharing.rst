@@ -16,3 +16,10 @@ Invitation
     :members:
     :undoc-members:
     :show-inheritance:
+
+DependencyManager
+---------------------------
+.. autoclass:: arcgis.gis.sharing.DependencyManager
+    :members:
+    :undoc-members:
+    :show-inheritance:

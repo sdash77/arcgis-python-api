@@ -279,8 +279,8 @@ def connect_origins_to_destinations(
                                             areas of the street network and making road travel there impossible.
                                             See :ref:`Feature Input<FeatureInput>`.
     -----------------------------------     ---------------------------------------------------------------
-    future                                  Optional boolean. If True, the result will be a GPJob object
-                                            and results will be returned asynchronously.
+    future                                  Optional boolean. If True, a future object will be returned and the process
+                                            will not wait for the task to complete. The default is False, which means wait for results.
     -----------------------------------     ---------------------------------------------------------------
     route_shape                             Optional String. Specify the shape of the route that connects
                                             each origin to it's destination when using a travel mode.
@@ -549,7 +549,8 @@ def create_buffers(
     -------------------------    ---------------------------------------------------------
     estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
     -------------------------    ---------------------------------------------------------
-    future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                       Optional boolean. If True, a future object will be returned and the process
+                                 will not wait for the task to complete. The default is False, which means wait for results.
     =========================    =========================================================
 
     :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
@@ -812,7 +813,8 @@ def create_drive_time_areas(
 
                                  One use of this type of barrier is to model floods covering areas of the street network and making road travel there impossible. See :ref:`Feature Input<FeatureInput>`.
     -------------------------    ---------------------------------------------------------
-    future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                       Optional boolean. If True, a future object will be returned and the process
+                                 will not wait for the task to complete. The default is False, which means wait for results.
     -------------------------    ---------------------------------------------------------
     travel_direction             Optiona String. Specify whether the direction of travel used to generate the travel areas is toward or away from the input locations.
 
@@ -1108,7 +1110,8 @@ def find_nearest(
     -------------------------    ---------------------------------------------------------
     estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
     -------------------------    ---------------------------------------------------------
-    future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                       Optional boolean. If True, a future object will be returned and the process
+                                 will not wait for the task to complete. The default is False, which means wait for results.
     =========================    =========================================================
 
     :return: A dictionary with the following keys:
@@ -1496,7 +1499,8 @@ def plan_routes(
 
                                     One use of this type of barrier is to model floods covering areas of the street network and making road travel there impossible. See :ref:`Feature Input<FeatureInput>`.
     ----------------------------    --------------------------------------------------------------------------------------------------
-    future                          Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                          Optional boolean. If True, a future object will be returned and the process
+                                    will not wait for the task to complete. The default is False, which means wait for results.
     ============================    ==================================================================================================
 
     :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else dict with the following keys:

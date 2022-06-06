@@ -202,10 +202,14 @@ class Server(BaseServer):
                                to the System folder.
         ------------------     --------------------------------------------------------------------
         service_config         Optional Dict[str, Any]. A set of configuration overwrites that overrides the service definitions defaults.
+        ------------------     --------------------------------------------------------------------
+        future                 Optional boolean. If True, the operation is returned immediately and a Job object is returned.
         ==================     ====================================================================
 
         :return:
-           A boolean indicating success (True) or failure (False).
+           If future=False, A boolean indicating success (True) or failure (False).
+           else when future=True, a Future object is returned.
+
         """
         import json
 
@@ -231,10 +235,18 @@ class Server(BaseServer):
                 if "folderName" in config:
                     config["folderName"] = folder
                 res = service.publish_service_definition(
-                    in_sdp_id=uid, in_config_overwrite=json.dumps(config)
+                    in_sdp_id=uid,
+                    in_config_overwrite=json.dumps(config),
+                    future=True,
+                    gis=self._con,
                 )
             else:
-                res = service.publish_service_definition(in_sdp_id=uid)
+                res = service.publish_service_definition(
+                    in_sdp_id=uid, future=True, gis=self._con
+                )
+            if future:
+                return res
+            res = res.result()
             return True
         return False
 
@@ -515,7 +527,18 @@ class Server(BaseServer):
     # ----------------------------------------------------------------------
     @property
     def _public_key(self) -> dict:
-        """Gets the public key."""
+        """
+        Returns the public key of the server that can be used by a client
+        application (or script) to encrypt data sent to the server using the
+        RSA algorithm for public-key encryption. In addition to encrypting
+        the sensitive parameters, the client is also required to send to
+        the server an additional flag encrypted with value set to true. As
+        the public key for the server can be changed at a later time, the
+        client must fetch it on each request before encrypting the data
+        sent to the server.
+
+        :returns: dict
+        """
         url = self._url + "/publicKey"
         params = {
             "f": "json",
@@ -1087,6 +1110,17 @@ class SiteManager(object):
 
     # ----------------------------------------------------------------------
     @property
-    def public_key(self) -> str:
-        """Gets the public key."""
+    def public_key(self) -> dict:
+        """
+        Returns the public key of the server that can be used by a client
+        application (or script) to encrypt data sent to the server using the
+        RSA algorithm for public-key encryption. In addition to encrypting
+        the sensitive parameters, the client is also required to send to
+        the server an additional flag encrypted with value set to true. As
+        the public key for the server can be changed at a later time, the
+        client must fetch it on each request before encrypting the data
+        sent to the server.
+
+        :returns: dict
+        """
         return self._sm._public_key

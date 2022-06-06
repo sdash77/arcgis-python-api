@@ -20,7 +20,7 @@ from arcgis._impl.common._utils import _to_utf8
 from urllib import request
 from urllib.parse import urlparse
 
-__version__ = "2.0.1"
+__version__ = "2.1.0"
 
 _log = logging.getLogger(__name__)
 
@@ -147,6 +147,7 @@ class KbertnetesPy(object):
                     timeout=self._timeout,
                     proxy=kwargs.get("proxy", None),
                     custom_adapter=custom_adapter,
+                    use_gen_token=kwargs.get("use_gen_token", False),
                 )
             else:
                 if token == api_key:
@@ -173,6 +174,7 @@ class KbertnetesPy(object):
                     timeout=self._timeout,
                     proxy=kwargs.get("proxy", None),
                     custom_adapter=custom_adapter,
+                    use_gen_token=kwargs.get("use_gen_token", False),
                 )
         # self.get_version(True)
         self.get_properties(True)

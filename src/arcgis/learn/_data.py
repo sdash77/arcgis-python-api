@@ -643,6 +643,9 @@ def merge_emd_and_stats(data_folders):
     # Create master EMD and esri_accumulated_stats
     emd = emd_store[emd_keys[0]]
     eas = stats_store[emd_keys[0]]
+    if not "NumTilesAsDouble" in eas:
+        eas["NumTilesAsDouble"] = eas["NumTiles"]
+        del eas["NumTiles"]
     _class_hash = {x["Value"]: x for x in emd["Classes"]}
     for k in emd_keys[1:]:
         _emd = emd_store[k]
@@ -671,7 +674,10 @@ def merge_emd_and_stats(data_folders):
                 eas["BandStatsState"][i]["Num"] + _eas["BandStatsState"][i]["Num"]
             )  # Number of pixels
         eas["NumClasses"] = max(eas["NumClasses"], _eas["NumClasses"])
-        eas["NumTiles"] += _eas["NumTiles"]
+        if "NumTiles" in _eas:
+            eas["NumTilesAsDouble"] += _eas["NumTiles"]
+        else:
+            eas["NumTilesAsDouble"] += _eas["NumTilesAsDouble"]
         stats_key1 = None
         stats_key1_1 = None
         stats_key2 = None
@@ -1037,7 +1043,7 @@ def prepare_tabulardata(
                             explanatory variables to the model. If a spatial dataframe is passed
                             as input_features, ensure that the spatial reference is 4326,
                             and the geometry type is Point. Not applicable when explanatory_rasters
-                            are provided.
+                            are provided. Not applicable for MLModel.
     ---------------------   -------------------------------------------
     distance_features       Optional list of Feature Layer objects.
                             Distance is calculated from features in these layers
@@ -1203,7 +1209,8 @@ def prepare_data(
     chip_size               Optional integer, default 224. Size of the image to train the model.
                             Images are cropped to the specified chip_size.
                             If image size is less than chip_size, the image size is
-                            used as chip_size. Not supported for SuperResolution,
+                            used as chip_size. A chip size that is a multiple of 32 pixels
+                            is recommended. Not supported for SuperResolution,
                             SiamMask, WNet_cGAN, Pix2Pix and CycleGAN.
     ---------------------   -------------------------------------------
     val_split_pct           Optional float. Percentage of training data to keep
@@ -1981,6 +1988,10 @@ def prepare_data(
 
         from ._data_utils._panoptic_data import PanopticSegmentationItemList
 
+        inst_class_mapping = {
+            i["Value"]: i["Name"] for i in emd["Panoptic_Segmentation_Instance_Classes"]
+        }
+
         data = (
             PanopticSegmentationItemList.from_folder(path / "images")
             .filter_by_func(remove_image_without_label)
@@ -1992,6 +2003,7 @@ def prepare_data(
                 class_mapping=class_mapping,
                 color_mapping=color_mapping,
                 n_masks=kwargs.get("n_masks", 30),
+                inst_class_mapping=inst_class_mapping,
             )
         )
 
@@ -2918,9 +2930,9 @@ def prepare_data(
         data.valid_ds.x._div = 255.0
         data.is_normalized = True
 
-        if dataset_type == "Panoptic_Segmentation":
-            data.c = len(data.classes)
-            data.show_batch = types.MethodType(show_batch_panoptic, data)
+    if dataset_type == "Panoptic_Segmentation":
+        data.c = len(data.classes)
+        data.show_batch = types.MethodType(show_batch_panoptic, data)
 
     if dataset_type in ["PASCAL_VOC_rectangles", "KITTI_rectangles"]:
         data.show_batch = types.MethodType(show_batch_object_detection, data)

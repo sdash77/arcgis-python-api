@@ -2,6 +2,11 @@
 # Name:        ContentManager class tests
 # Purpose:     Sanity tests for ArcGIS Python API
 # -------------------------------------------------------------------------------
+
+# Code to import test package for relative imports when running locally
+#import sys
+#sys.path.insert(0, r"local_path_to_repo\geosaurus\tests")
+
 import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils
@@ -378,31 +383,30 @@ class Test_ContentManager_ago_builtin(unittest.TestCase):
         try:
             # read input data
             import pandas as pd
-
-            df = pd.read_html(
-                "https://en.wikipedia.org/wiki/Number_of_guns_per_capita_by_country"
-            )[0]
-
-            # pre-process
-            df.columns = df.iloc[0]
-            df = df.reindex(df.index.drop(0))
-            df = df.reindex(df.index.drop(1))
-            df = df.drop(df.columns[0], axis=1)
-            df.iloc[0, 1] = 120.5
-
-            converted_column = pd.to_numeric(
-                df["Estimate of civilian firearms per 100 persons"], errors="coerce"
-            )
-            df["Estimate of civilian firearms per 100 persons"] = converted_column
-
-            # df.rename(columns={'Country__or_dependent_territory__subnational_area__etc__': 'Country'},
-            #           inplace=True)
+            from pathlib import Path
+            
+            # Returns SSL certificate expired error as of 4.25.22
+            #df = pd.read_html(
+                 #"https://en.wikipedia.org/wiki/Estimated_number_of_civilian_guns_per_capita_by_country"
+            #)[0]
+            
+            # pd.read_html() failed when reading directly from string as path, succeeds using Path
+            qa_path = Path(self.qalab_cls_path)
+            qa_file = qa_path / "estimated_guns_by_country.html"
+            
+            df = pd.read_html(qa_file)[0]
+  
+            # data engineering to clean/restructure dataframe
+            df.columns = df.columns.str.replace(" ", "_")
+            df.rename(columns={"Unnamed:_0":"id_number"}, inplace=True) 
+            df.drop(labels=0, axis=0, inplace=True)
+            df.reset_index(drop=True, inplace=True)
 
             # geocode and publish
             publish_output = self.gis.content.import_data(
                 df,
                 {
-                    "CountryCode": "Country__or_dependent_territory__subnational_area__etc__"
+                    "CountryCode": "Country_or_subnational_area"
                 },
             )
 
@@ -484,3 +488,6 @@ class Test_ContentManager_ago_builtin(unittest.TestCase):
 # TestModule
 def tearDownModule():
     print("**End GIS module Tests**")
+
+if __name__ == "__main__":
+    unittest.main()

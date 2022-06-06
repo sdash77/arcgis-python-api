@@ -263,8 +263,8 @@ class TestItemByItemId(unittest.TestCase):
                 item_id=myuid,
             )
         item1.delete()
-        if item2:
-            item2.delete()
+        # if item2:
+        #     item2.delete()
 
     # ----------------------------------------------------------------------
     def test_import_data_sedf(self):

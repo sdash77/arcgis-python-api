@@ -2,7 +2,7 @@ from ._codetemplate import image_translation_prf
 import json
 import traceback
 from .._data import _raise_fastai_import_error
-from ._arcgis_model import ArcGISModel
+from ._arcgis_model import ArcGISModel, _EmptyData
 
 try:
     from ._wnet_cgan_utils import WNetcGANLoss, WNetcGANTrainer, optim, compute_metrics
@@ -109,19 +109,8 @@ class WNet_cGAN(ArcGISModel):
         resize_to = emd.get("resize_to")
         chip_size = emd["ImageHeight"]
         if data is None:
-            data = (
-                ImageTupleListMS2.from_folders(
-                    emd_path.parent.parent.parent,
-                    emd_path.parent.parent.parent / "train_A_C" / "images",
-                    emd_path.parent.parent.parent / "train_A_C" / "images2",
-                    emd_path.parent.parent.parent / "train_B" / "images",
-                    batch_stats_a=None,
-                    batch_stats_b=None,
-                    batch_stats_c=None,
-                )
-                .split_none()
-                .label_empty()
-                .databunch(bs=2, no_check=True)
+            data = _EmptyData(
+                path=emd_path.parent, loss_func=None, c=2, chip_size=chip_size
             )
             data = get_multispectral_data_params_from_emd(data, emd)
             data._is_multispectral = emd.get("IsMultispectral", False)
@@ -140,15 +129,16 @@ class WNet_cGAN(ArcGISModel):
                     normalization_stats_b[_stat] = torch.tensor(
                         normalization_stats_b[_stat]
                     )
-                setattr(data, ("_" + _stat), normalization_stats_b[_stat])
+                setattr(data, ("_" + _stat + "_b"), normalization_stats_b[_stat])
             normalization_stats_c = dict(emd.get("NormalizationStats_c"))
             for _stat in normalization_stats_c:
                 if normalization_stats_c[_stat] is not None:
                     normalization_stats_c[_stat] = torch.tensor(
                         normalization_stats_c[_stat]
                     )
-                setattr(data, ("_" + _stat), normalization_stats_c[_stat])
+                setattr(data, ("_" + _stat + "_c"), normalization_stats_c[_stat])
             data.n_channel = emd["n_channel"]
+            data.nband_c = emd["n_band_c"]
             data._is_empty = True
             data.emd_path = emd_path
             data.emd = emd
@@ -251,10 +241,25 @@ class WNet_cGAN(ArcGISModel):
             max_values=self._data._band_max_values_b,
             mode="minmax",
         )
-        raw_img_tuple = ImageTuple(raw_img1_scaled, raw_img2_scaled, raw_img2_scaled)
-        pred_tuple = self.learn.predict(raw_img_tuple)
-        pred_img = pred_tuple[1][0] / 2 + 0.5
-        pred_img = ArcGISMSImage(pred_img)
+        raw_img1_scaled_tensor = raw_img1_scaled[None].to(self._device)
+        raw_img2_scaled_tensor = raw_img2_scaled[None].to(self._device)
+        self.learn.model.eval()
+        with torch.no_grad():
+            prediction = (
+                self.learn.model(
+                    raw_img1_scaled_tensor,
+                    raw_img2_scaled_tensor,
+                    raw_img2_scaled_tensor,
+                )[0]
+                .detach()[0]
+                .cpu()
+            )
+        pred_img = prediction / 2 + 0.5
+        if self._data.nband_c == 1:
+            pred_np = np.array(pred_img[0, :, :])
+            pred_img = ArcGISMSImage(torch.tensor([pred_np] * pred_img.shape[0]))
+        else:
+            pred_img = ArcGISMSImage(pred_img)
         pred_img = pred_img.show()
         self.learn.model.arcgis_results = False
         return pred_img

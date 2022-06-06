@@ -1,7 +1,7 @@
 import os
 import sys
 
-# sys.path.append(r"C:\SVN\achapkowski_geosaurus_fork\src")
+sys.path.append(r"C:\SVN\geosaurus_master\src")
 
 import tempfile
 import shutil, datetime
@@ -428,11 +428,12 @@ def test_buffer():
 # --------------------------------------------------------------------------
 def test_contains():
     """tests the contain logic"""
-    v = GeoArray([g.label_point for g in [geoms[3]]])
-    df = pd.DataFrame({"SHAPE": v})
-    df.spatial.set_geometry("SHAPE")
-    g = df.SHAPE.geom.buffer(2000)
-    assert all(df.SHAPE.geom.contains(g[0])) == False
+    if HASARCPY:
+        v = GeoArray([g.label_point for g in [geoms[3]]])
+        df = pd.DataFrame({"SHAPE": v})
+        df.spatial.set_geometry("SHAPE")
+        g = df.SHAPE.geom.buffer(2000)
+        assert all(df.SHAPE.geom.contains(g[0])) == False
 
 
 # --------------------------------------------------------------------------

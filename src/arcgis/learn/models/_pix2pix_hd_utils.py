@@ -729,7 +729,7 @@ class Pix2PixHDModel(nn.Module):
         self.n_layers_D = kwargs.get("n_layers_dscr", 3)
         self.num_D = kwargs.get("n_dscr", 2)
         self.feat_loss = kwargs.get("feat_loss", True)
-        netG = kwargs.get("gen_network", "global")
+        netG = kwargs.get("gen_network", "local")
         norm = kwargs.get("norm", "instance")
         self.label_nc = label_nc
 

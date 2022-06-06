@@ -879,13 +879,13 @@ class SyncManager(object):
                                `replica_id` in addition to the `retention_period` and the
                                `min_server_gen`.
         ------------------     --------------------------------------------------------------------
-        future                 Optional Boolean.  Support options for asynchronous processing. The
-                               default format is false.
+        future                 Optional boolean. If True, a future object will be returned and the process
+                               will not wait for the task to complete. The default is False, which means wait for results.
         ==================     ====================================================================
 
 
         :return:
-            Boolean when future is False and Future object when future is True
+            Boolean or If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         """
         return self._fs._cleanup_change_tracking(
@@ -2035,8 +2035,8 @@ class FeatureLayerCollectionManager(_GISResource):
         ===============     ====================================================================
 
         :return:
-           JSON message as dictionary when `future=False`
-           when `future=True`, ```concurrent.futures.Future``` is returned.
+           JSON message as dictionary when `future=False` else If ``future = True``,
+           then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         """
 
@@ -2077,7 +2077,7 @@ class FeatureLayerCollectionManager(_GISResource):
                             For layer level modifications, run updates on each individual feature
                             service layer object.
         ---------------     --------------------------------------------------------------------
-        future              Optional, If True, a future object will be returns and the process
+        future              Optional boolean. If True, a future object will be returns and the process
                             will not wait for the task to complete.
                             The default is False, which means wait for results.
         ===============     ====================================================================
@@ -2181,14 +2181,14 @@ class FeatureLayerCollectionManager(_GISResource):
                             For layer level modifications, run updates on each individual feature
                             service layer object.
         ---------------     --------------------------------------------------------------------
-        future              Optional, If True, a future object will be returns and the process
+        future              Optional boolean. If True, a future object will be returns and the process
                             will not wait for the task to complete.
                             The default is False, which means wait for results.
         ===============     ====================================================================
 
         :return:
-           JSON message as dictionary when `future=False`
-           when `future=True`, ```concurrent.futures.Future``` is returned.
+           JSON message as dictionary when `future=False` else If ``future = True``,
+           then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         """
         params = {
@@ -2245,7 +2245,9 @@ class FeatureLayerCollectionManager(_GISResource):
         if "serviceItemId" in self.properties.keys():
             feature_layer_item = self._gis.content.get(self.properties["serviceItemId"])
         else:
-            return {"error": "Can only overwrite a hosted feature layer collection"}
+            return {
+                "Error": "Can only overwrite a Hosted Feature Layer Collection (Feature Service)"
+            }
         # endregion
 
         # region find data item related to this hosted feature layer
@@ -2254,15 +2256,18 @@ class FeatureLayerCollectionManager(_GISResource):
             related_data_item = related_data_items[0]
         else:
             return {
-                "error": "Cannot find related data item used to publish this feature layer"
+                "Error": "Cannot find related data item used to publish this Feature Layer"
             }
 
-        # Find if hosted table, meaning no layers present but table is present
+        # find if we are overwritting only a hosted table
         hosted_table = False
         if not feature_layer_item.layers and feature_layer_item.tables:
             hosted_table = True
         # endregion
+
         params = None
+        # overwritting for online and enterprise is different
+        # if online or hosted table then use minimal parameters
         if (
             related_data_item.type
             in ["CSV", "Shapefile", "File Geodatabase", "Microsoft Excel"]
@@ -2291,13 +2296,13 @@ class FeatureLayerCollectionManager(_GISResource):
             for layer in self.layers:
                 layer_def = dict(layer.properties)
                 if "fields" in layer_def.keys():
-                    dump = layer_def.pop("fields")
+                    layer_def.pop("fields")
                 layers_dict.append(layer_def)
 
             for table in self.tables:
                 table_def = dict(table.properties)
                 if "fields" in table_def.keys():
-                    dump = table_def.pop("fields")
+                    table_def.pop("fields")
                 tables_dict.append(table_def)
 
             # Splice the detailed table and layer def with FeatuerServer def
@@ -2312,21 +2317,22 @@ class FeatureLayerCollectionManager(_GISResource):
             publish_parameters = feature_service_def
             publish_parameters.update(old_publish_parameters)
 
-        # region construct publishParameters dictionary
+        # enterprise overwriting params creation
         elif related_data_item.type in [
             "CSV",
             "Shapefile",
             "File Geodatabase",
             "Microsoft Excel",
         ]:
-            params = {
-                "name": related_data_item.name,
-                "title": related_data_item.title,
-                "tags": related_data_item.tags,
-                "type": related_data_item.type,
-                "overwrite": True,
-                "overwriteService": "on",
-            }
+
+            path = (
+                "content/items/"
+                + feature_layer_item.itemid
+                + "/info/publishParameters.json"
+            )
+            postdata = {"f": "json"}
+
+            old_publish_parameters = self._gis._con.post(path, postdata)
             base_url = feature_layer_item.privateUrl
             lyr_url_info = "%s/layers" % base_url
             fs_url = "%s" % base_url
@@ -2339,29 +2345,7 @@ class FeatureLayerCollectionManager(_GISResource):
             feature_service_def["layers"] = []
             feature_service_def.update(layer_info)
             publish_parameters = feature_service_def
-            publish_parameters["name"] = feature_layer_item.title
-            publish_parameters["_ssl"] = False
-            for idx, lyr in enumerate(publish_parameters["layers"]):
-                lyr["parentLayerId"] = -1
-                for k in {
-                    "sourceSpatialReference",
-                    "isCoGoEnabled",
-                    "parentLayer",
-                    "isDataArchived",
-                    "cimVersion",
-                }:
-                    lyr.pop(k, None)
-            for idx, lyr in enumerate(publish_parameters["tables"]):
-                lyr["parentLayerId"] = -1
-                for k in {
-                    "sourceSpatialReference",
-                    "isCoGoEnabled",
-                    "parentLayer",
-                    "isDataArchived",
-                    "cimVersion",
-                }:
-                    lyr.pop(k, None)
-
+            publish_parameters.update(old_publish_parameters)
         else:
             # overwriting a SD case - no need for detailed publish parameters
             publish_parameters = None
@@ -2587,10 +2571,14 @@ class FeatureLayerManager(_GISResource):
                             can be derived from the `properties` property.
                             For layer level modifications, run updates on each individual feature
                             service layer object.
+        ---------------     --------------------------------------------------------------------
+        future              Optional boolean. If True, a future object will be returned and the process
+                            will not wait for the task to complete. The default is False, which means wait for results.
         ===============     ====================================================================
 
         :return:
-           JSON message as dictionary indicating 'success' or 'error'
+           JSON message as dictionary indicating 'success' or 'error'. If ``future = True``,
+           then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
         """
 
         if isinstance(json_dict, PropertyMap):
@@ -2637,7 +2625,8 @@ class FeatureLayerManager(_GISResource):
         ===============     ====================================================================
 
         :return:
-           JSON Message as dictionary indicating 'success' or 'error'
+           JSON Message as dictionary indicating 'success' or 'error'. If ``future = True``,
+           then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
         """
 
         if isinstance(json_dict, PropertyMap):
@@ -2687,8 +2676,9 @@ class FeatureLayerManager(_GISResource):
                             The default is False, which means wait for results.
         ===============     ====================================================================
 
-        Output:
-           JSON Message as dictionary indicating 'success' or 'error'
+        :return:
+           JSON Message as dictionary indicating 'success' or 'error'. If ``future = True``,
+           then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         """
 

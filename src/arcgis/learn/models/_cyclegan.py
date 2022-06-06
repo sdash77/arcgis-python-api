@@ -68,6 +68,8 @@ class CycleGAN(ArcGISModel):
     ):
         super().__init__(data)
         self._check_dataset_support(data)
+        self._gen_blocks = gen_blocks
+        self._lsgan = lsgan
         cycle_gan = CycleGAN_model(
             self._data.n_channel,
             self._data.n_channel,
@@ -192,6 +194,11 @@ class CycleGAN(ArcGISModel):
         _emd_template["n_channel"] = len(
             _emd_template["NormalizationStats_b"]["band_min_values"]
         )
+        model_params = {
+            "gen_blocks": self._gen_blocks,
+            "lsgan": self._lsgan,
+        }
+        _emd_template["ModelParameters"] = model_params
         return _emd_template
 
     def show_results(self, rows=5, **kwargs):

@@ -161,7 +161,7 @@ class ParcelFabricManager(object):
 
     def build(
         self,
-        extent: Optional[dict[str, Any]] = None,
+        extent: Optional[Union[dict, Envelope]] = None,
         moment: Optional[str] = None,
         return_errors: bool = False,
         record: Optional[str] = None,
@@ -1122,6 +1122,50 @@ class ParcelFabricManager(object):
         if "success" in res:
             return res["success"]
         return res
+
+    # ----------------------------------------------------------------------
+    def reconstruct_from_seeds(
+        self,
+        extent: Union[dict, Envelope],
+    ):
+        """
+        The :meth:`~reconstructFromSeeds` operation constructs parcels from seeds enclosed by
+        parcel lines in the specified extent. The tool reconstructs parcels regardless of the parcel
+        lines associations with records.
+
+        ====================     ====================================================================
+        **Argument**             **Description**
+        --------------------     --------------------------------------------------------------------
+        extent                   Parameter representing the envelope of the extent to reconstruct seeds.
+                                 Seeds that lie within the specified extent will be reconstructed into
+                                 parcels.
+
+
+                                 :Syntax:
+
+                                 .. code-block:: python
+
+                                     >>> extent={
+                                                 "xmin":X min,
+                                                 "ymin": y min,
+                                                 "xmax": x max,
+                                                 "ymax": y max,
+                                                 "spatialReference": {"wkid": <wkid_value>}
+                                                }
+
+        ====================     ====================================================================
+
+        :return: Dictionary indicating 'success' or 'error'
+
+        """
+        url = "{base}/reconstructFromSeeds".format(base=self._url)
+        params = {
+            "gdbVersion": self._version.properties.versionName,
+            "sessionId": self._version._guid,
+            "extent": extent,
+            "f": "json",
+        }
+        return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
 

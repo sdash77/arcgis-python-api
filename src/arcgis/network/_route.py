@@ -1565,8 +1565,6 @@ def find_routes(
 
                                             The default value is 'Drive Time'.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    gis                                     Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
-    --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     time_zone_usage_for _time_windows       Optional string. Specifies the time zone for the input date-time fields supported by the tool. This
                                             parameter specifies the time zone for the following fields: ``TimeWindowStart1``, ``TimeWindowEnd1``, ``TimeWindowStart2``,
                                             ``TimeWindowEnd2``, ``InboundArriveTime``, and ``OutboundDepartTime`` on orders. ``TimeWindowStart1``, ``TimeWindowEnd1``,
@@ -1636,8 +1634,8 @@ def find_routes(
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     gis                                     Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    future                                  Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
-
+    future                                  Optional boolean. If True, a future object will be returned and the process
+                                            will not wait for the task to complete. The default is False, which means wait for results.
     ======================================  ==========================================================================================================================================
 
       : returns: the following as a named tuple:

@@ -1,4 +1,6 @@
-import os, csv
+from __future__ import annotations
+import os
+import csv
 from typing import Optional, Union
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
