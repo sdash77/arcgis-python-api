@@ -163,6 +163,18 @@ class ArcGISProAuth(AuthBase, SupportMultiAuth):
             _r.headers["referer"] = self._referer or "http"
             _r.history.append(r)
             return _r
+        elif str(r.text).lower().find("invalid token") > -1:
+            # Recreate the request without the token
+            #
+            parsed = parse_url(r.url)
+            self._invalid_token_urls.add(parsed.netloc)
+            r.content
+            r.raw.release_conn()
+            r.request.headers.pop("X-Esri-Authorization", None)
+            _r = r.connection.send(r.request, **kwargs)
+            _r.headers["referer"] = self._referer or "http"
+            _r.history.append(r)
+            return _r
         return r
 
     # ----------------------------------------------------------------------
