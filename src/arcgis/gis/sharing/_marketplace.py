@@ -13,7 +13,7 @@ class MarketPlaceManager:
         self._url = f"{gis._portal.resturl}content"
 
     # ----------------------------------------------------------------------
-    def list(self, itemid: str):
+    def list(self, itemid: str) -> dict:
         """
         The `list_item` operation lists the item in the marketplace.
 
@@ -37,7 +37,7 @@ class MarketPlaceManager:
         return self._gis._portal.con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def unlist(self, itemid: str):
+    def unlist(self, itemid: str) -> dict:
         """
         The `unlist` operation unlists a previously listed item from the marketplace.
 
@@ -61,7 +61,7 @@ class MarketPlaceManager:
         num: int = 10,
         sort_field: str | None = None,
         sort_order: str = "asc",
-    ):
+    ) -> dict:
         """
         This operation searches for marketplace listings. The searches are performed
         against a high performance index that indexes the most popular fields of a listing.
@@ -138,3 +138,210 @@ class MarketPlaceManager:
             "sortOrder": sort_order,
         }
         return self._gis._portal.con.get(url, params)
+
+    # ----------------------------------------------------------------------
+    def listing(self, itemid: str) -> dict:
+        """
+        A listing in the marketplace. The listing and its corresponding item share the same ID.
+
+        =====================       ========================================
+        **Argument**                **Description**
+        ---------------------       ----------------------------------------
+        itemid                      Required String. The item id.
+        =====================       ========================================
+
+        :return:
+            A dictionary of the listed item with properties.
+        """
+        params = {"f": "json"}
+        url = f"{self._url}/listings/{itemid}"
+        return self._gis._portal.con.get(url, params)
+
+    # ----------------------------------------------------------------------
+    def listing(self, itemid: str) -> dict:
+        """
+        A listing in the marketplace. The listing and its corresponding item share the same ID.
+
+        =====================       ========================================
+        **Argument**                **Description**
+        ---------------------       ----------------------------------------
+        itemid                      Required String. The item id.
+        =====================       ========================================
+
+        :return:
+            A dictionary of the listed item with properties.
+        """
+        params = {"f": "json"}
+        url = f"{self._url}/listings/{itemid}"
+        return self._gis._portal.con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def delete_provision(self, itemid: str) -> dict:
+        """
+        This operation deletes all provisions to this item for
+        the specified purchaser.
+
+        This operation cannot be invoked if the item has not been provisioned
+        to the specified purchaser.
+
+        .. note::
+            Only vendor org admins can invoke this operation.
+
+        =====================       ========================================
+        **Argument**                **Description**
+        ---------------------       ----------------------------------------
+        itemid                      Required String. The item id.
+        =====================       ========================================
+
+        :return:
+            A dictionary with syntax:
+            {
+                "success": <true | false>,
+                "itemId": "<itemId>",
+                "purchaserOrgId": "<purchaserOrgId>"
+            }
+        """
+        params = {"f": "json"}
+        url = f"{self._url}/listings/{itemid}/deleteProvision"
+        return self._gis._portal.con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def express_interest(self, itemid: str) -> dict:
+        """
+        A purchaser can express interest in a marketplace listing by
+        invoking this operation.
+
+        This operation cannot be invoked if the item has already been
+        purchased or if the purchaser has previously expressed interest.
+
+        Only administrators and members with request purchase information
+        privilege of purchasing orgs can invoke this operation.
+
+        Note that interests cannot be expressed for free listings, because
+        they can be directly purchased by purchasing org admins or members
+        with request purchase information privilege.
+
+        =====================       ========================================
+        **Argument**                **Description**
+        ---------------------       ----------------------------------------
+        itemid                      Required String. The item id.
+        =====================       ========================================
+
+        :return:
+            A dictionary of the listed item with properties.
+        """
+        params = {"f": "json"}
+        url = f"{self._url}/listings/{itemid}/interest"
+        return self._gis._portal.con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def provision_user_entitlements(self, itemid: str, user_entitlements: dict) -> bool:
+        """
+        For a license-by-user listing, purchasing organization administrator
+        can use this operation to provision entitlements to org
+        members. It can only be made if the item has already been purchased,
+        or is being tried by the purchasing org. A maximum of 25 users can
+        be provisioned in one request.
+
+        =====================       ==================================================================================
+        **Argument**                **Description**
+        ---------------------       ----------------------------------------------------------------------------------
+        itemid                      Required String. The item id.
+        ---------------------       ----------------------------------------------------------------------------------
+        user_entitlements           Required Dictionary. A JSON object representing the set of entitlements
+                                    assigned to the specified set of users.
+
+                                    Example:
+                                        {
+                                        "users": ["username1", "username2"],
+                                        "entitlements": ["standard", "networkAnalyst"] //"standard" is an entitlement string that uniquely identifies entitlement, listing itemId is used typically for provider apps
+                                        }
+
+                                    Only members of the purchasing org can be specified in the request.
+
+                                    Specified entitlements are assigned to all specified users. If different sets of
+                                    entitlements are to be assigned to different users, multiple requests
+                                    with this operation are required.
+
+                                    When there is no entitlements specified, it will revoke access to
+                                    the item completely for the specified users.
+
+                                    The total number of currently provisioned users plus users specified in requests
+                                    should be no larger than the maximum number of users allowed for the purchasing org.
+        =====================       ==================================================================================
+
+        :return:
+            A boolean indicating success (True) or failure (False).
+        """
+        params = {"f": "json", "userEntitlements": user_entitlements}
+        url = f"{self._url}/listings/{itemid}"
+        res = self._gis._portal.con.post(url, params)
+        return res["success"]
+
+    # ----------------------------------------------------------------------
+    def purchase(
+        self,
+        itemid: str,
+        purchase_org_id: str | None = None,
+        provisioned_itemid: str | None = None,
+        end_date: str | None = None,
+    ) -> dict:
+        """
+        =====================       ==================================================================================
+        **Argument**                **Description**
+        ---------------------       ----------------------------------------------------------------------------------
+        itemid                      Required String. The item id.
+        ---------------------       ----------------------------------------------------------------------------------
+        purchase_org_id             Required String. The org ID of the purchaser organization. This parameter is required
+                                    only when the call is made by the vendor. It is ignored otherwise.
+        ---------------------       ----------------------------------------------------------------------------------
+        provisioned_itemid          Required String. The ID of the item to be provisioned if different from the one listed.
+
+                                    Note that the listed item and the provisioned item must be related by the
+                                    "Listed2Provisioned" relationship otherwise it will result in an error.
+
+                                    This parameter is allowed only when the call is made by the vendor. It is ignored otherwise.
+        ---------------------       ----------------------------------------------------------------------------------
+        end_date                    Required String. The end/expiry date of this purchase if any. If this parameter is
+                                    not specified, it implies an unexpiring purchase. The end date specified
+                                    should be in milliseconds from epoch.
+        =====================       ==================================================================================
+
+        :return: A dictionary of the provision item.
+        """
+
+        params = {
+            "f": "json",
+            "purchaseOrgId": purchase_org_id,
+            "provisionedItemId": provisioned_itemid,
+            "endDate": end_date,
+        }
+        url = f"{self._url}/listings/{itemid}/purchase"
+        return self._gis._portal.con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def trial(self, itemid) -> dict:
+        """
+        A purchaser can start a trial for a marketplace listing by invoking this operation.
+
+        This operation is only supported for listings that support trials
+        (whose trialSupported property is true). Once started, the trial will be valid
+        for the duration of the trial specified on the listing (the trialDuration property).
+
+        This operation cannot be invoked if the item has already been purchased or
+        if the purchaser has started a trial previously.
+
+        Only admins or members with request purchase information privilege of
+        purchasing orgs can invoke this operation.
+
+        =====================       ==================================================================================
+        **Argument**                **Description**
+        ---------------------       ----------------------------------------------------------------------------------
+        itemid                      Required String. The item id.
+        =====================       ==================================================================================
+
+        :return: A dictionary of the provision item.
+        """
+        params = {"f": "json"}
+        url = f"{self._url}/listings/{itemid}/trial"
+        return self._gis._portal.con.post(url, params)
