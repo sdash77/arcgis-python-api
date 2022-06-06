@@ -4924,7 +4924,9 @@ class ContentManager(object):
         The class is not created by the user.
     """
 
+    # dependecy and marketplace managers
     _depmgr = None
+    _mrktplcmgr = None
 
     def __init__(self, gis):
         self._gis = gis
@@ -5027,6 +5029,21 @@ class ContentManager(object):
             self._depmgr = DependencyManager(gis=self._gis)
         return self._depmgr
 
+    # ----------------------------------------------------------------------
+    @property
+    def marketplace_manager(self) -> "MarketPlaceManager":
+        """
+        Provides users the ability to manage the content's presence on the marketplace.
+
+        :returns: MarketPlaceManager or None if not available
+        """
+        if self._mrktplcmgr is None and self._gis._portal.is_arcgisonline == False:
+            from arcgis.gis.sharing._marketplace import MarketPlaceManager
+
+            self._mrktplcmgr = MarketPlaceManager(gis=self._gis)
+        return self._mrktplcmgr
+
+    # ----------------------------------------------------------------------
     def _add_by_part(
         self, file_path, itemid, item_properties, size=1e7, owner=None, folder=None
     ):
@@ -11533,11 +11550,13 @@ class Item(dict):
             self.contentStatus = value
             self._hydrate()
 
+    # ----------------------------------------------------------------------
     @property
     def homepage(self):
         """The ``homepage`` property gets the URL to the HTML page for the item."""
         return "{}{}{}".format(self._gis.url, "/home/item.html?id=", self.itemid)
 
+    # ----------------------------------------------------------------------
     def copy_feature_layer_collection(
         self,
         service_name: str,
@@ -11725,6 +11744,7 @@ class Item(dict):
                 pass
         return None
 
+    # ----------------------------------------------------------------------
     def download(
         self, save_path: Optional[str] = None, file_name: Optional[str] = None
     ):
@@ -11823,6 +11843,7 @@ class Item(dict):
         else:
             return download_path
 
+    # ----------------------------------------------------------------------
     def export(
         self,
         title: str,
@@ -11985,48 +12006,6 @@ class Item(dict):
         if job_id is not None:
             params["jobId"] = job_id
         return self._portal.con.get(data_path, params)
-
-    # ----------------------------------------------------------------------
-    @property
-    def list(self):
-        """
-        The `list_item` operation lists the item in the marketplace.
-
-        This operation is only available to organizations that have permissions
-        to list items in the marketplace. The permissions are returned with the
-        Portal Self response.
-
-        The listing properties must be specified for the item before
-        calling this operation. This operation will fail if listing
-        properties have not already been specified.
-
-        Listing an item will set its listed property to true.
-
-        This operation is available to the user and to the administrator
-        of the organization to which the user belongs.
-
-        :return: True if success else False
-        """
-        params = {"f": "json"}
-        url = "content/users/%s/items/%s/list" % (self._user_id, self.itemid)
-        return self._portal.con.get(url, params)
-
-    # ----------------------------------------------------------------------
-    @property
-    def unlist(self):
-        """
-        The `unlist` operation unlists a previously listed item from the marketplace.
-
-        Unlisting an item will reset its listed property to false.
-
-        This operation is available to the user and the administrator of
-        the organization to which the user belongs.
-
-        :return: Success being True or False and the item id.
-        """
-        params = {"f": "json"}
-        url = "content/users/%s/items/%s/unlist" % (self._user_id, self.itemid)
-        return self._portal.con.get(url, params)
 
     # ----------------------------------------------------------------------
     def get_thumbnail(self):
@@ -12347,7 +12326,7 @@ class Item(dict):
             self._hydrate()
             return True
         return False
-        
+
     # ----------------------------------------------------------------------
     @property
     def metadata(self):
