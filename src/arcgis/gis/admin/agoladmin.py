@@ -59,7 +59,12 @@ class AGOLAdminManager(object):
     # ----------------------------------------------------------------------
     @property
     def ux(self):
-        """returns a UX/UI manager"""
+        """returns a UX/UI manager
+
+        :return:
+            :class:`~arcgis.gis.admin.UX` object
+
+        """
         if self._ux is None:
             from ._ux import UX
 
@@ -109,6 +114,10 @@ class AGOLAdminManager(object):
         """
         The collaborations resource lists all collaborations in which a
         portal participates
+
+        :return:
+            :class:`~arcgis.gis.admin.CollaborationManager` object
+
         """
         if self._collaborations is None:
             from ._collaboration import CollaborationManager
@@ -120,8 +129,12 @@ class AGOLAdminManager(object):
     @property
     def category_schema(self):
         """
-        This resource allows for the setting and manipulating of catagory
+        This resource allows for the setting and manipulating of category
         schemas.
+
+        :return:
+            :class:`~arcgis.gis.admin.CategoryManager` object
+
         """
         if self._category_schema is None:
             from ._catagoryschema import CategoryManager
@@ -134,6 +147,10 @@ class AGOLAdminManager(object):
     def idp(self):
         """
         This resource allows for the setting and configuration of the identity provider
+
+        :return:
+            :class:`~arcgis.gis.admin.IdentityProviderManager` object
+
         """
         if self._idp is None:
             from ._idp import IdentityProviderManager
@@ -145,7 +162,11 @@ class AGOLAdminManager(object):
     @property
     def location_tracking(self):
         """
-        The manager for Location Tracking. See :class:`~arcgis.apps.tracker.LocationTrackingManager'.
+        The manager for Location Tracking. See :class:`~arcgis.apps.tracker.LocationTrackingManager`
+
+        :return:
+            :class:`~arcgis.apps.tracker.LocationTrackingManager` object
+
         """
         return LocationTrackingManager(self._gis)
 
@@ -155,6 +176,10 @@ class AGOLAdminManager(object):
         """
         This resource allows for the setting and configuration of the social providers
         for a GIS.
+
+        :return:
+            :class:`~arcgis.gis.admin.SocialProviders` object
+
         """
         if self._sp is None:
             from ._socialproviders import SocialProviders
@@ -166,7 +191,11 @@ class AGOLAdminManager(object):
     @property
     def credits(self):
         """
-        manages the credits on a ArcGIS Online
+        Manages the credits on a ArcGIS Online
+
+        :return:
+            :class:`~arcgis.gis.admin.CreditManager` object
+
         """
         if self._credits is None:
             from ._creditmanagement import CreditManager
@@ -179,6 +208,10 @@ class AGOLAdminManager(object):
     def metadata(self):
         """
         resources to work with metadata on GIS
+
+        :return:
+            :class:`~arcgis.gis.admin.MetadataManager` object
+
         """
         if self._metadata is None:
             from ._metadata import MetadataManager
@@ -202,6 +235,10 @@ class AGOLAdminManager(object):
     def usage_reports(self):
         """
         provides access to the usage reports of the ArcGIS Online organization
+
+        :return:
+            :class:`~arcgis.gis.admin.AGOLUsageReports` object
+
         """
         if self._ur is None:
             from ._usage import AGOLUsageReports
@@ -446,6 +483,10 @@ class AGOLAdminManager(object):
     def certificates(self):
         """
         Provides access to managing the organization's certificates.
+
+        :return:
+            :class:`~arcgis.gis._impl.CertificateManager` object
+
         """
         if self._certificates is None:
             from .._impl import CertificateManager
@@ -458,6 +499,10 @@ class AGOLAdminManager(object):
     def servers(self):
         """
         Provides access to managing the services hosted on ArcGIS Online
+
+        :return:
+            :class:`~arcgis.gis.agoserver.AGOLServersManager`
+
         """
         if self._servers is None:
             from arcgis.gis.agoserver import AGOLServersManager

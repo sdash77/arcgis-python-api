@@ -245,3 +245,20 @@ Webhook
 .. autoclass:: arcgis.gis.admin.Webhook
    :members:
    :undoc-members:
+
+SocialProviders
+---------------
+.. autoclass:: arcgis.gis.admin.SocialProviders
+   :members:
+   :undoc-members:
+
+MetadataManager
+---------------
+.. autoclass:: arcgis.gis.admin.MetadataManager
+   :members:
+   :undoc-members:
+
+
+
+
+
