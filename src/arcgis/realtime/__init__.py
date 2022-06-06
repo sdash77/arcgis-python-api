@@ -3,10 +3,10 @@ The arcgis.realtime module provides API functions to work with and automate real
 
 This module contains the following:
 
-    + arcgis.realtime.StreamLayer provides types and functions for receiving real-time data feeds and sensor data streamed from
+    + :class:`~arcgis.realtime.StreamLayer` provides types and functions for receiving real-time data feeds and sensor data streamed from
       the GIS to perform continuous processing and analysis. It includes support for stream layers that allow Python scripts
       to subscribe to the streamed feature data or broadcast updates or alerts.
-    + arcgis.realtime.Velocity and its submodules provide API functions to automate the ArcGIS Velocity REST API.
+    + The :class:`~arcgis.realtime.Velocity`  class and the various submodules provide API functions to automate the ArcGIS Velocity REST API.
 
 """
 
