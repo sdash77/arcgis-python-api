@@ -6,8 +6,9 @@ from uuid import uuid4
 from warnings import warn
 from contextlib import contextmanager
 from typing import Any, Optional, Union
-from arcgis.auth.tools import LazyLoader
+from arcgis.features.layer import FeatureLayer
 from arcgis.gis import Error
+from arcgis.auth.tools import LazyLoader
 
 collections = LazyLoader("collections")
 json = LazyLoader("json")
@@ -480,6 +481,63 @@ class WebMap(HasTraits, collections.OrderedDict):
                                   'visibility':False})
             >> True
         """
+        new_layer = self._create_layer_definition(layer, options)
+        if "layerType" in new_layer:
+            layer_type = new_layer["layerType"]
+        else:
+            layer_type = None
+
+        # region sort layers into 'operationalLayers' or 'tables'
+        if isinstance(layer, _arcgis_features.Table):
+            if "tables" not in self._webmapdict.keys():
+                # There are no tables yet, create one here
+                self._webmapdict["tables"] = [new_layer]
+                self.definition = _mixins.PropertyMap(self._webmapdict)
+            else:
+                # There are tables, just append to it
+                self._webmapdict["tables"].append(new_layer)
+                self.definition = _mixins.PropertyMap(self._webmapdict)
+        else:
+            if "operationalLayers" not in self._webmapdict.keys():
+                # there no layers yet, create one here
+                self._webmapdict["operationalLayers"] = [new_layer]
+                self.definition = _mixins.PropertyMap(self._webmapdict)
+            else:
+                # there are operational layers, just append to it
+                self._webmapdict["operationalLayers"].append(new_layer)
+                self.definition = _mixins.PropertyMap(self._webmapdict)
+        # endregion
+
+        # update layers property
+        if not self._layers:
+            if "operationalLayers" in self._webmapdict:
+                self._layers = []
+                for l in self._webmapdict["operationalLayers"]:
+                    self._layers.append(_mixins.PropertyMap(l))
+                # reverse the layer list - webmap viewer reverses the list always
+                self._layers.reverse()
+        else:
+            # note - no need to add if self._layers was empty as the hydration step above will account for the new layer
+            # need this check to avoid duplicating adding a new table to both layers and tables
+            if "layerType" in new_layer:
+                self._layers.append(_mixins.PropertyMap(new_layer))
+
+        # update tables property
+        if not self._tables:
+            self._tables = []
+            if "tables" in self._webmapdict:
+                for t in self._webmapdict["tables"]:
+                    self._tables.append(_mixins.PropertyMap(t))
+            # reverse the layer list - webmap viewer reverses the list always
+            self._tables.reverse()
+        else:
+            if layer_type == "Table":
+                # note - no need to add if self._layers was empty as the hydration step above will account for the new layer
+                self._tables.append(_mixins.PropertyMap(new_layer))
+
+        return True
+
+    def _create_layer_definition(self, layer, options):
         from arcgis.mapping.ogc._base import BaseOGC
 
         if options is None:
@@ -894,56 +952,60 @@ class WebMap(HasTraits, collections.OrderedDict):
                 new_layer["featureCollection"]["layers"][0]["popupInfo"] = popup
 
         # endregion
+        return new_layer
 
-        # region sort layers into 'operationalLayers' or 'tables'
-        if isinstance(layer, _arcgis_features.Table):
-            if "tables" not in self._webmapdict.keys():
-                # There are no tables yet, create one here
-                self._webmapdict["tables"] = [new_layer]
-                self.definition = _mixins.PropertyMap(self._webmapdict)
-            else:
-                # There are tables, just append to it
-                self._webmapdict["tables"].append(new_layer)
-                self.definition = _mixins.PropertyMap(self._webmapdict)
-        else:
-            if "operationalLayers" not in self._webmapdict.keys():
-                # there no layers yet, create one here
-                self._webmapdict["operationalLayers"] = [new_layer]
-                self.definition = _mixins.PropertyMap(self._webmapdict)
-            else:
-                # there are operational layers, just append to it
-                self._webmapdict["operationalLayers"].append(new_layer)
-                self.definition = _mixins.PropertyMap(self._webmapdict)
-        # endregion
+    def update_layer(self, layer: Union[dict, FeatureLayer]):
+        """
+        To update the layer dictionary for a layer in the map. For example, to update the renderer dictionary for a layer
+        and have it by dynamically changed on the webmap. Can be used to configure the pop_ups dictionary, renderer,
+        or any other part of the Feature Layer properties.
 
-        # update layers property
-        if not self._layers:
-            if "operationalLayers" in self._webmapdict:
-                self._layers = []
-                for l in self._webmapdict["operationalLayers"]:
-                    self._layers.append(_mixins.PropertyMap(l))
-                # reverse the layer list - webmap viewer reverses the list always
-                self._layers.reverse()
-        else:
-            # note - no need to add if self._layers was empty as the hydration step above will account for the new layer
-            # need this check to avoid duplicating adding a new table to both layers and tables
-            if "layerType" in new_layer:
-                self._layers.append(_mixins.PropertyMap(new_layer))
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        layer                   Required Feature Layer or Feature Layer dictionary.
+                                The existing webmap layer with updated properties.
+                                In order to get a layer on the webmap, use the ``layers`` method and
+                                assign the output to a value. Make edits on the this value and pass
+                                it in as a dict to update the rendering on the map.
 
-        # update tables property
-        if not self._tables:
-            self._tables = []
-            if "tables" in self._webmapdict:
-                for t in self._webmapdict["tables"]:
-                    self._tables.append(_mixins.PropertyMap(t))
+                                .. warning::
+                                    If the itemId of the feature layer is changed, this will not work.
+        ==================      ====================================================================
+
+        .. code-block:: python
+            # Create Webmap from webmap item
+            wm = WebMap(<wm_item_id>)
+
+            # Get a layer and edit the color
+            fl = wm.layers[0]
+            fl["layerDefinition"]["drawingInfo"]["renderer"]["symbol"]["color"] = [0, 0, 0, 255]
+
+            # Update the layer to see it render on map
+            wm.update_layer(dict(my_lyr))
+
+            # Save with the updates
+            wm_properties= {"title": "Test Update", "tags":["update_layer"], "snippet":"Updated a layer and now save"}
+            wm.save(wm_properties)
+        """
+        if isinstance(layer, FeatureLayer):
+            # Need to remove to re-create the layer view correctly
+            layer = self._create_layer_definition(layer, None)
+        # Find the layer to update based on the id of the layer passed in.
+        lyr_dict = self.get_layer(layer["itemId"])
+        # Get the index so we update the observable list at the correct position.
+        lyr_idx = self._webmapdict["operationalLayers"].index(lyr_dict)
+
+        # Update the observable list, this triggers webmap to render new layer.
+        self._webmapdict["operationalLayers"][lyr_idx] = layer
+
+        # Update the layers property
+        if "operationalLayers" in self._webmapdict:
+            self._layers = []
+            for l in self._webmapdict["operationalLayers"]:
+                self._layers.append(_mixins.PropertyMap(l))
             # reverse the layer list - webmap viewer reverses the list always
-            self._tables.reverse()
-        else:
-            if layer_type == "Table":
-                # note - no need to add if self._layers was empty as the hydration step above will account for the new layer
-                self._tables.append(_mixins.PropertyMap(new_layer))
-
-        return True
+            self._layers.reverse()
 
     def _process_extent(self, extent=None):
         """
@@ -1858,6 +1920,9 @@ class WebMap(HasTraits, collections.OrderedDict):
         :return: Bookmarks in the WebMap item.
 
         .. code-block:: python
+
+            # Usage Example:
+
             from arcgis.mapping import WebMap
             from arcgis.gis import GIS
 
@@ -1903,7 +1968,6 @@ class WebMap(HasTraits, collections.OrderedDict):
 
             # set new bookmark
             wm.bookmarks = [bookmark1, bookmark2]
-
         """
         if "bookmarks" not in self._webmapdict:
             self._webmapdict["bookmarks"] = []
@@ -3940,7 +4004,7 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
     The ``VectorTileLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise hosted vector tile layers.
     A :class:`~arcgis.mapping.VectorTileLayer` offers access to layer content.
 
-    ..note:: Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/VectorTileServer/
+    .. note:: Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/VectorTileServer/
     """
 
     def __init__(self, url, gis=None, vect_tile_lyr=None):

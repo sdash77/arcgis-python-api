@@ -3837,6 +3837,87 @@ class UserManager(object):
         return False
 
     # ----------------------------------------------------------------------
+    def assign_categories(self, users: List[User], categories: List[str]) -> list:
+        """ """
+        results = []
+        for user in users:
+            results.append({user.username: user.update(categories=categories)})
+        return results
+
+    # ----------------------------------------------------------------------
+    @property
+    def categories(self) -> dict:
+        """
+        Defines the member categories.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        value                  Required List. A list of categories to assign to the organization.
+                               If `None` is given, the categories will be erased.
+        ==================     ====================================================================
+
+        :returns: list
+
+        """
+        if dict(self._gis.properties).get("hasMemberCategorySchema", False):
+            url = f"{self._gis._portal.resturl}portals/self/memberCategorySchema"
+            params = {"f": "json"}
+            return self._gis._con.get(url, params).get("memberCategorySchema", [])
+        return None
+
+    # ----------------------------------------------------------------------
+    @categories.setter
+    def categories(self, value: list):
+        """
+        Defines the member categories.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        value                  Required List. A list of categories to assign to the organization.
+                               If `None` is given, the categories will be erased.
+        ==================     ====================================================================
+
+        :returns: list
+
+        """
+        if self._gis.version < [10, 1]:
+            return
+        if value is None and dict(self._gis.properties).get(
+            "hasMemberCategorySchema", False
+        ):
+            url = f"{self._gis._portal.resturl}portals/self/deleteMemberCategorySchema"
+            params = {"f": "json"}
+            res = self._gis._con.post(url, params)
+            if res.get("success", False) == False:
+                raise Exception(res)
+        elif isinstance(value, (tuple, list)):
+            url = f"{self._gis._portal.resturl}portals/self/assignMemberCategorySchema"
+            params = {
+                "f": "json",
+                "memberCategorySchema": {
+                    "memberCategorySchema": [
+                        {
+                            "title": "Categories",
+                            "categories": list(value),
+                        }
+                    ]
+                },
+            }
+            res = self._gis._con.post(url, params)
+            if res.get("success", False) == False:
+                raise Exception(res)
+        elif isinstance(value, dict) and "memberCategorySchema" in value:
+            url = f"{self._gis._portal.resturl}portals/self/assignMemberCategorySchema"
+            params = {"f": "json", "memberCategorySchema": value}
+            res = self._gis._con.post(url, params)
+            if res.get("success", False) == False:
+                raise Exception(res)
+        else:
+            raise ValueError("A list or tuple must be given to set the categories.")
+
+    # ----------------------------------------------------------------------
     def advanced_search(
         self,
         query: str,
@@ -5021,7 +5102,7 @@ class ContentManager(object):
 
         Available in ArcGIS Enterprise 10.9.1+
 
-        :returns: DependencyManager or None for ArcGIS Online.
+        :returns: :class:`~arcgis.gis.sharing.DependencyManager` or None for ArcGIS Online.
         """
         if self._depmgr is None and self._gis._portal.is_arcgisonline == False:
             from arcgis.gis.sharing._dependency import DependencyManager
@@ -10265,6 +10346,7 @@ class User(dict):
         security_question: Optional[int] = None,
         security_answer: Optional[str] = None,
         culture_format: Optional[str] = None,
+        categories: Optional[list] = None,
     ):
 
         """
@@ -10336,6 +10418,10 @@ class User(dict):
                             security_answer="Working on the Python API"
         ------------------  ----------------------------------------------------------
         culture_format      Optional String. Specifies user-preferred number and date format
+        ------------------  ----------------------------------------------------------
+        categories          Optional List[str]. A list of category names.
+
+                            example: ```categories = ["category11", "category12"]```
         ==================  ==========================================================
 
         :return:
@@ -10382,6 +10468,8 @@ class User(dict):
             "cultureFormat": culture_format,
             "region": region,
         }
+        if categories:
+            params["categories"] = categories
         if security_answer and not security_question is None:
             params["securityQuestionIdx"] = security_question
             params["securityAnswer"] = security_answer

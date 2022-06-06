@@ -138,7 +138,7 @@ class FeatureLayer(Layer):
         value                   Required dict.
         ==================      ====================================================================
 
-        ..note::
+        .. note::
             When set, this overrides the default symbology when displaying it on a webmap.
 
         :return:
@@ -470,7 +470,7 @@ class FeatureLayer(Layer):
         :return:
             A JSON Dictionary
 
-        ..code-block:: python
+        .. code-block:: python
 
             # Example Usage
             FeatureLayer.generate_renderer(
@@ -2120,7 +2120,7 @@ class FeatureLayer(Layer):
 
         :return: Dictionary of the query results
 
-        ..code-block:: python
+        .. code-block:: python
             # The query results will return the related records for each objectIds
             # where TOWNSHIP is the outField and orderByField:
 
