@@ -149,6 +149,7 @@ class PortalAdminManager(BasePortalAdmin):
     @property
     def location_tracking(self):
         """
+
         The manager for Location Tracking. See :class:`~arcgis.apps.tracker.LocationTrackingManager`.
 
         :return:
@@ -461,7 +462,6 @@ class PortalAdminManager(BasePortalAdmin):
 
             >>> gis.admin.mode({'read_only' : False})
             >>> assert gis.admin.mode['isReadOnly'] == False
-
 
         """
         url = "%s/portaladmin/mode" % self._gis._portal.url

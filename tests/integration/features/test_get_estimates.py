@@ -121,8 +121,8 @@ class TestFeatureLayerGetEstimates(unittest.TestCase):
 
     def test_HFL_get_estimates_new_layer(self):
         """tests the call on a HFL for the get estimates if the property is not known to exist.
-            this will depend on the version of enterprise you are using. Estimates is supported
-            starting at 10.9.1 """
+        this will depend on the version of enterprise you are using. Estimates is supported
+        starting at 10.9.1"""
 
         for profile in PROFILES:
             print(profile)
