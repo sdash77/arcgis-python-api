@@ -13318,8 +13318,6 @@ class RasterCollection:
             # Usage Example 2: This snippet reduces a raster collection based on a custom reducer function.
 
             rc = RasterCollection("https://myserver/arcgis/rest/services/ImageServiceName/ImageServer")
-            from arcgis.raster.functions import max
-            max_raster = rc.reduce(func=max, func_args = {"cellsize_type":"MinOf"})
 
             def skewness(ras_list):
                 from arcgis.raster.functions import mean, std, med
@@ -13329,7 +13327,7 @@ class RasterCollection:
                 out_skewness = 3*(cs_mean - cs_median)/cs_stddev
                 return out_skewness
 
-            skewness = rc.reduce(func=out_skewness)
+            skewness = rc.reduce(func=skewness)
 
         """
         return self._ras_coll_engine_obj.reduce(func=func, func_args=func_args)
