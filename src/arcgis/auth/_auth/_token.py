@@ -10,6 +10,7 @@ from requests.cookies import extract_cookies_to_jar
 from ._schain import SupportMultiAuth
 from ..tools._lazy import LazyLoader
 from ..tools import parse_url
+from .._error import ArcGISLoginError
 
 re = LazyLoader("re")
 json = LazyLoader("json")
@@ -151,6 +152,18 @@ class ArcGISProAuth(AuthBase, SupportMultiAuth):
         if (r.status_code < 500 and r.status_code > 399) and str(r.text).lower().find(
             "invalid token"
         ) > -1:
+            # Recreate the request without the token
+            #
+            parsed = parse_url(r.url)
+            self._invalid_token_urls.add(parsed.netloc)
+            r.content
+            r.raw.release_conn()
+            r.request.headers.pop("X-Esri-Authorization", None)
+            _r = r.connection.send(r.request, **kwargs)
+            _r.headers["referer"] = self._referer or "http"
+            _r.history.append(r)
+            return _r
+        elif str(r.text).lower().find("invalid token") > -1:
             # Recreate the request without the token
             #
             parsed = parse_url(r.url)
@@ -355,6 +368,8 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         # After authenticating, ArcGIS Online/Enterprise can prompt for a
         # terms and conditions acceptance.
         #
+        if response.text.find("OAUTH_0015") > -1:
+            raise ArcGISLoginError()
         callback_url = response.headers["location"]
         if callback_url.find("acceptTermsAndConditions") > -1:
             parsed = parse_url(response.headers["location"])
@@ -400,7 +415,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         content = requests.get(
             self._authorization_url, verify=self._verify_cert, proxies=self.proxies
         ).text
-
+        oauth_info = None
         pattern = self._re_expressions["step-1a"]
         if len(pattern.findall(content)) == 0:
             pattern = self._re_expressions["step-1b"]
@@ -415,7 +430,13 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
                 except:
                     oauth_info = json.loads(js_object + "}")
                 break
-        oauth_state = oauth_info["oauth_state"]
+        if oauth_info:
+
+            oauth_state = oauth_info["oauth_state"]
+        else:
+            raise ArcGISLoginError(
+                "Could not login. Please ensure you have valid credentials and set your security login question."
+            )
 
         signin_params = {
             "oauth_state": oauth_state,

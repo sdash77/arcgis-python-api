@@ -1214,6 +1214,10 @@ def display_instances(
         _, ax = plt.subplots(1, figsize=figsize)
         auto_show = True
 
+    # Add black color for NoData
+    if color_mapping:
+        color_mapping[0] = [0, 0, 0]
+
     # Generate random colors for instance classes in ground truth and instance predictions
     # and use color mapping for semantic classes
     colors = []
@@ -1318,36 +1322,35 @@ def show_results_panoptic(model, rows=5, thresh=0.5, **kwargs):
     class_confidence, classes = F.softmax(preds[1], dim=-1).max(-1)
     semantic = F.softmax(preds[2], dim=1).argmax(dim=1)
 
-    bsz = model.learn.dl(ds_type).batch_size
-    category_dict = model._data.class_mapping
-    instance_classes = model._data.instance_classes
-    instance_classes = [0] + instance_classes
+    category_dict = model._data.class_mapping.copy()
     category_dict[0] = "NoData"
+    instance_classes = model._data.instance_classes
 
     # Remap to original class mapping if non-contiguous classes
     is_contig = is_contiguous(sorted([0] + list(category_dict.keys())))
     if not is_contig:
-        pixel_mapping = [0] + list(category_dict.keys())
+        pixel_mapping = sorted(list(category_dict.keys()))
         idx2pixel = {i: d for i, d in enumerate(pixel_mapping)}
         semantic = remap(semantic, idx2pixel)
         classes = remap(classes, idx2pixel)
         y[1] = remap(y[1], idx2pixel)
 
     # Filter predictions for instances
+    inst_cls = classes
     for i in instance_classes:
         inst_cls = torch.where(
-            classes == int(i), classes, torch.tensor(-1).to(classes.device)
+            inst_cls == i, torch.tensor(-1).to(classes.device), inst_cls
         )
-    # filter out low confidence instances from predictions
-    # keep_pred_instances = torch.where(torch.logical_and(classes > 0, class_confidence > 0.07)) # TODO: Use this with latest Pytorch
-    keep_pred_instances = torch.where((inst_cls > -1) & (class_confidence > thresh))
+    keep_pred_instances = torch.where(
+        torch.logical_and(inst_cls == -1, class_confidence > thresh)
+    )
 
     pred_instances = []
     pred_classes = []
     pred_class_names = []
     pred_scores = []
 
-    for index in range(bsz):
+    for index in range(n_items):
         keep_pred = keep_pred_instances[1][keep_pred_instances[0] == index]
         pred_instances.append(instances.detach()[index, keep_pred].cpu().numpy())
         pred_classes.append(classes.detach()[index, keep_pred].cpu().numpy())
@@ -1365,7 +1368,7 @@ def show_results_panoptic(model, rows=5, thresh=0.5, **kwargs):
     pred_semantic_classes = []
     pred_semantic_class_names = []
 
-    for index in range(bsz):
+    for index in range(n_items):
         keep_gt = keep_gt_instances[1][keep_gt_instances[0] == index]
         gt_instances.append(y[0].detach()[index, keep_gt].cpu().numpy())
         gt_classes.append(y[1].detach()[index, keep_gt].cpu().numpy())
@@ -1388,9 +1391,9 @@ def show_results_panoptic(model, rows=5, thresh=0.5, **kwargs):
     else:
         color_mapping = model._data.color_mapping
 
-    f, ax = plt.subplots(bsz, 4, figsize=(18, 6 * bsz), squeeze=False)
+    f, ax = plt.subplots(n_items, 4, figsize=(18, 6 * n_items), squeeze=False)
 
-    for index in range(bsz):
+    for index in range(n_items):
         # Display image
         display_image = roll_image(x.detach().cpu().numpy()[index])
         ax[index, 0].imshow(display_image)

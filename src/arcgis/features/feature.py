@@ -868,11 +868,13 @@ class FeatureSet(object):
             nn = list(df[nn].index)
             if len(nn) > 0:
                 val = df[col][nn[0]]
-                if isinstance(val, str):
+                if isinstance(val, (str, pd.StringDtype)):
                     return "esriFieldTypeString"
-                elif isinstance(val, tuple([int] + [np.int32])):
+                elif isinstance(
+                    val, tuple([int] + [np.int32, pd.Int32Dtype, pd.Int16Dtype])
+                ):
                     return "esriFieldTypeInteger"
-                elif isinstance(val, (float, np.int64)):
+                elif isinstance(val, (float, np.int64, pd.Int64Dtype)):
                     return "esriFieldTypeDouble"
                 elif isinstance(val, datetime):
                     return "esriFieldTypeDate"

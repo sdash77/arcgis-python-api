@@ -19,10 +19,10 @@ class TestAnalyzeLSA(unittest.TestCase):
     def setUpClass(cls):
         # Create Python API GIS object and prepare REST service URL strings
         cls.base_server_url = (
-            "https://krennic.esri.com/server/rest/services/ParcelFabric_LSA/"
+            "https://dev0016752.esri.com/server/rest/services/ParcelFabric_LSA/"
         )
         cls.gis = GIS(
-            "https://krennic.esri.com/portal",
+            "https://dev0016752.esri.com/portal",
             "admin",
             "esri.agp",
             verify_cert=False,
@@ -300,28 +300,28 @@ class TestAnalyzeLSA(unittest.TestCase):
             self.assertTrue(len(adj_y_vals) == 12, "Adjust Y not found in results")
 
             self.assertAlmostEqual(
-                7717973.09142832,
+                7717981.46849908,
                 min(adj_x_vals),
                 delta=0.005,
-                msg="Adjusted X minimum value is incorrect",
+                msg=f"Adjusted X minimum value is incorrect: Got {min(adj_x_vals)}",
             )
             self.assertAlmostEqual(
-                7720644.48520308,
+                7720654.99368485,
                 max(adj_x_vals),
                 delta=0.0005,
-                msg="Adjusted X maximum value is incorrect",
+                msg=f"Adjusted X maximum value is incorrect: Got {max(adj_x_vals)}",
             )
             self.assertAlmostEqual(
-                629647.44794996,
+                629648.32028119,
                 min(adj_y_vals),
                 delta=0.0005,
-                msg="Adjusted Y minimum value is incorrect",
+                msg=f"Adjusted Y minimum value is incorrect: Got {min(adj_y_vals)}",
             )
             self.assertAlmostEqual(
-                631577.57524533,
+                631575.49381029,
                 max(adj_y_vals),
                 delta=0.0005,
-                msg="Adjusted Y maximum value is incorrect",
+                msg=f"Adjusted Y maximum value is incorrect: Got {min(adj_y_vals)}",
             )
 
     def test_analyze_weighted_LSA_no_parcel_features_async(self):

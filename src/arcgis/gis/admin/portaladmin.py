@@ -124,7 +124,7 @@ class PortalAdminManager(BasePortalAdmin):
     @property
     def location_tracking(self):
         """
-        The manager for Location Tracking. See :class:`~arcgis.apps.tracker.LocationTrackingManager'.
+        The manager for Location Sharing. See :class:`~arcgis.apps.tracker.LocationTrackingManager'.
         """
         return LocationTrackingManager(self._gis)
 
@@ -370,7 +370,7 @@ class PortalAdminManager(BasePortalAdmin):
                           modify or update content or site settings is made through the API.
         ================  ===============================================================================
 
-        ..code-block:: python
+        .. code-block:: python
             **Usage Example**
 
             gis.admin.mode({'read_only' : False})
