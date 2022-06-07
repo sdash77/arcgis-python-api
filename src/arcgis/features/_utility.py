@@ -1035,7 +1035,7 @@ class UtilityNetworkManager(object):
             return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def trace_configurations(self) -> dict:
+    def trace_configurations(self) -> TraceConfigurationsManager:
         """
         The `trace_configurations` resource provides access to all trace
         configuration operations for a utility network.
@@ -1057,7 +1057,7 @@ class UtilityNetworkManager(object):
 class TraceConfigurationsManager(object):
     """
     The traceConfigurations resource provides access to all trace configuration
-    operations for a utility network. It is returned as an array of named trace
+    operations for a network service. It is returned as an array of named trace
     configurations with the creator, name, and global ID for each.
 
     The TraceConfigurationsManager allows methods to be done on a trace configuration.
