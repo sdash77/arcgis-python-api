@@ -157,44 +157,37 @@ class TestTraceNetworkManager(unittest.TestCase):
         assert query2
         assert len(query2["networkMoments"]) == 7
 
-    # def trace_test(self):
-    #     """
-    #     Test using trace method with the Trace Network Service
-    #     """
-    #     trace = trace_nm.trace(
-    #         locations=[
-    #             {
-    #                 "traceLocationType": "startingPoint",
-    #                 "globalId": "{2F82291C-ED2E-40F5-AB36-FEB0C50E3353}",
-    #                 "terminalId": 16,
-    #             }
-    #         ],
-    #         trace_type="subnetwork",
-    #         configuration={
-    #             "domainNetworkName": "Electric",
-    #             "tierName": "Electric Distribution",
-    #             "conditionBarriers": [
-    #                 {
-    #                     "name": "E:Device Status",
-    #                     "type": "networkAttribute",
-    #                     "operator": "equal",
-    #                     "value": 1,
-    #                     "combineUsingOr": True,
-    #                     "isSpecificValue": True,
-    #                 },
-    #                 {
-    #                     "name": "Lifecycle Status",
-    #                     "type": "networkAttribute",
-    #                     "operator": "doesNotIncludeAny",
-    #                     "value": 24,
-    #                     "combineUsingOr": False,
-    #                     "isSpecificValue": True,
-    #                 },
-    #             ],
-    #         },
-    #     )
-    #     assert trace
-    #     assert trace["success"] is True
+    def trace_test(self):
+        """
+        Test using trace method with the Trace Network Service
+        """
+        trace = trace_nm.trace(
+            locations=[
+                {
+                    "traceLocationType": "startingPoint",
+                    "globalid": "{5F8B05EC-B69A-4826-AD57-B527180EC9FD}",
+                    "percentAlong": 0,
+                }
+            ],
+            trace_type="connected",
+            configuration={
+                "includeBarriers": True,
+                "validateConsistency": True,
+                "ignoreBarriersAtStartingPoints": False,
+                "allowIndeterminateFlow": False,
+                "shortestPathNetworkAttributeName": "",
+                "traversabilityScope": "junctionsAndEdges",
+                "conditionBarriers": [],
+                "functionBarriers": [],
+                "functions": [],
+                "outputFilters": [],
+                "outputConditions": [],
+                "pathDirection": "noDirection",
+            },
+        )
+        assert trace
+        assert trace["success"] is True
+        assert trace["traceResults"]
 
 
 if __name__ == "__main__":

@@ -101,7 +101,6 @@ class TraceNetworkManager(object):
                                 The location is ignored by the trace if the following
                                 required properties are not defined:
                                 * `percentAlong` : required for edge features and objects.
-                                * `terminalID` : required for junction features and objects.
 
 
                                 .. code-block:: python
