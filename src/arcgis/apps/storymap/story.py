@@ -128,6 +128,7 @@ class StoryMap(object):
         else:
             # If no item was provided create a new story map
             self._create_new_storymap()
+        # Get the story url
         self._url = self._get_url()
 
     # ----------------------------------------------------------------------
@@ -166,7 +167,7 @@ class StoryMap(object):
                 "smdraftresourceid:" + draft,
             ]
         )
-        # thumbnail
+        # get default thumbnail for a new item
         my_path = os.path.abspath(os.path.dirname(__file__))
         thumbnail = os.path.join(
             my_path, "\\".join(("_ref", "default_story_thumbnail.png"))
@@ -211,7 +212,10 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     def _get_url(self):
-        # get url for story
+        """
+        Private method to determine what the story url is. This is used to publish
+        and have the correct path set.
+        """
         if self._gis._is_agol:
             self._url = "https://storymaps.arcgis.com/stories/{storyid}".format(
                 storyid=self._itemid
