@@ -1,4 +1,5 @@
 from __future__ import annotations
+import os
 from typing import Optional, Union
 import uuid
 from enum import Enum
@@ -127,6 +128,7 @@ class StoryMap(object):
         else:
             # If no item was provided create a new story map
             self._create_new_storymap()
+        self._url = self._get_url()
 
     # ----------------------------------------------------------------------
     def _create_new_storymap(self):
@@ -164,14 +166,22 @@ class StoryMap(object):
                 "smdraftresourceid:" + draft,
             ]
         )
+        # thumbnail
+        my_path = os.path.abspath(os.path.dirname(__file__))
+        thumbnail = os.path.join(
+            my_path, "\\".join(("_ref", "default_story_thumbnail.png"))
+        )
         # set the item properties dict to add new item to active gis
         item_properties = {
             "title": title,
             "keywords": keywords,
             "type": "StoryMap",
+            "thumbnail": thumbnail,
         }
         # add item to active gis and set properties
-        item = self._gis.content.add(item_properties=item_properties)
+        item = self._gis.content.add(
+            item_properties=item_properties, thumbnail=thumbnail
+        )
         # assign to story properties
         self._item = item
         self._itemid = item.itemid
@@ -199,6 +209,19 @@ class StoryMap(object):
     def _refresh(self):
         if self._item:
             self._properties = json.loads(self._item.get_data())
+
+    # ----------------------------------------------------------------------
+    def _get_url(self):
+        # get url for story
+        if self._gis._is_agol:
+            self._url = "https://storymaps.arcgis.com/stories/{storyid}".format(
+                storyid=self._itemid
+            )
+        else:
+            self._url = "https://{portal}/apps/storymaps/stories/{storyid}".format(
+                portal=self._gis.url, storyid=self._itemid
+            )
+        return self._url
 
     # ----------------------------------------------------------------------
     def show(self, width: Optional[int] = None, height: Optional[int] = None):
@@ -943,8 +966,8 @@ class StoryMap(object):
         )
 
         # Find type keywords to use based on whether to publish or not
+        # PUBLISH MODE
         if publish is True:
-            # Publish mode
             # Remove old publish item
             for resource in self._resources:
                 if (
@@ -990,13 +1013,14 @@ class StoryMap(object):
             p = {
                 "typeKeywords": list(set(keywords + new_keywords)),
                 "text": json.dumps(self._properties),
+                "url": self._url,
             }
             if title:
                 p["title"] = title
             if tags:
                 p["tags"] = tags
 
-            # find and set access
+            # Find and set access
             sharing = access if access is not None else self._item.access
             p["access"] = sharing
 
@@ -1014,21 +1038,11 @@ class StoryMap(object):
                 self._gis._con._session.auth
                 and self._gis._con._session.auth.token is not None
             ):
-                params = {"f": "json", "token": self._gis._con._session.auth.token}
-                # Get url
-                if self._gis._is_agol:
-                    self._url = (
-                        "https://storymaps.arcgis.com/stories/{storyid}/publish".format(
-                            storyid=self._itemid
-                        )
-                    )
-                else:
-                    self._url = "https://{portal}/apps/storymaps/stories/{storyid}/publish".format(
-                        portal=self._gis.url, storyid=self._itemid
-                    )
-
                 # Make a call to the StoryMaps publish endpoint
-                self._gis._con.post(path=self._url, params=params)
+                self._gis._con.post(
+                    path=self._url + "/publish",
+                    params={"f": "json", "token": self._gis._con._session.auth.token},
+                )
         else:
             # Set the type keywords
             keywords = self._item.typeKeywords
@@ -1075,7 +1089,6 @@ class StoryMap(object):
                 p["tags"] = tags
             # access does not change when only saving
             p["access"] = self._item.access
-
             self._item.update(item_properties=p)
 
         self._item = self._gis.content.get(self._itemid)
