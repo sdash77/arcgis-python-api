@@ -2365,7 +2365,7 @@ class FeatureLayer(Layer):
             and hasattr(self._gis, "_portal")
             and self._gis._portal.is_arcgisonline == False
         ):
-            params['token'] = self._gis._con.token
+            params["token"] = self._gis._con.token
         if not upsert_matching_field is None:
             params["upsertMatchingField"] = upsert_matching_field
         if not skip_inserts is None:
