@@ -176,7 +176,6 @@ class StoryMap(object):
             "title": title,
             "keywords": keywords,
             "type": "StoryMap",
-            "thumbnail": thumbnail,
         }
         # add item to active gis and set properties
         item = self._gis.content.add(
@@ -958,6 +957,18 @@ class StoryMap(object):
                 "draft.json", resource["resource"]
             ):
                 self._remove_resource(file=resource["resource"])
+
+        # Add meta settings and change push meta so title doesn't get overwritten on publish at any point.
+        if title:
+            root = self._properties["root"]
+            if "metaSettings" not in self._properties["nodes"][root]["data"]:
+                self._properties["nodes"][root]["data"]["metaSettings"] = {
+                    "title": None
+                }
+            self._properties["nodes"][root]["data"]["metaSettings"]["title"] = title
+            self._properties["nodes"][root]["config"][
+                "shouldPushMetaToAGOItemDetails"
+            ] = False
 
         # Add new draft with time in milliseconds
         draft = "draft_" + str(int(time.time() * 1000)) + ".json"
