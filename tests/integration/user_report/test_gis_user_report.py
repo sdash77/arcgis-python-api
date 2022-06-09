@@ -1,6 +1,6 @@
 import sys
 
-# sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
+# sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8518\src")
 import unittest
 import datetime as _dt
 from arcgis.gis import GIS
@@ -25,7 +25,7 @@ class TestReportApi(unittest.TestCase):
         then = _dt.datetime.strptime(date_time_str, "%d/%m/%y")
         val = int(then.timestamp() * 1000)
 
-        with self.assertRaises(AssertionError):
+        with self.assertRaises(Exception):
             user.report("user", None, "weekly")
 
     def test_content_report(self):
