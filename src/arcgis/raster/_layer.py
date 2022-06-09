@@ -9444,10 +9444,17 @@ class _ImageServerRaster(ImageryLayer, Raster):
 
     @property
     def catalog_path(self):
-        path = self._uri
+        import os
+
         if self._datastore_raster:
-            path = path.rpartition("\\")[0]
-        return path
+            path = self._uri
+            path = (
+                path.rpartition("\\")[0]
+                if "\\" in path and not os.path.exists(path)
+                else path
+            )
+            return path
+        return self._url
 
     @property
     def catalog_paths(self):
