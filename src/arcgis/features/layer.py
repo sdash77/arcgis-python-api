@@ -2358,8 +2358,14 @@ class FeatureLayer(Layer):
             "appendUploadFormat": upload_format,
             "rollbackOnFailure": rollback,
         }
-        if self._gis._con.token:
-            params["token"] = self._gis._con.token
+        if (
+            self._gis
+            and hasattr(self._gis, "_con")
+            and self._gis._con.token
+            and hasattr(self._gis, "_portal")
+            and self._gis._portal.is_arcgisonline == False
+        ):
+            params['token'] = self._gis._con.token
         if not upsert_matching_field is None:
             params["upsertMatchingField"] = upsert_matching_field
         if not skip_inserts is None:
