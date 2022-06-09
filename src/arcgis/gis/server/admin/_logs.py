@@ -183,10 +183,16 @@ class LogManager(BaseServer):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        start_time             Optional String. The most recent time to query.  Default is now.
+        start_time             Optional String or Integer. The most recent time to query.  Default is now.
                                Time can be specified in milliseconds since UNIX epoch, or as an
-                               ArcGIS Server timestamp. For example { "startTime": "2011-08-01T15:17:20,123", ... },
-                               { "startTime": 1312237040123, ... }, respectively.
+                               ArcGIS Server timestamp.
+
+                               Example for string:
+                               startTime = "2011-08-01T15:17:20"
+
+                               Example for integer:
+                               startTime = 1312237040123
+
         ------------------     --------------------------------------------------------------------
         end_time               Optional String. The oldest time to include in the result set. You
                                can use this to limit the query to the last n minutes or hours as

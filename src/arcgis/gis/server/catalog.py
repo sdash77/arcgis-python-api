@@ -42,13 +42,13 @@ class ServicesDirectory(BaseServer):
     url                       string required. The web address to the ArcGIS Server administration
                               end point.
 
-                              Example: https://mysite.com/arcgis
+                              Example: ``https://mysite.com/arcgis``
 
                               The URL should be formatted as follows:
                               <scheme>://<host>:<port (optional)>/<web adapter>
     ---------------------     --------------------------------------------------------------------
     baseurl                   optional string, the root URL to a site.
-                              Example: https://mysite.com/arcgis
+                              Example: ``https://mysite.com/arcgis``
     ---------------------     --------------------------------------------------------------------
     tokenurl                  optional string. Used when a site if federated or when the token
                               URL differs from the site's baseurl.  If a site is federated, the

@@ -116,14 +116,14 @@ class ServiceManager(BaseServer):
         """
         returns a list of services in the specified folder
 
-         ===============     ====================================================================
+        ===============     ===========================================================================================
         **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
+        ---------------     -------------------------------------------------------------------------------------------
         folder              Required string. The name of the folder to list services from.
-        ---------------     --------------------------------------------------------------------
+        ---------------     -------------------------------------------------------------------------------------------
         refresh             Optional boolean. Default is False. If True, the list of services will be
                             requested to the server, else the list will be returned from cache.
-        ===============     ====================================================================
+        ===============     ===========================================================================================
 
 
         :return: list
@@ -238,7 +238,7 @@ class ServiceManager(BaseServer):
         ===============     ====================================================================
 
 
-        :return: boolean
+        :return: Boolean
 
         """
         return self._sm.publish_sd(sd_file, folder, service_config=service_config)
@@ -458,7 +458,7 @@ class ServiceManager(BaseServer):
         description         Optional string. Description of what the folder is.
         ===============     ====================================================================
 
-        :return: boolean
+        :return: Boolean
         """
         params = {"f": "json", "folderName": folder_name, "description": description}
         u_url = self._url + "/createFolder"
@@ -479,7 +479,7 @@ class ServiceManager(BaseServer):
         folder_name         Required string. Name of the folder.
         ===============     ====================================================================
 
-        :return: boolean
+        :return: Boolean
         """
         params = {"f": "json"}
         if folder_name in self.folders:
@@ -690,18 +690,18 @@ class ServiceManager(BaseServer):
         The JSON representation of a service contains the following four
         sections:
          - Service Description Properties-Common properties that are shared
-          by all service types. Typically, they identify a specific service.
+           by all service types. Typically, they identify a specific service.
          - Service Framework Properties-Properties targeted towards the
-          framework that hosts the GIS service. They define the life cycle
-          and load balancing of the service.
+           framework that hosts the GIS service. They define the life cycle
+           and load balancing of the service.
          - Service Type Properties -Properties targeted towards the core
-          service type as seen by the server administrator. Since these
-          properties are associated with a server object, they vary across
-          the service types. The Service Types section in the Help
-          describes the supported properties for each service.
+           service type as seen by the server administrator. Since these
+           properties are associated with a server object, they vary across
+           the service types. The Service Types section in the Help
+           describes the supported properties for each service.
          - Extension Properties-Represent the extensions that are enabled
-          on the service. The Extension Types section in the Help describes
-          the supported out-of-the-box extensions for each service type.
+           on the service. The Extension Types section in the Help describes
+           the supported out-of-the-box extensions for each service type.
 
         ===============     ====================================================================
         **Argument**        **Description**
@@ -709,10 +709,11 @@ class ServiceManager(BaseServer):
         service             Required dict. The service is the properties to create a service.
         ===============     ====================================================================
 
-        :return: dict
+        :return: Dict
 
         Output:
          dictionary status message
+
         """
         url = self._url + "/createService"
         params = {"f": "json"}
@@ -859,7 +860,7 @@ class ServiceManager(BaseServer):
                              GeoDataServer | GPServer | GlobeServer | SearchServer
         ===============     ====================================================================
 
-        :return: boolean
+        :return: Boolean
 
         """
         if folder_name and name is None and service_type is None:
@@ -1053,7 +1054,7 @@ class Service(BaseServer):
         ==================     ====================================================================
 
 
-        :return: boolean
+        :return: Boolean
 
         """
         if extension_objects is None:
@@ -1142,7 +1143,7 @@ class Service(BaseServer):
         ===============     ====================================================================
 
 
-        :return: boolean
+        :return: Boolean
 
         """
         params = {
@@ -1356,7 +1357,7 @@ class Service(BaseServer):
         ===============     ====================================================================
 
 
-        :return: boolean
+        :return: Boolean
 
 
         """
@@ -1378,7 +1379,8 @@ class Service(BaseServer):
         """
         Returns the item information
 
-        :return: ItemInformationManager
+        :return:
+            :class:`~arcgis.gis.server.admin.ItemInformationManager`
 
         """
         if self._ii is None:
@@ -1398,7 +1400,9 @@ class Service(BaseServer):
     # ----------------------------------------------------------------------
     @property
     def _jobs(self):
-        """returns a `JobManager` to manage asynchronous geoprocessing tasks"""
+
+        """returns a :class:`~arcgis.gis.server.JobManager` to manage asynchronous geoprocessing tasks"""
+
         if self._jm is None:
             url = "%s/jobs" % self._url
             self._jm = JobManager(url=url, con=self._con)
@@ -1457,7 +1461,7 @@ class JobManager(BaseServer):
         ===============     ====================================================================
 
 
-        :return: List of `Job`
+        :return: List of :class:`~arcgis.gis.server.Job`
 
         """
         url = "{base}/query".format(base=self._url)
@@ -1637,13 +1641,10 @@ class ItemInformationManager(BaseServer):
 
         Databases
 
-           + byReference - Indicates whether the service data is referenced
-                           from a registered folder or database (true) or
-                           if it was copied to the server at the time the
-                           service was published (false).
-           + onPremiseConnectionString - Path to publisher data location.
-           + onServerConnectionString - Path to data location after
-                                        publishing completes.
+         - **byReference** - Indicates whether the service data is referenced from a registered folder or database (true)
+                             or it was copied to the server at the time the service was published (false).
+         - **onPremiseConnectionString** - Path to publisher data location.
+         - **onServerConnectionString** - Path to data location after publishing completes.
 
 
         When both the server machine and the publisher's machine are using
@@ -1661,14 +1662,10 @@ class ItemInformationManager(BaseServer):
 
         Resources
 
-           + clientName - Machine where ArcGIS Pro or ArcGIS Desktop was used to
-                          publish the service.
-           + onPremisePath - Path, relative to the 'clientName'
-                             machine, where the source resource (.mxd,
-                             .3dd, .tbx files, geodatabases, and so on)
-                             originated.
-           + serverPath - Path to the document after publishing
-                          completes.
+         - **clientName** - Machine where ArcGIS Pro or ArcGIS Desktop was used to publish the service.
+         - **onPremisePath** - Path, relative to the 'clientName' machine, where the source resource (.mxd,
+                             .3dd, .tbx files, geodatabases, and so on) originated.
+         - **serverPath** - Path to the document after publishing completes.
 
         :return: Dict
 

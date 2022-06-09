@@ -42,7 +42,8 @@ class DataStoreManager(BaseServer):
     ------------------     --------------------------------------------------------------------
     url                    Required string. The URL to the Data Store URL.
     ------------------     --------------------------------------------------------------------
-    gis                    Optional string. The GIS, Server, or ServicesDirectory object.
+    gis                    Optional string. The :class:`~arcgis.gis.GIS`, :class:`~arcgis.gis.server.Server`,
+                           or :class:`~arcgis.gis.server.catalog.ServicesDirectory` object.
     ==================     ====================================================================
 
     """
@@ -87,7 +88,8 @@ class DataStoreManager(BaseServer):
         """Retrieves a list of datastore objects.
 
         :return:
-           The list of datastore items.
+           The list of :class:`~arcgis.gis.server.Datastore` objects.
+
         """
         self._datastores = None
         if self._datastores is None:
@@ -325,16 +327,20 @@ class DataStoreManager(BaseServer):
         sde               required string.  Path to SDE connection file.
         ===============   ====================================================
 
-        returns: string on success, None on failure
+        :return:
+            string on success, None on failure
 
-        **Usage**:
+        .. code-block:: python
 
-        >>> con = dm.create_connection_string("c:\\myfolder\\postgres_db.sde")
-        >>> print(con)
-        'ENCRYPTED_PASSWORD=************************;SERVER=localhost;
-        INSTANCE=sde:postgresql:localhost,5432;DBCLIENT=postgresql;
-        DB_CONNECTION_PROPERTIES=localhost,5432;DATABASE=esri_spatial;
-        USER=sde;VERSION=sde.DEFAULT;AUTHENTICATION_MODE=DBMS'
+            # Usage
+
+            >>> con = dm.generate_connection_string("c:\\myfolder\\postgres_db.sde")
+            >>> print(con)
+            'ENCRYPTED_PASSWORD=************************;SERVER=localhost;
+            INSTANCE=sde:postgresql:localhost,5432;DBCLIENT=postgresql;
+            DB_CONNECTION_PROPERTIES=localhost,5432;DATABASE=esri_spatial;
+            USER=sde;VERSION=sde.DEFAULT;AUTHENTICATION_MODE=DBMS'
+
         """
         if str(sde).lower().endswith(".sde"):
             base_url = os.path.dirname(self._url)
@@ -408,7 +414,8 @@ class DataStoreManager(BaseServer):
         ===============     ====================================================================
 
 
-        :return: DataStore
+        :return:
+            :class:`~arcgis.gis.server.Datastore` object or None
 
         """
         item = {

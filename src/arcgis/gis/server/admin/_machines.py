@@ -122,7 +122,7 @@ class MachineManager(BaseServer):
         ==================     ====================================================================
 
         :return:
-            The machine object.
+            :class:`~arcgis.gis.server.Machine` object
 
         """
         url = self._url + "/%s" % machine_name
@@ -299,7 +299,7 @@ class Machine(BaseServer):
         change to the configuration of your machine, as well as each time
         the machine is restarted.
 
-        :return: dict
+        :return: Dict
         """
         url = self._url + "/hardware"
         params = {"f": "json"}
@@ -453,7 +453,7 @@ class Machine(BaseServer):
         certificate            Required string. The name of the certificate to delete
         ==================     ====================================================================
 
-        :return: boolean
+        :return: Boolean
 
         """
         params = {"f": "json", "csrfPreventToken": self._con.token}
