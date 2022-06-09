@@ -9722,6 +9722,7 @@ class User(dict):
                 if item:
                     break
                 count += 1
+                time.sleep(count)
 
             if item is None:
                 raise Exception(f"Cannot find Item: {res['itemID']}")
