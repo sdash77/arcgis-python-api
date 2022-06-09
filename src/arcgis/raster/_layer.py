@@ -9459,15 +9459,14 @@ class _ImageServerRaster(ImageryLayer, Raster):
     @property
     def catalog_paths(self):
         if self._datastore_raster:
-            return [self._uri]
+            return [self.catalog_path]
         return [self._url]
 
     @property
     def path(self):
-        if self._datastore_raster:
-            path_val = self._uri.rsplit("/", 1)[0]
-        else:
-            path_val = self._url.rsplit("/", 1)[0]
+        import os
+
+        path_val = os.path.dirname(self.catalog_path)
         if path_val.startswith("http"):
             return None
         else:
