@@ -2341,6 +2341,7 @@ class FeatureLayer(Layer):
                 "Append is not supported on this layer, please "
                 + "update service definition capabilities."
             )
+
         params = {
             "f": "json",
             "sourceTableName": source_table_name,
@@ -2357,6 +2358,8 @@ class FeatureLayer(Layer):
             "appendUploadFormat": upload_format,
             "rollbackOnFailure": rollback,
         }
+        if self._gis._con.token:
+            params["token"] = self._gis._con.token
         if not upsert_matching_field is None:
             params["upsertMatchingField"] = upsert_matching_field
         if not skip_inserts is None:

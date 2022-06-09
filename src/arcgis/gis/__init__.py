@@ -5619,6 +5619,7 @@ class ContentManager(object):
         location_type: Optional[str] = None,
         source_country: str = "world",
         country_hint: Optional[str] = None,
+        enable_global_geocoding: Optional[bool] = None,
     ):
         """
         The ``analyze`` method helps a client analyze a CSV or Excel file (.xlsx, .xls) prior to publishing or
@@ -5672,6 +5673,8 @@ class ContentManager(object):
         source_country             Optional string. The two character country code associated with the geocoding service, default is "world".
         -----------------------    -------------------------------------------------------------
         country_hint               Optional string. If first time analyzing, the hint is used. If source country is already specified than sourcecountry is used.
+        -----------------------    -------------------------------------------------------------
+        enable_global_geocoding    Optional boolean. Default is None. When True, the global geocoder is used.
         =======================    =============================================================
 
         :return: dictionary
@@ -5734,7 +5737,10 @@ class ContentManager(object):
             params["analyzeParameters"]["sourceCountry"] = source_country
         if country_hint:
             params["analyzeParameters"]["sourcecountryhint"] = country_hint
-
+        if enable_global_geocoding in [True, False]:
+            params["analyzeParameters"][
+                "enableGlobalGeocoding"
+            ] = enable_global_geocoding
         gis = self._gis
         params["analyzeParameters"] = json.dumps(params["analyzeParameters"])
 
