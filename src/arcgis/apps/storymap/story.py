@@ -168,10 +168,7 @@ class StoryMap(object):
             ]
         )
         # get default thumbnail for a new item
-        my_path = os.path.abspath(os.path.dirname(__file__))
-        thumbnail = os.path.join(
-            my_path, "\\".join(("_ref", "default_story_thumbnail.png"))
-        )
+        thumbnail = self._get_thumbnail()
         # set the item properties dict to add new item to active gis
         item_properties = {
             "title": title,
@@ -211,7 +208,7 @@ class StoryMap(object):
             self._properties = json.loads(self._item.get_data())
 
     # ----------------------------------------------------------------------
-    def _get_url(self):
+    def _get_url(self) -> str:
         """
         Private method to determine what the story url is. This is used to publish
         and have the correct path set.
@@ -225,6 +222,18 @@ class StoryMap(object):
                 portal=self._gis.url, storyid=self._itemid
             )
         return self._url
+
+    # ----------------------------------------------------------------------
+    def _get_thumbnail(self) -> str:
+        """
+        Private method to get the default thumbnail path dependent on whether the
+        user is Online or on Enterprise.
+        """
+        if self._gis._is_agol:
+            thumbnail = "https://storymaps.arcgis.com/static/images/item-default-thumbnails/item.jpg"
+        else:
+            thumbnail = "https://{portal}/apps/storymaps/static/images/item-default-thumbnails/item.jpg"
+        return thumbnail
 
     # ----------------------------------------------------------------------
     def show(self, width: Optional[int] = None, height: Optional[int] = None):
