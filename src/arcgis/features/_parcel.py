@@ -1174,7 +1174,10 @@ class ParcelFabricManager(object):
         import concurrent.futures
 
         tp = concurrent.futures.ThreadPoolExecutor(1)
-        future = tp.submit(fn=fn, **inputs)
+        try:
+            future = tp.submit(fn=fn, **inputs)
+        except:
+            future = tp.submit(fn, **inputs)
         tp.shutdown(False)
         return future
 
