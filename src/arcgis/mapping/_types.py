@@ -227,6 +227,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             self._layers = None
             self._tables = None
             self._basemap = self._webmapdict["baseMap"]
+            self._gallery_basemaps = {}
             self._extent = self.item.extent
         else:
             # default spatial ref for current web map
@@ -1696,8 +1697,9 @@ class WebMap(HasTraits, collections.OrderedDict):
     @property
     def gallery_basemaps(self):
         """
-        Get for a user their portal's custom
-        :attr:`~arcgis.mapping.WebMap.basemap` group.
+        Gets a list of web map titles contained within the
+        :class:`~arcgis.gis.Group` configured as the organization's Basemap
+        gallery.
         """
         if self._gis:
             bmquery = self._gis.properties["basemapGalleryGroupQuery"]
