@@ -125,7 +125,10 @@ class NotebookManager(object):
         from arcgis._impl._async.jobs import Job
 
         tp = concurrent.futures.ThreadPoolExecutor(1)
-        future = tp.submit(fn=fn, **kwargs)
+        try:
+            future = tp.submit(fn=fn, **kwargs)
+        except:
+            future = tp.submit(fn, **kwargs)
         tp.shutdown(False)
         return Job(future, task_name, jobid, task_url, notify, gis=gis)
 
