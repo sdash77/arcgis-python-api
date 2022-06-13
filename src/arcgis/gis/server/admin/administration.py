@@ -824,7 +824,7 @@ class SiteManager(object):
 
     _sm = None
     # ----------------------------------------------------------------------
-    def __init__(self, server: SiteManager, initialize: bool = False):
+    def __init__(self, server: Server, initialize: bool = False):
         """Constructor"""
         self._sm = server
         isinstance(self._sm, SiteManager)
