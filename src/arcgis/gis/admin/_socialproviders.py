@@ -16,7 +16,8 @@ class SocialProviders(object):
     value               Required GIS.  This is an administrator connection to a GIS site.
     ===============     ====================================================================
 
-    :return: SocialProviders class
+    :return:
+        :class:`~arcgis.gis.admin.SocialProviders` object
 
     """
 
