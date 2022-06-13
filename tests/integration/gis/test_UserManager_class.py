@@ -4,8 +4,8 @@
 # -------------------------------------------------------------------------------
 
 # Insert path to tests package so relative imports work
-#import sys
-#sys.path.insert(0, r"C:\Job\repos\geosaurus\tests")
+# import sys
+# sys.path.insert(0, r"C:\Job\repos\geosaurus\tests")
 
 import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
@@ -230,6 +230,7 @@ class Test_UserManager_portal_builtin(unittest.TestCase):
 # TestModule
 def tearDownModule():
     print("**End User Manager Tests**")
-    
+
+
 if __name__ == "__main__":
     unittest.main()
