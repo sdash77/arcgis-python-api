@@ -4382,45 +4382,25 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         # request sent to AGO Org
         if self._gis._is_agol:
             params = {
-                "minScale": 0.0,
-                "maxScale": 0.0,
-                "exportTilesAllowed": False,
-                "maxExportTilesCount": 100000,
                 "f": "json",
+                "minScale": min_scale if min_scale else 0.0,
+                "maxScale": max_scale if max_scale else 0.0,
+                "maxEportTilesCount": max_export_tile_count if max_export_tile_count else self.properties.maxExportTilesCount,
+                "exportTilesAllowed": export_tiles_allowed if export_tiles_allowed else self.properties.exportTilesAllowed
             }
-
-            if min_scale:
-                params["minScale"] = float(min_scale)
-            else:
-                params.pop("minScale", None)
-            if max_scale:
-                params["maxScale"] = float(max_scale)
-            else:
-                params.pop("maxScale", None)
-            if export_tiles_allowed:
-
-                params["exportTilesAllowed"] = export_tiles_allowed
-            else:
-                params["exportTilesAllowed"] = self.properties.exportTilesAllowed
-
-            params["maxExportTilesCount"] = (
-                max_export_tile_count
-                if max_export_tile_count
-                else self.properties.maxExportTilesCount
-            )
-            if source_item_id:  # only online
+            if source_item_id:
                 params["sourceItemId"] = source_item_id
+        # request sent to Enterprise
         elif self._gis._is_agol == False:
             params["runAsync"] = True
             params["services"] = {
                 "type": "VectorTileServer",
                 "capabilities": "TilesOnly,Tilemap",
-                "serviceName": self.properties.name,
+                "serviceName": service_name if service_name else self.properties.name,
             }
             params["services"]["properties"] = {
-                "exportTilesAllowed": export_tiles_allowed
+                "exportTilesAllowed": export_tiles_allowed if export_tiles_allowed else self.properties.exportTilesAllowed
             }
-            params["services"]["serviceName"] = self.properties.name
         url = self._url + "/edit"
         return self._con.post(path=url, params=params)
 
