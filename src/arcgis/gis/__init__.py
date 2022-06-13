@@ -5005,9 +5005,7 @@ class ContentManager(object):
         The class is not created by the user.
     """
 
-    # dependecy and marketplace managers
     _depmgr = None
-    _mrktplcmgr = None
 
     def __init__(self, gis):
         self._gis = gis
@@ -5109,20 +5107,6 @@ class ContentManager(object):
 
             self._depmgr = DependencyManager(gis=self._gis)
         return self._depmgr
-
-    # ----------------------------------------------------------------------
-    @property
-    def marketplace_manager(self) -> "MarketPlaceManager":
-        """
-        Provides users the ability to manage the content's presence on the marketplace.
-
-        :returns: MarketPlaceManager or None if not available
-        """
-        if self._mrktplcmgr is None and self._gis._portal.is_arcgisonline == False:
-            from arcgis.gis.sharing._marketplace import MarketPlaceManager
-
-            self._mrktplcmgr = MarketPlaceManager(gis=self._gis)
-        return self._mrktplcmgr
 
     # ----------------------------------------------------------------------
     def _add_by_part(
