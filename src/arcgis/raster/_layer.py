@@ -13309,7 +13309,7 @@ class RasterCollection:
 
         .. code-block:: python
 
-            # Usage Example 1: This snippet reduces a raster collection based on a reducer function from arcgis.raster.functions module.
+            # Usage Example 1: This snippet reduces a raster collection based on a reducer function from arcgis.raster.functions module that can accept a list of rasters.
 
             rc = RasterCollection("https://myserver/arcgis/rest/services/ImageServiceName/ImageServer")
             from arcgis.raster.functions import max
