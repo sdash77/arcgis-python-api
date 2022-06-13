@@ -4385,8 +4385,12 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
                 "f": "json",
                 "minScale": min_scale if min_scale else 0.0,
                 "maxScale": max_scale if max_scale else 0.0,
-                "maxEportTilesCount": max_export_tile_count if max_export_tile_count else self.properties.maxExportTilesCount,
-                "exportTilesAllowed": export_tiles_allowed if export_tiles_allowed else self.properties.exportTilesAllowed
+                "maxEportTilesCount": max_export_tile_count
+                if max_export_tile_count
+                else self.properties.maxExportTilesCount,
+                "exportTilesAllowed": export_tiles_allowed
+                if export_tiles_allowed
+                else self.properties.exportTilesAllowed,
             }
             if source_item_id:
                 params["sourceItemId"] = source_item_id
@@ -4399,7 +4403,9 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
                 "serviceName": service_name if service_name else self.properties.name,
             }
             params["services"]["properties"] = {
-                "exportTilesAllowed": export_tiles_allowed if export_tiles_allowed else self.properties.exportTilesAllowed
+                "exportTilesAllowed": export_tiles_allowed
+                if export_tiles_allowed
+                else self.properties.exportTilesAllowed
             }
         url = self._url + "/edit"
         return self._con.post(path=url, params=params)
