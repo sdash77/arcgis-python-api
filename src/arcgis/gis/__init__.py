@@ -4785,24 +4785,23 @@ class GroupManager(object):
                               from choosing to leave the group. If True, only an
                               administrator can remove them from the group. The default
                               is False.
-        ------------------  ---------------------------------------------------------
-        hidden_members      Optional Boolean. Only applies to org accounts. If true,
-                            only the group owner, group managers, and default
-                            administrators can see all members of the group.
-        ------------------  ---------------------------------------------------------
-        membership_access   Optional String. Sets the membership access for the group.
-                            Setting to `org` restricts group access to members of
-                            your organization. Setting to `collaboration` restricts the
-                            membership access to partnered collaboration and your
-                            organization members. If `None` set, any organization
-                            will have access. `None` is the default.
+        ------------------    ---------------------------------------------------------
+        hidden_members        Optional Boolean. Only applies to org accounts. If true,
+                              only the group owner, group managers, and default
+                              administrators can see all members of the group.
+        ------------------    ---------------------------------------------------------
+        membership_access     Optional String. Sets the membership access for the group.
+                              Setting to `org` restricts group access to members of
+                              your organization. Setting to `collaboration` restricts the
+                              membership access to partnered collaboration and your
+                              organization members. If `None` set, any organization
+                              will have access. `None` is the default.
 
-                            Values: `org`, `collaboration`, or `None`
-        ------------------  ---------------------------------------------------------
-        autojoin            Optional Boolean. The default is `False`. Only applies to
-                            org accounts. If `True`, this group will allow joined
-                            without requesting membership approval.
-
+                              Values: `org`, `collaboration`, or `None`
+        ------------------    ---------------------------------------------------------
+        autojoin              Optional Boolean. The default is `False`. Only applies to
+                              org accounts. If `True`, this group will allow joined
+                              without requesting membership approval.
         ====================  =========================================================
 
         :return:
@@ -9157,7 +9156,6 @@ class Group(dict):
         autojoin            Optional Boolean. The default is `False`. Only applies to
                             org accounts. If `True`, this group will allow joined
                             without requesting membership approval.
-
         ==================  =========================================================
 
         :return:
