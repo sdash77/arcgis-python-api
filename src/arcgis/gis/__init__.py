@@ -6028,7 +6028,7 @@ class ContentManager(object):
                             clauses separated by blank, or `AND`, e.g.
 
                             .. code-block:: python
-                            
+
                                #Usage Example:
 
 
@@ -6040,17 +6040,17 @@ class ContentManager(object):
                             .. warning::
                                 When the clauses are separated by comma, the filtering condition
                                 for `owner` should not be placed at the first position, e.g.
-                                
+
                                 .. code-block:: python
-                                
+
                                     >>> gis.content.advanced_search(query='type:map, owner:USERNAME')
-                                
+
                                 is allowed, while
-                                
+
                                 .. code-block:: python
-                                    
+
                                     >>> gis.content.advanced_search(query='owner:USERNAME, type:map')
-                                
+
                                 is not.  For more information, please check `Users, groups and items <https://developers.arcgis.com/rest/users-groups-and-items/search-reference.htm>`_.
         ----------------    ---------------------------------------------------------------
         bbox                Optional String/List. This is the xmin,ymin,xmax,ymax bounding
