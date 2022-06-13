@@ -12480,7 +12480,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         process_as_multidimensional=False,
         percentile_value=90,
         percentile_interpolation_type="AUTO_DETECT",
-        calculate_circular_statistics=False,
+        circular_calculation=False,
         circular_wrap_value=360,
         **kwargs,
     ):
@@ -12639,7 +12639,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 process_as_multidimensional=process_as_multidimensional,
                 percentile_value=percentile_value,
                 percentile_interpolation_type=percentile_interpolation_type,
-                calculate_circular_statistics=circular_calculation,
+                circular_calculation=circular_calculation,
                 circular_wrap_value=circular_wrap_value,
                 gis=gis,
                 future=True,
@@ -16115,7 +16115,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_name=None,
         context=None,
         future=False,
-        calculate_circular_statistics=False,
+        circular_calculation=False,
         circular_wrap_value=360,
         **kwargs,
     ):
@@ -16335,6 +16335,12 @@ class _RasterAnalysisTools(BaseAnalytics):
         else:
             output_name = json.dumps({"serviceProperties": {"name": output_name}})
 
+        current_version = None
+        if "currentVersion" in self._gis._tools.rasteranalysis.properties.keys():
+            current_version = self._gis._tools.rasteranalysis.properties[
+                "currentVersion"
+            ]
+
         if (current_version is not None) and current_version < 11:
             gpjob = self._tbx.zonal_statistics_as_table(
                 input_zone_raster_or_features=input_zone_raster_or_features,
@@ -16364,7 +16370,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 context=context,
                 gis=self._gis,
                 future=True,
-                calculate_circular_statistics=calculate_circular_statistics,
+                circular_calculation=circular_calculation,
                 circular_wrap_value=circular_wrap_value,
             )
 
