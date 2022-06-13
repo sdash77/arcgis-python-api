@@ -2352,6 +2352,9 @@ class Portal(object):
         display_settings: Optional[str] = None,
         is_open_data: bool = False,
         leaving_disallowed: bool = False,
+        hidden_members: bool = False,
+        membership_access: Optional[str] = None,
+        autojoin: bool = False,
     ):
         """Updates a group.
 
@@ -2448,6 +2451,13 @@ class Portal(object):
                         os.rename(thumbnail, new_thumbnail)
                         thumbnail = new_thumbnail
             files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
+
+        if hidden_members in [True, False]:
+            postdata['hiddenMembers'] = hidden_members
+        if membership_access in ['org', 'collaboration', None]:
+            postdata['membershipAccess'] = membership_access
+        if autojoin in [True, False]:
+            postdata['autoJoin'] = autojoin
 
         resp = self.con.post(
             "community/groups/" + group_id + "/update", postdata, files
