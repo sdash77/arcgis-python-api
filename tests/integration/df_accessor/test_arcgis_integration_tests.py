@@ -4,7 +4,6 @@ This collection of tests ensures that the functionality in the arcgis api works
 properly with the Spatially enabled DataFrame.
 
 """
-import pytest
 import os, sys
 
 # sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
@@ -157,7 +156,7 @@ def test_featureset_df():
 
     fs = FeatureSet.from_dict(_fs_dict)
     df = fs.sdf
-    assert df.spatial._name == "SHAPE"
+    assert df.spatial.name == "SHAPE"
     assert hasattr(df, "spatial")
     assert hasattr(df.SHAPE, "geom")
 
