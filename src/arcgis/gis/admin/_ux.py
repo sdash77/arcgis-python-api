@@ -249,13 +249,15 @@ class UX(object):
     def get_logo(self, download_path: str):
         """
         Get your organization's logo/thumbnail. You can use the `set_logo()` method to set an image as your logo.
+
         ================  ===============================================================
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
         download_path     required string. Folder path to download the logo file.
         ================  ===============================================================
 
-         :return: Path to downloaded logo file.
+        :return: Path to downloaded logo file.
+
         """
         portal_resources = PortalResourceManager(self._gis)
         props = self._gis.properties
@@ -280,7 +282,8 @@ class UX(object):
         name              required string. Name of the site.
         ================  ===============================================================
 
-         :return: string of the name of the site
+        :return: string of the name of the site
+
         """
         return self._gis.properties["name"]
 
@@ -339,7 +342,8 @@ class UX(object):
                           home page. If False, the descriptive text will not be displayed
         ================  ===============================================================
 
-         :return: boolean
+        :return: boolean
+
         """
         return self._gis.properties["showHomePageDescription"]
 
@@ -377,13 +381,14 @@ class UX(object):
                           {'group': <group id>, 'count' : 12}
         ================  ===============================================================
 
-          :return: dictionary
+        :return: dictionary
 
-        :Usage Example:
 
-        >>> data = ux.get_featured_content()
-        >>> ux.set_featured_content = data
-        True
+        .. code-block:: python
+            *Usage Example*
+            >>> data = ux.get_featured_content()
+            >>> ux.set_featured_content = data
+            True
 
         """
         return {
@@ -503,13 +508,15 @@ class UX(object):
         """
         Get your organization's home page banner image. You can use the `set_banner()` method to set an image or custom HTML
         code as your banner.
-        ================  ===============================================================
-        **Argument**      **Description**
-        ----------------  ---------------------------------------------------------------
-        download_path     required string. Folder path to download the banner file.
-        ================  ===============================================================
 
-         :return: Path to downloaded banner file.
+        ================    =================================================================================
+        **Argument**        **Description**
+        ----------------    ---------------------------------------------------------------------------------
+        download_path       required string. Folder path to download the banner file.
+        ================    =================================================================================
+
+        :return: Path to downloaded banner file.
+
         """
         # create a portal resource manager obj
         portal_resources = PortalResourceManager(self._gis)
@@ -609,7 +616,8 @@ class UX(object):
                           "spatialReference":{"wkid":102100}}
         ================  ===============================================================
 
-          :return: dictionary
+        :return: dictionary
+
         """
         return self._gis.properties["defaultExtent"]
 
@@ -647,7 +655,8 @@ class UX(object):
                           default value will be set.
         ================  ===============================================================
 
-          :return: dictionary
+        :return: dictionary
+
         """
         return self._gis.properties["defaultBasemap"]
 

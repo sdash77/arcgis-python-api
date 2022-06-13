@@ -26,7 +26,7 @@ class LicenseManager(BasePortalAdmin):
     ===============     ====================================================
 
     :return:
-       :class:`~arcgis.admin.LicenseManager` Object
+       :class:`~arcgis.gis.admin.LicenseManager` Object
     """
 
     _con = None
@@ -111,7 +111,8 @@ class LicenseManager(BasePortalAdmin):
         ===============     ====================================================
 
         :return:
-           :class:`~arcgis.admin.License` Object
+           List of :class:`~arcgis.gis.admin.License` objects
+
         """
         licenses = self.all()
         for l in licenses:
@@ -131,7 +132,8 @@ class LicenseManager(BasePortalAdmin):
         Returns all Licenses registered with an organization
 
         :return:
-           List of :class:`~arcgis.admin.License` objects
+           List of :class:`~arcgis.gis.admin.License` objects
+
         """
         licenses = []
         if self._properties is None:
@@ -153,7 +155,7 @@ class LicenseManager(BasePortalAdmin):
         Returns a list of Application Bundles for an Organization
 
         :return:
-           List of :class:`~arcgis.admin.Bundles` objects
+           List of :class:`~arcgis.gis.admin.Bundle` objects
 
         """
         if self._gis.version < [6, 4]:
@@ -424,7 +426,8 @@ class License(object):
     ===============     ====================================================
 
     :return:
-       :class:`~arcgis.admin.License` Object
+       :class:`~arcgis.gis.admin.License` object
+
     """
 
     _properties = None
