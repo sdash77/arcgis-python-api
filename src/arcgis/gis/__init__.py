@@ -5136,6 +5136,20 @@ class ContentManager(object):
         return self._depmgr
 
     # ----------------------------------------------------------------------
+    @property
+    def marketplace(self) -> "MarketPlaceManager":
+        """
+        Provides users the ability to manage the content's presence on the marketplace.
+
+        :returns: MarketPlaceManager or None if not available
+        """
+        if self._mrktplcmgr is None and self._gis._portal.is_arcgisonline == False:
+            from arcgis.gis.sharing._marketplace import MarketPlaceManager
+
+            self._mrktplcmgr = MarketPlaceManager(gis=self._gis)
+        return self._mrktplcmgr
+
+    # ----------------------------------------------------------------------
     def _add_by_part(
         self, file_path, itemid, item_properties, size=1e7, owner=None, folder=None
     ):
