@@ -58,9 +58,11 @@ class IdentityProviderManager(object):
         """returns the properties of the IDP configuration"""
         if self._properties is None:
             params = {"f": "json"}
-            res = self._gis._con.get(path=self._url, params=params)
+            res = self._gis._con.get(
+                path=self._url, params=params, return_raw_response=True
+            )
             try:
-                self._properties = PropertyMap(res)
+                self._properties = PropertyMap(res.json())
             except:
                 self._properties = PropertyMap({})
         return self._properties
@@ -71,17 +73,16 @@ class IdentityProviderManager(object):
         """
         Gets, updates, or Adds a SAML provider
 
-        ======================  =====================================================================
+        ======================  =======================================================================================
         **Arguement**           **Value**
-        ----------------------  ---------------------------------------------------------------------
+        ----------------------  ---------------------------------------------------------------------------------------
         value                   required dictionary.  This property sets, updates or deletes an IDP
                                 configuration for a given GIS.
 
                                 To configure an IDP, provide the key/value
                                 Example:
-                                idp.configuration = {'name' : 'Enterprise IDP',
-                                                     'idpMetadataFile' : 'metadata.xml'
-                                                    }
+
+                                idp.configuration = {'name' : 'Enterprise IDP', 'idpMetadataFile' : 'metadata.xml'}
 
                                 Once a site has been configured to use IDP, the configuration can be
                                 updated by passing in the key/value pair dictionary.
@@ -91,12 +92,13 @@ class IdentityProviderManager(object):
 
                                 To erase an IDP configuration, set the value to None
                                 Example:
+
                                 idp.configuration = None
 
                                 Everytime the IDP configuration is updated, the changes can be seen
                                 by calling the 'configuration' property and the new results will be
                                 returned as a dictionary.
-        ======================  =====================================================================
+        ======================  =======================================================================================
 
         *Key:Value Dictionary for Argument value*
 

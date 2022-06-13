@@ -4685,7 +4685,7 @@ def calculate_statistics(
 @deprecated(
     deprecated_in="1.8.1",
     details="Please use arcgis.raster.gbl.distance_accumulation()"
-    "followed by arcgis.raster.analytics.optimal_path_as_line(), instead.",
+    " followed by arcgis.raster.analytics.optimal_path_as_line(), instead.",
 )
 def determine_travel_costpath_as_polyline(
     input_source_data,

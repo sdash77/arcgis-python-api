@@ -121,6 +121,10 @@ class Security(BasePortalAdmin):
     def enterpriseusers(self):
         """
         provides access into managing enterprise users
+
+        :return:
+            :class:`~arcgis.gis.admin.EnterpriseUsers` object
+
         """
         if self._eu is None:
             url = "%s/users" % self._url
@@ -130,7 +134,13 @@ class Security(BasePortalAdmin):
     # ----------------------------------------------------------------------
     @property
     def groups(self):
-        """provides access to managing Enterprise Groups with Portal"""
+        """
+        provides access to managing Enterprise Groups with Portal
+
+        :return:
+            :class:`~arcgis.gis.admin.EnterpriseGroups` object
+
+        """
         if self._eg is None:
             url = "%s/groups" % self._url
             self._eg = EnterpriseGroups(url=url, gis=self._gis)
@@ -181,6 +191,11 @@ class Security(BasePortalAdmin):
         The OAuth resource contains a set of operations that update the
         OAuth2-specific properties of registered applications in Portal for
         ArcGIS.
+
+
+        :return:
+            :class:`~arcgis.gis.admin.OAuth` object
+
         """
         if self._oauth is None:
             url = "%s/oauth" % self._url
@@ -235,7 +250,7 @@ class Security(BasePortalAdmin):
         the format (.*).domain.com to allow access to all machines within a
         specified domain.
 
-        *example value*
+        *Example Value*
           {
            "disableServicesDirectory":false,
            "enableAutomaticAccountCreation":true,
@@ -346,6 +361,10 @@ class Security(BasePortalAdmin):
         """
         Provides access to managing and updating SSL Certificates on a
         Portal site.
+
+        :return:
+            :class:`~arcgis.gis.admin.SSLCertificates` object
+
         """
         if self._ssl is None:
             url = "%s/sslCertificates" % self._url
@@ -725,7 +744,7 @@ class SSLCertificates(BasePortalAdmin):
         ===========================     ====================================================================
 
         :return:
-            List of SSLCertificate objects
+            List of :class: arcgis.gis.admin.SSLCertificate objects
 
         .. code-block:: python
 
@@ -770,7 +789,8 @@ class SSLCertificates(BasePortalAdmin):
         alias_name                      Required string. The common name of the certificate.
         ===========================     ====================================================================
 
-        :return: SSLCertificate Object
+        :return:
+            :class: `~arcgis.gis.admin.SSLCertificate` object
 
         .. code-block:: python
 

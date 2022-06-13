@@ -125,8 +125,10 @@ class GPJob(object):
         """
         url = self._url + "/jobs/%s" % self._jobid
         params = {"f": "json", "returnMessages": True}
-
-        res = self._gis._con.post(url, params)
+        if hasattr(self._gis, "_con"):
+            res = self._gis._con.post(url, params)
+        else:
+            res = self._gis.post(url, params)
         if "messages" in res:
             return res["messages"]
         return []
@@ -142,7 +144,10 @@ class GPJob(object):
         url = self._url + "/jobs/%s" % self._jobid
         params = {"f": "json", "returnMessages": True}
 
-        res = self._gis._con.post(url, params)
+        if hasattr(self._gis, "_con"):
+            res = self._gis._con.post(url, params)
+        else:
+            res = self._gis.post(url, params)
         if "jobStatus" in res:
             return res["jobStatus"]
         return res
@@ -164,7 +169,10 @@ class GPJob(object):
         try:
             url = self._url + "/jobs/%s/cancel" % self._jobid
             params = {"f": "json"}
-            res = self._gis._con.post(url, params)
+            if hasattr(self._gis, "_con"):
+                res = self._gis._con.post(url, params)
+            else:
+                res = self._gis.post(url, params)
             if "jobStatus" in res:
                 self._future.cancel()
                 self._future.set_result({"jobStatus": "esriJobCancelled"})

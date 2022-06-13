@@ -138,7 +138,8 @@ def aggregate_points(
     estimate                                Optional Boolean. If True, the number of credits to run the operation
                                             will be returned.
     ------------------------------------    --------------------------------------------------------------------
-    future                                  Optional Boolean. When True, the task will be performed asynchronously.
+    future                                  Optional boolean. If True, a future object will be returned and the process
+                                            will not wait for the task to complete. The default is False, which means wait for results.
     ------------------------------------    --------------------------------------------------------------------
     bin_type                                Optional String. The type of bin that will be generated and points
                                             will be aggregated into. Bin options are as follows: Hexagon and Square.
@@ -161,6 +162,7 @@ def aggregate_points(
     ====================================    ====================================================================
 
     :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
+    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
 
     .. code-block:: python
@@ -424,7 +426,8 @@ def summarize_nearby(
     -------------------------   --------------------------------------------------------------------------------------------------------------------
     estimate                    Optional boolean. Returns the number of credit for the operation.
     -------------------------   --------------------------------------------------------------------------------------------------------------------
-    future                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                      Optional boolean. If True, a future object will be returned and the process
+                                will not wait for the task to complete. The default is False, which means wait for results.
     =========================   ====================================================================================================================
 
     :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection` dictionary.
@@ -569,7 +572,8 @@ def summarize_center_and_dispersion(
     --------------------    ---------------------------------------------------------
     estimate                Optional boolean. If True, the number of credits to run the operation will be returned.
     --------------------    ---------------------------------------------------------
-    future                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                  Optional boolean. If True, a future object will be returned and the process
+                            will not wait for the task to complete. The default is False, which means wait for results.
     ====================    =========================================================
 
     :return: list of items if ``output_name`` is supplied else, a Python dictionary with the following keys:
@@ -732,7 +736,8 @@ def summarize_within(
     -------------------------------------   ---------------------------------------------------------
     estimate                                Optional boolean. If True, the number of credits to run the operation will be returned.
     -------------------------------------   ---------------------------------------------------------
-    future                                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                                  Optional boolean. If True, a future object will be returned and the process
+                                            will not wait for the task to complete. The default is False, which means wait for results.
     -------------------------------------   ---------------------------------------------------------
     bin_type                                Required string. The type of bin used to calculate density.
 
@@ -918,7 +923,8 @@ def join_features(
     --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
     estimate                                                                                        Optional boolean. If True, the number of credits to run the operation will be returned.
     --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
-    future                                                                                          Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                                                                                          Optional boolean. If True, a future object will be returned and the process
+                                                                                                    will not wait for the task to complete. The default is False, which means wait for results.
     --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
     join_type                                                                                       Optional String.  Determines the type of join performed on the datasets.  The allowed values are INNER or LEFT.
     --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------

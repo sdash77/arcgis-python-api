@@ -130,7 +130,7 @@ class Comment(dict):
 
         Parameters:
          :comment: updated comment text
-        Output:
+        :return:
          On successful update, the comment Id
          On unsuccessful update, JSON response message
         """
