@@ -4709,6 +4709,9 @@ class GroupManager(object):
         display_settings: Optional[str] = None,
         is_open_data: bool = False,
         leaving_disallowed: bool = False,
+        hidden_members: bool = False,
+        membership_access: Optional[str] = None,
+        autojoin: bool = False,
     ):
         """
         The ``create`` method creates a group with the values for any particular arguments that are specified.
@@ -4782,6 +4785,23 @@ class GroupManager(object):
                               from choosing to leave the group. If True, only an
                               administrator can remove them from the group. The default
                               is False.
+        ------------------    ---------------------------------------------------------
+        hidden_members        Optional Boolean. Only applies to org accounts. If true,
+                              only the group owner, group managers, and default
+                              administrators can see all members of the group.
+        ------------------    ---------------------------------------------------------
+        membership_access     Optional String. Sets the membership access for the group.
+                              Setting to `org` restricts group access to members of
+                              your organization. Setting to `collaboration` restricts the
+                              membership access to partnered collaboration and your
+                              organization members. If `None` set, any organization
+                              will have access. `None` is the default.
+
+                              Values: `org`, `collaboration`, or `None`
+        ------------------    ---------------------------------------------------------
+        autojoin              Optional Boolean. The default is `False`. Only applies to
+                              org accounts. If `True`, this group will allow joined
+                              without requesting membership approval.
         ====================  =========================================================
 
         :return:
@@ -4832,6 +4852,13 @@ class GroupManager(object):
             params["capabilities"] = ""
         params["isOpenData"] = is_open_data
         params["MAX_FILE_SIZE"] = max_file_size
+        if hidden_members in [True, False]:
+            params["hiddenMembers"] = hidden_members
+        if membership_access in ["org", "collaboration", None]:
+            params["membershipAccess"] = membership_access
+        if autojoin in [True, False]:
+            params["autoJoin"] = autojoin
+
         if (
             isinstance(display_settings, str)
             and display_settings.lower() in display_settings_lu
@@ -9046,6 +9073,10 @@ class Group(dict):
         display_settings: Optional[str] = None,
         is_open_data: bool = False,
         leaving_disallowed: bool = False,
+        member_access: bool = None,
+        hidden_members: bool = False,
+        membership_access: Optional[str] = None,
+        autojoin: bool = False,
     ):
         """
         The ``update`` method updates the group's properties with the values supplied for particular arguments.
@@ -9108,6 +9139,23 @@ class Group(dict):
                             from choosing to leave the group. If True, only an
                             administrator can remove them from the group. The default
                             is False.
+        ------------------  ---------------------------------------------------------
+        hidden_members      Optional Boolean. Only applies to org accounts. If true,
+                            only the group owner, group managers, and default
+                            administrators can see all members of the group.
+        ------------------  ---------------------------------------------------------
+        membership_access   Optional String. Sets the membership access for the group.
+                            Setting to `org` restricts group access to members of
+                            your organization. Setting to `collaboration` restricts the
+                            membership access to partnered collaboration and your
+                            organization members. If `None` set, any organization
+                            will have access. `None` is the default.
+
+                            Values: `org`, `collaboration`, or `None`
+        ------------------  ---------------------------------------------------------
+        autojoin            Optional Boolean. The default is `False`. Only applies to
+                            org accounts. If `True`, this group will allow joined
+                            without requesting membership approval.
         ==================  =========================================================
 
         :return:
@@ -9163,6 +9211,9 @@ class Group(dict):
             display_settings=display_settings,
             is_open_data=is_open_data,
             leaving_disallowed=leaving_disallowed,
+            hidden_members=hidden_members,
+            membership_access=membership_access,
+            autojoin=autojoin,
         )
         if resp:
             self._hydrate()
