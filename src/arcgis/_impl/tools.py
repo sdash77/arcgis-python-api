@@ -12480,6 +12480,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         process_as_multidimensional=False,
         percentile_value=90,
         percentile_interpolation_type="AUTO_DETECT",
+        calculate_circular_statistics=False,
+        circular_wrap_value=360,
         **kwargs,
     ):
         """
@@ -12608,7 +12610,9 @@ class _RasterAnalysisTools(BaseAnalytics):
                 gis=gis,
                 future=True,
             )
-        elif (current_version is not None) and current_version >= 10.9:
+        elif (current_version is not None) and (
+            current_version >= 10.9 and current_version < 11
+        ):
             gpjob = self._tbx.summarize_raster_within(
                 input_zone_layer=input_zone_layer,
                 zone_field=zone_field,
@@ -12620,6 +12624,23 @@ class _RasterAnalysisTools(BaseAnalytics):
                 process_as_multidimensional=process_as_multidimensional,
                 percentile_value=percentile_value,
                 percentile_interpolation_type=percentile_interpolation_type,
+                gis=gis,
+                future=True,
+            )
+        elif (current_version is not None) and current_version >= 11:
+            gpjob = self._tbx.summarize_raster_within(
+                input_zone_layer=input_zone_layer,
+                zone_field=zone_field,
+                input_raster_layerto_summarize=input_raster_layer_to_summarize,
+                output_name=output_raster,
+                statistic_type=statistic_type,
+                ignore_missing_values=ignore_missing_values,
+                context=context,
+                process_as_multidimensional=process_as_multidimensional,
+                percentile_value=percentile_value,
+                percentile_interpolation_type=percentile_interpolation_type,
+                calculate_circular_statistics=circular_calculation,
+                circular_wrap_value=circular_wrap_value,
                 gis=gis,
                 future=True,
             )
@@ -16094,6 +16115,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_name=None,
         context=None,
         future=False,
+        calculate_circular_statistics=False,
+        circular_wrap_value=360,
         **kwargs,
     ):
         """
@@ -16312,20 +16335,38 @@ class _RasterAnalysisTools(BaseAnalytics):
         else:
             output_name = json.dumps({"serviceProperties": {"name": output_name}})
 
-        gpjob = self._tbx.zonal_statistics_as_table(
-            input_zone_raster_or_features=input_zone_raster_or_features,
-            input_value_raster=input_value_raster,
-            zone_field=zone_field,
-            ignore_nodata=ignore_nodata,
-            statistic_type=statistic_type,
-            percentile_values=percentile_values,
-            process_as_multidimensional=process_as_multidimensional,
-            percentile_interpolation_type=percentile_interpolation_type,
-            output_table_name=output_name,
-            context=context,
-            gis=self._gis,
-            future=True,
-        )
+        if (current_version is not None) and current_version < 11:
+            gpjob = self._tbx.zonal_statistics_as_table(
+                input_zone_raster_or_features=input_zone_raster_or_features,
+                input_value_raster=input_value_raster,
+                zone_field=zone_field,
+                ignore_nodata=ignore_nodata,
+                statistic_type=statistic_type,
+                percentile_values=percentile_values,
+                process_as_multidimensional=process_as_multidimensional,
+                percentile_interpolation_type=percentile_interpolation_type,
+                output_table_name=output_name,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
+        elif (current_version is not None) and current_version >= 11:
+            gpjob = self._tbx.zonal_statistics_as_table(
+                input_zone_raster_or_features=input_zone_raster_or_features,
+                input_value_raster=input_value_raster,
+                zone_field=zone_field,
+                ignore_nodata=ignore_nodata,
+                statistic_type=statistic_type,
+                percentile_values=percentile_values,
+                process_as_multidimensional=process_as_multidimensional,
+                percentile_interpolation_type=percentile_interpolation_type,
+                output_table_name=output_name,
+                context=context,
+                gis=self._gis,
+                future=True,
+                calculate_circular_statistics=calculate_circular_statistics,
+                circular_wrap_value=circular_wrap_value,
+            )
 
         gpjob._is_ra = True
         gpjob._item_properties = True
