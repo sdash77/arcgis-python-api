@@ -20,7 +20,6 @@ arcgis = LazyLoader("arcgis")
 _arcgis_features = LazyLoader("arcgis.features")
 _arcgis_mapping = LazyLoader("arcgis.mapping")
 _gis = LazyLoader("arcgis.gis")
-_env = LazyLoader("arcgis.env")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
 _utils = LazyLoader("arcgis._impl.common._utils")
 _geometry = LazyLoader("arcgis.geometry")
@@ -4321,7 +4320,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
     # ----------------------------------------------------------------------
     def edit_tile_service(
         self,
-        source_item_id=None,
+        source_item_id: str | None = None,
         export_tiles_allowed=None,
         min_scale=None,
         max_scale=None,
@@ -4329,15 +4328,15 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         service_name=None,
     ):
         """
-        The edit operation enables editing the service exportTilesAllowed,
-        export_tile_count, max_scale, and min_scale properties. Allowed for
-        Enterprise and ArcGIS Online
+        The edit operation enables editing the service source item id, min scale, max scale,
+        export tiles allowed and max export tiles count parameters.
+        Allowed for Enterprise and ArcGIS Online.
 
         ======================     =======================================================
         **Argument**               **Description**
         ----------------------     -------------------------------------------------------
-        source_item_id             Required String. The Source Item ID is the GeoWarehouse
-                                   Item ID of the tile service
+        source_item_id             Optional String. The Source Item ID is the GeoWarehouse
+                                   Item ID of the tile service. Only in ArcGIS Online.
         ----------------------     -------------------------------------------------------
         export_tiles_allowed       Optional boolean. ``exports_tiles_allowed`` sets
                                    the value to let users export tiles
