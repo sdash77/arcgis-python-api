@@ -972,6 +972,7 @@ def to_featureclass(
                 df.loc[q, "SHAPE"] = None  # reset null values
         except ValueError as ve:
             df.columns = original_columns
+            df.set_index(old_idx)
             fc = None
             raise
         except Exception as e:
@@ -981,6 +982,7 @@ def to_featureclass(
             raise e
         finally:
             df.columns = original_columns
+            df.set_index(old_idx)
         return fc
     elif HASPYSHP:
         if fc_name.endswith(".shp") == False:

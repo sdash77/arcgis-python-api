@@ -2338,7 +2338,7 @@ class Geometry(BaseGeometry):
         ===============     ====================================================================
 
         :return:
-            A `~arcgis.geometry.Geometry` object indicating an intersection, or None for no intersection
+            A :class:`~arcgis.geometry.Geometry` object indicating an intersection, or None for no intersection
 
         .. code-block:: python
 

@@ -63,7 +63,7 @@ def _create_service(url: str, layer_type: str, gis: GIS, name: str = None):
 ###########################################################################
 class AGOLServicesDirectory:
     """
-    The ArcGIS Online ServicesDirectory displays the hosted services for
+    The ArcGIS Online Services Directory displays the hosted services for
     a site.
 
     ==================     ====================================================================

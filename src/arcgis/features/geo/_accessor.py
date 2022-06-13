@@ -2691,7 +2691,18 @@ class GeoAccessor(object):
                     sr = 4326
             from ._array import GeoArray
 
-            df[geometry_column] = GeoArray(df[geometry_column].apply(Geometry))
+            def _set_default_sr(geom):
+                if geom["spatialReference"] is None:
+                    geom["spatialReference"] = {"wkid": 4326}
+                elif (
+                    geom["spatialReference"].get("wkid", None) is None
+                    and geom["spatialReference"].get("wkt", None) is None
+                ):
+                    geom["spatialReference"] = {"wkid": 4326}
+                return geom
+
+            series = df[geometry_column].apply(Geometry).apply(_set_default_sr)
+            df[geometry_column] = GeoArray(series)
             df.spatial.set_geometry(geometry_column)
             df.spatial.project(sr)
             return df

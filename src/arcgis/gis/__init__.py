@@ -4709,6 +4709,9 @@ class GroupManager(object):
         display_settings: Optional[str] = None,
         is_open_data: bool = False,
         leaving_disallowed: bool = False,
+        hidden_members: bool = False,
+        membership_access: Optional[str] = None,
+        autojoin: bool = False,
     ):
         """
         The ``create`` method creates a group with the values for any particular arguments that are specified.
@@ -4782,6 +4785,23 @@ class GroupManager(object):
                               from choosing to leave the group. If True, only an
                               administrator can remove them from the group. The default
                               is False.
+        ------------------    ---------------------------------------------------------
+        hidden_members        Optional Boolean. Only applies to org accounts. If true,
+                              only the group owner, group managers, and default
+                              administrators can see all members of the group.
+        ------------------    ---------------------------------------------------------
+        membership_access     Optional String. Sets the membership access for the group.
+                              Setting to `org` restricts group access to members of
+                              your organization. Setting to `collaboration` restricts the
+                              membership access to partnered collaboration and your
+                              organization members. If `None` set, any organization
+                              will have access. `None` is the default.
+
+                              Values: `org`, `collaboration`, or `None`
+        ------------------    ---------------------------------------------------------
+        autojoin              Optional Boolean. The default is `False`. Only applies to
+                              org accounts. If `True`, this group will allow joined
+                              without requesting membership approval.
         ====================  =========================================================
 
         :return:
@@ -4832,6 +4852,13 @@ class GroupManager(object):
             params["capabilities"] = ""
         params["isOpenData"] = is_open_data
         params["MAX_FILE_SIZE"] = max_file_size
+        if hidden_members in [True, False]:
+            params["hiddenMembers"] = hidden_members
+        if membership_access in ["org", "collaboration", None]:
+            params["membershipAccess"] = membership_access
+        if autojoin in [True, False]:
+            params["autoJoin"] = autojoin
+
         if (
             isinstance(display_settings, str)
             and display_settings.lower() in display_settings_lu
@@ -5619,6 +5646,7 @@ class ContentManager(object):
         location_type: Optional[str] = None,
         source_country: str = "world",
         country_hint: Optional[str] = None,
+        enable_global_geocoding: Optional[bool] = None,
     ):
         """
         The ``analyze`` method helps a client analyze a CSV or Excel file (.xlsx, .xls) prior to publishing or
@@ -5672,6 +5700,8 @@ class ContentManager(object):
         source_country             Optional string. The two character country code associated with the geocoding service, default is "world".
         -----------------------    -------------------------------------------------------------
         country_hint               Optional string. If first time analyzing, the hint is used. If source country is already specified than sourcecountry is used.
+        -----------------------    -------------------------------------------------------------
+        enable_global_geocoding    Optional boolean. Default is None. When True, the global geocoder is used.
         =======================    =============================================================
 
         :return: dictionary
@@ -5734,7 +5764,10 @@ class ContentManager(object):
             params["analyzeParameters"]["sourceCountry"] = source_country
         if country_hint:
             params["analyzeParameters"]["sourcecountryhint"] = country_hint
-
+        if enable_global_geocoding in [True, False]:
+            params["analyzeParameters"][
+                "enableGlobalGeocoding"
+            ] = enable_global_geocoding
         gis = self._gis
         params["analyzeParameters"] = json.dumps(params["analyzeParameters"])
 
@@ -5993,23 +6026,31 @@ class ContentManager(object):
                             contain two or more clauses, the recommended schema is to have
                             clauses separated by blank, or `AND`, e.g.
 
-                            :Usage Example:
+                            .. code-block:: python
+                            
+                               #Usage Example:
 
 
-                            gis.content.advanced_search(query='owner:USERNAME type:map')
-                            # or
-                            gis.content.advanced_search(query='type:map AND owner:USERNAME')
+                                >>> gis.content.advanced_search(query='owner:USERNAME type:map')
+                                # or
+                                >>> gis.content.advanced_search(query='type:map AND owner:USERNAME')
 
 
                             .. warning::
-                            When the clauses are separated by comma, the filtering condition
-                            for `owner` should not be placed at the first position, e.g.
-                            `gis.content.advanced_search(query='type:map, owner:USERNAME')`
-                            is allowed, while
-                            `gis.content.advanced_search(query='owner:USERNAME, type:map')`
-                            is not. For more, please check
-                            https://developers.arcgis.com/rest/users-groups-and-items/search-reference.htm
-
+                                When the clauses are separated by comma, the filtering condition
+                                for `owner` should not be placed at the first position, e.g.
+                                
+                                .. code-block:: python
+                                
+                                    >>> gis.content.advanced_search(query='type:map, owner:USERNAME')
+                                
+                                is allowed, while
+                                
+                                .. code-block:: python
+                                    
+                                    >>> gis.content.advanced_search(query='owner:USERNAME, type:map')
+                                
+                                is not.  For more information, please check `Users, groups and items <https://developers.arcgis.com/rest/users-groups-and-items/search-reference.htm>`_.
         ----------------    ---------------------------------------------------------------
         bbox                Optional String/List. This is the xmin,ymin,xmax,ymax bounding
                             box to limit the search in.  Items like documents do not have
@@ -9040,6 +9081,10 @@ class Group(dict):
         display_settings: Optional[str] = None,
         is_open_data: bool = False,
         leaving_disallowed: bool = False,
+        member_access: bool = None,
+        hidden_members: bool = False,
+        membership_access: Optional[str] = None,
+        autojoin: bool = False,
     ):
         """
         The ``update`` method updates the group's properties with the values supplied for particular arguments.
@@ -9102,6 +9147,23 @@ class Group(dict):
                             from choosing to leave the group. If True, only an
                             administrator can remove them from the group. The default
                             is False.
+        ------------------  ---------------------------------------------------------
+        hidden_members      Optional Boolean. Only applies to org accounts. If true,
+                            only the group owner, group managers, and default
+                            administrators can see all members of the group.
+        ------------------  ---------------------------------------------------------
+        membership_access   Optional String. Sets the membership access for the group.
+                            Setting to `org` restricts group access to members of
+                            your organization. Setting to `collaboration` restricts the
+                            membership access to partnered collaboration and your
+                            organization members. If `None` set, any organization
+                            will have access. `None` is the default.
+
+                            Values: `org`, `collaboration`, or `None`
+        ------------------  ---------------------------------------------------------
+        autojoin            Optional Boolean. The default is `False`. Only applies to
+                            org accounts. If `True`, this group will allow joined
+                            without requesting membership approval.
         ==================  =========================================================
 
         :return:
@@ -9157,6 +9219,9 @@ class Group(dict):
             display_settings=display_settings,
             is_open_data=is_open_data,
             leaving_disallowed=leaving_disallowed,
+            hidden_members=hidden_members,
+            membership_access=membership_access,
+            autojoin=autojoin,
         )
         if resp:
             self._hydrate()
@@ -9715,7 +9780,18 @@ class User(dict):
         res = self._gis._con.post(url, params)
         time.sleep(2)
         try:
-            item = Item(self._gis, res["itemId"])
+            count = 0
+            while count < 5:
+
+                item = Item(self._gis, res["itemId"])
+                if item:
+                    break
+                count += 1
+                time.sleep(count)
+
+            if item is None:
+                raise Exception(f"Cannot find Item: {res['itemID']}")
+
             status = item.status()
             counter = 1
             while not status["status"] in ["completed", "failed"]:
