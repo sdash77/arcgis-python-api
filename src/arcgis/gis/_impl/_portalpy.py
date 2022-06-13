@@ -2453,11 +2453,11 @@ class Portal(object):
             files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
 
         if hidden_members in [True, False]:
-            postdata['hiddenMembers'] = hidden_members
-        if membership_access in ['org', 'collaboration', None]:
-            postdata['membershipAccess'] = membership_access
+            postdata["hiddenMembers"] = hidden_members
+        if membership_access in ["org", "collaboration", None]:
+            postdata["membershipAccess"] = membership_access
         if autojoin in [True, False]:
-            postdata['autoJoin'] = autojoin
+            postdata["autoJoin"] = autojoin
 
         resp = self.con.post(
             "community/groups/" + group_id + "/update", postdata, files

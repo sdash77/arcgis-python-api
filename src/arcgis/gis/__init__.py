@@ -4854,11 +4854,11 @@ class GroupManager(object):
         params["isOpenData"] = is_open_data
         params["MAX_FILE_SIZE"] = max_file_size
         if hidden_members in [True, False]:
-            params['hiddenMembers'] = hidden_members
-        if membership_access in ['org', 'collaboration', None]:
-            params['membershipAccess'] = membership_access
+            params["hiddenMembers"] = hidden_members
+        if membership_access in ["org", "collaboration", None]:
+            params["membershipAccess"] = membership_access
         if autojoin in [True, False]:
-            params['autoJoin'] = autojoin
+            params["autoJoin"] = autojoin
 
         if (
             isinstance(display_settings, str)
