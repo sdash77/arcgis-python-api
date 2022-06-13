@@ -5112,7 +5112,7 @@ class ContentManager(object):
 
     # ----------------------------------------------------------------------
     @property
-    def marketplace_manager(self) -> "MarketPlaceManager":
+    def marketplace(self) -> "MarketPlaceManager":
         """
         Provides users the ability to manage the content's presence on the marketplace.
 
