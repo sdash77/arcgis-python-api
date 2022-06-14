@@ -652,12 +652,12 @@ def cost_allocation(
 
 
 def zonal_statistics(
-    in_zone_data: Raster,
+    in_zone_data: Union[Raster, ImageryLayer],
     zone_field: Union[str, int],
-    in_value_raster: Raster,
+    in_value_raster: Union[Raster, ImageryLayer],
     ignore_nodata: bool = True,
     statistics_type: str = "MEAN",
-    process_as_multidimensional: Optional[bool] = None,
+    process_as_multidimensional: bool = False,
     percentile_value: float = 90,
     percentile_interpolation_type: str = "AUTO_DETECT",
     circular_calculation: bool = False,
