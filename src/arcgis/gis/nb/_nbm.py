@@ -7,7 +7,9 @@ import concurrent.futures
 ########################################################################
 class NotebookManager(object):
     """
-    Provides access to managing a site's notebooks
+    Provides access to managing a site's notebooks. An object of this
+    class can be created using :attr:`~arcgis.gis.nb.NotebookServer.notebooks` property of the
+    :class:`~arcgis.gis.nb.NotebookServer` class
     """
 
     _url = None
@@ -154,7 +156,8 @@ class NotebookManager(object):
         a cron job to schedule the executeNotebook operation; on Windows
         machines, you can use the Task Scheduler app.
 
-        :Note: To run this operation, you must be logged in with an ArcGIS
+        .. note::
+            To run this operation, you must be logged in with an ArcGIS
             Enterprise portal account. You cannot execute notebooks from
             the ArcGIS Notebook Server primary site administrator
             account.
@@ -190,12 +193,11 @@ class NotebookManager(object):
                                 should be saved in the notebook for future use. The default is
                                 false.
         --------------------    --------------------------------------------------------------------
-        future                  Optional boolean. If True, a future object will be returned and the process
+        future                  Optional boolean. If True, a Job object will be returned and the process
                                 will not wait for the task to complete. The default is False, which means wait for results.
         ====================    ====================================================================
 
-        :return: Boolean else If ``future = True``,
-        then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
+        :return: Boolean else If ``future = True``, then a Job object is returned.
 
         """
         from arcgis.gis import Item
@@ -279,7 +281,7 @@ class NotebookManager(object):
         template_nb             Optional String. The start up template for the notebook.
         ==================      ====================================================================
 
-        :return: dict
+        :return: Dict
 
         """
         params = {
@@ -406,7 +408,7 @@ class Runtime(object):
         """
         Deletes the current runtime from the ArcGIS Notebook Server
 
-        :return: boolean
+        :return: Boolean
 
         """
         url = self._url + "/unregister"

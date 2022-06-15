@@ -53,7 +53,9 @@ class SnapShot(object):
         title                  Required String. The name of the new notebook.
         ==================     ====================================================================
 
-        :return: Item
+        :return:
+            :class:`~arcgis.gis.Item`
+
         """
         return self._sm._convert(
             item=self._item, snapshot=self.properties["resourceKey"], title=title
@@ -79,7 +81,7 @@ class SnapShot(object):
         description            Optional String. Text describing the restoration point.
         ==================     ====================================================================
 
-        :return: dict
+        :return: Dict
         """
         return self._sm._restore(
             item=self._item,
@@ -102,7 +104,7 @@ class SnapShot(object):
         snapshot               Required String. The name of the snapshot.
         ==================     ====================================================================
 
-        :return: bool
+        :return: Boolean
 
         """
         res = self._sm._delete(item=self._item, snapshot=self.properties["resourceKey"])
@@ -148,7 +150,9 @@ class SnapshotManager(object):
         ==================     ====================================================================
 
 
-        :return: Item
+        :return:
+            :class:`~arcgis.gis.Item`
+
 
         """
         if isinstance(item, Item) and item.type.lower() == "notebook":
@@ -222,7 +226,7 @@ class SnapshotManager(object):
         access                 Optional Bool. When false, the snapshot will not be publicly available.
         ==================     ====================================================================
 
-        :return: dict
+        :return: Dict
 
         """
         if isinstance(item, Item) and item.type.lower() == "notebook":
@@ -251,7 +255,7 @@ class SnapshotManager(object):
         item                   Required Item. The 'Notebook' typed item to get all the snapshots for.
         ==================     ====================================================================
 
-        :return: namedtuple of snapshot properties
+        :return: List of :class:`~arcgis.gis.nb.SnapShot` objects
 
         """
         if isinstance(item, Item) and item.type.lower() == "notebook":
