@@ -34,7 +34,7 @@ class SecurityManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<SecurityManager @ {url}>".format(url=self._url)
+        return "<SecurityManager at {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):

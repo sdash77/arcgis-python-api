@@ -41,11 +41,11 @@ class PortalDataStore(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "< PortalDataStore @ {url} >".format(url=self._url)
+        return "< PortalDataStore at {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "< PortalDataStore @ {url} >".format(url=self._url)
+        return "< PortalDataStore at {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def describe(self, item, server_id, path, store_type="datastore"):

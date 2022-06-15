@@ -42,11 +42,11 @@ class SystemManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<SystemManager @ {url}>".format(url=self._url)
+        return "<SystemManager at {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<SystemManager @ {url}>".format(url=self._url)
+        return "<SystemManager at {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -186,11 +186,11 @@ class DirectoryManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<DirectoryManager @ {url}>".format(url=self._url)
+        return "<DirectoryManager at {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<DirectoryManager @ {url}>".format(url=self._url)
+        return "<DirectoryManager at {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -295,11 +295,11 @@ class WebAdaptorManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<WebAdapterManager @ {url}>".format(url=self._url)
+        return "<WebAdapterManager at {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<WebAdapterManager @ {url}>".format(url=self._url)
+        return "<WebAdapterManager at {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -471,11 +471,11 @@ class WebAdaptor(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<WebAdapter @ {url}>".format(url=self._url)
+        return "<WebAdapter at {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<WebAdapter @ {url}>".format(url=self._url)
+        return "<WebAdapter at {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def unregister(self):

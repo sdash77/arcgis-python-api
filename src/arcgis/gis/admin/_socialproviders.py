@@ -34,11 +34,11 @@ class SocialProviders(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "<%s at %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "<%s at %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     @property

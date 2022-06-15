@@ -1941,10 +1941,10 @@ class DatastoreManager(object):
         self._server = server
 
     def __str__(self):
-        return "<%s for %s>" % (type(self).__name__, self._admin_url)
+        return "<%s for %s >" % (type(self).__name__, self._admin_url)
 
     def __repr__(self):
-        return "<%s for %s>" % (type(self).__name__, self._admin_url)
+        return "<%s for %s >" % (type(self).__name__, self._admin_url)
 
     @property
     def config(self):
@@ -2588,7 +2588,7 @@ class UserManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<UserManager @ {url}>".format(url=self._gis._url)
+        return "<UserManager at {url} >".format(url=self._gis._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -7669,7 +7669,7 @@ class CategorySchemaManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<CategorySchemaManager @ {url}>".format(url=self._url)
+        return "<CategorySchemaManager at {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):

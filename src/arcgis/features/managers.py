@@ -1143,7 +1143,7 @@ class WebHook(object):
     # ----------------------------------------------------------------------
     def __str__(self):
         """returns the class as a string"""
-        return f"<WebHook @ {self._url}>"
+        return f"<WebHook @ {self._url} >"
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -1302,7 +1302,7 @@ class WebHookServiceManager(object):
     # ----------------------------------------------------------------------
     def __str__(self):
         """returns the class as a string"""
-        return f"<WebHookServiceManager @ {self._url}>"
+        return f"<WebHookServiceManager @ {self._url} >"
 
     # ----------------------------------------------------------------------
     def __repr__(self):

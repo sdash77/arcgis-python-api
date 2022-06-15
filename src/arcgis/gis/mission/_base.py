@@ -26,7 +26,7 @@ class BaseMissionServer(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return f"<{self.__class__.__name__} @ {self._url}>"
+        return f"<{self.__class__.__name__} @ {self._url} >"
 
     # ----------------------------------------------------------------------
     def __repr__(self):
