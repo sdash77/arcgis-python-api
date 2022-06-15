@@ -226,7 +226,7 @@ class CollaborationManager(object):
                             Collaboration,
                             **{
                                 "collab_manager": self,
-                                "collab_id": collab['id'],
+                                "collab_id": collab["id"],
                                 "portal_id": self._gis.properties.id,
                             },
                         ): collab
@@ -237,7 +237,7 @@ class CollaborationManager(object):
                         try:
                             collabs.append(future.result())
                         except Exception as exc:
-                            print('%r generated an exception: %s' % (collab, exc))
+                            print("%r generated an exception: %s" % (collab, exc))
                 return collabs
             else:
                 params["start"] = res["nextStart"]
