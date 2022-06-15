@@ -667,76 +667,93 @@ def zonal_statistics(
     For more information see,
     `Zonal Statistics function <https://pro.arcgis.com/en/pro-app/latest/help/analysis/raster-functions/zonal-statistics-global-function.htm>`_
 
-    Parameters
-    ----------
-    :param in_zone_data: Required raster layer. Dataset that defines the zones. The zones can be defined by an integer raster
-    :param zone_field: Required string or integer. Field that holds the values that define each zone. It can be an integer or a
-                            string field of the zone raster.
-    :param in_value_raster: Required raster layer. Raster that contains the values on which to calculate a statistic.
-    :param ignore_no_data: Optional bool. Denotes whether NoData values in the Value Raster will influence the results
-                            of the zone that they fall within.
 
-                            - True - Within any particular zone, only pixels that have a value in the Value \
-                            Raster will be used in determining the output value for that zone. NoData \
-                            pixels in the Value Raster will be ignored in the statistic calculation. This is the default.
+    =============================    ===========================================================================================================
+    **Argument**                     **Description**
+    -----------------------------    -----------------------------------------------------------------------------------------------------------
+    in_zone_data                     Required raster layer. Dataset that defines the zones. The zones can be defined by an integer raster
+    -----------------------------    -----------------------------------------------------------------------------------------------------------
+    zone_field                       Required string or integer. Field that holds the values that define each zone. It can be an integer or a
+                                     string field of the zone raster.
+    -----------------------------    -----------------------------------------------------------------------------------------------------------
+    in_value_raster                  Required raster layer. Raster that contains the values on which to calculate a statistic.
+    -----------------------------    -----------------------------------------------------------------------------------------------------------
+    ignore_no_data                   Optional bool. Denotes whether NoData values in the Value Raster will influence the results
+                                     of the zone that they fall within.
 
-                            - False - Within any particular zone, if any NoData pixels exist in the Value \
-                            Raster, it is deemed that there is insufficient information to perform \
-                            statistical calculations for all the pixels in that zone; therefore, the \
-                            entire zone will receive the NoData value on the output raster.
-    :param statistics_type: Optional string. Statistic type to be calculated. Default is MEAN
+                                     True - Within any particular zone, only pixels that have a value in the Value
+                                     Raster will be used in determining the output value for that zone. NoData
+                                     pixels in the Value Raster will be ignored in the statistic calculation. This is the default.
 
-                            - MEAN-Calculates the average of all pixels in the Value Raster that belong to \
-                            the same zone as the output pixel.
+                                     False - Within any particular zone, if any NoData pixels exist in the Value
+                                     Raster, it is deemed that there is insufficient information to perform
+                                     statistical calculations for all the pixels in that zone; therefore, the
+                                     entire zone will receive the NoData value on the output raster.
+    -----------------------------    -----------------------------------------------------------------------------------------------------------
+    statistics_type                  Optional string. Statistic type to be calculated. Default is MEAN
 
-                            - MAJORITY-Determines the value that occurs most often of all pixels in the \
-                            Value Raster that belong to the same zone as the output pixel.
+                                     MEAN-Calculates the average of all pixels in the Value Raster that belong to
+                                     the same zone as the output pixel.
 
-                            - MAXIMUM-Determines the largest value of all pixels in the Value Raster \
-                            that belong to the same zone as the output pixel.
+                                     MAJORITY-Determines the value that occurs most often of all pixels in the
+                                     Value Raster that belong to the same zone as the output pixel.
 
-                            - MEDIAN-Determines the median value of all pixels in the Value Raster \
-                            that belong to the same zone as the output pixel.
+                                     MAXIMUM-Determines the largest value of all pixels in the Value Raster
+                                     that belong to the same zone as the output pixel.
 
-                            - MINIMUM-Determines the smallest value of all pixels in the Value Raster \
-                            that belong to the same zone as the output pixel.
+                                     MEDIAN-Determines the median value of all pixels in the Value Raster
+                                     that belong to the same zone as the output pixel.
 
-                            - MINORITY-Determines the value that occurs least often of all pixels in \
-                            the Value Raster that belong to the same zone as the output pixel.
+                                     MINIMUM-Determines the smallest value of all pixels in the Value Raster
+                                     that belong to the same zone as the output pixel.
 
-                            - RANGE-Calculates the difference between the largest and smallest value \
-                            of all pixels in the Value Raster that belong to the same zone as the \
-                            output pixel.
+                                     MINORITY-Determines the value that occurs least often of all pixels in
+                                     the Value Raster that belong to the same zone as the output pixel.
 
-                            - STD-Calculates the standard deviation of all pixels in \
-                            the Value Rasterthat belong to the same zone as the output pixel.
+                                     RANGE-Calculates the difference between the largest and smallest value
+                                     of all pixels in the Value Raster that belong to the same zone as the
+                                     output pixel.
 
-                            - SUM-Calculates the total value of all pixels in the Value Raster that \
-                            belong to the same zone as the output pixel.
+                                     STD-Calculates the standard deviation of all pixels in
+                                     the Value Rasterthat belong to the same zone as the output pixel.
 
-                            - VARIETY-Calculates the number of unique values for all pixels in the \
-                            Value Raster that belong to the same zone as the output pixel.
+                                     SUM-Calculates the total value of all pixels in the Value Raster that
+                                     aibhav chdahdgfjhagsfjkasbelong to the same zone as the output pixel.
 
-                            - PERCENTILE -Calculates a percentile of all cells in the value raster that \
-                            belong to the same zone as the output cell. The 90th percentile \
-                            is calculated by default. You can specify other values (from 0 to 100) \
-                            using the percentile_value parameter.
+                                     VARIETY-Calculates the number of unique values for all pixels in the
+                                     Value Raster that belong to the same zone as the output pixel.
 
-    :param process_as_multidimensional: Optional bool, Process as multidimensional if set to True. (If the input is multidimensional raster.)
-    :param percentile_value: Optional Double, The percentile to calculate. The default is 90, for the 90th percentile. The 
-                             values can range from 0 to 100. The 0th percentile is essentially equivalent to the 
-                             Minimum statistic, and the 100th percentile is equivalent to Maximum. 
-                             A value of 50 will produce essentially the same result as the Median statistic.
-                             
-                             This parameter is honoured only available if the statistics_type parameter is 
-                             set to PERCENTILE.
-    :param percentile_interpolation_type: Optional string. Specifies the method of interpolation to be used when the 
-                                          specified percentile value lies between two input cell values.
-                                            - AUTO_DETECT - If the input value raster has integer pixel type, the NEAREST method is used. If the input value raster has floating point pixel type, then the LINEAR method is used. This is the default.
-                                            - NEAREST - Nearest value to the desired percentile. In this case, the output pixel type is same as that of the input value raster.
-                                            - LINEAR - Weighted average of two surrounding values from the desired percentile. In this case, the output pixel type is floating point.
+                                     PERCENTILE -Calculates a percentile of all cells in the value raster that
+                                     belong to the same zone as the output cell. The 90th percentile
+                                     is calculated by default. You can specify other values (from 0 to 100)
+                                     using the percentile_value parameter.
+    -----------------------------    -----------------------------------------------------------------------------------------------------------
+    process_as_multidimensional      Optional bool, Process as multidimensional if set to True. (If the input is multidimensional raster.)
+    -----------------------------    -----------------------------------------------------------------------------------------------------------
+    percentile_value                 Optional Double, The percentile to calculate. The default is 90, for the 90th percentile. The
+                                     values can range from 0 to 100. The 0th percentile is essentially equivalent to the
+                                     Minimum statistic, and the 100th percentile is equivalent to Maximum.
+                                     A value of 50 will produce essentially the same result as the Median statistic.
 
-                                          Parameter available in ArcGIS Image Server 10.9 and higher.
+                                     This parameter is honoured only available if the statistics_type parameter is
+                                     set to PERCENTILE.
+    -----------------------------    -----------------------------------------------------------------------------------------------------------
+    percentile_interpolation_type    Optional string. Specifies the method of interpolation to be used when the
+                                     specified percentile value lies between two input cell values.
+
+                                     AUTO_DETECT - If the input value raster has integer pixel type, the NEAREST method is used.
+                                     If the input value raster has floating point pixel type, then the LINEAR method is used. This is the default.
+
+                                     NEAREST - Nearest value to the desired percentile. In this case, the output pixel type is
+                                     same as that of the input value raster.
+
+                                     LINEAR - Weighted average of two surrounding values from the desired percentile. In this case, the output
+                                     pixel type is floating point.
+
+                                     Parameter available in ArcGIS Image Server 10.9 and higher.
+    =============================    ===========================================================================================================
+
+
     :return: output raster with function applied
 
     """
@@ -1493,14 +1510,18 @@ def watershed(
     Replaces cells of a raster corresponding to a mask
     with the values of the nearest neighbors.
 
-    Parameters
-    ----------
-    :param input_flow_direction_raster: Required raster layer. The input raster that shows the direction of flow out of each cell.
-    :param input_pour_point_data: Required raster layer. This raster represents cells above
-                            which the contributing area, or catchment, will be determined. All cells that
-                            are not NoData will be used as source cells.
-    :param pour_point_field: Optional string. Field used to assign values to the pour point locations.
-                             For a raster pour point dataset, Value is used by default.
+    =============================    ===========================================================================================================
+    **Argument**                     **Description**
+    -----------------------------    -----------------------------------------------------------------------------------------------------------
+    input_flow_direction_raster      Required raster layer. The input raster that shows the direction of flow out of each cell.
+    -----------------------------    -----------------------------------------------------------------------------------------------------------
+    input_pour_point_data            Required raster layer. This raster represents cells abov which the contributing area, or catchment,
+                                     will be determined. All cells that are not NoData will be used as source cells.
+    -----------------------------    -----------------------------------------------------------------------------------------------------------
+    pour_point_field                 Optional string. Field used to assign values to the pour point locations.
+                                     For a raster pour point dataset, Value is used by default.
+    =============================    ===========================================================================================================
+
     :return: output raster with function applied
 
     """
