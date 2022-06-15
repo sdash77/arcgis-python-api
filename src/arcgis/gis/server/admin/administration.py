@@ -175,11 +175,11 @@ class Server(BaseServer):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "<%s at %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "<%s at %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     def publish_sd(
