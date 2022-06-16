@@ -506,7 +506,7 @@ class MapView(widgets.DOMWidget):
             except Exception:
                 raise RuntimeError("Basemap '{}' isn't valid".format(value))
 
-    _basemap = Unicode("topo").tag(sync=True)
+    _basemap = Unicode("topo-vector").tag(sync=True)
     """What basemap you would like to apply to the widget ('topo',
     'national-geographic', etc.). See `basemaps` for a full list
     """

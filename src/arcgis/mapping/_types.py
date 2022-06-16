@@ -373,8 +373,13 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         .. code-block:: python
 
+            # Create a WebMap from an existing WebMap Item.
             wm = WebMap(<webmap_item_id>)
-            layer = wm.layers[0] # A vector tile layer
+            # Get and add the layer to the map
+            vtl = gis.content.get("<vector tile layer id>")
+            wm.add_layer(vtl.layers[0])
+            # Move the layer to the basemap
+            layer = wm.layers[0]
             wm.move_to_basemap(layer)
             wm.update()
         """
@@ -390,7 +395,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             self._webmapdict["baseMap"]["baseMapLayers"].append(layer)
             self._webmapdict["operationalLayers"].remove(layer)
             self.definition = _mixins.PropertyMap(self._webmapdict)
-            return self.definition
+            return self.basemap
         else:
             raise Error(
                 "Layer must be part of WebMap's Operational Layers in order to add it as a basemap"
@@ -419,14 +424,24 @@ class WebMap(HasTraits, collections.OrderedDict):
             wm.update()
         """
         if layer in self.definition["baseMap"]["baseMapLayers"]:
-            self._webmapdict["baseMap"]["baseMapLayers"].remove(layer)
             self._webmapdict["operationalLayers"].append(layer)
+            self._webmapdict["baseMap"]["baseMapLayers"].remove(layer)
             self.definition = _mixins.PropertyMap(self._webmapdict)
-            return self.definition
+            return self.basemap
         else:
             raise Error(
                 "Layer must be part of WebMap's BaseMap Layers in order to add it as an Operational Layer"
             )
+
+    def basemap_title(self, title):
+        """
+        Get/Set the BaseMap Title.
+        Required string title for the basemap that can be used in a table of contents. 
+        If None is specified, it takes the title of the first `basemap` in the array.
+        """
+        self._webmapdict["baseMap"]["title"] = title
+        self.definition = _mixins.PropertyMap(self._webmapdict)
+        return self.basemap
 
     def add_layer(
         self,
