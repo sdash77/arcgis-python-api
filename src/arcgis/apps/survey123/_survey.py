@@ -857,7 +857,7 @@ class Survey:
         """ Finds the name of the layer the survey is submitting to, used to find the appropriate layer index """
         name = self._si._gis._con.get(f'{self._gis._url}/sharing/rest/content/items/{self._si.id}/info/forminfo.json')[
             'name']
-        title = quote(name, safe="()!-_.'")
+        title = quote(name, safe="()!-_.'~")
         print(title)
         url = f'{self._gis._url}/sharing/rest/content/items/{self._si.id}/info/{title}.xml'
         response = self._si._gis._con.get(url, out_folder=tempfile.gettempdir())
