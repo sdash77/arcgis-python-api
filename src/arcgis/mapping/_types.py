@@ -662,7 +662,9 @@ class WebMap(HasTraits, collections.OrderedDict):
                     for tbl in layer.tables:  # recurse - works for all.
                         tbl.properties.serviceItemId = layer.id
                         self.add_table(tbl, options)
-                return True
+                return (
+                    True  # end add_layer execution after iterating through each layer.
+                )
         elif isinstance(layer, _arcgis_features.FeatureLayerCollection):
             if not self._extent:
                 if hasattr(layer.properties, "fullExtent"):
