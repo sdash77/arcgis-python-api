@@ -655,9 +655,6 @@ class WebMap(HasTraits, collections.OrderedDict):
                     for tbl in layer.tables:  # recurse - works for all.
                         tbl.properties.serviceItemId = layer.id
                         self.add_table(tbl, options)
-                return (
-                    True  # end add_layer execution after iterating through each layer.
-                )
         elif isinstance(layer, _arcgis_features.FeatureLayerCollection):
             if not self._extent:
                 if hasattr(layer.properties, "fullExtent"):
@@ -672,7 +669,6 @@ class WebMap(HasTraits, collections.OrderedDict):
             if hasattr(layer, "tables"):
                 for tbl in layer.tables:  # recurse - works for all.
                     self.add_table(tbl, options)
-            return True
         elif isinstance(layer, BaseOGC):
             lyr = layer._lyr_json
             title = lyr["title"]
