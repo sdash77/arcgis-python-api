@@ -231,8 +231,9 @@ class NotebookServer(object):
         """
         Provices access to managing notebook created geoprocessing tools
 
+
         :return:
-            :class:`~arcgis.gis.nb._serivces.NBServicesManager`
+            :class:`~arcgis.gis.nb._services.NBServicesManager`
 
         """
         if self._services is None:
