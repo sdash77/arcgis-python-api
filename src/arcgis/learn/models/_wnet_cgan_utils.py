@@ -300,8 +300,8 @@ class NormalLoss(nn.Module):
 
         e = (c[:, :, None, :] @ d[:, :, :, None]).squeeze(-1).squeeze(-1)
 
-        fake_norm = torch.sqrt(torch.sum(c ** 2, dim=-1))
-        real_norm = torch.sqrt(torch.sum(d ** 2, dim=-1))
+        fake_norm = torch.sqrt(torch.sum(c**2, dim=-1))
+        real_norm = torch.sqrt(torch.sum(d**2, dim=-1))
 
         return 1 - torch.mean(e / (fake_norm * real_norm))
 
@@ -324,7 +324,7 @@ class WNetcGANLoss(nn.Module):
         self,
         cgan: nn.Module,
         lambda_A: float = 100.0,
-        lambda_B: float = 1000,
+        lambda_B: float = 10,
         lambda_idt: float = 0.5,
         gamma_g: float = 10.0,
         lsgan: bool = False,
@@ -363,81 +363,12 @@ class WNetcGANLoss(nn.Module):
         self.gen_loss = self.crit(self.cgan.D(self.real_A, fake_C), True)
         self.l1_loss = F.l1_loss(self.real_C, fake_C)
         self.rmse_log_loss = self.rmse_log(self.real_C, fake_C)
-
-        activ1 = get_activation_from_layers("disc_blk_1")
-        j1, k1 = activ1.get_activation()
-
-        hook1 = self.cgan.D.disc_blk_1.register_forward_hook(j1)
-        ten1 = self.cgan.D(self.real_C, self.real_C)
-        k1 = k1["disc_blk_1"]
-        hook1.remove()
-
-        activ2 = get_activation_from_layers("disc_blk_1")
-        j2, k2 = activ2.get_activation()
-
-        hook2 = self.cgan.D.disc_blk_1.register_forward_hook(j2)
-        ten2 = self.cgan.D(fake_C, fake_C)
-        k2 = k2["disc_blk_1"]
-        hook2.remove()
-
-        activ3 = get_activation_from_layers("disc_blk_2")
-        j3, k3 = activ3.get_activation()
-
-        hook3 = self.cgan.D.disc_blk_2.register_forward_hook(j3)
-        ten3 = self.cgan.D(self.real_C, self.real_C)
-        k3 = k3["disc_blk_2"]
-        hook3.remove()
-
-        activ4 = get_activation_from_layers("disc_blk_2")
-        j4, k4 = activ4.get_activation()
-
-        hook4 = self.cgan.D.disc_blk_2.register_forward_hook(j4)
-        ten4 = self.cgan.D(fake_C, fake_C)
-        k4 = k4["disc_blk_2"]
-        hook4.remove()
-
-        activ5 = get_activation_from_layers("disc_blk_3")
-        j5, k5 = activ5.get_activation()
-
-        hook5 = self.cgan.D.disc_blk_3.register_forward_hook(j5)
-        ten5 = self.cgan.D(self.real_C, self.real_C)
-        k5 = k5["disc_blk_3"]
-        hook5.remove()
-
-        activ6 = get_activation_from_layers("disc_blk_3")
-        j6, k6 = activ6.get_activation()
-
-        hook6 = self.cgan.D.disc_blk_3.register_forward_hook(j6)
-        ten6 = self.cgan.D(fake_C, fake_C)
-        k6 = k6["disc_blk_3"]
-        hook6.remove()
-
-        percep_loss, percep_loss1, percep_loss2, percep_loss3 = 0, 0, 0, 0
-        for i in range(k1.shape[0]):
-            percep_loss1 += F.l1_loss(k1[i, :, :, :], k2[i, :, :, :])
-            percep_loss2 += F.l1_loss(k3[i, :, :, :], k4[i, :, :, :])
-            percep_loss3 += F.l1_loss(k5[i, :, :, :], k6[i, :, :, :])
-            percep_loss1 += percep_loss1
-            percep_loss2 += percep_loss2
-            percep_loss3 += percep_loss3
-
-        percep_loss = torch.mean(
-            torch.tensor(
-                (
-                    percep_loss1,
-                    2 * percep_loss2,
-                    5 * percep_loss3,
-                )
-            )
-        )
-
         self.norm_vec_loss = self.norm_loss(fake_C, self.real_C)
         return (
             self.gen_loss
             + (self.l_A * self.l1_loss)
             + (self.l_B * self.norm_vec_loss)
             + self.rmse_log_loss
-            + 10 * percep_loss
         )
 
 
@@ -501,77 +432,10 @@ class WNetcGANTrainer(LearnerCallback):
 
         self.D.zero_grad()
 
-        activ1 = get_activation_from_layers("disc_blk_1")
-        j1, k1 = activ1.get_activation()
-
-        hook1 = self.D.disc_blk_1.register_forward_hook(j1)
-        ten1 = self.D(real_C, real_C)
-        k1 = k1["disc_blk_1"]
-        hook1.remove()
-
-        activ2 = get_activation_from_layers("disc_blk_1")
-        j2, k2 = activ2.get_activation()
-
-        hook2 = self.D.disc_blk_1.register_forward_hook(j2)
-        ten2 = self.D(fake_C, fake_C)
-        k2 = k2["disc_blk_1"]
-        hook2.remove()
-
-        activ3 = get_activation_from_layers("disc_blk_2")
-        j3, k3 = activ3.get_activation()
-
-        hook3 = self.D.disc_blk_2.register_forward_hook(j3)
-        ten3 = self.D(real_C, real_C)
-        k3 = k3["disc_blk_2"]
-        hook3.remove()
-
-        activ4 = get_activation_from_layers("disc_blk_2")
-        j4, k4 = activ4.get_activation()
-
-        hook4 = self.D.disc_blk_2.register_forward_hook(j4)
-        ten4 = self.D(fake_C, fake_C)
-        k4 = k4["disc_blk_2"]
-        hook4.remove()
-
-        activ5 = get_activation_from_layers("disc_blk_3")
-        j5, k5 = activ5.get_activation()
-
-        hook5 = self.D.disc_blk_3.register_forward_hook(j5)
-        ten5 = self.D(real_C, real_C)
-        k5 = k5["disc_blk_3"]
-        hook5.remove()
-
-        activ6 = get_activation_from_layers("disc_blk_3")
-        j6, k6 = activ6.get_activation()
-
-        hook6 = self.D.disc_blk_3.register_forward_hook(j6)
-        ten6 = self.D(fake_C, fake_C)
-        k6 = k6["disc_blk_3"]
-        hook6.remove()
-
-        percep_loss, percep_loss1, percep_loss2, percep_loss3 = 0, 0, 0, 0
-        for i in range(k1.shape[0]):
-            percep_loss1 += F.l1_loss(k1[i, :, :, :], k2[i, :, :, :])
-            percep_loss2 += F.l1_loss(k3[i, :, :, :], k4[i, :, :, :])
-            percep_loss3 += F.l1_loss(k5[i, :, :, :], k6[i, :, :, :])
-            percep_loss1 += percep_loss1
-            percep_loss2 += percep_loss2
-            percep_loss3 += percep_loss3
-
-        percep_loss = torch.mean(
-            torch.tensor(
-                (
-                    percep_loss1,
-                    2 * percep_loss2,
-                    5 * percep_loss3,
-                )
-            )
-        )
-
         if random.choice([0, 1]) < 0.5:
-            loss_D = self.crit(self.D(real_A, real_C), True) + (0.02 * percep_loss)
+            loss_D = self.crit(self.D(real_A, real_C), True)
         else:
-            loss_D = self.crit(self.D(real_A, fake_C), False) + (0.02 * percep_loss)
+            loss_D = self.crit(self.D(real_A, fake_C), False)
 
         self.d_smter.add_value(loss_D.detach().cpu())
         if self.learn.model.training == True:

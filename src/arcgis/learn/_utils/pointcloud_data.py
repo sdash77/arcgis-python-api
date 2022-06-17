@@ -470,6 +470,7 @@ class PointCloudDataset(Dataset):
             self.masks = f["Masks"][:]
             # centers and scales will be required in viz.
             self.centers = f["Centers"][:]
+            self._file_indexes = list(range(len(files)))
 
             if self.min_points is not None or filter_classes:
                 # We should not filter on valid blocks, currently its happening on both.
@@ -488,9 +489,9 @@ class PointCloudDataset(Dataset):
                 self._skip_block_min_points = skip_block_min_points
                 self._skip_block_COI = skip_block_COI
                 self._total_blocks = len(self.tiles)
-
                 if folder != "val":
-                    files = files[file_indexes]
+                    self._file_indexes = file_indexes
+
                 self.tiles = self.tiles[indexes]
                 if len(self.tiles) == 0:
                     raise Exception(
@@ -678,6 +679,8 @@ def show_point_cloud_batch(self, rows=2, figsize=(6, 12), color_mapping=None, **
 
     """
     It will plot 3d point cloud data you exported in the notebook.
+    Visualization of data, exported in a geographic coordinate system
+    is not yet supported.
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -741,7 +744,8 @@ def show_point_cloud_batch(self, rows=2, figsize=(6, 12), color_mapping=None, **
     random.shuffle(h5_files)
 
     idx = 0
-    file_idx = 0
+    file_idx = self._file_indexes[0]
+    f_idx = 1
     while idx < rows:
         # file = h5_files[file_idx]
         _pc, labels, pc = self._get_file_blocks(file_idx)
@@ -760,7 +764,8 @@ def show_point_cloud_batch(self, rows=2, figsize=(6, 12), color_mapping=None, **
         sampled_pc = pc[sample_idxs]
 
         if sampled_pc.shape[0] == 0:
-            file_idx += 1
+            file_idx = self._file_indexes[f_idx]
+            f_idx = (f_idx + 1) % len(self._file_indexes)
             continue
 
         if apply_tfms:
@@ -821,7 +826,8 @@ def show_point_cloud_batch(self, rows=2, figsize=(6, 12), color_mapping=None, **
         if idx == rows - 1:
             break
         idx += 1
-        file_idx += 1
+        file_idx = self._file_indexes[f_idx]
+        f_idx = (f_idx + 1) % len(self._file_indexes)
 
 
 def filter_pc(pc):
@@ -845,6 +851,8 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
 
     """
     It will plot 3d point cloud data you exported in the notebook.
+    Visualization of data, exported in a geographic coordinate system
+    is not yet supported.
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -2469,6 +2477,8 @@ def show_results(self, rows, color_mapping=None, **kwargs):
     """
     It will plot results from your trained model with ground truth on the
     left and predictions on the right.
+    Visualization of data, exported in a geographic coordinate system
+    is not yet supported.
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -2857,6 +2867,7 @@ class Transform3d(object):
     """
     Creates a 3D transformation that can be used in `prepare_data`
     to apply data augmentation to blocks, with a 50 % probability.
+    Applicable only for dataset_type=’PointCloud’.
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -3045,9 +3056,11 @@ def predict_batch_h5(self, dl, output_path, progressor):
             tile = tile[None]
 
         fname = np.array(dl.dataset.filenames)[tile[:, 0]]
-        fname, unique_index = np.unique(fname, return_index=True)
+        _, unique_index = np.unique(fname, return_index=True)
+        # get unique name form sorted index in actual array
+        fname = [fname[i] for i in np.sort(unique_index)]
         # add batch_size for spliting prediction till last batch number
-        unique_index = list(unique_index) + [dl.batch_size]
+        unique_index = list(np.sort(unique_index)) + [dl.batch_size]
         for i, ufname in enumerate(fname):
 
             if ufname != current_file_name:
@@ -3163,6 +3176,8 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
     """
     It will plot results from your trained model with ground truth on the
     left and predictions on the right.
+    Visualization of data, exported in a geographic coordinate system
+    is not yet supported.
 
     =====================   ===========================================
     **Argument**            **Description**

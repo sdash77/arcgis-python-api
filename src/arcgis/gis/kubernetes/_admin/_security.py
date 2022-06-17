@@ -42,11 +42,11 @@ class KubeSecurityCert(object):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -234,11 +234,11 @@ class KubeSecuritySAML(object):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -335,11 +335,11 @@ class KubeSecurityIngress(object):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -435,11 +435,11 @@ class KubeSecurityConfig(object):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -584,11 +584,11 @@ class KubeSecurity(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -632,7 +632,8 @@ class KubeSecurity(object):
     def ingress(self) -> "KubeSecurityIngress":
         """Returns a manager to configure the ingress settings.
 
-        :return: KubeSecurityIngress
+        :return:
+            A KubeSecurityIngress object.
         """
         if self._ingress is None:
             url = self._url + "/ingress"
@@ -655,6 +656,13 @@ class KubeSecurity(object):
     # ----------------------------------------------------------------------
     @property
     def certificates(self) -> "KubeSecurityCert":
+        """
+        Provides access to the certificate manager for the Kubernetes infrastructure
+
+        :returns:
+            A KubeSecurityCert object.
+
+        """
         if self._certs is None:
             url = self._url + "/certificates"
             self._certs = KubeSecurityCert(url, gis=self._gis)

@@ -1,7 +1,9 @@
 import os
 import sys
 
-sys.path.insert(0, r"c:\SVN\geosaurus_master_issue_4790a\src")
+# sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
+from arcgis.auth.tools._util import detect_proxy
+
 # import imp
 import json
 import tempfile
@@ -9,7 +11,7 @@ import unittest
 import unittest.mock
 from unittest.mock import MagicMock
 
-sys.path.insert(0, r"c:\SVN\geosaurus_master_issue_4790a\src")
+
 import unittest
 from arcgis.auth import EsriNotebookAuth, EsriSession, EsriKerberosAuth
 from arcgis.gis import GIS, ProfileManager
@@ -18,10 +20,10 @@ try:
     from _utils import get_config_parser
 except:
     from ._utils import get_config_parser
-if 'notebook' in get_config_parser():
+if "notebook" in get_config_parser():
     SKIPME = False
-    SITE_URL = get_config_parser()['notebook']['url']
-    API_KEY = get_config_parser()['notebook']['token']
+    SITE_URL = get_config_parser()["notebook"]["url"]
+    API_KEY = get_config_parser()["notebook"]["token"]
 else:
     SKIPME = True
 
@@ -145,7 +147,7 @@ class TestHomeNBAUTHLogic(unittest.TestCase):
                     )
                     self.assertEqual(len(os.environ), 1)
                     gis = GIS(url="home", verify_cert=False)
-                    assert gis._con._expiration == 20160
+                    assert gis._con._expiration > 0
                     assert gis.users.me
                     del gis
 

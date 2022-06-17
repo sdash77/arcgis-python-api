@@ -1,5 +1,6 @@
 import os
-from arcgis.gis import GIS
+from typing import Optional
+from arcgis.gis import GIS, Item
 from arcgis._impl.common._mixins import PropertyMap
 import concurrent.futures
 
@@ -37,11 +38,11 @@ class NotebookManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<NotebookManager @ {url}>".format(url=self._url)
+        return "< NotebookManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<NotebookManager @ {url}>".format(url=self._url)
+        return "< NotebookManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -124,18 +125,21 @@ class NotebookManager(object):
         from arcgis._impl._async.jobs import Job
 
         tp = concurrent.futures.ThreadPoolExecutor(1)
-        future = tp.submit(fn=fn, **kwargs)
+        try:
+            future = tp.submit(fn=fn, **kwargs)
+        except:
+            future = tp.submit(fn, **kwargs)
         tp.shutdown(False)
         return Job(future, task_name, jobid, task_url, notify, gis=gis)
 
     # ----------------------------------------------------------------------
     def execute_notebook(
         self,
-        item,
-        update_portal_item=True,
-        parameters=None,
-        save_parameters=False,
-        future=False,
+        item: Item,
+        update_portal_item: bool = True,
+        parameters: Optional[list] = None,
+        save_parameters: bool = False,
+        future: bool = False,
     ):
         """
 
@@ -186,11 +190,12 @@ class NotebookManager(object):
                                 should be saved in the notebook for future use. The default is
                                 false.
         --------------------    --------------------------------------------------------------------
-        future                  Optional Boolean.  The default is false.  When True, the operation
-                                returns a notebook job that will let you view the results as needed.
+        future                  Optional boolean. If True, a future object will be returned and the process
+                                will not wait for the task to complete. The default is False, which means wait for results.
         ====================    ====================================================================
 
-        :return: Boolean
+        :return: Boolean else If ``future = True``,
+        then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         """
         from arcgis.gis import Item
@@ -243,7 +248,11 @@ class NotebookManager(object):
 
     # ----------------------------------------------------------------------
     def open_notebook(
-        self, itemid, templateid=None, nb_runtimeid=None, template_nb=None
+        self,
+        itemid: str,
+        templateid: Optional[str] = None,
+        nb_runtimeid: Optional[str] = None,
+        template_nb: Optional[str] = None,
     ):
         """
 
@@ -378,11 +387,11 @@ class Runtime(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<Runtime @ {url}>".format(url=self._url)
+        return "< Runtime @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<Runtime @ {url}>".format(url=self._url)
+        return "< Runtime @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -410,21 +419,21 @@ class Runtime(object):
     # ----------------------------------------------------------------------
     def update(
         self,
-        name=None,
-        image_id=None,
-        max_cpu=None,
-        max_memory=None,
-        memory_unit=None,
-        max_swap_memory=None,
-        swap_memory_unit=None,
-        shared_memory=None,
-        docker_runtime=None,
-        shared_unit=None,
-        version=None,
-        container_type=None,
-        pull_string=None,
-        require_advanced_priv=None,
-        manifest=None,
+        name: Optional[str] = None,
+        image_id: Optional[str] = None,
+        max_cpu: Optional[float] = None,
+        max_memory: Optional[float] = None,
+        memory_unit: Optional[str] = None,
+        max_swap_memory: Optional[str] = None,
+        swap_memory_unit: Optional[str] = None,
+        shared_memory: Optional[str] = None,
+        docker_runtime: Optional[str] = None,
+        shared_unit: Optional[str] = None,
+        version: Optional[str] = None,
+        container_type: Optional[str] = None,
+        pull_string: Optional[str] = None,
+        require_advanced_priv: Optional[bool] = None,
+        manifest: Optional[str] = None,
     ):
         """
         This operation allows you to update the properties of a notebook
@@ -542,11 +551,11 @@ class Notebook(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<Notebook @ {url}>".format(url=self._url)
+        return "< Notebook @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<Notebook @ {url}>".format(url=self._url)
+        return "< Notebook @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property

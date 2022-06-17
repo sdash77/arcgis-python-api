@@ -1,6 +1,8 @@
 """
 Allows access to the Portal Logs
 """
+from datetime import datetime
+from typing import Optional, Union
 from .. import GIS
 from ._base import BasePortalAdmin
 
@@ -106,7 +108,7 @@ class Logs(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     @settings.setter
-    def settings(self, value):
+    def settings(self, value: dict):
         """
         See main ``settings`` property docstring.
         """
@@ -122,11 +124,11 @@ class Logs(BasePortalAdmin):
     # ----------------------------------------------------------------------
     def query(
         self,
-        start_time,
-        end_time=None,
-        level="WARNING",
-        query_filter="*",
-        page_size=1000,
+        start_time: Union[datetime, float],
+        end_time: Optional[Union[datetime, float]] = None,
+        level: str = "WARNING",
+        query_filter: Union[str, dict] = "*",
+        page_size: int = 1000,
     ):
         """
         The query operation allows you to aggregate, filter, and page
@@ -170,13 +172,15 @@ class Logs(BasePortalAdmin):
                           or more severe than the level specified.
                           Default: WARNING
         ----------------  ---------------------------------------------------------------
-        query_filter      optional string, Filtering is allowed by any combination of
+        query_filter      optional dict, Filtering is allowed by any combination of
                           codes, users, and source components. The filter accepts a comma
                           delimited list of filter definitions. If any definition is
                           omitted, it defaults to all ("*").
                           :Example:
+
                           {"codes":[204000-205999,212015,219114], "users":["admin","jcho"],
-                           "source": ["PORTAL ADMIN"]}
+                          "source": ["PORTAL ADMIN"]}
+
                           The source of logged events are generated from the sharing,
                           administrative, and portal components of the software.
                           For example:

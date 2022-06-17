@@ -6,12 +6,11 @@ import uuid
 import tempfile
 from urllib.parse import urlparse
 from typing import Optional, Union, Any
+import pandas as pd
+from arcgis.gis import GIS, Item
 from requests.utils import quote
 import xml.etree.ElementTree as ET
 from .exceptions import ServerError
-
-import pandas as pd
-from arcgis.gis import GIS, Item
 
 ########################################################################
 class SurveyManager:
@@ -36,7 +35,7 @@ class SurveyManager:
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<SurveyManager @ {iid}>".format(iid=self._gis._url)
+        return "< SurveyManager @ {iid} >".format(iid=self._gis._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -260,7 +259,6 @@ class Survey:
         utc_offset: str = "+00:00",
         report_title: Optional[str] = None,
         package_name: Optional[str] = None,
-        save_folder: Optional[str] = tempfile.gettempdir(),
         output_format: str = "docx",
         folder_id: Optional[str] = None,
         merge_files: Optional[str] = None,
@@ -268,6 +266,7 @@ class Survey:
         webmap_item: Optional[Item] = None,
         map_scale: Optional[float] = None,
         locale: str = "en",
+        save_folder: Optional[str] = tempfile.gettempdir(),
     ) -> str:
         """
         Creates a MS Word Report or PDF.  The `generate_report` method allows users to either save the
@@ -665,11 +664,11 @@ class Survey:
         utc_offset: str = "+00:00",
         report_title: Optional[str] = None,
         merge_files: Optional[str] = None,
-        save_folder: Optional[str] = tempfile.gettempdir(),
         survey_item: Optional[Item] = None,
         webmap_item: Optional[Item] = None,
         map_scale: Optional[float] = None,
         locale: str = "en",
+        save_folder: Optional[str] = tempfile.gettempdir(),
     ) -> str:
 
         """

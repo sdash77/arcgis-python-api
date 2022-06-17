@@ -22,11 +22,11 @@ class ContainerNotebook(object):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "<ContainerNotebook @ {url}>".format(url=self._url)
+        return "< ContainerNotebook @ {url}>".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "<ContainerNotebook @ {url}>".format(url=self._url)
+        return "< ContainerNotebook @ {url}>".format(url=self._url)
 
     @property
     def properties(self) -> PropertyMap:
@@ -80,11 +80,11 @@ class DirectoryManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "<DirectoryManager @ {url}>".format(url=self._url)
+        return "< DirectoryManager @ {url}>".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "<DirectoryManager @ {url}>".format(url=self._url)
+        return "< DirectoryManager @ {url}>".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -212,11 +212,11 @@ class WebAdaptor(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<WebAdaptor @ {url}>".format(url=self._url)
+        return "< WebAdaptor @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<WebAdaptor @ {url}>".format(url=self._url)
+        return "< WebAdaptor @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def unregister(self):
@@ -264,11 +264,11 @@ class WebAdaptorManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "<WebAdaptorManager @ {url}>".format(url=self._url)
+        return "< WebAdaptorManager @ {url}>".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "<WebAdaptorManager @ {url}>".format(url=self._url)
+        return "< WebAdaptorManager @ {url}>".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -412,11 +412,11 @@ class Container(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<Container @ {url}>".format(url=self._url)
+        return "< Container @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<Container @ {url}>".format(url=self._url)
+        return "< Container @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -563,11 +563,11 @@ class SystemManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "<SystemManager @ {url}>".format(url=self._url)
+        return "< SystemManager @ {url}>".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "<SystemManager @ {url}>".format(url=self._url)
+        return "< SystemManager @ {url}>".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -624,11 +624,11 @@ class SystemManager(object):
 
     # ----------------------------------------------------------------------
     @properties.setter
-    def properties(self, value) -> None:
+    def properties(self, value: dict) -> None:
         """
         See main ``properties`` property docstring
         """
-        properties: {
+        properties = {
             "dockerConnectionPort": 2375,
             "webSocketSize": 16,
             "maxContainersPerNode": 20,
@@ -776,7 +776,7 @@ class SystemManager(object):
         return self._dir
 
     # ----------------------------------------------------------------------
-    def job_details(self, job_id) -> Dict[str, Any]:
+    def job_details(self, job_id: str) -> Dict[str, Any]:
         """
         A job represents the asynchronous execution of an operation in
         ArcGIS Notebook Server. You can acquire progress information by

@@ -13,7 +13,7 @@ password = "PAPIletmein01"
 gis = GIS(url, username, password, verify_cert=False, trust_env=True)
 
 
-@unittest.skipIf(gis.version < [9, 2], reason='Portal is too old!')
+@unittest.skipIf(gis.version < [9, 2], reason="Portal is too old!")
 class TestPortalIndexer(unittest.TestCase):
     def test_get_indexer(self):
         """tests that the right class is returned."""
@@ -24,13 +24,13 @@ class TestPortalIndexer(unittest.TestCase):
         indexer = gis.admin.system.indexer
         status = indexer.status
         assert status
-        assert 'indexes' in status or 'status' in status
+        assert "indexes" in status or "status" in status
 
     def test_reindex(self):
         indexer = gis.admin.system.indexer
-        assert indexer.reindex('USER_MODE')
+        assert indexer.reindex("USER_MODE")
 
-    @unittest.skip(reason='manual test only')
+    @unittest.skip(reason="manual test only")
     def test_reconfigure(self):
         indexer = gis.admin.system.indexer
         assert indexer.reconfigure()

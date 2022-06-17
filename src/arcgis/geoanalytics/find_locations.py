@@ -3,14 +3,19 @@ These tools are used to identify areas that meet a number of different criteria 
 
 find_similar_locations finds locations most similar to one or more reference locations based on criteria you specify.
 """
+from __future__ import annotations
 import json as _json
-
 import logging as _logging
+from typing import Any, Optional, Union
+from datetime import datetime
 import arcgis as _arcgis
 from arcgis import env as _env
-from arcgis.features import FeatureSet as _FeatureSet
+from arcgis.geocoding._functions import Geocoder
+from arcgis.features.feature import FeatureCollection
+from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
 from arcgis.geoprocessing import import_toolbox as _import_toolbox
 from arcgis._impl.common._utils import inspect_function_inputs
+from arcgis.gis import GIS, Item
 from ._util import (
     _id_generator,
     _feature_input,
@@ -19,7 +24,6 @@ from ._util import (
     GAJob,
     _prevent_bds_item,
 )
-import datetime
 
 _log = _logging.getLogger(__name__)
 
@@ -27,17 +31,24 @@ _use_async = True
 
 
 def geocode_locations(
-    input_layer,
-    country=None,
-    category=None,
-    include_attributes=True,
-    locator_parameters=None,
-    output_name=None,
-    geocode_service=None,
-    geocode_parameters=None,
-    gis=None,
-    context=None,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    country: Optional[str] = None,
+    category: Optional[str] = None,
+    include_attributes: bool = True,
+    locator_parameters: Optional[dict[str, Any]] = None,
+    output_name: Optional[str] = None,
+    geocode_service: Optional[Union[str, Geocoder]] = None,
+    geocode_parameters: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/geocode_locations/geocode_locations.png
@@ -119,8 +130,8 @@ def geocode_locations(
                                  Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
                                  Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     --------------------------   ---------------------------------------------------------------
-    future                       Optional boolean. If True, a GPJob is returned instead of
-                                 results. The GPJob can be queried on the status of the execution.
+    future                       Optional boolean. If True, a future object will be returned and the process
+                                 will not wait for the task to complete. The default is False, which means wait for results.
     ==========================   ===============================================================
 
 
@@ -271,19 +282,203 @@ def geocode_locations(
         raise
 
 
+def snap_tracks(
+    point_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    polyline_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    track_fields: str,
+    connectivity_field_matching: dict[str, Any],
+    search_distance: float,
+    search_distance_unit: str,
+    distance_method: str = "Planar",
+    output_mode: str = "AllFeatures",
+    polyline_fields_to_include: Optional[str] = None,
+    direction_field_matching: dict[str, Any] = None,
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+):
+    """
+    The `snap_tracks` method matches track points to polylines.
+
+    ============================   ===============================================================
+    **Argument**                   **Description**
+    ----------------------------   ---------------------------------------------------------------
+    point_layer                    Required layer. The track point features that will be matched
+                                   to polylines. See :ref:`Feature Input<gaxFeatureInput>`.
+    ----------------------------   ---------------------------------------------------------------
+    polyline_layer                 Required layer. The polyline features to which track points
+                                   will be matched. See :ref:`Feature Input<gaxFeatureInput>`.
+    ----------------------------   ---------------------------------------------------------------
+    track_fields                   Required string. The fields used to identify distinct tracks.
+                                   There can be multiple ``track_fields``.
+    ----------------------------   ---------------------------------------------------------------
+    connectivity_field_matching    Required Dict[str,Any]. The polyline layer fields that will be
+                                   used to define the connectivity of the input polyline features.
+
+                                   The following values are required:
+
+                                   -  polylineID - The unique identifier for the line
+                                   -  fromNodeID - The node where the travel along a line is moving away from
+                                   -  toNodeID - The node where the travel along a line is moving to
+
+    ----------------------------   ---------------------------------------------------------------
+    search_distance                Required float. The maximum distance allowed between a point
+                                   and any polyline in order to be considered a match. It is
+                                   recommended to use values less than or equal to 50 meters.
+                                   Larger distances will result in a longer process time and less
+                                   accurate results.
+    ----------------------------   ---------------------------------------------------------------
+    search_distance_unit           Required String. The unit of the `search_distance`.
+    ----------------------------   ---------------------------------------------------------------
+    distance_method                Optional String. The method used to calculate search distances
+                                   between points and lines. There are two methods to choose from:
+                                   `Geodesic` and `Planar`. The Geodesic method calculates
+                                   distances geodesically and will allow tracks to cross the
+                                   anti-meridian. This method is appropriate for large areas and
+                                   any geographic coordinate system. The Planar method calculates
+                                   distances using a plane method and will not cross the
+                                   anti-meridian.
+                                   The default is 'Planar'.
+    ----------------------------   ---------------------------------------------------------------
+    output_mode                    Optional string. Determines which features are returned.
+
+                                   Choice list: [AllFeatures', 'Incidents']
+
+                                   - ``AllFeatures`` - All of the input features are returned.
+                                   - ``Incidents`` - Only features that were found to be incidents
+                                     are returned.
+
+                                   The default value is 'AllFeatures'.
+    ----------------------------   ---------------------------------------------------------------
+    polyline_fields_to_include     Optional String. One or more fields from the polyine layer that
+                                   will be included in the output result.
+    ----------------------------   ---------------------------------------------------------------
+    direction_field_matching       Optional dict[str, Any]. The polyline layer field and attribute
+                                   values that will be used to define the direction of the input
+                                   polyline features.
+    ----------------------------   ---------------------------------------------------------------
+    output_name                    Optional string, The task will create a feature service of the
+                                   results. You define the name of the service.
+    ----------------------------   ---------------------------------------------------------------
+    gis                            Optional GIS, the GIS on which this tool runs. If not
+                                   specified, the active GIS is used.
+    ----------------------------   ---------------------------------------------------------------
+    context                        Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
+
+                                   #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                   #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
+                                   #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                   #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+    ----------------------------   ---------------------------------------------------------------
+    future                         Optional boolean. If True, a GPJob is returned instead of
+                                   results. The GPJob can be queried on the status of the execution.
+
+                                   The default value is 'False'.
+    ============================   ===============================================================
+
+    """
+    _gis = gis or _arcgis.env.active_gis
+    point_layer = _prevent_bds_item(point_layer)
+    polyline_layer = _prevent_bds_item(polyline_layer)
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.geoanalytics.url
+    tbx = _import_toolbox(url, gis=gis)
+
+    if output_name is None:
+        output_service_name = _id_generator(prefix="Snap_Tracks_")
+        output_name = output_service_name.replace(" ", "_")
+    else:
+        output_service_name = output_name.replace(" ", "_")
+    if context is not None:
+        output_datastore = context.get("dataStore", None)
+    else:
+        output_datastore = None
+    output_service = _create_output_service(
+        gis,
+        output_name,
+        output_service_name,
+        "Detect Incidents",
+        output_datastore=output_datastore,
+    )
+
+    if output_service:
+        output_name = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
+    else:
+        output_name = output_service_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
+
+    params = {
+        "point_layer": point_layer,
+        "polyline_layer": polyline_layer,
+        "track_fields": track_fields,
+        "polyline_fields_to_include": polyline_fields_to_include,
+        "connectivity_field_matching": connectivity_field_matching,
+        "direction_field_matching": direction_field_matching,
+        "search_distance": search_distance,
+        "search_distance_unit": search_distance_unit,
+        "distance_method": distance_method,
+        "output_mode": output_mode,
+        "output_name": output_name,
+        "context": context,
+        "gis": _gis,
+        "future": True,
+    }
+    if context is None:
+        context = {}
+        _set_context(context)
+
+    params = inspect_function_inputs(tbx.snap_tracks, **params)
+
+    result = tbx.snap_tracks(**params)
+    job = GAJob(result, return_service=output_service)
+    if future:
+        return job
+    return job.result()
+
+
 def detect_incidents(
-    input_layer,
-    track_fields,
-    start_condition_expression,
-    end_condition_expression=None,
-    output_mode="AllFeatures",
-    time_boundary_split=None,
-    time_split_unit=None,
-    time_reference=None,
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    track_fields: str,
+    start_condition_expression: str,
+    end_condition_expression: Optional[str] = None,
+    output_mode: str = "AllFeatures",
+    time_boundary_split: Optional[int] = None,
+    time_split_unit: Optional[str] = None,
+    time_reference: Optional[datetime] = None,
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
 ):
     """
 
@@ -388,10 +583,8 @@ def detect_incidents(
                                  #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
                                  #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     --------------------------   ---------------------------------------------------------------
-    future                       optional boolean. If True, a GPJob is returned instead of
-                                 results. The GPJob can be queried on the status of the execution.
-
-                                 The default value is 'False'.
+    future                       Optional boolean. If True, a future object will be returned and the process
+                                 will not wait for the task to complete. The default is False, which means wait for results.
     ==========================   ===============================================================
 
     :return: result_layer : Output Features as :class:`~arcgis.features.FeatureLayerCollection`.
@@ -480,22 +673,29 @@ def detect_incidents(
 
 
 def find_dwell_locations(
-    input_layer,
-    track_fields,
-    distance_tolerance,
-    distance_unit,
-    time_tolerance,
-    time_unit,
-    summary_fields=None,
-    method="Planar",
-    dwell_type="DwellMeanCenters",
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
-    time_boundary_split=None,
-    time_boundary_unit=None,
-    time_boundary_ref=None,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    track_fields: str,
+    distance_tolerance: float,
+    distance_unit: str,
+    time_tolerance: int,
+    time_unit: str,
+    summary_fields: Optional[list[dict[str, Any]]] = None,
+    method: str = "Planar",
+    dwell_type: str = "DwellMeanCenters",
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
+    time_boundary_split: Optional[int] = None,
+    time_boundary_unit: Optional[str] = None,
+    time_boundary_ref: Optional[datetime] = None,
 ):
 
     """
@@ -619,9 +819,8 @@ def find_dwell_locations(
                                  #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
                                  #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     --------------------------   ---------------------------------------------------------------
-    future                       Optional boolean. If 'True', a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
-
-                                 The default value is 'False'.
+    future                       Optional boolean. If True, a future object will be returned and the process
+                                 will not wait for the task to complete. The default is False, which means wait for results.
     --------------------------   ---------------------------------------------------------------
     time_boundary_split          Optional integer. A time boundary to detect and incident. A time
                                  boundary allows your to analyze values within a defined time span.
@@ -746,18 +945,32 @@ def find_dwell_locations(
 
 
 def find_similar_locations(
-    input_layer,
-    search_layer,
-    analysis_fields,
-    most_or_least_similar="MostSimilar",
-    match_method="AttributeValues",
-    number_of_results=10,
-    append_fields=None,
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
-    return_tuple=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    search_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    analysis_fields: str,
+    most_or_least_similar: str = "MostSimilar",
+    match_method: str = "AttributeValues",
+    number_of_results: int = 10,
+    append_fields: str = None,
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
+    return_tuple: bool = False,
 ):
     """
     .. image:: _static/images/find_similar_locations/find_similar_locations.png
@@ -852,9 +1065,8 @@ def find_similar_locations(
                                  #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
                                  #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     --------------------------   ---------------------------------------------------------------
-    future                       Optional boolean. If 'True', a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
-
-                                 The default value is 'False'.
+    future                       Optional boolean. If True, a future object will be returned and the process
+                                 will not wait for the task to complete. The default is False, which means wait for results.
     --------------------------   ---------------------------------------------------------------
     return_tuple                 Optional boolean. If 'True', a named tuple with multiple output keys is returned.
 

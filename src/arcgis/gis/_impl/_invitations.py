@@ -20,11 +20,11 @@ class InvitationManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<InvitationManager @ {url}>".format(url=self._url)
+        return "< InvitationManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<InvitationManager @ {url}>".format(url=self._url)
+        return "< InvitationManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __len__(self):
@@ -56,7 +56,7 @@ class InvitationManager(object):
             invites.extend(res["invitations"])
         return invites
 
-    def get(self, invite_id):
+    def get(self, invite_id: str):
         """
         The ``get`` method retrieves information about a single invitation.
 
@@ -97,7 +97,7 @@ class InvitationManager(object):
         return {"accepts": accepts, "declines": declines}
 
     # ----------------------------------------------------------------------
-    def delete(self, invite_id):
+    def delete(self, invite_id: str):
         """
         The ``delete`` method deletes an invitation by ID
 

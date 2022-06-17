@@ -320,7 +320,7 @@ class SerialChart(_BaseWidget):
                 }
             )
         elif self._data._categories_from == "fields":
-            for category in self._category_fields:
+            for category in self._data._category_fields:
                 dataset["statisticDefinitions"].append(
                     {
                         "onStatisticField": category,
@@ -917,6 +917,7 @@ class SerialChartData(object):
             raise Exception(
                 'Invalid option, choose from "groupByValues", "features", "fields"'
             )
+        schart_data._series = []
 
         if categories_from == "features":
             schart_data._series = []
@@ -1115,8 +1116,10 @@ class SerialChartData(object):
             raise Exception("Please select the right condition")
 
         if condition in ["between", "not between"]:
-            self._val1 = kwargs.get("start")
-            self._val2 = kwargs.get("end")
+            self._val1 = kwargs.get("start", "")
+            self._val2 = kwargs.get("end", "")
+            if self._val1 is None or self._val2 is None:
+                raise Exception("Please provide 'start' and 'end' values as parameters")
             self._filters.append(
                 {
                     "filtertype": self._filter_join,
@@ -1126,10 +1129,7 @@ class SerialChartData(object):
                     "end": self._val2,
                 }
             )
-        else:
-            raise Exception("Please provide 'start' and 'end' values as parameters")
-
-        if condition in [
+        elif condition in [
             "equal",
             "not equal",
             "greater than",
@@ -1146,8 +1146,16 @@ class SerialChartData(object):
                     "value": self._val,
                 }
             )
+        elif condition in ["is null", "is not null"]:
+            self._filters.append(
+                {
+                    "filtertype": self._filter_join,
+                    "field": self._filter_field,
+                    "operator": self._filter_condition,
+                }
+            )
         else:
-            raise Exception("Please provide a 'value' parameter for comparison")
+            raise Exception("Please provide a valid condition")
 
     def _field_type(self, field_name):
         f_type = self._item.tables[0].query().sdf[field_name].dtype

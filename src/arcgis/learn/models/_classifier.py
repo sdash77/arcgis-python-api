@@ -1,5 +1,6 @@
 import arcgis as _arcgis
 from ._arcgis_model import ArcGISModel
+from ._timm_utils import timm_config, filter_timm_models, _get_feature_size
 from ..._impl.common._deprecate import deprecated
 from .._data import _check_esri_files, _raise_fastai_import_error
 import random
@@ -16,8 +17,6 @@ try:
     import shutil
     import warnings
     from pathlib import Path
-    from functools import partial
-    from ._unet_utils import is_no_color
     from ._codetemplate import feature_classifier_prf
     import torch
     import torch.nn.functional as F
@@ -33,7 +32,7 @@ try:
     from fastai.vision.data import ImageDataBunch, ImageList
     from fastai.vision import imagenet_stats, normalize
     from fastai.basic_train import Learner, LearnerCallback
-    from torch.utils.data.sampler import WeightedRandomSampler, BatchSampler
+    from torch.utils.data.sampler import WeightedRandomSampler
     from fastai.vision.learner import (
         cnn_learner,
         ClassificationInterpretation,
@@ -62,7 +61,7 @@ try:
         _get_emd_path,
         image_batch_stretcher,
     )
-    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from .._utils.env import is_arcgispronotebook
     from matplotlib import pyplot as plt
     from .._utils.image_classification import adapt_fastai_databunch
     import copy
@@ -107,6 +106,17 @@ def _prediction_function(predictions):
     return max_prediction_class, max_prediction_value
 
 
+class FeatureClassifierTF(torch.nn.Module):
+    def __init__(self, head):
+        super(FeatureClassifierTF, self).__init__()
+        self._head = head
+
+    def forward(self, x):
+        x = self._head(x)
+        x = torch.nn.functional.softmax(x[0], dim=0)
+        return x
+
+
 class FeatureClassifier(ArcGISModel):
     """
     Creates an image classifier to classify the area occupied by a
@@ -118,9 +128,11 @@ class FeatureClassifier(ArcGISModel):
     data                    Required fastai Databunch. Returned data object from
                             `prepare_data` function.
     ---------------------   -------------------------------------------
-    backbone                Optional torchvision model. Backbone CNN model to be used for
-                            creating the base of the ``FeatureClassifier``, which
-                            is ``resnet34`` by default.
+    backbone                Optional string. Backbone convolutional neural network
+                            model used for feature extraction, which is ``resnet34``
+                            by default.
+                            Supported backbones: ResNet family and specified Timm
+                            models(experimental support) from :func:`~arcgis.learn.FeatureClassifier.backbones`.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -197,7 +209,7 @@ class FeatureClassifier(ArcGISModel):
 
                 class MultLabelFbetaModified(MultiLabelFbeta):
                     def fbeta_score(self, precision, recall):
-                        beta2 = self.beta ** 2
+                        beta2 = self.beta**2
                         fbeta = (
                             (1 + beta2)
                             * (precision * recall)
@@ -213,12 +225,26 @@ class FeatureClassifier(ArcGISModel):
             else:
                 metrics = accuracy
 
+            if "timm" in self._backbone.__module__:
+                timm_meta = timm_config(self._backbone)
+                backbone_cut = timm_meta["cut"]
+                backbone_split = timm_meta["split"]
+
+            if "tresnet" in self._backbone.__module__:
+                from fastai.vision import create_head
+
+                nf = 2 * _get_feature_size(self._backbone, backbone_cut)[-1][1]
+                head = create_head(nf, data.c)
+            else:
+                head = None
+
             self.learn = cnn_learner(
                 data,
                 self._backbone,
                 metrics=metrics,
                 cut=backbone_cut,
                 split_on=backbone_split,
+                custom_head=head,
             )
             if oversample:
                 self.learn.callbacks.append(OverSamplingCallback(self.learn))
@@ -258,12 +284,19 @@ class FeatureClassifier(ArcGISModel):
 
     @property
     def supported_backbones(self):
-        """Supported torchvision backbones for this model."""
+        """Supported list of backbones for this model."""
+        return FeatureClassifier._supported_backbones()
+
+    @staticmethod
+    def backbones():
+        """Supported list of backbones for this model."""
         return FeatureClassifier._supported_backbones()
 
     @staticmethod
     def _supported_backbones():
-        return [*_resnet_family, models.mobilenet_v2.__name__]
+        timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
+        timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
+        return [*_resnet_family, models.mobilenet_v2.__name__] + timm_backbones
 
     @property
     def supported_datasets(self):
@@ -288,7 +321,7 @@ class FeatureClassifier(ArcGISModel):
         """
         self._check_requisites()
         self.learn.show_results(rows=rows, **kwargs)
-        if _IS_ARCGISPRONOTEBOOK:
+        if is_arcgispronotebook():
             plt.show()
 
     def _show_results_multispectral(self, rows=5, **kwargs):
@@ -318,7 +351,7 @@ class FeatureClassifier(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
-        image_path              Required. Path to the image file to make the
+        img_path                Required. Path to the image file to make the
                                 predictions on.
         visualize               Optional: Set this parameter to True to
                                 visualize the image being predicted.
@@ -334,7 +367,7 @@ class FeatureClassifier(ArcGISModel):
         img = open_image(img_path)
         pred = self.learn.predict(img)
         if visualize == True:
-            gradCam = self.gradCAM(img, pred[0], grad_vis=gradcam)
+            gradCam = self._gradCAM(img, pred[0], grad_vis=gradcam)
         return pred
 
     def _predict_batch(self, imagetensor_batch):
@@ -357,6 +390,75 @@ class FeatureClassifier(ArcGISModel):
     @property
     def _model_metrics(self):
         return {}
+
+    def _save_pytorch_tflite(self, name):
+        import tensorflow as tf
+        import logging
+
+        tf.get_logger().setLevel(logging.ERROR)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            import onnx
+            import onnx_tf
+            from onnx_tf.backend import prepare
+
+        model = self.learn.model
+        model.eval()
+        device = self._device
+        cpu = torch.device("cpu")
+        model.to(cpu)
+
+        if hasattr(self._data, "chip_size"):
+            chip_size = self._data.chip_size
+            if not isinstance(chip_size, tuple):
+                chip_size = (chip_size, chip_size)
+        num_input_channels = list(self.learn.model.parameters())[0].shape[1]
+        inp = torch.randn([1, num_input_channels, chip_size[0], chip_size[1]]).to(cpu)
+        inp_np = inp.detach().cpu().numpy()
+        base = f"{name}-base"
+        path_base_onnx = self.learn.path / self.learn.model_dir / f"{base}.onnx"
+        path_save_pb = self.learn.path / self.learn.model_dir / f"{name}-pb"
+
+        activated_model = FeatureClassifierTF(model)
+        activated_model.eval()
+        activated_model.to(cpu)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            torch.onnx.export(
+                model=activated_model,
+                args=inp,
+                f=path_base_onnx,
+                verbose=False,
+                export_params=True,
+                do_constant_folding=True,  # fold constant values for optimization
+                input_names=["input"],
+                output_names=["output"],
+                opset_version=12,
+            )
+
+            onnx_base_model = onnx.load(str(path_base_onnx))
+            tf_rep_base = prepare(onnx_base_model)
+            tf_rep_base.export_graph(str(path_save_pb))
+
+        model.to(device)
+
+        path_save_tflite = self.learn.path / self.learn.model_dir / f"{name}.tflite"
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            tf_model = tf.saved_model.load(str(path_save_pb))
+            infer = tf_model.signatures["serving_default"]
+            concrete_func = tf_model.signatures[
+                tf.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY
+            ]
+            converter = tf.lite.TFLiteConverter.from_concrete_functions([concrete_func])
+            tflite_model = converter.convert()
+
+            # Save the model
+            with open(path_save_tflite, "wb") as f:
+                f.write(tflite_model)
+
+        return [f"{name}.tflite", f"{name}-pb"]
 
     def _get_emd_params(self, save_inference_file):
         _emd_template = {}
@@ -500,7 +602,14 @@ class FeatureClassifier(ArcGISModel):
     def plot_confusion_matrix(self, **kwargs):
         """
         Plots a confusion matrix of the model predictions to evaluate accuracy
-        kwargs: 'thresh' - confidence score threshold for multilabel predictions, defaults to 0.5
+        **kwargs**
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        thresh                  confidence score threshold for multilabel predictions,
+                                defaults to 0.5
+        =====================   ===========================================
         """
         self._check_requisites()
         if self._data._dataset_type == "MultiLabeled_Tiles":
@@ -976,9 +1085,10 @@ class FeatureClassifier(ArcGISModel):
     ):
 
         """
+        Deprecated in ArcGIS version 1.9.1 and later: Use the Classify Objects Using Deep Learning tool or arcgis.learn.classify_objects()
+
         Classifies the exported images and updates the feature layer with the prediction results in the ``output_label_field``.
         Works with RGB images only.
-        Deprecated since version 1.9.1: Use the Classify Objects Using Deep Learning tool or arcgis.learn.classify_objects()
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -1553,7 +1663,7 @@ class FeatureClassifier(ArcGISModel):
             del update_cursor
         return True
 
-    def gradCAM(
+    def _gradCAM(
         self, im, cl, heatmap_thresh: int = 16, image: bool = True, grad_vis=False
     ):
         if isinstance(cl, fastai.core.MultiCategory):

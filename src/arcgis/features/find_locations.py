@@ -14,22 +14,35 @@ create_viewshed creates areas that are visible based on locations you specify.
 create_watersheds creates catchment areas based on locations you specify.
 trace_downstream determines the flow paths in a downstream direction from the locations you specify
 """
-import json
+from __future__ import annotations
+from datetime import datetime
 import logging
+from re import U
+from typing import Any, Optional, Union
 import arcgis as _arcgis
+from arcgis.features.feature import FeatureCollection
+from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
+from arcgis.gis import GIS, Item
 import arcgis.network as network
 from .._impl.common._utils import inspect_function_inputs
 
 _logger = logging.getLogger()
 # --------------------------------------------------------------------------
 def find_existing_locations(
-    input_layers=None,
-    expressions=None,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    input_layers: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ] = None,
+    expressions: Optional[dict[str, Any]] = None,
+    output_name: Optional[Union[FeatureLayer, str]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/find_existing_locations/find_existing_locations.png
@@ -255,7 +268,7 @@ def find_existing_locations(
 
                                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                                 .. code-block:: python
 
@@ -270,7 +283,8 @@ def find_existing_locations(
     -------------------------------------    ------------------------------------------------------------------------------------------------------
     gis                                      Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------------------    ------------------------------------------------------------------------------------------------------
-    estimate                                 Optional boolean. Is true, the number of credits needed to run the operation will be returned as a float.
+    estimate                                 Optional, If True, a future object will be returned and the process
+                                             will not wait for the task to complete. The default is False, which means wait for results.
     =====================================    ======================================================================================================
 
     :return: :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
@@ -309,13 +323,16 @@ def find_existing_locations(
 
 # --------------------------------------------------------------------------
 def derive_new_locations(
-    input_layers=[],
-    expressions=[],
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    input_layers: Union[
+        list[FeatureLayer],
+        list[FeatureCollection],
+    ] = [],
+    expressions: Optional[dict[str, Any]] = [],
+    output_name: Optional[Union[FeatureLayer, str]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/derive_new_locations/derive_new_locations.png
@@ -538,7 +555,7 @@ def derive_new_locations(
 
                                              - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                              - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                                 .. code-block:: python
 
@@ -555,7 +572,8 @@ def derive_new_locations(
     -------------------------------------    ------------------------------------------------------------------------------------------------------
     estimate                                 Optional boolean. Is true, the number of credits needed to run the operation will be returned as a float.
     -------------------------------------    ------------------------------------------------------------------------------------------------------
-    future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                                   Optional, If True, a future object will be returned and the process
+                                             will not wait for the task to complete. The default is False, which means wait for results.
     =====================================    ======================================================================================================
 
     :return: :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
@@ -594,16 +612,30 @@ def derive_new_locations(
 
 # --------------------------------------------------------------------------
 def find_similar_locations(
-    input_layer,
-    search_layer,
-    analysis_fields=[],
-    input_query=None,
-    number_of_results=0,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    search_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    analysis_fields: Optional[list[str]] = [],
+    input_query: Optional[str] = None,
+    number_of_results: int = 0,
+    output_name: Optional[Union[FeatureLayer, str]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/find_similar_locations/find_similar_locations.png
@@ -680,7 +712,7 @@ def find_similar_locations(
 
                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                     .. code-block:: python
 
@@ -695,7 +727,8 @@ def find_similar_locations(
     -----------------------     -------------------------------------------------------------------------------------------
     estimate                    Optional boolean. If True, the number of credits to run the operation will be returned.
     -----------------------     -------------------------------------------------------------------------------------------
-    future                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                      Optional, If True, a future object will be returned and the process
+                                will not wait for the task to complete. The default is False, which means wait for results.
     =======================     ===========================================================================================
 
     :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else Python dictionary with the following keys:
@@ -735,13 +768,20 @@ def find_similar_locations(
 
 # --------------------------------------------------------------------------
 def find_centroids(
-    input_layer,
-    point_location=False,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    point_location: bool = False,
+    output_name: Optional[Union[FeatureLayer, str]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/find_centroids/find_centroids.png
@@ -772,7 +812,7 @@ def find_centroids(
 
                         - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                         - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                        - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                        - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                             .. code-block:: python
 
@@ -787,7 +827,8 @@ def find_centroids(
     ----------------    ---------------------------------------------------------------
     estimate            Optional boolean. If True, the number of credits to run the operation will be returned.
     ----------------    ---------------------------------------------------------------
-    future              Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future              Optional, If True, a future object will be returned and the process
+                        will not wait for the task to complete. The default is False, which means wait for results.
     ================    ===============================================================
 
     :return: result_layer : :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else :class:`~arcgis.features.FeatureCollection`.
@@ -827,33 +868,87 @@ def find_centroids(
 
 # --------------------------------------------------------------------------
 def choose_best_facilities(
-    goal="Allocate",
-    demand_locations_layer=None,
-    demand=1,
-    demand_field=None,
-    max_travel_range=2147483647,
-    max_travel_range_field=None,
-    max_travel_range_units="Minutes",
-    travel_mode=None,
-    time_of_day=None,
-    time_zone_for_time_of_day="GeoLocal",
-    travel_direction="FacilityToDemand",
-    required_facilities_layer=None,
-    required_facilities_capacity=2147483647,
-    required_facilities_capacity_field=None,
-    candidate_facilities_layer=None,
-    candidate_count=1,
-    candidate_facilities_capacity=2147483647,
-    candidate_facilities_capacity_field=None,
-    percent_demand_coverage=100,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    point_barrier_layer=None,
-    line_barrier_layer=None,
-    polygon_barrier_layer=None,
-    future=False,
+    goal: str = "Allocate",
+    demand_locations_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    demand: float = 1,
+    demand_field: Optional[str] = None,
+    max_travel_range: float = 2147483647,
+    max_travel_range_field: Optional[str] = None,
+    max_travel_range_units: str = "Minutes",
+    travel_mode: Optional[str] = None,
+    time_of_day: Optional[datetime] = None,
+    time_zone_for_time_of_day: str = "GeoLocal",
+    travel_direction: str = "FacilityToDemand",
+    required_facilities_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    required_facilities_capacity: float = 2147483647,
+    required_facilities_capacity_field: Optional[str] = None,
+    candidate_facilities_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    candidate_count: float = 1,
+    candidate_facilities_capacity: float = 2147483647,
+    candidate_facilities_capacity_field: Optional[str] = None,
+    percent_demand_coverage: float = 100,
+    output_name: Optional[Union[FeatureLayer, str]] = None,
+    context: Optional[dict] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    point_barrier_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    line_barrier_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    polygon_barrier_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/choose_best_facilities/choose_best_facilities.png
@@ -1046,7 +1141,7 @@ def choose_best_facilities(
 
                                              - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                              - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                                  .. code-block:: python
 
@@ -1080,11 +1175,12 @@ def choose_best_facilities(
                                              A line barrier prohibits travel anywhere the barrier intersects the streets. For example, a parade or protest that blocks traffic across several street
                                              segments can be modeled with a line barrier. See :ref:`Feature Input<FeatureInput>`.
     -------------------------------------    ---------------------------------------------------------
-    polygon_barrier_layer                    Optional string. Specify one or more polygon features that completely restrict travel on the streets intersected by the polygons.
+    polygon_barrier_layer                    Optional layer. Specify one or more polygon features that completely restrict travel on the streets intersected by the polygons.
 
                                              One use of this type of barrier is to model floods covering areas of the street network and making road travel there impossible. See :ref:`Feature Input<FeatureInput>`.
     -------------------------------------    ---------------------------------------------------------
-    future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                                   Optional boolean. If True, a future object will be returned and the process
+                                             will not wait for the task to complete. The default is False, which means wait for results.
     =====================================    =========================================================
 
 
@@ -1161,20 +1257,27 @@ def choose_best_facilities(
 
 # --------------------------------------------------------------------------
 def create_viewshed(
-    input_layer,
-    dem_resolution="Finest",
-    maximum_distance=None,
-    max_distance_units="Meters",
-    observer_height=None,
-    observer_height_units="Meters",
-    target_height=None,
-    target_height_units="Meters",
-    generalize=True,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    dem_resolution: str = "Finest",
+    maximum_distance: Optional[float] = None,
+    max_distance_units: str = "Meters",
+    observer_height: Optional[float] = None,
+    observer_height_units: str = "Meters",
+    target_height: Optional[float] = None,
+    target_height_units: str = "Meters",
+    generalize: bool = True,
+    output_name: Optional[Union[FeatureLayer, str]] = None,
+    context: Optional[dict] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/create_viewshed/create_viewshed.png
@@ -1266,7 +1369,7 @@ def create_viewshed(
 
                                  - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                  - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                      .. code-block:: python
 
@@ -1283,7 +1386,8 @@ def create_viewshed(
     -------------------------    ---------------------------------------------------------
     estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
     -------------------------    ---------------------------------------------------------
-    future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                       Optional boolean. If True, a future object will be returned and the process
+                                 will not wait for the task to complete. The default is False, which means wait for results.
     =========================    =========================================================
 
     :returns result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
@@ -1326,16 +1430,23 @@ def create_viewshed(
 
 # --------------------------------------------------------------------------
 def create_watersheds(
-    input_layer,
-    search_distance=None,
-    search_units="Meters",
-    source_database="FINEST",
-    generalize=True,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    search_distance: Optional[float] = None,
+    search_units: str = "Meters",
+    source_database: str = "FINEST",
+    generalize: bool = True,
+    output_name: Optional[Union[FeatureLayer, str]] = None,
+    context: Optional[dict] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/create_watersheds/create_watersheds.png
@@ -1400,7 +1511,7 @@ def create_watersheds(
 
                                  - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                  - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                      .. code-block:: python
 
@@ -1417,7 +1528,8 @@ def create_watersheds(
     -------------------------    ---------------------------------------------------------
     estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
     -------------------------    ---------------------------------------------------------
-    future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                       Optional boolean. If True, a future object will be returned and the process
+                                 will not wait for the task to complete. The default is False, which means wait for results.
     =========================    =========================================================
 
     :returns result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
@@ -1456,19 +1568,35 @@ def create_watersheds(
 
 # --------------------------------------------------------------------------
 def trace_downstream(
-    input_layer,
-    split_distance=None,
-    split_units="Kilometers",
-    max_distance=None,
-    max_distance_units="Kilometers",
-    bounding_polygon_layer=None,
-    source_database=None,
-    generalize=True,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    split_distance: Optional[float] = None,
+    split_units: str = "Kilometers",
+    max_distance: Optional[float] = None,
+    max_distance_units: str = "Kilometers",
+    bounding_polygon_layer: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    source_database: Optional[str] = None,
+    generalize: bool = True,
+    output_name: Optional[Union[FeatureLayer, str]] = None,
+    context: Optional[dict] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/trace_downstream/trace_downstream.png
@@ -1536,7 +1664,7 @@ def trace_downstream(
 
                                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                                 .. code-block:: python
 
@@ -1551,7 +1679,8 @@ def trace_downstream(
     -------------------------------------   ---------------------------------------------------------
     estimate                                Optional boolean. If True, the number of credits to run the operation will be returned.
     -------------------------------------   ---------------------------------------------------------
-    future                                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                                  Optional boolean. If True, a future object will be returned and the process
+                                            will not wait for the task to complete. The default is False, which means wait for results.
     =====================================   =========================================================
 
     :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is set, else :class:`~arcgis.features.FeatureCollection`.

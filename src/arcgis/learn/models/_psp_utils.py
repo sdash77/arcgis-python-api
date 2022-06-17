@@ -23,27 +23,27 @@
 # Based on https://github.com/hszhao/semseg
 
 import torch
-import warnings
-import PIL
 import numpy as np
-
-from pdb import set_trace
 import torch.nn.functional as F
 import torch.nn as nn
 import torch
-from torchvision import models
 
 import math
 from fastai.callbacks.hooks import hook_outputs, hook_output
-from fastai.vision.learner import create_body
 from fastai.callbacks.hooks import model_sizes
 from fastai.vision import flatten_model
 from fastai.vision.models import unet
 from fastai.basic_train import Learner
 from fastai.vision import to_device
 from ._PointRend import PointRendSemSegHead
-from ._arcgis_model import _get_backbone_meta, _set_ddp_multigpu, _isnotebook
-import os as arcgis_os
+from ._arcgis_model import _set_ddp_multigpu, _isnotebook
+from ._timm_utils import get_backbone
+from ._deeplab_utils import (
+    get_dilation_index,
+    get_hooks,
+    get_last_module,
+    add_dilation,
+)
 
 
 def initialize_weights(*models):
@@ -101,58 +101,11 @@ def _pspnet_unet(
     """
     Function which returns PPM module attached to backbone which is then used to form the Unet.
     """
-    if getattr(backbone_fn, "_is_multispectral", False):
-        backbone = create_body(
-            backbone_fn,
-            pretrained=pretrained,
-            cut=_get_backbone_meta(backbone_fn.__name__)["cut"],
-        )
-    else:
-        backbone = create_body(backbone_fn, pretrained=pretrained)
-
+    backbone = get_backbone(backbone_fn, pretrained)
     backbone_name = backbone_fn.__name__
-
-    ## Support for different backbones
-    if "densenet" in backbone_name or "vgg" in backbone_name:
-        hookable_modules = list(backbone.children())[0]
-    else:
-        hookable_modules = list(backbone.children())
-
-    if "vgg" in backbone_name:
-        modify_dilation_index = -5
-    else:
-        modify_dilation_index = -2
-
-    if backbone_name == "resnet18" or backbone_name == "resnet34":
-        module_to_check = "conv"
-    else:
-        module_to_check = "conv2"
-
-    custom_idx = 0
-    for i, module in enumerate(hookable_modules[modify_dilation_index:]):
-        dilation = 2 * (i + 1)
-        padding = 2 * (i + 1)
-        # padding = 1
-        for n, m in module.named_modules():
-            if module_to_check in n:
-                m.dilation, m.padding, m.stride = (
-                    (dilation, dilation),
-                    (padding, padding),
-                    (1, 1),
-                )
-            elif "downsample.0" in n:
-                m.stride = (1, 1)
-
-        if "vgg" in backbone_fn.__name__:
-            if isinstance(module, nn.Conv2d):
-                dilation = 2 * (custom_idx + 1)
-                padding = 2 * (custom_idx + 1)
-                module.dilation, module.padding, module.stride = (
-                    (dilation, dilation),
-                    (padding, padding),
-                    (1, 1),
-                )
-                custom_idx += 1
+    modify_dilation_index, _ = get_dilation_index(backbone_name)
+    hookable_modules = get_last_module(backbone)
+    add_dilation(backbone_fn, hookable_modules, modify_dilation_index)
 
     ## returns the size of various activations
     feature_sizes = model_sizes(backbone, size=(chip_size, chip_size))
@@ -210,8 +163,9 @@ class AuxPSUnet(nn.Module):
             aux_l = self.aux_logits(self.hook.stored)
             ## Remove hook to free up memory
             self.hook.remove()
-            return out, F.interpolate(
-                aux_l, x.shape[2:], mode="bilinear", align_corners=True
+            return (
+                out,
+                F.interpolate(aux_l, x.shape[2:], mode="bilinear", align_corners=True),
             )
         else:
             return out
@@ -253,72 +207,14 @@ class PSPNet(nn.Module):
     ):
         super(PSPNet, self).__init__()
         self.pointrend = pointrend
-        self.vgg = False
-        if getattr(backbone_fn, "_is_multispectral", False):
-            self.backbone = create_body(
-                backbone_fn,
-                pretrained=pretrained,
-                cut=_get_backbone_meta(backbone_fn.__name__)["cut"],
-            )
-        else:
-            self.backbone = create_body(backbone_fn, pretrained=pretrained)
-
+        self.backbone = get_backbone(backbone_fn, pretrained)
         backbone_name = backbone_fn.__name__
-
-        ## Support for different backbones
-        if "densenet" in backbone_name or "vgg" in backbone_name:
-            hookable_modules = list(self.backbone.children())[0]
-        else:
-            hookable_modules = list(self.backbone.children())
-
-        if "vgg" in backbone_name:
-            modify_dilation_index = -5
-            self.vgg = True
-        else:
-            if self.pointrend and not keep_dilation:
-                modify_dilation_index = -1
-            else:
-                modify_dilation_index = -2
-
-        if backbone_name == "resnet18" or backbone_name == "resnet34":
-            module_to_check = "conv"
-        else:
-            module_to_check = "conv2"
-
-        if "vgg" in backbone_name:
-            hooks = [
-                hookable_modules[i - 1]
-                for i, module in enumerate(hookable_modules)
-                if isinstance(module, nn.MaxPool2d)
-            ]
-
-        else:
-            hooks = [hookable_modules[-2], hookable_modules[-4]]
-
-        custom_idx = 0
-        for i, module in enumerate(hookable_modules[modify_dilation_index:]):
-            dilation = 2 * (i + 1)
-            padding = 2 * (i + 1)
-            for n, m in module.named_modules():
-                if module_to_check in n:
-                    m.dilation, m.padding, m.stride = (
-                        (dilation, dilation),
-                        (padding, padding),
-                        (1, 1),
-                    )
-                elif "downsample.0" in n:
-                    m.stride = (1, 1)
-
-            if "vgg" in backbone_fn.__name__:
-                if isinstance(module, nn.Conv2d):
-                    dilation = 2 * (custom_idx + 1)
-                    padding = 2 * (custom_idx + 1)
-                    module.dilation, module.padding, module.stride = (
-                        (dilation, dilation),
-                        (padding, padding),
-                        (1, 1),
-                    )
-                    custom_idx += 1
+        modify_dilation_index, self.vgg = get_dilation_index(
+            backbone_name, pointrend, keep_dilation
+        )
+        hookable_modules = get_last_module(self.backbone)
+        add_dilation(backbone_fn, hookable_modules, modify_dilation_index)
+        hooks = get_hooks(backbone_name, hookable_modules)
 
         ## Hook at the index where we need to get the auxillary logits out along with Fine-grained features
         self.hook = hook_outputs(hooks)
@@ -368,7 +264,7 @@ class PSPNet(nn.Module):
                 point_num_channels = self.hook[1].stored.shape[1]
                 stride = chip_size / feature_sizes[-1][2]
 
-            subdivision_steps = math.log(stride, 2)
+            subdivision_steps = math.ceil(math.log(stride, 2))
             self.pointrend_head = PointRendSemSegHead(
                 num_classes,
                 point_num_channels,
@@ -418,6 +314,10 @@ class PSPNet(nn.Module):
         else:
 
             if self.pointrend:
+                if pointrend_out.shape[-1] != x_size[-1]:
+                    pointrend_out = F.interpolate(
+                        pointrend_out, x_size[2:], mode="bilinear", align_corners=True
+                    )
                 return pointrend_out
             else:
                 return result
@@ -529,6 +429,6 @@ def accuracy(input, target, ignore_mapped_class=[]):
         _, total_classes, _, _ = input.shape
         keep_indices = [i for i in range(total_classes) if i not in ignore_mapped_class]
         for k in ignore_mapped_class:
-            input[:, k] = -1
+            input[:, k] = input.min() - 1
         targ_mask = isin(target, keep_indices)
         return (input.argmax(dim=1)[targ_mask] == target[targ_mask]).float().mean()

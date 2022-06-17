@@ -4,11 +4,15 @@ These tools are used for the day-to-day management of geographic and tabular dat
 
 copy_to_data_store copies data to your ArcGIS Data Store and creates a layer in your web GIS.
 """
+from __future__ import annotations
+from datetime import datetime
 import json as _json
 import logging as _logging
-import datetime as _datetime
+from typing import Any, Optional, Union
 import arcgis as _arcgis
-from arcgis.features import FeatureSet as _FeatureSet
+from arcgis.features.feature import FeatureCollection
+from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
+from arcgis.gis import GIS, Item
 
 from ._util import (
     _id_generator,
@@ -27,13 +31,24 @@ _use_async = True
 
 
 def run_python_script(
-    code,
-    layers=None,
-    gis=None,
-    context=None,
-    future=False,
-    parameters=None,
-    param_as_input=False,
+    code: str,
+    layers: Optional[
+        list[
+            Union[
+                Item,
+                FeatureCollection,
+                FeatureLayer,
+                FeatureLayerCollection,
+                str,
+                dict[str, Any],
+            ]
+        ]
+    ] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
+    parameters: Optional[dict[str, Any]] = None,
+    param_as_input: bool = False,
 ):
     """
 
@@ -119,8 +134,8 @@ def run_python_script(
 
                       To limit the extent of a layer when converting it to a DataFrame, use the "extent" option when loading the layer's URL.
     ----------------  ---------------------------------------------------------------
-    future            Optional boolean. If 'True', a GPJob is returned instead of
-                      results. The GPJob can be queried on the status of the execution.
+    future            Optional boolean. If True, a future object will be returned and the process
+                      will not wait for the task to complete. The default is False, which means wait for results.
     ----------------  ---------------------------------------------------------------
     parameters        Optional dict. A global level variable that will be loaded into the given code.
                       The variable name is called **user_variables**.
@@ -215,14 +230,21 @@ def run_python_script(
 
 
 def dissolve_boundaries(
-    input_layer,
-    dissolve_fields=None,
-    summary_fields=None,
-    multipart=False,
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    dissolve_fields: Optional[str] = None,
+    summary_fields: Optional[list[dict[str, Any]]] = None,
+    multipart: bool = False,
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/dissolve_boundaries/dissolve_boundaries.png
@@ -283,9 +305,9 @@ def dissolve_boundaries(
 
                       The default value is 'False'.
     ----------------  ---------------------------------------------------------------
-    output_name       optional string. The task will create a feature service of the results. You define the name of the service.
+    output_name       Optional string. The task will create a feature service of the results. You define the name of the service.
     ----------------  ---------------------------------------------------------------
-    gis               optional GIS. The GIS object where the analysis will take place.
+    gis               Optional GIS. The GIS object where the analysis will take place.
     ----------------  ---------------------------------------------------------------
     context           Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are five settings:
 
@@ -295,8 +317,8 @@ def dissolve_boundaries(
                       #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
                       #. Default aggregation styles (``defaultAggregationStyles``) - If set to true, results will have square, hexagon, and triangle aggregation styles enabled on results map services.
     ----------------  ---------------------------------------------------------------
-    future            optional boolean. If True, a GPJob is returned instead of
-                      results. The GPJob can be queried on the status of the execution.
+    future            Optional boolean. If True, a future object will be returned and the process
+                      will not wait for the task to complete. The default is False, which means wait for results.
     ================  ===============================================================
 
     :return: result_layer : Output Features as :class:`~arcgis.features.FeatureLayerCollection`.
@@ -387,13 +409,27 @@ def dissolve_boundaries(
 
 
 def merge_layers(
-    input_layer,
-    merge_layer,
-    merge_attributes=None,
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    merge_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    merge_attributes: Optional[list[dict[str, str]]] = None,
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
 ):
     """
 
@@ -553,7 +589,26 @@ def merge_layers(
 
 
 def clip_layer(
-    input_layer, clip_layer, output_name=None, gis=None, context=None, future=False
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    clip_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/clip_layer/clip_layer.png
@@ -566,38 +621,38 @@ def clip_layer(
 
     Only available at **ArcGIS Enterprise 10.7** and later.
 
-    ================  ===============================================================
-    **Argument**      **Description**
-    ----------------  ---------------------------------------------------------------
-    input_layer       Required feature layer. The point, line, or polygon features
-                      that will be clipped to the areas of ``clip_layer`` features.
-                      See :ref:`Feature Input<gaxFeatureInput>`.
-    ----------------  ---------------------------------------------------------------
-    clip_layer        Required feature layer. The polygon features that define the
-                      areas to which ``input_layer`` features will be clipped.
-                      See :ref:`Feature Input<gaxFeatureInput>`.
-    ----------------  ---------------------------------------------------------------
-    output_name       Optional string. The task will create a feature service of
-                      the results. You define the name of the service.
-    ----------------  ---------------------------------------------------------------
-    context           Optional strin. The context parameter contains additional
-                      settings that affect task execution. For this task, there are four settings:
+    ================    ===============================================================
+    **Argument**        **Description**
+    ----------------    ---------------------------------------------------------------
+    input_layer         Required feature layer. The point, line, or polygon features
+                        that will be clipped to the areas of ``clip_layer`` features.
+                        See :ref:`Feature Input<gaxFeatureInput>`.
+    ----------------    ---------------------------------------------------------------
+    clip_layer          Required feature layer. The polygon features that define the
+                        areas to which ``input_layer`` features will be clipped.
+                        See :ref:`Feature Input<gaxFeatureInput>`.
+    ----------------    ---------------------------------------------------------------
+    output_name         Optional string. The task will create a feature service of
+                        the results. You define the name of the service.
+    ----------------    ---------------------------------------------------------------
+    context             Optional strin. The context parameter contains additional
+                        settings that affect task execution. For this task, there are four settings:
 
-                      #. Extent (``extent``) - A bounding box that defines the analysis area.
-                         Only those features that intersect the bounding box will be analyzed.
-                      #. Processing spatial reference (``processSR``) - The features will be
-                         projected into this coordinate system for analysis.
-                      #. Output spatial reference (``outSR``) - The features will be projected
-                         into this coordinate system after the analysis to be saved.
-                         The output spatial reference for the spatiotemporal big data store is always WGS84.
-                      #. Data store (``dataStore``) - Results will be saved to the specified data store.
-                         For ArcGIS Enterprise, the default is the spatiotemporal big data store.
-    ----------------  ---------------------------------------------------------------
-    gis               optional GIS. The GIS object where the analysis will take place.
-    ----------------  ---------------------------------------------------------------
-    future            Optional boolean. If True, a GPJob is returned instead of
-                      results. The GPJob can be queried on the status of the execution.
-    ================  ===============================================================
+                        #. Extent (``extent``) - A bounding box that defines the analysis area.
+                           Only those features that intersect the bounding box will be analyzed.
+                        #. Processing spatial reference (``processSR``) - The features will be
+                           projected into this coordinate system for analysis.
+                        #. Output spatial reference (``outSR``) - The features will be projected
+                           into this coordinate system after the analysis to be saved.
+                           The output spatial reference for the spatiotemporal big data store is always WGS84.
+                        #. Data store (``dataStore``) - Results will be saved to the specified data store.
+                           For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+    ----------------    ---------------------------------------------------------------
+    gis                 Optional GIS. The GIS object where the analysis will take place.
+    ----------------    ---------------------------------------------------------------
+    future              Optional boolean. If True, a future object will be returned and the process
+                        will not wait for the task to complete. The default is False, which means wait for results.
+    ================    ===============================================================
 
     :return: :class:`~arcgis.features.FeatureLayerCollection`
 
@@ -667,14 +722,28 @@ def clip_layer(
 
 
 def overlay_data(
-    input_layer,
-    overlay_layer,
-    overlay_type="intersect",
-    output_name=None,
-    gis=None,
-    include_overlaps=True,
-    context=None,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    overlay_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    overlay_type: str = "intersect",
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    include_overlaps: bool = True,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
 ):
     """
     .. image:: _static/images//overlay_layers/overlay_layers.png
@@ -853,7 +922,27 @@ def overlay_data(
     return
 
 
-def append_data(input_layer, append_layer, field_mapping=None, gis=None, future=False):
+def append_data(
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    append_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    field_mapping: Optional[list[dict[str, str]]] = None,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+):
     """
     Only available at ArcGIS Enterprise 10.6.1 and later.
 
@@ -864,10 +953,10 @@ def append_data(input_layer, append_layer, field_mapping=None, gis=None, future=
     ================  ===============================================================
     **Argument**      **Description**
     ----------------  ---------------------------------------------------------------
-    input_layer       required FeatureLayer , The table, point, line or
+    input_layer       Required FeatureLayer , The table, point, line or
                       polygon features.
     ----------------  ---------------------------------------------------------------
-    append_layer      required FeatureLayer. The table, point, line, or polygon
+    append_layer      Required FeatureLayer. The table, point, line, or polygon
                       features to be appended to the input_layer. To append geometry,
                       the append_layer must have the same geometry type as the
                       input_layer. If the geometry types are not the same, the
@@ -923,12 +1012,11 @@ def append_data(input_layer, append_layer, field_mapping=None, gis=None, future=
                                                ]
                                               )
     ----------------  ---------------------------------------------------------------
-    gis               optional GIS, the GIS on which this tool runs. If not
+    gis               Optional GIS, the GIS on which this tool runs. If not
                       specified, the active GIS is used.
     ----------------  ---------------------------------------------------------------
-    future            optional Boolean. If True, a GPJob is returned instead of
-                      results. The GPJob can be queried on the status of the
-                      execution.
+    future            Optional boolean. If True, a future object will be returned and the process
+                      will not wait for the task to complete. The default is False, which means wait for results.
     ================  ===============================================================
 
     :return: True or an error
@@ -961,19 +1049,26 @@ def append_data(input_layer, append_layer, field_mapping=None, gis=None, future=
 
 
 def calculate_fields(
-    input_layer,
-    field_name,
-    data_type,
-    expression,
-    track_aware=False,
-    track_fields=None,
-    time_boundary_split=None,
-    time_split_unit=None,
-    time_reference=None,
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    field_name: str,
+    data_type: str,
+    expression: str,
+    track_aware: bool = False,
+    track_fields: Optional[str] = None,
+    time_boundary_split: Optional[int] = None,
+    time_split_unit: Optional[str] = None,
+    time_reference: Optional[datetime] = None,
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
 ):
     """
 
@@ -1037,6 +1132,9 @@ def calculate_fields(
                                                         #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
                                                         #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
                                                         #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+    -------------------------------------------------   ---------------------------------------------------------------
+    future                                              Optional boolean. If True, a future object will be returned and the process
+                                                        will not wait for the task to complete. The default is False, which means wait for results.
     =================================================   ===============================================================
 
 
@@ -1120,7 +1218,18 @@ def calculate_fields(
 
 
 def copy_to_data_store(
-    input_layer, output_name=None, gis=None, context=None, future=False
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/copy_to_data_store/copy_to_data_store.png
@@ -1158,9 +1267,8 @@ def copy_to_data_store(
                                  #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
                                  #. Default aggregation styles (``defaultAggregationStyles``) - If set to 'True', results will have square, hexagon, and triangle aggregation styles enabled on results map services.
     --------------------------   ---------------------------------------------------------------
-     future                      Optional boolean. If 'True', the result comes back as a GPJob.
-
-                                 The default value is 'False'.
+     future                      Optional boolean. If True, a future object will be returned and the process
+                                 will not wait for the task to complete. The default is False, which means wait for results.
     ==========================   ===============================================================
 
     :return: result_layer : Output Features as :class:`~arcgis.features.FeatureLayer`.

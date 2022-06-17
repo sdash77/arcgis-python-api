@@ -39,11 +39,11 @@ class SiteManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<SiteManager @ {url}>".format(url=self._url)
+        return "< SiteManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<SiteManager @ {url}>".format(url=self._url)
+        return "< SiteManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -54,7 +54,7 @@ class SiteManager(object):
         return self._properties
 
     # ----------------------------------------------------------------------
-    def export_site(self, location):
+    def export_site(self, location: str):
         """
         ArcGIS Notebook Server provides this operation to back up the site's
         configuration store, along with the importSite operation to restore
@@ -88,7 +88,7 @@ class SiteManager(object):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def import_site(self, location):
+    def import_site(self, location: str):
         """
         ArcGIS Notebook Server provides this operation to restore a site
         configuration from a backup. The backup will have been created and

@@ -1,7 +1,9 @@
 import logging as _logging
+from typing import Optional
 import arcgis
 from datetime import datetime
 from arcgis.features import FeatureSet
+from arcgis.gis import GIS
 from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing._support import _execute_gp_tool
@@ -487,36 +489,36 @@ default_attributes = {
 
 
 def generate_service_areas(
-    facilities,
-    break_values="5 10 15",
-    break_units="Minutes",
-    analysis_region=None,
-    travel_direction="Away From Facility",
-    time_of_day=None,
-    use_hierarchy=False,
-    uturn_at_junctions="Allowed Only at Intersections and Dead Ends",
-    polygons_for_multiple_facilities="Overlapping",
-    polygon_overlap_type="Rings",
-    detailed_polygons=False,
-    polygon_trim_distance=None,
-    polygon_simplification_tolerance=None,
-    point_barriers=None,
-    line_barriers=None,
-    polygon_barriers=None,
-    restrictions=None,
-    attribute_parameter_values=None,
-    time_zone_for_time_of_day="Geographically Local",
-    travel_mode="Custom",
-    impedance="Drive Time",
-    save_output_network_analysis_layer=False,
-    overrides=None,
-    time_impedance=None,
-    distance_impedance=None,
-    polygon_detail=None,
-    output_type=None,
-    output_format=None,
-    gis=None,
-    future=False,
+    facilities: FeatureSet,
+    break_values: str = "5 10 15",
+    break_units: str = "Minutes",
+    analysis_region: Optional[str] = None,
+    travel_direction: str = "Away From Facility",
+    time_of_day: Optional[datetime] = None,
+    use_hierarchy: bool = False,
+    uturn_at_junctions: str = "Allowed Only at Intersections and Dead Ends",
+    polygons_for_multiple_facilities: str = "Overlapping",
+    polygon_overlap_type: str = "Rings",
+    detailed_polygons: bool = False,
+    polygon_trim_distance: Optional[LinearUnit] = None,
+    polygon_simplification_tolerance: Optional[LinearUnit] = None,
+    point_barriers: Optional[FeatureSet] = None,
+    line_barriers: Optional[FeatureSet] = None,
+    polygon_barriers: Optional[FeatureSet] = None,
+    restrictions: Optional[str] = None,
+    attribute_parameter_values: Optional[FeatureSet] = None,
+    time_zone_for_time_of_day: str = "Geographically Local",
+    travel_mode: str = "Custom",
+    impedance: str = "Drive Time",
+    save_output_network_analysis_layer: bool = False,
+    overrides: Optional[dict] = None,
+    time_impedance: Optional[str] = None,
+    distance_impedance: Optional[str] = None,
+    polygon_detail: Optional[str] = None,
+    output_type: Optional[str] = None,
+    output_format: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/generate_service_areas/generate_service_areas.png
@@ -1223,8 +1225,8 @@ def generate_service_areas(
     -------------------------------------------------     ------------------------------------------------------------------------
     gis                                                   Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------------------------------     ------------------------------------------------------------------------
-    future                                                Optional boolean. If True, a GPJob is returned instead of results.
-                                                          The GPJob can be queried on the status of the execution.
+    future                                                Optional boolean. If True, a future object will be returned and the process
+                                                          will not wait for the task to complete. The default is False, which means wait for results.
     =================================================     ========================================================================
 
     : returns: the following as a named tuple:

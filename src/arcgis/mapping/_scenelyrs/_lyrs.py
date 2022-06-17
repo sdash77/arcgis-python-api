@@ -1,4 +1,5 @@
 import json
+from typing import Optional, Union
 from arcgis.gis import Layer, _GISResource, Item, GIS
 from arcgis.auth.tools import LazyLoader
 
@@ -18,7 +19,7 @@ class SceneLayerManager(_GISResource):
         self._sl = scene_lyr
 
     # ----------------------------------------------------------------------
-    def refresh(self, service_definition=True):
+    def refresh(self, service_definition: bool = True):
         """
         The ``refresh`` operation refreshes a service, which clears the web
         server cache for the service.
@@ -35,7 +36,7 @@ class SceneLayerManager(_GISResource):
         return res
 
     # ----------------------------------------------------------------------
-    def swap(self, target_service_name):
+    def swap(self, target_service_name: str):
         """
         The swap operation replaces the current service cache with an existing one.
 
@@ -69,7 +70,7 @@ class SceneLayerManager(_GISResource):
         return self._con.get(url, params)
 
     # ----------------------------------------------------------------------
-    def cancel_job(self, job_id):
+    def cancel_job(self, job_id: str):
         """
         The ``cancel_job`` operation supports cancelling a job while update
         tiles is running from a hosted feature service. The result of this
@@ -79,7 +80,7 @@ class SceneLayerManager(_GISResource):
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
-        job_id               Required String. The ``job id`` to cancel.
+        job_id              Required String. The ``job id`` to cancel.
         ===============     ====================================================
 
         """
@@ -88,7 +89,7 @@ class SceneLayerManager(_GISResource):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def job_statistics(self, job_id):
+    def job_statistics(self, job_id: str):
         """
         Returns the job statistics for the given jobId
 
@@ -98,7 +99,14 @@ class SceneLayerManager(_GISResource):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def import_tiles(self, item, levels=None, extent=None, merge=False, replace=False):
+    def import_tiles(
+        self,
+        item: Union[str, Item],
+        levels: Optional[Union[str, list]] = None,
+        extent: Optional[Union[str, dict]] = None,
+        merge: bool = False,
+        replace: bool = False,
+    ):
         """
         The ``import_tiles`` method imports tiles from an :class:`~arcgis.gis.Item` object.
 
@@ -177,7 +185,11 @@ class SceneLayerManager(_GISResource):
         return res
 
     # ----------------------------------------------------------------------
-    def update_tiles(self, levels=None, extent=None):
+    def update_tiles(
+        self,
+        levels: Optional[Union[str, list]] = None,
+        extent: Optional[Union[str, dict]] = None,
+    ):
         """
         The ``update_tiles`` method starts tile generation for ArcGIS Online. The levels of detail
         and the extent are needed to determine the area where tiles need
@@ -243,7 +255,7 @@ class SceneLayerManager(_GISResource):
 
     # ----------------------------------------------------------------------
     @property
-    def rerun_job(self, job_id, code):
+    def rerun_job(self, job_id: str, code: str):
         """
         The ``rerun_job`` operation supports re-running a canceled job from a
         hosted map service. The result of this operation is a response
@@ -252,11 +264,11 @@ class SceneLayerManager(_GISResource):
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
-        code                required string, parameter used to re-run a given
+        code                Required string, parameter used to re-run a given
                             jobs with a specific error
                             code: ``ALL | ERROR | CANCELED``
         ---------------     ----------------------------------------------------
-        job_id              required string, job to reprocess
+        job_id              Required string, job to reprocess
         ===============     ====================================================
 
         :return:
@@ -269,12 +281,12 @@ class SceneLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def edit_tile_service(
         self,
-        service_definition=None,
-        min_scale=None,
-        max_scale=None,
-        source_item_id=None,
-        export_tiles_allowed=False,
-        max_export_tile_count=100000,
+        service_definition: str,
+        min_scale: Optional[float],
+        max_scale: Optional[float],
+        source_item_id: str,
+        export_tiles_allowed: bool = False,
+        max_export_tile_count: float = 100000,
     ):
         """
         The ``edit_tile_service`` operation updates a Tile Service's properties.
@@ -335,19 +347,19 @@ class SceneLayerManager(_GISResource):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def delete_tiles(self, levels, extent=None):
+    def delete_tiles(self, levels: str, extent: Optional[Union[str, dict]] = None):
         """
         The ``delete_tiles`` method deletes tiles from the current cache.
 
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
-        extent              optional dictionary,  If specified, the tiles within
+        levels              Required string, The level to delete.
+                            Example, 0-5,10,11-20 or 1,2,3 or 0-5
+        ---------------     ----------------------------------------------------
+        extent              Optional dictionary,  If specified, the tiles within
                             this extent will be deleted or will be deleted based
                             on the service's full extent.
-        ---------------     ----------------------------------------------------
-        levels              required string, The level to delete.
-                            Example, 0-5,10,11-20 or 1,2,3 or 0-5
         ===============     ====================================================
 
         :return:
@@ -390,7 +402,7 @@ class EnterpriseSceneLayerManager(_GISResource):
     The ``EnterpriseSceneLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise hosted scene layers.
     A :class:`~arcgis.mapping.SceneLayer` offers access to layer content.
 
-    ..note:: Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/SceneServer/
+    .. note:: Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/SceneServer/
     """
 
     def __init__(self, url, gis=None, scene_lyr=None):
@@ -400,7 +412,7 @@ class EnterpriseSceneLayerManager(_GISResource):
         self._sl = scene_lyr
 
     # ----------------------------------------------------------------------
-    def edit(self, service_dictionairy):
+    def edit(self, service_dictionairy: dict):
         """
         To edit a service, you need to submit the complete JSON
         representation of the service, which includes the updates to the

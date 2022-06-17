@@ -1,6 +1,8 @@
 """
 Entry point to working with local enterprise GIS functions
 """
+from datetime import datetime
+from typing import Optional
 from ...gis._impl._con import Connection
 from ...gis import GIS, Item, User
 from ._resources import PortalResourceManager
@@ -17,12 +19,17 @@ class PortalAdminManager(BasePortalAdmin):
     configured using the Create Site operation. Once initialized, the
     portal environment is available through System and Security resources.
 
-    Parameter:
-    :param url: web address to portaladmin rest API (ends with: portal//sharing/rest/)
-    :param gis: GIS object containing Administrative credentials
-    :param initialize: (optional) if True, properties of REST endpoint are
-    loaded on creation of object. False (default) means they are loaded
-    when needed.
+    ================    =================================================================================
+    **Argument**        **Description**
+    ----------------    ---------------------------------------------------------------------------------
+    url                 web address to portaladmin rest API (ends with: portal//sharing/rest/)
+    ----------------    ---------------------------------------------------------------------------------
+    gis                 GIS object containing Administrative credentials
+    ----------------    ---------------------------------------------------------------------------------
+    initialize          Optional if True, properties of REST endpoint are loaded on creation of object.
+                        False (default) means they are loaded when needed.
+    ================    =================================================================================
+
     """
 
     _logs = None
@@ -76,7 +83,13 @@ class PortalAdminManager(BasePortalAdmin):
     # ----------------------------------------------------------------------
     @property
     def ux(self):
-        """returns a UX/UI manager with properties such as description, featured_content, name, etc."""
+        """
+        returns a UX/UI manager with properties such as description, featured_content, name, etc.
+
+        :return:
+            :class:`~arcgis.gis.admin.UX` object
+
+        """
         if self._ux is None:
             from ._ux import UX
 
@@ -89,6 +102,10 @@ class PortalAdminManager(BasePortalAdmin):
         """
         The collaborations resource lists all collaborations in which a
         portal participates
+
+        :return:
+            :class:`~arcgis.gis.admin.CollaborationManager` object
+
         """
         if self._collaborations is None:
             from ._collaboration import CollaborationManager
@@ -99,7 +116,13 @@ class PortalAdminManager(BasePortalAdmin):
     # ----------------------------------------------------------------------
     @property
     def category_schema(self):
-        """This resource allows for the setting and manipulating of catagory schemas."""
+        """
+        This resource allows for the setting and manipulating of category schemas.
+
+        :return:
+            :class:`~arcgis.gis.admin.CategoryManager` object
+
+        """
         if self._category_schema is None:
             from ._catagoryschema import CategoryManager
 
@@ -111,6 +134,10 @@ class PortalAdminManager(BasePortalAdmin):
     def idp(self):
         """
         This resource allows for the setting and configuration of the identity provider
+
+        :return:
+            :class:`~arcgis.gis.admin.IdentityProviderManager` object
+
         """
         if self._idp is None:
             from ._idp import IdentityProviderManager
@@ -122,7 +149,12 @@ class PortalAdminManager(BasePortalAdmin):
     @property
     def location_tracking(self):
         """
-        The manager for Location Tracking. See :class:`~arcgis.apps.tracker.LocationTrackingManager'.
+
+        The manager for Location Tracking. See :class:`~arcgis.apps.tracker.LocationTrackingManager`.
+
+        :return:
+            :class:`~arcgis.apps.tracker.LocationTrackingManager` object
+
         """
         return LocationTrackingManager(self._gis)
 
@@ -132,6 +164,10 @@ class PortalAdminManager(BasePortalAdmin):
         """
         This resource allows for the setting and configuration of the social providers
         for a GIS.
+
+        :return:
+            :class:`~arcgis.gis.admin.SocialProviders` object
+
         """
         if self._sp is None:
             from ._socialproviders import SocialProviders
@@ -145,6 +181,10 @@ class PortalAdminManager(BasePortalAdmin):
         """
         returns a set of tools to work with ArcGIS Enterprise metadata
         settings.
+
+        :return:
+            :class:`~arcgis.gis.admin.MetadataManager` object
+
         """
         if self._metadata is None:
             from ._metadata import MetadataManager
@@ -155,7 +195,12 @@ class PortalAdminManager(BasePortalAdmin):
     # ----------------------------------------------------------------------
     @property
     def servers(self):
-        """returns a server manager object"""
+        """returns a server manager object
+
+        :return:
+            :class:`~arcgis.gis.server.ServerManager`
+
+        """
         if self._servers is None:
             from ..server import ServerManager
 
@@ -165,10 +210,10 @@ class PortalAdminManager(BasePortalAdmin):
     # ----------------------------------------------------------------------
     def scheduled_tasks(
         self,
-        item: Item = None,
-        active: bool = None,
-        user: User = None,
-        types: str = None,
+        item: Optional[Item] = None,
+        active: Optional[bool] = None,
+        user: Optional[User] = None,
+        types: Optional[str] = None,
     ):
         """
         This property allows `org_admins` to be able to see all scheduled tasks on the enterprise
@@ -222,6 +267,11 @@ class PortalAdminManager(BasePortalAdmin):
         This resource lists all the portal machines in a site. Each portal
         machine has a status that indicates whether the machine is ready
         to accept requests.
+
+
+        :return:
+            :class:`~arcgis.gis.admin.Machines` object
+
         """
         if self._machines is None:
             from ._machines import Machines
@@ -236,6 +286,10 @@ class PortalAdminManager(BasePortalAdmin):
     def security(self):
         """
         accesses the controls for the security of a local portal site
+
+        :return:
+            :class:`~arcgis.gis.admin.Security` object
+
         """
 
         if self._security is None:
@@ -251,6 +305,10 @@ class PortalAdminManager(BasePortalAdmin):
         """
         Site is the root resources used after a local GIS is installed. Here
         administrators can create, export, import, and join sites.
+
+        :return:
+            :class:`~arcgis.gis.admin.Site` object
+
         """
         if self._site is None:
             from ._site import Site
@@ -263,6 +321,10 @@ class PortalAdminManager(BasePortalAdmin):
     def logs(self):
         """
         returns a class to work with the portal logs
+
+        :return:
+            :class:`~arcgis.gis.admin.Logs` object
+
         """
         if self._logs is None:
             from ._logs import Logs
@@ -276,6 +338,11 @@ class PortalAdminManager(BasePortalAdmin):
     def federation(self):
         """
         provides access into the federation settings of a server.
+
+
+        :return:
+            :class:`~arcgis.gis.admin.Federation` object
+
         """
         if self._federation is None:
             from ._federation import Federation
@@ -292,6 +359,11 @@ class PortalAdminManager(BasePortalAdmin):
         configuration, portal directories, database management server,
         indexing capabilities, license information, and the properties of
         your portal.
+
+
+        :return:
+            :class:`~arcgis.gis.admin.System` object
+
         """
         if self._system is None:
             from ._system import System
@@ -303,7 +375,12 @@ class PortalAdminManager(BasePortalAdmin):
     # ----------------------------------------------------------------------
     @property
     def password_policy(self):
-        """tools to manage a Site's password policy"""
+        """tools to manage a Site's password policy
+
+        :return:
+            :class:`~arcgis.gis.admin.PasswordPolicy` object
+
+        """
         if self._pp is None:
             from ._security import PasswordPolicy
 
@@ -317,6 +394,10 @@ class PortalAdminManager(BasePortalAdmin):
         """
         provides a set of tools to access and manage user licenses and
         entitlements.
+
+        :return:
+            :class:`~arcgis.gis.admin.LicenseManager` object
+
         """
         if self._license is None:
             from ._license import LicenseManager
@@ -330,6 +411,10 @@ class PortalAdminManager(BasePortalAdmin):
     def living_atlas(self):
         """
         provides a set of tools to manage and setup Living Atlas content.
+
+        :return:
+            :class:`~arcgis.gis.admin.LivingAtlas` object
+
         """
         if self._livingatlas is None:
             from ._livingatlas import LivingAtlas
@@ -341,7 +426,12 @@ class PortalAdminManager(BasePortalAdmin):
     # ----------------------------------------------------------------------
     @property
     def webhooks(self):
-        """Provides access to Portal's WebHook Manager"""
+        """Provides access to Portal's WebHook Manager
+
+        :return:
+            :class:`~arcgis.gis.admin.WebhookManager` object
+
+        """
         if self._whm is None and self._gis.version >= [6, 4]:
             from ._wh import WebhookManager
 
@@ -368,11 +458,11 @@ class PortalAdminManager(BasePortalAdmin):
                           modify or update content or site settings is made through the API.
         ================  ===============================================================================
 
-        ..code-block:: python
-            **Usage Example**
+        .. code-block:: python
 
-            gis.admin.mode({'read_only' : False})
-            assert gis.admin.mode['isReadOnly'] == False
+            >>> gis.admin.mode({'read_only' : False})
+            >>> assert gis.admin.mode['isReadOnly'] == False
+
         """
         url = "%s/portaladmin/mode" % self._gis._portal.url
         params = {"f": "json"}
@@ -395,7 +485,9 @@ class PortalAdminManager(BasePortalAdmin):
             raise RuntimeError(res)
 
     # ----------------------------------------------------------------------
-    def history(self, start_date, num=100, save_folder=None):
+    def history(
+        self, start_date: datetime, num: int = 100, save_folder: Optional[str] = None
+    ):
         """
         Returns a CSV file containing the login history from a start_date to the present.
 

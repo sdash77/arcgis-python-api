@@ -1,14 +1,18 @@
+from __future__ import annotations
 from arcgis.gis._impl._con import Connection
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import Item
 from arcgis.gis.server._service import Service
 from arcgis._impl.backport import cached_property
 from functools import lru_cache
-from typing import Union
+from typing import Optional, Union
+
 
 ###########################################################################
 class MissionJob(object):
-    """Represents a Single `Job` operation for Mission Server"""
+    """
+    Represents a Single `Job` operation for Mission Server
+    """
 
     _properties = None
     _url = None
@@ -22,15 +26,17 @@ class MissionJob(object):
 
     # ---------------------------------------------------------------------
     def __str__(self):
-        return f"<{self.__class__.__name__} @ {self._url}>"
+        return f"< {self.__class__.__name__} @ {self._url} >"
 
     # ---------------------------------------------------------------------
     def __repr__(self):
-        return f"<{self.__class__.__name__} @ {self._url}>"
+        return f"< {self.__class__.__name__} @ {self._url} >"
 
     # ---------------------------------------------------------------------
     @cached_property
     def properties(self):
+        """returns the properties of the resource"""
+
         if self._properties is None:
             try:
                 self._properties = PropertyMap(self._con.get(self._url, {"f": "json"}))
@@ -58,7 +64,7 @@ class MissionJob(object):
         """Returns the results of the process"""
         if self.status.upper() == "COMPLETED":
             resp = self._con.get(self._url, {"f": "json"})
-            if self.properties["type"] == "addMission":
+            if self.properties["type"] == "createNewMissionService":
                 url = f"{self._url.split('/jobs/')[0]}/missions/{resp['customAttributes']['missionId']}"
                 return Mission(url=url, gis=self._gis)
             else:
@@ -102,6 +108,7 @@ class Mission(object):
     # ---------------------------------------------------------------------
     @cached_property
     def properties(self):
+        """returns the properties of the resource"""
         if self._properties is None:
             try:
                 r = self._con.get(self._url, {"f": "json"})
@@ -115,20 +122,21 @@ class Mission(object):
 
     # ---------------------------------------------------------------------
     def __str__(self):
-        return f"<{self.__class__.__name__} @ {self._url}>"
+        return f"< {self.__class__.__name__} @ {self._url} >"
 
     # ---------------------------------------------------------------------
     def __repr__(self):
-        return f"<{self.__class__.__name__} @ {self._url}>"
+        return f"< {self.__class__.__name__} @ {self._url} >"
 
     # ---------------------------------------------------------------------
     def delete(self) -> bool:
         """
-        Deletes a `Mission` from the server.
+        Deletes a :class:`~arcgis.gis.mission.api.Mission` from the server.
 
         :return: Boolean
+
         """
-        params = {"f": "json", "async": False}
+        params = {"f": "json"}
         url = f"{self._url}/delete"
         res = self._con.post(url, params)
         if res.get("status") or res.get("success"):
@@ -139,28 +147,38 @@ class Mission(object):
     def add_report(
         self,
         title: str,
-        description: str = None,
-        tags: str = None,
-        questions: dict = None,
-        display_field: str = None,
-        drawing_info: dict = None,
+        service_name: str,
+        questions: list[dict],
+        source: str = "user",
+        description: Optional[str] = None,
+        tags: Optional[Union[list, str]] = None,
+        display_field: Optional[str] = None,
+        drawing_info: Optional[dict] = None,
         locale: str = "en",
         share_as_template: bool = False,
     ) -> dict:
         """
+
+        This method adds a report to the associated mission.
+
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         title	               Required String. The name of the report.
         ------------------     --------------------------------------------------------------------
-        description	           Optional String. A description of the report.
+        service_name           Required String. The desired service name for the report.
+                               This value cannot be longer than 87 characters and cannot contain the following values:
+                               #,$, %,^,*,=,`,{,},[,],,,{space},:,*, ?, ",<,>,|,\, /, +
         ------------------     --------------------------------------------------------------------
-        tags	               Optional. A comma-separated list of strings. Used to add tags to the report.
-        ------------------     --------------------------------------------------------------------
-        questions              Optional Dict. A dictionary containing questions and their fields. If an empty array is passed, the request is rejected. Used to represent the desired questions and their fields. Question types are based on Survey123 question type fields.
+        questions              Required String. A string formatted as a JSON Array containing questions and their fields. If an empty array is passed, the request is rejected. Used to represent the desired questions and their fields. Question types are based on Survey123 question type fields.
                                Available question types: Single Line Text, Single Choice, Number,
                                Image, Multiline Text, Dropdown, Multiple Choice, and Date/Time.
                                See https://doc.arcgis.com/en/survey123/browser/create-surveys/quickreferencecreatesurveys.htm#GUID-2D96112F-85B1-4C41-9C6F-A85BB6026A51 for details.
+        ------------------     --------------------------------------------------------------------
+        description	           Optional String. A description of the report.
+        ------------------     --------------------------------------------------------------------
+        tags	               Optional. A comma-separated list of strings. Used to add tags to the report.
         ------------------     --------------------------------------------------------------------
         display_field          Optional String. The name of the report feature layer's display field. Normally this is the field name of one of the report questions. If absent, the report feature layer's display field will be the first question's field name.
         ------------------     --------------------------------------------------------------------
@@ -176,42 +194,25 @@ class Mission(object):
         """
         params = {
             "title": title,
+            "serviceName": service_name,
+            "source": source,
+            "questions": questions,
             "description": description or "",
             "tags": tags or "report",
-            "questions": questions or [],
             "displayField": display_field or "",
             "drawingInfo": drawing_info or "",
             "shareAsTemplate": share_as_template,
             "locale": locale,
             "f": "json",
         }
-        url = f"{self._url}/reports/add"
+        url = f"{self._url}/addReport"
         return self._con.post(url, params)
-
-    # ---------------------------------------------------------------------
-    @property
-    def reports(self) -> list:
-        """
-        Returns a List of Mission Report Items associated with the `Mission`
-
-        :return: List[Item]
-
-        """
-        url = f"{self._url}/reports"
-        params = {"f": "json"}
-        res = self._con.get(url, params)
-        return [
-            Item(gis=self._gis, itemid=r["itemId"])
-            for r in res["reports"]
-            if r.get("itemId")
-        ]
 
 
 ###########################################################################
 class MissionCatalog:
     """
     The ArcGIS Mission Server catalog.
-
     """
 
     _con = None
@@ -239,15 +240,17 @@ class MissionCatalog:
 
     # ---------------------------------------------------------------------
     def __str__(self):
-        return f"<{self.__class__.__name__} @ {self._url}>"
+        return f"< {self.__class__.__name__} @ {self._url} >"
 
     # ---------------------------------------------------------------------
     def __repr__(self):
-        return f"<{self.__class__.__name__} @ {self._url}>"
+        return f"< {self.__class__.__name__} @ {self._url} >"
 
     # ---------------------------------------------------------------------
     @cached_property
     def properties(self):
+        """returns the properties of the resource"""
+
         if self._properties is None:
             try:
                 self._properties = PropertyMap(self._con.get(self._url, {"f": "json"}))
@@ -267,16 +270,18 @@ class MissionCatalog:
     def create_mission(
         self,
         title: str,
-        snippet: str = None,
-        description: str = None,
-        license_info: str = None,
-        tags: str = None,
-        extent: list = None,
-        template_item: "Item" = None,
+        snippet: Optional[str] = None,
+        description: Optional[str] = None,
+        license_info: Optional[str] = None,
+        tags: Optional[Union[list, str]] = None,
+        capabilities: Optional[Union[list, str]] = None,
+        extent: Optional[str] = None,
+        template_item: Optional[Item] = None,
         locale: str = "en",
-        base_map: dict = None,
-        wm_description: str = None,
-        webmap_id: Union[str, Item] = None,
+        base_map: Optional[dict] = None,
+        wm_description: Optional[str] = None,
+        webmap_id: Optional[Union[str, Item]] = None,
+        app_id: Optional[str] = None,
     ) -> MissionJob:
         """
 
@@ -290,6 +295,9 @@ class MissionCatalog:
         snippet	               Optional String. A short summary description of the item.
         ------------------     --------------------------------------------------------------------
         description	           Optional String. Mission description.
+        ------------------     --------------------------------------------------------------------
+        capabilities	       Optional String. The comma-separated list of desired capabilites for the mission.
+                               Valid values are CHAT, TASK, REPORT, PRESENCE.
         ------------------     --------------------------------------------------------------------
         license_info	       Optional String. Any license information or restrictions.
         ------------------     --------------------------------------------------------------------
@@ -310,26 +318,31 @@ class MissionCatalog:
                                See: https://developers.arcgis.com/documentation/common-data-types/basemap.htm
         ------------------     --------------------------------------------------------------------
         wm_description         Optional string. The description of the web map added to the mission.
+        ------------------     --------------------------------------------------------------------
+        app_id                 Optional string. The ID of the app that created the mission.
         ==================     ====================================================================
 
 
-        :return: `MissionJob`
+        :return:
+            :class:`~arcgis.gis.mission.api.MissionJob`
 
 
         """
         if isinstance(webmap_id, Item):
             webmap_id = webmap_id.itemid
-        url = f"{self._url}/missions/add"
+        url = f"{self._url}/services/createMission"
         params = {
             "title": title,
             "snippet": snippet or "",
             "description": description or "",
             "licenseInfo": license_info or "",
+            "capabilities": capabilities or "",
             "async": True,
             "tags": tags or "",
             "extent": extent or "-180,-90,180,90",
             "locale": locale or "en",
             "baseMap": base_map or "",
+            "appId": app_id or "",
             "webMapDescription": wm_description,
             "templateWebMapId": webmap_id,
             "f": "json",
@@ -340,7 +353,7 @@ class MissionCatalog:
     # ---------------------------------------------------------------------
     @property
     def jobs(self) -> list:
-        """returns a list of jobs on the server"""
+        """returns a list of :class:`~arcgis.gis.mission.api.MissionJob` on the server"""
         url = f"{self._url}/jobs"
         params = {"f": "json"}
         resp = self._con.get(url, params)
@@ -350,11 +363,15 @@ class MissionCatalog:
     @property
     def missions(self) -> list:
         """
-        returns a list of missions on the server
+        returns a list of :class:`~arcgis.gis.mission.api.Mission` on the server
 
         :return: List
         """
-        url = f"{self._url}/missions"
+        url = f"{self._url}/services"
         params = {"f": "json"}
         resp = self._con.get(url, params)
-        return [Mission(url=f"{url}/{j['id']}", gis=self._gis) for j in resp["results"]]
+        return [
+            Mission(url=f"{url}/{j['name']}/MissionServer", gis=self._gis)
+            for j in resp["services"]
+            if j["type"] == "MissionServer"
+        ]

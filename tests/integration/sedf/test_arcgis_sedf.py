@@ -281,7 +281,7 @@ if HAS_ARCPY:
             self._attributes = [
                 ["A", 1, 2],
                 ["B", 13, -2.99],
-                ["C", 1 - (4 ** 3), 2 ** 9],
+                ["C", 1 - (4**3), 2**9],
             ]
             self._col = ["APPLE", "BLUE", "ROGERWILCO"]
             self.geom_pts = [pt, pt1, pt2]

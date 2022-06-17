@@ -1,4 +1,9 @@
 ########################################################################
+from __future__ import annotations
+from typing import Any, Union
+from arcgis.gis import Item
+
+
 class CategoryManager(object):
     """
     This class allows for the addition, removal and viewing of category
@@ -27,11 +32,11 @@ class CategoryManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -82,7 +87,7 @@ class CategoryManager(object):
 
     # ----------------------------------------------------------------------
     @schema.setter
-    def schema(self, value):
+    def schema(self, value: list[dict[str, Any]]):
         """
         See main ``schema`` property docstring
         """
@@ -97,7 +102,7 @@ class CategoryManager(object):
             self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def categorize_item(self, item, categories):
+    def categorize_item(self, item: Union[Item, str], categories: list[str]):
         """
         Assigns or removes a category to a single item.
 
@@ -127,7 +132,7 @@ class CategoryManager(object):
         return all(res)
 
     # ----------------------------------------------------------------------
-    def add(self, items, category):
+    def add(self, items: list[Item], category: str):
         """
         Adds a category to an existing set of items
 
@@ -153,7 +158,6 @@ class CategoryManager(object):
 
 
         """
-        from arcgis.gis import Item
 
         path = self._gis._portal.resturl + "content/updateItems"
         params = {"f": "json"}
@@ -197,9 +201,8 @@ class CategoryManager(object):
         return results
 
     # ----------------------------------------------------------------------
-    def remove(self, items, category):
+    def remove(self, items: list[Item], category: str):
         """remove a category to an item or items"""
-        from arcgis.gis import Item
 
         path = self._gis._portal.resturl + "content/updateItems"
         params = {"f": "json"}
@@ -247,13 +250,13 @@ class CategoryManager(object):
         return results
 
     # ----------------------------------------------------------------------
-    def replace(self, items, old_category, new_catgory):
+    def replace(self, items: list[Item], old_category: str, new_catgory: str):
         """finds and replaces a category value with a new value one"""
         res = self.add(items, new_catgory)
         res = self.remove(items, old_category)
         return res
 
     # ----------------------------------------------------------------------
-    def reset(self, items):
+    def reset(self, items: list[Item]):
         """deletes all the categories for a given set of items"""
         return self._gis.content.bulk_update(items, {"categories": ""})

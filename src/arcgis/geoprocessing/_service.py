@@ -25,6 +25,7 @@ _log = _logging.getLogger(__name__)
 def _input_string_params(spec, name_type, name_param, num_spaces=20):
     """creates the input strings for the lambda"""
     src_code = ""
+    optional_code = ""
     param_inputs = ""
     default_db = {}
     if len(spec) > 0:
@@ -38,15 +39,22 @@ def _input_string_params(spec, name_type, name_param, num_spaces=20):
             param_name, param_dval = param_name_dval
             param_type = name_type[param_name]
             if param_dval:
-                src_code += f"{param_name}=None"
+                optional_code += f"{param_name}=None,"
                 default_db[param_name] = param_dval
             else:
                 src_code += f"{param_name}"
             # src_code += _generate_param(name_param, param_dval, param_name, param_type)
             src_code += ","
+            if src_code.find(",,") > -1:
+                src_code = src_code.replace(",,", ",")
             param_inputs += f"{param_name}={param_name},"
         # src_code += ","
     src_code += ""
+    if src_code.endswith(",") and optional_code:
+        src_code += optional_code
+    elif src_code.endswith(",") == False and optional_code:
+        src_code += ","
+        src_code += optional_code
     return src_code, param_inputs, default_db
 
 
@@ -165,7 +173,7 @@ class GPTask:
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return f"<{self.__class__.__name__} @ {self._url}>"
+        return f"< {self.__class__.__name__} @ {self._url} >"
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -295,7 +303,7 @@ class GPService:
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return f"<{self.__class__.__name__} @ {self._url}>"
+        return f"< {self.__class__.__name__} @ {self._url} >"
 
     # ----------------------------------------------------------------------
     def __repr__(self):

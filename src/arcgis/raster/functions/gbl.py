@@ -13,6 +13,7 @@ Functions can be applied to various rasters (or images), including the following
 
 """
 from arcgis.raster._layer import ImageryLayer, Raster, _ArcpyRaster, RasterCollection
+from typing import Union, Optional
 from arcgis.features import FeatureLayer
 from arcgis.gis import Item
 import copy
@@ -651,20 +652,20 @@ def cost_allocation(
 
 
 def zonal_statistics(
-    in_zone_data,
-    zone_field,
-    in_value_raster,
-    ignore_nodata=True,
-    statistics_type="MEAN",
-    process_as_multidimensional=None,
-    percentile_value=90,
-    percentile_interpolation_type="AUTO_DETECT",
+    in_zone_data: Raster,
+    zone_field: Union[str, int],
+    in_value_raster: Raster,
+    ignore_nodata: bool = True,
+    statistics_type: str = "MEAN",
+    process_as_multidimensional: Optional[bool] = None,
+    percentile_value: float = 90,
+    percentile_interpolation_type: str = "AUTO_DETECT",
 ):
 
     """
     Calculates statistics on values of a raster within the zones of another dataset.
     For more information see,
-     https://pro.arcgis.com/en/pro-app/latest/help/analysis/raster-functions/zonal-statistics-global-function.htm
+    `Zonal Statistics function <https://pro.arcgis.com/en/pro-app/latest/help/analysis/raster-functions/zonal-statistics-global-function.htm>`_
 
     Parameters
     ----------
@@ -994,12 +995,12 @@ def least_cost_path(
 
 
 def flow_distance(
-    input_stream_raster,
-    input_surface_raster,
-    input_flow_direction_raster=None,
-    distance_type="VERTICAL",
-    flow_direction_type="D8",
-    statistics_type="MINIMUM",
+    input_stream_raster: Raster,
+    input_surface_raster: Raster,
+    input_flow_direction_raster: Optional[Raster] = None,
+    distance_type: str = "VERTICAL",
+    flow_direction_type: str = "D8",
+    statistics_type: str = "MINIMUM",
 ):
 
     """
@@ -1104,10 +1105,10 @@ def flow_distance(
 
 
 def flow_accumulation(
-    input_flow_direction_raster,
-    input_weight_raster=None,
-    data_type="FLOAT",
-    flow_direction_type="D8",
+    input_flow_direction_raster: Raster,
+    input_weight_raster: Optional[Raster] = None,
+    data_type: str = "FLOAT",
+    flow_direction_type: str = "D8",
 ):
 
     """ "
@@ -1170,10 +1171,10 @@ def flow_accumulation(
 
 
 def flow_direction(
-    input_surface_raster,
-    force_flow="NORMAL",
-    flow_direction_type="D8",
-    generate_out_drop_raster=False,
+    input_surface_raster: Raster,
+    force_flow: str = "NORMAL",
+    flow_direction_type: str = "D8",
+    generate_out_drop_raster: bool = False,
 ):
     """
     .. image:: _static/images/flow_direction/flow_direction.png
@@ -1338,7 +1339,7 @@ def flow_direction(
     )
 
 
-def fill(input_surface_raster, zlimit=None):
+def fill(input_surface_raster: Raster, zlimit: Optional[float] = None):
     """
     Fills sinks in a surface raster to remove small imperfections in the data
 
@@ -1376,11 +1377,11 @@ def fill(input_surface_raster, zlimit=None):
 
 
 def nibble(
-    input_raster,
-    input_mask_raster,
-    nibble_values="ALL_VALUES",
-    nibble_no_data="PRESERVE_NODATA",
-    input_zone_raster=None,
+    input_raster: Raster,
+    input_mask_raster: Raster,
+    nibble_values: str = "ALL_VALUES",
+    nibble_no_data: str = "PRESERVE_NODATA",
+    input_zone_raster: Optional[Raster] = None,
 ):
     """
     Replaces cells of a raster corresponding to a mask
@@ -1447,7 +1448,7 @@ def nibble(
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
 
 
-def stream_link(input_raster, input_flow_direction_raster):
+def stream_link(input_raster: Raster, input_flow_direction_raster: Raster):
     """
     Assigns unique values to sections of a raster linear network between intersections
 
@@ -1484,7 +1485,9 @@ def stream_link(input_raster, input_flow_direction_raster):
 
 
 def watershed(
-    input_flow_direction_raster, input_pour_point_data, pour_point_field=None
+    input_flow_direction_raster: Raster,
+    input_pour_point_data: Raster,
+    pour_point_field: Optional[str] = None,
 ):
     """
     Replaces cells of a raster corresponding to a mask
@@ -1769,13 +1772,13 @@ def calculate_travel_cost(
 
 
 def kernel_density(
-    in_features,
-    population_field,
-    cell_size=None,
-    search_radius=None,
-    area_unit_scale_factor="SQUARE_MAP_UNITS",
-    out_cell_values="DENSITIES",
-    method="PLANAR",
+    in_features: FeatureLayer,
+    population_field: float,
+    cell_size: Optional[float] = None,
+    search_radius: Optional[float] = None,
+    area_unit_scale_factor: str = "SQUARE_MAP_UNITS",
+    out_cell_values: str = "DENSITIES",
+    method: str = "PLANAR",
     in_barriers=None,
 ):
     """
@@ -2224,11 +2227,11 @@ def cost_backlink(
 
 
 def region_group(
-    in_raster,
-    number_of_neighbor_cells="FOUR",
-    zone_connectivity="WITHIN",
-    add_link="ADD_LINK",
-    excluded_value=0,
+    in_raster: Raster,
+    number_of_neighbor_cells: str = "FOUR",
+    zone_connectivity: str = "WITHIN",
+    add_link: str = "ADD_LINK",
+    excluded_value: int = 0,
 ):
     """
     Records, for each cell in the output, the identity of the connected region to which that cell
@@ -2349,7 +2352,7 @@ def region_group(
     return _gbl_clone_layer(layer, template_dict, function_chain_ra)
 
 
-def corridor(in_distance_raster1, in_distance_raster2):
+def corridor(in_distance_raster1: Raster, in_distance_raster2: Raster):
     """
     Calculates the sum of accumulative costs for two input accumulative cost rasters.
 
@@ -3317,9 +3320,9 @@ def euclidean_back_direction(
 
 
 def flow_length(
-    input_flow_direction_raster,
-    direction_measurement="DOWNSTREAM",
-    input_weight_raster=None,
+    input_flow_direction_raster: Raster,
+    direction_measurement: str = "DOWNSTREAM",
+    input_weight_raster: Optional[Raster] = None,
 ):
     """
     Creates a raster layer of upstream or downstream distance, or weighted distance, 
@@ -3394,7 +3397,7 @@ def flow_length(
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
 
 
-def sink(input_flow_direction_raster):
+def sink(input_flow_direction_raster: Raster):
     """
     Creates a raster layer identifying all sinks or areas of internal drainage.
 
@@ -3435,10 +3438,10 @@ def sink(input_flow_direction_raster):
 
 
 def snap_pour_point(
-    in_pour_point_data,
-    in_accumulation_raster=None,
-    snap_distance=0,
-    pour_point_field=None,
+    in_pour_point_data: Raster,
+    in_accumulation_raster: Optional[Raster] = None,
+    snap_distance: int = 0,
+    pour_point_field: Optional[str] = None,
 ):
     """
     Snaps pour points to the cell of highest flow accumulation within a specified distance.
@@ -3499,7 +3502,9 @@ def snap_pour_point(
 
 
 def stream_order(
-    input_stream_raster, input_flow_direction_raster=None, order_method="STRAHLER"
+    input_stream_raster: Raster,
+    input_flow_direction_raster: Optional[Raster] = None,
+    order_method: str = "STRAHLER",
 ):
     """
     Creates a raster layer that assigns a numeric order to segments 
@@ -3568,7 +3573,7 @@ def stream_order(
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
 
 
-def expand(input_raster, number_of_cells, zone_values):
+def expand(input_raster: Raster, number_of_cells: int, zone_values: Union[list, str]):
     """
     Expands specified zones of a raster by a specified number of cells.
     https://pro.arcgis.com/en/pro-app/help/data/imagery/expand-function.htm
@@ -3619,7 +3624,7 @@ def expand(input_raster, number_of_cells, zone_values):
     return _gbl_clone_layer(layer1, template_dict, function_chain_ra)
 
 
-def shrink(input_raster, number_of_cells, zone_values):
+def shrink(input_raster: Raster, number_of_cells: int, zone_values: Union[list, str]):
     """
     Shrinks the selected zones by a specified number of cells by replacing them with
     the value of the cell that is most frequent in its neighborhood.
@@ -3671,22 +3676,22 @@ def shrink(input_raster, number_of_cells, zone_values):
 
 
 def distance_accumulation(
-    in_source_data,
-    in_barrier_data=None,
-    in_surface_raster=None,
-    in_cost_raster=None,
-    in_vertical_raster=None,
-    vertical_factor="BINARY 1 -30 30",
-    in_horizontal_raster=None,
-    horizontal_factor="BINARY 1 45",
-    source_initial_accumulation=None,
-    source_maximum_accumulation=None,
-    source_cost_multiplier=None,
-    source_direction="FROM_SOURCE",
-    distance_method="PLANAR",
-    output_back_direction_raster_name=None,
-    output_source_direction_raster_name=None,
-    output_source_location_raster_name=None,
+    in_source_data: Raster,
+    in_barrier_data: Optional[Raster] = None,
+    in_surface_raster: Optional[Raster] = None,
+    in_cost_raster: Optional[Raster] = None,
+    in_vertical_raster: Optional[Raster] = None,
+    vertical_factor: str = "BINARY 1 -30 30",
+    in_horizontal_raster: Optional[Raster] = None,
+    horizontal_factor: str = "BINARY 1 45",
+    source_initial_accumulation: Optional[int] = None,
+    source_maximum_accumulation: Optional[int] = None,
+    source_cost_multiplier: Optional[int] = None,
+    source_direction: str = "FROM_SOURCE",
+    distance_method: str = "PLANAR",
+    output_back_direction_raster_name: Optional[str] = None,
+    output_source_direction_raster_name: Optional[str] = None,
+    output_source_location_raster_name: Optional[str] = None,
 ):
     """
     Calculates the least accumulative cost distance for each cell from or to the 
@@ -3956,24 +3961,24 @@ def distance_accumulation(
 
 
 def distance_allocation(
-    in_source_data,
-    in_barrier_data=None,
-    in_surface_raster=None,
-    in_cost_raster=None,
-    in_vertical_raster=None,
-    vertical_factor="BINARY 1 -30 30",
-    in_horizontal_raster=None,
-    horizontal_factor="BINARY 1 45",
-    source_field=None,
-    source_initial_accumulation=None,
-    source_maximum_accumulation=None,
-    source_cost_multiplier=None,
-    source_direction="FROM_SOURCE",
-    distance_method="PLANAR",
-    output_distance_accumulation_raster_name=None,
-    output_back_direction_raster_name=None,
-    output_source_direction_raster_name=None,
-    output_source_location_raster_name=None,
+    in_source_data: FeatureLayer,
+    in_barrier_data: Optional[FeatureLayer] = None,
+    in_surface_raster: Optional[Raster] = None,
+    in_cost_raster: Optional[Raster] = None,
+    in_vertical_raster: Optional[Raster] = None,
+    vertical_factor: str = "BINARY 1 -30 30",
+    in_horizontal_raster: Optional[Raster] = None,
+    horizontal_factor: str = "BINARY 1 45",
+    source_field: Optional[str] = None,
+    source_initial_accumulation: Optional[int] = None,
+    source_maximum_accumulation: Optional[int] = None,
+    source_cost_multiplier: Optional[int] = None,
+    source_direction: str = "FROM_SOURCE",
+    distance_method: str = "PLANAR",
+    output_distance_accumulation_raster_name: Optional[str] = None,
+    output_back_direction_raster_name: Optional[str] = None,
+    output_source_direction_raster_name: Optional[str] = None,
+    output_source_location_raster_name: Optional[str] = None,
 ):
     """
     Calculates, for each cell, its least-cost source based on the least accumulative cost over a cost surface, 
@@ -4244,11 +4249,11 @@ def distance_allocation(
 
 
 def optimal_path_as_raster(
-    in_destination_data,
-    in_distance_accumulation_raster,
-    in_back_direction_raster,
-    destination_field=None,
-    path_type="EACH_ZONE",
+    in_destination_data: FeatureLayer,
+    in_distance_accumulation_raster: Raster,
+    in_back_direction_raster: Raster,
+    destination_field: Optional[str] = None,
+    path_type: str = "EACH_ZONE",
 ):
     """
     Calculates, for each cell, its least-cost source based on the least accumulative cost over a cost surface, 
@@ -4377,7 +4382,9 @@ def optimal_path_as_raster(
         )
 
 
-def boundary_clean(input_raster, sort_type="NO_SORT", number_of_runs="TWO_WAY"):
+def boundary_clean(
+    input_raster: Raster, sort_type: str = "NO_SORT", number_of_runs: str = "TWO_WAY"
+):
     """
     The boundary_clean function smooths the boundary between zones in a raster.
     Function available in ArcGIS Image Server 10.9 and higher.
@@ -4468,23 +4475,23 @@ def boundary_clean(input_raster, sort_type="NO_SORT", number_of_runs="TWO_WAY"):
 
 
 def viewshed(
-    input_raster,
-    input_observer_features,
-    analysis_method="ALL_SIGHTLINES",
-    analysis_type="FREQUENCY",
-    vertical_error="0 Meters",
-    refractivity_coefficient=0.13,
-    surface_offset="0 Meters",
-    observer_elevation=None,
-    observer_offset="1 Meters",
-    inner_radius=None,
-    inner_radius_is_3d=False,
-    outer_radius=None,
-    outer_radius_is_3d=False,
-    horizontal_start_angle=0,
-    horizontal_end_angle=360,
-    vertical_upper_angle=90,
-    vertical_lower_angle=-90,
+    input_raster: Raster,
+    input_observer_features: FeatureLayer,
+    analysis_method: str = "ALL_SIGHTLINES",
+    analysis_type: str = "FREQUENCY",
+    vertical_error: str = "0 Meters",
+    refractivity_coefficient: float = 0.13,
+    surface_offset: str = "0 Meters",
+    observer_elevation: Optional[Union[str, int]] = None,
+    observer_offset: str = "1 Meters",
+    inner_radius: Optional[int] = None,
+    inner_radius_is_3d: bool = False,
+    outer_radius: Optional[int] = None,
+    outer_radius_is_3d: bool = False,
+    horizontal_start_angle: float = 0,
+    horizontal_end_angle: float = 360,
+    vertical_upper_angle: float = 90,
+    vertical_lower_angle: float = -90,
 ):
     """
     Determines the raster surface locations visible to a set of observer features using geodesic methods.

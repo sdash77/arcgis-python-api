@@ -1,4 +1,7 @@
-import os, csv
+from __future__ import annotations
+import os
+import csv
+from typing import Optional, Union
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 from datetime import datetime as _datetime
@@ -7,7 +10,10 @@ from datetime import datetime as _datetime
 class LogManager(object):
     """
     Logs are the records written by the various components of Mission Server.
-    You can query the logs and change various log settings.
+    You can query the logs and change various log settings. Log Manager can be accessed
+    via the :attr:`~arcgis.gis.mission.MissionServer.logs` property of
+    :class:`~arcgis.gis.mission.MissionServer` class
+
     """
 
     _url = None
@@ -35,11 +41,11 @@ class LogManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<LogManager @ {url}>".format(url=self._url)
+        return "< LogManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<LogManager @ {url}>".format(url=self._url)
+        return "< LogManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -95,7 +101,7 @@ class LogManager(object):
 
     # ----------------------------------------------------------------------
     @settings.setter
-    def settings(self, value):
+    def settings(self, value: dict):
         """
         See main ``settings`` property docstring.
         """
@@ -111,18 +117,18 @@ class LogManager(object):
     # ----------------------------------------------------------------------
     def query(
         self,
-        start_time=None,
-        end_time=None,
-        since_server_start=False,
-        level="WARNING",
-        services="*",
-        machines="*",
-        server="*",
-        codes=None,
-        process_IDs=None,
-        export=False,
-        export_type="CSV",  # CSV or TAB
-        out_path=None,
+        start_time: Optional[Union[str, _datetime]] = None,
+        end_time: Optional[Union[str, _datetime]] = None,
+        since_server_start: bool = False,
+        level: str = "WARNING",
+        services: str = "*",
+        machines: str = "*",
+        server: str = "*",
+        codes: Optional[str] = None,
+        process_IDs: Optional[str] = None,
+        export: bool = False,
+        export_type: str = "CSV",  # CSV or TAB
+        out_path: Optional[str] = None,
     ):
         """
         The query operation on the logs resource provides a way to
@@ -131,12 +137,19 @@ class LogManager(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        start_time             Optional string/datetime.dateime. The most recent time to query.  Default is now.
+        start_time             Optional string/datetime.datetime/integer. The most recent time to query.  Default is now.
                                Time can be specified in milliseconds since UNIX epoch, or as an
-                               ArcGIS Server timestamp. For example { "startTime": "2011-08-01T15:17:20,123", ... },
-                               { "startTime": 1312237040123, ... }, respectively.
+                               ArcGIS Server timestamp.
+
+                               Example for string:
+
+                               "start_time": "2011-08-01T15:17:20"
+
+                               Example for integer:
+
+                               "start_time": 1312237040123
         ------------------     --------------------------------------------------------------------
-        end_time               Optional string/datetime.dateime. The oldest time to include in the result set. You
+        end_time               Optional string/datetime.datetime/integer. The oldest time to include in the result set. You
                                can use this to limit the query to the last n minutes or hours as
                                needed. Default is the beginning of all logging.
         ------------------     --------------------------------------------------------------------
@@ -158,11 +171,11 @@ class LogManager(object):
                                The default is all.
         ------------------     --------------------------------------------------------------------
         codes                  Optional string. Gets only the records with the specified code.
-                               The default is all.  See http://server.arcgis.com/en/server/latest/administer/windows/log-codes-overview.htm
+                               The default is all.  See https://server.arcgis.com/en/server/latest/administer/windows/log-codes-overview.htm
         ------------------     --------------------------------------------------------------------
         process_IDs            Optional string. Query by the machine process ID that logged the event.
         ------------------     --------------------------------------------------------------------
-        export                 Optional string. Boolean indicating whether to export the query
+        export                 Optional bool. Boolean indicating whether to export the query
                                results.  The default is False (don't export).
         ------------------     --------------------------------------------------------------------
         export_type            Optional string. The export file type. CSV or TAB are the choices,

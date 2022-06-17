@@ -6,8 +6,8 @@ from ._util import _Util
 
 class RealTimeAnalytics(Task):
     """
-    RealTimeAnalytics class implements Task and provides public facing methods to
-    access RealTimeAnalytics API endpoints
+    the ``RealTimeAnalytics`` class implements Task and provides public facing methods to
+    access RealTimeAnalytics API endpoints.
     """
 
     _id = ""
@@ -34,7 +34,7 @@ class RealTimeAnalytics(Task):
     # ----------------------------------------------------------------------
     def start(self) -> Dict:
         """
-        Start the Real-Time Analytics for the given id
+        Start the Real-Time Analytics for the given ID.
 
         :return: response of realtime_analytics start
 
@@ -52,7 +52,7 @@ class RealTimeAnalytics(Task):
     # ----------------------------------------------------------------------
     def stop(self) -> Dict:
         """
-        Stop the Real-Time Analytics for the given id
+        Stop the Real-Time Analytics for the given ID.
         Return True if the the Real-Time Analytics was successfully stopped.
 
         :return: boolean
@@ -72,7 +72,7 @@ class RealTimeAnalytics(Task):
     @property
     def status(self) -> Dict:
         """
-        Get the status of the running Real-Time Analytics for the given id
+        Get the status of the running Real-Time Analytics for the given ID.
 
         :return: response of Real-Time Analytics status
 
@@ -92,7 +92,7 @@ class RealTimeAnalytics(Task):
     @property
     def metrics(self) -> Dict:
         """
-        Get the metrics of the running Real-Time Analytics for the given id
+        Get the metrics of the running Real-Time Analytics for the given ID.
 
         :return: response of Real-Time Analytics metrics
 
@@ -111,7 +111,7 @@ class RealTimeAnalytics(Task):
     # ----------------------------------------------------------------------
     def delete(self) -> bool:
         """
-        Deletes an existing Real-Time Analytics task instance
+        Deletes an existing Real-Time Analytics task instance.
 
         :return: A boolean containing True (for success) or False (for failure) a dictionary with details is returned.
 

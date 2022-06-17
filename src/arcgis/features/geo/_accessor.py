@@ -1,16 +1,6 @@
 """
 Holds Delegate and Accessor Logic
 """
-from arcgis.auth.tools import LazyLoader
-
-os = LazyLoader("os")
-copy = LazyLoader("copy")
-uuid = LazyLoader("uuid")
-shutil = LazyLoader("shutil")
-datetime = LazyLoader("datetime")
-np = LazyLoader("numpy")
-tempfile = LazyLoader("tempfile")
-warnings = LazyLoader("warnings")
 import logging
 import pandas as pd
 from collections.abc import Iterable
@@ -22,7 +12,16 @@ from ._io.fileops import (
     _sanitize_column_names,
     read_feather,
 )
+from arcgis.auth.tools import LazyLoader
 
+os = LazyLoader("os")
+copy = LazyLoader("copy")
+uuid = LazyLoader("uuid")
+shutil = LazyLoader("shutil")
+datetime = LazyLoader("datetime")
+np = LazyLoader("numpy")
+tempfile = LazyLoader("tempfile")
+warnings = LazyLoader("warnings")
 _geometry = LazyLoader("arcgis.geometry")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
 _isd = LazyLoader("arcgis._impl.common._isd")
@@ -1330,6 +1329,61 @@ class GeoAccessor(object):
                 ).format(view_box, width, height, transform, svg)
         return
 
+    # ----------------------------------------------------------------------
+    @staticmethod
+    def from_parquet(path: str, columns: list = None, **kwargs) -> pd.DataFrame:
+        """
+        Load a Parquet object from the file path, returning a Spatially Enabled DataFrame.
+
+        You can read a subset of columns in the file using the ``columns`` parameter.
+        However, the structure of the returned Spatially Enabled DataFrame will depend on which
+        columns you read:
+
+        * if no geometry columns are read, this will raise a ``ValueError`` - you
+          should use the pandas `read_parquet` method instead.
+        * if the primary geometry column saved to this file is not included in
+          columns, the first available geometry column will be set as the geometry
+          column of the returned Spatially Enabled DataFrame.
+
+        Requires 'pyarrow'.
+
+        .. versionadded:: arcgis 1.9
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        path                   Required String. path object
+        ------------------     --------------------------------------------------------------------
+        columns                Optional List[str]. The defaulti s `None`. If not None, only these
+                               columns will be read from the file.  If the primary geometry column
+                               is not included, the first secondary geometry read from the file will
+                               be set as the geometry column of the returned Spatially Enabled
+                               DataFrame.  If no geometry columns are present, a ``ValueError``
+                               will be raised.
+        ------------------     --------------------------------------------------------------------
+        **kwargs               Optional dict. Any additional kwargs that can be given to the
+                               `pyarrow.parquet.read_table` method.
+        ==================     ====================================================================
+
+
+
+        :returns: Spatially Enabled DataFrame
+
+        Examples
+        --------
+        >>> df = pd.DataFrame.spatial.read_parquet("data.parquet")  # doctest: +SKIP
+
+        Specifying columns to read:
+
+        >>> df = pd.DataFrame.spatial.read_parquet(
+        ...     "data.parquet",
+        ...     columns=["SHAPE", "pop_est"]
+        ... )  # doctest: +SKIP
+        """
+        from ._io._arrow import _read_parquet
+
+        return _read_parquet(path=path, columns=columns, **kwargs)
+
     @staticmethod
     def from_feather(path, spatial_column="SHAPE", columns=None, use_threads=True):
         """
@@ -1464,11 +1518,11 @@ class GeoAccessor(object):
         """
         if self._name is None:
             try:
-                cols = [c.lower() for c in self._data.columns.tolist()]
                 if any(self._data.dtypes == "geometry"):
                     name = self._data.dtypes[self._data.dtypes == "geometry"].index[0]
                     self.set_geometry(name)
-                elif "shape" in cols:
+                elif "shape" in [str(c).lower() for c in self._data.columns.tolist()]:
+                    cols = [str(c).lower() for c in self._data.columns.tolist()]
                     idx = cols.index("shape")
                     self.set_geometry(self._data.columns[idx])
             except:
@@ -1962,6 +2016,9 @@ class GeoAccessor(object):
         ----------------------  ---------------------------------------------------------
         field                   Attribute field used for renderer.
         ----------------------  ---------------------------------------------------------
+        class_count             Number of classes that will be considered in the
+                                selected classification method for the class breaks.
+        ----------------------  ---------------------------------------------------------
         min_value               The minimum numeric data value needed to begin class
                                 breaks.
         ----------------------  ---------------------------------------------------------
@@ -2347,7 +2404,7 @@ class GeoAccessor(object):
 
     # ----------------------------------------------------------------------
     def to_featureclass(
-        self, location, overwrite=True, has_z=None, has_m=None, sanitize_columns=False
+        self, location, overwrite=True, has_z=None, has_m=None, sanitize_columns=True
     ):
         """
         The ``to_featureclass`` exports a spatially enabled dataframe to a feature class.
@@ -2415,7 +2472,7 @@ class GeoAccessor(object):
         ---------------------------     --------------------------------------------------------------------
         sanitize_columns                Optional Boolean. If True, column names will be converted to
                                         string, invalid characters removed and other checks will be
-                                        performed. The default is False.
+                                        performed. The default is True.
         ===========================     ====================================================================
 
         :return: String
@@ -2424,7 +2481,7 @@ class GeoAccessor(object):
         from arcgis.features.geo._io.fileops import to_table
         from ._tools._utils import run_and_hide
 
-        sanitize_columns = kwargs.pop("sanitize_columns", False)
+        sanitize_columns = kwargs.pop("sanitize_columns", True)
         origin_columns = self._data.columns.tolist()
         origin_index = copy.deepcopy(self._data.index)
         location = os.path.abspath(location)
@@ -2440,6 +2497,56 @@ class GeoAccessor(object):
         self._data.columns = origin_columns
         self._data.index = origin_index
         return table
+
+    # ----------------------------------------------------------------------
+    def to_parquet(
+        self, path: str, index: bool = None, compression: str = "gzip", **kwargs
+    ) -> str:
+        """
+        Write a Spatially Enabled DataFrame to the Parquet format.
+
+        Any geometry columns present are serialized to WKB format in the file.
+
+        Requires 'pyarrow'.
+
+        WARNING: this is an initial implementation of Parquet file support and
+        associated metadata.  This is tracking version 0.1.0 of the metadata
+        specification at:
+        https://github.com/geopandas/geo-arrow-spec
+
+        This metadata specification does not yet make stability promises.  As such,
+        we do not yet recommend using this in a production setting unless you are
+        able to rewrite your Parquet files.
+
+
+        .. versionadded:: 2.1.0
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        path                   Required String. The save file path
+        ------------------     --------------------------------------------------------------------
+        index                  Optional Bool. If ``True``, always include the dataframe's
+                               index(es) as columns in the file output.
+                               If ``False``, the index(es) will not be written to the file.
+                               If ``None``, the index(ex) will be included as columns in the file
+                               output except `RangeIndex` which is stored as metadata only.
+        ------------------     --------------------------------------------------------------------
+        compression            Optional string. {'snappy', 'gzip', 'brotli', None}, default 'gzip'
+                               Name of the compression to use. Use ``None`` for no compression.
+        ------------------     --------------------------------------------------------------------
+        **kwargs               Optional dict. Any additional kwargs that can be given to the
+                               `pyarrow.parquet.write_table` method.
+        ==================     ====================================================================
+
+        :returns: string
+
+        """
+        from ._io._arrow import _to_parquet
+
+        return _to_parquet(
+            df=self._data, path=path, index=index, compression=compression, **kwargs
+        )
 
     # ----------------------------------------------------------------------
     def to_featurelayer(
@@ -2583,7 +2690,18 @@ class GeoAccessor(object):
                     sr = 4326
             from ._array import GeoArray
 
-            df[geometry_column] = GeoArray(df[geometry_column].apply(Geometry))
+            def _set_default_sr(geom):
+                if geom["spatialReference"] is None:
+                    geom["spatialReference"] = {"wkid": 4326}
+                elif (
+                    geom["spatialReference"].get("wkid", None) is None
+                    and geom["spatialReference"].get("wkt", None) is None
+                ):
+                    geom["spatialReference"] = {"wkid": 4326}
+                return geom
+
+            series = df[geometry_column].apply(Geometry).apply(_set_default_sr)
+            df[geometry_column] = GeoArray(series)
             df.spatial.set_geometry(geometry_column)
             df.spatial.project(sr)
             return df
@@ -2592,49 +2710,34 @@ class GeoAccessor(object):
             if geocoder is None:
                 geocoder = arcgis.env.active_gis._tools.geocoders[0]
             sr = dict(geocoder.properties.spatialReference)
-            geoms = []
             if address_column in df.columns:
                 batch_size = geocoder.properties.locatorProperties.MaxBatchSize
-                N = len(df)
-                geoms = []
-                for i in range(0, N, batch_size):
-                    start = i
-                    stop = i + batch_size if i + batch_size < N else N
-                    res = batch_geocode(
-                        list(df[start:stop][address_column]), geocoder=geocoder
+                pieces = [
+                    df.iloc[i : i + batch_size] for i in range(0, len(df), batch_size)
+                ]
+                data = []
+                for df in pieces:
+                    piece_df = batch_geocode(
+                        list(df[address_column]),
+                        geocoder=geocoder,
+                        as_featureset=True,
+                    ).sdf.sort_values(by="ResultID")
+                    piece_df.index = df.index
+                    piece_df["ResultID"] = df.index.tolist()
+                    data.append(piece_df)
+                if len(data) == 1:
+                    merged = df.merge(data[0], left_index=True, right_on="ResultID")
+                else:
+                    merged = df.merge(
+                        pd.concat(data), left_index=True, right_on="ResultID"
                     )
-                    for index in range(len(res)):
-                        try:
-                            address = df.iloc[index][address_column]
-                        except:  # for older versions, fall back to `df.loc`
-                            address = df.loc[df.index[index]][address_column]
-                        try:
-                            loc = res[index]["location"]
-                            x = loc["x"]
-                            y = loc["y"]
-                            geoms.append(
-                                _geometry.Geometry(
-                                    {"x": x, "y": y, "spatialReference": sr}
-                                )
-                            )
-
-                        except:
-                            x, y = None, None
-                            try:
-                                loc = geocode(address, geocoder=geocoder)[0]["location"]
-                                x = loc["x"]
-                                y = loc["y"]
-                            except:
-                                print("Unable to geocode address: " + address)
-                                pass
-                            geoms.append(None)
             else:
                 raise ValueError("Address column not found in dataframe")
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                df["SHAPE"] = geoms
-                df.spatial.set_geometry("SHAPE")
-            return df
+
+                merged.spatial.set_geometry("SHAPE")
+            return merged
 
     # ----------------------------------------------------------------------
     @staticmethod
@@ -3026,18 +3129,18 @@ class GeoAccessor(object):
             ):  # pd.datetime
                 fields.append({"name": col, "type": "esriFieldTypeDate", "alias": col})
                 date_fields.append(col)
-            elif (
-                isinstance(col_val, (np.int32, np.int16, np.int8))
-                and not col in date_cols
-            ):
+            elif isinstance(col_val, (np.int16, np.int8)) and not col in date_cols:
                 fields.append(
                     {"name": col, "type": "esriFieldTypeSmallInteger", "alias": col}
                 )
-            elif isinstance(col_val, (int, np.int, np.int64)) and not col in date_cols:
+            elif isinstance(col_val, (int, np.int, np.int32)) and not col in date_cols:
                 fields.append(
                     {"name": col, "type": "esriFieldTypeInteger", "alias": col}
                 )
-            elif isinstance(col_val, (float, np.float64)) and not col in date_cols:
+            elif (
+                isinstance(col_val, (float, np.float64, np.int64))
+                and not col in date_cols
+            ):
                 fields.append(
                     {"name": col, "type": "esriFieldTypeDouble", "alias": col}
                 )
@@ -3720,8 +3823,10 @@ class GeoAccessor(object):
                                      - equals - Indicates if the base and comparison geometries are of the same shape type and define the same set of points in the plane. This is a 2D comparison only; M and Z values are ignored.
                                      - overlaps - Indicates if the intersection of the two geometries has the same shape type as one of the input geometries and is not equivalent to either of the input geometries.
                                      - touches - Indicates if the boundaries of the geometries intersect.
-                                     - within - Indicates if the base geometry is within the comparison geometry.
-                                     - intersect - Intdicates if the base geometry has an intersection of the other geometry.
+                                     - within - Indicates if the base geometry contains the comparison geometry.
+                                     - intersect - Indicates if the base geometry has an intersection of the other geometry.
+
+                                     Note - contains and within will lead to same results when performing spatial operations.
         -------------------------    ---------------------------------------------------------
         relation                     Optional String.  The spatial relationship type.  The
                                      allowed values are: BOUNDARY, CLEMENTINI, and PROPER.

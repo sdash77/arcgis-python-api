@@ -7,21 +7,33 @@ merge_layers copies all the features from two or more existing layers into a new
 overlay_layers combines two or more layers into one single layer. You can think of overlay as peering through a stack of
 maps and creating a single map containing all the information found in the stack.
 """
+from __future__ import annotations
+from typing import Any, Optional, Union
 import arcgis as _arcgis
+from arcgis.features.feature import FeatureCollection
+from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
+from arcgis.gis import GIS, Item
 from .._impl.common._utils import inspect_function_inputs
 
 # ----------------------------------------------------------------------
 def generate_tessellation(
-    extent_layer=None,
-    bin_size=1,
-    bin_size_unit="SquareKilometers",
-    bin_type="SQUARE",
-    intersect_study_area=False,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    extent_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ] = None,
+    bin_size: float = 1,
+    bin_size_unit: str = "SquareKilometers",
+    bin_type: str = "SQUARE",
+    intersect_study_area: bool = False,
+    output_name: Optional[Union[str, FeatureLayer]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     Generates a tessellated grid of regular polygons.
@@ -56,7 +68,7 @@ def generate_tessellation(
 
                                              - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                              - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                                 .. code-block:: python
 
@@ -73,7 +85,8 @@ def generate_tessellation(
     ------------------------------------     --------------------------------------------------------------------
     estimate                                 Optional Boolean. If True, the number of credits to run the operation will be returned.
     ------------------------------------     --------------------------------------------------------------------
-    future                                   Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                                   Optional boolean. If True, a future object will be returned and the process
+                                             will not wait for the task to complete. The default is False, which means wait for results.
     ====================================     ====================================================================
 
     .. note::
@@ -81,7 +94,8 @@ def generate_tessellation(
 
     :return:
         :class:`~arcgis.features.FeatureLayer` if out_put name specified or
-        a :class:`~arcgis.features.FeatureLayerCollection`
+        a :class:`~arcgis.features.FeatureLayerCollection`.
+        If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     """
 
@@ -110,15 +124,22 @@ def generate_tessellation(
 
 # ----------------------------------------------------------------------
 def dissolve_boundaries(
-    input_layer,
-    dissolve_fields=[],
-    summary_fields=[],
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    multi_part_features=True,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    dissolve_fields: Union[list[str], list] = [],
+    summary_fields: Union[list[str], list] = [],
+    output_name: Optional[Union[str, FeatureLayer]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    multi_part_features: bool = True,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/dissolve_boundaries/dissolve_boundaries.png
@@ -185,7 +206,7 @@ def dissolve_boundaries(
 
                                              - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                              - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                             - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                                 .. code-block:: python
 
@@ -213,10 +234,12 @@ def dissolve_boundaries(
 
                                              The default value is ``True``.
     ------------------------------------     -------------------------------------------------------------------------------------
-    future                                   Optional boolean. If True, the result will be a :class:`~arcgis.geoprocessing.GPJob` object and results will be returned asynchronously.
+    future                                   Optional boolean. If True, a future object will be returned and the process
+                                             will not wait for the task to complete. The default is False, which means wait for results.
     ====================================     =====================================================================================
 
     :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`Feature Collection <arcgis.features.FeatureCollection>`.
+    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
 
     .. code-block:: python
@@ -248,14 +271,30 @@ def dissolve_boundaries(
 
 # ----------------------------------------------------------------------
 def extract_data(
-    input_layers,
-    extent=None,
-    clip=False,
-    data_format=None,
-    output_name=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    input_layers: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    extent: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    clip: bool = False,
+    data_format: Optional[str] = None,
+    output_name: Optional[Union[str, dict]] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/extract_data/extract_data.png
@@ -311,10 +350,12 @@ def extract_data(
     -----------------------------------    ---------------------------------------------------------
     estimate                               Optional boolean. If True, the number of credits to run the operation will be returned.
     -----------------------------------    ---------------------------------------------------------
-    future                                 Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                                 Optional boolean. If True, a future object will be returned and the process
+                                           will not wait for the task to complete. The default is False, which means wait for results.
     ===================================    =========================================================
 
     :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`Feature Collection <arcgis.features.FeatureCollection>`.
+    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 
@@ -346,14 +387,28 @@ def extract_data(
 
 # ----------------------------------------------------------------------
 def merge_layers(
-    input_layer,
-    merge_layer,
-    merging_attributes=[],
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    merge_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    merging_attributes: list[str] = [],
+    output_name: Optional[Union[str, FeatureLayer]] = None,
+    context: Optional[dict] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/merge_layers/merge_layers.png
@@ -407,7 +462,7 @@ def merge_layers(
 
                         - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                         - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                        - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                        - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                             .. code-block:: python
 
@@ -424,10 +479,12 @@ def merge_layers(
     ----------------    ---------------------------------------------------------------
     estimate            Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
     ----------------    ---------------------------------------------------------------
-    future              Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future              Optional boolean. If True, a future object will be returned and the process
+                        will not wait for the task to complete. The default is False, which means wait for results.
     ================    ===============================================================
 
     :return: result_layer : :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else Feature Collection.
+    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 
@@ -457,17 +514,31 @@ def merge_layers(
 
 # ----------------------------------------------------------------------
 def overlay_layers(
-    input_layer,
-    overlay_layer,
-    overlay_type="Intersect",
-    snap_to_input=False,
-    output_type="Input",
-    tolerance=None,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    overlay_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    overlay_type: str = "Intersect",
+    snap_to_input: bool = False,
+    output_type: str = "Input",
+    tolerance: Optional[float] = None,
+    output_name: Optional[Union[str, FeatureLayer]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images//overlay_layers/overlay_layers.png
@@ -548,7 +619,7 @@ def overlay_layers(
 
                         - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                         - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                        - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                        - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                             .. code-block:: python
 
@@ -563,10 +634,12 @@ def overlay_layers(
     ----------------    ---------------------------------------------------------------
     gis                 Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ----------------    ---------------------------------------------------------------
-    future              Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future              Optional boolean. If True, a future object will be returned and the process
+                        will not wait for the task to complete. The default is False, which means wait for results.
     ================    ===============================================================
 
     :return: result_layer : :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else Feature Collection.
+    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
 
     .. code-block:: python
@@ -600,15 +673,15 @@ def overlay_layers(
 
 # ----------------------------------------------------------------------
 def create_route_layers(
-    route_data_item,
-    delete_route_data_item=False,
-    tags=None,
-    summary=None,
-    route_name_prefix=None,
-    folder_name=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    route_data_item: Item,
+    delete_route_data_item: bool = False,
+    tags: Optional[str] = None,
+    summary: Optional[str] = None,
+    route_name_prefix: Optional[str] = None,
+    folder_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
 
     """
@@ -653,10 +726,12 @@ def create_route_layers(
     -------------------------    ---------------------------------------------------------
     estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
     -------------------------    ---------------------------------------------------------
-    future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                       Optional boolean. If True, a future object will be returned and the process
+                                 will not wait for the task to complete. The default is False, which means wait for results.
     =========================    =========================================================
 
-    :return: result_layer : A list (items) or an :class:`~arcgis.gis.Item`
+    :return: result_layer : A list (items) or an :class:`~arcgis.gis.Item`.
+    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 

@@ -1,4 +1,6 @@
+from __future__ import annotations
 import os
+from typing import Optional
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 
@@ -6,7 +8,9 @@ from arcgis._impl.common._mixins import PropertyMap
 class MachineManager(object):
     """
     This resource provides the name and URL of the ArcGIS Mission
-    Server machine in the site.
+    Server machine in the site. Machine Manager can be accessed via the
+    :attr:`~arcgis.gis.mission.MissionServer.machine` property of
+    :class:`~arcgis.gis.mission.MissionServer` class
     """
 
     _url = None
@@ -34,11 +38,11 @@ class MachineManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<MachineManager @ {url}>".format(url=self._url)
+        return "< MachineManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<MachineManager @ {url}>".format(url=self._url)
+        return "< MachineManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -91,11 +95,11 @@ class Machine(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<Machine @ {url}>".format(url=self._url)
+        return "< Machine @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<Machine @ {url}>".format(url=self._url)
+        return "< Machine @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -143,7 +147,7 @@ class Machine(object):
         detects any change to the configuration of your machine, as well
         as each time the machine is restarted.
 
-        :return: dict
+        :return: Dict
         """
         url = self._url + "/hardware"
         params = {"f": "json"}
@@ -152,18 +156,18 @@ class Machine(object):
     # ----------------------------------------------------------------------
     def create_self_signed_cert(
         self,
-        alias,
-        keysize,
-        common_name,
-        org_unit,
-        organization,
-        city,
-        state,
-        country,
-        keyalg="RSA",
-        sigalg="SHA1withRSA",
-        validity=90,
-        san=None,
+        alias: str,
+        keysize: str,
+        common_name: str,
+        org_unit: str,
+        organization: str,
+        city: str,
+        state: str,
+        country: str,
+        keyalg: str = "RSA",
+        sigalg: str = "SHA1withRSA",
+        validity: int = 90,
+        san: Optional[str] = None,
     ):
         """
         Use this operation to create a self-signed certificate or as a
@@ -195,13 +199,13 @@ class Machine(object):
         ------------------     --------------------------------------------------------------------
         common_name            Required String. Use the domain name of your server name as the
                                common name. If your server will be accessed on the Internet through
-                               the URL https://www.Missionserver.com:11443/arcgis/, use
-                               www.Missionserver.com as the common name.If your server will only
-                               be accessible on your local area network (LAN) through the URL
-                               https://Missionserver.domain.com:11443/arcgis/, use Missionserver
+                               the URL ``https://www.Missionserver.com:11443/arcgis/``, use
+                               ``www.Missionserver.com`` as the common name.If your server will
+                               only be accessible on your local area network (LAN) through the URL
+                               ``https://Missionserver.domain.com:11443/arcgis/``, use Missionserver
                                as the common name.
         ------------------     --------------------------------------------------------------------
-        org_unit	       Required String. The name of your organizational unit, for example,
+        org_unit	           Required String. The name of your organizational unit, for example,
                                GIS Department.
         ------------------     --------------------------------------------------------------------
         organization	       Required String. The name of your organization, for example, Esri.
@@ -226,13 +230,13 @@ class Machine(object):
                                in the URL. If a SAN is defined and a DNS name is present, the
                                website can only be accessed by what is listed in the SAN. Multiple
                                DNS names can be specified if desired. For example, the URLs
-                               https://www.esri.com, https://esri, and https://10.60.1.16 can be
+                               ``https://www.esri.com``, ``https://esri``, and ``https://10.60.1.16`` can be
                                used to access the same site if the SSL certificate is created
                                using the following SAN parameter
-                               value: DNS:www.esri.com,DNS:esri,IP:10.60.1.16
+                               value: ``DNS:www.esri.com,DNS:esri,IP:10.60.1.16``
         ==================     ====================================================================
 
-        :return: Bool
+        :return: Boolean
 
         """
         url = self._url + "/sslCertificates/generate"
@@ -302,7 +306,7 @@ class Machine(object):
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def ssl_certificate(self, certificate):
+    def ssl_certificate(self, certificate: str):
         """
         Provides the self-signed certificate object.
 
@@ -327,7 +331,7 @@ class Machine(object):
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def delete_certificate(self, certificate):
+    def delete_certificate(self, certificate: str):
         """
         Deletes a SSL certificate using the certificate alias.
 
@@ -337,7 +341,7 @@ class Machine(object):
         certificate            Required string. The name of the certificate to delete
         ==================     ====================================================================
 
-        :return: boolean
+        :return: Boolean
 
         """
         params = {"f": "json"}
@@ -349,7 +353,7 @@ class Machine(object):
             return res
 
     # ----------------------------------------------------------------------
-    def export_certificate(self, certificate):
+    def export_certificate(self, certificate: str):
         """
         Downloads an SSL certificate. The file returned by the
         server is an X.509 certificate. The downloaded certificate can then
@@ -371,7 +375,7 @@ class Machine(object):
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def generate_CSR(self, certificate):
+    def generate_CSR(self, certificate: str):
         """
         Generates a certificate signing request (CSR) for a
         self-signed certificate. A CSR is required by a CA to create a
@@ -392,7 +396,9 @@ class Machine(object):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def import_CA_signed_certificate(self, certificate, ca_signed_certificate):
+    def import_CA_signed_certificate(
+        self, certificate: str, ca_signed_certificate: str
+    ):
         """
         Imports a certificate authority (CA)-signed SSL certificate into the key store.
 
@@ -418,7 +424,9 @@ class Machine(object):
         return self._con.post(path=url, postdata=params, files=files)
 
     # ----------------------------------------------------------------------
-    def import_existing_server_certificate(self, alias, cert_password, cert_file):
+    def import_existing_server_certificate(
+        self, alias: str, cert_password: str, cert_file: str
+    ):
         """
         Imports an existing server certificate, stored in
         the PKCS #12 format, into the keystore.
@@ -448,7 +456,7 @@ class Machine(object):
         return self._con.post(path=url, postdata=params, files=files)
 
     # ----------------------------------------------------------------------
-    def import_root_certificate(self, alias, root_CA_certificate):
+    def import_root_certificate(self, alias: str, root_CA_certificate: str):
         """
         Imports a certificate authority's (CA) root and intermediate
         certificates into the keystore.

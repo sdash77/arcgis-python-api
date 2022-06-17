@@ -33,6 +33,7 @@ class EsriPKIAuth(AuthBase, SupportMultiAuth):
         else:
             self.referer = referer
         self._session = kwargs.pop("session", requests.Session())
+        self._proxies = kwargs.pop("proxies", None)
 
     # ----------------------------------------------------------------------
     def __str__(self):
@@ -85,6 +86,7 @@ class EsriPKIAuth(AuthBase, SupportMultiAuth):
                     cert=(self.cert[0], self.cert[1]),
                     verify=self.verify_cert,
                     auth=self.auth,
+                    proxies=self._proxies,
                 ).json()
                 token_url = info["authInfo"]["tokenServicesUrl"]
                 self._server_log[parsed.netloc] = token_url
@@ -100,6 +102,7 @@ class EsriPKIAuth(AuthBase, SupportMultiAuth):
                     cert=(self.cert[0], self.cert[1]),
                     auth=self.auth,
                     verify=self.verify_cert,
+                    proxies=self._proxies,
                 )
                 token_str = token.json().get("token", None)
                 if token_str is None:

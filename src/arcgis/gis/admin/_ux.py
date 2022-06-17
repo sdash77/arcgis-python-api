@@ -1,5 +1,6 @@
 import os
 import json
+from typing import Optional
 from ._resources import PortalResourceManager
 
 ###########################################################################
@@ -38,7 +39,7 @@ class UX(object):
     # ----------------------------------------------------------------------
 
     @summary.setter
-    def summary(self, text):
+    def summary(self, text: str):
         """
         See main ``summary`` property docstring
         """
@@ -55,7 +56,12 @@ class UX(object):
         )
 
     # ----------------------------------------------------------------------
-    def set_banner(self, banner_file=None, is_built_in=False, custom_html=None):
+    def set_banner(
+        self,
+        banner_file: Optional[str] = None,
+        is_built_in: bool = False,
+        custom_html: Optional[str] = None,
+    ):
         """
         Configure your home page by setting the organization's banner. You can choose one of the 5 built-in banners or
         upload your own. For best results the dimensions of the banner image should be 960 x 180 pixels. You can also
@@ -169,7 +175,7 @@ class UX(object):
         return update_result
 
     # ----------------------------------------------------------------------
-    def set_logo(self, logo_file=None):
+    def set_logo(self, logo_file: Optional[str] = None):
         """
         Configure your home page by setting the organization's logo image. For best results the logo file should be
         65 x 65 pixels in dimension.
@@ -240,16 +246,18 @@ class UX(object):
         return update_result
 
     # ----------------------------------------------------------------------
-    def get_logo(self, download_path):
+    def get_logo(self, download_path: str):
         """
         Get your organization's logo/thumbnail. You can use the `set_logo()` method to set an image as your logo.
+
         ================  ===============================================================
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
         download_path     required string. Folder path to download the logo file.
         ================  ===============================================================
 
-         :return: Path to downloaded logo file.
+        :return: Path to downloaded logo file.
+
         """
         portal_resources = PortalResourceManager(self._gis)
         props = self._gis.properties
@@ -274,13 +282,14 @@ class UX(object):
         name              required string. Name of the site.
         ================  ===============================================================
 
-         :return: string of the name of the site
+        :return: string of the name of the site
+
         """
         return self._gis.properties["name"]
 
     # ----------------------------------------------------------------------
     @name.setter
-    def name(self, name):
+    def name(self, name: str):
         """
         See main ``name`` property docstring
         """
@@ -333,13 +342,14 @@ class UX(object):
                           home page. If False, the descriptive text will not be displayed
         ================  ===============================================================
 
-         :return: boolean
+        :return: boolean
+
         """
         return self._gis.properties["showHomePageDescription"]
 
     # ----------------------------------------------------------------------
     @description_visibility.setter
-    def description_visibility(self, visiblity):
+    def description_visibility(self, visiblity: bool):
         """
         See main ``description_visibility`` property docstring
         """
@@ -347,7 +357,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @description.setter
-    def description(self, description=None):
+    def description(self, description: Optional[str] = None):
         """
         See main ``description`` property docstring
         """
@@ -371,13 +381,14 @@ class UX(object):
                           {'group': <group id>, 'count' : 12}
         ================  ===============================================================
 
-          :return: dictionary
+        :return: dictionary
 
-        :Usage Example:
 
-        >>> data = ux.get_featured_content()
-        >>> ux.set_featured_content = data
-        True
+        .. code-block:: python
+            *Usage Example*
+            >>> data = ux.get_featured_content()
+            >>> ux.set_featured_content = data
+            True
 
         """
         return {
@@ -387,7 +398,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @featured_content.setter
-    def featured_content(self, content):
+    def featured_content(self, content: dict):
         """
         See main ``featured_content`` property docstring
         """
@@ -434,7 +445,9 @@ class UX(object):
         self._gis.update_properties(content)
 
     # ----------------------------------------------------------------------
-    def set_background(self, background_file=None, is_built_in=True):
+    def set_background(
+        self, background_file: Optional[str] = None, is_built_in: bool = True
+    ):
         """
         Configure your home page by setting the organization's background image. You can choose no image, a built-in image
         or upload your own. If you upload your own image, the image is positioned at the top and center of the page.
@@ -491,17 +504,19 @@ class UX(object):
         return update_result
 
     # ----------------------------------------------------------------------
-    def get_banner(self, download_path):
+    def get_banner(self, download_path: str):
         """
         Get your organization's home page banner image. You can use the `set_banner()` method to set an image or custom HTML
         code as your banner.
-        ================  ===============================================================
-        **Argument**      **Description**
-        ----------------  ---------------------------------------------------------------
-        download_path     required string. Folder path to download the banner file.
-        ================  ===============================================================
 
-         :return: Path to downloaded banner file.
+        ================    =================================================================================
+        **Argument**        **Description**
+        ----------------    ---------------------------------------------------------------------------------
+        download_path       required string. Folder path to download the banner file.
+        ================    =================================================================================
+
+        :return: Path to downloaded banner file.
+
         """
         # create a portal resource manager obj
         portal_resources = PortalResourceManager(self._gis)
@@ -523,7 +538,7 @@ class UX(object):
         return download_path
 
     # ----------------------------------------------------------------------
-    def get_background(self, download_path):
+    def get_background(self, download_path: str):
         """
         Get your organization's home page background image. You can use the `set_background()` method to set an image
         as the home page background image.
@@ -577,7 +592,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @enable_comments.setter
-    def enable_comments(self, enable=False):
+    def enable_comments(self, enable: bool = False):
         """
         See main ``enable_comments`` property docstring.
         """
@@ -601,13 +616,14 @@ class UX(object):
                           "spatialReference":{"wkid":102100}}
         ================  ===============================================================
 
-          :return: dictionary
+        :return: dictionary
+
         """
         return self._gis.properties["defaultExtent"]
 
     # ----------------------------------------------------------------------
     @default_extent.setter
-    def default_extent(self, extent):
+    def default_extent(self, extent: dict):
         """
         See main ``default_extent`` property docstring
         """
@@ -639,13 +655,14 @@ class UX(object):
                           default value will be set.
         ================  ===============================================================
 
-          :return: dictionary
+        :return: dictionary
+
         """
         return self._gis.properties["defaultBasemap"]
 
     # ----------------------------------------------------------------------
     @default_basemap.setter
-    def default_basemap(self, basemap):
+    def default_basemap(self, basemap: str):
         """
         See main ``default_basemap`` property docstring
         """
@@ -672,7 +689,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @vector_basemap.setter
-    def vector_basemap(self, basemap):
+    def vector_basemap(self, basemap: dict):
         """
         See main ``vector_basemap`` property docstring
         """

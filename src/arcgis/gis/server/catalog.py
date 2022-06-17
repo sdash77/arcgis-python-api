@@ -1,5 +1,6 @@
 import ssl
 import logging
+from typing import Optional
 from urllib.parse import urlparse
 from ._common import BaseServer
 from .._impl._con import Connection
@@ -105,11 +106,14 @@ class ServicesDirectory(BaseServer):
         key_file: str = None,
         cert_file: str = None,
         verify_cert: bool = False,
+        proxy: dict = None,
         **kwargs,
     ):
         """Constructor"""
         super(ServicesDirectory, self)
         profile = kwargs.pop("profile", None)
+        if str(url).endswith("/"):
+            url = url[:-1]
         if profile:
             # pm = self._pm
             url, username, password, key_file, cert_file, client_id = self._profile_mgr(
@@ -165,6 +169,7 @@ class ServicesDirectory(BaseServer):
                 portal_connection=self._portal_connection,
                 verify_cert=verify_cert,
                 product="SERVER",
+                proxy=proxy,
                 **kwargs,
             )
         self._gis = kwargs.pop("gis", None)
@@ -226,14 +231,14 @@ class ServicesDirectory(BaseServer):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<%s at %s>" % (type(self).__name__, self.url)
+        return "< %s @ %s >" % (type(self).__name__, self.url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<%s at %s>" % (type(self).__name__, self.url)
+        return "< %s @ %s >" % (type(self).__name__, self.url)
 
     # ----------------------------------------------------------------------
-    def report(self, as_html=True, folder=None):
+    def report(self, as_html: bool = True, folder: Optional[str] = None):
         """
         Generates a table of Services in the given folder, as a Pandas dataframe.
 
@@ -270,7 +275,7 @@ class ServicesDirectory(BaseServer):
             return df
 
     # ----------------------------------------------------------------------
-    def get(self, name, folder=None):
+    def get(self, name: str, folder: Optional[str] = None):
         """returns a single service in a folder"""
         if folder is None:
             res = self._con.get(self._url, {"f": "json"})
@@ -287,7 +292,7 @@ class ServicesDirectory(BaseServer):
         return None
 
     # ----------------------------------------------------------------------
-    def list(self, folder=None):
+    def list(self, folder: Optional[str] = None):
         """
         The ``list`` method returns a list of services at the given folder.
         The objects will vary in type according to the type of service. For
@@ -329,7 +334,7 @@ class ServicesDirectory(BaseServer):
         return services
 
     # ----------------------------------------------------------------------
-    def find(self, service_name, folder=None):
+    def find(self, service_name: str, folder: Optional[str] = None):
         """
         finds a service based on it's name in a given folder
         """

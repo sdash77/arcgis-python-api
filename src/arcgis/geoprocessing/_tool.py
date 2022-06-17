@@ -106,30 +106,58 @@ def _call_generator(fnname, spec):
 
         # args, posargs = self.arguments()
 
+        inputs = dict(kwargs)
         # print("My args: ")
-        # for k, v in kwargs.items():
+        # for k, v in dict(kwargs).items():
         #    print(k + " => " + str(v))
 
-        return self._execute(kwargs)
+        return self._execute(inputs)
 
     code = call.__code__
-    new_code = types.CodeType(
-        len(spec) + 1,
-        0,
-        len(spec) + 2,
-        code.co_stacksize,
-        code.co_flags,
-        code.co_code,
-        code.co_consts,
-        code.co_names,
-        varnames,
-        code.co_filename,
-        _camelCase_to_underscore(fnname),
-        code.co_firstlineno,
-        code.co_lnotab,
-        code.co_freevars,
-        code.co_cellvars,
-    )
+
+    if hasattr(types.CodeType, "co_posonlyargcount"):  # pragma: no branch
+        """
+               rgcount, posonlyargcount, kwonlyargcount, nlocals, stacksize,
+        |        flags, codestring, constants, names, varnames, filename, name,
+        |        firstlineno, lnotab[, freevars[, cellvars]]
+        """
+        new_code = types.CodeType(
+            len(spec) + 1,
+            0,
+            0,
+            len(spec) + 2,
+            code.co_stacksize,
+            code.co_flags,
+            code.co_code,
+            code.co_consts,
+            code.co_names,
+            varnames,
+            code.co_filename,
+            _camelCase_to_underscore(fnname),
+            code.co_firstlineno,
+            code.co_lnotab,
+            code.co_freevars,
+            cellvars=code.co_cellvars,
+        )
+    else:
+        new_code = types.CodeType(
+            len(spec) + 1,
+            0,
+            len(spec) + 2,
+            code.co_stacksize,
+            code.co_flags,
+            code.co_code,
+            code.co_consts,
+            code.co_names,
+            varnames,
+            code.co_filename,
+            _camelCase_to_underscore(fnname),
+            code.co_firstlineno,
+            code.co_lnotab,
+            code.co_freevars,
+            code.co_cellvars,
+        )
+
     """
      * co_name gives the function name
      * co_argcount is the number of positional arguments (including
@@ -307,11 +335,11 @@ def _inspect_tool(taskprops, map_as_result):
             }
         )
 
-    helpstring = " \n\t\n"
+    helpstring = r" \n\t\n"
     if "docstring" in taskprops:
-        helpstring += _strip_html(taskprops["docstring"])
+        helpstring += rf"{_strip_html(taskprops['docstring'])}"
     if "description" in taskprops:
-        helpstring += _strip_html(taskprops["description"])
+        helpstring += rf"{_strip_html(taskprops['description'])}"  # _strip_html(taskprops["description"])
 
     helpstring = helpstring + "\n\nParameters:"
 
@@ -332,7 +360,7 @@ def _inspect_tool(taskprops, map_as_result):
                 if "choiceList" in t
             }
         )
-        helpstring += param_helpstring
+        helpstring += param_helpstring.replace("\\", "\\\\")
         name_param.update(param_name_param)
         if param_spec is not None:
             spec.append(param_spec)
@@ -344,8 +372,8 @@ def _inspect_tool(taskprops, map_as_result):
             return_values.append(param_return_values)
 
     # gis=None
-    helpstring += "\n\n\tgis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.\n"
-    helpstring += "\n\n\tfuture: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.\n"
+    helpstring += r"\n\n\tgis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.\n"
+    helpstring += r"\n\n\tfuture: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.\n"
 
     if len(return_values) == 1:
         helpstring = (
@@ -434,7 +462,7 @@ def _process_parameter(param, map_as_result):
             helpstring = helpstring + " Required parameter. "
 
         if "description" in param:
-            helpstring = helpstring + " " + param["description"]
+            helpstring = helpstring + " " + param["description"].replace("\\", "\\\\")
 
         if param_chcs is not None and len(param_chcs) > 0:
             if isinstance(param_chcs, (tuple, list)):
@@ -577,7 +605,7 @@ _log = _logging.getLogger(__name__)
 
             for task in tbx.properties.tasks:
                 # _generate_fn(task, tbx)
-                f = executor.submit(fn=_generate_fn, **{"task": task, "tbx": tbx})
+                f = executor.submit(_generate_fn, **{"task": task, "tbx": tbx})
                 source.append(f)
         for fnsrc in source:
             fn_src, choice_list, func_name = fnsrc.result()
@@ -588,7 +616,7 @@ _log = _logging.getLogger(__name__)
     else:
         listed_params = PropertyMap(listed_params)
 
-    return _import_code(src_code, "name", verbose, choice_list=listed_params)
+    return _import_code(r"%s" % src_code, "name", verbose, choice_list=listed_params)
     # print(src_code)
 
 
@@ -936,12 +964,12 @@ class Toolbox(_AsyncResource):
             if "docstring" in taskprops:
                 docstring = taskprops["docstring"]
                 text_docstring = re.sub(r"&lt; */? *\w+ */?\ *&gt;", "", docstring)
-                helpstring = helpstring + ". " + text_docstring
+                helpstring = re.escape(helpstring) + ". " + re.escape(text_docstring)
 
             if "description" in taskprops:
                 description = taskprops["description"]
                 text_description = re.sub(r"&lt; */? *\w+ */?\ *&gt;", "", description)
-                helpstring += " \n \n" + text_description
+                helpstring += " \n \n" + re.escape(text_description)
 
             helpstring = helpstring + "\n\nParameters:"
 
@@ -1111,7 +1139,7 @@ class Toolbox(_AsyncResource):
         # http://sampleserver1.arcgisonline.com/ArcGIS/rest/Services/Specialty/ESRI_Currents_World/GPServer
 
     def __str__(self):
-        return "<Toolbox url:" + self.url + ">"
+        return "< Toolbox url:" + self.url + " >"
 
     def _execute(self, params):
         caller_fnname = inspect.stack()[1][3]

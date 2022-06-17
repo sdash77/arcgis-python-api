@@ -25,7 +25,7 @@ ESRI_REQUESTS_CHANNEL = "http://zion/conda/esri_requests/"
 
 BASE_BUILD_CMD = (
     "cd {build_dir} && conda build "
-    + f"-c {ESRI_CHANNEL_DEV} -c {ESRI_REQUESTS_CHANNEL} -c conda-forge -c esri "
+    + f"-c {ESRI_CHANNEL_DEV} -c {ESRI_REQUESTS_CHANNEL} -c esri -c Esri-build "
     + "arcgis --py {python_version} --output-folder {output_dir}"
 )
 BASE_CONVERT_CMD = (

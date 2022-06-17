@@ -5,6 +5,8 @@ calculate_density takes known quantities of some phenomenon and spreads these qu
 find_hot_spots identifies statistically significant clustering in the spatial pattern of your data.
 interpolate_points predicts values at new locations based on measurements found in a collection of points.
 """
+from __future__ import annotations
+from typing import Any, Optional, Union
 from arcgis.auth.tools import LazyLoader
 
 _arcgis = LazyLoader("arcgis")
@@ -12,21 +14,37 @@ _util = LazyLoader("arcgis._impl.common._utils")
 
 # --------------------------------------------------------------------------
 def calculate_density(
-    input_layer,
-    field=None,
-    cell_size=None,
-    cell_size_units="Meters",
-    radius=None,
-    radius_units=None,
-    bounding_polygon_layer=None,
-    area_units=None,
-    classification_type="EqualInterval",
-    num_classes=10,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    input_layer: Union[
+        _arcgis.gis.Item,
+        _arcgis.features.FeatureCollection,
+        _arcgis.features.FeatureLayer,
+        _arcgis.features.FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    field: Optional[str] = None,
+    cell_size: Optional[float] = None,
+    cell_size_units: str = "Meters",
+    radius: Optional[float] = None,
+    radius_units: Optional[str] = None,
+    bounding_polygon_layer: Optional[
+        Union[
+            _arcgis.gis.Item,
+            _arcgis.features.FeatureCollection,
+            _arcgis.features.FeatureLayer,
+            _arcgis.features.FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    area_units: Optional[str] = None,
+    classification_type: str = "EqualInterval",
+    num_classes: int = 10,
+    output_name: Optional[Union[_arcgis.features.FeatureLayer, str]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[_arcgis.gis.GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/cal_density_standard/calculate_density.png
@@ -88,7 +106,7 @@ def calculate_density(
 
                                  - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                  - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                      .. code-block:: python
 
@@ -105,11 +123,14 @@ def calculate_density(
     -------------------------    ---------------------------------------------------------
     estimate                     Optional Boolean. Is true, the number of credits needed to run the operation will be returned as a float.
     -------------------------    ---------------------------------------------------------
-    future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                       Optional, If True, a future object will be returned and the process
+                                 will not wait for the task to complete.
+                                 The default is False, which means wait for results.
     =========================    =========================================================
 
 
     :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
+    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 
@@ -155,16 +176,23 @@ def calculate_density(
 
 # --------------------------------------------------------------------------
 def summarize_center_and_dispersion(
-    analysis_layer,
-    summarize_type,
-    ellipse_size=None,
-    weight_field=None,
-    group_field=None,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    analysis_layer: Union[
+        _arcgis.gis.Item,
+        _arcgis.features.FeatureCollection,
+        _arcgis.features.FeatureLayer,
+        _arcgis.features.FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    summarize_type: str,
+    ellipse_size: Optional[str] = None,
+    weight_field: Optional[str] = None,
+    group_field: Optional[str] = None,
+    output_name: Optional[Union[_arcgis.features.FeatureLayer, str]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[_arcgis.gis.GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
 
     """
@@ -209,7 +237,7 @@ def summarize_center_and_dispersion(
 
                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                 .. code-block:: python
 
@@ -227,7 +255,9 @@ def summarize_center_and_dispersion(
     --------------------    ---------------------------------------------------------
     estimate                Optional Boolean. If True, the number of credits to run the operation will be returned.
     --------------------    ---------------------------------------------------------
-    future                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                  Optional, If True, a future object will be returned and the process
+                            will not wait for the task to complete.
+                            The default is False, which means wait for results.
     ====================    =========================================================
 
     :return: Python dictionary with the following keys:
@@ -236,6 +266,8 @@ def summarize_center_and_dispersion(
         "median_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
         "ellipse_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
         "process_info" : list of messages
+
+        If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     """
 
@@ -261,15 +293,22 @@ def summarize_center_and_dispersion(
 
 # --------------------------------------------------------------------------
 def find_point_clusters(
-    analysis_layer,
-    min_features_cluster,
-    search_distance=None,
-    search_distance_unit=None,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    analysis_layer: Union[
+        _arcgis.gis.Item,
+        _arcgis.features.FeatureCollection,
+        _arcgis.features.FeatureLayer,
+        _arcgis.features.FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    min_features_cluster: int,
+    search_distance: Optional[float] = None,
+    search_distance_unit: Optional[str] = None,
+    output_name: Optional[Union[_arcgis.features.FeatureLayer, str]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[_arcgis.gis.GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/find_point_clusters/find_point_clusters.png
@@ -329,7 +368,7 @@ def find_point_clusters(
 
                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                 .. code-block:: python
 
@@ -347,10 +386,13 @@ def find_point_clusters(
     --------------------    ---------------------------------------------------------
     estimate                Optional Boolean. If True, the number of credits to run the operation will be returned.
     --------------------    ---------------------------------------------------------
-    future                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                  Optional, If True, a future object will be returned and the process
+                            will not wait for the task to complete.
+                            The default is False, which means wait for results.
     ====================    =========================================================
 
     :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else :class:`~arcgis.features.FeatureCollection`.
+    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 
@@ -383,21 +425,46 @@ def find_point_clusters(
 
 # --------------------------------------------------------------------------
 def find_hot_spots(
-    analysis_layer,
-    analysis_field=None,
-    divided_by_field=None,
-    bounding_polygon_layer=None,
-    aggregation_polygon_layer=None,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    shape_type=None,
-    cell_size=None,
-    cell_size_unit=None,
-    distance_band=None,
-    distance_band_unit=None,
-    future=False,
+    analysis_layer: Union[
+        _arcgis.gis.Item,
+        _arcgis.features.FeatureCollection,
+        _arcgis.features.FeatureLayer,
+        _arcgis.features.FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    analysis_field: Optional[str] = None,
+    divided_by_field: Optional[str] = None,
+    bounding_polygon_layer: Optional[
+        Union[
+            _arcgis.gis._arcgis.gis.Item,
+            _arcgis.features.FeatureCollection,
+            _arcgis.features.FeatureLayer,
+            _arcgis.features.FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    aggregation_polygon_layer: Optional[
+        Union[
+            _arcgis.gis.Item,
+            _arcgis.features.FeatureCollection,
+            _arcgis.features.FeatureLayer,
+            _arcgis.features.FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    output_name: Optional[Union[_arcgis.features.FeatureLayer, str]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[_arcgis.gis.GIS] = None,
+    estimate: bool = False,
+    shape_type: Optional[str] = None,
+    cell_size: Optional[float] = None,
+    cell_size_unit: Optional[str] = None,
+    distance_band: Optional[float] = None,
+    distance_band_unit: Optional[str] = None,
+    future: bool = False,
 ):
     """
 
@@ -452,7 +519,7 @@ def find_hot_spots(
 
                                                                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                                                                 .. code-block:: python
 
@@ -486,10 +553,13 @@ def find_hot_spots(
     -------------------------------------------------------------------     ---------------------------------------------------------
     distance_band_unit                                                      Optional string. The units of the ``distance_band`` value. You must provide a value if ``distance_band`` has been set.
     -------------------------------------------------------------------     ---------------------------------------------------------
-    future                                                                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                                                                  Optional, If True, a future object will be returned and the process
+                                                                            will not wait for the task to complete.
+                                                                            The default is False, which means wait for results.
     ===================================================================     =========================================================
 
     :return: :class:`~arcgis.features.FeatureLayer` if output_name is specified, else a dictionary with a :class:`~arcgis.features.FeatureCollection` and processing messages.
+    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 
@@ -498,6 +568,7 @@ def find_hot_spots(
                                              bounding_polygon_layer=boundry_lyr,
                                              output_name='collision_hexagon_hot_spots',
                                              shape_type='hexagon')
+
     """
 
     distance_band_units = distance_band_unit
@@ -528,22 +599,47 @@ def find_hot_spots(
 
 # --------------------------------------------------------------------------
 def find_outliers(
-    analysis_layer,
-    analysis_field=None,
-    divided_by_field=None,
-    bounding_polygon_layer=None,
-    aggregation_polygon_layer=None,
-    permutations=None,
-    shape_type=None,
-    cell_size=None,
-    cell_units=None,
-    distance_band=None,
-    band_units=None,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    analysis_layer: Union[
+        _arcgis.gis.Item,
+        _arcgis.features.FeatureCollection,
+        _arcgis.features.FeatureLayer,
+        _arcgis.features.FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    analysis_field: Optional[str] = None,
+    divided_by_field: Optional[str] = None,
+    bounding_polygon_layer: Optional[
+        Union[
+            _arcgis.gis.Item,
+            _arcgis.features.FeatureCollection,
+            _arcgis.features.FeatureLayer,
+            _arcgis.features.FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    aggregation_polygon_layer: Optional[
+        Union[
+            _arcgis.gis.Item,
+            _arcgis.features.FeatureCollection,
+            _arcgis.features.FeatureLayer,
+            _arcgis.features.FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    permutations: Optional[str] = None,
+    shape_type: Optional[str] = None,
+    cell_size: Optional[float] = None,
+    cell_units: Optional[str] = None,
+    distance_band: Optional[float] = None,
+    band_units: Optional[str] = None,
+    output_name: Optional[Union[_arcgis.features.FeatureLayer, str]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[_arcgis.gis.GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/find_outliers/find_outliers.png
@@ -623,7 +719,7 @@ def find_outliers(
 
                                                                         - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                                         - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                                                        - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                                                        - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                                                             .. code-block:: python
 
@@ -638,7 +734,9 @@ def find_outliers(
     ------------------------------------------------------------------  ---------------------------------------------------------------
     estimate                                                            Optional boolean. Returns the number of credit for the operation.
     ------------------------------------------------------------------  ---------------------------------------------------------------
-    future                                                              Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                                                              Optional, If True, a future object will be returned and the process
+                                                                        will not wait for the task to complete.
+                                                                        The default is False, which means wait for results.
     ==================================================================  ===============================================================
 
     :return:
@@ -647,6 +745,8 @@ def find_outliers(
         "find_outliers_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
         "process_info" : list of messages
+
+        If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 
@@ -684,20 +784,41 @@ def find_outliers(
 
 # --------------------------------------------------------------------------
 def interpolate_points(
-    input_layer,
-    field,
-    interpolate_option="5",
-    output_prediction_error=False,
-    classification_type="GeometricInterval",
-    num_classes=10,
-    class_breaks=[],
-    bounding_polygon_layer=None,
-    predict_at_point_layer=None,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    input_layer: Union[
+        _arcgis.gis.Item,
+        _arcgis.features.FeatureCollection,
+        _arcgis.features.FeatureLayer,
+        _arcgis.features.FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    field: str,
+    interpolate_option: str = "5",
+    output_prediction_error: bool = False,
+    classification_type: str = "GeometricInterval",
+    num_classes: int = 10,
+    class_breaks: Optional[list[float]] = [],
+    bounding_polygon_layer: Union[
+        _arcgis.gis.Item,
+        _arcgis.features.FeatureCollection,
+        _arcgis.features.FeatureLayer,
+        _arcgis.features.FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ] = None,
+    predict_at_point_layer: Union[
+        _arcgis.gis.Item,
+        _arcgis.features.FeatureCollection,
+        _arcgis.features.FeatureLayer,
+        _arcgis.features.FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ] = None,
+    output_name: Optional[Union[_arcgis.features.FeatureLayer, str]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[_arcgis.gis.GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/interpolate_points/interpolate_points.png
@@ -827,7 +948,7 @@ def interpolate_points(
 
                                  - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                  - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                      .. code-block:: python
 
@@ -844,7 +965,9 @@ def interpolate_points(
     ---------------------------  -------------------------------------------------------------------------------------------
     estimate                     Optional boolean. If True, the number of credits to run the operation will be returned.
     ---------------------------  -------------------------------------------------------------------------------------------
-    future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                       Optional, If True, a future object will be returned and the process
+                                 will not wait for the task to complete.
+                                 The default is False, which means wait for results.
     ===========================  ===========================================================================================
 
     :return: result_layer : :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else Python dictionary with the following keys:
@@ -854,6 +977,8 @@ def interpolate_points(
         "prediction_error" : layer (:class:`~arcgis.features.FeatureCollection`)
 
         "predicted_point_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+
+        If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 

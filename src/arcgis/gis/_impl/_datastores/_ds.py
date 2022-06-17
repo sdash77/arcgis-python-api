@@ -1,4 +1,5 @@
 import time as _time
+from typing import Union
 import uuid
 from arcgis.gis import GIS
 from .._con import Connection
@@ -102,6 +103,7 @@ class PortalDataStore(object):
             gis=self._gis,
             notify=_env.verbose,
             extra_marker="",
+            key=res.get("key", None),
         )
 
     # ----------------------------------------------------------------------
@@ -115,6 +117,8 @@ class PortalDataStore(object):
         if job_id:
             url = f"{self._gis._portal.resturl}portals/self/jobs/{job_id}"
             params["f"] = "json"
+            if key:
+                params["key"] = key
             res = self._con.post(url, params)
             while res["status"] not in ["completed", "complete", "succeeded"]:
                 res = self._con.post(url, params)
@@ -313,7 +317,12 @@ class PortalDataStore(object):
 
     # ----------------------------------------------------------------------
     def publish(
-        self, config: dict, server_id, folder=None, description=None, tags: list = None
+        self,
+        config: dict,
+        server_id,
+        folder=None,
+        description=None,
+        tags: Union[list, str] = None,
     ):
         """
         The ``publish`` operation is used to publish scene layers by reference to data in a
@@ -373,6 +382,7 @@ class PortalDataStore(object):
             gis=self._gis,
             notify=_env.verbose,
             extra_marker="",
+            key=res.get("key", None),
         )
 
     # ----------------------------------------------------------------------

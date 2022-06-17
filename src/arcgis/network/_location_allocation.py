@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 import logging as _logging
+from typing import Optional
 import arcgis
 from datetime import datetime
 from arcgis.features import FeatureSet
+from arcgis.gis import GIS
 from arcgis.mapping import MapImageLayer
 from arcgis.geoprocessing import DataFile, LinearUnit, RasterData
 from arcgis.geoprocessing import import_toolbox
@@ -13,37 +15,37 @@ _log = _logging.getLogger(__name__)
 
 
 def solve_location_allocation(
-    facilities,
-    demand_points,
-    measurement_units=None,
-    analysis_region=None,
-    problem_type=None,
-    number_of_facilities_to_find=None,
-    default_measurement_cutoff=None,
-    default_capacity=None,
-    target_market_share=None,
-    measurement_transformation_model=None,
-    measurement_transformation_factor=None,
-    travel_direction=None,
-    time_of_day=None,
-    time_zone_for_time_of_day=None,
-    uturn_at_junctions=None,
-    point_barriers=None,
-    line_barriers=None,
-    polygon_barriers=None,
-    use_hierarchy=True,
-    restrictions=None,
-    attribute_parameter_values=None,
-    allocation_line_shape=None,
-    travel_mode="Custom",
-    impedance=None,
-    save_output_network_analysis_layer=False,
-    overrides=None,
-    time_impedance=None,
-    distance_impedance=None,
-    output_format=None,
-    gis=None,
-    future=False,
+    facilities: FeatureSet,
+    demand_points: FeatureSet,
+    measurement_units: Optional[str] = None,
+    analysis_region: Optional[str] = None,
+    problem_type: Optional[str] = None,
+    number_of_facilities_to_find: Optional[int] = None,
+    default_measurement_cutoff: Optional[float] = None,
+    default_capacity: Optional[float] = None,
+    target_market_share: Optional[float] = None,
+    measurement_transformation_model: Optional[str] = None,
+    measurement_transformation_factor: Optional[float] = None,
+    travel_direction: Optional[str] = None,
+    time_of_day: Optional[datetime] = None,
+    time_zone_for_time_of_day: Optional[str] = None,
+    uturn_at_junctions: Optional[str] = None,
+    point_barriers: Optional[FeatureSet] = None,
+    line_barriers: Optional[FeatureSet] = None,
+    polygon_barriers: Optional[FeatureSet] = None,
+    use_hierarchy: bool = True,
+    restrictions: Optional[str] = None,
+    attribute_parameter_values: Optional[FeatureSet] = None,
+    allocation_line_shape: Optional[str] = None,
+    travel_mode: str = "Custom",
+    impedance: Optional[str] = None,
+    save_output_network_analysis_layer: bool = False,
+    overrides: Optional[dict] = None,
+    time_impedance: Optional[str] = None,
+    distance_impedance: Optional[str] = None,
+    output_format: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    future: bool = False,
 ):
     """
     The ``solve_location_allocation`` tool chooses the best location or locations from a set of input locations. Input to this tool includes facilities,
@@ -871,6 +873,9 @@ def solve_location_allocation(
                                             Choice list:['Drive Time', 'Truck Time', 'Walk Time']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     gis                                     Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
+    future                                  Optional boolean. If True, a future object will be returned and the process
+                                            will not wait for the task to complete. The default is False, which means wait for results.
     ======================================  ==========================================================================================================================================
 
     : returns the following as a named tuple:

@@ -1,32 +1,33 @@
 {% set name = "arcgis_learn" %}
-{% set version = "2.0.0" %}
+{% set version = "2.1.0" %}
 
 package:
   name: {{ name | lower }}
   version: {{ version }}
 
 build:
-  number: 2
+  number: 1
 
 requirements:
   build:
     - python
 
   run:
-    - arcgis>=2.0.0
+    - arcgis>=2.1.0
     - boost=1.73
+    - cairo 1.14.12
     - einops 0.3.2
     - ensemble-boxes 1.0.8
     - fastai=1.0.63
     - fastprogress=0.2.3
     - fasttext=0.9.2
-    - gdal=3.0.2
-    - graphviz=2
-    - h5py=2.10.0
-    - keras-gpu=2.7.*
+    - gdal=3.4.1
+    - graphviz
+    - h3-py>=3.7.3
+    - inplace-abn
     - laspy=1.7.0
-    - libgdal=3.0.2=h955fff2_0 #[win]
-    - libgdal=3.0.2 #[not win]
+    - libgdal=3.4.1=h82bb817_3 #[win]
+    - libnetcdf 4.6.1 #[win]
     - libtiff=4.3.0
     - matplotlib>=3.4.2
     - mljar-supervised>=0.10.6
@@ -34,9 +35,11 @@ requirements:
     - mmdet=2.19.0
     - mmdet3d=0.17.3
     - mmsegmentation=0.19.0
+    - multi-scale-deformable-attention 1.0.0
     - nb_conda_kernels
+    - notebook
     - onnx>=1.8.0
-    - onnx-tf 1.8.0
+    - onnx-tf>=1.8.0
     - opencv=4.5.2
     - paddleocr=2.0.6
     - paddlepaddle-gpu=2.1.0
@@ -44,7 +47,7 @@ requirements:
     - plotly=4.5.4
     - python
     - pytorch=1.8.2
-    - scikit-learn>=0.23.2
+    - scikit-learn>=0.23.2,<1
     - scikit-image=0.17.2
     - shap>=0.36.0
     - spacy=2.2.4
@@ -62,11 +65,18 @@ requirements:
 test:
   imports:
     - arcgis
-    - osgeo.gdal
+    - cv2
     - PIL.Image
+    - fastai
+    - matplotlib.pyplot
+    - mmdet
+    - mmdet3d
+    - mmseg
+    - onnx
+    - osgeo.gdal
+    - osgeo.gdal_array
     - skimage
     - sklearn
-    - fastai
     - torch
     - torchvision
     - tensorflow

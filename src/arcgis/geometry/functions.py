@@ -4,8 +4,18 @@ The ``Functions`` module is used to take :class:`~arcgis.geometry.Geometry` type
 """
 from __future__ import annotations
 from enum import Enum
-from typing import Optional, Union
+import json
+from typing import Any, Optional, Union
+from arcgis.geometry import (
+    Geometry,
+    Point,
+    MultiPoint,
+    Polyline,
+    Polygon,
+    SpatialReference,
+)
 import arcgis.env
+from arcgis.gis import GIS
 
 
 class AreaUnits(Enum):
@@ -102,13 +112,13 @@ class LengthUnits(Enum):
 
 # -------------------------------------------------------------------------
 def areas_and_lengths(
-    polygons,
-    length_unit,
-    area_unit,
-    calculation_type,
-    spatial_ref=4326,
-    gis=None,
-    future=False,
+    polygons: Polygon,
+    length_unit: str,
+    area_unit: str,
+    calculation_type: str,
+    spatial_ref: int = 4326,
+    gis: Optional[GIS] = None,
+    future: bool = False,
 ):
     """
     The ``areas_and_lengths`` function calculates areas and perimeter lengths
@@ -163,8 +173,13 @@ def areas_and_lengths(
                           3. preserveShape - This type calculates the area or length of the geometry on the surface of
                           the Earth ellipsoid. The shape of the geometry in its coordinate system is preserved.
     ----------------  -------------------------------------------------------------------------------
-     future            A required Boolean. This operation determines if the job is run asynchronously or not.
+     future           Optional boolean. If True, a future object will be returned and the process
+                      will not wait for the task to complete. The default is False, which means wait for results.
     ================  ===============================================================================
+
+    :returns:
+        A JSON as dictionary, or a `GeometryJob` object. If ``future = True``,
+        then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 
@@ -180,8 +195,6 @@ def areas_and_lengths(
                                   area_unit = AreaUnits.SQUAREMETERS,
                                   calculation_type = "planar",
                                   future = True)
-    :returns:
-        A JSON as dictionary, or a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -196,7 +209,11 @@ def areas_and_lengths(
 
 # -------------------------------------------------------------------------
 def auto_complete(
-    polygons=None, polylines=None, spatial_ref=None, gis=None, future=False
+    polygons: Optional[list[Polygon]] = None,
+    polylines: Optional[list[Polyline]] = None,
+    spatial_ref: Optional[SpatialReference] = None,
+    gis: Optional[GIS] = None,
+    future: bool = False,
 ):
     """
     The ``auto_complete`` function simplifies the process of
@@ -207,17 +224,19 @@ def auto_complete(
     ================  ===============================================================================
     **Keys**          **Description**
     ----------------  -------------------------------------------------------------------------------
-    polygons          An array of :class:`~arcgis.geometry.Polygon` objects
+    polygons          A List of :class:`~arcgis.geometry.Polygon` objects
     ----------------  -------------------------------------------------------------------------------
-    polylines         An List of :class:`~arcgis.geometry.Polyline` objects
+    polylines         A List of :class:`~arcgis.geometry.Polyline` objects
     ----------------  -------------------------------------------------------------------------------
     spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries WKID
     ----------------  -------------------------------------------------------------------------------
-    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    future            Optional boolean. If True, a future object will be returned and the process
+                      will not wait for the task to complete. The default is False, which means wait for results.
     ================  ===============================================================================
 
     :returns:
-        A :class:`~arcgis.geometry.Polygon` object, or a `GeometryJob` object
+        A :class:`~arcgis.geometry.Polygon` object, or a `GeometryJob` object. If ``future = True``,
+        then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -227,16 +246,16 @@ def auto_complete(
 
 
 def buffer(
-    geometries,
-    in_sr,
-    distances,
-    unit,
-    out_sr=None,
-    buffer_sr=None,
-    union_results=None,
-    geodesic=None,
-    gis=None,
-    future=False,
+    geometries: list,
+    in_sr: Union[int, dict[str, Any]],
+    distances: float,
+    unit: str,
+    out_sr: Optional[Union[int, dict[str, Any]]] = None,
+    buffer_sr: Optional[float] = None,
+    union_results: Optional[bool] = None,
+    geodesic: Optional[bool] = None,
+    gis: Optional[GIS] = None,
+    future: bool = False,
 ):
     """
     The ``buffer`` function is performed on a geometry service resource
@@ -281,8 +300,13 @@ def buffer(
                       .. note::
                         The default value depends on the `geometry type`, `unit` and `bufferSR`.
     ----------------  -------------------------------------------------------------------------------
-    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    future            Optional boolean. If True, a future object will be returned and the process
+                      will not wait for the task to complete. The default is False, which means wait for results.
     ================  ===============================================================================
+
+    :returns:
+        A list of :class:`~arcgis.geometry.Polygon` object, or a `GeometryJob` object. If ``future = True``,
+        then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 
@@ -295,8 +319,6 @@ def buffer(
                        geodesic = True,
                        future = True)
 
-    :returns:
-        A list of :class:`~arcgis.geometry.Polygon` object, or a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -313,7 +335,12 @@ def buffer(
     )
 
 
-def convex_hull(geometries, spatial_ref=None, gis=None, future=False):
+def convex_hull(
+    geometries: Union[list[Polygon], list[Polyline], list[MultiPoint], list[Point]],
+    spatial_ref: Optional[Union[int, dict[str, Any]]] = None,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+):
     """
     The `convex_hull` function is performed on a :class:`~arcgis.geometry.Geometry` service
     resource. It returns the convex hull of the input geometry. The
@@ -335,18 +362,27 @@ def convex_hull(geometries, spatial_ref=None, gis=None, future=False):
     ----------------  -------------------------------------------------------------------------------
     spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
     ----------------  -------------------------------------------------------------------------------
-    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    future            Optional boolean. If True, a future object will be returned and the process
+                      will not wait for the task to complete. The default is False, which means wait for results.
     ================  ===============================================================================
 
     :returns:
-        The convex hull of the :class:`~arcgis.geometry.Geometry` object, or a `GeometryJob` object
+        The convex hull of the :class:`~arcgis.geometry.Geometry` object, or a `GeometryJob` object.
+        If ``future = True``,
+        then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
     """
     if gis is None:
         gis = arcgis.env.active_gis
     return gis._tools.geometry.convex_hull(geometries, spatial_ref, future=future)
 
 
-def cut(cutter, target, spatial_ref=None, gis=None, future=False):
+def cut(
+    cutter: Polyline,
+    target: Union[list[Polyline], list[Polygon]],
+    spatial_ref: Optional[Union[int, dict[str, Any]]] = None,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+):
     """
     The `cut` function is performed on a :class:`~arcgis.geometry.Geometry` service resource. This
     function splits the target :class:`~arcgis.geometry.Polyline` or :class:`~arcgis.geometry.Polygon` where it is
@@ -368,7 +404,7 @@ def cut(cutter, target, spatial_ref=None, gis=None, future=False):
                         polyline is the same as the structure of the JSON polyline
                         objects returned by the ArcGIS REST API.
     ----------------  -------------------------------------------------------------------------------
-    geometries        The array of :class:`~arcgis.geometry.Polyline` or :class:`~arcgis.geometry.Polygon` to be cut.
+    target            The array of :class:`~arcgis.geometry.Polyline` or :class:`~arcgis.geometry.Polygon` to be cut.
                       The structure of the geometry is the same as the structure of the
                       JSON geometry objects returned by the ArcGIS REST API. The
                       spatial reference of the target geometry array is specified by
@@ -377,11 +413,13 @@ def cut(cutter, target, spatial_ref=None, gis=None, future=False):
     spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or a JSON
                       object for the output geometry
     ----------------  -------------------------------------------------------------------------------
-    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    future            Optional boolean. If True, a future object will be returned and the process
+                      will not wait for the task to complete. The default is False, which means wait for results.
     ================  ===============================================================================
 
     :returns:
-        A List of :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object
+        A List of :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object. If ``future = True``,
+        then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -389,13 +427,13 @@ def cut(cutter, target, spatial_ref=None, gis=None, future=False):
 
 
 def densify(
-    geometries,
-    spatial_ref,
-    max_segment_length,
-    length_unit,
-    geodesic=False,
-    gis=None,
-    future=False,
+    geometries: Union[list[Polygon], list[Polyline], list[MultiPoint], list[Point]],
+    spatial_ref: Optional[Union[int, dict[str, Any]]],
+    max_segment_length: Optional[float],
+    length_unit: Optional[str],
+    geodesic: bool = False,
+    gis: Optional[GIS] = None,
+    future: bool = False,
 ):
     """
     The ``densify`` function is performed using the :class:`~arcgis.gis.GIS` geometry engine.
@@ -436,8 +474,13 @@ def densify(
                       earth. If geodesic is set to false, then 2D Euclidean distance
                       is used to calculate max_segment_length. The default is false.
     ----------------  -------------------------------------------------------------------------------
-    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    future            Optional boolean. If True, a future object will be returned and the process
+                      will not wait for the task to complete. The default is False, which means wait for results.
     ================  ===============================================================================
+
+    :returns:
+        A list of :class:`~arcgis.geometry.Geometry` object, or a `GeometryJob` object. If ``future = True``,
+        then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 
@@ -448,8 +491,6 @@ def densify(
                         geodesic = True,
                         future = False)
 
-    :returns:
-        A list of :class:`~arcgis.geometry.Geometry` object, or a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -466,7 +507,13 @@ def densify(
     )
 
 
-def difference(geometries, spatial_ref, geometry, gis=None, future=False):
+def difference(
+    geometries: Union[list[Polygon], list[Polyline], list[MultiPoint], list[Point]],
+    spatial_ref: Optional[Union[int, dict[str, Any]]],
+    geometry: Geometry,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+):
     """
     The ``difference`` function is performed on a geometry service
     resource. This function constructs the set-theoretic difference
@@ -492,11 +539,13 @@ def difference(geometries, spatial_ref, geometry, gis=None, future=False):
     ----------------  -------------------------------------------------------------------------------
     spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
     ----------------  -------------------------------------------------------------------------------
-    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    future            Optional boolean. If True, a future object will be returned and the process
+                      will not wait for the task to complete. The default is False, which means wait for results.
     ================  ===============================================================================
 
     :returns:
-        A list of :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object
+        A list of :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object. If ``future = True``,
+        then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -507,13 +556,13 @@ def difference(geometries, spatial_ref, geometry, gis=None, future=False):
 
 
 def distance(
-    spatial_ref,
-    geometry1,
-    geometry2,
-    distance_unit="",
-    geodesic=False,
-    gis=None,
-    future=False,
+    spatial_ref: Optional[Union[int, dict[str, Any]]],
+    geometry1: Geometry,
+    geometry2: Geometry,
+    distance_unit: str = "",
+    geodesic: bool = False,
+    gis: Optional[GIS] = None,
+    future: bool = False,
 ):
     """
     The ``distance`` function is performed on a geometry service resource.
@@ -547,13 +596,14 @@ def distance(
     spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known
                       ID or JSON object
     ----------------  -------------------------------------------------------------------------------
-    future            An optional Boolean. This operation determines if the job is run asynchronously
-                      or not.
+    future            Optional boolean. If True, a future object will be returned and the process
+                      will not wait for the task to complete. The default is False, which means wait for results.
     ================  ===============================================================================
 
     :returns:
         The 2D or geodesic distance between the two :class:`~arcgis.geometry.Geometry` objects, or
-        a `GeometryJob` object
+        a `GeometryJob` object. If ``future = True``,
+        then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -565,7 +615,12 @@ def distance(
 
 
 def find_transformation(
-    in_sr, out_sr, extent_of_interest=None, num_of_results=1, gis=None, future=False
+    in_sr: Optional[Union[int, dict[str, Any]]],
+    out_sr: Optional[Union[int, dict[str, Any]]],
+    extent_of_interest: Optional[dict[str, Any]] = None,
+    num_of_results: int = 1,
+    gis: Optional[GIS] = None,
+    future: bool = False,
 ):
     """
     The ``find_transformations`` function is performed on a :class:`~arcgis.geometry.Geometry`
@@ -612,11 +667,13 @@ def find_transformation(
                       .. note::
                         If ``num_of_results`` has a value of -1, all applicable transformations are returned.
     ----------------  -------------------------------------------------------------------------------
-    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    future            Optional boolean. If True, a future object will be returned and the process
+                      will not wait for the task to complete. The default is False, which means wait for results.
     ================  ===============================================================================
 
     :returns:
-        A List of geographic transformations, or a `GeometryJob` object
+        A List of geographic transformations, or a `GeometryJob` object. If ``future = True``,
+        then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -626,7 +683,12 @@ def find_transformation(
 
 
 def from_geo_coordinate_string(
-    spatial_ref, strings, conversion_type, conversion_mode=None, gis=None, future=False
+    spatial_ref: Optional[Union[int, dict[str, Any]]],
+    strings: list[str],
+    conversion_type: Optional[str],
+    conversion_mode: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    future: bool = False,
 ):
     """
     The ``from_geo_coordinate_string`` function is performed on a :class:`~arcgis.geometry.Geometry`
@@ -679,8 +741,13 @@ def from_geo_coordinate_string(
                         `zone numbers` - Non-standard. Default is recommended
 
     ----------------  -------------------------------------------------------------------------------
-    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    future            Optional boolean. If True, a future object will be returned and the process
+                      will not wait for the task to complete. The default is False, which means wait for results.
     ================  ===============================================================================
+
+    :returns:
+        An array of (x,y) coordinates, or a `GeometryJob` object. If ``future = True``,
+        then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 
@@ -691,8 +758,6 @@ def from_geo_coordinate_string(
                                             future = False)
             >>> coords
                 [[x1,y1], [x2,y2], [x3,y3]]
-    :returns:
-        An array of (x,y) coordinates, or a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -702,7 +767,12 @@ def from_geo_coordinate_string(
 
 
 def generalize(
-    spatial_ref, geometries, max_deviation, deviation_unit, gis=None, future=False
+    spatial_ref: Optional[Union[int, dict[str, Any]]],
+    geometries: list[Geometry],
+    max_deviation: int,
+    deviation_unit: str,
+    gis: Optional[GIS] = None,
+    future: bool = False,
 ):
     """
     The ``generalize`` function is performed on a :class:`~arcgis.geometry.Geometry` service
@@ -733,11 +803,13 @@ def generalize(
     ----------------  -------------------------------------------------------------------------------
     spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
     ----------------  -------------------------------------------------------------------------------
-    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    future            Optional boolean. If True, a future object will be returned and the process
+                      will not wait for the task to complete. The default is False, which means wait for results.
     ================  ===============================================================================
 
     :returns:
-        An array of the simplified :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object
+        An array of the simplified :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object. If ``future = True``,
+        then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -746,7 +818,13 @@ def generalize(
     )
 
 
-def intersect(spatial_ref, geometries, geometry, gis=None, future=False):
+def intersect(
+    spatial_ref: Optional[Union[int, dict[str, Any]]],
+    geometries: list[Geometry],
+    geometry: Geometry,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+):
     """
     The ``intersect`` function is performed on a :class:`~arcgis.geometry.Geometry` service
     resource. This function constructs the set-theoretic intersection
@@ -774,11 +852,13 @@ def intersect(spatial_ref, geometries, geometry, gis=None, future=False):
     ----------------  -------------------------------------------------------------------------------
     spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
     ----------------  -------------------------------------------------------------------------------
-    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    future            Optional boolean. If True, a future object will be returned and the process
+                      will not wait for the task to complete. The default is False, which means wait for results.
     ================  ===============================================================================
 
     :returns:
-        The set-theoretic dimension between :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object
+        The set-theoretic dimension between :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object. If ``future = True``,
+        then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -787,7 +867,12 @@ def intersect(spatial_ref, geometries, geometry, gis=None, future=False):
     )
 
 
-def label_points(spatial_ref, polygons, gis=None, future=False):
+def label_points(
+    spatial_ref: Optional[Union[int, dict[str, Any]]],
+    polygons: list[Polygon],
+    gis: Optional[GIS] = None,
+    future: bool = False,
+):
     """
     The ``label_points`` function is performed on a :class:`~arcgis.geometry.Geometry` service
     resource. The ``labelPoints`` function calculates an interior :class:`~arcgis.geometry.Point`
@@ -804,11 +889,13 @@ def label_points(spatial_ref, polygons, gis=None, future=False):
     ----------------  -------------------------------------------------------------------------------
     spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
     ----------------  -------------------------------------------------------------------------------
-    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    future            Optional boolean. If True, a future object will be returned and the process
+                      will not wait for the task to complete. The default is False, which means wait for results.
     ================  ===============================================================================
 
     :returns:
-        An array of :class:`~arcgis.geometry.Point` objects, or a `GeometryJob` object
+        An array of :class:`~arcgis.geometry.Point` objects, or a `GeometryJob` object. If ``future = True``,
+        then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -816,7 +903,12 @@ def label_points(spatial_ref, polygons, gis=None, future=False):
 
 
 def lengths(
-    spatial_ref, polylines, length_unit, calculation_type, gis=None, future=False
+    spatial_ref: Optional[Union[int, dict[str, Any]]],
+    polylines: Polyline,
+    length_unit: str,
+    calculation_type: str,
+    gis: Optional[GIS] = None,
+    future: bool = False,
 ):
     """
     The ``lengths`` function is performed on a :class:`~arcgis.geometry.Geometry` service resource.
@@ -855,11 +947,13 @@ def lengths(
                           3. preserveShape - This type calculates the area or length of the geometry on the surface of
                           the Earth ellipsoid. The shape of the geometry in its coordinate system is preserved.
     ----------------  -------------------------------------------------------------------------------
-     future            A required Boolean. This operation determines if the job is run asynchronously or not.
+     future           Optional boolean. If True, a future object will be returned and the process
+                      will not wait for the task to complete. The default is False, which means wait for results.
     ================  ===============================================================================
 
     :returns:
-        A list of floats of 2D-Euclidean or Geodesic lengths, or a `GeometryJob` object
+        A list of floats of 2D-Euclidean or Geodesic lengths, or a `GeometryJob` object. If ``future = True``,
+        then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -872,15 +966,15 @@ def lengths(
 
 
 def offset(
-    geometries,
-    offset_distance,
-    offset_unit,
-    offset_how="esriGeometryOffsetRounded",
-    bevel_ratio=10,
-    simplify_result=False,
-    spatial_ref=None,
-    gis=None,
-    future=False,
+    geometries: Union[list[Polygon], list[Polyline], list[MultiPoint], list[Point]],
+    offset_distance: float,
+    offset_unit: str,
+    offset_how: str = "esriGeometryOffsetRounded",
+    bevel_ratio: int = 10,
+    simplify_result: bool = False,
+    spatial_ref: Optional[Union[int, dict[str, Any]]] = None,
+    gis: Optional[GIS] = None,
+    future: bool = False,
 ):
     """
     The ``offset`` function is performed on a :class:`~arcgis.geometry.Geometry` service resource.
@@ -936,8 +1030,13 @@ def offset(
     ----------------  -------------------------------------------------------------------------------
     spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
     ----------------  -------------------------------------------------------------------------------
-    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    future            Optional boolean. If True, a future object will be returned and the process
+                      will not wait for the task to complete. The default is False, which means wait for results.
     ================  ===============================================================================
+
+    :returns:
+        A list of :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object. If ``future = True``,
+        then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 
@@ -949,9 +1048,6 @@ def offset(
                                   simplify_result = True
                                   spatial_ref = "wkid",
                                   future = True)
-
-    :returns:
-        A list of :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object
 
     """
     if gis is None:
@@ -969,13 +1065,13 @@ def offset(
 
 
 def project(
-    geometries,
-    in_sr,
-    out_sr,
-    transformation="",
-    transform_forward=False,
-    gis=None,
-    future=False,
+    geometries: Union[list[Polygon], list[Polyline], list[MultiPoint], list[Point]],
+    in_sr: Optional[Union[int, dict[str, Any]]],
+    out_sr: Optional[Union[int, dict[str, Any]]],
+    transformation: str = "",
+    transform_forward: bool = False,
+    gis: Optional[GIS] = None,
+    future: bool = False,
 ):
     """
     The ``project`` function is performed on a :class:`~arcgis.geometry.Geometry` service resource.
@@ -1012,8 +1108,14 @@ def project(
                       transformation is specified, a value for the ``transform_Forward``
                       parameter must also be specified. The default value is false.
     ----------------  -------------------------------------------------------------------------------
-    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    future            Optional boolean. If True, a future object will be returned and the process
+                      will not wait for the task to complete. The default is False, which means wait for results.
     ================  ===============================================================================
+
+    :returns:
+        A list of :class:`~arcgis.geometry.Geometry` objects in the ``out_sr`` coordinate system, or
+        a `GeometryJob` object. If ``future = True``,
+        then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 
@@ -1023,10 +1125,6 @@ def project(
                              in_sr = 3857,
                              out_sr = 4326)
             [{"x": -157.82343617279275, "y": 21.305781607280093}, {"x": -157.8201333369876, "y": 21.306233559873714}]
-
-    :returns:
-        A list of :class:`~arcgis.geometry.Geometry` objects in the ``out_sr`` coordinate system, or
-        a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -1036,13 +1134,13 @@ def project(
 
 
 def relation(
-    geometries1,
-    geometries2,
-    spatial_ref,
-    spatial_relation="esriGeometryRelationIntersection",
-    relation_param="",
-    gis=None,
-    future=False,
+    geometries1: list[Geometry],
+    geometries2: list[Geometry],
+    spatial_ref: Optional[Union[int, dict[str, Any]]],
+    spatial_relation: str = "esriGeometryRelationIntersection",
+    relation_param: str = "",
+    gis: Optional[GIS] = None,
+    future: bool = False,
 ):
     """
     The ``relation`` function is performed on a :class:`~arcgis.geometry.Geometry` service resource.
@@ -1074,9 +1172,14 @@ def relation(
     ----------------  -------------------------------------------------------------------------------
     spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
     ----------------  -------------------------------------------------------------------------------
-    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    future            Optional boolean. If True, a future object will be returned and the process
+                      will not wait for the task to complete. The default is False, which means wait for results.
     ================  ===============================================================================
 
+
+    :returns:
+        A JSON dict of geometryNIndex between two lists of geometries, or a `GeometryJob` object. If ``future = True``,
+        then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
             >>> new_res = relation(geometry1 = [geom1,geom2,...],
                                    geometry2 = [geom21,geom22,..],
@@ -1086,9 +1189,6 @@ def relation(
                                    future = False)
             >>> new_res
                 {'relations': [{'geometry1Index': 0, 'geometry2Index': 0}]}
-
-    :returns:
-        A JSON dict of geometryNIndex between two lists of geometries, or a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -1102,7 +1202,13 @@ def relation(
     )
 
 
-def reshape(spatial_ref, target, reshaper, gis=None, future=False):
+def reshape(
+    spatial_ref: Optional[Union[int, dict[str, Any]]],
+    target: Union[Polyline, Polygon],
+    reshaper: Polyline,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+):
     """
     The ``reshape`` function is performed on a :class:`~arcgis.geometry.Geometry` service resource.
     It reshapes a :class:`~arcgis.geometry.Polyline` or :class:`~arcgis.geometry.Polygon` feature by constructing a
@@ -1120,19 +1226,26 @@ def reshape(spatial_ref, target, reshaper, gis=None, future=False):
     spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or a JSON
                       object for the input geometry
     ----------------  -------------------------------------------------------------------------------
-    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    future            Optional boolean. If True, a future object will be returned and the process
+                      will not wait for the task to complete. The default is False, which means wait for results.
     ================  ===============================================================================
 
     :returns:
         A reshaped :class:`~arcgis.geometry.Polyline` or :class:`~arcgis.geometry.Polygon` object, or
-        a `GeometryJob` object
+        a `GeometryJob` object. If ``future = True``,
+        then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
     """
     if gis is None:
         gis = arcgis.env.active_gis
     return gis._tools.geometry.reshape(spatial_ref, target, reshaper, future=future)
 
 
-def simplify(spatial_ref, geometries, gis=None, future=False):
+def simplify(
+    spatial_ref: Optional[Union[int, dict[str, Any]]],
+    geometries: Union[list[Polygon], list[Polyline], list[MultiPoint], list[Point]],
+    gis: Optional[GIS] = None,
+    future: bool = False,
+):
     """
     The ``simplify`` function is performed on a :class:`~arcgis.geometry.Geometry` service resource.
     ``simplify`` permanently alters the input geometry so that the geometry
@@ -1150,11 +1263,13 @@ def simplify(spatial_ref, geometries, gis=None, future=False):
     ----------------  -------------------------------------------------------------------------------
     spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
     ----------------  -------------------------------------------------------------------------------
-    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    future            Optional boolean. If True, a future object will be returned and the process
+                      will not wait for the task to complete. The default is False, which means wait for results.
     ================  ===============================================================================
 
     :returns:
-        An array of :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object
+        An array of :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object. If ``future = True``,
+        then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -1162,15 +1277,15 @@ def simplify(spatial_ref, geometries, gis=None, future=False):
 
 
 def to_geo_coordinate_string(
-    spatial_ref,
-    coordinates,
-    conversion_type,
-    conversion_mode="mgrsDefault",
-    num_of_digits=None,
-    rounding=True,
-    add_spaces=True,
-    gis=None,
-    future=False,
+    spatial_ref: Optional[Union[int, dict[str, Any]]],
+    coordinates: json,
+    conversion_type: str,
+    conversion_mode: str = "mgrsDefault",
+    num_of_digits: Optional[int] = None,
+    rounding: bool = True,
+    add_spaces: bool = True,
+    gis: Optional[GIS] = None,
+    future: bool = False,
 ):
     """
     The ``to_geo_coordinate_string`` function is performed on a :class:`~arcgis.geometry.Geometry`
@@ -1238,8 +1353,13 @@ def to_geo_coordinate_string(
                       applies only to conversion types `MGRS`, `USNG` and `UTM`. The default value for `MGRS` is
                       ``False``, while the default value for both `USNG` and `UTM` is ``True``.
     ----------------  -------------------------------------------------------------------------------
-    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    future            Optional boolean. If True, a future object will be returned and the process
+                      will not wait for the task to complete. The default is False, which means wait for results.
     ================  ===============================================================================
+
+    :returns:
+        An array of Strings, or a `GeometryJob` object. If ``future = True``,
+        then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         .. code-block:: python
 
@@ -1250,9 +1370,6 @@ def to_geo_coordinate_string(
                                                      future = False)
             >>> strings
                 ["01N AA 66021 00000","11S NT 00000 62155", "31U BT 94071 65288"]
-
-    :returns:
-        An array of Strings, or a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -1269,7 +1386,12 @@ def to_geo_coordinate_string(
 
 
 def trim_extend(
-    spatial_ref, polylines, trim_extend_to, extend_how=0, gis=None, future=False
+    spatial_ref: Optional[Union[int, dict[str, Any]]],
+    polylines: list[Polyline],
+    trim_extend_to: Polyline,
+    extend_how: int = 0,
+    gis: Optional[GIS] = None,
+    future: bool = False,
 ):
     """
     The ``trim_extend`` function is performed on a :class:`~arcgis.geometry.Geometry` service
@@ -1314,8 +1436,13 @@ def trim_extend(
     ----------------  -------------------------------------------------------------------------------
     spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
     ----------------  -------------------------------------------------------------------------------
-    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    future            Optional boolean. If True, a future object will be returned and the process
+                      will not wait for the task to complete. The default is False, which means wait for results.
     ================  ===============================================================================
+
+    :returns:
+        An array of :class:`~arcgis.geometry.Polyline` objects, or a `GeometryJob` object. If ``future = True``,
+        then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 
@@ -1326,9 +1453,6 @@ def trim_extend(
                                              future = False)
             >>> polyline_arr
                 [polyline1, polyline2,...]
-
-    :returns:
-        An array of :class:`~arcgis.geometry.Polyline` objects, or a `GeometryJob` object
     """
     if gis is None:
         gis = arcgis.env.active_gis
@@ -1338,10 +1462,10 @@ def trim_extend(
 
 
 def union(
-    geometries,
+    geometries: Union[list[Polygon], list[Polyline], list[MultiPoint], list[Point]],
     spatial_ref: Optional[Union[str, dict[str:str]]] = None,
-    gis=None,
-    future=False,
+    gis: Optional[GIS] = None,
+    future: bool = False,
 ):
     """
     The ``union`` function is performed on a :class:`~arcgis.geometry.Geometry` service resource.
@@ -1366,11 +1490,13 @@ def union(
 
                       Example: "4326" or {"wkid":"4326"}
     ----------------  -------------------------------------------------------------------------------
-    future            An optional Boolean. This operation determines if the job is run asynchronously or not.
+    future            Optional boolean. If True, a future object will be returned and the process
+                      will not wait for the task to complete. The default is False, which means wait for results.
     ================  ===============================================================================
 
     :returns:
-        The set-theoretic union of the :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object
+        The set-theoretic union of the :class:`~arcgis.geometry.Geometry` objects, or a `GeometryJob` object. If ``future = True``,
+        then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
     """
     if gis is None:
         gis = arcgis.env.active_gis

@@ -6,6 +6,7 @@ Possible optional might be required: requests_ntlm, requests_kerberos, requests-
 
 """
 from arcgis.auth.tools import LazyLoader
+from typing import Union
 
 try:
     arcpy = LazyLoader("arcpy", strict=True)
@@ -55,6 +56,7 @@ from arcgis._impl.common._isd import InsensitiveDict
 from arcgis.auth import EsriSession
 from arcgis.auth import (
     EsriBuiltInAuth,
+    EsriAPIKeyAuth,
     EsriGenTokenAuth,
     ArcGISProAuth,
     EsriOAuth2Auth,
@@ -78,7 +80,7 @@ except ImportError:
 
 from arcgis.auth import EsriBasicAuth
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 
 _DEFAULT_TOKEN = uuid.uuid4()
 _log = logging.getLogger(__name__)
@@ -114,7 +116,9 @@ class Connection(object):
     legacy = None
     _server_log = None
     # ----------------------------------------------------------------------
-    def __init__(self, baseurl=None, username=None, password=None, **kwargs):
+    def __init__(
+        self, baseurl: str = None, username: str = None, password: str = None, **kwargs
+    ):
         """initializer
 
         Optional Kwargs
@@ -212,7 +216,7 @@ class Connection(object):
         if self._is_hosted_nb_home:
             auth_check = [""]
         elif self._key_file is None and self._cert_file is None:
-            auth_check = self._auth_check(baseurl)
+            auth_check = self._auth_check(baseurl, proxies=self._assemble_proxy())
         else:
             auth_check = [""]
         if self._is_hosted_nb_home:
@@ -223,6 +227,9 @@ class Connection(object):
         elif "token" in kwargs and kwargs["token"]:
             self._auth = "USER_TOKEN"
             self._token = kwargs.pop("token", None)
+        elif "api_key" in kwargs and kwargs["api_key"]:
+            self._auth = "API_KEY"
+            self._api_key = kwargs.pop("api_key", None)
         elif (
             self._key_file is None
             and self._key_file is None
@@ -311,7 +318,7 @@ class Connection(object):
         return urlparse(url)
 
     # ----------------------------------------------------------------------
-    def _auth_check(self, url):
+    def _auth_check(self, url: str, proxies: dict = None) -> list:
         import requests
 
         if str(url).lower() == "pro":
@@ -341,7 +348,7 @@ class Connection(object):
                 s.auth = self._custom_auth
             parsed = self._parsed(url)
             root = (
-                fr"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
+                rf"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
             )
             params = {"f": "json"}
             results = []
@@ -352,6 +359,7 @@ class Connection(object):
                         root + pt,
                         params=params,
                         verify=self._verify_cert,
+                        proxies=proxies,
                     ).headers.get("www-authenticate", "")
                     results.append(www_auth)
                 except:
@@ -359,7 +367,7 @@ class Connection(object):
         return list(set(results))
 
     # ----------------------------------------------------------------------
-    def _validate_url(self, url):
+    def _validate_url(self, url: str) -> str:
         """ensures the base url has the /sharing/rest"""
         if url.lower().find("arcgis.com") > -1:
             self._product = "AGOL"
@@ -390,10 +398,10 @@ class Connection(object):
         return url
 
     # ----------------------------------------------------------------------
-    def _create_session(self):
+    def _assemble_proxy(self) -> dict:
         if self._proxy and isinstance(self._proxy, dict):
-            proxies = self._proxy
-        if self._proxy_port and self._proxy_url:
+            return self._proxy
+        elif self._proxy_port and self._proxy_url:
             url = "%s:%s" % (self._proxy_url, self._proxy_port)
             if self._proxy_password and self._proxy_username:
                 proxies = {
@@ -404,6 +412,26 @@ class Connection(object):
                 }
             else:
                 proxies = {"http": "http://%s" % url, "https": "https://%s" % url}
+            return proxies
+        return
+
+    # ----------------------------------------------------------------------
+    def _create_session(self) -> requests.Session:
+        if self._proxy and isinstance(self._proxy, dict):
+            proxies = self._proxy
+            self._proxy = proxies
+        elif self._proxy_port and self._proxy_url:
+            url = "%s:%s" % (self._proxy_url, self._proxy_port)
+            if self._proxy_password and self._proxy_username:
+                proxies = {
+                    "http": "http://%s:%s@%s"
+                    % (self._proxy_username, self._proxy_password, url),
+                    "https": "https://%s:%s@%s"
+                    % (self._proxy_username, self._proxy_password, url),
+                }
+            else:
+                proxies = {"http": "http://%s" % url, "https": "https://%s" % url}
+            self._proxy = proxies
         else:
             proxies = None
 
@@ -422,7 +450,9 @@ class Connection(object):
         else:
             cert = None
 
-        self._session = EsriSession(cert=cert, verify_cert=self._verify_cert)
+        self._session = EsriSession(
+            cert=cert, verify_cert=self._verify_cert, proxies=proxies
+        )
         self._session.verify = self._verify_cert
         self._session.stream = True
         self._session.trust_env = self.trust_env
@@ -495,6 +525,8 @@ class Connection(object):
                 pauth = None
                 if self._portal_connection:
                     pauth = self._portal_connection._con._auth
+                if self._token_url is None:
+                    self._check_product()
                 self._session.auth = EsriGenTokenAuth(
                     token_url=self._token_url,
                     referer=self._referer,
@@ -504,9 +536,12 @@ class Connection(object):
                     time_out=self._timeout,
                     verify_cert=self._verify_cert,
                     legacy=self.legacy,
+                    proxies=proxies,
                 )
             else:
                 if self._use_gen_token:
+                    if self._token_url is None:
+                        self._check_product()
                     self._session.auth = EsriGenTokenAuth(
                         token_url=self._token_url,
                         referer=self._referer,
@@ -516,6 +551,7 @@ class Connection(object):
                         time_out=1440,
                         verify_cert=self._verify_cert,
                         legacy=self.legacy,
+                        proxies=proxies,
                     )
                 else:
                     self._session.auth = EsriBuiltInAuth(
@@ -526,11 +562,21 @@ class Connection(object):
                         legacy=False,
                         verify_cert=self._verify_cert,
                         referer=self._referer,
+                        proxies=proxies,
                     )
         elif self._auth.lower() == "user_token":
             self._session.auth = EsriUserTokenAuth(
                 token=self._token, referer=self._referer, verify_cert=self._verify_cert
             )
+        elif self._auth.lower() == "api_key":
+            from arcgis.auth._auth._apikey import EsriAPIKeyAuth
+
+            self._session.auth = EsriAPIKeyAuth(
+                api_key=self._api_key,
+                referer=self._referer,
+                verify_cert=self._verify_cert,
+            )
+            self._token = self._api_key
         elif self._auth.lower() == "basic_realm":
             self._session.auth = EsriBasicAuth(
                 username=self._username,
@@ -548,6 +594,7 @@ class Connection(object):
                 password=self._password,
                 verify_cert=self._verify_cert,
                 legacy=False,
+                proxies=self._proxy,
             )
         elif self._auth.lower() == "pro":
 
@@ -561,20 +608,24 @@ class Connection(object):
             if HAS_SSPI:
                 try:
                     self._session.auth = EsriWindowsAuth(
-                        verify_cert=self._verify_cert, legacy=False
+                        verify_cert=self._verify_cert,
+                        legacy=False,
+                        proxies=self._proxy,
                     )
                 except:
                     ...
             elif HAS_KERBEROS:
                 try:
                     self._session.auth = EsriKerberosAuth(
-                        verify_cert=self._verify_cert, legacy=False
+                        verify_cert=self._verify_cert, legacy=False, proxies=self._proxy
                     )
                 except:
                     ...
 
     # ----------------------------------------------------------------------
-    def get(self, path, params=None, **kwargs):
+    def get(
+        self, path: str, params: dict = None, **kwargs
+    ) -> Union[dict, requests.Response]:
         """
 
         sends a GET request.
@@ -608,9 +659,15 @@ class Connection(object):
         ignore_error_key              optional Boolean. The default is False. If true, JSON will be returned and no exception is raised when 'error' is present in the response
         ---------------------------   -----------------------------------------------------
         return_raw_response           optional Boolean. Returns the requests' Response object.
+        ---------------------------   -----------------------------------------------------
+        allow_redirects               Optional Boolean. Does not allow the call to follow the 3xx status codes. The default is True
+        ---------------------------   -----------------------------------------------------
+        drop_auth                     Optional Boolean. Drop this when auth handlers cause issues. The default is False
         ===========================   =====================================================
         """
+        drop_auth = kwargs.pop("drop_auth", False)
         ignore_error_key = kwargs.pop("ignore_error_key", False)
+        allow_redirects = kwargs.pop("allow_redirects", True)
         return_raw_response = kwargs.pop("return_raw_response", False)
         json_encode = kwargs.pop("json_encode", True)
         if self._baseurl.endswith("/") == False:
@@ -651,10 +708,25 @@ class Connection(object):
                 cert = (self._cert_file, self._key_file)
             else:
                 cert = None
-
-            resp = self._session.get(
-                url=url, params=params, cert=cert, verify=self._verify_cert
-            )
+            if self._session.auth and drop_auth:
+                auth = self._session.auth
+                self._session.auth = None
+                resp = self._session.get(
+                    url=url,
+                    params=params,
+                    cert=cert,
+                    verify=self._verify_cert,
+                    allow_redirects=allow_redirects,
+                )
+                self._session.auth = auth
+            else:
+                resp = self._session.get(
+                    url=url,
+                    params=params,
+                    cert=cert,
+                    verify=self._verify_cert,
+                    allow_redirects=allow_redirects,
+                )
 
         except requests.exceptions.SSLError as err:
             raise requests.exceptions.SSLError(
@@ -700,13 +772,13 @@ class Connection(object):
     # ----------------------------------------------------------------------
     def _handle_response(
         self,
-        resp,
-        file_name,
-        out_path,
-        try_json,
-        force_bytes=False,
-        ignore_error_key=False,
-    ):
+        resp: requests.Response,
+        file_name: str,
+        out_path: str,
+        try_json: bool,
+        force_bytes: bool = False,
+        ignore_error_key: bool = False,
+    ) -> dict:
         """
         handles the request responses
 
@@ -770,8 +842,20 @@ class Connection(object):
             file_name = os.path.join(out_path, file_name)
             if os.path.isfile(file_name):
                 os.remove(file_name)
+            stream_size = 512 * 2
+            if "Content-Length" in resp.headers:
+                max_length = int(resp.headers["Content-Length"])
+                if max_length > stream_size * 2 and max_length < 1024 * 1024:
+                    stream_size = 1024 * 2
+                elif max_length > 5 * (1024 * 1024):
+                    stream_size = 5 * (1024 * 1024)  # 5 mb
+                elif max_length > (1024 * 1024):
+                    stream_size = 1024 * 1024  # 1 mb
+                else:
+                    stream_size = 512 * 2
+
             fp = stream.stream_response_to_file(
-                response=resp, path=file_name, chunksize=512 * 2
+                response=resp, path=file_name, chunksize=stream_size
             )
             return fp
 
@@ -838,7 +922,9 @@ class Connection(object):
         errormessage = errormessage + "\n(Error Code: " + str(errorcode) + ")"
         raise Exception(errormessage)
 
-    def post_multipart(self, path, params=None, files=None, **kwargs):
+    def post_multipart(
+        self, path: str, params: dict = None, files: list = None, **kwargs
+    ) -> Union[dict, requests.Response]:
         """
         sends a MultiPart Form POST request.
 
@@ -898,10 +984,18 @@ class Connection(object):
         timeout                       optional Integer. Timeout in seconds
         ---------------------------   -----------------------------------------------------
         return_raw_response           Optional Boolean. If True, returns the requests.Response object.
+        ---------------------------   -----------------------------------------------------
+        allow_redirects               Optional Boolean. Does not allow the call to follow the 3xx status codes. The default is True
+        ---------------------------   -----------------------------------------------------
+        drop_auth                     Optional Boolean. Drop this when auth handlers cause issues. The default is False
         ===========================   =====================================================
 
         :returns: data returned from the URL call.
         """
+        import io
+
+        drop_auth = kwargs.pop("drop_auth", False)
+        allow_redirects = kwargs.pop("allow_redirects", True)
         timeout = kwargs.pop("timeout", self._timeout)
         return_raw_response = kwargs.pop("return_raw_response", False)
         json_encode = kwargs.pop("json_encode", True)
@@ -943,11 +1037,22 @@ class Connection(object):
                         )
             elif isinstance(files, (list, tuple)):
                 for key, filePath, fileName in files:
-                    if isinstance(fileName, str):
+                    if (
+                        isinstance(fileName, str)
+                        and isinstance(filePath, (io.StringIO, io.BytesIO)) == False
+                    ):
                         fields[key] = (
                             fileName,
                             open(filePath, "rb"),
                             mimetypes.guess_type(filePath)[0],
+                        )
+                    elif isinstance(fileName, str) and isinstance(
+                        filePath, (io.StringIO, io.BytesIO)
+                    ):
+                        fields[key] = (
+                            fileName,
+                            filePath,
+                            None,
                         )
                     else:
                         fields[key] = v
@@ -976,15 +1081,29 @@ class Connection(object):
             # https://stackoverflow.com/a/12385661
             params.update(fields)
             mp_encoder = MultipartEncoder(fields=params)
+            if self._session.auth and drop_auth:
+                auth = self._session.auth
+                self._session.auth
+            else:
+                auth = None
             if post_json:  # edge case workflow
                 if timeout:
 
                     resp = self._session.post(
-                        url=url, json=params, cert=cert, files=files, timeout=timeout
+                        url=url,
+                        json=params,
+                        cert=cert,
+                        files=files,
+                        allow_redirects=allow_redirects,
+                        timeout=timeout,
                     )
                 else:
                     resp = self._session.post(
-                        url=url, json=params, cert=cert, files=files
+                        url=url,
+                        json=params,
+                        cert=cert,
+                        allow_redirects=allow_redirects,
+                        files=files,
                     )
             else:
                 # data=mp_encoder
@@ -993,6 +1112,7 @@ class Connection(object):
                         url=url,
                         data=mp_encoder,
                         cert=cert,
+                        allow_redirects=allow_redirects,
                         timeout=timeout,
                         headers={"Content-Type": mp_encoder.content_type},
                     )
@@ -1001,8 +1121,11 @@ class Connection(object):
                         url=url,
                         data=mp_encoder,
                         cert=cert,
+                        allow_redirects=allow_redirects,
                         headers={"Content-Type": mp_encoder.content_type},
                     )
+            if auth and drop_auth:
+                self._session.auth = auth
         except requests.exceptions.SSLError as err:
             raise requests.exceptions.SSLError(
                 "Please set verify_cert=False due to encountered SSL error: %s" % err
@@ -1045,7 +1168,9 @@ class Connection(object):
         )
 
     # ----------------------------------------------------------------------
-    def post(self, path, params=None, files=None, **kwargs):
+    def post(
+        self, path: str, params: dict = None, files: list = None, **kwargs
+    ) -> Union[dict, requests.Response]:
         """
         sends a POST request.
 
@@ -1105,11 +1230,17 @@ class Connection(object):
         timeout                       optional Integer. The number of seconds to timeout a service without a response.  The default is 600 seconds.
         ---------------------------   -----------------------------------------------------
         return_raw_response           Optional boolean. Returns the requests.Response object.
+        ---------------------------   -----------------------------------------------------
+        allow_redirects               Optional Boolean. Does not allow the call to follow the 3xx status codes. The default is True
+        ---------------------------   -----------------------------------------------------
+        drop_auth                     Optional Boolean. Drop this when auth handlers cause issues. The default is False
         ===========================   =====================================================
 
         :returns: data returned from the URL call.
 
         """
+        drop_auth = kwargs.pop("drop_auth", False)
+        allow_redirects = kwargs.pop("allow_redirects", True)
         timeout = kwargs.pop("timeout", self._timeout)
         return_raw_response = kwargs.pop("return_raw_response", False)
         json_encode = kwargs.pop("json_encode", True)
@@ -1190,16 +1321,33 @@ class Connection(object):
                         params[k] = json.dumps(dict(v))
                     elif isinstance(v, InsensitiveDict):
                         params[k] = v.json
+            if self._session.auth and drop_auth:
+                auth = self._session.auth
+                self._session.auth
+            else:
+                auth = None
             if post_json:  # edge case workflow
-                if timeout:
 
+                if timeout:
                     resp = self._session.post(
-                        url=url, json=params, cert=cert, files=files, timeout=timeout
+                        url=url,
+                        json=params,
+                        cert=cert,
+                        files=files,
+                        timeout=timeout,
+                        verify=self._verify_cert,
+                        allow_redirects=allow_redirects,
                     )
                 else:
                     resp = self._session.post(
-                        url=url, json=params, cert=cert, files=files
+                        url=url,
+                        json=params,
+                        cert=cert,
+                        files=files,
+                        verify=self._verify_cert,
+                        allow_redirects=allow_redirects,
                     )
+
             else:
                 if timeout:
 
@@ -1210,6 +1358,7 @@ class Connection(object):
                         files=files,
                         timeout=timeout,
                         verify=self._verify_cert,
+                        allow_redirects=allow_redirects,
                     )
                 else:
                     resp = self._session.post(
@@ -1218,7 +1367,10 @@ class Connection(object):
                         cert=cert,
                         files=files,
                         verify=self._verify_cert,
+                        allow_redirects=allow_redirects,
                     )
+            if auth:
+                self._session.auth = auth
         except requests.exceptions.SSLError as err:
             raise requests.exceptions.SSLError(
                 "Please set verify_cert=False due to encountered SSL error: %s" % err
@@ -1261,7 +1413,7 @@ class Connection(object):
         )
 
     # ----------------------------------------------------------------------
-    def put_raw(self, url, data, **kwargs):
+    def put_raw(self, url: str, data: dict, **kwargs) -> requests.Response:
         """
         performs a raw PUT operation
 
@@ -1284,7 +1436,9 @@ class Connection(object):
         return resp
 
     # ----------------------------------------------------------------------
-    def put(self, url, params=None, files=None, **kwargs):
+    def put(
+        self, url: str, params: dict = None, files: list = None, **kwargs
+    ) -> Union[dict, requests.Response]:
         """
         sends a PUT request
 
@@ -1324,12 +1478,17 @@ class Connection(object):
         json_encode                   optional Bool. If False, the key/value parameters will not be JSON encoded.
         ---------------------------   -----------------------------------------------------
         return_raw_response           Optional boolean. When true, it returns the requests.Response object
+        ---------------------------   -----------------------------------------------------
+        allow_redirects               Optional Boolean. Does not allow the call to follow the 3xx status codes. The default is True
+        ---------------------------   -----------------------------------------------------
+        drop_auth                     Optional Boolean. Drop this when auth handlers cause issues. The default is False
         ===========================   =====================================================
 
         :returns: dict or string depending on the response
 
         """
-
+        drop_auth = kwargs.pop("drop_auth", False)
+        allow_redirects = kwargs.pop("allow_redirects", True)
         return_raw_response = kwargs.pop("return_raw_response", False)
         post_json = kwargs.pop("post_json", False)
         json_encode = kwargs.pop("json_encode", True)
@@ -1385,11 +1544,29 @@ class Connection(object):
                     params[k] = json.dumps(dict(v))
                 elif isinstance(v, InsensitiveDict):
                     params[k] = v.json
-        if post_json:  # edge case workflow
-            resp = self._session.put(url=url, json=params, cert=cert, files=files)
+        if self._session.auth and drop_auth:
+            auth = self._session.auth
+            self._session.auth
         else:
-            resp = self._session.put(url=url, data=params, cert=cert, files=files)
-        #
+            auth = None
+        if post_json:  # edge case workflow
+            resp = self._session.put(
+                url=url,
+                json=params,
+                cert=cert,
+                files=files,
+                allow_redirects=allow_redirects,
+            )
+        else:
+            resp = self._session.put(
+                url=url,
+                data=params,
+                cert=cert,
+                files=files,
+                allow_redirects=allow_redirects,
+            )
+        if auth and drop_auth:
+            self._session.auth = auth
         if return_raw_response:
             return resp
         return self._handle_response(
@@ -1431,11 +1608,18 @@ class Connection(object):
         ---------------------------   -----------------------------------------------------
         ssl                           optional boolean. If true all calls are forced to be
                                       https.
+        ---------------------------   -----------------------------------------------------
         return_raw_response           Optional Boolean.  Returns the raw requests.Response object
+        ---------------------------   -----------------------------------------------------
+        allow_redirects               Optional Boolean. Does not allow the call to follow the 3xx status codes. The default is True
+        ---------------------------   -----------------------------------------------------
+        drop_auth                     Optional Boolean. Drop this when auth handlers cause issues. The default is False
         ===========================   =====================================================
 
         :returns: dict or string depending on the response
         """
+        allow_redirects = kwargs.pop("allow_redirects", True)
+        drop_auth = kwargs.pop("drop_auth", False)
         out_path = kwargs.pop("out_path", None)
         return_raw_response = kwargs.pop("return_raw_response", False)
         file_name = kwargs.pop("file_name", None)
@@ -1451,8 +1635,17 @@ class Connection(object):
 
         if try_json:
             params["f"] = "json"
-
-        resp = self._session.delete(url=url, data=params)
+        if drop_auth and self._session.auth:
+            auth = self._session.auth
+            self._session.auth = None
+            resp = self._session.delete(
+                url=url, data=params, allow_redirects=allow_redirects
+            )
+            self._session.auth = auth
+        else:
+            resp = self._session.delete(
+                url=url, data=params, allow_redirects=allow_redirects
+            )
         if return_raw_response:
             return resp
         return self._handle_response(
@@ -1465,8 +1658,14 @@ class Connection(object):
 
     # ----------------------------------------------------------------------
     def streaming_method(
-        self, url, callback, data=None, json_data=None, verb="GET", **kwargs
-    ):
+        self,
+        url: str,
+        callback: object,
+        data: dict = None,
+        json_data: dict = None,
+        verb: str = "GET",
+        **kwargs,
+    ) -> Union[dict, requests.Response]:
         """
         Performs streaming web requests.
 
@@ -1518,7 +1717,7 @@ class Connection(object):
         self._session.post(url=url, data=data, json_data=json, stream=True)
 
     # ----------------------------------------------------------------------
-    def login(self, username, password, expiration=None):
+    def login(self, username: str, password: str, expiration: Union[int, float] = None):
         """allows a user to login to a site with different credentials"""
         if expiration is None:
             expiration = 1440
@@ -1532,7 +1731,7 @@ class Connection(object):
             raise Exception("Could not create a new login.")
 
     # ----------------------------------------------------------------------
-    def relogin(self, expiration=None):
+    def relogin(self, expiration: Union[float, int] = None) -> str:
         """Re-authenticates with the portal using the same username/password."""
         if expiration is None:
             expiration = self._expiration
@@ -1547,19 +1746,19 @@ class Connection(object):
 
     # ----------------------------------------------------------------------
     @property
-    def is_logged_in(self):
+    def is_logged_in(self) -> bool:
         """Returns true if logged into the portal."""
         return (self._auth in ["ANON", "UNKNOWN"]) == False
 
     # ----------------------------------------------------------------------
     @property
-    def product(self):
+    def product(self) -> str:
         """Returns true if logged into the portal."""
         return self._product
 
     # ----------------------------------------------------------------------
     @property
-    def token(self):
+    def token(self) -> str:
         """Gets a Token"""
         if isinstance(self._session.auth, EsriBuiltInAuth):
             return self._session.auth.token
@@ -1573,6 +1772,8 @@ class Connection(object):
             return self._session.auth.token
         elif isinstance(self._session.auth, EsriNotebookAuth):
             return self._session.auth.token
+        elif isinstance(self._session.auth, EsriAPIKeyAuth):
+            return self._session.auth.token
         return None
 
     # ----------------------------------------------------------------------
@@ -1583,7 +1784,7 @@ class Connection(object):
             self._token = value
 
     # ----------------------------------------------------------------------
-    def _check_product(self):
+    def _check_product(self) -> str:
         """
         determines if the product is portal, arcgis online or arcgis server
         """
@@ -1671,7 +1872,7 @@ class Connection(object):
             # Brute Force Method
             parsed = urlparse(baseurl)
             root = (
-                fr"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
+                rf"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
             )
             parts = ["/info", "/rest/services", "/rest/info", "/sharing/rest/info"]
             params = {"f": "json"}

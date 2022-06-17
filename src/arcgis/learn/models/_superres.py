@@ -25,7 +25,7 @@ try:
     from fastai.callbacks import LossMetrics
     from fastai.utils.mem import Path
     from .._utils.common import _get_emd_path
-    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from .._utils.env import is_arcgispronotebook
 
     HAS_FASTAI = True
 except Exception as e:
@@ -48,7 +48,7 @@ class SuperResolution(ArcGISModel):
                             `prepare_data` function.
     ---------------------   -------------------------------------------
     backbone                Optional function. Backbone CNN model to be used for
-                            creating the base of the `UnetClassifier`, which
+                            creating the base of the `SuperResolution`, which
                             is `resnet34` by default.
                             Compatible backbones: 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152'
     ---------------------   -------------------------------------------
@@ -222,7 +222,7 @@ class SuperResolution(ArcGISModel):
 
         self._check_requisites()
         self.learn.show_results(rows=rows)
-        if _IS_ARCGISPRONOTEBOOK:
+        if is_arcgispronotebook():
             from matplotlib import pyplot as plt
 
             plt.show()

@@ -43,9 +43,13 @@ class MaXDeepLabConfig:
         return xb
 
     def get_model(self, data, backbone, **kwargs):
-        N = data.K  # Max num of masks in predictions
+        N = data.K  # Max num of masks in predictions #TODO: make K private variable
+        n_bands = len(data._bands) if data._is_multispectral else 3
         model = self.maxdeeplab.MaXDeepLabS(
-            im_size=data.chip_size, n_classes=data.c, n_masks=N
+            im_size=data.chip_size,
+            n_classes=data.c,
+            n_masks=N,
+            in_channels=n_bands,
         )
         return model
 
@@ -85,11 +89,13 @@ class MaXDeepLab(ModelExtension):
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    data                    Required fastai Databunch. Returned data object from
-                            ``prepare_data`` function.
+    data                    Required fastai Databunch. Returned data
+                            object from ``prepare_data`` function.
+                            MaXDeepLab only supports image sizes in
+                            multiples of 16 (e.g. 256, 416, etc.).
     ---------------------   -------------------------------------------
-    pretrained_path         Optional string. Path where pre-trained model is
-                            saved.
+    pretrained_path         Optional string. Path where pre-trained
+                            model is saved.
     =====================   ===========================================
 
     :returns: ``MaXDeepLab`` Object
@@ -97,9 +103,10 @@ class MaXDeepLab(ModelExtension):
 
     def __init__(self, data, backbone=None, pretrained_path=None, **kwargs):
         self._check_dataset_support(data)
-        data.c = len(data.class_mapping) + 1
-        super().__init__(data, MaXDeepLabConfig, pretrained_path, **kwargs)
-        self._backbone = backbone
+        super().__init__(
+            data, MaXDeepLabConfig, pretrained_path=pretrained_path, **kwargs
+        )
+        self._backbone = None
 
     @property
     def supported_datasets(self):
@@ -108,7 +115,7 @@ class MaXDeepLab(ModelExtension):
 
     @staticmethod
     def _supported_datasets():
-        return ["Panoptic"]
+        return ["Panoptic_Segmentation"]
 
     @property
     def supported_backbones(self):
@@ -183,4 +190,4 @@ class MaXDeepLab(ModelExtension):
         Computes the maximum number of class labels and masks in any chip in the entire dataset.
         Note: It might take long time for larger datasets.
         """
-        return compute_n_masks(self._data.path)
+        return compute_n_masks(self._data.orig_path)

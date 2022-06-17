@@ -4,9 +4,15 @@
 # -------------------------------------------------------------------------------
 import unittest
 import os
+import sys
+import uuid
+
+sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
+from integration.dino_utils.dino_configs import DinoConfigs
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils
-from integration.dino_utils.dino_configs import DinoConfigs
+
+sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 from configparser import ConfigParser
 import datetime
 import tempfile
@@ -64,13 +70,19 @@ class Test_Item_portal_builtin(unittest.TestCase):
         :return:
         """
 
-        # region Read config data
-        _conf_reader = ConfigParser()
-        _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
+        # region precondition checks and sign in
+        r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
+        if not r1:
+            cls.class_skip = True
 
-        cls.portal_url = _conf_reader["datascienceqa"]["url"]
-        cls.portal_username = _conf_reader["datascienceqa"]["admin_user"]
-        cls.portal_password = _conf_reader["datascienceqa"]["admin_password"]
+        cls.gis = GIS(
+            url="https://datasciencedev.esri.com/portal/",
+            username="portaladmin",
+            password="esri.agp",
+            verify_cert=False,
+        )
+        if cls.gis is None:
+            cls.class_skip = True
 
         _conf_reader2 = ConfigParser()
         _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
@@ -82,18 +94,6 @@ class Test_Item_portal_builtin(unittest.TestCase):
         cls.qalab_cls_path = (
             cls.qalab_base_path + _conf_reader2["test_data"]["qalab_Item_cls"]
         )
-        # endregion
-
-        # region precondition checks and sign in
-        r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
-        if not r1:
-            cls.class_skip = True
-
-        cls.gis = GIS(
-            cls.portal_url, cls.portal_username, cls.portal_password, verify_cert=False
-        )
-        if cls.gis is None:
-            cls.class_skip = True
         # endregion
 
         # region publish necessary web layers
@@ -1350,15 +1350,10 @@ class Test_Item_arcgis_online(unittest.TestCase):
         Get class test asset location
         :return:
         """
-
-        # region Read config data
-        _conf_reader = ConfigParser()
-        _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
-
-        cls.portal_url = _conf_reader["arcgiscom"]["url"]
-        cls.portal_username = _conf_reader["arcgiscom"]["admin_user"]
-        cls.portal_password = _conf_reader["arcgiscom"]["admin_password"]
-
+        cls.gis = GIS(profile="your_online_profile", verify_cert=False)
+        if cls.gis is None:
+            cls.class_skip = True
+        # endregion
         _conf_reader2 = ConfigParser()
         _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
 
@@ -1369,17 +1364,6 @@ class Test_Item_arcgis_online(unittest.TestCase):
         cls.qalab_cls_path = (
             cls.qalab_base_path + _conf_reader2["test_data"]["qalab_Item_cls"]
         )
-        # endregion
-
-        # region precondition checks and sign in
-        r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
-        if not r1:
-            cls.class_skip = True
-
-        cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
-        if cls.gis is None:
-            cls.class_skip = True
-        # endregion
 
         # region publish necessary web layers
         cls.one_to_many_csv_item = PortalUtils.search_portal_item(
@@ -2976,33 +2960,7 @@ class Test_Item_arcgis_kubernetes(unittest.TestCase):
         Get class test asset location
         :return:
         """
-
-        # region Read config data
-        _conf_reader = ConfigParser()
-        _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
-
-        cls.portal_url = _conf_reader["kubeportal"]["url"]
-        cls.portal_username = _conf_reader["kubeportal"]["admin_user"]
-        cls.portal_password = _conf_reader["kubeportal"]["admin_password"]
-
-        _conf_reader2 = ConfigParser()
-        _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
-
-        cls.qalab_base_path = _conf_reader2["test_data"]["qalab_base_path"]
-        cls.qalab_data_path = (
-            cls.qalab_base_path + _conf_reader2["test_data"]["qalab_dataprep"]
-        )
-        cls.qalab_cls_path = (
-            cls.qalab_base_path + _conf_reader2["test_data"]["qalab_Item_cls"]
-        )
-        # endregion
-
-        # region precondition checks and sign in
-        r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
-        if not r1:
-            cls.class_skip = True
-
-        cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
+        cls.gis = GIS(profile="your_kubernetes_profile")
         if cls.gis is None:
             cls.class_skip = True
         # endregion
@@ -3441,3 +3399,7 @@ class Test_Item_arcgis_kubernetes(unittest.TestCase):
 # TestModule
 def tearDownModule():
     print("**End GIS module Tests**")
+
+
+if __name__ == "__main__":
+    unittest.main()

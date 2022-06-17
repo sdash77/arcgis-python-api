@@ -1,6 +1,6 @@
 import sys
 
-sys.path.insert(0, r"c:\SVN\geosaurus_master_issue_4790a\src")
+sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
 import unittest
 
 
@@ -8,17 +8,22 @@ try:
     from _utils import get_config_parser
 except:
     from ._utils import get_config_parser
+import arcgis
 
+print(arcgis.__file__)
 from arcgis.gis import GIS
+from arcgis.auth.tools._util import detect_proxy
 
-if 'oauth' in get_config_parser():
-    base_url = get_config_parser()['oauth']['base_url']
-    client_id = get_config_parser()['oauth']['client_id']
-    client_secret = get_config_parser()['oauth']['client_secret']
-    username = get_config_parser()['oauth']['username']
-    password = get_config_parser()['oauth']['password']
+PROXIES = detect_proxy(True)
+VERIFY_CERT = False
+if "oauth" in get_config_parser():
+    base_url = "https://datasciencedev.esri.com/portal"  # get_config_parser()["oauth"]["base_url"]
+    client_id = "HkaOom5nPxZxegLu"  # get_config_parser()["oauth"]["client_id"]
+    client_secret = "1d773c803794496bbb0bf16a5696cd2e"  # get_config_parser()["oauth"]["client_secret"]
+    username = "portaladmin"  # get_config_parser()["oauth"]["username"]
+    password = "esri.agp"  # get_config_parser()["oauth"]["password"]
     SKIPME = False
-    msg = 'all good'
+    msg = "all good"
 else:
     SKIPME = True
     msg = "Configuration file not found."
@@ -35,7 +40,9 @@ class TestOAuth2Workflow(unittest.TestCase):
         """
         Tests the manual workflow for the client_id only workflow
         """
-        gis = GIS(url=base_url, client_id=client_id)
+        gis = GIS(
+            url=base_url, client_id=client_id, verify_cert=VERIFY_CERT, proxy=PROXIES
+        )
         print(gis.properties)
 
     def test_client_id_client_secret(self):
@@ -43,7 +50,13 @@ class TestOAuth2Workflow(unittest.TestCase):
         Tests the client/secret workflow
         """
 
-        gis = GIS(url=base_url, client_id=client_id, client_secret=client_secret,)
+        gis = GIS(
+            url=base_url,
+            client_id=client_id,
+            client_secret=client_secret,
+            verify_cert=VERIFY_CERT,
+            proxy=PROXIES,
+        )
         assert gis.properties["appInfo"]["appOwner"]
 
     def test_client_id_username_pw(self):
@@ -52,7 +65,12 @@ class TestOAuth2Workflow(unittest.TestCase):
         """
 
         gis = GIS(
-            url=base_url, client_id=client_id, username=username, password=password,
+            url=base_url,
+            client_id=client_id,
+            username=username,
+            password=password,
+            verify_cert=VERIFY_CERT,
+            proxy=PROXIES,
         )
 
         assert gis.properties["appInfo"]["appOwner"]
@@ -67,6 +85,8 @@ class TestOAuth2Workflow(unittest.TestCase):
             client_secret=client_secret,
             username=username,
             password=password,
+            verify_cert=VERIFY_CERT,
+            proxy=PROXIES,
         )
 
         assert gis.properties["appInfo"]["appOwner"]

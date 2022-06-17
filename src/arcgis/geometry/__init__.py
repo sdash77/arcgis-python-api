@@ -6,7 +6,7 @@ geometries between different representations.
 Several functions accept geometries represented as dictionaries and the geometry objects in this module behave like them
 as well as support the '.' (dot) notation providing attribute access.
 
-..note::
+.. note::
     It is recommended to have ArcPy or Shapely downloaded for most Geometry methods and property usage.
 
 **Examples**:

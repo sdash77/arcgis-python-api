@@ -71,7 +71,11 @@ class MMDetectionConfig:
             if hasattr(cfg.model.neck, "rfp_backbone"):
                 cfg.model.neck.rfp_backbone.in_channels = len(data._extract_bands)
 
-        model = mmdet.models.build_detector(cfg.model)
+        import warnings
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            model = mmdet.models.build_detector(cfg.model)
 
         if checkpoint:
             mmcv.runner.load_checkpoint(
@@ -188,9 +192,11 @@ class MMDetectionConfig:
 
         if hasattr(self.model, "roi_head"):
             self.model.roi_head.test_cfg.nms.iou_threshold = self.nms_thres
+            thres = self.model.roi_head.test_cfg.score_thr
             self.model.roi_head.test_cfg.score_thr = self.thresh
         else:
             self.model.bbox_head.test_cfg.nms.iou_threshold = self.nms_thres
+            thres = self.model.bbox_head.test_cfg.score_thr
             self.model.bbox_head.test_cfg.score_thr = self.thresh
 
         post_processed_pred = []
@@ -203,11 +209,11 @@ class MMDetectionConfig:
             label = self.numpy.concatenate(label) + 1
             score = bbox[:, -1]
             bbox = bbox[:, 0:-1]
-
+            kip_pred = score > thres
             bbox, label, score = (
-                self.torch.from_numpy(bbox),
-                self.torch.from_numpy(label),
-                self.torch.from_numpy(score),
+                self.torch.from_numpy(bbox[kip_pred]),
+                self.torch.from_numpy(label[kip_pred]),
+                self.torch.from_numpy(score[kip_pred]),
             )
             # convert bboxes in range -1 to 1.
             bbox = bbox / (chip_size / 2) - 1

@@ -2,21 +2,19 @@ import json
 from pathlib import Path
 from ._codetemplate import image_classifier_prf
 from ._arcgis_model import ArcGISModel
-import types
 from functools import partial
 import logging
 
 logger = logging.getLogger()
 
 try:
-    from fastai.basic_train import Learner
     from ._arcgis_model import (
-        SaveModelCallback,
         _resnet_family,
         _densenet_family,
         _vgg_family,
     )
-    from ._unet_utils import is_no_color, predict_batch, show_results_multispectral
+    from ._timm_utils import filter_timm_models
+    from ._unet_utils import is_no_color, show_results_multispectral
     import torch
     from torch import nn
     import torch.nn.functional as F
@@ -29,12 +27,11 @@ try:
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from .._utils.classified_tiles import per_class_metrics
     import numpy as np
-    from fastai.callbacks import EarlyStoppingCallback
     from fastai.torch_core import split_model_idx
     from fastai.vision import flatten_model
     from ._deeplab_utils import compute_miou
     from ._PointRend import PointRend_target_transform
-    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from .._utils.env import is_arcgispronotebook
     from matplotlib import pyplot as plt
 
     HAS_FASTAI = True
@@ -54,10 +51,12 @@ class PSPNetClassifier(ArcGISModel):
     data                    Required fastai Databunch. Returned data object from
                             `prepare_data` function.
     ---------------------   -------------------------------------------
-    backbone                Optional function. Backbone CNN model to be used for
-                            creating the base of the `PSPNetClassifier`, which
-                            is `resnet50` by default. It supports the ResNet,
-                            DenseNet, and VGG families.
+    backbone                Optional string. Backbone convolutional neural network
+                            model used for feature extraction, which
+                            is `resnet50` by default.
+                            Supported backbones: ResNet, DenseNet, VGG families
+                            and specified Timm models(experimental support) from
+                            :func:`~arcgis.learn.PSPNetClassifier.backbones`.
     ---------------------   -------------------------------------------
     use_unet                Optional Bool. Specify whether to use Unet-Decoder or not,
                             Default True.
@@ -308,12 +307,32 @@ class PSPNetClassifier(ArcGISModel):
     # Return a list of supported backbones names
     @property
     def supported_backbones(self):
-        """Supported torchvision backbones for this model."""
+        """Supported list of backbones for this model."""
+        return PSPNetClassifier._supported_backbones()
+
+    @staticmethod
+    def backbones():
+        """Supported list of backbones for this model."""
         return PSPNetClassifier._supported_backbones()
 
     @staticmethod
     def _supported_backbones():
-        return [*_resnet_family, *_densenet_family, *_vgg_family]
+        timm_models = filter_timm_models(
+            [
+                "*dpn*",
+                "*inception*",
+                "*hrnet*",
+                "*nasnet*",
+                "*repvgg*",
+                "*resnetblur*",
+                "*selecsls*",
+                "*tresnet*",
+                "*mobilenet*",
+                "*hardcorenas*",
+            ]
+        )
+        timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
+        return [*_resnet_family, *_densenet_family, *_vgg_family] + timm_backbones
 
     @property
     def supported_datasets(self):
@@ -485,6 +504,14 @@ class PSPNetClassifier(ArcGISModel):
     def show_results(self, rows=5, **kwargs):
         """
         Displays the results of a trained model on a part of the validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional int. Number of rows of results
+                                to be displayed.
+        =====================   ===========================================
+
         """
         self._check_requisites()
         if rows > len(self._data.valid_ds):
@@ -492,12 +519,30 @@ class PSPNetClassifier(ArcGISModel):
         self.learn.show_results(
             rows=rows, ignore_mapped_class=self._ignore_mapped_class, **kwargs
         )
-        if _IS_ARCGISPRONOTEBOOK:
+        if is_arcgispronotebook():
             plt.show()
 
     def _show_results_multispectral(
         self, rows=5, alpha=0.7, **kwargs
     ):  # parameters adjusted in kwargs
+        """
+        Shows the ground truth and predictions of model side by side.
+
+        **kwargs**
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Number of rows of data to be displayed, if
+                                batch size is smaller, then the rows will
+                                display the value provided for batch size.
+        ---------------------   -------------------------------------------
+        alpha                   Optional Float. Opacity parameter for label
+                                overlay on image. Float [0.0 - 1.0]
+                                Default: 0.7
+        =====================   ===========================================
+
+        """
         return_fig = kwargs.get("return_fig", False)
         ret_val = show_results_multispectral(self, nrows=rows, alpha=alpha, **kwargs)
         if return_fig:

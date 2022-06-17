@@ -1,4 +1,6 @@
 import sys
+
+sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8072\src")
 import copy
 import json
 import unittest
@@ -32,7 +34,7 @@ class TestAdvancedUserSearch(unittest.TestCase):
         profiles = [
             "your_online_profile",
             "your_enterprise_profile",
-            "your_kubernetes_profile",
+            # "your_kubernetes_profile",
         ]
         for profile in profiles:
             self._gis.append(GIS(profile=profile, verify_cert=False))

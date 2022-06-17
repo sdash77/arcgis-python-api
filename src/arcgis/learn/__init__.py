@@ -46,8 +46,11 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
         AutoML,
         DeepSort,
         Pix2PixHD,
+        AutoDL,
+        ImageryModel,
         MaXDeepLab,
         WNet_cGAN,
+        DETReg,
     )
 
     from ._object_tracker import ObjectTracker
@@ -245,6 +248,8 @@ def detect_objects(
     Function can be used to generate feature service that contains polygons on detected objects
     found in the imagery data using the designated deep learning model. Note that the deep learning
     library needs to be installed separately, in addition to the server's built in Python 3.x library.
+    .. note::
+            This function is supported with ArcGIS Enterprise (Image Server)
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -286,6 +291,10 @@ def detect_objects(
                                              - extent - Sets the processing extent used by the function
 
                                              - parallelProcessingFactor - Sets the parallel processing factor. Default is "80%"
+
+                                             - mask: Only cells that fall within the analysis mask will be considered in the operation.
+
+                                             Eg: {"mask": {"url": "<feature_service_url>"}}
 
                                              - processorType - Sets the processor type. "CPU" or "GPU"
 
@@ -430,6 +439,8 @@ def classify_pixels(
     Function to classify input imagery data using a deep learning model.
     Note that the deep learning library needs to be installed separately,
     in addition to the server's built in Python 3.x library.
+    .. note::
+            This function is supported with ArcGIS Enterprise (Image Server)
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -564,6 +575,10 @@ def export_training_data(
     process_all_raster_items=False,
     blacken_around_feature=False,
     fix_chip_size=True,
+    additional_input_raster=None,
+    input_instance_data=None,
+    instance_class_value_field=None,
+    min_polygon_overlap_ratio=0,
     *,
     gis=None,
     future=False,
@@ -575,10 +590,14 @@ def export_training_data(
     labeled vector data or classified images. The output of this service tool is the data store string
     where the output image chips, labels and metadata files are going to be stored.
 
+    .. note::
+            This function is supported with ArcGIS Enterprise (Image Server)
+
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    input_raster                             Required. Raster layer that needs to be exported for training.
+    input_raster                             Required :class:`~arcgis.raster.ImageryLayer`/:class:`~arcgis.raster.Raster`/:class:`~arcgis.gis.Item`/String (URL).
+                                             Raster layer that needs to be exported for training.
     ------------------------------------     --------------------------------------------------------------------
     input_class_data                         Labeled data, either a feature layer or image layer.
                                              Vector inputs should follow a training sample format as
@@ -639,13 +658,25 @@ def export_training_data(
                                                   This format is used for image classification.
                                                   This format can be used with FeatureClassifier model.
 
-                                                - ``Multi-labeled Tiles``: Each output tile will be labeled with one or more classes.
+                                                - ``MultiLabeled_Tiles``: Each output tile will be labeled with one or more classes.
                                                   For example, a tile may be labeled agriculture and also cloudy. This format is used for object classification.
                                                   This format can be used with FeatureClassifier model.
 
-                                                - ``Export Tiles``: The output will be image chips with no label.
+                                                - ``Export_Tiles``: The output will be image chips with no label.
                                                   This format is used for image enhancement techniques such as Super Resolution and Change Detection.
                                                   This format can be used with ChangeDetector, CycleGAN, Pix2Pix and SuperResolution models.
+
+                                                - ``CycleGAN``: The output will be image chips with no label. This format is used for image
+                                                  translation technique CycleGAN, which is used to train images that do not overlap.
+
+                                                - ``Imagenet``: Each output tile will be labeled with a specific class. This format is used
+                                                  for object classification; however, it can also be used for object tracking when the Deep Sort
+                                                  model type is used during training.
+
+                                                - ``Panoptic_Segmentation``: The output will be one classified image chip and one instance per
+                                                  input image chip. The output will also have image chips that mask the areas where the sample exists;
+                                                  these image chips will be stored in a different folder. This format is used for both pixel classification
+                                                  and instance segmentation, therefore there will be two output labels folders.
     ------------------------------------     --------------------------------------------------------------------
     classvalue_field                         Optional string. Specifies the field which contains the class values. If no field is specified,
                                              the system will look for a 'value' or 'classvalue' field. If this feature does
@@ -659,12 +690,11 @@ def export_training_data(
                                              Example:
 
                                                 Server datastore path -
-                                                ``/fileShares/deeplearning/rooftoptrainingsamples``
-                                                ``/rasterStores/rasterstorename/rooftoptrainingsamples``
-                                                ``/cloudStores/cloudstorename/rooftoptrainingsamples``
+                                                    * ``/fileShares/deeplearning/rooftoptrainingsamples``
+                                                    * ``/rasterStores/rasterstorename/rooftoptrainingsamples``
 
                                                 File share path -
-                                                ``\\\\servername\\deeplearning\\rooftoptrainingsamples``
+                                                    * ``\\\\servername\\deeplearning\\rooftoptrainingsamples``
     ------------------------------------     --------------------------------------------------------------------
     context                                  Optional dictionary. Context contains additional settings that affect task execution.
                                              Dictionary can contain value for following keys:
@@ -731,6 +761,37 @@ def export_training_data(
 
                                                 - False : Exported tiles will be cropped such that the bounding geometry surrounds only the feature in the tile.
     ------------------------------------     --------------------------------------------------------------------
+    additional_input_raster                  Optional :class:`~arcgis.raster.ImageryLayer`/:class:`~arcgis.raster.Raster`/:class:`~arcgis.gis.Item`/String (URL).
+                                             An additional input imagery source that will be used for image translation methods.
+
+                                             This parameter is valid when the metadata_format parameter is set to Classified_Tiles, Export_Tiles, or CycleGAN.
+    ------------------------------------     --------------------------------------------------------------------
+    input_instance_data                      Optional. The training sample data collected that contains classes for instance segmentation.
+
+                                             The input can also be a point feature without a class value field or an integer raster without any class information.
+
+                                             This parameter is only valid when the metadata_format parameter is set to Panoptic_Segmentation.
+    ------------------------------------     --------------------------------------------------------------------
+    instance_class_value_field               Optional string. The field that contains the class values for instance segmentation.
+                                             If no field is specified, the tool will use a value or class value field, if one is present.
+                                             If the feature does not contain a class field, the tool will determine that all records belong to one class.
+
+                                             This parameter is only valid when the metadata_format parameter is set to Panoptic_Segmentation.
+    ------------------------------------     --------------------------------------------------------------------
+    min_polygon_overlap_ratio                Optional float. The minimum overlap percentage for a feature to be included in the training data.
+                                             If the percentage overlap is less than the value specified, the feature will be excluded from the
+                                             training chip, and will not be added to the label file.
+
+                                             The percent value is expressed as a decimal. For example, to specify an overlap of 20 percent,
+                                             use a value of 0.2. The default value is 0, which means that all features will be included.
+
+                                             This parameter improves the performance of the tool and also improves inferencing.
+                                             The speed is improved since less training chips are created. Inferencing is improved
+                                             since the model is trained to only detect large patches of objects and ignores small
+                                             corners of features.
+
+                                             This parameter is honoured only when the input_class_data parameter value is a feature service.
+    ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
@@ -767,6 +828,10 @@ def export_training_data(
         process_all_raster_items=process_all_raster_items,
         blacken_around_feature=blacken_around_feature,
         fix_chip_size=fix_chip_size,
+        additional_input_raster=additional_input_raster,
+        input_instance_data=input_instance_data,
+        instance_class_value_field=instance_class_value_field,
+        min_polygon_overlap_ratio=min_polygon_overlap_ratio,
         context=context,
         future=future,
         **kwargs
@@ -844,6 +909,8 @@ def export_training_data(
 def list_models(*, gis=None, future=False, **kwargs):
     """
     Function is used to list all the installed deep learning models.
+    .. note::
+            This function is supported with ArcGIS Enterprise (Image Server)
 
     ==================     ====================================================================
     **Argument**           **Description**
@@ -910,6 +977,8 @@ def classify_objects(
     """
     Function can be used to output feature service with assigned class label for each feature based on
     information from overlapped imagery data using the designated deep learning model.
+    .. note::
+            This function is supported with ArcGIS Enterprise (Image Server)
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -1009,7 +1078,7 @@ def compute_accuracy_for_object_detection(
     """
     Function can be used to calculate the accuracy of a deep learning model by comparing the detected objects from
     the detect_objects function to ground truth data.
-    Function available in ArcGIS Image Server 10.9 and higher.
+    Function available in ArcGIS Image Server 10.9 and higher (not available in ArcGIS Online).
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -1113,6 +1182,12 @@ def compute_accuracy_for_object_detection(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+
+    if gis._con._product == "AGOL":
+        raise RuntimeError(
+            "compute_accuracyfor_object_detection() is not supported on ArcGIS Online"
+        )
+
     return gis._tools.rasteranalysis.compute_accuracyfor_object_detection(
         detected_features=detected_features,
         ground_truth_features=ground_truth_features,
@@ -1154,11 +1229,13 @@ def train_model(
     export_training_data function.
     It generates the deep learning model package (*.dlpk) and adds it to your enterprise portal.
     train_model function performs the training using the Raster Analytics server.
+    .. note::
+            This function is supported with ArcGIS Enterprise (Image Server)
 
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    input_folder                             Required string. This is the input location for the training sample data.
+    input_folder                             Required string or list. This is the input location for the training sample data.
                                              It can be the path of output location on the file share raster data store or a
                                              shared file system path.
                                              The training sample data folder needs to be the output of export_training_data function,
@@ -1171,15 +1248,73 @@ def train_model(
 
                                              Shared path example:
                                                - \\serverName\deepLearning\trainingSampleData
+
+                                             The function also support multiple input folders. In this case,
+                                             specify the list of input folders
+
+
+                                             list of file share raster store and datastore path examples:
+                                               -  ["/rasterStores/yourRasterStoreFolderName/trainingSampleDataA", "/rasterStores/yourRasterStoreFolderName/trainingSampleDataB"]
+                                               - ["/fileShares/yourFileShareFolderName/trainingSampleDataA", "/fileShares/yourFileShareFolderName/trainingSampleDataB"]
+
+                                             list of shared path example:
+                                               - ["\\serverName\deepLearning\trainingSampleDataA", "\\serverName\deepLearning\trainingSampleDataB"]
+
+                                             Multiple input folders are supported when all the following conditions are met:
+
+                                              - The metadata format must be one of the following types: Classified_Tiles, Labeled_Tiles, Multi-labeled Tiles, PASCAL_VOC_rectangles, or RCNN_Masks.
+                                              - All training data must have the same metadata format.
+                                              - All training data must have the same number of bands.
+                                              - All training data must have the same tile size.
     ------------------------------------     --------------------------------------------------------------------
     model_type                               Required string. The model type to use for training the deep learning model.
-                                             Possible values: SSD, UNET, FEATURE_CLASSIFIER, PSPNET, RETINANET, MASKRCNN
+                                             Possible values:
                                               - SSD - The Single Shot Detector (SSD) is used for object detection.
                                               - UNET - U-Net is used for pixel classification.
                                               - FEATURE_CLASSIFIER - The Feature Classifier is used for object classification.
                                               - PSPNET - The Pyramid Scene Parsing Network (PSPNET) is used for pixel classification.
                                               - RETINANET - The RetinaNet is used for object detection.
                                               - MASKRCNN - The MarkRCNN is used for object detection
+                                              - YOLOV3 - The YOLOv3 approach will be used to train the model. YOLOv3 is used for object detection.
+                                              - DeepLabV3 - The DeepLabV3 approach will be used to train the model. DeepLab is used for pixel classification.
+                                              - FASTERRCNN - The FasterRCNN approach will be used to train the model. FasterRCNN is used for object detection.
+                                              - BDCN_EDGEDETECTOR -  The Bi-Directional Cascade Network (BDCN) architecture will be used to train the model.
+                                                The BDCN Edge Detector is used for pixel classification. This approach is useful to improve edge detection for objects at different scales.
+                                              - HED_EDGEDETECTOR -  The Holistically-Nested Edge Detection (HED) architecture will be used to train the model.
+                                                The HED Edge Detector is used for pixel classification. This approach is useful to in edge and object boundary detection.
+                                              - MULTITASK_ROADEXTRACTOR -  The Multi Task Road Extractor architecture will be used to train the model.
+                                                The Multi Task Road Extractor is used for pixel classification. This approach is useful for road network extraction from satellite imagery.
+                                              - CONNECTNET - The ConnectNet architecture will be used to train the model. ConnectNet is used for pixel classification.
+                                                This approach is useful for road network extraction from satellite imagery.
+                                              - PIX2PIX - The Pix2Pix approach will be used to train the model. Pix2Pix is used for image-to-image translation.
+                                                This approach creates a model object that generates images of one type to another. The input training data for this
+                                                model type uses the Export Tiles metadata format.
+                                              - CYCLEGAN - The CycleGAN approach will be used to train the model. CycleGAN is used for image-to-image translation.
+                                                This approach creates a model object that generates images of one type to another. This approach is unique in that
+                                                the images to be trained do not need to overlap. The input training data for this model type uses the CycleGAN metadata format.
+                                              - SUPERRESOLUTION - The Super-resolution approach will be used to train the model. Super-resolution is used for
+                                                image-to-image translation. This approach creates a model object that increases the resolution and improves the
+                                                quality of images. The input training data for this model type uses the Export Tiles metadata format.
+                                              - CHANGEDETECTOR - The Change detector approach will be used to train the model. Change detector is used for
+                                                pixel classification. This approach creates a model object that uses two spatial-temporal images to create
+                                                a classified raster of the change. The input training data for this model type uses the Classified Tiles metadata format.
+                                              - IMAGECAPTIONER - The Image captioner approach will be used to train the model. Image captioner is used for
+                                                image-to-text translation. This approach creates a model that generates text captions for an image.
+                                              - SIAMMASK - The Siam Mask approach will be used to train the model. Siam Mask is used for object detection in videos.
+                                                The model is trained using frames of the video and detects the classes and bounding boxes of the objects in each frame.
+                                                The input training data for this model type uses the MaskRCNN metadata format.
+                                              - MMDETECTION - The MMDetection approach will be used to train the model. MMDetection is used for object detection.
+                                                The supported metadata formats are PASCAL Visual Object Class rectangles and KITTI rectangles.
+                                              - MMSEGMENTATION - The MMSegmentation approach will be used to train the model. MMDetection is used for pixel classification.
+                                                The supported metadata format is Classified Tiles.
+                                              - DEEPSORT - The Deep Sort approach will be used to train the model. Deep Sort is used for object detection in videos.
+                                                The model is trained using frames of the video and detects the classes and bounding boxes of the objects in each frame.
+                                                The input training data for this model type uses the Imagenet metadata format.
+                                                Where Siam Mask is useful while tracking an object, Deep Sort is useful in training a model to track multiple objects.
+                                              - PIX2PIXHD - The Pix2PixHD approach will be used to train the model. Pix2PixHD is used for image-to-image translation.
+                                                This approach creates a model object that generates images of one type to another.
+                                                The input training data for this model type uses the Export Tiles metadata format.
+                                              - MAXDEEPLAB - The MAXDEEPLAB approach will be used to train the model. It is used for Panoptic Segmentation.
     ------------------------------------     --------------------------------------------------------------------
     model_arguments                          Optional dictionary. Name-value pairs of arguments and their values that can be customized by the clients.
 
@@ -1211,9 +1346,10 @@ def train_model(
     ------------------------------------     --------------------------------------------------------------------
     backbone_model                           Optional string.
                                              Specifies the preconfigured neural network to be used as an architecture for training the new model.
-                                             Possible values: DENSENET121 , DENSENET161 , DENSENET169 , DENSENET201 , MOBILENET_V2 , MASKRCNN50_FPN ,
-                                                              RESNET18 , RESNET34 , RESNET50 , RESNET101 , RESNET152 , VGG11 , VGG11_BN , VGG13 ,
-                                                              VGG13_BN , VGG16 , VGG16_BN , VGG19 , VGG19_BN
+                                             Possible values: DENSENET121 , DENSENET161 , DENSENET169 , DENSENET201 , MOBILENET_V2 ,
+                                             RESNET18 , RESNET34 , RESNET50 , RESNET101 , RESNET152 , VGG11 , VGG11_BN , VGG13 ,
+                                             VGG13_BN , VGG16 , VGG16_BN , VGG19 , VGG19_BN , DARKNET53 , REID_V1 , REID_V2
+
                                              Example:
                                                 RESNET34
     ------------------------------------     --------------------------------------------------------------------

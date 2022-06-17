@@ -1,5 +1,6 @@
 import os
 import json
+from typing import Optional, Union
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import GIS
 
@@ -102,7 +103,7 @@ class WebhookManager(object):
         self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def get(self, name):
+    def get(self, name: str):
         """finds a single instance of a webhook by name"""
         for wh in self.list():
             if wh.properties.name.lower() == name.lower():
@@ -113,13 +114,13 @@ class WebhookManager(object):
     # ----------------------------------------------------------------------
     def create(
         self,
-        name,
-        url,
-        events="ALL",
-        number_of_failures=5,
-        days_in_past=5,
-        secret=None,
-        properties=None,
+        name: str,
+        url: str,
+        events: Union[list, str] = "ALL",
+        number_of_failures: int = 5,
+        days_in_past: int = 5,
+        secret: Optional[str] = None,
+        properties: Optional[dict] = None,
     ):
         """
         Creates a WebHook to monitor REST endpoints and report activities
@@ -377,7 +378,10 @@ class Webhook(object):
 
     # ----------------------------------------------------------------------
     def activate(self):
-        """ """
+        """
+        Restarts a deactivated webhook. When activated, payloads
+        will be delivered to the payload URL when the webhook is invoked.
+        """
         url = self._url + "/activate"
         params = {"f": "json"}
         res = self._con.post(url, params)
@@ -389,12 +393,12 @@ class Webhook(object):
     # ----------------------------------------------------------------------
     def update(
         self,
-        name=None,
-        url=None,
-        events=None,
-        number_of_failures=None,
-        days_in_past=None,
-        secret=None,
+        name: Optional[str] = None,
+        url: Optional[str] = None,
+        events: Optional[Union[list, str]] = None,
+        number_of_failures: Optional[int] = None,
+        days_in_past: Optional[int] = None,
+        secret: Optional[str] = None,
     ):
         """
         The Update Webhook operation allows administrators to update any of
@@ -482,14 +486,19 @@ class Webhook(object):
                                             | Enable a specific user's account                   | /users/<username>/enable  |
                                             +----------------------------------------------------+---------------------------+
 
-                                           Example Syntax: ['/users', '/groups/abcd1234....']
+                                           .. code-block:: python
+
+                                               #Example Usage:
+
+                                               >>> events = ['/users', '/groups/abcd1234....']
 
         ---------------------------------  -------------------------------------------------------------------------------
-        number_of_failures                 Optional Integer. The number of failures to allow before the service
+        number_of_failures                 Optional Integer. The number of failures to allow before the webhook is
+                                           deactivated.
         ---------------------------------  -------------------------------------------------------------------------------
         days_in_past                       Option Integer. The number of days to report back on.
         ---------------------------------  -------------------------------------------------------------------------------
-        secret                             Optional String. Add a Secret to your payload that can be used to authenticate
+        secret                             Optional String. Add a secret to your payload that can be used to authenticate
                                            the message on your receiver.
         =================================  ===============================================================================
 
@@ -498,8 +507,14 @@ class Webhook(object):
         """
         if name is None:
             name = self.properties.name
-        if secret is None:
-            secret = self.properties.secret
+        if "secret" in self.properties:
+            if secret is None:
+                secret = self.properties.secret
+            elif secret == "":
+                secret = ""
+        else:
+            if secret is None or secret == "":
+                secret = None
         if url is None:
             url = self.properties.payloadUrl
         if number_of_failures is None:

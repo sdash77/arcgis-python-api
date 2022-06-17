@@ -1,4 +1,6 @@
+from __future__ import annotations
 import time
+from typing import Any, Optional
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.features import FeatureLayer, FeatureLayerCollection
 from arcgis.features._version import Version, VersionManager
@@ -47,7 +49,7 @@ class ParcelFabricManager(object):
     # ----------------------------------------------------------------------
 
     def __str__(self):
-        return "<ParcelFabricManager @ %s>" % self._url
+        return "< ParcelFabricManager @ %s >" % self._url
 
     # ----------------------------------------------------------------------
 
@@ -93,7 +95,13 @@ class ParcelFabricManager(object):
 
     # ----------------------------------------------------------------------
 
-    def assign_to_record(self, features, record, write_attribute, moment=None):
+    def assign_to_record(
+        self,
+        features: list[dict[str, Any]],
+        record: str,
+        write_attribute: str,
+        moment: Optional[int] = None,
+    ):
         """
         Assigns the specified parcel features to the specified record. If
         parcel polygons are assigned, the record polygon will be updated to
@@ -151,7 +159,13 @@ class ParcelFabricManager(object):
 
     # ----------------------------------------------------------------------
 
-    def build(self, extent=None, moment=None, return_errors=False, record=None):
+    def build(
+        self,
+        extent: Optional[Union[dict, Envelope]] = None,
+        moment: Optional[str] = None,
+        return_errors: bool = False,
+        record: Optional[str] = None,
+    ):
         """
         A `build` will fix known parcel fabric errors.
 
@@ -574,7 +588,7 @@ class ParcelFabricManager(object):
                                     moment.
         =======================     ====================================================================
 
-        :return: Boolean. `True` if success else `False`
+        :return: Dictionary indicating 'success' or 'error'
 
 
         """
@@ -590,7 +604,7 @@ class ParcelFabricManager(object):
             "moment": moment,
             "f": "json",
         }
-        return self._con.post(url, params)["success"]
+        return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
 
@@ -830,7 +844,8 @@ class ParcelFabricManager(object):
 
                                         If None, the method will analyze the entire parcel fabric.
         ----------------------------    --------------------------------------------------------------------
-        future                          Optional boolean. If `True`, the request is processed as an asynchronous job and a URL is returned that points a location
+        future                          Optional boolean. If `True`, the request is processed as an
+                                        asynchronous job and a URL is returned that points a location
                                         displaying the status of the job.
 
                                         The default is `False`.
@@ -1109,13 +1124,60 @@ class ParcelFabricManager(object):
         return res
 
     # ----------------------------------------------------------------------
+    def reconstruct_from_seeds(
+        self,
+        extent: Union[dict, Envelope],
+    ):
+        """
+        The :meth:`~reconstructFromSeeds` operation constructs parcels from seeds enclosed by
+        parcel lines in the specified extent. The tool reconstructs parcels regardless of the parcel
+        lines associations with records.
+
+        ====================     ====================================================================
+        **Argument**             **Description**
+        --------------------     --------------------------------------------------------------------
+        extent                   Parameter representing the envelope of the extent to reconstruct seeds.
+                                 Seeds that lie within the specified extent will be reconstructed into
+                                 parcels.
+
+
+                                 :Syntax:
+
+                                 .. code-block:: python
+
+                                     >>> extent={
+                                                 "xmin":X min,
+                                                 "ymin": y min,
+                                                 "xmax": x max,
+                                                 "ymax": y max,
+                                                 "spatialReference": {"wkid": <wkid_value>}
+                                                }
+
+        ====================     ====================================================================
+
+        :return: Dictionary indicating 'success' or 'error'
+
+        """
+        url = "{base}/reconstructFromSeeds".format(base=self._url)
+        params = {
+            "gdbVersion": self._version.properties.versionName,
+            "sessionId": self._version._guid,
+            "extent": extent,
+            "f": "json",
+        }
+        return self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
 
     def _run_async(self, fn, **inputs):
         """runs the inputs asynchronously"""
         import concurrent.futures
 
         tp = concurrent.futures.ThreadPoolExecutor(1)
-        future = tp.submit(fn=fn, **inputs)
+        try:
+            future = tp.submit(fn=fn, **inputs)
+        except:
+            future = tp.submit(fn, **inputs)
         tp.shutdown(False)
         return future
 

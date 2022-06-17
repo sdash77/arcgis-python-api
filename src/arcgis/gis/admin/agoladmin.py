@@ -1,8 +1,10 @@
 """
 Entry point to working with local enterprise GIS functions
 """
+from datetime import datetime
+from typing import Optional
 from .._impl._con import Connection
-from ...gis import GIS
+from ...gis import GIS, Item, User
 from ._resources import PortalResourceManager
 from ._base import BasePortalAdmin
 from ...apps.tracker._location_tracking import LocationTrackingManager
@@ -48,16 +50,21 @@ class AGOLAdminManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<%s at %s>" % (type(self).__name__, self._gis._portal.resturl)
+        return "< %s @ %s >" % (type(self).__name__, self._gis._portal.resturl)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<%s at %s>" % (type(self).__name__, self._gis._portal.resturl)
+        return "< %s @ %s >" % (type(self).__name__, self._gis._portal.resturl)
 
     # ----------------------------------------------------------------------
     @property
     def ux(self):
-        """returns a UX/UI manager"""
+        """returns a UX/UI manager
+
+        :return:
+            :class:`~arcgis.gis.admin.UX` object
+
+        """
         if self._ux is None:
             from ._ux import UX
 
@@ -91,7 +98,7 @@ class AGOLAdminManager(object):
 
     # ----------------------------------------------------------------------
     @_user_experience_program.setter
-    def _user_experience_program(self, value):
+    def _user_experience_program(self, value: bool):
         """
         See main ``_user_experience_program`` property docstring.
         """
@@ -107,6 +114,10 @@ class AGOLAdminManager(object):
         """
         The collaborations resource lists all collaborations in which a
         portal participates
+
+        :return:
+            :class:`~arcgis.gis.admin.CollaborationManager` object
+
         """
         if self._collaborations is None:
             from ._collaboration import CollaborationManager
@@ -118,8 +129,12 @@ class AGOLAdminManager(object):
     @property
     def category_schema(self):
         """
-        This resource allows for the setting and manipulating of catagory
+        This resource allows for the setting and manipulating of category
         schemas.
+
+        :return:
+            :class:`~arcgis.gis.admin.CategoryManager` object
+
         """
         if self._category_schema is None:
             from ._catagoryschema import CategoryManager
@@ -132,6 +147,10 @@ class AGOLAdminManager(object):
     def idp(self):
         """
         This resource allows for the setting and configuration of the identity provider
+
+        :return:
+            :class:`~arcgis.gis.admin.IdentityProviderManager` object
+
         """
         if self._idp is None:
             from ._idp import IdentityProviderManager
@@ -143,7 +162,12 @@ class AGOLAdminManager(object):
     @property
     def location_tracking(self):
         """
-        The manager for Location Tracking. See :class:`~arcgis.apps.tracker.LocationTrackingManager'.
+
+        The manager for Location Tracking. See :class:`~arcgis.apps.tracker.LocationTrackingManager`
+
+        :return:
+            :class:`~arcgis.apps.tracker.LocationTrackingManager` object
+
         """
         return LocationTrackingManager(self._gis)
 
@@ -153,6 +177,10 @@ class AGOLAdminManager(object):
         """
         This resource allows for the setting and configuration of the social providers
         for a GIS.
+
+        :return:
+            :class:`~arcgis.gis.admin.SocialProviders` object
+
         """
         if self._sp is None:
             from ._socialproviders import SocialProviders
@@ -164,7 +192,11 @@ class AGOLAdminManager(object):
     @property
     def credits(self):
         """
-        manages the credits on a ArcGIS Online
+        Manages the credits on a ArcGIS Online
+
+        :return:
+            :class:`~arcgis.gis.admin.CreditManager` object
+
         """
         if self._credits is None:
             from ._creditmanagement import CreditManager
@@ -177,6 +209,10 @@ class AGOLAdminManager(object):
     def metadata(self):
         """
         resources to work with metadata on GIS
+
+        :return:
+            :class:`~arcgis.gis.admin.MetadataManager` object
+
         """
         if self._metadata is None:
             from ._metadata import MetadataManager
@@ -200,6 +236,10 @@ class AGOLAdminManager(object):
     def usage_reports(self):
         """
         provides access to the usage reports of the ArcGIS Online organization
+
+        :return:
+            :class:`~arcgis.gis.admin.AGOLUsageReports` object
+
         """
         if self._ur is None:
             from ._usage import AGOLUsageReports
@@ -241,10 +281,10 @@ class AGOLAdminManager(object):
     # ----------------------------------------------------------------------
     def scheduled_tasks(
         self,
-        item: "Item" = None,
-        active: bool = None,
-        user: "User" = None,
-        types: str = None,
+        item: Optional[Item] = None,
+        active: Optional[bool] = None,
+        user: Optional[User] = None,
+        types: Optional[str] = None,
     ):
         """
         This property allows `org_admins` to be able to see all scheduled tasks on the enterprise
@@ -294,19 +334,19 @@ class AGOLAdminManager(object):
     # ----------------------------------------------------------------------
     def history(
         self,
-        start_date,
-        to_date=None,
-        num=100,
-        all_events=True,
-        event_ids=None,
-        event_types=None,
-        actors=None,
-        owners=None,
-        actions=None,
-        ips=None,
-        sort_order="asc",
-        data_format="csv",
-        save_folder=None,
+        start_date: datetime,
+        to_date: Optional[datetime] = None,
+        num: int = 100,
+        all_events: bool = True,
+        event_ids: Optional[str] = None,
+        event_types: Optional[str] = None,
+        actors: Optional[str] = None,
+        owners: Optional[str] = None,
+        actions: Optional[str] = None,
+        ips: Optional[str] = None,
+        sort_order: str = "asc",
+        data_format: str = "csv",
+        save_folder: Optional[str] = None,
     ):
         """
         Returns a CSV file or Pandas's DataFrame containing the login history from a start_date to the present.
@@ -444,6 +484,10 @@ class AGOLAdminManager(object):
     def certificates(self):
         """
         Provides access to managing the organization's certificates.
+
+        :return:
+            :class:`~arcgis.gis._impl.CertificateManager` object
+
         """
         if self._certificates is None:
             from .._impl import CertificateManager
@@ -456,6 +500,10 @@ class AGOLAdminManager(object):
     def servers(self):
         """
         Provides access to managing the services hosted on ArcGIS Online
+
+        :return:
+            :class:`~arcgis.gis.agoserver.AGOLServersManager`
+
         """
         if self._servers is None:
             from arcgis.gis.agoserver import AGOLServersManager

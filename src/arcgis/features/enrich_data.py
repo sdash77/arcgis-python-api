@@ -5,28 +5,37 @@ chosen areas.
 enrich_layer retrieves information about the people, places, and businesses in a specific area, or within a selected
 travel time or distance from a location.
 """
+from __future__ import annotations
+from typing import Any, Optional, Union
 from arcgis.auth.tools import LazyLoader
 
 _util = LazyLoader("arcgis._impl.common._utils")
-_logging = LazyLoader("logging")
 _arcgis = LazyLoader("arcgis")
 network = LazyLoader("arcgis.network")
+_features = LazyLoader("arcgis.features")
 
 # --------------------------------------------------------------------------
 def enrich_layer(
-    input_layer,
-    data_collections=[],
-    analysis_variables=[],
-    country=None,
-    buffer_type=None,
-    distance=None,
-    units=None,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    return_boundaries=False,
-    future=False,
+    input_layer: Union[
+        _arcgis.gis.Item,
+        _features.FeatureCollection,
+        _features.FeatureLayer,
+        _features.FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    data_collections: Optional[list[str]] = [],
+    analysis_variables: Optional[list[str]] = [],
+    country: Optional[str] = None,
+    buffer_type: Optional[str] = None,
+    distance: Optional[float] = None,
+    units: Optional[str] = None,
+    output_name: Optional[Union[_features.FeatureLayer, str]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[_arcgis.gis.GIS] = None,
+    estimate: bool = False,
+    return_boundaries: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/enrich_layer/enrich_layer.png
@@ -83,7 +92,7 @@ def enrich_layer(
 
                                                                               - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                                               - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                                                              - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                                                              - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
 
                                                                               .. code-block:: python
@@ -108,10 +117,13 @@ def enrich_layer(
 
                                                                               The default value is False.
     ---------------------------------------------------------------------     --------------------------------------------------------------------
-    future                                                                    Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                                                                    Optional, If True, a future object will be returned and the process
+                                                                              will not wait for the task to complete.
+                                                                              The default is False, which means wait for results.
     =====================================================================     ====================================================================
 
     :returns :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
+    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 

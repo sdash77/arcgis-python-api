@@ -29,7 +29,7 @@ try:
     from pathlib import Path
     from fastai.vision import DatasetType, Learner, partial, open_image, Image
     import torch
-    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from .._utils.env import is_arcgispronotebook
 
     HAS_FASTAI = True
 except Exception as e:
@@ -68,6 +68,8 @@ class CycleGAN(ArcGISModel):
     ):
         super().__init__(data)
         self._check_dataset_support(data)
+        self._gen_blocks = gen_blocks
+        self._lsgan = lsgan
         cycle_gan = CycleGAN_model(
             self._data.n_channel,
             self._data.n_channel,
@@ -192,17 +194,36 @@ class CycleGAN(ArcGISModel):
         _emd_template["n_channel"] = len(
             _emd_template["NormalizationStats_b"]["band_min_values"]
         )
+        model_params = {
+            "gen_blocks": self._gen_blocks,
+            "lsgan": self._lsgan,
+        }
+        _emd_template["ModelParameters"] = model_params
         return _emd_template
 
     def show_results(self, rows=5, **kwargs):
         """
         Displays the results of a trained model on a part of the validation set.
 
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional int. Number of rows of results
+                                to be displayed.
+        =====================   ===========================================
+
+         **kwargs**
+
+        =====================   ===========================================
+        rgb_bands               Optional list of integers (band numbers)
+                                to be considered for rgb visualization.
+        =====================   ===========================================
+
         """
         if rows > len(self._data.valid_ds):
             rows = len(self._data.valid_ds)
         show_results(self, rows, **kwargs)
-        if _IS_ARCGISPRONOTEBOOK:
+        if is_arcgispronotebook():
             from matplotlib import pyplot as plt
 
             plt.show()

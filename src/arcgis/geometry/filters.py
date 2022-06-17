@@ -3,8 +3,9 @@ The ``Filters`` modules contain functions to filter query results by a spatial r
 :class:`~arcgis.geometry.Geometry` object. The ``Filters`` module is used when querying feature layers and imagery
 layers.
 """
+from typing import Union
+from arcgis.geometry._types import Geometry, SpatialReference
 
-from . import Geometry
 
 # esriSpatialRelIntersects | esriSpatialRelContains | esriSpatialRelCrosses | esriSpatialRelEnvelopeIntersects | \
 # esriSpatialRelIndexIntersects | esriSpatialRelOverlaps | esriSpatialRelTouches | esriSpatialRelWithin
@@ -38,10 +39,23 @@ def _filter(geometry, sr, rel):
     return filter
 
 
-def intersects(geometry, sr=None):
+def intersects(geometry: Geometry, sr: Union[SpatialReference, dict, None] = None):
     """
     The ``intersects`` method filters results whose geometry intersects with the specified
     :class:`~arcgis.geometry.Geometry` object.
+
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    geometry          A single :class:`~arcgis.geometry.Geometry` of any type. The structure of
+                      geometry is the same as the structure of the JSON geometry
+                      objects returned by the ArcGIS REST API. The use of simple
+                      syntax is not supported.
+    ----------------  -------------------------------------------------------------------------------
+    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
+    ================  ===============================================================================
+
+    :return: A dictionary
 
     .. code-block:: python
 
@@ -62,15 +76,12 @@ def intersects(geometry, sr=None):
 
         # query a feature layer for features that meet filter criteria
         >>> gas_lines_I15 = gas_line_lyr.query(geometry_filter=flyr_filter)
-
-    :return:
-        A List of :class:`~arcgis.geometry.Geometry` objects
     """
 
     return _filter(geometry, sr, "esriSpatialRelIntersects")
 
 
-def contains(geometry, sr=None):
+def contains(geometry: Geometry, sr: Union[SpatialReference, dict, None] = None):
     """
     The ``contains`` method returns a feature if its shape is wholly contained within the search
     :class:`~arcgis.geometry.Geometry` object.
@@ -78,13 +89,23 @@ def contains(geometry, sr=None):
     .. note::
         Valid for all shape type combinations.
 
-    :return:
-        A :class:`~arcgis.geometry.Geometry` object
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    geometry          A single :class:`~arcgis.geometry.Geometry` of any type. The structure of
+                      geometry is the same as the structure of the JSON geometry
+                      objects returned by the ArcGIS REST API. The use of simple
+                      syntax is not supported.
+    ----------------  -------------------------------------------------------------------------------
+    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
+    ================  ===============================================================================
+
+    :return: A dictionary
     """
     return _filter(geometry, sr, "esriSpatialRelContains")
 
 
-def crosses(geometry, sr=None):
+def crosses(geometry: Geometry, sr: Union[SpatialReference, dict, None] = None):
     """
     The ``crosses`` method retrieves a feature if the intersection of the interiors of the two shapes is not empty
     **and** has a lower dimension than the maximum dimension of the two shapes. Two lines that share an endpoint in
@@ -94,35 +115,69 @@ def crosses(geometry, sr=None):
         Valid for Line/Line, Line/Area, :class:`~arcgis.geometry.MultiPoint` /Area, and
         :class:`~arcgis.geometry.MultiPoint` /Line shape type combinations.
 
-    :return:
-        A :class:`~arcgis.geometry.Geometry` object
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    geometry          A single :class:`~arcgis.geometry.Geometry` of any type. The structure of
+                      geometry is the same as the structure of the JSON geometry
+                      objects returned by the ArcGIS REST API. The use of simple
+                      syntax is not supported.
+    ----------------  -------------------------------------------------------------------------------
+    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
+    ================  ===============================================================================
+
+    :return: A dictionary
     """
     return _filter(geometry, sr, "esriSpatialRelCrosses")
 
 
-def envelope_intersects(geometry, sr=None):
+def envelope_intersects(
+    geometry: Geometry, sr: Union[SpatialReference, dict, None] = None
+):
     """
     The ``envelope_intersects`` retrieves features if the :class:`~arcgis.geometry.Envelope` of the two shapes
     intersects.
 
-    :return:
-        A :class:`~arcgis.geometry.Geometry` object
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    geometry          A single :class:`~arcgis.geometry.Geometry` of any type. The structure of
+                      geometry is the same as the structure of the JSON geometry
+                      objects returned by the ArcGIS REST API. The use of simple
+                      syntax is not supported.
+    ----------------  -------------------------------------------------------------------------------
+    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
+    ================  ===============================================================================
+
+    :return: A dictionary
     """
     return _filter(geometry, sr, "esriSpatialRelEnvelopeIntersects")
 
 
-def index_intersects(geometry, sr=None):
+def index_intersects(
+    geometry: Geometry, sr: Union[SpatialReference, dict, None] = None
+):
     """
     The ``index_intersects`` method retrieves a feature if the :class:`~arcgis.geometry.Envelope` of the query
     :class:`~arcgis.geometry.Geometry` intersects the index entry for the target geometry.
 
-    :return:
-        A :class:`~arcgis.geometry.Geometry` object
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    geometry          A single :class:`~arcgis.geometry.Geometry` of any type. The structure of
+                      geometry is the same as the structure of the JSON geometry
+                      objects returned by the ArcGIS REST API. The use of simple
+                      syntax is not supported.
+    ----------------  -------------------------------------------------------------------------------
+    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
+    ================  ===============================================================================
+
+    :return: A dictionary
     """
     return _filter(geometry, sr, "esriSpatialRelIndexIntersects")
 
 
-def overlaps(geometry, sr=None):
+def overlaps(geometry: Geometry, sr: Union[SpatialReference, dict, None] = None):
     """
     The ``overlaps`` method retrieves a feature if the intersection of the two shapes results in an object of the same
     dimension, but different from both of the shapes.
@@ -130,13 +185,23 @@ def overlaps(geometry, sr=None):
     .. note::
         This applies to Area/Area, Line/Line, and Multi-point/Multi-point shape type combinations.
 
-    :return:
-        A :class:`~arcgis.geometry.Geometry` object
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    geometry          A single :class:`~arcgis.geometry.Geometry` of any type. The structure of
+                      geometry is the same as the structure of the JSON geometry
+                      objects returned by the ArcGIS REST API. The use of simple
+                      syntax is not supported.
+    ----------------  -------------------------------------------------------------------------------
+    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
+    ================  ===============================================================================
+
+    :return: A dictionary
     """
     return _filter(geometry, sr, "esriSpatialRelOverlaps")
 
 
-def touches(geometry, sr=None):
+def touches(geometry: Geometry, sr: Union[SpatialReference, dict, None] = None):
     """
     The ``touches`` method retrieves a feature if the two shapes share a common boundary. However, the intersection of
     the interiors of the two shapes must be empty.
@@ -145,13 +210,23 @@ def touches(geometry, sr=None):
         In the Point/Line case, the point may touch an endpoint only of the line. Applies to all
         combinations except Point/Point.
 
-    :return:
-        A :class:`~arcgis.geometry.Geometry` object
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    geometry          A single :class:`~arcgis.geometry.Geometry` of any type. The structure of
+                      geometry is the same as the structure of the JSON geometry
+                      objects returned by the ArcGIS REST API. The use of simple
+                      syntax is not supported.
+    ----------------  -------------------------------------------------------------------------------
+    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
+    ================  ===============================================================================
+
+    :return: A dictionary
     """
     return _filter(geometry, sr, "esriSpatialRelTouches")
 
 
-def within(geometry, sr=None):
+def within(geometry: Geometry, sr: Union[SpatialReference, dict, None] = None):
     """
      The ``within`` method retrieves a feature if its shape wholly contains the search
      :class:`~arcgis.geometry.Geometry`.
@@ -159,7 +234,18 @@ def within(geometry, sr=None):
      .. note::
         Valid for all shape type combinations.
 
-    :return:
-        A :class:`~arcgis.geometry.Geometry` object
+    ================  ===============================================================================
+    **Keys**          **Description**
+    ----------------  -------------------------------------------------------------------------------
+    geometry          A single :class:`~arcgis.geometry.Geometry` of any type. The structure of
+                      geometry is the same as the structure of the JSON geometry
+                      objects returned by the ArcGIS REST API. The use of simple
+                      syntax is not supported.
+    ----------------  -------------------------------------------------------------------------------
+    spatial_ref       A :class:`~arcgis.geometry.SpatialReference` of the input geometries Well-Known ID or JSON object
+    ================  ===============================================================================
+
+    :return: A dictionary
+
     """
     return _filter(geometry, sr, "esriSpatialRelWithin")

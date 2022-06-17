@@ -48,7 +48,7 @@ class Machines(BasePortalAdmin):
         return machines
 
     # ----------------------------------------------------------------------
-    def get(self, name):
+    def get(self, name: str):
         """
         allows for retrieval of a single instance of Machine by it's
         registered name.

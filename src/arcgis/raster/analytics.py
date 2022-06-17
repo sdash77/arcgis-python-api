@@ -5,6 +5,11 @@ The Hosted Imagery & Raster Analysis capabilities are available both on ArcGIS E
 Refer https://doc.arcgis.com/en/arcgis-online/analyze/perform-raster-analysis.htm for more details on performing Analysis using ArcGIS Online.
 Refer https://enterprise.arcgis.com/en/portal/latest/use/perform-raster-analysis.htm for more details on performing Analysis using ArcGIS Enterprise.
 """
+from __future__ import annotations
+from typing import Any, Optional, Union
+
+from arcgis.geometry import SpatialReference
+from arcgis.features.layer import FeatureLayer
 from arcgis.geoprocessing._support import (
     _analysis_job,
     _analysis_job_results,
@@ -16,12 +21,12 @@ import arcgis as _arcgis
 import string as _string
 import random as _random
 import collections
-from arcgis.gis import Item
+from arcgis.gis import GIS, Item
 from arcgis.raster._util import _set_context, _id_generator
 from .._impl.common._deprecate import deprecated
 
 
-def get_datastores(gis=None):
+def get_datastores(gis: Optional[GIS] = None):
     """
     Returns a helper object to manage raster analytics datastores in the GIS.
     If a gis isn't specified, returns datastore manager of arcgis.env.active_gis
@@ -35,7 +40,7 @@ def get_datastores(gis=None):
     return None
 
 
-def is_supported(gis=None):
+def is_supported(gis: Optional[GIS] = None):
     """
     Returns True if the GIS supports raster analytics. If a gis isn't specified,
     checks if arcgis.env.active_gis supports raster analytics
@@ -144,7 +149,7 @@ def _flow_direction_analytics_converter(
     other_outputs=None,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
     input_surface_raster = (
         forceFlow
@@ -170,7 +175,7 @@ def _flow_direction_analytics_converter(
         output_drop_name,
         gis=gis,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -180,7 +185,7 @@ def _calculate_travel_cost_analytics_converter(
     other_outputs=None,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
     input_source = None
     input_cost_raster = None
@@ -278,7 +283,7 @@ def _calculate_travel_cost_analytics_converter(
         output_allocation_name,
         gis=gis,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -288,7 +293,7 @@ def _calculate_distance_analytics_converter(
     other_outputs=None,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
     input_source = None
     maximum_distance = None
@@ -347,7 +352,7 @@ def _calculate_distance_analytics_converter(
         distance_method,
         gis=gis,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -474,7 +479,7 @@ def _distance_accumulation_analytics_converter(
         output_source_direction_raster_name=output_source_direction_raster_name,
         output_source_location_raster_name=output_source_location_raster_name,
         gis=gis,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -615,7 +620,7 @@ def _distance_allocation_analytics_converter(
         output_source_direction_raster_name=output_source_direction_raster_name,
         output_source_location_raster_name=output_source_location_raster_name,
         gis=gis,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -701,7 +706,7 @@ def _save_ra(
     other_outputs=None,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
     if raster_function["rasterFunctionArguments"]["toolName"] == "FlowDirection_sa":
         return _flow_direction_analytics_converter(
@@ -710,7 +715,7 @@ def _save_ra(
             other_outputs=other_outputs,
             gis=gis,
             future=future,
-            **kwargs
+            **kwargs,
         )
     if (
         raster_function["rasterFunctionArguments"]["toolName"]
@@ -722,7 +727,7 @@ def _save_ra(
             other_outputs=other_outputs,
             gis=gis,
             future=future,
-            **kwargs
+            **kwargs,
         )
     if raster_function["rasterFunctionArguments"]["toolName"] == "CalculateDistance_sa":
         return _calculate_distance_analytics_converter(
@@ -731,7 +736,7 @@ def _save_ra(
             other_outputs=other_outputs,
             gis=gis,
             future=future,
-            **kwargs
+            **kwargs,
         )
     if (
         raster_function["rasterFunctionArguments"]["toolName"]
@@ -742,7 +747,7 @@ def _save_ra(
             output_name=output_name,
             other_outputs=other_outputs,
             gis=gis,
-            **kwargs
+            **kwargs,
         )
     if (
         raster_function["rasterFunctionArguments"]["toolName"]
@@ -753,7 +758,7 @@ def _save_ra(
             output_name=output_name,
             other_outputs=other_outputs,
             gis=gis,
-            **kwargs
+            **kwargs,
         )
 
 
@@ -980,16 +985,16 @@ def _set_image_collection_param(gis, params, image_collection):
 
 def generate_raster(
     raster_function,
-    function_arguments=None,
-    output_raster_properties=None,
-    output_name=None,
-    process_as_multidimensional=None,
-    build_transpose=None,
-    context=None,
+    function_arguments: Optional[dict[str, Any]] = None,
+    output_raster_properties: Optional[dict[str, Any]] = None,
+    output_name: Optional[str] = None,
+    process_as_multidimensional: Optional[bool] = None,
+    build_transpose: Optional[bool] = None,
+    context: Optional[dict[str, Any]] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
 
     """
@@ -1024,7 +1029,7 @@ def generate_raster(
     output_raster_properties                 Optional dict, can be used to set the output raster's key metadata properties.
                                              {"SensorName": "Landsat 8", "CloudCover": 20}
     ------------------------------------     --------------------------------------------------------------------
-    output_name                              Optional. If not provided, an Image Service is created by the method and used as the output raster.
+    output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster.
                                              You can pass in an existing Image Service Item from your GIS to use that instead.
                                              Alternatively, you can pass in the name of the output Image Service that should be created by this method to be
                                              used as the output for the tool.
@@ -1036,7 +1041,7 @@ def generate_raster(
     build_transpose                          Optional bool, if set to true, transforms the output multidimensional
                                              raster. Valid only if process_as_multidimensional is set to True.
     ------------------------------------     --------------------------------------------------------------------
-    context                                  context contains additional settings that affect task execution.
+    context                                  Optional dict, context contains additional settings that affect task execution.
 
                                              context parameter overwrites values set through arcgis.env parameter
 
@@ -1146,20 +1151,20 @@ def generate_raster(
         output_name=output_name,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
 def convert_feature_to_raster(
-    input_feature,
-    output_cell_size,
-    value_field=None,
-    output_name=None,
-    context=None,
+    input_feature: FeatureLayer,
+    output_cell_size: dict[str, Any],
+    value_field: Optional[str] = None,
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
 
     """
@@ -1285,26 +1290,26 @@ def convert_feature_to_raster(
         value_field=value_field,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
 def copy_raster(
     input_raster,
-    output_cellsize=None,
-    resampling_method="NEAREST",
-    clip_setting=None,
-    output_name=None,
-    process_as_multidimensional=None,
-    build_transpose=None,
-    context=None,
-    raster_type_name=None,
-    raster_type_params=None,
-    source_mosaic_dataset=None,
+    output_cellsize: Optional[dict[str, Any]] = None,
+    resampling_method: str = "NEAREST",
+    clip_setting: Optional[str] = None,
+    output_name: Optional[str] = None,
+    process_as_multidimensional: Optional[bool] = None,
+    build_transpose: Optional[bool] = None,
+    context: Optional[dict[str, Any]] = None,
+    raster_type_name: Optional[str] = None,
+    raster_type_params: Optional[dict[str, Any]] = None,
+    source_mosaic_dataset: Optional[str] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
 
     """
@@ -1336,7 +1341,7 @@ def copy_raster(
     clip_setting                         Optional string.  The field that will be used to assign values to the
                                          output raster.
     --------------------------------     --------------------------------------------------------------------
-    output_name                          Optional. If not provided, an Image Service is created by the method 
+    output_name                          Optional String. If not provided, an Image Service is created by the method 
                                          and used as the output raster.
 
                                          You can pass in an existing Image Service Item from your GIS to use 
@@ -1610,25 +1615,25 @@ def copy_raster(
         raster_type_name=raster_type_name,
         raster_type_params=raster_type_params,
         md_to_upload=source_mosaic_dataset,
-        **kwargs
+        **kwargs,
     )
 
 
 def summarize_raster_within(
-    input_zone_layer,
+    input_zone_layer: FeatureLayer,
     input_raster_layer_to_summarize,
-    zone_field="Value",
-    statistic_type="Mean",
-    ignore_missing_values=True,
-    output_name=None,
-    context=None,
-    process_as_multidimensional=False,
-    percentile_value=90,
-    percentile_interpolation_type="AUTO_DETECT",
+    zone_field: str = "Value",
+    statistic_type: str = "Mean",
+    ignore_missing_values: bool = True,
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
+    process_as_multidimensional: bool = False,
+    percentile_value: int = 90,
+    percentile_interpolation_type: str = "AUTO_DETECT",
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
 
     """
@@ -1850,23 +1855,23 @@ def summarize_raster_within(
         percentile_value=percentile_value,
         percentile_interpolation_type=percentile_interpolation_type,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
 def convert_raster_to_feature(
     input_raster,
-    field="Value",
-    output_type="Polygon",
-    simplify=True,
-    output_name=None,
-    context=None,
-    create_multipart_features=False,
-    max_vertices_per_feature=None,
+    field: str = "Value",
+    output_type: str = "Polygon",
+    simplify: bool = True,
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
+    create_multipart_features: bool = False,
+    max_vertices_per_feature: Optional[int] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
 
     """
@@ -1976,23 +1981,23 @@ def convert_raster_to_feature(
         create_multipart_features=create_multipart_features,
         max_vertices_per_feature=max_vertices_per_feature,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
 def calculate_density(
-    input_point_or_line_features,
-    count_field=None,
-    search_distance=None,
-    output_area_units=None,
-    output_cell_size=None,
-    output_name=None,
-    context=None,
-    input_barriers=None,
+    input_point_or_line_features: FeatureLayer,
+    count_field: Optional[str] = None,
+    search_distance: Optional[dict[str, Any]] = None,
+    output_area_units: Optional[str] = None,
+    output_cell_size: Optional[dict[str, Any]] = None,
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
+    input_barriers: Optional[str] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
 
     """
@@ -2176,32 +2181,32 @@ def calculate_density(
         context=context,
         future=future,
         input_barriers=input_barriers,
-        **kwargs
+        **kwargs,
     )
 
 
 def create_viewshed(
     input_elevation_surface,
-    input_observer_features,
-    optimize_for=None,
-    maximum_viewing_distance=None,
-    maximum_viewing_distance_field=None,
-    minimum_viewing_distance=None,
-    minimum_viewing_distance_field=None,
-    viewing_distance_is_3d=None,
-    observers_elevation=None,
-    observers_elevation_field=None,
-    observers_height=None,
-    observers_height_field=None,
-    target_height=None,
-    target_height_field=None,
-    above_ground_level_output_name=None,
-    output_name=None,
-    context=None,
+    input_observer_features: FeatureLayer,
+    optimize_for: Optional[str] = None,
+    maximum_viewing_distance: Optional[dict[str, Any]] = None,
+    maximum_viewing_distance_field: Optional[str] = None,
+    minimum_viewing_distance: Optional[dict[str, Any]] = None,
+    minimum_viewing_distance_field: Optional[str] = None,
+    viewing_distance_is_3d: Optional[bool] = None,
+    observers_elevation: Optional[dict[str, Any]] = None,
+    observers_elevation_field: Optional[str] = None,
+    observers_height: Optional[dict[str, Any]] = None,
+    observers_height_field: Optional[str] = None,
+    target_height: Optional[dict[str, Any]] = None,
+    target_height_field: Optional[str] = None,
+    above_ground_level_output_name: Optional[str] = None,
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
 
     """
@@ -2442,25 +2447,25 @@ def create_viewshed(
         above_ground_level_output_name=above_ground_level_output_name,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
 def interpolate_points(
-    input_point_features,
-    interpolate_field,
-    optimize_for="BALANCE",
-    transform_data=False,
-    size_of_local_models=None,
-    number_of_neighbors=None,
-    output_cell_size=None,
-    output_prediction_error=False,
-    output_name=None,
-    context=None,
+    input_point_features: FeatureLayer,
+    interpolate_field: str,
+    optimize_for: str = "BALANCE",
+    transform_data: bool = False,
+    size_of_local_models: Optional[int] = None,
+    number_of_neighbors: Optional[int] = None,
+    output_cell_size: Optional[dict[str, Any]] = None,
+    output_prediction_error: bool = False,
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
 
     """
@@ -2672,20 +2677,20 @@ def interpolate_points(
         output_prediction_error=output_prediction_error,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
 def classify(
     input_raster,
-    input_classifier_definition,
+    input_classifier_definition: dict[str, Any],
     additional_input_raster=None,
-    output_name=None,
-    context=None,
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
 
     """
@@ -2839,23 +2844,23 @@ def classify(
         additional_input_raster=additional_input_raster,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
 def segment(
     input_raster,
-    spectral_detail=15.5,
-    spatial_detail=15,
-    minimum_segment_size_in_pixels=20,
-    band_indexes=[0, 1, 2],
-    remove_tiling_artifacts=False,
-    output_name=None,
-    context=None,
+    spectral_detail: float = 15.5,
+    spatial_detail: float = 15,
+    minimum_segment_size_in_pixels: float = 20,
+    band_indexes: list[int] = [0, 1, 2],
+    remove_tiling_artifacts: bool = False,
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
 
     """
@@ -3011,7 +3016,7 @@ def segment(
         remove_tiling_artifacts=remove_tiling_artifacts,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -3023,9 +3028,9 @@ def train_classifier(
     segment_attributes="COLOR;MEAN",
     dimension_value_field=None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
     """
     .. image:: _static/images/ra_train_classifier/ra_train_classifier.png
@@ -3128,7 +3133,7 @@ def train_classifier(
         segment_attributes=segment_attributes,
         dimension_value_field=dimension_value_field,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -3136,17 +3141,17 @@ def train_classifier(
 ## Create image collection
 ###################################################################################################
 def create_image_collection(
-    image_collection,
-    input_rasters,
-    raster_type_name,
-    raster_type_params=None,
-    out_sr=None,
-    context=None,
-    source_mosaic_dataset=None,
+    image_collection: Item,
+    input_rasters: list,
+    raster_type_name: str,
+    raster_type_params: Optional[dict[str, Any]] = None,
+    out_sr: Optional[Union[str, SpatialReference]] = None,
+    context: Optional[dict[str, Any]] = None,
+    source_mosaic_dataset: Optional[str] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
 
     """
@@ -3880,7 +3885,7 @@ def create_image_collection(
         context=context,
         future=future,
         md_to_upload=source_mosaic_dataset,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -3888,15 +3893,15 @@ def create_image_collection(
 ## Add image
 ###################################################################################################
 def add_image(
-    image_collection,
-    input_rasters,
-    raster_type_name=None,
-    raster_type_params=None,
-    context=None,
+    image_collection: Item,
+    input_rasters: list,
+    raster_type_name: Optional[str] = None,
+    raster_type_params: Optional[dict[str, Any]] = None,
+    context: Optional[dict[str, Any]] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
     """
     .. image:: _static/images/add_image/add_image.png 
@@ -4026,14 +4031,21 @@ def add_image(
         raster_type_params=raster_type_params,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
 ###################################################################################################
 ## Delete image
 ###################################################################################################
-def delete_image(image_collection, where, *, gis=None, future=False, **kwargs):
+def delete_image(
+    image_collection: Item,
+    where: str,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
+):
     """
     .. image:: _static/images/delete_image/delete_image.png
 
@@ -4076,7 +4088,9 @@ def delete_image(image_collection, where, *, gis=None, future=False, **kwargs):
 ###################################################################################################
 ## Delete image collection
 ###################################################################################################
-def delete_image_collection(image_collection, *, gis=None, future=False, **kwargs):
+def delete_image_collection(
+    image_collection: Item, *, gis: Optional[GIS] = None, future: bool = False, **kwargs
+):
     """
     .. image:: _static/images/delete_image_collection/delete_image_collection.png
 
@@ -4124,7 +4138,7 @@ def _flow_direction(
     *,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
     """
     Replaces cells of a raster corresponding to a mask
@@ -4170,7 +4184,7 @@ def _flow_direction(
         flow_direction_type=flow_direction_type,
         output_drop_name=output_drop_name,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -4195,7 +4209,7 @@ def _calculate_travel_cost(
     *,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
     """
 
@@ -4276,7 +4290,7 @@ def _calculate_travel_cost(
         output_allocation_name=output_allocation_name,
         allocation_field=allocation_field,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -4287,13 +4301,13 @@ def _calculate_travel_cost(
 def optimum_travel_cost_network(
     input_regions_raster,
     input_cost_raster,
-    output_optimum_network_name=None,
-    output_neighbor_network_name=None,
-    context=None,
+    output_optimum_network_name: Optional[str] = None,
+    output_neighbor_network_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
 
     """
@@ -4377,11 +4391,18 @@ def optimum_travel_cost_network(
         output_neighbor_network_name=output_neighbor_network_name,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
-def list_datastore_content(datastore, filter=None, *, gis=None, future=False, **kwargs):
+def list_datastore_content(
+    datastore: Union[str, list],
+    filter: Optional[str] = None,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
+):
     """
 
     List the contents of the datastore registered with the server (fileShares, cloudStores, rasterStores).
@@ -4435,13 +4456,13 @@ def list_datastore_content(datastore, filter=None, *, gis=None, future=False, **
 
 def build_footprints(
     image_collection,
-    computation_method="RADIOMETRY",
+    computation_method: str = "RADIOMETRY",
     value_range=None,
     context=None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
 
     """
@@ -4508,12 +4529,18 @@ def build_footprints(
         value_range=value_range,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
 def build_overview(
-    image_collection, cell_size=None, context=None, *, gis=None, future=False, **kwargs
+    image_collection,
+    cell_size: Optional[float] = None,
+    context: Optional[dict[str, Any]] = None,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
 
     """
@@ -4573,18 +4600,18 @@ def build_overview(
         cell_size=cell_size,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
 def calculate_statistics(
     image_collection,
-    skip_factors=None,
-    context=None,
+    skip_factors: Optional[dict[str, int]] = None,
+    context: Optional[dict[str, Any]] = None,
     *,
     gis=None,
-    future=False,
-    **kwargs
+    future: bool = False,
+    **kwargs,
 ):
     """
     Calculates statistics for an image collection
@@ -4596,7 +4623,7 @@ def calculate_statistics(
                                              portal Item or an image service URL or a URI.
                                              The image_collection must exist.
     ------------------------------------     --------------------------------------------------------------------
-    skip_factors                             optional dictionary, Controls the portion of the raster that is used when calculating the statistics.
+    skip_factors                             Optional dictionary, Controls the portion of the raster that is used when calculating the statistics.
 
                                              eg:
                                                 | {"x":5,"y":5}
@@ -4651,14 +4678,14 @@ def calculate_statistics(
         skip_factors=skip_factors,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
 @deprecated(
     deprecated_in="1.8.1",
     details="Please use arcgis.raster.gbl.distance_accumulation()"
-    "followed by arcgis.raster.analytics.optimal_path_as_line(), instead.",
+    " followed by arcgis.raster.analytics.optimal_path_as_line(), instead.",
 )
 def determine_travel_costpath_as_polyline(
     input_source_data,
@@ -4669,9 +4696,9 @@ def determine_travel_costpath_as_polyline(
     destination_field=None,
     context=None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
 
     """
@@ -4765,7 +4792,7 @@ def determine_travel_costpath_as_polyline(
         destination_field=destination_field,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -4783,7 +4810,7 @@ def _calculate_distance(
     *,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -4877,23 +4904,23 @@ def _calculate_distance(
         input_barrier_raster_or_features=input_barrier_data,
         output_back_direction_name=output_back_direction_name,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
 def generate_multidimensional_anomaly(
     input_multidimensional_raster,
-    variables=None,
-    method="DIFFERENCE_FROM_MEAN",
-    calculation_interval=None,
-    ignore_nodata=True,
-    output_name=None,
-    context=None,
+    variables: Optional[list] = None,
+    method: str = "DIFFERENCE_FROM_MEAN",
+    calculation_interval: Optional[str] = None,
+    ignore_nodata: bool = True,
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
     reference_mean_raster=None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
     """
     Computes the anomaly for each slice in a multidimensional raster to generate a multidimensional dataset.
@@ -5067,18 +5094,18 @@ def generate_multidimensional_anomaly(
         context=context,
         reference_mean_raster=reference_mean_raster,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
 def build_multidimensional_transpose(
     input_multidimensional_raster,
-    context=None,
-    delete_transpose=False,
+    context: Optional[dict[str, Any]] = None,
+    delete_transpose: bool = False,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
     """
     Transposes a multidimensional raster dataset, which chunks the multidimensional data along each dimension
@@ -5142,31 +5169,31 @@ def build_multidimensional_transpose(
         context=context,
         delete_transpose=delete_transpose,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
 def aggregate_multidimensional_raster(
     input_multidimensional_raster,
-    dimension=None,
-    variables=None,
-    aggregation_method="MEAN",
-    aggregation_definition="ALL",
-    interval_keyword=None,
-    interval_value=None,
-    interval_unit=None,
-    interval_ranges=None,
+    dimension: Optional[str] = None,
+    variables: Optional[list] = None,
+    aggregation_method: str = "MEAN",
+    aggregation_definition: str = "ALL",
+    interval_keyword: Optional[str] = None,
+    interval_value: Optional[str] = None,
+    interval_unit: Optional[int] = None,
+    interval_ranges: Optional[list[dict[str, str]]] = None,
     aggregation_function=None,
-    ignore_nodata=True,
-    output_name=None,
-    context=None,
-    dimensionless=False,
-    percentile_value=90,
-    percentile_interpolation_type="NEAREST",
+    ignore_nodata: bool = True,
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
+    dimensionless: bool = False,
+    percentile_value: float = 90,
+    percentile_interpolation_type: str = "NEAREST",
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
     """
     Generates a multidimensional image service by aggregating existing multidimensional raster variables along a dimension.
@@ -5519,29 +5546,29 @@ def aggregate_multidimensional_raster(
         percentile_interpolation_type=percentile_interpolation_type,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
 def generate_trend_raster(
     input_multidimensional_raster,
-    dimension=None,
-    variables=None,
-    trend_line_type="LINEAR",
-    frequency=None,
-    ignore_nodata=True,
-    output_name=None,
-    context=None,
-    cycle_length=None,
-    cycle_unit="YEARS",
-    rmse=True,
-    r2=False,
-    slope_p_value=False,
-    seasonal_period="DAYS",
+    dimension: Optional[str] = None,
+    variables: Optional[list] = None,
+    trend_line_type: str = "LINEAR",
+    frequency: Optional[int] = None,
+    ignore_nodata: bool = True,
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
+    cycle_length: Optional[float] = None,
+    cycle_unit: str = "YEARS",
+    rmse: bool = True,
+    r2: bool = False,
+    slope_p_value: bool = False,
+    seasonal_period: str = "DAYS",
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
     """
     Estimates the trend for each pixel along a dimension for a given variable in a multidimensional raster.
@@ -5728,25 +5755,25 @@ def generate_trend_raster(
         slope_p_value=slope_p_value,
         seasonal_period=seasonal_period,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
 def predict_using_trend_raster(
     input_multidimensional_raster,
-    variables=None,
-    dimension_definition="BY_VALUE",
-    dimension_values=None,
-    start=None,
-    end=None,
-    interval_value=1,
-    interval_unit=None,
-    output_name=None,
-    context=None,
+    variables: Optional[list] = None,
+    dimension_definition: str = "BY_VALUE",
+    dimension_values: Optional[str] = None,
+    start: Optional[str] = None,
+    end: Optional[str] = None,
+    interval_value: float = 1,
+    interval_unit: Optional[str] = None,
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
     """
     Estimates the trend for each pixel along a dimension for a given variable in a multidimensional raster.
@@ -5923,27 +5950,27 @@ def predict_using_trend_raster(
         interval_unit=interval_unit,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
 def find_argument_statistics(
     input_raster,
-    dimension=None,
-    dimension_definition="ALL",
-    interval_keyword=None,
-    variables=None,
-    statistics_type="ARGUMENT_MIN",
-    min_value=None,
-    max_value=None,
-    multiple_occurrence_value=None,
-    ignore_nodata=True,
-    output_name=None,
-    context=None,
+    dimension: Optional[list] = None,
+    dimension_definition: str = "ALL",
+    interval_keyword: Optional[str] = None,
+    variables: Optional[list] = None,
+    statistics_type: str = "ARGUMENT_MIN",
+    min_value: Optional[float] = None,
+    max_value: Optional[float] = None,
+    multiple_occurrence_value: Optional[int] = None,
+    ignore_nodata: bool = True,
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
     """
     Extracts the dimension value at which a given statistic is attained for each pixel in a multidimensional raster.
@@ -6142,20 +6169,20 @@ def find_argument_statistics(
         ignore_nodata=ignore_nodata,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
 def linear_spectral_unmixing(
     input_raster,
-    input_spectral_profile,
-    value_option=[],
-    output_name=None,
-    context=None,
+    input_spectral_profile: Union[dict, str],
+    value_option: list[str] = [],
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
     """
     Performs subpixel classification and calculates the fractional abundance of endmembers for individual pixels.
@@ -6169,7 +6196,7 @@ def linear_spectral_unmixing(
     ------------------------------------     --------------------------------------------------------------------
     input_spectral_profile                   Required Dict or String. The class spectral profile information.
     ------------------------------------     --------------------------------------------------------------------
-    value_option                             Optional String. Specifies the options to define the output pixel values.
+    value_option                             Optional List of string(s). Specifies the options to define the output pixel values.
 
                                              - SUM_TO_ONE : Class values for each pixel are provided in decimal format with the sum
                                                of all classes equal to 1. For example, Class1 = 0.16; Class2 = 0.24; Class3 = 0.60.
@@ -6292,27 +6319,27 @@ def linear_spectral_unmixing(
         value_option=value_option,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
 def subset_multidimensional_raster(
     input_multidimensional_raster,
-    variables=None,
-    dimension_definition="ALL",
-    dimension_ranges=None,
-    dimension_values=None,
-    dimension=None,
-    start_of_first_iteration=None,
-    end_of_first_iteration=None,
-    iteration_step=None,
-    iteration_unit=None,
-    output_name=None,
-    context=None,
+    variables: Optional[list] = None,
+    dimension_definition: str = "ALL",
+    dimension_ranges: Optional[list[dict, Any]] = None,
+    dimension_values: Optional[list[dict[str, Any]]] = None,
+    dimension: Optional[str] = None,
+    start_of_first_iteration: Optional[str] = None,
+    end_of_first_iteration: Optional[str] = None,
+    iteration_step: Optional[float] = None,
+    iteration_unit: Optional[str] = None,
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
     """
     Subsets a multidimensional raster by slicing data along defined variables and dimensions.
@@ -6514,7 +6541,7 @@ def subset_multidimensional_raster(
         iteration_unit=iteration_unit,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -6533,7 +6560,7 @@ def costpath_as_polyline(
     *,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
 
     """
@@ -6628,20 +6655,20 @@ def costpath_as_polyline(
         destination_field=destination_field,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
 def define_nodata(
     input_raster,
-    nodata,
-    query_filter=None,
-    num_of_bands=None,
-    composite_value=False,
+    nodata: dict[str, Any],
+    query_filter: Optional[str] = None,
+    num_of_bands: Optional[int] = None,
+    composite_value: bool = False,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
 
     """
@@ -6720,7 +6747,7 @@ def define_nodata(
         num_of_bands=num_of_bands,
         composite_value=composite_value,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -6728,15 +6755,15 @@ def optimal_path_as_line(
     input_destination_data,
     input_distance_accumulation_raster,
     input_back_direction_raster,
-    destination_field=None,
-    path_type="EACH_ZONE",
-    output_feature_name=None,
-    context=None,
-    create_network_paths="DESTINATIONS_TO_SOURCES",
+    destination_field: Optional[str] = None,
+    path_type: str = "EACH_ZONE",
+    output_feature_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
+    create_network_paths: str = "DESTINATIONS_TO_SOURCES",
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
 
     """
@@ -6848,7 +6875,7 @@ def optimal_path_as_line(
         context=context,
         create_network_paths=create_network_paths,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -6856,15 +6883,15 @@ def optimal_region_connections(
     input_region_data,
     input_barrier_data=None,
     input_cost_raster=None,
-    distance_method="PLANAR",
-    connections_within_regions="GENERATE_CONNECTIONS",
-    output_optimal_lines_name=None,
-    output_neighbor_connections_name=None,
-    context=None,
+    distance_method: str = "PLANAR",
+    connections_within_regions: str = "GENERATE_CONNECTIONS",
+    output_optimal_lines_name: Optional[str] = None,
+    output_neighbor_connections_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
 
     """
@@ -7019,7 +7046,7 @@ def optimal_region_connections(
         output_neighbor_connections_name=output_neighbor_connections_name,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -7045,7 +7072,7 @@ def _distance_accumulation(
     *,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -7069,7 +7096,7 @@ def _distance_accumulation(
         output_source_location_raster_name=output_source_location_raster_name,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -7096,7 +7123,7 @@ def _distance_allocation(
     *,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
 
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -7121,23 +7148,23 @@ def _distance_allocation(
         output_source_location_raster_name=output_source_location_raster_name,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
 def analyze_changes_using_ccdc(
     input_multidimensional_raster=None,
-    bands_for_detecting_change=[],
-    bands_for_temporal_masking=[],
-    chi_squared_threshold=0.99,
-    min_anomaly_observations=6,
-    update_frequency=1,
-    output_name=None,
-    context=None,
+    bands_for_detecting_change: list[int] = [],
+    bands_for_temporal_masking: list[int] = [],
+    chi_squared_threshold: float = 0.99,
+    min_anomaly_observations: int = 6,
+    update_frequency: int = 1,
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
 
     """
@@ -7301,37 +7328,37 @@ def analyze_changes_using_ccdc(
         output_name=output_name,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
 def detect_change_using_change_analysis_raster(
     input_change_analysis_raster=None,
-    change_type="TIME_OF_LATEST_CHANGE",
-    max_number_of_changes=1,
-    output_name=None,
-    context=None,
-    segment_date="BEGINNING_OF_SEGMENT",
-    change_direction="ALL",
-    filter_by_year=False,
-    min_year=None,
-    max_year=None,
-    filter_by_duration=False,
-    min_duration=None,
-    max_duration=None,
-    filter_by_magnitude=False,
-    min_magnitude=None,
-    max_magnitude=None,
-    filter_by_start_value=None,
-    min_start_value=None,
-    max_start_value=None,
-    filter_by_end_value=None,
-    min_end_value=None,
-    max_end_value=None,
+    change_type: str = "TIME_OF_LATEST_CHANGE",
+    max_number_of_changes: int = 1,
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
+    segment_date: str = "BEGINNING_OF_SEGMENT",
+    change_direction: str = "ALL",
+    filter_by_year: bool = False,
+    min_year: Optional[int] = None,
+    max_year: Optional[int] = None,
+    filter_by_duration: bool = False,
+    min_duration: Optional[float] = None,
+    max_duration: Optional[float] = None,
+    filter_by_magnitude: bool = False,
+    min_magnitude: Optional[float] = None,
+    max_magnitude: Optional[float] = None,
+    filter_by_start_value: Optional[bool] = None,
+    min_start_value: Optional[float] = None,
+    max_start_value: Optional[float] = None,
+    filter_by_end_value: Optional[bool] = None,
+    min_end_value: Optional[float] = None,
+    max_end_value: Optional[float] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
 
     """
@@ -7663,23 +7690,23 @@ def detect_change_using_change_analysis_raster(
         output_name=output_name,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
 def manage_multidimensional_raster(
     target_multidimensional_raster,
-    manage_mode="APPEND_SLICES",
-    variables=None,
-    input_multidimensional_rasters=None,
-    dimension_name=None,
-    dimension_value=None,
-    dimension_description=None,
-    dimension_unit=None,
+    manage_mode: str = "APPEND_SLICES",
+    variables: Optional[list] = None,
+    input_multidimensional_rasters: Optional[list] = None,
+    dimension_name: Optional[str] = None,
+    dimension_value: Optional[str] = None,
+    dimension_description: Optional[str] = None,
+    dimension_unit: Optional[str] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
     """
     Function edits a multidimensional raster by adding or deleting variables or dimensions.
@@ -7779,28 +7806,28 @@ def manage_multidimensional_raster(
         dimension_description=dimension_description,
         dimension_unit=dimension_unit,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
 def sample(
     input_rasters,
     input_location_data,
-    resampling_type="NEAREST",
-    unique_id_field=None,
-    acquisition_definition=None,
-    statistics_type="MEAN",
-    percentile_value=None,
-    buffer_distance=None,
-    layout="ROW_WISE",
-    generate_feature_class=False,
-    process_as_multidimensional=None,
-    output_name=None,
-    context=None,
+    resampling_type: str = "NEAREST",
+    unique_id_field: Optional[int] = None,
+    acquisition_definition: Optional[dict[str, str]] = None,
+    statistics_type: str = "MEAN",
+    percentile_value: Optional[int] = None,
+    buffer_distance: Optional[int] = None,
+    layout: str = "ROW_WISE",
+    generate_feature_class: bool = False,
+    process_as_multidimensional: Optional[bool] = None,
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
 
     """
@@ -7947,24 +7974,24 @@ def sample(
         generate_feature_class=generate_feature_class,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
 def merge_multidimensional_rasters(
     input_multidimensional_rasters,
-    resolve_overlap_method="FIRST",
-    output_name=None,
-    context=None,
+    resolve_overlap_method: str = "FIRST",
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
 
     """
     Function merges several multidimensional rasters spatially, or across variables and dimensions into one.
-    Function available in ArcGIS Image Server 10.9 and higher.
+    Function available in ArcGIS Image Server 10.9 and higher (not available in ArcGIS Online).
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -8081,36 +8108,42 @@ def merge_multidimensional_rasters(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+
+    if gis._con._product == "AGOL":
+        raise RuntimeError(
+            "merge_multidimensional_rasters() is not supported on ArcGIS Online"
+        )
+
     return gis._tools.rasteranalysis.merge_multidimensional_rasters(
         input_multidimensional_rasters=input_multidimensional_rasters,
         resolve_overlap_method=resolve_overlap_method,
         output_name=output_name,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
 def analyze_changes_using_landtrendr(
     input_multidimensional_raster,
-    processing_band=None,
-    snapping_date="06-30",
-    max_num_segments=5,
-    vertex_count_overshoot=2,
-    spike_threshold=0.9,
-    recovery_threshold=0.25,
-    prevent_one_year_recovery=True,
-    increasing_recovery_trend=True,
-    min_num_observations=6,
-    best_model_proportion=1.25,
-    pvalue_threshold=0.01,
-    output_other_bands=False,
-    output_name=None,
-    context=None,
+    processing_band: Optional[str] = None,
+    snapping_date: str = "06-30",
+    max_num_segments: int = 5,
+    vertex_count_overshoot: int = 2,
+    spike_threshold: float = 0.9,
+    recovery_threshold: float = 0.25,
+    prevent_one_year_recovery: bool = True,
+    increasing_recovery_trend: bool = True,
+    min_num_observations: int = 6,
+    best_model_proportion: float = 1.25,
+    pvalue_threshold: float = 0.01,
+    output_other_bands: bool = False,
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
 
     """
@@ -8337,7 +8370,7 @@ def analyze_changes_using_landtrendr(
         output_name=output_name,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -8430,18 +8463,18 @@ def analyze_changes_using_landtrendr(
 def zonal_statistics_as_table(
     input_zone_raster_or_features,
     input_value_raster,
-    zone_field,
-    ignore_nodata=True,
-    statistic_type="ALL",
-    percentile_values=[90],
-    process_as_multidimensional=False,
-    percentile_interpolation_type="AUTO_DETECT",
-    output_name=None,
-    context=None,
+    zone_field: str,
+    ignore_nodata: bool = True,
+    statistic_type: bool = "ALL",
+    percentile_values: list[int] = [90],
+    process_as_multidimensional: bool = False,
+    percentile_interpolation_type: str = "AUTO_DETECT",
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
 
     """
@@ -8595,26 +8628,26 @@ def zonal_statistics_as_table(
         percentile_interpolation_type=percentile_interpolation_type,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
 def compute_change_raster(
     input_from_raster,
     input_to_raster,
-    compute_change_method="DIFFERENCE",
-    from_classes=None,
-    to_classes=None,
-    filter_method="CHANGED_PIXELS_ONLY",
-    transition_class_colors="AVERAGE",
-    output_name=None,
-    context=None,
-    from_class_name_field_name=None,
-    to_class_name_field_name=None,
+    compute_change_method: str = "DIFFERENCE",
+    from_classes: Optional[Union[str, list[str]]] = None,
+    to_classes: Optional[Union[str, list[str]]] = None,
+    filter_method: str = "CHANGED_PIXELS_ONLY",
+    transition_class_colors: str = "AVERAGE",
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
+    from_class_name_field_name: Optional[str] = None,
+    to_class_name_field_name: Optional[str] = None,
     *,
-    gis=None,
-    future=False,
-    **kwargs
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
 ):
 
     """
@@ -8797,7 +8830,7 @@ def compute_change_raster(
         output_name=output_name,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -8811,12 +8844,12 @@ def summarize_categorical_raster(
     *,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
 
     """
     Generates a table containing the pixel count for each class, in each slice of an input categorical raster.
-    Function available in ArcGIS Image Server 10.9.1 and higher.
+    Function available in ArcGIS Image Server 10.9.1 and higher (not available in ArcGIS Online).
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -8904,6 +8937,12 @@ def summarize_categorical_raster(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+
+    if gis._con._product == "AGOL":
+        raise RuntimeError(
+            "summarize_categorical_raster() is not supported on ArcGIS Online"
+        )
+
     return gis._tools.rasteranalysis.summarize_categorical_raster(
         input_categorical_raster=input_categorical_raster,
         dimension=dimension,
@@ -8912,7 +8951,7 @@ def summarize_categorical_raster(
         output_summary_table_name=output_summary_table_name,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
     )
 
 
@@ -8934,12 +8973,12 @@ def train_random_trees_regression_model(
     *,
     gis=None,
     future=False,
-    **kwargs
+    **kwargs,
 ):
 
     """
     Models the relationship between explanatory variables (independent variables) and a target dataset (dependent variable).
-    Function available in ArcGIS Image Server 10.9.1 and higher.
+    Function available in ArcGIS Image Server 10.9.1 and higher (not available in ArcGIS Online).
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -9064,6 +9103,12 @@ def train_random_trees_regression_model(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+
+    if gis._con._product == "AGOL":
+        raise RuntimeError(
+            "train_random_trees_regression_model() is not supported on ArcGIS Online"
+        )
+
     return gis._tools.rasteranalysis.train_random_trees_regression_model(
         input_rasters=input_rasters,
         input_target_data=input_target_data,
@@ -9080,5 +9125,48 @@ def train_random_trees_regression_model(
         output_importance_table_name=output_importance_table_name,
         context=context,
         future=future,
-        **kwargs
+        **kwargs,
+    )
+
+
+def export_to_tile_package(
+    input_data, output_name=None, *, gis=None, future=False, **kwargs
+):
+    """
+
+    Exports a Tiled ImageryLayer portal item to tile package.
+
+    .. note::
+        Currently supported only on ArcGIS online.
+
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    input_data          Required Tiled ImageryLayer portal item to be exported as tile package.
+    ---------------     --------------------------------------------------------------------
+    output_name         Optional string. Name of the Tile Package to be created.
+                        If not provided, a Tile Package is created by the method and used as the output.
+    ---------------     --------------------------------------------------------------------
+    gis                 Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    ---------------     --------------------------------------------------------------------
+    future              Optional Boolean. If True, the result will be a GPJob object and
+                        results will be returned asynchronously.
+    ===============     ====================================================================
+
+    :return: The exported tile package item
+
+    .. code-block:: python
+
+        # Usage Example
+
+        exported_item = export_to_tile_package(input_data = item, output_name = "exported_tile_package")
+
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.export_to_tile_package(
+        input_imagery_layer=input_data,
+        output_tile_package=output_name,
+        future=future,
+        **kwargs,
     )

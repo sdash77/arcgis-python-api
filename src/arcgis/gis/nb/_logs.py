@@ -1,4 +1,5 @@
 import os, csv
+from typing import Optional
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 import datetime as _dt
@@ -35,11 +36,11 @@ class LogManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<LogManager @ {url}>".format(url=self._url)
+        return "< LogManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<LogManager @ {url}>".format(url=self._url)
+        return "< LogManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -95,7 +96,7 @@ class LogManager(object):
 
     # ----------------------------------------------------------------------
     @settings.setter
-    def settings(self, value):
+    def settings(self, value: dict):
         """
         See main ``settings`` property docstring.
         """
@@ -113,18 +114,18 @@ class LogManager(object):
     # ----------------------------------------------------------------------
     def query(
         self,
-        start_time=None,
-        end_time=None,
-        since_server_start=False,
-        level="WARNING",
-        services="*",
-        machines="*",
-        server="*",
-        codes=None,
-        process_IDs=None,
-        export=False,
-        export_type="CSV",  # CSV or TAB
-        out_path=None,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None,
+        since_server_start: bool = False,
+        level: str = "WARNING",
+        services: str = "*",
+        machines: str = "*",
+        server: str = "*",
+        codes: Optional[str] = None,
+        process_IDs: Optional[str] = None,
+        export: bool = False,
+        export_type: str = "CSV",  # CSV or TAB
+        out_path: Optional[str] = None,
     ):
         """
         The query operation on the logs resource provides a way to

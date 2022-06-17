@@ -375,6 +375,14 @@ class PointCNN(ArcGISModel):
         _emd_template["DataAttributes"][
             "background_classcode"
         ] = self._data.background_classcode
+
+        if hasattr(self.learn.data, "statistics") and self.learn.data.statistics[
+            "parameters"
+        ].get("excludedClasses", False):
+            _emd_template["excludedClasses"] = self.learn.data.statistics["parameters"][
+                "excludedClasses"
+            ]
+
         if self._data.pc_type == "PointCloud_TF":
             _emd_template["DataAttributes"][
                 "extra_feat_indexes"
@@ -394,6 +402,11 @@ class PointCNN(ArcGISModel):
             class_data["Color"] = np.array(color).astype(int).tolist()
             _emd_template["Classes"].append(class_data.copy())
 
+        if hasattr(self.learn.data, "statistics") and self.learn.data.statistics.get(
+            "blockShape", False
+        ):
+            _emd_template["blockShape"] = self.learn.data.statistics.get("blockShape")
+
         return _emd_template
 
     def show_results(self, rows=2, **kwargs):
@@ -401,6 +414,8 @@ class PointCNN(ArcGISModel):
         """
         Displays the results from your model on the validation set
         with ground truth on the left and predictions on the right.
+        Visualization of data, exported in a geographic coordinate system
+        is not yet supported.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -546,6 +561,15 @@ class PointCNN(ArcGISModel):
         output_path             Optional string. The path to folder where to dump
                                 the resulting h5 block files. Defaults to `results`
                                 folder in input path.
+        =====================   ===========================================
+
+        **kwargs**
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        batch_size              Optional integer. The number of blocks to process
+                                in one batch. Default is set to 1.
         =====================   ===========================================
 
         :return: Path where files are dumped.

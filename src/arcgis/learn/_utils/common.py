@@ -179,7 +179,9 @@ class ArcGISMSImage(Image):
         return read_image(path, keep_raw=keep_raw)
 
     @classmethod
-    def open(cls, path, cast_to=np.float32, div=None, imagery_type=None):
+    def open(cls, path, cast_to=None, div=None, imagery_type=None):
+        if cast_to is None:
+            cast_to = np.float32
         path = str(os.path.abspath(path))
         if not os.path.exists:
             raise Exception(
@@ -311,7 +313,6 @@ class(es) {",".join(classes_below_req_intances)} in your data does not meet the 
                 classes = len(set(self._list_of_labels))
                 xlen = len(self._list_of_labels)
                 sample_shortage = math.ceil((classes - xlen * valid_pct) / valid_pct)
-                print(sample_shortage)
                 extra_samples = random.choices(
                     self._idx_label_tuple_list, k=sample_shortage
                 )
@@ -454,7 +455,7 @@ def image_tensor_checks_plotting(imagetensor_batch):
     if symbology_x_batch.mean() < 1:
         symbology_x_batch = symbology_x_batch.clamp(0, 1)
 
-    # Squeeze channels if single channel (1, 224, 224) -> (224, 224)
+    # Squeeze channels if single channel (224, 224, 1) -> (224, 224)
     if symbology_x_batch.shape[-1] == 1:
         symbology_x_batch = symbology_x_batch.squeeze(-1)
     return symbology_x_batch
@@ -623,7 +624,7 @@ def load_model(emd_path, data=None):
 
     with open(_emd_path) as f:
         emd = json.load(f)
-    model_name = emd["ModelName"]
+    model_name = "".join(char for char in emd["ModelName"] if char.isalnum())
     model_cls = getattr(models, model_name, None)
 
     if model_cls is None:

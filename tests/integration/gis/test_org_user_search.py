@@ -39,22 +39,22 @@ class TestUserManagerOrgSearch(unittest.TestCase):
 
     def test_no_given_parameters(self):
         """tests method without parameters"""
-        gis = GIS(profile='your_online_profile', verify_cert=False)
+        gis = GIS(profile="your_online_profile", verify_cert=False)
         assert gis.users.org_search()
 
     def test_star_given_parameters(self):
-        """tests method with wildcards * """
-        gis = GIS(profile='your_online_profile', verify_cert=False)
+        """tests method with wildcards *"""
+        gis = GIS(profile="your_online_profile", verify_cert=False)
         assert gis.users.org_search("*")
 
     def test_invalid_query_given_parameters(self):
         """tests method without parameters"""
-        gis = GIS(profile='your_online_profile', verify_cert=False)
+        gis = GIS(profile="your_online_profile", verify_cert=False)
         assert len(gis.users.org_search("asdfasd43r3asdf")) == 0
 
     def test_valid_query_parameters(self):
         """tests method without parameters"""
-        gis = GIS(profile='your_online_profile', verify_cert=False)
+        gis = GIS(profile="your_online_profile", verify_cert=False)
         assert gis.users.org_search("role: org_publisher")
 
 
