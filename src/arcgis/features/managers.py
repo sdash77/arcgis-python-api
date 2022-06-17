@@ -10,13 +10,13 @@ import logging
 import tempfile
 import collections
 from arcgis._impl.common._mixins import PropertyMap
-from arcgis.features._version import Version
 from arcgis.gis import GIS, _GISResource, Item
 import concurrent.futures as _cf
 from typing import Optional, Any, Union
 from arcgis.auth.tools import LazyLoader
 
 features = LazyLoader("arcgis.features")
+_version = LazyLoader("arcgis.features._version")
 
 _log = logging.getLogger()
 
@@ -45,7 +45,7 @@ class AttachmentManager(object):
     ---------------------   -------------------------------------------
     """
 
-    def __init__(self, layer: features.FeatureLayer, version: str | Version = None):
+    def __init__(self, layer: features.FeatureLayer, version: str | _version.Version = None):
         self._layer = layer
         if isinstance(version, str):
             self._version = version
