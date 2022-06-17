@@ -385,9 +385,13 @@ class WebMap(HasTraits, collections.OrderedDict):
             self._webmapdict["operationalLayers"].remove(layer)
             self.definition = _mixins.PropertyMap(self._webmapdict)
             return self.definition
+        elif layer["layerType"] not in layer_types:
+            raise Error(
+                "This layer type cannot be added as a basemap. See method description to know what layer types can be moved to basemap."
+            )
         else:
             raise Error(
-                "Layer must be part of WebMap's Operational Layers in order to add it as a basemap"
+                "Make sure the layer dictionary is already added to the WebMap. Use the layers property to see all layers in the WebMap."
             )
 
     def move_from_basemap(self, layer):
@@ -477,6 +481,9 @@ class WebMap(HasTraits, collections.OrderedDict):
             >> True
         """
         new_layer = self._create_layer_definition(layer, options)
+        # recursive call already added layers, can return
+        if new_layer is True:
+            return True
         if "layerType" in new_layer:
             layer_type = new_layer["layerType"]
         else:
