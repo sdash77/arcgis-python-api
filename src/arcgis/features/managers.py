@@ -10,11 +10,13 @@ import logging
 import tempfile
 import collections
 from arcgis._impl.common._mixins import PropertyMap
-from arcgis.features.layer import FeatureLayer
 from arcgis.features._version import Version
 from arcgis.gis import GIS, _GISResource, Item
 import concurrent.futures as _cf
 from typing import Optional, Any, Union
+from arcgis.auth.tools import LazyLoader
+
+features = LazyLoader("arcgis.features")
 
 _log = logging.getLogger()
 
@@ -34,7 +36,7 @@ class AttachmentManager(object):
     =====================   ===========================================
     **Inputs**              **Description**
     ---------------------   -------------------------------------------
-    layer                   Required FeatureLayer. The Feature Layer
+    layer                   Required Feature Layer. The Feature Layer
                             that supports attachments.
     ---------------------   -------------------------------------------
     version                 Required Version or string. The `Version` class where
@@ -43,7 +45,7 @@ class AttachmentManager(object):
     ---------------------   -------------------------------------------
     """
 
-    def __init__(self, layer: FeatureLayer, version: str | Version = None):
+    def __init__(self, layer: features.FeatureLayer, version: str | Version = None):
         self._layer = layer
         if isinstance(version, str):
             self._version = version
