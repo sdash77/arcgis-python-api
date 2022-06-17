@@ -715,10 +715,10 @@ def zonal_statistics(
                                      output pixel.
 
                                      STD-Calculates the standard deviation of all pixels in
-                                     the Value Rasterthat belong to the same zone as the output pixel.
+                                     the Value Raster that belong to the same zone as the output pixel.
 
                                      SUM-Calculates the total value of all pixels in the Value Raster that
-                                     aibhav chdahdgfjhagsfjkasbelong to the same zone as the output pixel.
+                                     belong to the same zone as the output pixel.
 
                                      VARIETY-Calculates the number of unique values for all pixels in the
                                      Value Raster that belong to the same zone as the output pixel.
@@ -735,7 +735,7 @@ def zonal_statistics(
                                      Minimum statistic, and the 100th percentile is equivalent to Maximum.
                                      A value of 50 will produce essentially the same result as the Median statistic.
 
-                                     This parameter is honoured only available if the statistics_type parameter is
+                                     This parameter is honoured only if the statistics_type parameter is
                                      set to PERCENTILE.
     -----------------------------    -----------------------------------------------------------------------------------------------------------
     percentile_interpolation_type    Optional string. Specifies the method of interpolation to be used when the
@@ -1515,7 +1515,7 @@ def watershed(
     -----------------------------    -----------------------------------------------------------------------------------------------------------
     input_flow_direction_raster      Required raster layer. The input raster that shows the direction of flow out of each cell.
     -----------------------------    -----------------------------------------------------------------------------------------------------------
-    input_pour_point_data            Required raster layer. This raster represents cells abov which the contributing area, or catchment,
+    input_pour_point_data            Required raster layer. This raster represents cells above which the contributing area, or catchment,
                                      will be determined. All cells that are not NoData will be used as source cells.
     -----------------------------    -----------------------------------------------------------------------------------------------------------
     pour_point_field                 Optional string. Field used to assign values to the pour point locations.
