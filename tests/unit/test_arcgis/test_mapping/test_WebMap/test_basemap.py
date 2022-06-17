@@ -65,7 +65,7 @@ def test_default_basemap_no_gis():
     from arcgis.mapping import WebMap
 
     wm = WebMap()
-    assert "World Topographic Map" in str(wm.basemap)
+    assert "World Topo" in str(wm.basemap)
 
 
 @patch("arcgis.widgets.MapView", MockMapView)
