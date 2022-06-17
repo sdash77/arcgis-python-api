@@ -87,11 +87,11 @@ class AGOLServicesDirectory:
 
     # ---------------------------------------------------------------------
     def __str__(self):
-        return f"<AGOLServicesDirectory @ {self._url} >"
+        return f"< AGOLServicesDirectory @ {self._url} >"
 
     # ---------------------------------------------------------------------
     def __repr__(self):
-        return f"<AGOLServicesDirectory @ {self._url} >"
+        return f"< AGOLServicesDirectory @ {self._url} >"
 
     # ---------------------------------------------------------------------
     @functools.lru_cache(maxsize=255)

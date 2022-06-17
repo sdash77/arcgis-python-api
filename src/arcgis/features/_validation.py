@@ -42,7 +42,7 @@ class ValidationManager(object):
     # ----------------------------------------------------------------------
     def __str__(self):
         url = self._url
-        return f"<ValidationManager at {url} >"
+        return f"< ValidationManager @ {url} >"
 
     # ----------------------------------------------------------------------
     def __repr__(self):

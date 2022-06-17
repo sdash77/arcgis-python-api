@@ -1139,7 +1139,7 @@ class Toolbox(_AsyncResource):
         # http://sampleserver1.arcgisonline.com/ArcGIS/rest/Services/Specialty/ESRI_Currents_World/GPServer
 
     def __str__(self):
-        return "<Toolbox url:" + self.url + " >"
+        return "< Toolbox url:" + self.url + " >"
 
     def _execute(self, params):
         caller_fnname = inspect.stack()[1][3]

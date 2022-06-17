@@ -181,7 +181,7 @@ class APIKeyManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return f"<API Key Manager @ {self._gis._portal.resturl} >"
+        return f"< API Key Manager @ {self._gis._portal.resturl} >"
 
     # ----------------------------------------------------------------------
     def __repr__(self):

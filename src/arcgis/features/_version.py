@@ -57,7 +57,7 @@ class VersionManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<VersionManager at {url} >".format(url=self._url)
+        return "< VersionManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):

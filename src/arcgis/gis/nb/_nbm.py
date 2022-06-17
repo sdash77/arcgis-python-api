@@ -38,11 +38,11 @@ class NotebookManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<NotebookManager at {url} >".format(url=self._url)
+        return "< NotebookManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<NotebookManager at {url} >".format(url=self._url)
+        return "< NotebookManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -387,11 +387,11 @@ class Runtime(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<Runtime at {url} >".format(url=self._url)
+        return "< Runtime @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<Runtime at {url} >".format(url=self._url)
+        return "< Runtime @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -551,11 +551,11 @@ class Notebook(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<Notebook at {url} >".format(url=self._url)
+        return "< Notebook @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<Notebook at {url} >".format(url=self._url)
+        return "< Notebook @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property

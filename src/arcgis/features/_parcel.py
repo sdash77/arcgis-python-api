@@ -49,7 +49,7 @@ class ParcelFabricManager(object):
     # ----------------------------------------------------------------------
 
     def __str__(self):
-        return "<ParcelFabricManager @ %s >" % self._url
+        return "< ParcelFabricManager @ %s >" % self._url
 
     # ----------------------------------------------------------------------
 
