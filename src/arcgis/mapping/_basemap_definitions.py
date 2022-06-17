@@ -1,5 +1,7 @@
 # Note that these may change and need to be updated periodically
 # https://developers.arcgis.com/javascript/latest/api-reference/esri-Map.html#basemap -> NO API KEY MAPS
+# https://devtopia.esri.com/WebGIS/arcgis-js-api/blob/4master/esri/support/basemapDefinitions.ts -> for the json structure
+
 basemap_dict = {
     "satellite": [
         {
