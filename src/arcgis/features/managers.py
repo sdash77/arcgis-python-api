@@ -45,7 +45,9 @@ class AttachmentManager(object):
     ---------------------   -------------------------------------------
     """
 
-    def __init__(self, layer: features.FeatureLayer, version: str | _version.Version = None):
+    def __init__(
+        self, layer: features.FeatureLayer, version: str | _version.Version = None
+    ):
         self._layer = layer
         if isinstance(version, str):
             self._version = version
