@@ -20,20 +20,14 @@ arcgis = LazyLoader("arcgis")
 _arcgis_features = LazyLoader("arcgis.features")
 _arcgis_mapping = LazyLoader("arcgis.mapping")
 _gis = LazyLoader("arcgis.gis")
-_env = LazyLoader("arcgis.env")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
 _utils = LazyLoader("arcgis._impl.common._utils")
 _geometry = LazyLoader("arcgis.geometry")
 _basemap_definitions = LazyLoader("arcgis.mapping._basemap_definitions")
 _forms = LazyLoader("arcgis.mapping.forms")
-SceneLayer = LazyLoader("arcgis.mapping._scenelyrs.SceneLayer")
-SpatialReference = LazyLoader("arcgis.geometry.SpatialReference")
-Polygon = LazyLoader("arcgis.geometry.Polygon")
-Geometry = LazyLoader("arcgis.geometry.Geometry")
-StreamLayer = LazyLoader("arcgis.realtime.StreamLayer")
+_scenelyrs = LazyLoader("arcgis.mapping._scenelyrs")
+_realtime = LazyLoader("arcgis.realtime")
 _services = LazyLoader("arcgis.gis.server.admin._services")
-
-from arcgis.mapping._scenelyrs import SceneLayer
 
 try:
     from traitlets import HasTraits, observe
@@ -433,10 +427,10 @@ class WebMap(HasTraits, collections.OrderedDict):
         layer: Union[
             _arcgis_features.FeatureLayer,
             MapImageLayer,
-            SceneLayer,
+            _scenelyrs.SceneLayer,
             arcgis.raster.ImageryLayer,
             VectorTileLayer,
-            StreamLayer,
+            _realtime.StreamLayer,
             _arcgis_features.FeatureSet,
             _gis.Item,
             _arcgis_features.FeatureCollection,
@@ -623,7 +617,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                     layer_type = "ArcGISMapServiceLayer"
                 elif isinstance(layer, _arcgis_mapping.VectorTileLayer):
                     layer_type = "VectorTileLayer"
-                elif isinstance(layer, StreamLayer):
+                elif isinstance(layer, _realtime.StreamLayer):
                     layer_type = "ArcGISStreamLayer"
 
                 if hasattr(layer.properties, "serviceItemId"):
@@ -4621,7 +4615,7 @@ class VectorTileLayer(arcgis.gis.Layer):
         self,
         levels: Optional[str] = None,
         export_extent: Optional[dict[str, Any]] = None,
-        polygon: Optional[Union[dict[str, Any], Polygon]] = None,
+        polygon: Optional[Union[dict[str, Any], _geometry.Polygon]] = None,
         max_export_tile_count: int = 10000,
     ):
         """
@@ -5559,11 +5553,11 @@ class MapImageLayer(arcgis.gis.Layer):
     # ----------------------------------------------------------------------
     def identify(
         self,
-        geometry: Union[Geometry, list],
+        geometry: Union[_geometry.Geometry, list],
         map_extent: str,
         image_display: Optional[str] = None,
         geometry_type: str = "Point",
-        sr: Optional[Union[dict[str, Any], str, SpatialReference]] = None,
+        sr: Optional[Union[dict[str, Any], str, _geometry.SpatialReference]] = None,
         layer_defs: Optional[dict[str, Any]] = None,
         time_value: Optional[Union[list[str], str]] = None,
         time_options: Optional[dict] = None,
@@ -5816,7 +5810,7 @@ class MapImageLayer(arcgis.gis.Layer):
         layers: str,
         contains: bool = True,
         search_fields: Optional[str] = None,
-        sr: Optional[Union[dict[str, Any], str, SpatialReference]] = None,
+        sr: Optional[Union[dict[str, Any], str, _geometry.SpatialReference]] = None,
         layer_defs: Optional[dict[str, Any]] = None,
         return_geometry: bool = True,
         max_offset: Optional[int] = None,
@@ -6279,7 +6273,7 @@ class MapImageLayer(arcgis.gis.Layer):
         levels: str,
         tile_package: bool = False,
         export_extent: str = "DEFAULTEXTENT",
-        area_of_interest: Optional[Union[dict[str, Any], Polygon]] = None,
+        area_of_interest: Optional[Union[dict[str, Any], _geometry.Polygon]] = None,
         asynchronous: bool = True,
         **kwargs,
     ):
@@ -6398,7 +6392,7 @@ class MapImageLayer(arcgis.gis.Layer):
         export_extent: Optional[Union[dict[str, Any], str]] = None,
         optimize_for_size: bool = True,
         compression: int = 75,
-        area_of_interest: Optional[Union[dict[str, Any], Polygon]] = None,
+        area_of_interest: Optional[Union[dict[str, Any], _geometry.Polygon]] = None,
         asynchronous: bool = False,
         storage_format: Optional[str] = None,
         **kwargs,

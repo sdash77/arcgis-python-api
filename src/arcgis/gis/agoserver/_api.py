@@ -6,7 +6,6 @@ from arcgis.gis import GIS
 
 logging = LazyLoader("logging")
 _isd = LazyLoader("arcgis._impl.common._isd")
-_service = LazyLoader("arcgis.gis.server._service")
 layer = LazyLoader("arcgis.features.layer")
 geocoding = LazyLoader("arcgis.geocoding")
 gptool = LazyLoader("arcgis.geoprocessing._tool")
