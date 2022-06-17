@@ -1,16 +1,6 @@
 """
 Holds Delegate and Accessor Logic
 """
-from arcgis.auth.tools import LazyLoader
-
-os = LazyLoader("os")
-copy = LazyLoader("copy")
-uuid = LazyLoader("uuid")
-shutil = LazyLoader("shutil")
-datetime = LazyLoader("datetime")
-np = LazyLoader("numpy")
-tempfile = LazyLoader("tempfile")
-warnings = LazyLoader("warnings")
 import logging
 import pandas as pd
 from collections.abc import Iterable
@@ -22,7 +12,16 @@ from ._io.fileops import (
     _sanitize_column_names,
     read_feather,
 )
+from arcgis.auth.tools import LazyLoader
 
+os = LazyLoader("os")
+copy = LazyLoader("copy")
+uuid = LazyLoader("uuid")
+shutil = LazyLoader("shutil")
+datetime = LazyLoader("datetime")
+np = LazyLoader("numpy")
+tempfile = LazyLoader("tempfile")
+warnings = LazyLoader("warnings")
 _geometry = LazyLoader("arcgis.geometry")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
 _isd = LazyLoader("arcgis._impl.common._isd")

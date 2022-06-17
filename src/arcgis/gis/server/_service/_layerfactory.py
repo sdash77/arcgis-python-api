@@ -18,7 +18,7 @@ from arcgis.mapping import VectorTileLayer
 from arcgis.mapping import MapImageLayer, MapServiceLayer
 from arcgis.raster import ImageryLayer
 from arcgis.schematics import SchematicLayers
-from arcgis.mapping._types import SceneLayer
+from arcgis.mapping._scenelyrs import SceneLayer
 from ..._impl._con import Connection
 from ._geodataservice import GeoData
 

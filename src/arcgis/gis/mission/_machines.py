@@ -8,7 +8,9 @@ from arcgis._impl.common._mixins import PropertyMap
 class MachineManager(object):
     """
     This resource provides the name and URL of the ArcGIS Mission
-    Server machine in the site.
+    Server machine in the site. Machine Manager can be accessed via the
+    :attr:`~arcgis.gis.mission.MissionServer.machine` property of
+    :class:`~arcgis.gis.mission.MissionServer` class
     """
 
     _url = None
@@ -145,7 +147,7 @@ class Machine(object):
         detects any change to the configuration of your machine, as well
         as each time the machine is restarted.
 
-        :return: dict
+        :return: Dict
         """
         url = self._url + "/hardware"
         params = {"f": "json"}
@@ -197,10 +199,10 @@ class Machine(object):
         ------------------     --------------------------------------------------------------------
         common_name            Required String. Use the domain name of your server name as the
                                common name. If your server will be accessed on the Internet through
-                               the URL https://www.Missionserver.com:11443/arcgis/, use
-                               www.Missionserver.com as the common name.If your server will only
-                               be accessible on your local area network (LAN) through the URL
-                               https://Missionserver.domain.com:11443/arcgis/, use Missionserver
+                               the URL ``https://www.Missionserver.com:11443/arcgis/``, use
+                               ``www.Missionserver.com`` as the common name.If your server will
+                               only be accessible on your local area network (LAN) through the URL
+                               ``https://Missionserver.domain.com:11443/arcgis/``, use Missionserver
                                as the common name.
         ------------------     --------------------------------------------------------------------
         org_unit	           Required String. The name of your organizational unit, for example,
@@ -228,13 +230,13 @@ class Machine(object):
                                in the URL. If a SAN is defined and a DNS name is present, the
                                website can only be accessed by what is listed in the SAN. Multiple
                                DNS names can be specified if desired. For example, the URLs
-                               https://www.esri.com, https://esri, and https://10.60.1.16 can be
+                               ``https://www.esri.com``, ``https://esri``, and ``https://10.60.1.16`` can be
                                used to access the same site if the SSL certificate is created
                                using the following SAN parameter
-                               value: DNS:www.esri.com,DNS:esri,IP:10.60.1.16
+                               value: ``DNS:www.esri.com,DNS:esri,IP:10.60.1.16``
         ==================     ====================================================================
 
-        :return: Bool
+        :return: Boolean
 
         """
         url = self._url + "/sslCertificates/generate"
@@ -339,7 +341,7 @@ class Machine(object):
         certificate            Required string. The name of the certificate to delete
         ==================     ====================================================================
 
-        :return: boolean
+        :return: Boolean
 
         """
         params = {"f": "json"}
