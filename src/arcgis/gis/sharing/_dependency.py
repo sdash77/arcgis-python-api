@@ -3,7 +3,7 @@ from arcgis.gis import GIS
 
 
 class DependencyManager:
-    """Provides the ability for Manager to Rebuild Item Dependencies"""
+    """Provides the ability for the manager to rebuild Item Dependencies"""
 
     _gis: GIS = None
     _urls: dict = None
@@ -22,7 +22,7 @@ class DependencyManager:
         """
         Rebuilds all the Item Dependencies on the Enterprise
 
-        :returns: Dict[str, Any]
+        :return: Dict[str, Any]
 
         """
         url = self._urls["rebuild"]
@@ -33,7 +33,8 @@ class DependencyManager:
         """
         Checks to see if the dependency graph database is rebuilding
 
-        :returns: Dict[str,str]
+        :return: Dict[str,str]
+
         """
         url = self._urls["status"]
         params = {"f": "json"}
