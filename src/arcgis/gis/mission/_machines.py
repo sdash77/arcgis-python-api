@@ -38,11 +38,11 @@ class MachineManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<MachineManager @ {url}>".format(url=self._url)
+        return "< MachineManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<MachineManager @ {url}>".format(url=self._url)
+        return "< MachineManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -95,11 +95,11 @@ class Machine(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<Machine @ {url}>".format(url=self._url)
+        return "< Machine @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<Machine @ {url}>".format(url=self._url)
+        return "< Machine @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property

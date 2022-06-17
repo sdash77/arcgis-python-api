@@ -41,11 +41,11 @@ class AGOLServerManager:
 
     # ---------------------------------------------------------------------
     def __str__(self):
-        return f"<AGOLServerManager @ {self._url}>"
+        return f"< AGOLServerManager @ {self._url} >"
 
     # ---------------------------------------------------------------------
     def __repr__(self):
-        return f"<AGOLServerManager @ {self._url}>"
+        return f"< AGOLServerManager @ {self._url} >"
 
     @property
     @lru_cache(maxsize=100)

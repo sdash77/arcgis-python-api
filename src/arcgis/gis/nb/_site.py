@@ -39,11 +39,11 @@ class SiteManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<SiteManager @ {url}>".format(url=self._url)
+        return "< SiteManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<SiteManager @ {url}>".format(url=self._url)
+        return "< SiteManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property

@@ -51,7 +51,7 @@ class LicenseManager(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<License Manager at {url}>".format(url=self._url)
+        return "< License Manager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -329,12 +329,12 @@ class Bundle(object):
     # ----------------------------------------------------------------------
     def __str__(self):
         """ """
-        return "<AppBundle: %s>" % self.properties["name"]
+        return "< AppBundle: %s >" % self.properties["name"]
 
     # ----------------------------------------------------------------------
     def __repr__(self):
         """ """
-        return "<AppBundle: %s>" % self.properties["name"]
+        return "< AppBundle: %s >" % self.properties["name"]
 
     # ----------------------------------------------------------------------
     def assign(self, users: list):
@@ -443,24 +443,24 @@ class License(object):
     # ----------------------------------------------------------------------
     def __str__(self):
         try:
-            return "<%s %s at %s>" % (
+            return "< %s %s @ %s >" % (
                 self.properties["listing"]["title"],
                 type(self).__name__,
                 self._gis._portal.resturl,
             )
         except:
-            return "<%s at %s>" % (type(self).__name__, self._gis._portal.resturl)
+            return "<%s at %s >" % (type(self).__name__, self._gis._portal.resturl)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
         try:
-            return "<%s %s at %s>" % (
+            return "<%s %s @ %s >" % (
                 self.properties["listing"]["title"],
                 type(self).__name__,
                 self._gis._portal.resturl,
             )
         except:
-            return "<%s at %s>" % (type(self).__name__, self._gis._portal.resturl)
+            return "<%s at %s >" % (type(self).__name__, self._gis._portal.resturl)
 
     # ----------------------------------------------------------------------
     @property

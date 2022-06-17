@@ -41,11 +41,11 @@ class LogManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<LogManager @ {url}>".format(url=self._url)
+        return "< LogManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<LogManager @ {url}>".format(url=self._url)
+        return "< LogManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
