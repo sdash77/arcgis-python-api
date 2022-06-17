@@ -26,7 +26,7 @@ basemap_dict = {
         },
         {
             "id": "hybrid-reference-layer",
-            "styleUrl": "https://cdn.arcgis.com/sharing/rest/content/items/30d6b8271e1849cd9c3042060001f425/resources/styles/root.json",
+            "styleUrl": "https://www.arcgis.com/sharing/rest/content/items/30d6b8271e1849cd9c3042060001f425/resources/styles/root.json",
             "layerType": "VectorTileLayer",
             "title": "Hybrid Reference Layer",
             "isReference": True,
@@ -90,7 +90,7 @@ basemap_dict = {
     "dark-gray-vector": [
         {
             "id": "dark-gray-base-layer",
-            "styleUrl": "https://cdn.arcgis.com/sharing/rest/content/items/5e9b3685f4c24d8781073dd928ebda50/resources/styles/root.json",
+            "styleUrl": "https://www.arcgis.com/sharing/rest/content/items/5e9b3685f4c24d8781073dd928ebda50/resources/styles/root.json",
             "layerType": "VectorTileLayer",
             "title": "Dark Gray Base",
             "visibility": True,
@@ -98,7 +98,7 @@ basemap_dict = {
         },
         {
             "id": "dark-gray-reference-layer",
-            "styleUrl": "https://cdn.arcgis.com/sharing/rest/content/items/747cb7a5329c478cbe6981076cc879c5/resources/styles/root.json",
+            "styleUrl": "https://www.arcgis.com/sharing/rest/content/items/747cb7a5329c478cbe6981076cc879c5/resources/styles/root.json",
             "layerType": "VectorTileLayer",
             "title": "Dark Gray Reference",
             "isReference": True,
@@ -109,7 +109,7 @@ basemap_dict = {
     "gray-vector": [
         {
             "id": "gray-base-layer",
-            "styleUrl": "https://cdn.arcgis.com/sharing/rest/content/items/291da5eab3a0412593b66d384379f89f/resources/styles/root.json",
+            "styleUrl": "https://www.arcgis.com/sharing/rest/content/items/291da5eab3a0412593b66d384379f89f/resources/styles/root.json",
             "layerType": "VectorTileLayer",
             "title": "Light Gray Base",
             "visibility": True,
@@ -117,7 +117,7 @@ basemap_dict = {
         },
         {
             "id": "gray-reference-layer",
-            "styleUrl": "https://cdn.arcgis.com/sharing/rest/content/items/1768e8369a214dfab4e2167d5c5f2454/resources/styles/root.json",
+            "styleUrl": "https://www.arcgis.com/sharing/rest/content/items/1768e8369a214dfab4e2167d5c5f2454/resources/styles/root.json",
             "layerType": "VectorTileLayer",
             "title": "Light Gray Reference",
             "isReference": True,
@@ -147,7 +147,7 @@ basemap_dict = {
         },
         {
             "id": "topo-vector-base-layer",
-            "styleUrl": "//cdn.arcgis.com/sharing/rest/content/items/7dc6cea0b1764a1f9af2e679f642f0f5/resources/styles/root.json",
+            "styleUrl": "https://www.arcgis.com/sharing/rest/content/items/7dc6cea0b1764a1f9af2e679f642f0f5/resources/styles/root.json",
             "layerType": "VectorTileLayer",
             "title": "World Topo",
             "visibility": True,
@@ -157,7 +157,7 @@ basemap_dict = {
     "streets-night-vector": [
         {
             "id": "streets-night-vector-base-layer",
-            "styleUrl": "//cdn.arcgis.com/sharing/rest/content/items/86f556a2d1fd468181855a35e344567f/resources/styles/root.json",
+            "styleUrl": "https://www.arcgis.com/sharing/rest/content/items/86f556a2d1fd468181855a35e344567f/resources/styles/root.json",
             "layerType": "VectorTileLayer",
             "title": "World Streets Night",
             "visibility": True,
@@ -186,7 +186,7 @@ basemap_dict = {
     "streets-navigation-vector": [
         {
             "id": "streets-navigation-vector-base-layer",
-            "styleUrl": "//cdn.arcgis.com/sharing/rest/content/items/63c47b7177f946b49902c24129b87252/resources/styles/root.json",
+            "styleUrl": "https://www.arcgis.com/sharing/rest/content/items/63c47b7177f946b49902c24129b87252/resources/styles/root.json",
             "layerType": "VectorTileLayer",
             "title": "World Streets Navigation",
             "visibility": True,
