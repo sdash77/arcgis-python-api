@@ -440,7 +440,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                 "Layer must be part of WebMap's BaseMap Layers in order to add it as an Operational Layer"
             )
 
-    def basemap_title(self, title):
+    def basemap_title(self, title: str):
         """
         Get/Set the BaseMap Title.
         Required string title for the basemap that can be used in a table of contents.
@@ -1572,12 +1572,9 @@ class WebMap(HasTraits, collections.OrderedDict):
             wm.basemap = wm2
 
         """
-        if self._basemap:
-            return _mixins.PropertyMap(self._basemap)
-        else:
-            if "baseMap" in self._webmapdict.keys():
-                self._basemap = self._webmapdict["baseMap"]
-            return _mixins.PropertyMap(self._basemap)
+        if "baseMap" in self._webmapdict.keys():
+            self._basemap = self._webmapdict["baseMap"]
+        return _mixins.PropertyMap(self._basemap)
 
     def _determine_layer_type(self, item):
         # this function determines the basemap layer type for the Web Map Specification
