@@ -76,7 +76,7 @@ class SiteManager(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        location               Require String. The folder to save the site to.
+        location               Required String. The folder to save the site to.
         ==================     ====================================================================
 
         :return: string
@@ -106,7 +106,7 @@ class SiteManager(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        location               Require String. Path to the backup site file.
+        location               Required String. Path to the backup site file.
         ==================     ====================================================================
 
         :return: Boolean

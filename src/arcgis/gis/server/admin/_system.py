@@ -6,6 +6,9 @@ configuration store, Web Adaptors, and licenses.
 from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer
+from arcgis.gis import GIS
+from arcgis.gis._impl._con import Connection
+from typing import Optional
 
 ########################################################################
 class SystemManager(BaseServer):
@@ -21,7 +24,7 @@ class SystemManager(BaseServer):
     _url = None
     _resources = None
     # ----------------------------------------------------------------------
-    def __init__(self, url, gis, initialize=False):
+    def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """
         Constructor
 
@@ -48,16 +51,16 @@ class SystemManager(BaseServer):
             self._init(gis)
 
     # ----------------------------------------------------------------------
-    def __str__(self):
+    def __str__(self) -> str:
         return "<%s at %s>" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<%s at %s>" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     @property
-    def server_properties(self):
+    def server_properties(self) -> "ServerProperties":
         """
         Gets the server properties for the site as an object.
         """
@@ -67,7 +70,7 @@ class SystemManager(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def _directories(self):
+    def _directories(self) -> list:
         """
         Gets the server directory object as a list.
         """
@@ -87,7 +90,7 @@ class SystemManager(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def directories(self):
+    def directories(self) -> "DirectoryManager":
         """
         :return:
             The server directory object in a list.
@@ -95,7 +98,7 @@ class SystemManager(BaseServer):
         return DirectoryManager(system=self)
 
     # ----------------------------------------------------------------------
-    def _get_directory(self, name):
+    def _get_directory(self, name: str) -> "ServerDirectory":
         """
         Retrieves a single directory registered with ArcGIS Server.
 
@@ -124,13 +127,13 @@ class SystemManager(BaseServer):
     # ----------------------------------------------------------------------
     def _register(
         self,
-        name,
-        physical_path,
-        directory_type,
-        max_age,
-        cleanup_mode="NONE",
-        description=None,
-    ):
+        name: str,
+        physical_path: str,
+        directory_type: str,
+        max_age: int,
+        cleanup_mode: str = "NONE",
+        description: Optional[str] = None,
+    ) -> bool:
         """
         Registers a new server directory. While registering the server
         directory, you can also specify the directory's cleanup parameters.
@@ -177,7 +180,7 @@ class SystemManager(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def licenses(self):
+    def licenses(self) -> dict:
         """
         Gets the license resource list.  The licenses resource lists the
         current license level of ArcGIS for Server and all authorized
@@ -190,7 +193,7 @@ class SystemManager(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def platform_services(self):
+    def platform_services(self) -> "PlatformServiceManager":
         """
         Provides access to the platform services that are associated with GeoAnalytics.
         """
@@ -199,7 +202,7 @@ class SystemManager(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def jobs(self):
+    def jobs(self) -> "Jobs":
         """
         Gets the Jobs object.
         """
@@ -208,7 +211,7 @@ class SystemManager(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def web_adaptors(self):
+    def web_adaptors(self) -> dict:
         """
         Gets a list of all the Web Adaptors that have been registered
         with the site. The server will trust all these Web Adaptors and
@@ -224,7 +227,7 @@ class SystemManager(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def web_adaptors_configuration(self):
+    def web_adaptors_configuration(self) -> dict:
         """
         Gets the Web Adaptors configuration which is a resource of all the
         configuration parameters shared across all the Web Adaptors in the
@@ -237,7 +240,7 @@ class SystemManager(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def update_web_adaptors_configuration(self, config):
+    def update_web_adaptors_configuration(self, config: str) -> bool:
         """
         You can use this operation to change the Web Adaptor configuration
         and the sharedkey attribute. The sharedkey attribute must be present
@@ -262,7 +265,9 @@ class SystemManager(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def update_web_adaptor(self, wa_id, description, http_port, https_port):
+    def update_web_adaptor(
+        self, wa_id: str, description: str, http_port: int, https_port: int
+    ) -> bool:
         """
         This operation allows you to update the description, HTTP port, and
         HTTPS port of a Web Adaptor that is registered with the server.
@@ -303,7 +308,7 @@ class SystemManager(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def unregister_webadaptor(self, wa_id):
+    def unregister_webadaptor(self, wa_id: str) -> bool:
         """
         Unregistering a Web Adaptor removes the Web Adaptor from the ArcGIS
         Server's trusted list. The Web Adaptor can no longer submit requests
@@ -331,7 +336,7 @@ class SystemManager(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def configuration_store(self):
+    def configuration_store(self) -> "ConfigurationStore":
         """
         Gets the ConfigurationStore object for this site.
         """
@@ -340,7 +345,7 @@ class SystemManager(BaseServer):
         return ConfigurationStore(url=url, connection=self._con)
 
     # ----------------------------------------------------------------------
-    def clear_cache(self):
+    def clear_cache(self) -> bool:
         """
         This operation clears the cache on all REST handlers in the system.
         While the server typically manages the REST cache for you, use this
@@ -359,7 +364,7 @@ class SystemManager(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def deployment(self):
+    def deployment(self) -> dict:
         """
         Gets the load balancing value for this site.  Load balancing is an
         ArcGIS Server deployment configuration resource that can
@@ -393,15 +398,15 @@ class SystemManager(BaseServer):
     # ----------------------------------------------------------------------
     def _edit_services_directory(
         self,
-        allowed_origins,
-        arcgis_com_map,
-        arcgis_com_map_text,
-        jsapi_arcgis,
-        jsapi_arcgis_css,
-        jsapi_arcgis_css2,
-        jsapi_arcgis_sdk,
-        service_dir_enabled,
-    ):
+        allowed_origins: str,
+        arcgis_com_map: str,
+        arcgis_com_map_text: str,
+        jsapi_arcgis: str,
+        jsapi_arcgis_css: str,
+        jsapi_arcgis_css2: str,
+        jsapi_arcgis_sdk: str,
+        service_dir_enabled: str,
+    ) -> bool:
         """
         Allows you to update the Services Directory configuration.  You can do such thing as
         enable or disable the HTML view of ArcGIS REST API, or adjust the JavaScript and map viewer
@@ -462,7 +467,7 @@ class SystemManager(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def _services_directory(self):
+    def _services_directory(self) -> dict:
         """returns the Server directory properties"""
         url = self._url + "/handlers/rest/servicesdirectory"
         params = {"f": "json"}
@@ -470,7 +475,7 @@ class SystemManager(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def handlers(self):
+    def handlers(self) -> dict:
         """
         Gets the handler of this server. A handler exposes the GIS capabilities of ArcGIS Server through a
         specific interface/API. There are two types of handlers currently
@@ -488,7 +493,7 @@ class SystemManager(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def rest_handler(self):
+    def rest_handler(self) -> dict:
         """
         Gets a list of resources accessible throught the REST API.
         """
@@ -528,7 +533,7 @@ class PlatformServiceManager(BaseServer):
     _json = None
     _json_dict = None
     # ----------------------------------------------------------------------
-    def __init__(self, url, connection, initialize=False):
+    def __init__(self, url: str, connection: Connection, initialize: bool = False):
         """
         ==================     ====================================================================
         **Argument**           **Description**
@@ -549,7 +554,7 @@ class PlatformServiceManager(BaseServer):
             self._init(connection)
 
     # ----------------------------------------------------------------------
-    def _init(self, connection=None):
+    def _init(self, connection: Connection = None):
         """loads the properties into the class"""
         from arcgis._impl.common._mixins import PropertyMap
 
@@ -569,7 +574,7 @@ class PlatformServiceManager(BaseServer):
             self._properties = PropertyMap({})
 
     # ----------------------------------------------------------------------
-    def get(self, service):
+    def get(self, service: str) -> "PlatformServices":
         """
         Returns a single instance of a Platform Service
 
@@ -596,7 +601,7 @@ class PlatformServiceManager(BaseServer):
         return None
 
     # ----------------------------------------------------------------------
-    def list(self):
+    def list(self) -> list:
         """
         Returns all Platform Services on the enterprise configuration.
 
@@ -642,7 +647,7 @@ class PlatformService(BaseServer):
     _url = None
     _con = None
     # ----------------------------------------------------------------------
-    def __init__(self, url, connection, initialize=False):
+    def __init__(self, url: str, connection: Connection, initialize: bool = False):
         """
         Constructor
 
@@ -666,7 +671,7 @@ class PlatformService(BaseServer):
             self._init(connection)
 
     # ----------------------------------------------------------------------
-    def start(self):
+    def start(self) -> dict:
         """
         The Start method allows for the running of the service.
         """
@@ -675,7 +680,7 @@ class PlatformService(BaseServer):
         return self._con.get(url, params)
 
     # ----------------------------------------------------------------------
-    def stop(self):
+    def stop(self) -> dict:
         """
         The Start method allows for the running of the service.
         """
@@ -684,7 +689,7 @@ class PlatformService(BaseServer):
         return self._con.get(url, params)
 
     # ----------------------------------------------------------------------
-    def status(self):
+    def status(self) -> dict:
         """
         The status resource allows you to view the status of the service.
         The
@@ -694,7 +699,7 @@ class PlatformService(BaseServer):
         return self._con.get(url, params)
 
     # ----------------------------------------------------------------------
-    def health(self):
+    def health(self) -> dict:
         """
         The health check operation allows you to view the health of the service.
         """
@@ -714,7 +719,7 @@ class ConfigurationStore(BaseServer):
     _json = None
     _json_dict = None
     # ----------------------------------------------------------------------
-    def __init__(self, url, connection, initialize=False):
+    def __init__(self, url: str, connection: Connection, initialize: bool = False):
         """
         Constructor
 
@@ -737,7 +742,7 @@ class ConfigurationStore(BaseServer):
             self._init(connection)
 
     # ----------------------------------------------------------------------
-    def recover(self):
+    def recover(self) -> dict:
         """
         Recovers the Configuration Store of the site.
 
@@ -762,8 +767,14 @@ class ConfigurationStore(BaseServer):
 
     # ----------------------------------------------------------------------
     def edit(
-        self, type_value, connection, move=True, run_async=False, *, local_path=None
-    ):
+        self,
+        type_value: str,
+        connection: GIS,
+        move: bool = True,
+        run_async: bool = False,
+        *,
+        local_path: Optional[str] = None,
+    ) -> bool:
         """
         You can use this operation to update the configuration store.
         Typically, this operation is used to change the location of the
@@ -832,7 +843,7 @@ class Jobs(BaseServer):
     _json_dict = None
     _url = None
     # ----------------------------------------------------------------------
-    def __init__(self, url, connection, initialize=False):
+    def __init__(self, url: str, connection: Connection, initialize: bool = False):
         """
         Constructor
 
@@ -856,7 +867,7 @@ class Jobs(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def jobs(self):
+    def jobs(self) -> list:
         """
         Gets the job IDs.
         """
@@ -865,7 +876,7 @@ class Jobs(BaseServer):
         return self._jobs
 
     # ----------------------------------------------------------------------
-    def get(self, job_id):
+    def get(self, job_id: str) -> dict:
         """
         A job represents the asynchronous execution of an operation. You
         can acquire progress information by periodically querying the job.
@@ -987,7 +998,7 @@ class ServerProperties(BaseServer):
     _json = None
     _json_dict = None
     # ----------------------------------------------------------------------
-    def __init__(self, url, connection, initialize=False):
+    def __init__(self, url: str, connection: Connection, initialize: bool = False):
         """
         Constructor
 
@@ -1012,15 +1023,15 @@ class ServerProperties(BaseServer):
             self._init(connection)
 
     # ----------------------------------------------------------------------
-    def __str__(self):
+    def __str__(self) -> str:
         return "<%s at %s>" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<%s at %s>" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
-    def update(self, properties):
+    def update(self, properties: str) -> bool:
         """
         This operation allows you to update the server properties. See the ServerProperties
         class description for all possible properties.
@@ -1064,15 +1075,15 @@ class DirectoryManager(object):
         self._system = system
 
     # ----------------------------------------------------------------------
-    def __str__(self):
+    def __str__(self) -> str:
         return "<%s at %s>" % (type(self).__name__, self._system._url)
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<%s at %s>" % (type(self).__name__, self._system._url)
 
     # ----------------------------------------------------------------------
-    def all(self):
+    def all(self) -> list:
         """
         Provides a configuration of this server directory.
         Server directories are used by GIS services as a location to output
@@ -1088,15 +1099,15 @@ class DirectoryManager(object):
     # ----------------------------------------------------------------------
     def edit_services_directory(
         self,
-        allowedOrigins,
-        arcgis_com_map,
-        arcgis_com_map_text,
-        jsapi_arcgis,
-        jsapi_arcgis_css,
-        jsapi_arcgis_css2,
-        jsapi_arcgis_sdk,
-        serviceDirEnabled,
-    ):
+        allowedOrigins: str,
+        arcgis_com_map: str,
+        arcgis_com_map_text: str,
+        jsapi_arcgis: str,
+        jsapi_arcgis_css: str,
+        jsapi_arcgis_css2: str,
+        jsapi_arcgis_sdk: str,
+        serviceDirEnabled: str,
+    ) -> bool:
         """
         Allows you to update the Services Directory configuration.  You can do such thing as
         enable or disable the HTML view of ArcGIS REST API, or adjust the JavaScript and map viewer
@@ -1152,7 +1163,7 @@ class DirectoryManager(object):
 
     # ----------------------------------------------------------------------
     @property
-    def properties(self):
+    def properties(self) -> dict:
         """
         returns the current service directory properties for the server.
 
@@ -1161,7 +1172,7 @@ class DirectoryManager(object):
         return self._system._services_directory
 
     # ----------------------------------------------------------------------
-    def get(self, name):
+    def get(self, name: str) -> dict:
         """
         Retrieves a single directory registered with ArcGIS Server.
 
@@ -1179,13 +1190,13 @@ class DirectoryManager(object):
     # ----------------------------------------------------------------------
     def add(
         self,
-        name,
-        physicalPath,
-        directoryType,
-        maxFileAge,
-        cleanupMode="NONE",
-        description=None,
-    ):
+        name: str,
+        physicalPath: str,
+        directoryType: str,
+        maxFileAge: int,
+        cleanupMode: str = "NONE",
+        description: Optional[str] = None,
+    ) -> bool:
         """
         Registers a new server directory. While registering the server
         directory, you can also specify the directory's cleanup parameters.
@@ -1262,7 +1273,7 @@ class ServerDirectory(BaseServer):
     _description = None
     _virtualPath = None
     # ----------------------------------------------------------------------
-    def __init__(self, url, connection, initialize=False):
+    def __init__(self, url: str, connection: Connection, initialize: bool = False):
         """
         Constructor
 
@@ -1287,13 +1298,13 @@ class ServerDirectory(BaseServer):
     # ----------------------------------------------------------------------
     def edit(
         self,
-        physical_path,
-        cleanup_mode,
-        max_age,
-        description,
+        physical_path: str,
+        cleanup_mode: str,
+        max_age: int,
+        description: str,
         *,
-        use_local_dir=None,
-        local_dir=None,
+        use_local_dir: Optional[bool] = None,
+        local_dir: Optional[str] = None,
     ):
         """
         The server directory's edit operation allows you to change the path
@@ -1353,7 +1364,7 @@ class ServerDirectory(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def clean(self):
+    def clean(self) -> bool:
         """
         Cleans the content (files and folders) within the directory that
         have passed their expiration date. Every server directory has the
@@ -1375,7 +1386,7 @@ class ServerDirectory(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def recover(self):
+    def recover(self) -> dict:
         """
         Recovers the shared server directories of the site.
 
@@ -1399,7 +1410,7 @@ class ServerDirectory(BaseServer):
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def unregister(self):
+    def unregister(self) -> bool:
         """
         Unregisters a server directory. Once a directory has been
         unregistered, it can no longer be referenced (used) from within a

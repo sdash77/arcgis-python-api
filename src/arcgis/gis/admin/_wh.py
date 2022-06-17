@@ -378,7 +378,10 @@ class Webhook(object):
 
     # ----------------------------------------------------------------------
     def activate(self):
-        """ """
+        """
+        Restarts a deactivated webhook. When activated, payloads
+        will be delivered to the payload URL when the webhook is invoked.
+        """
         url = self._url + "/activate"
         params = {"f": "json"}
         res = self._con.post(url, params)

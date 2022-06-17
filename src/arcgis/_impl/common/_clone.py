@@ -255,7 +255,7 @@ class _DeepCloner:
         from arcgis.gis.clone import clone_registry
 
         # if the item is in the clone_registry then use the item definition.
-        if item["type"] in clone_registry():
+        if isinstance(item, arcgis.gis.Item) and item["type"] in clone_registry():
             item_definition = self._get_item_definition(item)
             self._graph[item.id] = item_definition
         # if the item is a group find all the web maps that are shared with the group

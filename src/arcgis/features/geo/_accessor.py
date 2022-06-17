@@ -1,16 +1,6 @@
 """
 Holds Delegate and Accessor Logic
 """
-from arcgis.auth.tools import LazyLoader
-
-os = LazyLoader("os")
-copy = LazyLoader("copy")
-uuid = LazyLoader("uuid")
-shutil = LazyLoader("shutil")
-datetime = LazyLoader("datetime")
-np = LazyLoader("numpy")
-tempfile = LazyLoader("tempfile")
-warnings = LazyLoader("warnings")
 import logging
 import pandas as pd
 from collections.abc import Iterable
@@ -22,7 +12,16 @@ from ._io.fileops import (
     _sanitize_column_names,
     read_feather,
 )
+from arcgis.auth.tools import LazyLoader
 
+os = LazyLoader("os")
+copy = LazyLoader("copy")
+uuid = LazyLoader("uuid")
+shutil = LazyLoader("shutil")
+datetime = LazyLoader("datetime")
+np = LazyLoader("numpy")
+tempfile = LazyLoader("tempfile")
+warnings = LazyLoader("warnings")
 _geometry = LazyLoader("arcgis.geometry")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
 _isd = LazyLoader("arcgis._impl.common._isd")
@@ -2691,7 +2690,18 @@ class GeoAccessor(object):
                     sr = 4326
             from ._array import GeoArray
 
-            df[geometry_column] = GeoArray(df[geometry_column].apply(Geometry))
+            def _set_default_sr(geom):
+                if geom["spatialReference"] is None:
+                    geom["spatialReference"] = {"wkid": 4326}
+                elif (
+                    geom["spatialReference"].get("wkid", None) is None
+                    and geom["spatialReference"].get("wkt", None) is None
+                ):
+                    geom["spatialReference"] = {"wkid": 4326}
+                return geom
+
+            series = df[geometry_column].apply(Geometry).apply(_set_default_sr)
+            df[geometry_column] = GeoArray(series)
             df.spatial.set_geometry(geometry_column)
             df.spatial.project(sr)
             return df

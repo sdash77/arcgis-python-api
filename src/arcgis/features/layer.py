@@ -138,7 +138,7 @@ class FeatureLayer(Layer):
         value                   Required dict.
         ==================      ====================================================================
 
-        ..note::
+        .. note::
             When set, this overrides the default symbology when displaying it on a webmap.
 
         :return:
@@ -470,7 +470,7 @@ class FeatureLayer(Layer):
         :return:
             A JSON Dictionary
 
-        ..code-block:: python
+        .. code-block:: python
 
             # Example Usage
             FeatureLayer.generate_renderer(
@@ -2168,7 +2168,7 @@ class FeatureLayer(Layer):
 
         :return: Dictionary of the query results
 
-        ..code-block:: python
+        .. code-block:: python
             # The query results will return the related records for each objectIds
             # where TOWNSHIP is the outField and orderByField:
 
@@ -2389,6 +2389,7 @@ class FeatureLayer(Layer):
                 "Append is not supported on this layer, please "
                 + "update service definition capabilities."
             )
+
         params = {
             "f": "json",
             "sourceTableName": source_table_name,
@@ -2405,6 +2406,14 @@ class FeatureLayer(Layer):
             "appendUploadFormat": upload_format,
             "rollbackOnFailure": rollback,
         }
+        if (
+            self._gis
+            and hasattr(self._gis, "_con")
+            and self._gis._con.token
+            and hasattr(self._gis, "_portal")
+            and self._gis._portal.is_arcgisonline == False
+        ):
+            params["token"] = self._gis._con.token
         if not upsert_matching_field is None:
             params["upsertMatchingField"] = upsert_matching_field
         if not skip_inserts is None:
