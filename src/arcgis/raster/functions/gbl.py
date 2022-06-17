@@ -681,52 +681,52 @@ def zonal_statistics(
     ignore_no_data                   Optional bool. Denotes whether NoData values in the Value Raster will influence the results
                                      of the zone that they fall within.
 
-                                     True - Within any particular zone, only pixels that have a value in the Value
-                                     Raster will be used in determining the output value for that zone. NoData
-                                     pixels in the Value Raster will be ignored in the statistic calculation. This is the default.
+                                     - True - Within any particular zone, only pixels that have a value in the Value
+                                       Raster will be used in determining the output value for that zone. NoData
+                                       pixels in the Value Raster will be ignored in the statistic calculation. This is the default.
 
-                                     False - Within any particular zone, if any NoData pixels exist in the Value
-                                     Raster, it is deemed that there is insufficient information to perform
-                                     statistical calculations for all the pixels in that zone; therefore, the
-                                     entire zone will receive the NoData value on the output raster.
+                                     - False - Within any particular zone, if any NoData pixels exist in the Value
+                                       Raster, it is deemed that there is insufficient information to perform
+                                       statistical calculations for all the pixels in that zone; therefore, the
+                                       entire zone will receive the NoData value on the output raster.
     -----------------------------    -----------------------------------------------------------------------------------------------------------
     statistics_type                  Optional string. Statistic type to be calculated. Default is MEAN
 
-                                     MEAN-Calculates the average of all pixels in the Value Raster that belong to
-                                     the same zone as the output pixel.
+                                     - MEAN-Calculates the average of all pixels in the Value Raster that belong to
+                                       the same zone as the output pixel.
 
-                                     MAJORITY-Determines the value that occurs most often of all pixels in the
-                                     Value Raster that belong to the same zone as the output pixel.
+                                     - MAJORITY-Determines the value that occurs most often of all pixels in the
+                                       Value Raster that belong to the same zone as the output pixel.
 
-                                     MAXIMUM-Determines the largest value of all pixels in the Value Raster
-                                     that belong to the same zone as the output pixel.
+                                     - MAXIMUM-Determines the largest value of all pixels in the Value Raster
+                                       that belong to the same zone as the output pixel.
 
-                                     MEDIAN-Determines the median value of all pixels in the Value Raster
-                                     that belong to the same zone as the output pixel.
+                                     - MEDIAN-Determines the median value of all pixels in the Value Raster
+                                       that belong to the same zone as the output pixel.
 
-                                     MINIMUM-Determines the smallest value of all pixels in the Value Raster
-                                     that belong to the same zone as the output pixel.
+                                     - MINIMUM-Determines the smallest value of all pixels in the Value Raster
+                                       that belong to the same zone as the output pixel.
 
-                                     MINORITY-Determines the value that occurs least often of all pixels in
-                                     the Value Raster that belong to the same zone as the output pixel.
+                                     - MINORITY-Determines the value that occurs least often of all pixels in
+                                       the Value Raster that belong to the same zone as the output pixel.
 
-                                     RANGE-Calculates the difference between the largest and smallest value
-                                     of all pixels in the Value Raster that belong to the same zone as the
-                                     output pixel.
+                                     - RANGE-Calculates the difference between the largest and smallest value
+                                       of all pixels in the Value Raster that belong to the same zone as the
+                                       output pixel.
 
-                                     STD-Calculates the standard deviation of all pixels in
-                                     the Value Raster that belong to the same zone as the output pixel.
+                                     - STD-Calculates the standard deviation of all pixels in
+                                       the Value Raster that belong to the same zone as the output pixel.
 
-                                     SUM-Calculates the total value of all pixels in the Value Raster that
-                                     belong to the same zone as the output pixel.
+                                     - SUM-Calculates the total value of all pixels in the Value Raster that
+                                       belong to the same zone as the output pixel.
 
-                                     VARIETY-Calculates the number of unique values for all pixels in the
-                                     Value Raster that belong to the same zone as the output pixel.
+                                     - VARIETY-Calculates the number of unique values for all pixels in the
+                                       Value Raster that belong to the same zone as the output pixel.
 
-                                     PERCENTILE -Calculates a percentile of all cells in the value raster that
-                                     belong to the same zone as the output cell. The 90th percentile
-                                     is calculated by default. You can specify other values (from 0 to 100)
-                                     using the percentile_value parameter.
+                                     - PERCENTILE -Calculates a percentile of all cells in the value raster that
+                                       belong to the same zone as the output cell. The 90th percentile
+                                       is calculated by default. You can specify other values (from 0 to 100)
+                                       using the percentile_value parameter.
     -----------------------------    -----------------------------------------------------------------------------------------------------------
     process_as_multidimensional      Optional bool, Process as multidimensional if set to True. (If the input is multidimensional raster.)
     -----------------------------    -----------------------------------------------------------------------------------------------------------
@@ -741,14 +741,14 @@ def zonal_statistics(
     percentile_interpolation_type    Optional string. Specifies the method of interpolation to be used when the
                                      specified percentile value lies between two input cell values.
 
-                                     AUTO_DETECT - If the input value raster has integer pixel type, the NEAREST method is used.
-                                     If the input value raster has floating point pixel type, then the LINEAR method is used. This is the default.
+                                     - AUTO_DETECT - If the input value raster has integer pixel type, the NEAREST method is used.
+                                       If the input value raster has floating point pixel type, then the LINEAR method is used. This is the default.
 
-                                     NEAREST - Nearest value to the desired percentile. In this case, the output pixel type is
-                                     same as that of the input value raster.
+                                     - NEAREST - Nearest value to the desired percentile. In this case, the output pixel type is
+                                       same as that of the input value raster.
 
-                                     LINEAR - Weighted average of two surrounding values from the desired percentile. In this case, the output
-                                     pixel type is floating point.
+                                     - LINEAR - Weighted average of two surrounding values from the desired percentile. In this case, the output
+                                       pixel type is floating point.
 
                                      Parameter available in ArcGIS Image Server 10.9 and higher.
     =============================    ===========================================================================================================
