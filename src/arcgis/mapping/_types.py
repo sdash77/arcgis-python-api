@@ -234,15 +234,24 @@ class WebMap(HasTraits, collections.OrderedDict):
             self._basemap = {
                 "baseMapLayers": [
                     {
-                        "id": "defaultBasemap",
+                        "id": "world-hillshade-layer",
+                        "url": "https://services.arcgisonline.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer",
                         "layerType": "ArcGISTiledMapServiceLayer",
-                        "url": "https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer",
+                        "title": "World Hillshade",
+                        "showLegend": False,
                         "visibility": True,
                         "opacity": 1,
-                        "title": "World Topographic Map",
-                    }
+                    },
+                    {
+                        "id": "topo-vector-base-layer",
+                        "styleUrl": "https://www.arcgis.com/sharing/rest/content/items/7dc6cea0b1764a1f9af2e679f642f0f5/resources/styles/root.json",
+                        "layerType": "VectorTileLayer",
+                        "title": "World Topo",
+                        "visibility": True,
+                        "opacity": 1,
+                    },
                 ],
-                "title": "Topographic",
+                "title": "Topographic Vector",
             }
             self._gallery_basemaps = {}
             self._webmapdict = {
