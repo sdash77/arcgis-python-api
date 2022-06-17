@@ -395,7 +395,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             "ArcGISVectorTileLayer",
         ]
         if layer in self.layers and layer["layerType"] in layer_types:
-            self._webmapdict["baseMap"]["baseMapLayers"].append(layer)
+            self._webmapdict["baseMap"]["baseMapLayers"].append(dict(layer))
             self._webmapdict["operationalLayers"].remove(layer)
             self.definition = _mixins.PropertyMap(self._webmapdict)
             return self.basemap
@@ -431,7 +431,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             wm.update()
         """
         if layer in self.definition["baseMap"]["baseMapLayers"]:
-            self._webmapdict["operationalLayers"].append(layer)
+            self._webmapdict["operationalLayers"].append(_mixins.PropertyMap(layer))
             self._webmapdict["baseMap"]["baseMapLayers"].remove(layer)
             self.definition = _mixins.PropertyMap(self._webmapdict)
             return self.basemap
