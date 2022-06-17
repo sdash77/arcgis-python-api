@@ -1545,7 +1545,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             wm = WebMap(wm_item)
 
             print(wm.basemaps)
-            >> ['dark-gray', 'dark-gray-vector', 'gray', 'gray-vector', 'hybrid', 'national-geographic', 'oceans', 'osm', 'satellite', 'streets', 'streets-navigation-vector', 'streets-night-vector', 'streets-relief-vector', 'streets-vector', 'terrain', 'topo', 'topo-vector']
+            >> ['dark-gray-vector', 'gray-vector', 'hybrid', 'oceans', 'osm', 'satellite', 'streets-navigation-vector', 'streets-night-vector', 'streets-relief-vector', 'streets-vector', 'terrain', 'topo-vector']
             wm.basemap = 'dark-gray'
             print(wm.gallery_basemaps)
             >> ['custom_dark_gray_canvas', 'imagery', 'imagery_hybrid', 'light_gray_canvas', 'custom_basemap_vector_(proxy)', 'world_imagery_(proxy)', 'world_street_map_(proxy)']
@@ -1689,22 +1689,17 @@ class WebMap(HasTraits, collections.OrderedDict):
         :attr:`~arcgis.mapping.WebMap.basemap` for the ``WebMap``.
         """
         basemaps = [
-            "dark-gray",
             "dark-gray-vector",
-            "gray",
             "gray-vector",
             "hybrid",
-            "national-geographic",
             "oceans",
             "osm",
             "satellite",
-            "streets",
             "streets-navigation-vector",
             "streets-night-vector",
             "streets-relief-vector",
             "streets-vector",
             "terrain",
-            "topo",
             "topo-vector",
         ]
         return basemaps

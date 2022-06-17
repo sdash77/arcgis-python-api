@@ -844,44 +844,34 @@ class MapView(widgets.DOMWidget):
     # end how we store layers
 
     basemaps = [
-        "dark-gray",
         "dark-gray-vector",
-        "gray",
         "gray-vector",
         "hybrid",
-        "national-geographic",
         "oceans",
         "osm",
         "satellite",
-        "streets",
         "streets-navigation-vector",
         "streets-night-vector",
         "streets-relief-vector",
         "streets-vector",
         "terrain",
-        "topo",
         "topo-vector",
     ]
     """
     The ``basemaps`` layers are a list of possible basemaps to set :attr:`~arcgis.widgets.MapView.basemap` with:
     
-    1. Dark Grey
-    2. Dark Grey Vector
-    3. Gray
-    4. Gray Vector
-    5. Hybrid
-    6. National Geographic
-    7. Oceans
-    8. OSM
-    9. Satellite
-    10. Streets
-    11. Streets Navigation Vector
-    12. Streets Night Vector
-    13. Streets Relief Vector
-    14. Streets Vector
-    15. Terrain
-    16. Topo
-    17. Topographic Vector
+    1. Dark Grey Vector
+    2. Gray Vector
+    3. Hybrid
+    4. Oceans
+    5. OSM
+    6. Satellite
+    7. Streets Navigation Vector
+    8. Streets Night Vector
+    9. Streets Relief Vector
+    10. Streets Vector
+    11. Terrain
+    12. Topographic Vector
     """
     # End other properties that don't interact with the model
 
