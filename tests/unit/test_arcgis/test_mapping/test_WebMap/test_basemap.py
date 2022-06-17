@@ -1,4 +1,7 @@
 import pytest
+import sys
+sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
+sys.path.insert(1, r"C:\ipython_workfolder\geosaurus\tests")
 from unittest.mock import patch
 
 from utils.mocks import MockMapView
@@ -52,7 +55,7 @@ def test_set_basemap_using_webmap_object():
     wm.basemap = "dark-gray-vector"
     wm2 = WebMap()
     wm2.basemap = wm
-    assert "dark-gray-base-layer" in str(wm.basemap["baseMapLayers"]) and "dark-gray-vector" in str(
+    assert "dark-gray-base-layer" in str(wm.basemap["baseMapLayers"]) and "Dark Gray Vector" in str(
         wm._webmapdict
     )
 
