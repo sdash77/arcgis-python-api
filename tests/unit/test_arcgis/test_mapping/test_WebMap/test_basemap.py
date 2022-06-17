@@ -52,7 +52,7 @@ def test_set_basemap_using_webmap_object():
     wm.basemap = "dark-gray-vector"
     wm2 = WebMap()
     wm2.basemap = wm
-    assert "dark-gray-vector" in str(wm.basemap["baseMapLayers"]) and "dark-gray-vector" in str(
+    assert "dark-gray-base-layer" in str(wm.basemap["baseMapLayers"]) and "dark-gray-vector" in str(
         wm._webmapdict
     )
 
