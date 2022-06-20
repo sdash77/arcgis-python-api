@@ -417,7 +417,7 @@ class TaskManager(object):
                           ``ExecuteNotebook``, or ``UpdateInsightsWorkbook``.
         ================  ===============================================================================
 
-        :return: List of :class:`~arcgis.gis.tasks.Task`
+        :return: List of :class:`~arcgis.gis.tasks.Task` objects
 
         """
         if item is None and active is None and types is None:
@@ -491,13 +491,13 @@ class TaskManager(object):
         ------------------     --------------------------------------------------------------------
         parameters             Optional Dict. Optional collection of Key/Values that will be given
                                to the task.  The dictionary will be added to the task run
-                               request. This parameter is required for `ExecuteSceneCook` tasks.
+                               request. This parameter is required for ``ExecuteSceneCook`` tasks.
 
                                Example:
 
                                    {
                                        "service_url": <scene service URL>,
-                                       "num_of_caching_service_instances": 2, //2 instances are required
+                                       "num_of_caching_service_instances": 2, (2 instances are required)
                                        "layer": "{<list of scene layers to cook>}", //The default is all layers
                                        "update_mode": "PARTIAL_UPDATE_NODES"
                                    }
@@ -506,7 +506,7 @@ class TaskManager(object):
         ==================     ====================================================================
 
         :return:
-            :class:`~arcgis.gis.tasks.Task`
+            :class:`~arcgis.gis.tasks.Task` object
 
         """
         SPECIALS = {

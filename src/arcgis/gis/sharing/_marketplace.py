@@ -107,7 +107,7 @@ class MarketPlaceManager:
 
                                     Supported sort field names are:
                                     "title", "created", "listingpublisheddate", "type", "owner",
-                                    "avgrating", "numratings", "numcomments", and "numviews".
+                                    "avgrating", "numratings", "numcomments", and "numviews"
         ----------------------      --------------------------------------------------------------------
         sort_order                  Optional string. Describes whether the order returns
                                     in ascending(asc) or descending(desc) order. Default is asc.
@@ -117,16 +117,14 @@ class MarketPlaceManager:
         :return:
             A dictionary with response syntax of:
 
-                {
-                    "query": "<query string>",
-                    "total": <total number of results>,
-                    "start": <results in first set>,
-                    "num": <number of results per page>,
-                    "nextStart": <result number of next page>,
-                    "listings": [
-                        {<listing1>}, {<listing2>}
-                                ]
-                }
+                | {
+                | "query": "<query string>",
+                | "total": <total number of results>,
+                | "start": <results in first set>,
+                | "num": <number of results per page>,
+                | "nextStart": <result number of next page>,
+                | "listings": [{<listing1>}, {<listing2>}]
+                | }
 
         """
         url = f"{self._url}/listings"
@@ -180,9 +178,11 @@ class MarketPlaceManager:
         :return:
             A dictionary with syntax:
 
-                {
-                    "success": <true | false>, "itemId": "<itemId>", "purchaserOrgId": "<purchaserOrgId>"
-                }
+                | {
+                | "success": <true | false>,
+                | "itemId": "<itemId>",
+                | "purchaserOrgId": "<purchaserOrgId>"
+                | }
 
         """
         params = {"f": "json"}
@@ -251,14 +251,14 @@ class MarketPlaceManager:
 
                                         Example:
 
-                                            {
-                                                "maxUsers": 10,
-                                                "entitlements": {
-                                                    "standard": {"num": 8},  //'standard' is an entitlement string that uniquely identifies entitlement, listingID is used typically for provider apps
-                                                    "advanced": {"num": 2},
-                                                    "spatialAnalyst": {"num": 2}
-                                                }
-                                            }
+                                            | {
+                                            | "maxUsers": 10,
+                                            | "entitlements": {
+                                            | "standard": {"num": 8}, ('standard' is an entitlement string that uniquely identifies entitlement, listingID is used typically for provider apps)
+                                            | "advanced": {"num": 2},
+                                            | "spatialAnalyst": {"num": 2}
+                                            | }
+                                            | }
 
         ==========================      ==================================================================================================================================================================
 
@@ -292,10 +292,10 @@ class MarketPlaceManager:
 
                                     Example:
 
-                                        {
-                                        "users": ["username1", "username2"],
-                                        "entitlements": ["standard", "networkAnalyst"] //"standard" is an entitlement string that uniquely identifies entitlement, listing itemId is used typically for provider apps
-                                        }
+                                        | {
+                                        | "users": ["username1", "username2"],
+                                        | "entitlements": ["standard", "networkAnalyst"] ("standard" is an entitlement string that uniquely identifies entitlement, listing itemId is used typically for provider apps)
+                                        | }
 
                                     Only members of the purchasing org can be specified in the request.
 
@@ -330,7 +330,6 @@ class MarketPlaceManager:
         status                      Optional String. Status of the listings to be returned. The default value is active.
 
                                     Accepted values are:
-
                                         * active: Only listings that are currently active will be returned
                                         * expired: Only listings that have already expired will be returned
                                         * all: Both active and expired listings will be returned
@@ -488,13 +487,11 @@ class MarketPlaceManager:
         status                      Optional String. Status of the listings to be returned. The default value is active.
 
                                     Accepted values are:
-
                                         * active: Only listings that are currently active will be returned
                                         * expired: Only listings that have already expired will be returned
                                         * all: Both active and expired listings will be returned
         ---------------------       ------------------------------------------------------------------------------------
         type                        Optional String. Access type of the provisions to be returned:
-
                                         * REQUEST: Only provisions that have been requested will be returned.
                                         * TRIAL: Only trial provisions will be returned.
                                         * PURCHASE: Only subscription provisions will be returned.
