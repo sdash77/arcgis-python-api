@@ -2993,7 +2993,7 @@ def path_distance_back_link(
                                         or to which the least accumulated cost distance for every output cell location is calculated.
 
                                         For rTasters, the input type can be integer or floating point.
-
+    -------------------------------     -------------------------------------------------------------------------------------------------------------------
     in_cost_raster                      Optional. A raster defining the impedance or cost to move planimetrically through each cell.
 
                                         The value at each cell location represents the cost-per-unit distance for moving through the cell.
@@ -3002,57 +3002,59 @@ def path_distance_back_link(
 
                                         The values of the cost raster can be integer or floating point, but they cannot be negative or
                                         zero (you cannot have a negative or zero cost).
-
+    -------------------------------     -------------------------------------------------------------------------------------------------------------------
     in_surface_raster                   Optional. A raster defining the elevation values at each cell location. The values are used to calculate the actual
                                         surface distance covered when passing between cells.
-
+    -------------------------------     -------------------------------------------------------------------------------------------------------------------
     in_horizontal_raster                Optional. A raster defining the horizontal direction at each cell.
                                         The values on the raster must be integers ranging from 0 to 360, with 0 degrees being north, or toward
                                         the top of the screen, and increasing clockwise. Flat areas should be given a value of -1.
                                         The values at each location will be used in conjunction with the {horizontal_factor} to determine the
                                         horizontal cost incurred when moving from a cell to its neighbors.
-
+    -------------------------------     -------------------------------------------------------------------------------------------------------------------
     in_vertical_raster                  Optional. A raster defining the vertical (z) value for each cell. The values are used for calculating the slope
                                         used to identify the vertical factor incurred when moving from one cell to another.
-
+    -------------------------------     -------------------------------------------------------------------------------------------------------------------
     horizontal_factor                   Optional. The Horizontal Factor defines the relationship between the horizontal cost
                                         factor and the horizontal relative moving angle.
                                         Possible values are: "BINARY", "LINEAR", "FORWARD", "INVERSE_LINEAR"
-
+    -------------------------------     -------------------------------------------------------------------------------------------------------------------
     vertical_factor                     Optional. The Vertical Factor defines the relationship between the vertical cost factor and
                                         the vertical relative moving angle (VRMA)
                                         Possible values are: "BINARY", "LINEAR", "SYMMETRIC_LINEAR", "INVERSE_LINEAR",
                                         "SYMMETRIC_INVERSE_LINEAR", "COS", "SEC", "COS_SEC", "SEC_COS"
-
+    -------------------------------     -------------------------------------------------------------------------------------------------------------------
     maximum_distance                    Optional. Defines the threshold that the accumulative cost values cannot exceed. If an accumulative cost distance
                                         value exceeds this value, the output value for the cell location will be NoData. The maximum distance
                                         defines the extent for which the accumulative cost distances are calculated.
 
                                         The default distance is to the edge of the output raster.
-
+    -------------------------------     -------------------------------------------------------------------------------------------------------------------
     source_cost_multiplier              Optional. Multiplier to apply to the cost values. Allows for control of the mode of travel or the magnitude at a source.
                                         The greater the multiplier, the greater the cost to move through each cell. The values must be greater than zero.
                                         The default is 1.
-
+    -------------------------------     -------------------------------------------------------------------------------------------------------------------
     source_start_cost                   Optional. The starting cost from which to begin the cost calculations. Allows for the specification of the fixed cost associated with a source.
                                         Instead of starting at a cost of zero, the cost algorithm will begin with the value set by source_start_cost.
 
                                         The values must be zero or greater. The default is 0.
-
+    -------------------------------     -------------------------------------------------------------------------------------------------------------------
     source_resistance_rate              Optional. This parameter simulates the increase in the effort to overcome costs as the accumulative cost increases.
                                         It is used to model fatigue of the traveler. The growing accumulative cost to reach a cell is multiplied
                                         by the resistance rate and added to the cost to move into the subsequent cell.
-
+    -------------------------------     -------------------------------------------------------------------------------------------------------------------
     source_capacity                     Optional. Defines the cost capacity for the traveler for a source.
                                         The cost calculations continue for each source until the specified capacity is reached.
 
                                         The values must be greater than zero. The default capacity is to the edge of the output raster.
-
+    -------------------------------     -------------------------------------------------------------------------------------------------------------------
     source_direction                    Optional. Defines the direction of the traveler when applying horizontal and vertical factors,
                                         the source resistance rate, and the source starting cost.
                                         Possible values: FROM_SOURCE, TO_SOURCE
+    ===============================     ===================================================================================================================
 
     :return: output raster with function applied
+
     """
 
     layer1, input_source_data, raster_ra1 = _raster_input(in_source_data)
@@ -3490,21 +3492,25 @@ def flow_length(
     For more information, see 
     https://pro.arcgis.com/en/pro-app/help/data/imagery/flow-length-function.htm
 
-    Parameters
-    ----------
-    :param input_flow_direction_raster: Required. The input raster that shows the direction of flow out of each cell.
-                                        The flow direction raster can be created by running the Flow Direction function.
-    :param direction_measurement: Optional String. The direction of measurement along the flow path.
+    ================================     ===============================================================================
+    **Argument**                         **Description**
+    --------------------------------     -------------------------------------------------------------------------------
+    input_flow_direction_raster          Required. The input raster that shows the direction of flow out of each cell.
+                                         The flow direction raster can be created by running the Flow Direction function.
+    --------------------------------     -------------------------------------------------------------------------------
+    direction_measurement                Optional String. The direction of measurement along the flow path.
 
-                                  - DOWNSTREAM - Calculates the downslope distance along the flow path, \
-                                  from each cell to a sink or outlet on the edge of the raster. this is the default.
+                                         - DOWNSTREAM - Calculates the downslope distance along the flow path, \
+                                         from each cell to a sink or outlet on the edge of the raster. this is the default.
 
-                                  - UPSTREAM - Calculates the longest upslope distance along the flow path, \
-                                  from each cell to the top of the drainage divide.
+                                         - UPSTREAM - Calculates the longest upslope distance along the flow path, \
+                                         from each cell to the top of the drainage divide.
+    --------------------------------     -------------------------------------------------------------------------------
+    input_weight_raster                  An optional input raster for applying a weight to each cell.
+                                         If no weight raster is specified, a default weight of 1 will
+                                         be applied to each cell.
+    ================================     ===============================================================================
 
-    :param input_weight_raster: An optional input raster for applying a weight to each cell.
-                                If no weight raster is specified, a default weight of 1 will 
-                                be applied to each cell.
     :return: output raster with function applied
 
     """
@@ -3558,13 +3564,15 @@ def sink(input_flow_direction_raster: Raster):
     For more information, see
     https://pro.arcgis.com/en/pro-app/help/data/imagery/sink-function.htm
 
-    Parameters
-    ----------
-    :param input_flow_direction_raster: Required. The input raster that shows the direction
-                                        of flow out of each cell.
+    ================================     ===============================================================================
+    **Argument**                         **Description**
+    --------------------------------     -------------------------------------------------------------------------------
+    input_flow_direction_raster          Required. The input raster that shows the direction
+                                         of flow out of each cell.
 
-                                        The flow direction raster can be created by
-                                        running the Flow Direction function.
+                                         The flow direction raster can be created by
+                                         running the Flow Direction function.
+    ================================     ===============================================================================
 
     :return: output raster with function applied
 
@@ -3601,17 +3609,21 @@ def snap_pour_point(
     For more information, see
     https://pro.arcgis.com/en/pro-app/help/data/imagery/snap-pour-point-function.htm
 
-    Parameters
-    ----------
-    :param in_pour_point_data: Required. The input pour point locations that are to be snapped.
-                               For an input raster layer, all cells that are not
-                               NoData (that is, have a value) will be considered
-                               pour points and will be snapped.
-
-    :param in_accumulation_raster: optional raster; The input flow accumulation raster layer.
-    :param snap_distance: Optional. Maximum distance, in map units, to search for a cell of higher
-                          accumulated flow. Default is 0
-    :param pour_point_field: Optional. Field used to assign values to the pour point locations.
+    ================================     ===============================================================================
+    **Argument**                         **Description**
+    --------------------------------     -------------------------------------------------------------------------------
+    in_pour_point_data                   Required. The input pour point locations that are to be snapped.
+                                         For an input raster layer, all cells that are not
+                                         NoData (that is, have a value) will be considered
+                                         pour points and will be snapped.
+    --------------------------------     -------------------------------------------------------------------------------
+    in_accumulation_raster               Optional raster; The input flow accumulation raster layer.
+    --------------------------------     -------------------------------------------------------------------------------
+    snap_distance                        Optional. Maximum distance, in map units, to search for a cell of higher
+                                         accumulated flow. Default is 0
+    --------------------------------     -------------------------------------------------------------------------------
+    pour_point_field                     Optional. Field used to assign values to the pour point locations.
+    ================================     ===============================================================================
 
     :return: output raster with function applied
 
@@ -3665,24 +3677,28 @@ def stream_order(
     For more information, see 
     https://pro.arcgis.com/en/pro-app/help/data/imagery/stream-order-function.htm
 
-    Parameters
-    ----------
-    :param input_stream_raster: Required. An input stream raster that represents a linear stream network.
-    :param input_flow_direction_raster: Optional. The input raster that shows the direction of flow out of each cell
-                                        The flow direction raster can be created by running the Flow 
-                                        Direction function.
-    :param order_method: Optional. The method used for assigning stream order.
+    ================================     ===============================================================================
+    **Argument**                         **Description**
+    --------------------------------     -------------------------------------------------------------------------------
+    input_stream_raster                  Required. An input stream raster that represents a linear stream network.
+    --------------------------------     -------------------------------------------------------------------------------
+    input_flow_direction_raster          Optional. The input raster that shows the direction of flow out of each cell
+                                         The flow direction raster can be created by running the Flow
+                                         Direction function.
+    --------------------------------     -------------------------------------------------------------------------------
+    order_method                         Optional. The method used for assigning stream order.
 
-                          - STRAHLER - The method of stream ordering proposed by Strahler in 1952. \
-                          Stream order only increases when streams of the same order intersect. \
-                          Therefore, the intersection of a first-order and second-order link will \
-                          remain a second-order link, rather than creating a third-order link. \
-                          This is the default.
+                                         - STRAHLER - The method of stream ordering proposed by Strahler in 1952. \
+                                         Stream order only increases when streams of the same order intersect. \
+                                         Therefore, the intersection of a first-order and second-order link will \
+                                         remain a second-order link, rather than creating a third-order link. \
+                                         This is the default.
 
-                          - SHREVE - The method of stream ordering by magnitude, proposed by Shreve \
-                          in 1967. All links with no tributaries are assigned a magnitude (order) \
-                          of one. Magnitudes are additive downslope. When two links intersect, \
-                          their magnitudes are added and assigned to the downslope link.
+                                         - SHREVE - The method of stream ordering by magnitude, proposed by Shreve \
+                                         in 1967. All links with no tributaries are assigned a magnitude (order) \
+                                         of one. Magnitudes are additive downslope. When two links intersect, \
+                                         their magnitudes are added and assigned to the downslope link.
+    ================================     ===============================================================================
 
     :return: output raster with function applied
 
@@ -3730,20 +3746,22 @@ def expand(input_raster: Raster, number_of_cells: int, zone_values: Union[list, 
     Expands specified zones of a raster by a specified number of cells.
     https://pro.arcgis.com/en/pro-app/help/data/imagery/expand-function.htm
 
-    Parameters
-    ----------
-    :param input_raster: Required. The input raster for which the identified zones are to
-                         be expanded.
-                         It must be of integer type.
-
-    :param number_of_cells: Required. The number of cells to expand by.
-                            The value must be integer, and can be 1 or greater.
-
-    :param zone_values: Required. The list of zones to expand. The zone values
-                        must be integer, and they can be in any order.
-                        The zone values can be specified as a list or as a string.
-                        If specified as a string and if it is required to specify multiple zones,
-                        use a semicolon (";") to separate the zone values.
+    ================================     ===============================================================================
+    **Argument**                         **Description**
+    --------------------------------     -------------------------------------------------------------------------------
+    input_raster                         Required. The input raster for which the identified zones are to
+                                         be expanded.
+                                         It must be of integer type.
+    --------------------------------     -------------------------------------------------------------------------------
+    number_of_cells                      Required. The number of cells to expand by. The value must be integer,
+                                         and can be 1 or greater.
+    --------------------------------     -------------------------------------------------------------------------------
+    zone_values                          Required. The list of zones to expand. The zone values
+                                         must be integer, and they can be in any order.
+                                         The zone values can be specified as a list or as a string.
+                                         If specified as a string and if it is required to specify multiple zones,
+                                         use a semicolon (";") to separate the zone values.
+    ================================     ===============================================================================
 
     :return: output raster with function applied
 
@@ -3782,19 +3800,20 @@ def shrink(input_raster: Raster, number_of_cells: int, zone_values: Union[list, 
     the value of the cell that is most frequent in its neighborhood.
     https://pro.arcgis.com/en/pro-app/help/data/imagery/shrink-function.htm
 
-    Parameters
-    ----------
-    :param input_raster: Required. The input raster for which the identified zones are to be shrunk.
-                         It must be of integer type.
-
-    :param number_of_cells: Required. The number of cells by which to shrink each specified zone.
-                            The value must be integer, and can be 1 or greater.
-
-    :param zone_values: Required. The list of zones to shrink. The zone values must be integer, and they can be in any order.
-                        The zone values can be specified as a list or as a string.
-                        If specified as a string and if it is required to specify multiple zones,
-                        use a semicolon (";") to separate the zone values.
-
+    ===============================     ================================================================================
+    **Argument**                         **Description**
+    -------------------------------     --------------------------------------------------------------------------------
+    input_raster                        Required. The input raster for which the identified zones are to be shrunk.
+                                        It must be of integer type.
+    -------------------------------     --------------------------------------------------------------------------------
+    number_of_cells                     Required. The number of cells by which to shrink each specified zone.
+                                        The value must be integer, and can be 1 or greater.
+    -------------------------------     --------------------------------------------------------------------------------
+    zone_values                         Required. The list of zones to shrink. The zone values must be integer, and they can be in any order.
+                                        The zone values can be specified as a list or as a string.
+                                        If specified as a string and if it is required to specify multiple zones,
+                                        use a semicolon (";") to separate the zone values.
+    ===============================     ================================================================================
 
     :return: output raster with function applied
 
@@ -3849,72 +3868,74 @@ def distance_accumulation(
     Calculates the least accumulative cost distance for each cell from or to the 
     least-cost source over a cost surface, preserving euclidean distance metric
 
-    Parameters
-    ----------
-    :param in_source_data:  Required. The input source locations.
 
-                            This is a layer that identifies the cells or locations from
-                            or to which the least accumulated cost distance for every output cell location is calculated.
-                            This parameter can have either a raster layer input or a feature layer input. 
-                            For rasters, the input type can be integer or floating point.
+    ===============================     ================================================================================
+    **Argument**                         **Description**
+    -------------------------------     --------------------------------------------------------------------------------
+    in_source_data                      Required. The input source locations.
 
-    :param in_barrier_data: Optional. The input layer that defines the barriers. 
-                            This parameter can have either a raster layer input or a feature layer input. The dataset must contain 
-                            NoData where there are no barriers. Barriers are represented by valid values including zero. 
-                            The barriers can be defined by an integer or floating-point raster. 
+                                        This is a layer that identifies the cells or locations from
+                                        or to which the least accumulated cost distance for every output cell location is calculated.
+                                        This parameter can have either a raster layer input or a feature layer input.
+                                        For rasters, the input type can be integer or floating point.
 
-    :param in_surface_raster:  Optional. A raster defining the elevation values at each cell location. The values are used to calculate the actual
-                               surface distance covered when passing between cells.
+    in_barrier_data                     Optional. The input layer that defines the barriers.
+                                        This parameter can have either a raster layer input or a feature layer input. The dataset must contain
+                                        NoData where there are no barriers. Barriers are represented by valid values including zero.
+                                        The barriers can be defined by an integer or floating-point raster.
 
-    :param in_cost_raster:   Optional. A raster defining the impedance or cost to move planimetrically through each cell.
+    in_surface_raster                   Optional. A raster defining the elevation values at each cell location. The values are used to calculate the actual
+                                        surface distance covered when passing between cells.
 
-                             The value at each cell location represents the cost-per-unit distance for moving through the cell.
-                             Each cell location value is multiplied by the cell resolution while also compensating for diagonal
-                             movement to obtain the total cost of passing through the cell.
+    in_cost_raster                      Optional. A raster defining the impedance or cost to move planimetrically through each cell.
 
-                             The values of the cost raster can be integer or floating point, but they cannot be negative or
-                             zero (you cannot have a negative or zero cost).
+                                        The value at each cell location represents the cost-per-unit distance for moving through the cell.
+                                        Each cell location value is multiplied by the cell resolution while also compensating for diagonal
+                                        movement to obtain the total cost of passing through the cell.
 
-    :param in_horizontal_raster: Optional. A raster defining the horizontal direction at each cell.
-                                 The values on the raster must be integers ranging from 0 to 360, with 0 degrees being north, or toward
-                                 the top of the screen, and increasing clockwise. Flat areas should be given a value of -1.
-                                 The values at each location will be used in conjunction with the {horizontal_factor} to determine the
-                                 horizontal cost incurred when moving from a cell to its neighbors.
+                                        The values of the cost raster can be integer or floating point, but they cannot be negative or
+                                        zero (you cannot have a negative or zero cost).
 
-    :param in_vertical_raster:  Optional. A raster defining the vertical (z) value for each cell. The values are used for calculating the slope
-                                used to identify the vertical factor incurred when moving from one cell to another.
+    in_horizontal_raster                Optional. A raster defining the horizontal direction at each cell.
+                                        The values on the raster must be integers ranging from 0 to 360, with 0 degrees being north, or toward
+                                        the top of the screen, and increasing clockwise. Flat areas should be given a value of -1.
+                                        The values at each location will be used in conjunction with the {horizontal_factor} to determine the
+                                        horizontal cost incurred when moving from a cell to its neighbors.
 
-    :param horizontal_factor:  Optional. The Horizontal Factor defines the relationship between the horizontal cost
-                               factor and the horizontal relative moving angle.
+    in_vertical_raster                  Optional. A raster defining the vertical (z) value for each cell. The values are used for calculating the slope
+                                        used to identify the vertical factor incurred when moving from one cell to another.
 
-    :param vertical_factor: Optional. The Vertical Factor defines the relationship between the vertical cost factor and
-                            the vertical relative moving angle (VRMA)
+    horizontal_factor                   Optional. The Horizontal Factor defines the relationship between the horizontal cost
+                                        factor and the horizontal relative moving angle.
 
-    :param maximum_distance:  Optional. Defines the threshold that the accumulative cost values cannot exceed. If an accumulative cost distance
-                              value exceeds this value, the output value for the cell location will be NoData. The maximum distance
-                              defines the extent for which the accumulative cost distances are calculated.
+    vertical_factor                     Optional. The Vertical Factor defines the relationship between the vertical cost factor and
+                                        the vertical relative moving angle (VRMA)
 
-                              The default distance is to the edge of the output raster.
+    maximum_distance                    Optional. Defines the threshold that the accumulative cost values cannot exceed. If an accumulative cost distance
+                                        value exceeds this value, the output value for the cell location will be NoData. The maximum distance
+                                        defines the extent for which the accumulative cost distances are calculated.
 
-    :param distance_method: Optional String; Determines whether to calculate the distance using a planar (flat earth) 
-                            or a geodesic (ellipsoid) method.
+                                        The default distance is to the edge of the output raster.
 
-                            - Planar - Planar measurements use 2D Cartesian mathematics to calculate \
-                            length and area. The option is only available when measuring in a \
-                            projected coordinate system and the 2D plane of that coordinate system \
-                            will be used as the basis for the measurements. This is the default.
+    distance_method                     Optional String; Determines whether to calculate the distance using a planar (flat earth)
+                                        or a geodesic (ellipsoid) method.
 
-                            - Geodesic - The shortest line between two points on the earth's surface \
-                            on a spheroid (ellipsoid). Therefore, regardless of input or output \
-                            projection, the results do not change.
+                                        - Planar - Planar measurements use 2D Cartesian mathematics to calculate \
+                                        length and area. The option is only available when measuring in a \
+                                        projected coordinate system and the 2D plane of that coordinate system \
+                                        will be used as the basis for the measurements. This is the default.
 
-                            .. note::
+                                        - Geodesic - The shortest line between two points on the earth's surface \
+                                        on a spheroid (ellipsoid). Therefore, regardless of input or output \
+                                        projection, the results do not change.
 
-                            One use for a geodesic line is when you want to determine the shortest 
-                            distance between two cities for an airplane's flight path. This is also
-                            known as a great circle line if based on a sphere rather than an ellipsoid.
+                                        .. note::
 
-    :param source_initial_accumulation: Optional. The starting cost from which to begin the cost calculations. 
+                                        One use for a geodesic line is when you want to determine the shortest
+                                        distance between two cities for an airplane's flight path. This is also
+                                        known as a great circle line if based on a sphere rather than an ellipsoid.
+
+    source_initial_accumulation         Optional. The starting cost from which to begin the cost calculations.
     
                                         Allows for the specification of the fixed 
                                         cost associated with a source. Instead of starting at a cost of zero, the cost algorithm will begin with 
@@ -3922,35 +3943,36 @@ def distance_accumulation(
 
                                         The values must be zero or greater. The default is 0.
 
-    :param source_maximum_accumulation: Optional. The cost capacity for the traveler for a source. 
+    source_maximum_accumulation         Optional. The cost capacity for the traveler for a source.
 
                                         The cost calculations continue for each source until the specified capacity is reached.
 
                                         The values must be greater than zero. The default capacity is to the edge of the output raster.
 
 
-    :param source_cost_multiplier:  Optional. Multiplier to apply to the cost values. Allows for control of the mode of travel or the magnitude at a source.
-                                    The greater the multiplier, the greater the cost to move through each cell. The values must be greater than zero.
-                                    The default is 1.
+    source_cost_multiplier              Optional. Multiplier to apply to the cost values. Allows for control of the mode of travel or the magnitude at a source.
+                                        The greater the multiplier, the greater the cost to move through each cell. The values must be greater than zero.
+                                        The default is 1.
 
 
-    :param source_direction:  Optional. Defines the direction of the traveler when applying horizontal and vertical factors,
-                              the source resistance rate, and the source starting cost.
-                              Possible values: FROM_SOURCE, TO_SOURCE. Default value is FROM_SOURCE.
+    source_direction                    Optional. Defines the direction of the traveler when applying horizontal and vertical factors,
+                                        the source resistance rate, and the source starting cost.
+                                        Possible values: FROM_SOURCE, TO_SOURCE. Default value is FROM_SOURCE.
 
-    :param output_back_direction_raster_name: Optional string, determines whether back_direction_raster should be generated or not.
-                                              Set this parameter, in order to generate the back_direction_raster.
-                                              If set, the output of the function will be a named tuple.
+    output_back_direction_raster_name   Optional string, determines whether back_direction_raster should be generated or not.
+                                        Set this parameter, in order to generate the back_direction_raster.
+                                        If set, the output of the function will be a named tuple.
 
-    :param output_source_direction_raster_name: Optional string. Name of the source_direction_raster. This parameter determines 
-                                                whether source_direction_raster should be generated or not.
-                                                Set this parameter, in order to generate the source_direction_raster.
-                                                If set, the output of the function will be a named tuple.
+    output_source_direction_raster_name Optional string. Name of the source_direction_raster. This parameter determines
+                                        whether source_direction_raster should be generated or not.
+                                        Set this parameter, in order to generate the source_direction_raster.
+                                        If set, the output of the function will be a named tuple.
 
-    :param output_source_location_raster_name: Optional string. Name of the source_location_raster.This paramter determines whether 
-                                               source_location_raster should be generated or not.
-                                               Set this parameter, in order to generate the source_location_raster.
-                                               If set, the output of the function will be a named tuple.
+    output_source_location_raster_name  Optional string. Name of the source_location_raster.This paramter determines whether
+                                        source_location_raster should be generated or not.
+                                        Set this parameter, in order to generate the source_location_raster.
+                                        If set, the output of the function will be a named tuple.
+    ===============================     ================================================================================
 
     :return: output raster with function applied
     """
@@ -4136,8 +4158,9 @@ def distance_allocation(
     Calculates, for each cell, its least-cost source based on the least accumulative cost over a cost surface, 
     avoiding network distance distortion.",
 
-    Parameters
-    ----------
+    ===============================     ================================================================================
+    **Argument**                         **Description**
+    -------------------------------     --------------------------------------------------------------------------------
     :param in_source_data:  Required. The input source locations.
 
                             This is a layer that identifies the cells or locations from
@@ -4411,45 +4434,48 @@ def optimal_path_as_raster(
     Calculates, for each cell, its least-cost source based on the least accumulative cost over a cost surface, 
     avoiding network distance distortion.",
 
-    Parameters
-    ----------
-    :param in_destination_data: Required layer. A layer that identifies locations from which the optimal 
-                                path is determined to the least costly source. 
-                                This parameter can have either a raster layer input or a feature layer input.
+    ===============================     ================================================================================
+    **Argument**                         **Description**
+    -------------------------------     --------------------------------------------------------------------------------
+    in_destination_data                 Required layer. A layer that identifies locations from which the optimal
+                                        path is determined to the least costly source.
+                                        This parameter can have either a raster layer input or a feature layer input.
 
-                                If the input is a raster, it must consists of cells that have valid values 
-                                (zero is a valid value), and the remaining cells must be assigned NoData.
+                                        If the input is a raster, it must consists of cells that have valid values
+                                        (zero is a valid value), and the remaining cells must be assigned NoData.
+    -------------------------------     --------------------------------------------------------------------------------
+    in_distance_accumulation_raster     Required raster layer. The distance accumulation raster is used
+                                        to determine the optimal path from the sources to the destinations.
 
-    :param in_distance_accumulation_raster: Required raster layer. The distance accumulation raster is used 
-                                            to determine the optimal path from the sources to the destinations. 
+                                        The distance accumulation raster is usually created with the
+                                        distance_accumulation or distance_allocation functions.  Each cell
+                                        in the distance accumulation raster represents the minimum
+                                        accumulative cost distance over a surface from each cell to a set of source cells.
+    -------------------------------     --------------------------------------------------------------------------------
+    in_back_direction_raster            Required raster layer. The back direction raster contains calculated directions in
+                                        degrees. The direction identifies the next cell along the optimal path back to
+                                        the least accumulative cost source while avoiding barriers.
+    -------------------------------     --------------------------------------------------------------------------------
+    destination_field                   Optional string. The field to be used to obtain values for the destination locations.
+    -------------------------------     --------------------------------------------------------------------------------
+    path_type                           Optional string. A keyword defining the manner in which the values and zones on the input destination
+                                        data will be interpreted in the cost path calculations.
 
-                                            The distance accumulation raster is usually created with the 
-                                            distance_accumulation or distance_allocation functions.  Each cell 
-                                            in the distance accumulation raster represents the minimum 
-                                            accumulative cost distance over a surface from each cell to a set of source cells.
+                                        - EACH_ZONE - For each zone on the input destination data, a least-cost path is determined \
+                                        and saved on the output raster. With this option, the least-cost path for each zone \
+                                        begins at the cell with the lowest cost distance weighting in the zone. This is the default.
 
-    :param in_back_direction_raster: Required raster layer. The back direction raster contains calculated directions in 
-                                     degrees. The direction identifies the next cell along the optimal path back to 
-                                     the least accumulative cost source while avoiding barriers.
+                                        - BEST_SINGLE - For all cells on the input destination data, the least-cost path is derived \
+                                        from the cell with the minimum of the least-cost paths to source cells.
 
-    :param destination_field:   Optional string. The field to be used to obtain values for the destination locations. 
-
-    :param path_type: Optional string. A keyword defining the manner in which the values and zones on the input destination
-                      data will be interpreted in the cost path calculations.
-
-                      - EACH_ZONE - For each zone on the input destination data, a least-cost path is determined \
-                      and saved on the output raster. With this option, the least-cost path for each zone \
-                      begins at the cell with the lowest cost distance weighting in the zone. This is the default.
-
-                      - BEST_SINGLE - For all cells on the input destination data, the least-cost path is derived \
-                      from the cell with the minimum of the least-cost paths to source cells.
-
-                      - EACH_CELL - For each cell with valid values on the input destination data, a least-cost \
-                      path is determined and saved on the output raster. With this option, each cell of the \
-                      input destination data is treated separately, and a least-cost path is determined for \
-                      each from cell.
+                                        - EACH_CELL - For each cell with valid values on the input destination data, a least-cost \
+                                        path is determined and saved on the output raster. With this option, each cell of the \
+                                        input destination data is treated separately, and a least-cost path is determined for \
+                                        each from cell.
+    ===============================     ================================================================================
 
     :return: output raster with function applied
+
     """
     if in_destination_data is not None:
         if isinstance(in_destination_data, ImageryLayer):
