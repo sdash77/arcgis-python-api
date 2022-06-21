@@ -819,7 +819,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
     # ----------------------------------------------------------------------
     def _output_name_dict(self, output_name, overwrite):
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {"serviceProperties": {"name": str(output_name).strip().replace(" ", "_")}}
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
