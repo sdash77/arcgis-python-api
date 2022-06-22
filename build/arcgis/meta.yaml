@@ -24,7 +24,7 @@ requirements:
   - matplotlib
   - keyring >=23.0.0
   - pyshp >=2
-  - requests >=1.27.1
+  - requests >=2.27.1
   - requests-toolbelt
   - requests-kerberos
   - requests-oauthlib
@@ -52,7 +52,7 @@ requirements:
   - pyshp >=2
   - matplotlib
   - keyring >=23.0.0
-  - requests >=1.27.1
+  - requests >=2.27.1
   - requests-toolbelt
   - requests-kerberos
   - requests-oauthlib
