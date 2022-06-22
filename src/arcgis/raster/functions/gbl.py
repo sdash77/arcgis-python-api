@@ -777,13 +777,14 @@ def zonal_statistics(
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     percentile_interpolation_type       Optional string. Specifies the method of interpolation to be used when the
                                         specified percentile value lies between two input cell values.
-                                            - AUTO_DETECT - If the input value raster has integer pixel type,
-                                              the NEAREST method is used. If the input value raster has floating point pixel type, then the LINEAR method is used.
-                                              This is the default.
-                                            - NEAREST - Nearest value to the desired percentile. In this case, the output pixel type is same as that of the
-                                              input value raster.
-                                            - LINEAR - Weighted average of two surrounding values from the desired percentile. In this case,
-                                              the output pixel type is floating point.
+
+                                        - AUTO_DETECT - If the input value raster has integer pixel type,
+                                          the NEAREST method is used. If the input value raster has floating point pixel type, then the LINEAR method is used.
+                                          This is the default.
+                                        - NEAREST - Nearest value to the desired percentile. In this case, the output pixel type is same as that of the
+                                          input value raster.
+                                        - LINEAR - Weighted average of two surrounding values from the desired percentile. In this case,
+                                          the output pixel type is floating point.
 
                                         Parameter available in ArcGIS Image Server 10.9 and higher.
     ===============================     ===================================================================================================================
@@ -3197,106 +3198,118 @@ def calculate_distance(
 
     Calculates the Euclidean distance, direction, and allocation from a single source or set of sources.
 
-    ================================     ===============================================================================
-    **Argument**                         **Description**
-    --------------------------------     -------------------------------------------------------------------------------
-    in_source_data                       Required. The layer that defines the sources to calculate the distance to.
-                                         The layer can be raster or feature. To use a raster input, it must
-                                         be of integer type.
-    --------------------------------     -------------------------------------------------------------------------------
-    maximum_distance                     Optional. Defines the threshold that the accumulative distance values
-                                         cannot exceed. If an accumulative Euclidean distance value exceeds
-                                         this value, the output value for the cell location will be NoData.
-                                         The default distance is to the edge of the output raster.
+    ===========================================     ===============================================================================
+    **Argument**                                    **Description**
+    -------------------------------------------     -------------------------------------------------------------------------------
+    in_source_data                                  Required. The layer that defines the sources to calculate the distance to.
+                                                    The layer can be raster or feature. To use a raster input, it must
+                                                    be of integer type.
+    -------------------------------------------     -------------------------------------------------------------------------------
+    maximum_distance                                Optional. Defines the threshold that the accumulative distance values
+                                                    cannot exceed. If an accumulative Euclidean distance value exceeds
+                                                    this value, the output value for the cell location will be NoData.
+                                                    The default distance is to the edge of the output raster.
 
-                                         Supported units: Meters | Kilometers | Feet | Miles
+                                                    Supported units: Meters | Kilometers | Feet | Miles
 
-                                         Example:
+                                                    Example:
 
-                                         {"distance":"60","units":"Meters"}
-    --------------------------------     -------------------------------------------------------------------------------
-    output_cell_size                     Optional. Specify the cell size to use for the output raster.
+                                                    {"distance":"60","units":"Meters"}
+    -------------------------------------------     -------------------------------------------------------------------------------
+    output_cell_size                                Optional. Specify the cell size to use for the output raster.
 
-                                         Supported units: Meters | Kilometers | Feet | Miles
+                                                    Supported units: Meters | Kilometers | Feet | Miles
 
-                                         Example:
+                                                    Example:
 
-                                         {"distance":"60","units":"Meters"}
-    --------------------------------     -------------------------------------------------------------------------------
-    allocation_field                     Optional. A field on the input_source_data layer that holds the values that
-                                         defines each source.
+                                                    {"distance":"60","units":"Meters"}
+    -------------------------------------------     -------------------------------------------------------------------------------
+    allocation_field                                Optional. A field on the input_source_data layer that holds the values that
+                                                    defines each source.
 
-                                         It can be an integer or a string field of the source dataset.
+                                                    It can be an integer or a string field of the source dataset.
 
-                                         The default for this parameter is 'Value.
-    --------------------------------     -------------------------------------------------------------------------------
-    generate_out_direction_raster        Optional Boolean, determines whether out_direction_raster should be generated
-                                         or not.Set this parameter to True, in order to generate the out_direction_raster.
-                                         If set to true, the output will be a named tuple with name values being
-                                         output_distance_service and output_direction_service.
+                                                    The default for this parameter is 'Value.
+    -------------------------------------------     -------------------------------------------------------------------------------
+    generate_out_direction_raster                   Optional Boolean, determines whether out_direction_raster should be generated
+                                                    or not.Set this parameter to True, in order to generate the out_direction_raster.
+                                                    If set to true, the output will be a named tuple with name values being
+                                                    output_distance_service and output_direction_service.
 
-                                         Example:
+                                                    Example:
 
-                                            | out_layer = calculate_distance(in_source_data, generate_out_direction_raster=True)
-                                            | out_var = out_layer.save()
+                                                    | out_layer = calculate_distance(in_source_data, generate_out_direction_raster=True)
+                                                    | out_var = out_layer.save()
 
-                                         then,
+                                                    then,
 
-                                            out_var.output_distance_service -> gives you the output distance imagery
-                                            layer item
-                                            out_var.output_direction_service -> gives you the output backlink raster
-                                            imagery layer item
+                                                    | out_var.output_distance_service -> gives you the output distance imagery
+                                                    layer item
+                                                    | out_var.output_direction_service -> gives you the output backlink raster
+                                                    imagery layer item
 
-                                         The output direction raster is in degrees, and indicates the
-                                         direction to return to the closest source from each cell center.
-                                         The values on the direction raster are based on compass directions,
-                                         with 0 degrees reserved for the source cells. Thus, a value of 90
-                                         means 90 degrees to the East, 180 is to the South, 270 is to the west,
-                                         and 360 is to the North.
-    --------------------------------     -------------------------------------------------------------------------------
-    generate_out_allocation_raster       Optional Boolean, determines whether out_allocation_raster should be generated
-                                         or not. Set this parameter to True, in order to generate the out_backlink_raster.
-                                         If set to true, the output will be a named tuple with name values being
-                                         output_distance_service and output_allocation_service.
+                                                    The output direction raster is in degrees, and indicates the
+                                                    direction to return to the closest source from each cell center.
+                                                    The values on the direction raster are based on compass directions,
+                                                    with 0 degrees reserved for the source cells. Thus, a value of 90
+                                                    means 90 degrees to the East, 180 is to the South, 270 is to the west,
+                                                    and 360 is to the North.
+    -------------------------------------------     -------------------------------------------------------------------------------
+    generate_out_back_direction_raster              Optional Boolean, determines whether out_back_direction_raster should be generated or not.
+                                                    Set this parameter to True, in order to generate the out_back_direction_raster.
+                                                    If set to true, the output will be a named tuple with name values being output_distance_service and out_back_direction_service. eg,
 
-                                         Example:
+                                                    | out_layer = calculate_distance(in_source_data, generate_out_back_direction_raster=True)
+                                                    | out_var = out_layer.save()
 
-                                            | out_layer = calculate_distance(in_source_data, generate_out_allocation_raster=True)
-                                            | out_var = out_layer.save()
+                                                    then,
 
-                                         then,
+                                                    | out_var.output_distance_service -> gives you the output distance imagery layer item
+                                                    | out_var.out_back_direction_service -> gives you the output back direction raster imagery layer item
+    -------------------------------------------     -------------------------------------------------------------------------------
+    generate_out_allocation_raster                  Optional Boolean, determines whether out_allocation_raster should be generated
+                                                    or not. Set this parameter to True, in order to generate the out_backlink_raster.
+                                                    If set to true, the output will be a named tuple with name values being
+                                                    output_distance_service and output_allocation_service.
 
-                                            out_var.output_distance_service -> gives you the output distance imagery
-                                            layer item
-                                            out_var.output_allocation_service -> gives you the output allocation raster
-                                            imagery layer item
+                                                    Example:
 
-                                         This parameter calculates, for each cell, the nearest source based
-                                         on Euclidean distance.
-    --------------------------------     -------------------------------------------------------------------------------
-    in_barrier_data                      Optional barrier raster. The input raster that defines the barriers.
-                                         The dataset must contain NoData where there are no barriers.
-                                         Barriers are represented by valid values including zero.
-                                         The barriers can be defined by an integer or floating-point raster.
-    --------------------------------     -------------------------------------------------------------------------------
-    distance_method                      Optional String. Determines whether to calculate the distance using a planar
-                                         (flat earth) or a geodesic (ellipsoid) method.
+                                                    | out_layer = calculate_distance(in_source_data, generate_out_allocation_raster=True)
+                                                    | out_var = out_layer.save()
 
-                                         - Planar - Planar measurements use 2D Cartesian mathematics to calculate
-                                         length and area. The option is only available when measuring in a
-                                         projected coordinate system and the 2D plane of that coordinate system
-                                         will be used as the basis for the measurements. This is the default.
+                                                    then,
 
-                                         - Geodesic - The shortest line between two points on the earth's surface
-                                         on a spheroid (ellipsoid). Therefore, regardless of input or output
-                                         projection, the results do not change.
+                                                    out_var.output_distance_service -> gives you the output distance imagery
+                                                    layer item
+                                                    out_var.output_allocation_service -> gives you the output allocation raster
+                                                    imagery layer item
 
-                                         .. note::
+                                                    This parameter calculates, for each cell, the nearest source based
+                                                    on Euclidean distance.
+    -------------------------------------------     -------------------------------------------------------------------------------
+    in_barrier_data                                 Optional barrier raster. The input raster that defines the barriers.
+                                                    The dataset must contain NoData where there are no barriers.
+                                                    Barriers are represented by valid values including zero.
+                                                    The barriers can be defined by an integer or floating-point raster.
+    -------------------------------------------     -------------------------------------------------------------------------------
+    distance_method                                 Optional String. Determines whether to calculate the distance using a planar
+                                                    (flat earth) or a geodesic (ellipsoid) method.
 
-                                             One use for a geodesic line is when you want to determine the shortest
-                                             distance between two cities for an airplane's flight path. This is also
-                                             known as a great circle line if based on a sphere rather than an ellipsoid.
-    ================================     ===============================================================================
+                                                    - Planar - Planar measurements use 2D Cartesian mathematics to calculate
+                                                    length and area. The option is only available when measuring in a
+                                                    projected coordinate system and the 2D plane of that coordinate system
+                                                    will be used as the basis for the measurements. This is the default.
+
+                                                    - Geodesic - The shortest line between two points on the earth's surface
+                                                    on a spheroid (ellipsoid). Therefore, regardless of input or output
+                                                    projection, the results do not change.
+
+                                                    .. note::
+
+                                                        One use for a geodesic line is when you want to determine the shortest
+                                                        distance between two cities for an airplane's flight path. This is also
+                                                        known as a great circle line if based on a sphere rather than an ellipsoid.
+    ===========================================    ================================================================================
 
 
     :return: output raster with function applied
