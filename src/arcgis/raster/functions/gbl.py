@@ -179,6 +179,7 @@ def euclidean_distance(
     in_barrier_data=None,
 ):
     """
+
     Calculates, for each cell, the Euclidean distance to the closest source.
     For more information, see
     http://pro.arcgis.com/en/pro-app/help/data/imagery/euclidean-distance-global-function.htm
@@ -3178,7 +3179,6 @@ def path_distance_back_link(
 
 
 @deprecated(
-    deprecated_in="1.8.1"
 )
 def calculate_distance(
     in_source_data,
@@ -3192,7 +3192,7 @@ def calculate_distance(
     distance_method="PLANAR",
 ):
     """
-    .. deprecated::
+    .. deprecated:: 1.8.1
         Please use :meth:`~arcgis.raster.functions.gbl.distance_accumulation`
         (or :meth:`~arcgis.raster.functions.gbl.distance_allocation` for allocation output) instead.
 
