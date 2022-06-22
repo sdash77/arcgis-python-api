@@ -197,7 +197,9 @@ class NotebookManager(object):
                                 will not wait for the task to complete. The default is False, which means wait for results.
         ====================    ====================================================================
 
-        :return: Boolean else If ``future = True``, then a Job object is returned.
+        :return: Dict else If ``future = True``, then the result is
+                 a `concurrent.futures.Future <https://docs.python.org/3/library/concurrent.futures.html>`_ object.
+                 Call ``result()`` to get the response
 
         """
         from arcgis.gis import Item
