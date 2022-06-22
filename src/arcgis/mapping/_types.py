@@ -4095,7 +4095,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         super(VectorTileLayerManager, self).__init__(url, gis)
         self._vtl = vect_tile_lyr
 
-    # ----------------------------------------------------------------------
+    ###### These methods are ok if the VTL was published through a Feature Layer #####
     def refresh(self):
         """
         The refresh operation clears and refreshes the service cache.
@@ -4223,6 +4223,133 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         else:
             raise Exception("Refresh method is not available for Enterprise Service.")
 
+
+    # ----------------------------------------------------------------------
+    def rerun_job(self, code, job_id):
+        """
+        The ``rerun_job`` operation supports re-running a canceled job from a
+        hosted map service. The result of this operation is a response
+        indicating success or failure with error code and description.
+
+        ===============     ====================================================
+        **Argument**        **Description**
+        ---------------     ----------------------------------------------------
+        code                required string, parameter used to re-run a given
+                            jobs with a specific error
+                            code: ``ALL | ERROR | CANCELED``
+        ---------------     ----------------------------------------------------
+        job_id              required string, job to reprocess
+        ===============     ====================================================
+
+        :returns:
+           A boolean or dictionary
+        """
+        if self._gis._is_agol:
+            url = self._url + "/jobs/%s/rerun" % job_id
+            params = {"f": "json", "rerun": code}
+            return self._con.post(url, params)
+        else:
+            raise Exception("Refresh method is not available for Enterprise Service.")
+
+    # ----------------------------------------------------------------------
+    def edit_tile_service(
+        self,
+        source_item_id: str | None = None,
+        export_tiles_allowed: bool | None = None,
+        min_scale: float | None = None,
+        max_scale: float | None = None,
+        max_export_tile_count: int | None = None,
+        layers: list[dict] | None = None,
+        cache_max_age: int | None = None,
+        max_zoom: int | None = None,
+    ) -> dict:
+        """
+        The edit operation enables editing the service source item id, min scale, max scale,
+        export tiles allowed and max export tiles count parameters.
+
+        ======================      =======================================================
+        **Argument**                **Description**
+        ----------------------      -------------------------------------------------------
+        source_item_id              Optional String. The Source Item ID is the GeoWarehouse
+                                    Item ID of the tile service.
+        ----------------------      -------------------------------------------------------
+        export_tiles_allowed        Optional boolean. ``exports_tiles_allowed`` sets
+                                   the value to let users export tiles
+        ----------------------      -------------------------------------------------------
+        min_scale                   Optional float. Sets the services minimum scale for
+                                    caching.
+        ----------------------      -------------------------------------------------------
+        max_scale                   Optional float. Sets the services maximum scale for
+                                    caching.
+        ----------------------      -------------------------------------------------------
+        max_export_tile_count       Optional int. ``max_export_tile_count`` sets the
+                                    maximum amount of tiles to be exported from a single
+                                    call.
+        ----------------------      -------------------------------------------------------
+        layers                      Optional list of dictionaries. Each dict representing a layer.
+
+                                    Syntax Example:
+                                        layers = [
+                                            {
+                                                "name": "Layer Name",
+                                                "id": 1159321,
+                                                "layerId": 0,
+                                                "tableName": "tableName",
+                                                "type": "Feature Layer",
+                                                "xssTrustedFields": ""
+                                            }
+                                        ]
+        ----------------------      -------------------------------------------------------
+        cache_max_age               Optional int. The maximum cache age.
+        ----------------------      -------------------------------------------------------
+        max_zoom                    Optional int. The maximum zoom level.
+        ======================      =======================================================
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE
+
+            >>> from arcgis.mapping import VectorTileLayer
+            >>> from arcgis.gis import GIS
+
+            # connect to your GIS and get the tile layer item
+            >>> gis = GIS(url, username, password)
+
+            >>> vector_layer_item = gis.content.get('abcd_item-id')
+            >>> source_item_id = vector_tile_item.related_items(rel_type="Service2Data", direction="forward")[0]["id"]
+            >>> vector_tile_layer = VectorTileLayer.fromitem(vector_layer_item)
+            >>> vtl_manager = vector_tile_layer.manager
+            >>> vtl_manager.edit_tile_service(
+                                            min_scale = 50,
+                                            max_scale = 100,
+                                            source_item_id = source_item_id,
+                                            export_tiles_allowed = True,
+                                            max_Export_Tile_Count = 10000
+                                            )
+        """
+        params = {
+            "f": "json",
+            "serviceDefinition": {},
+        }
+        if min_scale:
+            params["serviceDefinition"]["minScale"] = min_scale
+        if max_scale:
+            params["serviceDefinition"]["maxScale"] = max_scale
+        if max_export_tile_count:
+            params["serviceDefinition"]["maxExportTilesCount"] = max_export_tile_count
+        if export_tiles_allowed and export_tiles_allowed in [True, False]:
+            params["serviceDefinition"]["exportTilesAllowed"] = export_tiles_allowed
+        if source_item_id:
+            params["sourceItemId"] = source_item_id
+        if layers:
+            params["serviceDefinition"]["layerProperties"] = {"layers": layers}
+        if cache_max_age:
+            params["serviceDefinition"]["cacheMaxAge"] = cache_max_age
+        if max_zoom:
+            params["serviceDefinition"]["maxZoom"] = max_zoom
+        url = self._url + "/edit"
+        return self._con.post(path=url, params=params)
+
     # ----------------------------------------------------------------------
     def update_tiles(self, levels=None, extent=None):
         """
@@ -4291,194 +4418,59 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
                 params["extent"] = extent
             return self._con.post(url, params)
         return None
+    # # ----------------------------------------------------------------------
+    # def delete_tiles(self, levels, extent=None):
+    #     """
+    #     The ``delete_tiles`` method deletes tiles from the current cache.
 
-    # ----------------------------------------------------------------------
-    def rerun_job(self, code, job_id):
-        """
-        The ``rerun_job`` operation supports re-running a canceled job from a
-        hosted map service. The result of this operation is a response
-        indicating success or failure with error code and description.
+    #     ===============     ====================================================
+    #     **Argument**        **Description**
+    #     ---------------     ----------------------------------------------------
+    #     extent              Optional dictionary,  If specified, the tiles within
+    #                         this extent will be deleted or will be deleted based
+    #                         on the service's full extent.
+    #     ---------------     ----------------------------------------------------
+    #     levels              Required string, The level to delete.
+    #                         Example, 0-5,10,11-20 or 1,2,3 or 0-5
+    #     ===============     ====================================================
 
-        ===============     ====================================================
-        **Argument**        **Description**
-        ---------------     ----------------------------------------------------
-        code                required string, parameter used to re-run a given
-                            jobs with a specific error
-                            code: ``ALL | ERROR | CANCELED``
-        ---------------     ----------------------------------------------------
-        job_id              required string, job to reprocess
-        ===============     ====================================================
+    #     :return:
+    #        A dictionary
 
-        :returns:
-           A boolean or dictionary
-        """
-        if self._gis._is_agol:
-            url = self._url + "/jobs/%s/rerun" % job_id
-            params = {"f": "json", "rerun": code}
-            return self._con.post(url, params)
-        else:
-            raise Exception("Refresh method is not available for Enterprise Service.")
+    #     .. code-block:: python
 
-    # ----------------------------------------------------------------------
-    def edit_tile_service(
-        self,
-        source_item_id=None,
-        export_tiles_allowed=None,
-        min_scale=None,
-        max_scale=None,
-        max_export_tile_count=None,
-        service_name=None,
-    ):
-        """
-        The edit operation enables editing the service exportTilesAllowed,
-        export_tile_count, max_scale, and min_scale properties. Allowed for
-        Enterprise and ArcGIS Online
+    #         # USAGE EXAMPLE
 
-        ======================     =======================================================
-        **Argument**               **Description**
-        ----------------------     -------------------------------------------------------
-        source_item_id             Required String. The Source Item ID is the GeoWarehouse
-                                   Item ID of the tile service
-        ----------------------     -------------------------------------------------------
-        export_tiles_allowed       Optional boolean. ``exports_tiles_allowed`` sets
-                                   the value to let users export tiles
-        ----------------------     -------------------------------------------------------
-        min_scale                  Optional float. Sets the services minimum scale for
-                                   caching.
-        ----------------------     -------------------------------------------------------
-        max_scale                  Optional float. Sets the services maximum scale for
-                                   caching.
-        ----------------------     -------------------------------------------------------
-        max_export_tile_count      Optional int. ``max_export_tile_count`` sets the
-                                   maximum amount of tiles to be exported from a single
-                                   call.
-        ----------------------     -------------------------------------------------------
-        service_name               Optional String. Name of the service to edit. This only
-                                   only applies for enterprise.
-        ======================     =======================================================
+    #         >>> from arcgis.mapping import VectorTileLayer
+    #         >>> from arcgis.gis import GIS
 
-        .. code-block:: python
+    #         # connect to your GIS
+    #         >>> gis = GIS(url, username, password)
 
-            # USAGE EXAMPLE
-
-            >>> from arcgis.mapping import VectorTileLayer
-            >>> from arcgis.gis import GIS
-
-            # connect to your GIS and get the tile layer item
-            >>> gis = GIS(url, username, password)
-
-            >>> vector_layer_item = gis.content.get('abcd_item-id')
-            >>> vector_tile_layer = VectorTileLayer.fromitem(vector_layer_item)
-            >>> vtl_manager = vector_tile_layer.manager
-            >>> vtl_manager.edit_tile_service(service_name = "vector_layer_name",
-                                                        min_scale = 50,
-                                                        max_scale = 100,
-                                                        source_item_id = "geowarehouse_item_id",
-                                                        export_tiles_allowed = True,
-                                                        max_Export_Tile_Count = 10000
-                                                        )
-        """
-        params = {
-            "f": "json",
-        }
-        # request sent to AGO Org
-        if self._gis._is_agol:
-            params = {
-                "minScale": 0.0,
-                "maxScale": 0.0,
-                "exportTilesAllowed": False,
-                "maxExportTilesCount": 100000,
-                "f": "json",
-            }
-
-            if min_scale:
-                params["minScale"] = float(min_scale)
-            else:
-                params.pop("minScale", None)
-            if max_scale:
-                params["maxScale"] = float(max_scale)
-            else:
-                params.pop("maxScale", None)
-            if export_tiles_allowed:
-
-                params["exportTilesAllowed"] = export_tiles_allowed
-            else:
-                params["exportTilesAllowed"] = self.properties.exportTilesAllowed
-
-            params["maxExportTilesCount"] = (
-                max_export_tile_count
-                if max_export_tile_count
-                else self.properties.maxExportTilesCount
-            )
-            if source_item_id:  # only online
-                params["sourceItemId"] = source_item_id
-        elif self._gis._is_agol == False:
-            params["runAsync"] = True
-            params["services"] = {
-                "type": "VectorTileServer",
-                "capabilities": "TilesOnly,Tilemap",
-                "serviceName": self.properties.name,
-            }
-            params["services"]["properties"] = {
-                "exportTilesAllowed": export_tiles_allowed
-            }
-            params["services"]["serviceName"] = self.properties.name
-        url = self._url + "/edit"
-        return self._con.post(path=url, params=params)
-
-    # ----------------------------------------------------------------------
-    def delete_tiles(self, levels, extent=None):
-        """
-        The ``delete_tiles`` method deletes tiles from the current cache.
-
-        ===============     ====================================================
-        **Argument**        **Description**
-        ---------------     ----------------------------------------------------
-        extent              Optional dictionary,  If specified, the tiles within
-                            this extent will be deleted or will be deleted based
-                            on the service's full extent.
-        ---------------     ----------------------------------------------------
-        levels              Required string, The level to delete.
-                            Example, 0-5,10,11-20 or 1,2,3 or 0-5
-        ===============     ====================================================
-
-        :return:
-           A dictionary
-
-        .. code-block:: python
-
-            # USAGE EXAMPLE
-
-            >>> from arcgis.mapping import VectorTileLayer
-            >>> from arcgis.gis import GIS
-
-            # connect to your GIS
-            >>> gis = GIS(url, username, password)
-
-            >>> vector_layer_item = gis.content.get('abcd_item-id')
-            >>> vector_tile_layer = VectorTileLayer.fromitem(vector_layer_item)
-            >>> vtl_manager = vector_tile_layer.manager
-            >>> deleted_tiles = vtl_manager.delete_tiles(levels = "11-20",
-                                                  extent = {"xmin":6224324.092137296,
-                                                            "ymin":487347.5253569535,
-                                                            "xmax":11473407.698535524,
-                                                            "ymax":4239488.369818687,
-                                                            "spatialReference":{"wkid":102100}
-                                                            }
-                                                  )
-            >>> type(deleted_tiles)
-        """
-        if self._gis._is_agol:
-            params = {
-                "f": "json",
-                "levels": levels,
-            }
-            if extent:
-                params["extent"] = extent
-            url = self._url + "/deleteTiles"
-            return self._con.post(url, params)
-        else:
-            raise Exception("Refresh method is not available for Enterprise Service.")
+    #         >>> vector_layer_item = gis.content.get('abcd_item-id')
+    #         >>> vector_tile_layer = VectorTileLayer.fromitem(vector_layer_item)
+    #         >>> vtl_manager = vector_tile_layer.manager
+    #         >>> deleted_tiles = vtl_manager.delete_tiles(levels = "11-20",
+    #                                               extent = {"xmin":6224324.092137296,
+    #                                                         "ymin":487347.5253569535,
+    #                                                         "xmax":11473407.698535524,
+    #                                                         "ymax":4239488.369818687,
+    #                                                         "spatialReference":{"wkid":102100}
+    #                                                         }
+    #                                               )
+    #         >>> type(deleted_tiles)
+    #     """
+    #     if self._gis._is_agol:
+    #         params = {
+    #             "f": "json",
+    #             "levels": levels,
+    #         }
+    #         if extent:
+    #             params["extent"] = extent
+    #         url = self._url + "/deleteTiles"
+    #         return self._con.post(url, params)
+    #     else:
+    #         raise Exception("Refresh method is not available for Enterprise Service.")
 
 
 ###########################################################################
