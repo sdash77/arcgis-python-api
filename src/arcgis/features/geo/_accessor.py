@@ -3114,6 +3114,8 @@ class GeoAccessor(object):
             pd.Float64Dtype(): "esriFieldTypeDouble",
             "geometry": "esriFieldTypeGeometry",
             str: "esriFieldTypeString",
+            _dtype("O"): "esriFieldTypeString",
+            object: "esriFieldTypeString",
             _dtype(str): "esriFieldTypeString",
             pd.StringDtype(): "esriFieldTypeString",
             "<M8[us]": "esriFieldTypeDate",
