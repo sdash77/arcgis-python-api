@@ -25,7 +25,7 @@ def get_kube_server(site="https://rpublicservers.esri.com/AEoK1100.php", row=2):
 def get_kube_credentials(
     site="https://ragsreports.ags.esri.com/information/11.0_users.htm", row=16
 ):
-    # for Windows users (make sure to uncomment import at top):
+    # for Windows users (make sure import is uncommented at top):
     # page = requests.get(site, auth=HttpNegotiateAuth())
 
     # for Mac users, use your avworld credentials below
