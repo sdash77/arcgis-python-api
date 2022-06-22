@@ -150,8 +150,7 @@ class SnapshotManager(object):
         ==================     ====================================================================
 
 
-        :return:
-            :class:`~arcgis.gis.Item`
+        :return: Item
 
 
         """
@@ -252,7 +251,8 @@ class SnapshotManager(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        item                   Required Item. The 'Notebook' typed item to get all the snapshots for.
+        item                   Required Item. The Notebook :class:`~arcgis.gis.Item` to get all
+                               snapshots for.
         ==================     ====================================================================
 
         :return: List of :class:`~arcgis.gis.nb.SnapShot` objects
