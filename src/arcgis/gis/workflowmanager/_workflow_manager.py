@@ -1330,7 +1330,7 @@ class WorkflowManager:
         ===============     ====================================================================
 
         :return:
-            :class:`Workflow Manager Role <arcgis.gis.workflowmanager.WMRole>` Object
+            Workflow Manager :class:`~arcgis.gis.workflowmanager.WMRole` Object
 
         """
         try:
