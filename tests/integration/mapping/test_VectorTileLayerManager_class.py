@@ -79,7 +79,6 @@ class TestVectorTileLayerManager(unittest.TestCase):
             rel_type="Service2Data", direction="forward"
         )[0]["id"]
         res = manager.edit_tile_service(
-            service_name="set2_vtpk_worldgreen2",
             source_item_id=source_item_id,
             export_tiles_allowed=True,
             max_export_tile_count=5000,
