@@ -3137,8 +3137,8 @@ class GeoAccessor(object):
                     "type": _look_up[dtype],
                     "alias": col,
                 }
-            if column['type'] == 'esriFieldTypeString':
-                column['length'] = self._data[col].str.len().max()
+            if column["type"] == "esriFieldTypeString":
+                column["length"] = self._data[col].str.len().max()
             if _look_up[dtype] != "esriFieldTypeGeometry":
                 fields.append(column)
 
