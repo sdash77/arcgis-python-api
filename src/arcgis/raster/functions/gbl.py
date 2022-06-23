@@ -752,6 +752,20 @@ def zonal_statistics(
                                        pixel type is floating point.
 
                                      Parameter available in ArcGIS Image Server 10.9 and higher.
+    -----------------------------    -----------------------------------------------------------------------------------------------------------
+    circular_calculation             Optional bool. Denotes whether the statistics calculations will be arithmetic or circular.
+
+                                     - False - Calculates arithmetic statistics. This is the default.
+                                     - True - Calculates circular statistics that are appropriate for cyclic quantities, such as compass direction in degrees, daytimes, and fractional parts of real numbers.
+
+                                     Parameter available in ArcGIS Image Server 11 and higher.
+    -----------------------------    -----------------------------------------------------------------------------------------------------------
+    circular_wrap_value              Optional float. The possible highest value (upper bound) in the cyclic data. 
+                                     It is a positive number, and the default is 360. This value also represents the same quantity 
+                                     as the possible lowest value (lower bound).
+                                     This parameter is honored only available if the circular_calculation parameter is set to True.\
+
+                                     | Parameter available in ArcGIS Image Server 11 and higher.
     =============================    ===========================================================================================================
 
 
