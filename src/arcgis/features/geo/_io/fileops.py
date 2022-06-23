@@ -385,14 +385,18 @@ def from_table(filename, **kwargs):
     elif HASARCPY and filename.lower().endswith(".dbf"):
         import arcpy
 
-        scur = arcpy.da.SearchCursor(
+        with arcpy.da.SearchCursor(
             in_table=filename,
-            field_names=kwargs.pop("fields", None),
+            field_names=kwargs.pop("fields", "*"),
             where_clause=kwargs.pop("where", None),
-        )
-        array = scur._as_array()
-        del scur
-        return pd.DataFrame(data=array)
+        ) as scur:
+            array = [row for row in scur]
+            df = pd.DataFrame(array, columns=scur.fields)
+            try:
+                return df.convert_dtypes()
+            except:
+                return df
+        return None
     elif filename.lower().endswith(".dbf"):
         import shapefile
 
@@ -972,6 +976,7 @@ def to_featureclass(
                 df.loc[q, "SHAPE"] = None  # reset null values
         except ValueError as ve:
             df.columns = original_columns
+            df.set_index(old_idx)
             fc = None
             raise
         except Exception as e:
@@ -981,6 +986,7 @@ def to_featureclass(
             raise e
         finally:
             df.columns = original_columns
+            df.set_index(old_idx)
         return fc
     elif HASPYSHP:
         if fc_name.endswith(".shp") == False:

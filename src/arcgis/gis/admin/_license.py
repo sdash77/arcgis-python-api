@@ -26,7 +26,7 @@ class LicenseManager(BasePortalAdmin):
     ===============     ====================================================
 
     :return:
-       :class:`~arcgis.admin.LicenseManager` Object
+       :class:`~arcgis.gis.admin.LicenseManager` Object
     """
 
     _con = None
@@ -51,7 +51,7 @@ class LicenseManager(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<License Manager at {url}>".format(url=self._url)
+        return "< License Manager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -111,7 +111,8 @@ class LicenseManager(BasePortalAdmin):
         ===============     ====================================================
 
         :return:
-           :class:`~arcgis.admin.License` Object
+           List of :class:`~arcgis.gis.admin.License` objects
+
         """
         licenses = self.all()
         for l in licenses:
@@ -131,7 +132,8 @@ class LicenseManager(BasePortalAdmin):
         Returns all Licenses registered with an organization
 
         :return:
-           List of :class:`~arcgis.admin.License` objects
+           List of :class:`~arcgis.gis.admin.License` objects
+
         """
         licenses = []
         if self._properties is None:
@@ -153,7 +155,7 @@ class LicenseManager(BasePortalAdmin):
         Returns a list of Application Bundles for an Organization
 
         :return:
-           List of :class:`~arcgis.admin.Bundles` objects
+           List of :class:`~arcgis.gis.admin.Bundle` objects
 
         """
         if self._gis.version < [6, 4]:
@@ -327,12 +329,12 @@ class Bundle(object):
     # ----------------------------------------------------------------------
     def __str__(self):
         """ """
-        return "<AppBundle: %s>" % self.properties["name"]
+        return "< AppBundle: %s >" % self.properties["name"]
 
     # ----------------------------------------------------------------------
     def __repr__(self):
         """ """
-        return "<AppBundle: %s>" % self.properties["name"]
+        return "< AppBundle: %s >" % self.properties["name"]
 
     # ----------------------------------------------------------------------
     def assign(self, users: list):
@@ -424,7 +426,8 @@ class License(object):
     ===============     ====================================================
 
     :return:
-       :class:`~arcgis.admin.License` Object
+       :class:`~arcgis.gis.admin.License` object
+
     """
 
     _properties = None
@@ -440,24 +443,24 @@ class License(object):
     # ----------------------------------------------------------------------
     def __str__(self):
         try:
-            return "<%s %s at %s>" % (
+            return "< %s %s @ %s >" % (
                 self.properties["listing"]["title"],
                 type(self).__name__,
                 self._gis._portal.resturl,
             )
         except:
-            return "<%s at %s>" % (type(self).__name__, self._gis._portal.resturl)
+            return "<%s at %s >" % (type(self).__name__, self._gis._portal.resturl)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
         try:
-            return "<%s %s at %s>" % (
+            return "<%s %s @ %s >" % (
                 self.properties["listing"]["title"],
                 type(self).__name__,
                 self._gis._portal.resturl,
             )
         except:
-            return "<%s at %s>" % (type(self).__name__, self._gis._portal.resturl)
+            return "<%s at %s >" % (type(self).__name__, self._gis._portal.resturl)
 
     # ----------------------------------------------------------------------
     @property

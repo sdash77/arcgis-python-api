@@ -16,6 +16,9 @@ from __future__ import print_function
 import json
 from .._common import BaseServer
 from arcgis._impl.common._mixins import PropertyMap
+from arcgis.gis import GIS
+from arcgis.gis._impl._con import Connection
+from typing import Optional
 
 ########################################################################
 class MachineManager(BaseServer):
@@ -43,7 +46,7 @@ class MachineManager(BaseServer):
     _url = None
     _json = None
     # ----------------------------------------------------------------------
-    def __init__(self, url, gis, initialize=False):
+    def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """Constructor
 
 
@@ -67,7 +70,7 @@ class MachineManager(BaseServer):
             self._init(gis)
 
     # ----------------------------------------------------------------------
-    def _init(self, connection=None):
+    def _init(self, connection: Connection = None) -> dict:
         """Loads the properties into the class."""
         if connection is None:
             connection = self._con
@@ -98,7 +101,7 @@ class MachineManager(BaseServer):
             self._properties = PropertyMap({})
 
     # ----------------------------------------------------------------------
-    def list(self):
+    def list(self) -> list:
         """
         Provides the list of machines in the cluster.
 
@@ -111,7 +114,7 @@ class MachineManager(BaseServer):
         return self._machines
 
     # ----------------------------------------------------------------------
-    def get(self, machine_name):
+    def get(self, machine_name: str) -> "Machine":
         """
         Provides the machine object for a given machine.
 
@@ -129,7 +132,7 @@ class MachineManager(BaseServer):
         return Machine(url=url, gis=self._con)
 
     # ----------------------------------------------------------------------
-    def register(self, name, admin_url):
+    def register(self, name: str, admin_url: str) -> bool:
         """
         For a server machine to participate in a site, it needs to be
         registered with the site. The server machine must have ArcGIS
@@ -161,7 +164,7 @@ class MachineManager(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def rename(self, name, new_name):
+    def rename(self, name: str, new_name: str) -> bool:
         """
         You must use this operation if one of the registered machines
         has undergone a name change. This operation updates any
@@ -258,7 +261,7 @@ class Machine(BaseServer):
     _con = None
     _url = None
     # ----------------------------------------------------------------------
-    def __init__(self, url, gis, initialize=False):
+    def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """
         Constructor
 
@@ -283,16 +286,16 @@ class Machine(BaseServer):
             self._init(connection)
 
     # ----------------------------------------------------------------------
-    def __str__(self):
+    def __str__(self) -> str:
         return "<%s at %s>" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<%s at %s>" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     @property
-    def hardware(self):
+    def hardware(self) -> dict:
         """
         This resource displays hardware information for the machine in your
         ArcGIS Server site. It updates the information when it detects any
@@ -307,7 +310,7 @@ class Machine(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def status(self):
+    def status(self) -> dict:
         """
         Gets the status/state of this machine.
         """
@@ -318,7 +321,7 @@ class Machine(BaseServer):
         return self._con.get(path=uURL, params=params)
 
     # ----------------------------------------------------------------------
-    def start(self):
+    def start(self) -> bool:
         """
         Starts this server machine. Starting the machine enables its
         ability to host GIS services.
@@ -334,7 +337,7 @@ class Machine(BaseServer):
             return res["status"] == "success"
         return res
 
-    def synchronize(self):
+    def synchronize(self) -> bool:
         """
         On occasion, one or more machines in a server site might be
         unavailable due to network issues or because they are down
@@ -362,7 +365,7 @@ class Machine(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def stop(self):
+    def stop(self) -> bool:
         """
         Stops this server machine. Stopping the machine disables its
         ability to host GIS services.
@@ -380,7 +383,7 @@ class Machine(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def unregister(self):
+    def unregister(self) -> bool:
         """
         Removes this machine from the site.  This server machine will no
         longer participate in the site or run any of the GIS services.  All
@@ -407,7 +410,7 @@ class Machine(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def ssl_certificates(self):
+    def ssl_certificates(self) -> dict:
         """
         Gets the list of all the certificates (self-signed and CA-signed)
         created for the server machine. The server securely stores these
@@ -418,7 +421,7 @@ class Machine(BaseServer):
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def ssl_certificate(self, certificate):
+    def ssl_certificate(self, certificate: str):
         """
         Provides the self-signed certificate object.
 
@@ -443,7 +446,7 @@ class Machine(BaseServer):
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def delete_certificate(self, certificate):
+    def delete_certificate(self, certificate: str) -> bool:
         """
         Deletes a SSL certificate using the certificate alias.
 
@@ -465,7 +468,7 @@ class Machine(BaseServer):
             return res
 
     # ----------------------------------------------------------------------
-    def export_certificate(self, certificate):
+    def export_certificate(self, certificate: str) -> str:
         """
         Downloads an SSL certificate. The file returned by the
         server is an X.509 certificate. The downloaded certificate can then
@@ -487,7 +490,7 @@ class Machine(BaseServer):
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def generate_CSR(self, certificate):
+    def generate_CSR(self, certificate: str) -> dict:
         """
         Generates a certificate signing request (CSR) for a
         self-signed certificate. A CSR is required by a CA to create a
@@ -508,7 +511,9 @@ class Machine(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def import_CA_signed_certificate(self, certificate, ca_signed_certificate):
+    def import_CA_signed_certificate(
+        self, certificate: str, ca_signed_certificate: str
+    ) -> bool:
         """
         Imports a certificate authority (CA)-signed SSL certificate into the key store.
 
@@ -534,7 +539,9 @@ class Machine(BaseServer):
         return self._con.post(path=url, postdata=params, files=files)
 
     # ----------------------------------------------------------------------
-    def import_existing_server_certificate(self, alias, cert_password, cert_file):
+    def import_existing_server_certificate(
+        self, alias: str, cert_password: str, cert_file: str
+    ) -> bool:
         """
         Imports an existing server certificate, stored in
         the PKCS #12 format, into the keystore.
@@ -564,7 +571,7 @@ class Machine(BaseServer):
         return self._con.post(path=url, postdata=params, files=files)
 
     # ----------------------------------------------------------------------
-    def import_root_certificate(self, alias, root_CA_certificate):
+    def import_root_certificate(self, alias: str, root_CA_certificate: str) -> dict:
         """
         Imports a certificate authority's (CA) root and intermediate
         certificates into the keystore.

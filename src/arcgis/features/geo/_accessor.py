@@ -1,16 +1,6 @@
 """
 Holds Delegate and Accessor Logic
 """
-from arcgis.auth.tools import LazyLoader
-
-os = LazyLoader("os")
-copy = LazyLoader("copy")
-uuid = LazyLoader("uuid")
-shutil = LazyLoader("shutil")
-datetime = LazyLoader("datetime")
-np = LazyLoader("numpy")
-tempfile = LazyLoader("tempfile")
-warnings = LazyLoader("warnings")
 import logging
 import pandas as pd
 from collections.abc import Iterable
@@ -22,7 +12,16 @@ from ._io.fileops import (
     _sanitize_column_names,
     read_feather,
 )
+from arcgis.auth.tools import LazyLoader
 
+os = LazyLoader("os")
+copy = LazyLoader("copy")
+uuid = LazyLoader("uuid")
+shutil = LazyLoader("shutil")
+datetime = LazyLoader("datetime")
+np = LazyLoader("numpy")
+tempfile = LazyLoader("tempfile")
+warnings = LazyLoader("warnings")
 _geometry = LazyLoader("arcgis.geometry")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
 _isd = LazyLoader("arcgis._impl.common._isd")
@@ -3033,37 +3032,31 @@ class GeoAccessor(object):
         }
         # Ensure all number values are 0 so errors do not occur.
         df = self._data.where(pd.notnull(self._data), None)
-        date_cols = [col for col in df.columns if df[col].dtype == "datetime64[ns]"]
+        date_fields = [col for col in df.columns if df[col].dtype == "datetime64[ns]"]
         cols_norm = [col for col in df.columns]
         cols_lower = [col.lower() for col in df.columns]
-        old_series = None
+
         if "objectid" in cols_lower:
             fs["objectIdFieldName"] = cols_norm[cols_lower.index("objectid")]
             fs["displayFieldName"] = cols_norm[cols_lower.index("objectid")]
             if df[fs["objectIdFieldName"]].is_unique == False:
                 old_series = df[fs["objectIdFieldName"]].copy()
                 df[fs["objectIdFieldName"]] = list(range(1, df.shape[0] + 1))
-                # res = self.__feature_set__
-                # df[fs['objectIdFieldName']] = old_series
-                # return res
+
         elif "fid" in cols_lower:
             fs["objectIdFieldName"] = cols_norm[cols_lower.index("fid")]
             fs["displayFieldName"] = cols_norm[cols_lower.index("fid")]
             if df[fs["objectIdFieldName"]].is_unique == False:
                 old_series = df[fs["objectIdFieldName"]].copy()
                 df[fs["objectIdFieldName"]] = list(range(1, df.shape[0] + 1))
-                # res = self.__feature_set__
-                # df[fs['objectIdFieldName']] = old_series
-                # return res
+
         elif "oid" in cols_lower:
             fs["objectIdFieldName"] = cols_norm[cols_lower.index("oid")]
             fs["displayFieldName"] = cols_norm[cols_lower.index("oid")]
             if df[fs["objectIdFieldName"]].is_unique == False:
                 old_series = df[fs["objectIdFieldName"]].copy()
                 df[fs["objectIdFieldName"]] = list(range(1, df.shape[0] + 1))
-                # res = self.__feature_set__
-                # df[fs['objectIdFieldName']] = old_series
-                # return res
+
         else:
             fs["objectIdFieldName"] = "OBJECTID"
             fs["displayFieldName"] = "OBJECTID"
@@ -3096,59 +3089,61 @@ class GeoAccessor(object):
             del fs["globalIdFieldName"]
         if self.name in cols_norm:
             cols_norm.pop(cols_norm.index(self.name))
-        for col in cols_norm:
-            try:
-                idx = df[col].first_valid_index()
-                col_val = df[col].loc[idx]
-            except:
-                col_val = ""
-            if isinstance(col_val, (str, np.str)) and not col in date_cols:
-                l = df[col].str.len().max()
-                if str(l) == "nan":
-                    l = 255
+        from numpy import dtype as _dtype
 
-                fields.append(
-                    {
-                        "name": col,
-                        "type": "esriFieldTypeString",
-                        "length": int(l),
-                        "alias": col,
-                    }
-                )
-                if fs["displayFieldName"] == "":
-                    fs["displayFieldName"] = col
-            elif (
-                isinstance(
-                    col_val,
-                    (
-                        datetime.datetime,
-                        pd.Timestamp,
-                        np.datetime64,
-                    ),
-                )
-                or col in date_cols
-            ):  # pd.datetime
-                fields.append({"name": col, "type": "esriFieldTypeDate", "alias": col})
-                date_fields.append(col)
-            elif isinstance(col_val, (np.int16, np.int8)) and not col in date_cols:
-                fields.append(
-                    {"name": col, "type": "esriFieldTypeSmallInteger", "alias": col}
-                )
-            elif isinstance(col_val, (int, np.int, np.int32)) and not col in date_cols:
-                fields.append(
-                    {"name": col, "type": "esriFieldTypeInteger", "alias": col}
-                )
-            elif (
-                isinstance(col_val, (float, np.float64, np.int64))
-                and not col in date_cols
-            ):
-                fields.append(
-                    {"name": col, "type": "esriFieldTypeDouble", "alias": col}
-                )
-            elif isinstance(col_val, (np.float32)) and not col in date_cols:
-                fields.append(
-                    {"name": col, "type": "esriFieldTypeSingle", "alias": col}
-                )
+        _look_up = {
+            np.int8: "esriFieldTypeInteger",
+            _dtype(np.int8): "esriFieldTypeInteger",
+            np.int16: "esriFieldTypeInteger",
+            _dtype(np.int16): "esriFieldTypeInteger",
+            np.int32: "esriFieldTypeInteger",
+            _dtype(np.int32): "esriFieldTypeInteger",
+            np.int64: "esriFieldTypeDouble",
+            _dtype(np.int64): "esriFieldTypeOID",
+            pd.Int64Dtype(): "esriFieldTypeOID",
+            pd.Int32Dtype(): "esriFieldTypeInteger",
+            int: "esriFieldTypeInteger",
+            float: "esriFieldTypeDouble",
+            np.float16: "esriFieldTypeSingle",
+            _dtype(np.float16): "esriFieldTypeSingle",
+            np.float32: "esriFieldTypeDouble",
+            _dtype(np.float32): "esriFieldTypeDouble",
+            np.float64: "esriFieldTypeDouble",
+            _dtype(np.float64): "esriFieldTypeDouble",
+            pd.Float32Dtype(): "esriFieldTypeDouble",
+            pd.Float64Dtype(): "esriFieldTypeDouble",
+            "geometry": "esriFieldTypeGeometry",
+            str: "esriFieldTypeString",
+            _dtype("O"): "esriFieldTypeString",
+            object: "esriFieldTypeString",
+            _dtype(str): "esriFieldTypeString",
+            pd.StringDtype(): "esriFieldTypeString",
+            "<M8[us]": "esriFieldTypeDate",
+            datetime: "esriFieldTypeDate",
+            np.datetime64: "esriFieldTypeDate",
+            _dtype(np.datetime64): "esriFieldTypeDate",
+            arcgis.features.geo._array.GeoType(): "esriFieldTypeGeometry",
+        }
+        fields = []
+        for idx, dtype in enumerate(self._data.dtypes):
+            col = self._data.dtypes.index[idx]
+            if fs["objectIdFieldName"] == col:
+                column = {
+                    "name": col,
+                    "type": "esriFieldTypeOID",
+                    "alias": col,
+                }
+            else:
+                column = {
+                    "name": col,
+                    "type": _look_up[dtype],
+                    "alias": col,
+                }
+            if column["type"] == "esriFieldTypeString":
+                column["length"] = self._data[col].str.len().max()
+            if _look_up[dtype] != "esriFieldTypeGeometry":
+                fields.append(column)
+
         fs["fields"] = fields
         for row in df.to_dict("records"):
             geom = {}
@@ -3170,7 +3165,6 @@ class GeoAccessor(object):
             del row
             del geom
         fs["features"] = features
-        # if old_series:
 
         return fs
 

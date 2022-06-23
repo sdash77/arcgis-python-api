@@ -20,20 +20,14 @@ arcgis = LazyLoader("arcgis")
 _arcgis_features = LazyLoader("arcgis.features")
 _arcgis_mapping = LazyLoader("arcgis.mapping")
 _gis = LazyLoader("arcgis.gis")
-_env = LazyLoader("arcgis.env")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
 _utils = LazyLoader("arcgis._impl.common._utils")
 _geometry = LazyLoader("arcgis.geometry")
 _basemap_definitions = LazyLoader("arcgis.mapping._basemap_definitions")
 _forms = LazyLoader("arcgis.mapping.forms")
-SceneLayer = LazyLoader("arcgis.mapping._scenelyrs.SceneLayer")
-SpatialReference = LazyLoader("arcgis.geometry.SpatialReference")
-Polygon = LazyLoader("arcgis.geometry.Polygon")
-Geometry = LazyLoader("arcgis.geometry.Geometry")
-StreamLayer = LazyLoader("arcgis.realtime.StreamLayer")
+_scenelyrs = LazyLoader("arcgis.mapping._scenelyrs")
+_realtime = LazyLoader("arcgis.realtime")
 _services = LazyLoader("arcgis.gis.server.admin._services")
-
-from arcgis.mapping._scenelyrs import SceneLayer
 
 try:
     from traitlets import HasTraits, observe
@@ -227,6 +221,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             self._layers = None
             self._tables = None
             self._basemap = self._webmapdict["baseMap"]
+            self._gallery_basemaps = {}
             self._extent = self.item.extent
         else:
             # default spatial ref for current web map
@@ -239,15 +234,24 @@ class WebMap(HasTraits, collections.OrderedDict):
             self._basemap = {
                 "baseMapLayers": [
                     {
-                        "id": "defaultBasemap",
+                        "id": "world-hillshade-layer",
+                        "url": "https://services.arcgisonline.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer",
                         "layerType": "ArcGISTiledMapServiceLayer",
-                        "url": "https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer",
+                        "title": "World Hillshade",
+                        "showLegend": False,
                         "visibility": True,
                         "opacity": 1,
-                        "title": "World Topographic Map",
-                    }
+                    },
+                    {
+                        "id": "topo-vector-base-layer",
+                        "styleUrl": "https://www.arcgis.com/sharing/rest/content/items/7dc6cea0b1764a1f9af2e679f642f0f5/resources/styles/root.json",
+                        "layerType": "VectorTileLayer",
+                        "title": "World Topo",
+                        "visibility": True,
+                        "opacity": 1,
+                    },
                 ],
-                "title": "Topographic",
+                "title": "Topographic Vector",
             }
             self._gallery_basemaps = {}
             self._webmapdict = {
@@ -372,8 +376,13 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         .. code-block:: python
 
+            # Create a WebMap from an existing WebMap Item.
             wm = WebMap(<webmap_item_id>)
-            layer = wm.layers[0] # A vector tile layer
+            # Get and add the layer to the map
+            vtl = gis.content.get("<vector tile layer id>")
+            wm.add_layer(vtl.layers[0])
+            # Move the layer to the basemap
+            layer = wm.layers[0]
             wm.move_to_basemap(layer)
             wm.update()
         """
@@ -386,13 +395,17 @@ class WebMap(HasTraits, collections.OrderedDict):
             "ArcGISVectorTileLayer",
         ]
         if layer in self.layers and layer["layerType"] in layer_types:
-            self._webmapdict["baseMap"]["baseMapLayers"].append(layer)
+            self._webmapdict["baseMap"]["baseMapLayers"].append(dict(layer))
             self._webmapdict["operationalLayers"].remove(layer)
             self.definition = _mixins.PropertyMap(self._webmapdict)
-            return self.definition
+            return self.basemap
+        elif layer["layerType"] not in layer_types:
+            raise Error(
+                "This layer type cannot be added as a basemap. See method description to know what layer types can be moved to basemap."
+            )
         else:
             raise Error(
-                "Layer must be part of WebMap's Operational Layers in order to add it as a basemap"
+                "Make sure the layer dictionary is already added to the WebMap. Use the layers property to see all layers in the WebMap."
             )
 
     def move_from_basemap(self, layer):
@@ -418,24 +431,34 @@ class WebMap(HasTraits, collections.OrderedDict):
             wm.update()
         """
         if layer in self.definition["baseMap"]["baseMapLayers"]:
+            self._webmapdict["operationalLayers"].append(_mixins.PropertyMap(layer))
             self._webmapdict["baseMap"]["baseMapLayers"].remove(layer)
-            self._webmapdict["operationalLayers"].append(layer)
             self.definition = _mixins.PropertyMap(self._webmapdict)
-            return self.definition
+            return self.basemap
         else:
             raise Error(
                 "Layer must be part of WebMap's BaseMap Layers in order to add it as an Operational Layer"
             )
+
+    def basemap_title(self, title: str):
+        """
+        Get/Set the BaseMap Title.
+        Required string title for the basemap that can be used in a table of contents.
+        If None is specified, it takes the title of the first `basemap` in the array.
+        """
+        self._webmapdict["baseMap"]["title"] = title
+        self.definition = _mixins.PropertyMap(self._webmapdict)
+        return self.basemap
 
     def add_layer(
         self,
         layer: Union[
             _arcgis_features.FeatureLayer,
             MapImageLayer,
-            SceneLayer,
+            _scenelyrs.SceneLayer,
             arcgis.raster.ImageryLayer,
             VectorTileLayer,
-            StreamLayer,
+            _realtime.StreamLayer,
             _arcgis_features.FeatureSet,
             _gis.Item,
             _arcgis_features.FeatureCollection,
@@ -482,6 +505,9 @@ class WebMap(HasTraits, collections.OrderedDict):
             >> True
         """
         new_layer = self._create_layer_definition(layer, options)
+        # recursive call already added layers, can return
+        if new_layer is True:
+            return True
         if "layerType" in new_layer:
             layer_type = new_layer["layerType"]
         else:
@@ -622,7 +648,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                     layer_type = "ArcGISMapServiceLayer"
                 elif isinstance(layer, _arcgis_mapping.VectorTileLayer):
                     layer_type = "VectorTileLayer"
-                elif isinstance(layer, StreamLayer):
+                elif isinstance(layer, _realtime.StreamLayer):
                     layer_type = "ArcGISStreamLayer"
 
                 if hasattr(layer.properties, "serviceItemId"):
@@ -1529,7 +1555,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             wm = WebMap(wm_item)
 
             print(wm.basemaps)
-            >> ['dark-gray', 'dark-gray-vector', 'gray', 'gray-vector', 'hybrid', 'national-geographic', 'oceans', 'osm', 'satellite', 'streets', 'streets-navigation-vector', 'streets-night-vector', 'streets-relief-vector', 'streets-vector', 'terrain', 'topo', 'topo-vector']
+            >> ['dark-gray-vector', 'gray-vector', 'hybrid', 'oceans', 'osm', 'satellite', 'streets-navigation-vector', 'streets-night-vector', 'streets-relief-vector', 'streets-vector', 'terrain', 'topo-vector']
             wm.basemap = 'dark-gray'
             print(wm.gallery_basemaps)
             >> ['custom_dark_gray_canvas', 'imagery', 'imagery_hybrid', 'light_gray_canvas', 'custom_basemap_vector_(proxy)', 'world_imagery_(proxy)', 'world_street_map_(proxy)']
@@ -1546,12 +1572,9 @@ class WebMap(HasTraits, collections.OrderedDict):
             wm.basemap = wm2
 
         """
-        if self._basemap:
-            return _mixins.PropertyMap(self._basemap)
-        else:
-            if "baseMap" in self._webmapdict.keys():
-                self._basemap = self._webmapdict["baseMap"]
-            return _mixins.PropertyMap(self._basemap)
+        if "baseMap" in self._webmapdict.keys():
+            self._basemap = self._webmapdict["baseMap"]
+        return _mixins.PropertyMap(self._basemap)
 
     def _determine_layer_type(self, item):
         # this function determines the basemap layer type for the Web Map Specification
@@ -1673,22 +1696,17 @@ class WebMap(HasTraits, collections.OrderedDict):
         :attr:`~arcgis.mapping.WebMap.basemap` for the ``WebMap``.
         """
         basemaps = [
-            "dark-gray",
             "dark-gray-vector",
-            "gray",
             "gray-vector",
             "hybrid",
-            "national-geographic",
             "oceans",
             "osm",
             "satellite",
-            "streets",
             "streets-navigation-vector",
             "streets-night-vector",
             "streets-relief-vector",
             "streets-vector",
             "terrain",
-            "topo",
             "topo-vector",
         ]
         return basemaps
@@ -1696,8 +1714,9 @@ class WebMap(HasTraits, collections.OrderedDict):
     @property
     def gallery_basemaps(self):
         """
-        Get for a user their portal's custom
-        :attr:`~arcgis.mapping.WebMap.basemap` group.
+        Gets a list of web map titles contained within the
+        :class:`~arcgis.gis.Group` configured as the organization's Basemap
+        gallery.
         """
         if self._gis:
             bmquery = self._gis.properties["basemapGalleryGroupQuery"]
@@ -4619,7 +4638,7 @@ class VectorTileLayer(arcgis.gis.Layer):
         self,
         levels: Optional[str] = None,
         export_extent: Optional[dict[str, Any]] = None,
-        polygon: Optional[Union[dict[str, Any], Polygon]] = None,
+        polygon: Optional[Union[dict[str, Any], _geometry.Polygon]] = None,
         max_export_tile_count: int = 10000,
     ):
         """
@@ -5557,11 +5576,11 @@ class MapImageLayer(arcgis.gis.Layer):
     # ----------------------------------------------------------------------
     def identify(
         self,
-        geometry: Union[Geometry, list],
+        geometry: Union[_geometry.Geometry, list],
         map_extent: str,
         image_display: Optional[str] = None,
         geometry_type: str = "Point",
-        sr: Optional[Union[dict[str, Any], str, SpatialReference]] = None,
+        sr: Optional[Union[dict[str, Any], str, _geometry.SpatialReference]] = None,
         layer_defs: Optional[dict[str, Any]] = None,
         time_value: Optional[Union[list[str], str]] = None,
         time_options: Optional[dict] = None,
@@ -5814,7 +5833,7 @@ class MapImageLayer(arcgis.gis.Layer):
         layers: str,
         contains: bool = True,
         search_fields: Optional[str] = None,
-        sr: Optional[Union[dict[str, Any], str, SpatialReference]] = None,
+        sr: Optional[Union[dict[str, Any], str, _geometry.SpatialReference]] = None,
         layer_defs: Optional[dict[str, Any]] = None,
         return_geometry: bool = True,
         max_offset: Optional[int] = None,
@@ -6277,7 +6296,7 @@ class MapImageLayer(arcgis.gis.Layer):
         levels: str,
         tile_package: bool = False,
         export_extent: str = "DEFAULTEXTENT",
-        area_of_interest: Optional[Union[dict[str, Any], Polygon]] = None,
+        area_of_interest: Optional[Union[dict[str, Any], _geometry.Polygon]] = None,
         asynchronous: bool = True,
         **kwargs,
     ):
@@ -6396,7 +6415,7 @@ class MapImageLayer(arcgis.gis.Layer):
         export_extent: Optional[Union[dict[str, Any], str]] = None,
         optimize_for_size: bool = True,
         compression: int = 75,
-        area_of_interest: Optional[Union[dict[str, Any], Polygon]] = None,
+        area_of_interest: Optional[Union[dict[str, Any], _geometry.Polygon]] = None,
         asynchronous: bool = False,
         storage_format: Optional[str] = None,
         **kwargs,

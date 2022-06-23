@@ -8,6 +8,9 @@ class SecurityManager(object):
     """
     This resource is a container for all resources and operations
     pertaining to security in your ArcGIS Mission Server site.
+    Security Manager can be accessed via the
+    :attr:`~arcgis.gis.mission.MissionServer.security` property of
+    :class:`~arcgis.gis.mission.MissionServer` class
     """
 
     _url = None
@@ -35,7 +38,7 @@ class SecurityManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<SecurityManager @ {url}>".format(url=self._url)
+        return "< SecurityManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):

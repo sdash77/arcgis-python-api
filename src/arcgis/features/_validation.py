@@ -42,7 +42,7 @@ class ValidationManager(object):
     # ----------------------------------------------------------------------
     def __str__(self):
         url = self._url
-        return f"<ValidationManager @ {url}>"
+        return f"< ValidationManager @ {url} >"
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -61,7 +61,7 @@ class ValidationManager(object):
         self,
         error_features: list[dict[str, Any]],
         version: Optional[str] = None,
-        return_edits: Optional[bool] = None,
+        return_edits: bool = False,
         **kwargs,
     ):
         """
@@ -120,15 +120,12 @@ class ValidationManager(object):
 
         """
         url = self._url + "/updateErrors"
-
-        version = self._version
-        version_name = version.properties.versionName
-        session_id = version._guid
         params = {
             "f": "json",
-            "gdbVersion": version_name,
-            "sessionId": session_id,
+            "gdbVersion": self._version.properties.versionName,
+            "sessionId": self._version._guid,
             "errorFeatures": error_features,
+            "returnEdits": return_edits,
         }
         if len(kwargs) > 0:
             params.update(kwargs)
@@ -149,13 +146,20 @@ class ValidationManager(object):
         """
         Runs the topology rules and returns new errors if they exist.
 
+        Evaluation can be performed on different types of geodatabase rules (controlled by the evaluationType):
+
+        * Topology rules
+        * Validation and batch calculation attribute rules
+
+
         ====================     ====================================================================
         **Argument**             **Description**
         --------------------     --------------------------------------------------------------------
-        evaluation               Required List of Strings.  An array of evaluation types.
-                                 Allowed Rule Types: `validation`, `calculation` and/or `topology`
+        evaluation               Required List of Strings.  A list of evaluation types.
+
+                                 `Values: "validationRules" | "calculationRules" | "topologyRules"`
         --------------------     --------------------------------------------------------------------
-        area                     Optional Envelope/Dict. Extent area to evaluate.
+        area                     Optional Envelope/Dict. Extent of the area to evaluate.
         --------------------     --------------------------------------------------------------------
         changes_in_version       Optional Boolean. representing whether to perform the evaluation on
                                  the features that have changed in the version (default is false).
@@ -198,7 +202,7 @@ class ValidationManager(object):
 
         ====================     ====================================================================
 
-        :return: Dictionary indicating 'success' or 'error'
+        :return: The number of new errors identified along with the moment.
 
         """
         url = self._url + "/evaluate"

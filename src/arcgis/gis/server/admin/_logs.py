@@ -1,12 +1,10 @@
-"""
-
-"""
 from __future__ import absolute_import
 from __future__ import print_function
 import csv
 from datetime import datetime
 from .._common import BaseServer
-
+from arcgis.gis import GIS
+from typing import Optional
 
 ########################################################################
 class LogManager(BaseServer):
@@ -24,7 +22,7 @@ class LogManager(BaseServer):
     _json_dict = None
     _json = None
     # ----------------------------------------------------------------------
-    def __init__(self, url, gis, initialize=False):
+    def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """Constructor
 
 
@@ -45,15 +43,15 @@ class LogManager(BaseServer):
             self._init(connection)
 
     # ----------------------------------------------------------------------
-    def __str__(self):
+    def __str__(self) -> str:
         return "<%s at %s>" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<%s at %s>" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
-    def count_error_reports(self, machine="*"):
+    def count_error_reports(self, machine: str = "*") -> dict:
         """
         This operation counts the number of error reports (crash reports) that have been generated
         on each machine.
@@ -74,7 +72,7 @@ class LogManager(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def clean(self):
+    def clean(self) -> bool:
         """
         Deletes all the log files on all server machines in the site. This is an irreversible
         operation.
@@ -98,7 +96,7 @@ class LogManager(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def settings(self):
+    def settings(self) -> dict:
         """Gets the current log settings."""
         params = {"f": "json"}
         url = self._url + "/settings"
@@ -108,7 +106,13 @@ class LogManager(BaseServer):
             return ""
 
     # ----------------------------------------------------------------------
-    def edit(self, level="WARNING", log_dir=None, max_age=90, max_report_count=10):
+    def edit(
+        self,
+        level: str = "WARNING",
+        log_dir: Optional[str] = None,
+        max_age: int = 90,
+        max_report_count: int = 10,
+    ) -> dict:
         """
         Provides log editing capabilities for the entire site.
 
@@ -162,19 +166,19 @@ class LogManager(BaseServer):
     # ----------------------------------------------------------------------
     def query(
         self,
-        start_time=None,
-        end_time=None,
-        since_server_start=False,
-        level="WARNING",
-        services="*",
-        machines="*",
-        server="*",
-        codes=None,
-        process_IDs=None,
-        export=False,
-        export_type="CSV",  # CSV or TAB
-        out_path=None,
-        max_records_return=5000,
+        start_time: Optional[str] = None,
+        end_time: Optional[str] = None,
+        since_server_start: bool = False,
+        level: str = "WARNING",
+        services: str = "*",
+        machines: str = "*",
+        server: str = "*",
+        codes: Optional[str] = None,
+        process_IDs: Optional[str] = None,
+        export: bool = False,
+        export_type: str = "CSV",
+        out_path: Optional[str] = None,
+        max_records_return: int = 5000,
     ):
         """
         The query operation on the logs resource provides a way to

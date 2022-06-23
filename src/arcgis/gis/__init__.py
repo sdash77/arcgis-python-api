@@ -1941,10 +1941,10 @@ class DatastoreManager(object):
         self._server = server
 
     def __str__(self):
-        return "<%s for %s>" % (type(self).__name__, self._admin_url)
+        return "< %s for %s >" % (type(self).__name__, self._admin_url)
 
     def __repr__(self):
-        return "<%s for %s>" % (type(self).__name__, self._admin_url)
+        return "< %s for %s >" % (type(self).__name__, self._admin_url)
 
     @property
     def config(self):
@@ -2588,7 +2588,7 @@ class UserManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<UserManager @ {url}>".format(url=self._gis._url)
+        return "< UserManager at {url} >".format(url=self._gis._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -4709,6 +4709,9 @@ class GroupManager(object):
         display_settings: Optional[str] = None,
         is_open_data: bool = False,
         leaving_disallowed: bool = False,
+        hidden_members: bool = False,
+        membership_access: Optional[str] = None,
+        autojoin: bool = False,
     ):
         """
         The ``create`` method creates a group with the values for any particular arguments that are specified.
@@ -4782,6 +4785,23 @@ class GroupManager(object):
                               from choosing to leave the group. If True, only an
                               administrator can remove them from the group. The default
                               is False.
+        ------------------    ---------------------------------------------------------
+        hidden_members        Optional Boolean. Only applies to org accounts. If true,
+                              only the group owner, group managers, and default
+                              administrators can see all members of the group.
+        ------------------    ---------------------------------------------------------
+        membership_access     Optional String. Sets the membership access for the group.
+                              Setting to `org` restricts group access to members of
+                              your organization. Setting to `collaboration` restricts the
+                              membership access to partnered collaboration and your
+                              organization members. If `None` set, any organization
+                              will have access. `None` is the default.
+
+                              Values: `org`, `collaboration`, or `None`
+        ------------------    ---------------------------------------------------------
+        autojoin              Optional Boolean. The default is `False`. Only applies to
+                              org accounts. If `True`, this group will allow joined
+                              without requesting membership approval.
         ====================  =========================================================
 
         :return:
@@ -4832,6 +4852,13 @@ class GroupManager(object):
             params["capabilities"] = ""
         params["isOpenData"] = is_open_data
         params["MAX_FILE_SIZE"] = max_file_size
+        if hidden_members in [True, False]:
+            params["hiddenMembers"] = hidden_members
+        if membership_access in ["org", "collaboration", None]:
+            params["membershipAccess"] = membership_access
+        if autojoin in [True, False]:
+            params["autoJoin"] = autojoin
+
         if (
             isinstance(display_settings, str)
             and display_settings.lower() in display_settings_lu
@@ -5108,6 +5135,21 @@ class ContentManager(object):
             self._depmgr = DependencyManager(gis=self._gis)
         return self._depmgr
 
+    # ----------------------------------------------------------------------
+    @property
+    def marketplace(self) -> "MarketPlaceManager":
+        """
+        Provides users the ability to manage the content's presence on the marketplace.
+
+        :returns: MarketPlaceManager or None if not available
+        """
+        if self._mrktplcmgr is None and self._gis._portal.is_arcgisonline == False:
+            from arcgis.gis.sharing._marketplace import MarketPlaceManager
+
+            self._mrktplcmgr = MarketPlaceManager(gis=self._gis)
+        return self._mrktplcmgr
+
+    # ----------------------------------------------------------------------
     def _add_by_part(
         self, file_path, itemid, item_properties, size=1e7, owner=None, folder=None
     ):
@@ -5999,23 +6041,31 @@ class ContentManager(object):
                             contain two or more clauses, the recommended schema is to have
                             clauses separated by blank, or `AND`, e.g.
 
-                            :Usage Example:
+                            .. code-block:: python
+
+                               #Usage Example:
 
 
-                            gis.content.advanced_search(query='owner:USERNAME type:map')
-                            # or
-                            gis.content.advanced_search(query='type:map AND owner:USERNAME')
+                                >>> gis.content.advanced_search(query='owner:USERNAME type:map')
+                                # or
+                                >>> gis.content.advanced_search(query='type:map AND owner:USERNAME')
 
 
                             .. warning::
-                            When the clauses are separated by comma, the filtering condition
-                            for `owner` should not be placed at the first position, e.g.
-                            `gis.content.advanced_search(query='type:map, owner:USERNAME')`
-                            is allowed, while
-                            `gis.content.advanced_search(query='owner:USERNAME, type:map')`
-                            is not. For more, please check
-                            https://developers.arcgis.com/rest/users-groups-and-items/search-reference.htm
+                                When the clauses are separated by comma, the filtering condition
+                                for `owner` should not be placed at the first position, e.g.
 
+                                .. code-block:: python
+
+                                    >>> gis.content.advanced_search(query='type:map, owner:USERNAME')
+
+                                is allowed, while
+
+                                .. code-block:: python
+
+                                    >>> gis.content.advanced_search(query='owner:USERNAME, type:map')
+
+                                is not.  For more information, please check `Users, groups and items <https://developers.arcgis.com/rest/users-groups-and-items/search-reference.htm>`_.
         ----------------    ---------------------------------------------------------------
         bbox                Optional String/List. This is the xmin,ymin,xmax,ymax bounding
                             box to limit the search in.  Items like documents do not have
@@ -7619,7 +7669,7 @@ class CategorySchemaManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<CategorySchemaManager @ {url}>".format(url=self._url)
+        return "< CategorySchemaManager at {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -9046,6 +9096,10 @@ class Group(dict):
         display_settings: Optional[str] = None,
         is_open_data: bool = False,
         leaving_disallowed: bool = False,
+        member_access: bool = None,
+        hidden_members: bool = False,
+        membership_access: Optional[str] = None,
+        autojoin: bool = False,
     ):
         """
         The ``update`` method updates the group's properties with the values supplied for particular arguments.
@@ -9108,6 +9162,23 @@ class Group(dict):
                             from choosing to leave the group. If True, only an
                             administrator can remove them from the group. The default
                             is False.
+        ------------------  ---------------------------------------------------------
+        hidden_members      Optional Boolean. Only applies to org accounts. If true,
+                            only the group owner, group managers, and default
+                            administrators can see all members of the group.
+        ------------------  ---------------------------------------------------------
+        membership_access   Optional String. Sets the membership access for the group.
+                            Setting to `org` restricts group access to members of
+                            your organization. Setting to `collaboration` restricts the
+                            membership access to partnered collaboration and your
+                            organization members. If `None` set, any organization
+                            will have access. `None` is the default.
+
+                            Values: `org`, `collaboration`, or `None`
+        ------------------  ---------------------------------------------------------
+        autojoin            Optional Boolean. The default is `False`. Only applies to
+                            org accounts. If `True`, this group will allow joined
+                            without requesting membership approval.
         ==================  =========================================================
 
         :return:
@@ -9163,6 +9234,9 @@ class Group(dict):
             display_settings=display_settings,
             is_open_data=is_open_data,
             leaving_disallowed=leaving_disallowed,
+            hidden_members=hidden_members,
+            membership_access=membership_access,
+            autojoin=autojoin,
         )
         if resp:
             self._hydrate()
@@ -11638,11 +11712,13 @@ class Item(dict):
             self.contentStatus = value
             self._hydrate()
 
+    # ----------------------------------------------------------------------
     @property
     def homepage(self):
         """The ``homepage`` property gets the URL to the HTML page for the item."""
         return "{}{}{}".format(self._gis.url, "/home/item.html?id=", self.itemid)
 
+    # ----------------------------------------------------------------------
     def copy_feature_layer_collection(
         self,
         service_name: str,
@@ -11830,6 +11906,7 @@ class Item(dict):
                 pass
         return None
 
+    # ----------------------------------------------------------------------
     def download(
         self, save_path: Optional[str] = None, file_name: Optional[str] = None
     ):
@@ -11928,6 +12005,7 @@ class Item(dict):
         else:
             return download_path
 
+    # ----------------------------------------------------------------------
     def export(
         self,
         title: str,
@@ -12118,6 +12196,7 @@ class Item(dict):
                     thumbnail_url_path, try_json=False, force_bytes=True
                 )
 
+    # ----------------------------------------------------------------------
     def download_thumbnail(self, save_folder: Optional[str] = None):
         """
         The ``download_thumbnail`` method is similar to the ``download`` method but only downloads the item thumbnail.
@@ -12160,6 +12239,7 @@ class Item(dict):
         else:
             return None
 
+    # ----------------------------------------------------------------------
     def get_thumbnail_link(self):
 
         """
@@ -12185,721 +12265,7 @@ class Item(dict):
             )
             return thumbnail_url_path
 
-    @property
-    def metadata(self):
-        """The ``metadata`` property gets and sets the item metadata for the specified item.
-        ``metadata`` returns None if the item does not have metadata.
-
-        .. note::
-            Items with metadata have 'Metadata' in their typeKeywords.
-
-        """
-        metadataurlpath = "content/items/" + self.itemid + "/info/metadata/metadata.xml"
-        try:
-            return self._portal.con.get(metadataurlpath, try_json=False)
-
-        # If the get operation returns a 400 HTTP Error then the metadata simply
-        # doesn't exist, let's just return None in this case
-        except HTTPError as e:
-            if e.code == 400 or e.code == 500:
-                return None
-            else:
-                raise e
-
     # ----------------------------------------------------------------------
-    @metadata.setter
-    def metadata(self, value):
-        """
-        See main ``metadata`` property docstring
-        """
-        xml_file = os.path.join(tempfile.gettempdir(), "metadata.xml")
-        if os.path.isfile(xml_file) == True:
-            os.remove(xml_file)
-        if (
-            str(value).lower().endswith(".xml")
-            and len(value) <= 32767
-            and os.path.isfile(value) == True
-        ):
-            if os.path.basename(value).lower() != "metadata.xml":
-                shutil.copy(value, xml_file)
-            else:
-                xml_file = value
-        elif isinstance(value, str):
-            with open(xml_file, mode="w") as writer:
-                writer.write(value)
-                writer.close()
-        else:
-            raise ValueError("Input must be XML path file or XML Text")
-        return self.update(metadata=xml_file)
-
-    def download_metadata(self, save_folder: Optional[str] = None):
-        """
-        The ``download_metadata`` method is similar to the ``download`` method but only downloads the item metadata for
-        the specified item id. Items with metadata have 'Metadata' in their typeKeywords.
-
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        save_folder          Optional string. Folder location to download the item's metadata to.
-        ===============     ====================================================================
-
-
-        :return:
-           A file path, if the metadata download was successful. None if the item does not have metadata.
-        """
-        metadataurlpath = "content/items/" + self.itemid + "/info/metadata/metadata.xml"
-        if not save_folder:
-            save_folder = self._workdir
-        try:
-            file_name = "metadata.xml"
-            file_path = os.path.join(save_folder, file_name)
-            self._portal.con.get(
-                path=metadataurlpath,
-                out_folder=save_folder,
-                file_name=file_name,
-                try_json=False,
-            )
-            return file_path
-
-        # If the get operation returns a 400 HTTP/IO Error then the metadata
-        # simply doesn't exist, let's just return None in this case
-        except HTTPError as e:
-            if e.code == 400 or e.code == 500:
-                return None
-            else:
-                raise e
-
-    def _get_icon(self):
-        icon = "layers16.png"
-        if self.type.lower() == "web map":
-            icon = "maps16.png"
-        elif self.type.lower() == "web scene":
-            icon = "websceneglobal16.png"
-        elif self.type.lower() == "cityengine web scene":
-            icon = "websceneglobal16.png"
-        elif self.type.lower() == "pro map":
-            icon = "mapsgray16.png"
-        elif self.type.lower() == "feature service" and "Table" in self.typeKeywords:
-            icon = "table16.png"
-        elif self.type.lower() == "feature service":
-            icon = "featureshosted16.png"
-        elif self.type.lower() == "map service":
-            icon = "mapimages16.png"
-        elif self.type.lower() == "image service":
-            icon = "imagery16.png"
-        elif self.type.lower() == "kml":
-            icon = "features16.png"
-        elif self.type.lower() == "wms":
-            icon = "mapimages16.png"
-        elif self.type.lower() == "feature collection":
-            icon = "features16.png"
-        elif self.type.lower() == "feature collection template":
-            icon = "maps16.png"
-        elif self.type.lower() == "geodata service":
-            icon = "layers16.png"
-        elif self.type.lower() == "globe service":
-            icon = "layers16.png"
-        elif self.type.lower() == "shapefile":
-            icon = "datafiles16.png"
-        elif self.type.lower() == "web map application":
-            icon = "apps16.png"
-        elif self.type.lower() == "map package":
-            icon = "mapsgray16.png"
-        elif self.type.lower() == "feature layer":
-            icon = "featureshosted16.png"
-        elif self.type.lower() == "map service":
-            icon = "maptiles16.png"
-        elif self.type.lower() == "map document":
-            icon = "mapsgray16.png"
-        else:
-            icon = "layers16.png"
-
-        icon = self._gis.url + "/home/js/jsapi/esri/css/images/item_type_icons/" + icon
-        return icon
-
-    def _ux_item_type(self):
-        item_type = self.type
-        if self.type == "Geoprocessing Service":
-            item_type = "Geoprocessing Toolbox"
-        elif self.type.lower() == "feature service" and "Table" in self.typeKeywords:
-            item_type = "Table Layer"
-        elif self.type.lower() == "feature service":
-            item_type = "Feature Layer Collection"
-        elif self.type.lower() == "map service":
-            item_type = "Map Image Layer"
-        elif self.type.lower() == "image service":
-            item_type = "Imagery Layer"
-        elif self.type.lower().endswith("service"):
-            item_type = self.type.replace("Service", "Layer")
-        return item_type
-
-    def _repr_html_(self):
-        thumbnail = self.thumbnail
-        if self.thumbnail is None or not self._portal.is_logged_in:
-            thumbnail = self.get_thumbnail_link()
-        else:
-            try:
-                b64 = base64.b64encode(self.get_thumbnail())
-                thumbnail = (
-                    "data:image/png;base64,"
-                    + str(b64, "utf-8")
-                    + "' width='200' height='133"
-                )
-            except:
-                if self._gis.properties.portalName == "ArcGIS Online":
-                    thumbnail = "http://static.arcgis.com/images/desktopapp.png"
-                else:
-                    thumbnail = self._gis.url + "/portalimages/desktopapp.png"
-
-        snippet = self.snippet
-        if snippet is None:
-            snippet = ""
-
-        portalurl = self.homepage
-
-        # locale.setlocale(locale.LC_ALL, "")
-        numViews = locale.format("%d", self.numViews, grouping=True)
-        return (
-            """<div class="item_container" style="height: auto; overflow: hidden; border: 1px solid #cfcfcf; border-radius: 2px; background: #f6fafa; line-height: 1.21429em; padding: 10px;">
-                    <div class="item_left" style="width: 210px; float: left;">
-                       <a href='"""
-            + portalurl
-            + """' target='_blank'>
-                        <img src='"""
-            + thumbnail
-            + """' class="itemThumbnail">
-                       </a>
-                    </div>
-
-                    <div class="item_right"     style="float: none; width: auto; overflow: hidden;">
-                        <a href='"""
-            + portalurl
-            + """' target='_blank'><b>"""
-            + self.title
-            + """</b>
-                        </a>
-                        <br/>"""
-            + snippet
-            + """<img src='"""
-            + self._get_icon()
-            + """' style="vertical-align:middle;">"""
-            + self._ux_item_type()
-            + """ by """
-            + self.owner
-            + """
-                        <br/>Last Modified: """
-            + datetime.fromtimestamp(self.modified / 1000).strftime("%B %d, %Y")
-            + """
-                        <br/>"""
-            + str(self.numComments)
-            + """ comments, """
-            + str(numViews)
-            + """ views
-                    </div>
-                </div>
-                """
-        )
-
-    def __str__(self):
-        return self.__repr__()
-        # state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
-        # return '\n'.join(state)
-
-    def __repr__(self):
-        return '<%s title:"%s" type:%s owner:%s>' % (
-            type(self).__name__,
-            self.title,
-            self._ux_item_type(),
-            self.owner,
-        )
-
-    def reassign_to(self, target_owner: str, target_folder: Optional[str] = None):
-        """
-        The ``reassign_to`` method allows the administrator to reassign a single item from one user to another.
-
-        .. note::
-            If you wish to move all of a user's items (and groups) to another user then use the
-            user.reassign_to() method.  The ``item.reassign_to`` method (this method) only moves one item at a time.
-
-        ================  ========================================================
-        **Argument**      **Description**
-        ----------------  --------------------------------------------------------
-        target_owner      Required string. The new desired owner of the item.
-        ----------------  --------------------------------------------------------
-        target_folder     Optional string. The folder to move the item to.
-        ================  ========================================================
-
-        :return:
-            A boolean indicating success (True) with the ID of the reassigned item, or failure (False).
-
-        .. code-block:: python
-
-            # Usage Example
-
-            >>> item.reassign_to("User1234")
-
-        """
-        try:
-            current_folder = self.ownerFolder
-        except:
-            current_folder = None
-        resp = self._portal.reassign_item(
-            self.itemid, self._user_id, target_owner, current_folder, target_folder
-        )
-        if resp is True:
-            self._hydrate()  # refresh
-            return resp
-
-    @property
-    def shared_with(self):
-        """
-        The ``shared_with`` property reveals the privacy or sharing status of the current item. An item can be private
-        or shared with one or more of the following:
-            1. A specified list of groups
-            2. All members in the organization
-            3. Everyone (including anonymous users).
-
-        .. note::
-            If the return is False for `org`, `everyone` and contains an empty list of `groups`, then the
-            item is private and visible only to the owner.
-
-        :return:
-            A Dictionary in the following format:
-            {
-            'groups': [],  # one or more Group objects
-            'everyone': True | False,
-            'org': True | False
-            }
-        """
-        if not self._hydrated:
-            self._hydrate()  # hydrated properties needed below
-
-        # find if portal is ArcGIS Online
-        if self._gis._portal.is_arcgisonline:
-            # Call with owner info
-            if self._user_id != self._gis.users.me.username:
-                url = "{resturl}content/items/{itemid}/groups".format(
-                    resturl=self._gis._portal.resturl, itemid=self.itemid
-                )
-                resp = self._portal.con.post(url, {"f": "json"})
-                ret_dict = {
-                    "everyone": self.access == "public",
-                    "org": (self.access == "public" or self.access == "org"),
-                    "groups": [],
-                }
-                for grpid in (
-                    resp.get("admin", [])
-                    + resp.get("other", [])
-                    + resp.get("member", [])
-                ):
-                    try:
-                        grp = Group(gis=self._gis, groupid=grpid["id"])
-                        ret_dict["groups"].append(grp)
-                    except:
-                        pass
-                return ret_dict
-            else:
-                resp = self._portal.con.get(
-                    "content/users/" + self._user_id + "/items/" + self.itemid
-                )
-
-        else:  # gis is a portal, find if item resides in a folder
-            if self._user_id != self._gis.users.me.username:
-                url = "{resturl}content/items/{itemid}/groups".format(
-                    resturl=self._gis._portal.resturl, itemid=self.itemid
-                )
-                resp = self._portal.con.post(url, {"f": "json"})
-                ret_dict = {
-                    "everyone": self.access == "public",
-                    "org": (self.access == "public" or self.access == "org"),
-                    "groups": [],
-                }
-                for grpid in (
-                    resp.get("admin", [])
-                    + resp.get("other", [])
-                    + resp.get("member", [])
-                ):
-                    try:
-                        grp = Group(gis=self._gis, groupid=grpid["id"])
-                        ret_dict["groups"].append(grp)
-                    except:
-                        pass
-                return ret_dict
-            if self.ownerFolder is not None:
-                resp = self._portal.con.get(
-                    "content/users/"
-                    + self._user_id
-                    + "/"
-                    + self.ownerFolder
-                    + "/items/"
-                    + self.itemid
-                )
-            else:
-                resp = self._portal.con.get(
-                    "content/users/" + self._user_id + "/items/" + self.itemid
-                )
-
-        # Get the sharing info
-        sharing_info = resp["sharing"]
-        ret_dict = {"everyone": False, "org": False, "groups": []}
-
-        if sharing_info["access"] == "public":
-            ret_dict["everyone"] = True
-            ret_dict["org"] = True
-
-        if sharing_info["access"] == "org":
-            ret_dict["org"] = True
-
-        if len(sharing_info["groups"]) > 0:
-            grps = []
-            for g in sharing_info["groups"]:
-                try:
-                    grps.append(Group(self._gis, g))
-                except:  # ignore groups you can't access
-                    pass
-            ret_dict["groups"] = grps
-
-        return ret_dict
-
-    def share(
-        self,
-        everyone: bool = False,
-        org: bool = False,
-        groups: Optional[Union[list[Group], list[str]]] = None,
-        allow_members_to_edit: bool = False,
-    ):
-        """
-        The ``share`` method shares an item with the specified list of groups.
-
-        ======================  ========================================================
-        **Argument**            **Description**
-        ----------------------  --------------------------------------------------------
-        everyone                Optional boolean. Default is False, don't share with
-                                everyone.
-        ----------------------  --------------------------------------------------------
-        org                     Optional boolean. Default is False, don't share with
-                                the organization.
-        ----------------------  --------------------------------------------------------
-        groups                  Optional list of group ids as strings, or a list of
-                                arcgis.gis.Group objects, or a comma-separated list of
-                                group IDs.
-        ----------------------  --------------------------------------------------------
-        allow_members_to_edit   Optional boolean. Default is False, to allow item to be
-                                shared with groups that allow shared update
-        ======================  ========================================================
-
-        :return:
-            A dictionary with a key titled "`notSharedWith`",containing array of groups with which the item could not be
-            shared.
-
-        .. code-block:: python
-
-            # Usage Example
-
-            >>> item.share(org = True, allow_members_to_edit = True)
-
-
-        """
-        if everyone:
-            org = True
-        try:
-            folder = self.ownerFolder
-        except:
-            folder = None
-
-        # get list of group IDs
-        group_ids = ""
-        if isinstance(groups, list):
-            for group in groups:
-                if isinstance(group, Group):
-                    group_ids = group_ids + "," + group.id
-
-                elif isinstance(group, str):
-                    # search for group using id
-                    search_result = self._gis.groups.search(
-                        query="id:" + group, max_groups=1
-                    )
-                    if len(search_result) > 0:
-                        group_ids = group_ids + "," + search_result[0].id
-                    else:
-                        raise Exception("Cannot find group with id: " + group)
-                else:
-                    raise Exception("Invalid group(s)")
-        elif isinstance(groups, Group):
-            group_ids = groups.id
-        elif isinstance(groups, str):
-            # old API - groups sent as comma separated group ids
-            group_ids = groups
-        if self.owner == self._gis.users.me.username:
-
-            url = "{resturl}content/users/{owner}/shareItems".format(
-                resturl=self._gis._portal.resturl, owner=self.owner
-            )
-            params = {
-                "f": "json",
-                "items": self.id,
-                "groups": group_ids,
-                "everyone": everyone,
-                "account": org,
-                "confirmItemControl": allow_members_to_edit,
-            }
-            if allow_members_to_edit:
-                params["confirmItemControl"] = allow_members_to_edit  # True
-        else:
-            url = "{resturl}content/items/{itemid}/share".format(
-                resturl=self._gis._portal.resturl, itemid=self.itemid
-            )
-            params = {
-                "f": "json",
-                "groups": group_ids,
-                "everyone": everyone,
-                "account": org,
-            }
-
-            if allow_members_to_edit:
-                if (
-                    "portal:admin:createUpdateCapableGroup"
-                    in self._gis.users.me.privileges
-                ):
-                    params["confirmItemControl"] = allow_members_to_edit  # True
-
-        res = self._portal.con.post(url, params)
-        self._hydrated = False
-        self._hydrate()
-        return res
-
-    def update_thumbnail(
-        self,
-        file_path: str | None = None,
-        encoded_image: str | None = None,
-        file_name: str | None = None,
-        url: str | None = None,
-    ) -> bool:
-        """
-        The `update_thumbnail` updates the thumbnail of any ArcGIS item in your organization. The updated thumbnail
-        can be provided in a variety of formats, as either a file to be uploaded as part of a multipart request,
-        a direct URL to the thumbnail file, or as a Base64 encoded image.
-
-        ================  =========================================================================================
-        **Argument**      **Description**
-        ----------------  -----------------------------------------------------------------------------------------
-        file_path         Optional String. The local path to the thumbnail.
-        ----------------  -----------------------------------------------------------------------------------------
-        encoded_image     Optional String. A base64 encoded image as a string.
-        ----------------  -----------------------------------------------------------------------------------------
-        file_name         Optional String. This is required with `encoded_image` is used. It is the name of the file
-                          with extension.  Example thumbnail.png
-        ----------------  -----------------------------------------------------------------------------------------
-        url               Optional String. A URL location of a thumbnail.
-        ================  =========================================================================================
-
-
-        .. code-block:: python
-
-            # Usage Example 1: Using a base64 encoded image
-
-            gis = GIS(profile='your_profile')
-            item = gis.content.get(<item id>)
-            base64_img = (
-                'data:image/png;base64,'
-                'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAAsTAAA'
-                'LEwEAmpwYAAAB1klEQVQ4jY2TTUhUURTHf+fy/HrjhNEX2KRGiyIXg8xgSURuokX'
-                'LxFW0qDTaSQupkHirthK0qF0WQQQR0UCbwCQyw8KCiDbShEYLJQdmpsk3895p4aS'
-                'v92ass7pcfv/zP+fcc4U6kXKe2pTY3tjSUHjtnFgB0VqchC/SY8/293S23f+6VEj'
-                '9KKwCoPDNIJdmr598GOZNJKNWTic7tqb27WwNuuwGvVWrAit84fsmMzE1P1+1TiK'
-                'MVKvYUjdBvzPZXCwXzyhyWNBgVYkgrIow09VJMznpyebWE+Tdn9cEroBSc1JVPS+'
-                '6moh5Xyjj65vEgBxafGzWetTh+rr1eE/c/TMYg8hlAOvI6JP4KmwLgJ4qD0TIbli'
-                'TB+sunjkbeLekKsZ6Zc8V027aBRoBRHVoduDiSypmGFG7CrcBEyDHA0ZNfNphC0D'
-                '6amYa6ANw3YbWD4Pn3oIc+EdL36V3od0A+MaMAXmA8x2Zyn+IQeQeBDfRcUw3B+2'
-                'PxwZ/EdtTDpCPQLMh9TKx0k3pXipEVlknsf5KoNzGyOe1sz8nvYtTQT6yyvTjIax'
-                'smHGB9pFx4n3jIEfDePQvCIrnn0J4B/gA5J4XcRfu4JZuRAw3C51OtOjM3l2bMb8'
-                'Br5eXCsT/w/EAAAAASUVORK5CYII='
-            )
-            res = item.update_thumbnail(encoded_image=base64_img, file_name="thumbnail.png")
-
-        .. code-block:: python
-
-            # Usage Example 2: URL image
-
-            gis = GIS(profile='your_profile')
-            item = gis.content.get(<item id>)
-            img_url = "https://www.esri.com/content/dam/esrisites/en-us/common/icons/product-logos/ArcGIS-Pro.png"
-            res = item.update_thumbnail(url=img_url)
-
-        .. code-block:: python
-
-            # Usage Example 3: Using a local file
-
-            gis = GIS(profile='your_profile')
-            item = gis.content.get(<item id>)
-            fp = "c:/images/ArcGIS-Pro.png"
-            res = item.update_thumbnail(file_path=fp)
-
-        :returns: bool
-        """
-        if file_path is None and encoded_image is None and url is None:
-            return False
-        files = None
-        rest_url = f"{self._gis._portal.resturl}content/users/{self.owner}/items/{self.itemid}/updateThumbnail"
-        params = {
-            "f": "json",
-        }
-        if file_path and os.path.isfile(file_path):
-            files = []
-            files.append(("file", file_path, os.path.basename(file_path)))
-        elif encoded_image:
-            params["data"] = encoded_image
-        elif url:
-            params["url"] = url
-        if encoded_image and file_name is None:
-            params["filename"] = "thumbnail.png"
-        elif file_name:
-            params["filename"] = file_name
-        resp = self._gis._con.post(rest_url, params, files=files)
-        if resp.get("success", False):
-            self._hydrated = False
-            self._hydrate()
-            return True
-        return False
-
-    def unshare(self, groups: Union[list[str], list[Group]]):
-        """
-        The ``unshare`` method stops sharing of the Item with the specified list of groups.
-
-
-        ================  =========================================================================================
-        **Argument**      **Description**
-        ----------------  -----------------------------------------------------------------------------------------
-        groups            Optional list of group names as strings, or a list of :class:`~arcgis.gis.Group` objects,
-                          or a comma-separated list of group IDs.
-        ================  =========================================================================================
-
-
-        :return:
-            A Dictionary containing the key `notUnsharedFrom` containing array of groups from which the item
-            could not be unshared.
-        """
-        try:
-            folder = self.ownerFolder
-        except:
-            folder = None
-
-        # get list of group IDs
-        group_ids = ""
-        if isinstance(groups, list):
-            for group in groups:
-                if isinstance(group, Group):
-                    group_ids = group_ids + "," + group.id
-
-                elif isinstance(group, str):
-                    # search for group using id
-                    search_result = self._gis.groups.search(
-                        query="id:" + group, max_groups=1
-                    )
-                    if len(search_result) > 0:
-                        group_ids = group_ids + "," + search_result[0].id
-                    else:
-                        raise Exception("Cannot find group with id: " + group)
-                else:
-                    raise Exception("Invalid group(s)")
-
-        elif isinstance(groups, str):
-            # old API - groups sent as comma separated group ids
-            group_ids = groups
-
-        if self.access == "public":
-            return self._portal.unshare_item_as_group_admin(self.itemid, group_ids)
-        else:
-            owner = self._user_id
-            return self._portal.unshare_item(self.itemid, owner, folder, group_ids)
-
-    def delete(self, force: bool = False, dry_run: bool = False):
-        """
-        The ``delete`` method deletes the item. If the item is unable to be deleted , a RuntimeException is raised.
-        To know if you can safely delete the item, use the optional parameter 'dry_run' in order to test the operation
-        without actually deleting the item.
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        force               Optional boolean. Available in ArcGIS Enterprise 10.6.1 and higher.
-                            Force deletion is applicable only to items that were orphaned when
-                            a server federated to the ArcGIS Enterprise was removed accidentally
-                            before properly unfederating it. When called on other items, it has
-                            no effect.
-        ---------------     --------------------------------------------------------------------
-        dry_run             Optional boolean. Available in ArcGIS Enterprise 10.6.1 and higher.If
-                            True, checks if the item can be safely deleted and gives you back
-                            either a dictionary with details. If dependent items are preventing
-                            deletion, a list of such Item objects are provided.
-        ===============     ====================================================================
-
-        :return:
-            A boolean indicating success (True), or failure (False). When ``dry_run`` is used, a dictionary containing
-            details of the item is returned.
-
-        .. code-block:: python
-
-            USAGE EXAMPLE: Successful deletion of an item
-
-            item1 = gis.content.get('itemId12345')
-            item1.delete()
-
-            >> True
-
-        .. code-block:: python
-
-            USAGE EXAMPLE: Failed deletion of an item
-
-            item1 = gis.content.get('itemId12345')
-            item1.delete()
-
-            >> RuntimeError: Unable to delete item. This service item has a related Service item
-            >> (Error Code: 400)
-
-        .. code-block:: python
-
-            USAGE EXAMPLE: Dry run to check deletion of an item
-
-            item1 = gis.content.get('itemId12345abcde')
-            item1.delete(dry_run=True)
-
-            >> {'can_delete': False,
-            >> 'details': {'code': 400,
-            >> 'message': 'Unable to delete item. This service item has a related Service item',
-            >> 'offending_items': [<Item title:"Chicago_accidents_WFS" type:WFS owner:sharing1>]}}
-
-        .. note::
-            During the `dry run`, if you receive a list of offending items, attempt to delete them first before deleting
-            the current item. You can in turn call ``dry_run`` on those items to ensure they can be deleted safely.
-        """
-
-        try:
-            folder = self.ownerFolder
-        except:
-            folder = None
-
-        if dry_run:
-            can_delete_resp = self._portal.can_delete(
-                self.itemid, self._user_id, folder
-            )
-            if can_delete_resp[0]:
-                return {"can_delete": True}
-            else:
-                error_dict = {
-                    "code": can_delete_resp[1].get("code"),
-                    "message": can_delete_resp[1].get("message"),
-                    "offending_items": [
-                        Item(self._gis, e["itemId"])
-                        for e in can_delete_resp[1].get("offendingItems")
-                    ],
-                }
-
-                return {"can_delete": False, "details": error_dict}
-        else:
-            return self._portal.delete_item(self.itemid, self._user_id, folder, force)
-
     def create_thumbnail(self, update: bool = True):
         """
         The ``create_thumbnail`` method creates a Thumbnail for a feature service portal item using the service's
@@ -13012,6 +12378,7 @@ class Item(dict):
             self.update(item_properties={"thumbnailUrl": res.url})
         return res
 
+    # ----------------------------------------------------------------------
     def delete_thumbnail(self) -> bool:
         """
         Deletes the item's thumbnail
@@ -13027,6 +12394,734 @@ class Item(dict):
             return True
         return res
 
+    # ----------------------------------------------------------------------
+    def update_thumbnail(
+        self,
+        file_path: str | None = None,
+        encoded_image: str | None = None,
+        file_name: str | None = None,
+        url: str | None = None,
+    ) -> bool:
+        """
+        The `update_thumbnail` updates the thumbnail of any ArcGIS item in your organization. The updated thumbnail
+        can be provided in a variety of formats, as either a file to be uploaded as part of a multipart request,
+        a direct URL to the thumbnail file, or as a Base64 encoded image.
+
+        ================  =========================================================================================
+        **Argument**      **Description**
+        ----------------  -----------------------------------------------------------------------------------------
+        file_path         Optional String. The local path to the thumbnail.
+        ----------------  -----------------------------------------------------------------------------------------
+        encoded_image     Optional String. A base64 encoded image as a string.
+        ----------------  -----------------------------------------------------------------------------------------
+        file_name         Optional String. This is required with `encoded_image` is used. It is the name of the file
+                          with extension.  Example thumbnail.png
+        ----------------  -----------------------------------------------------------------------------------------
+        url               Optional String. A URL location of a thumbnail.
+        ================  =========================================================================================
+
+
+        .. code-block:: python
+
+            # Usage Example 1: Using a base64 encoded image
+
+            gis = GIS(profile='your_profile')
+            item = gis.content.get(<item id>)
+            base64_img = (
+                'data:image/png;base64,'
+                'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAAsTAAA'
+                'LEwEAmpwYAAAB1klEQVQ4jY2TTUhUURTHf+fy/HrjhNEX2KRGiyIXg8xgSURuokX'
+                'LxFW0qDTaSQupkHirthK0qF0WQQQR0UCbwCQyw8KCiDbShEYLJQdmpsk3895p4aS'
+                'v92ass7pcfv/zP+fcc4U6kXKe2pTY3tjSUHjtnFgB0VqchC/SY8/293S23f+6VEj'
+                '9KKwCoPDNIJdmr598GOZNJKNWTic7tqb27WwNuuwGvVWrAit84fsmMzE1P1+1TiK'
+                'MVKvYUjdBvzPZXCwXzyhyWNBgVYkgrIow09VJMznpyebWE+Tdn9cEroBSc1JVPS+'
+                '6moh5Xyjj65vEgBxafGzWetTh+rr1eE/c/TMYg8hlAOvI6JP4KmwLgJ4qD0TIbli'
+                'TB+sunjkbeLekKsZ6Zc8V027aBRoBRHVoduDiSypmGFG7CrcBEyDHA0ZNfNphC0D'
+                '6amYa6ANw3YbWD4Pn3oIc+EdL36V3od0A+MaMAXmA8x2Zyn+IQeQeBDfRcUw3B+2'
+                'PxwZ/EdtTDpCPQLMh9TKx0k3pXipEVlknsf5KoNzGyOe1sz8nvYtTQT6yyvTjIax'
+                'smHGB9pFx4n3jIEfDePQvCIrnn0J4B/gA5J4XcRfu4JZuRAw3C51OtOjM3l2bMb8'
+                'Br5eXCsT/w/EAAAAASUVORK5CYII='
+            )
+            res = item.update_thumbnail(encoded_image=base64_img, file_name="thumbnail.png")
+
+        .. code-block:: python
+
+            # Usage Example 2: URL image
+
+            gis = GIS(profile='your_profile')
+            item = gis.content.get(<item id>)
+            img_url = "https://www.esri.com/content/dam/esrisites/en-us/common/icons/product-logos/ArcGIS-Pro.png"
+            res = item.update_thumbnail(url=img_url)
+
+        .. code-block:: python
+
+            # Usage Example 3: Using a local file
+
+            gis = GIS(profile='your_profile')
+            item = gis.content.get(<item id>)
+            fp = "c:/images/ArcGIS-Pro.png"
+            res = item.update_thumbnail(file_path=fp)
+
+        :returns: bool
+        """
+        if file_path is None and encoded_image is None and url is None:
+            return False
+        files = None
+        rest_url = f"{self._gis._portal.resturl}content/users/{self.owner}/items/{self.itemid}/updateThumbnail"
+        params = {
+            "f": "json",
+        }
+        if file_path and os.path.isfile(file_path):
+            files = []
+            files.append(("file", file_path, os.path.basename(file_path)))
+        elif encoded_image:
+            params["data"] = encoded_image
+        elif url:
+            params["url"] = url
+        if encoded_image and file_name is None:
+            params["filename"] = "thumbnail.png"
+        elif file_name:
+            params["filename"] = file_name
+        resp = self._gis._con.post(rest_url, params, files=files)
+        if resp.get("success", False):
+            self._hydrated = False
+            self._hydrate()
+            return True
+        return False
+
+    # ----------------------------------------------------------------------
+    @property
+    def metadata(self):
+        """The ``metadata`` property gets and sets the item metadata for the specified item.
+        ``metadata`` returns None if the item does not have metadata.
+
+        .. note::
+            Items with metadata have 'Metadata' in their typeKeywords.
+
+        """
+        metadataurlpath = "content/items/" + self.itemid + "/info/metadata/metadata.xml"
+        try:
+            return self._portal.con.get(metadataurlpath, try_json=False)
+
+        # If the get operation returns a 400 HTTP Error then the metadata simply
+        # doesn't exist, let's just return None in this case
+        except HTTPError as e:
+            if e.code == 400 or e.code == 500:
+                return None
+            else:
+                raise e
+
+    # ----------------------------------------------------------------------
+    @metadata.setter
+    def metadata(self, value):
+        """
+        See main ``metadata`` property docstring
+        """
+        xml_file = os.path.join(tempfile.gettempdir(), "metadata.xml")
+        if os.path.isfile(xml_file) == True:
+            os.remove(xml_file)
+        if (
+            str(value).lower().endswith(".xml")
+            and len(value) <= 32767
+            and os.path.isfile(value) == True
+        ):
+            if os.path.basename(value).lower() != "metadata.xml":
+                shutil.copy(value, xml_file)
+            else:
+                xml_file = value
+        elif isinstance(value, str):
+            with open(xml_file, mode="w") as writer:
+                writer.write(value)
+                writer.close()
+        else:
+            raise ValueError("Input must be XML path file or XML Text")
+        return self.update(metadata=xml_file)
+
+    # ----------------------------------------------------------------------
+    def download_metadata(self, save_folder: Optional[str] = None):
+        """
+        The ``download_metadata`` method is similar to the ``download`` method but only downloads the item metadata for
+        the specified item id. Items with metadata have 'Metadata' in their typeKeywords.
+
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        save_folder          Optional string. Folder location to download the item's metadata to.
+        ===============     ====================================================================
+
+
+        :return:
+           A file path, if the metadata download was successful. None if the item does not have metadata.
+        """
+        metadataurlpath = "content/items/" + self.itemid + "/info/metadata/metadata.xml"
+        if not save_folder:
+            save_folder = self._workdir
+        try:
+            file_name = "metadata.xml"
+            file_path = os.path.join(save_folder, file_name)
+            self._portal.con.get(
+                path=metadataurlpath,
+                out_folder=save_folder,
+                file_name=file_name,
+                try_json=False,
+            )
+            return file_path
+
+        # If the get operation returns a 400 HTTP/IO Error then the metadata
+        # simply doesn't exist, let's just return None in this case
+        except HTTPError as e:
+            if e.code == 400 or e.code == 500:
+                return None
+            else:
+                raise e
+
+    def _get_icon(self):
+        icon = "layers16.png"
+        if self.type.lower() == "web map":
+            icon = "maps16.png"
+        elif self.type.lower() == "web scene":
+            icon = "websceneglobal16.png"
+        elif self.type.lower() == "cityengine web scene":
+            icon = "websceneglobal16.png"
+        elif self.type.lower() == "pro map":
+            icon = "mapsgray16.png"
+        elif self.type.lower() == "feature service" and "Table" in self.typeKeywords:
+            icon = "table16.png"
+        elif self.type.lower() == "feature service":
+            icon = "featureshosted16.png"
+        elif self.type.lower() == "map service":
+            icon = "mapimages16.png"
+        elif self.type.lower() == "image service":
+            icon = "imagery16.png"
+        elif self.type.lower() == "kml":
+            icon = "features16.png"
+        elif self.type.lower() == "wms":
+            icon = "mapimages16.png"
+        elif self.type.lower() == "feature collection":
+            icon = "features16.png"
+        elif self.type.lower() == "feature collection template":
+            icon = "maps16.png"
+        elif self.type.lower() == "geodata service":
+            icon = "layers16.png"
+        elif self.type.lower() == "globe service":
+            icon = "layers16.png"
+        elif self.type.lower() == "shapefile":
+            icon = "datafiles16.png"
+        elif self.type.lower() == "web map application":
+            icon = "apps16.png"
+        elif self.type.lower() == "map package":
+            icon = "mapsgray16.png"
+        elif self.type.lower() == "feature layer":
+            icon = "featureshosted16.png"
+        elif self.type.lower() == "map service":
+            icon = "maptiles16.png"
+        elif self.type.lower() == "map document":
+            icon = "mapsgray16.png"
+        else:
+            icon = "layers16.png"
+
+        icon = self._gis.url + "/home/js/jsapi/esri/css/images/item_type_icons/" + icon
+        return icon
+
+    # ----------------------------------------------------------------------
+    def _ux_item_type(self):
+        item_type = self.type
+        if self.type == "Geoprocessing Service":
+            item_type = "Geoprocessing Toolbox"
+        elif self.type.lower() == "feature service" and "Table" in self.typeKeywords:
+            item_type = "Table Layer"
+        elif self.type.lower() == "feature service":
+            item_type = "Feature Layer Collection"
+        elif self.type.lower() == "map service":
+            item_type = "Map Image Layer"
+        elif self.type.lower() == "image service":
+            item_type = "Imagery Layer"
+        elif self.type.lower().endswith("service"):
+            item_type = self.type.replace("Service", "Layer")
+        return item_type
+
+    # ----------------------------------------------------------------------
+    def _repr_html_(self):
+        thumbnail = self.thumbnail
+        if self.thumbnail is None or not self._portal.is_logged_in:
+            thumbnail = self.get_thumbnail_link()
+        else:
+            try:
+                b64 = base64.b64encode(self.get_thumbnail())
+                thumbnail = (
+                    "data:image/png;base64,"
+                    + str(b64, "utf-8")
+                    + "' width='200' height='133"
+                )
+            except:
+                if self._gis.properties.portalName == "ArcGIS Online":
+                    thumbnail = "http://static.arcgis.com/images/desktopapp.png"
+                else:
+                    thumbnail = self._gis.url + "/portalimages/desktopapp.png"
+
+        snippet = self.snippet
+        if snippet is None:
+            snippet = ""
+
+        portalurl = self.homepage
+
+        # locale.setlocale(locale.LC_ALL, "")
+        numViews = locale.format("%d", self.numViews, grouping=True)
+        return (
+            """<div class="item_container" style="height: auto; overflow: hidden; border: 1px solid #cfcfcf; border-radius: 2px; background: #f6fafa; line-height: 1.21429em; padding: 10px;">
+                    <div class="item_left" style="width: 210px; float: left;">
+                       <a href='"""
+            + portalurl
+            + """' target='_blank'>
+                        <img src='"""
+            + thumbnail
+            + """' class="itemThumbnail">
+                       </a>
+                    </div>
+
+                    <div class="item_right"     style="float: none; width: auto; overflow: hidden;">
+                        <a href='"""
+            + portalurl
+            + """' target='_blank'><b>"""
+            + self.title
+            + """</b>
+                        </a>
+                        <br/>"""
+            + snippet
+            + """<img src='"""
+            + self._get_icon()
+            + """' style="vertical-align:middle;">"""
+            + self._ux_item_type()
+            + """ by """
+            + self.owner
+            + """
+                        <br/>Last Modified: """
+            + datetime.fromtimestamp(self.modified / 1000).strftime("%B %d, %Y")
+            + """
+                        <br/>"""
+            + str(self.numComments)
+            + """ comments, """
+            + str(numViews)
+            + """ views
+                    </div>
+                </div>
+                """
+        )
+
+    # ----------------------------------------------------------------------
+    def __str__(self):
+        return self.__repr__()
+        # state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
+        # return '\n'.join(state)
+
+    # ----------------------------------------------------------------------
+    def __repr__(self):
+        return '<%s title:"%s" type:%s owner:%s>' % (
+            type(self).__name__,
+            self.title,
+            self._ux_item_type(),
+            self.owner,
+        )
+
+    # ----------------------------------------------------------------------
+    def reassign_to(self, target_owner: str, target_folder: Optional[str] = None):
+        """
+        The ``reassign_to`` method allows the administrator to reassign a single item from one user to another.
+
+        .. note::
+            If you wish to move all of a user's items (and groups) to another user then use the
+            user.reassign_to() method.  The ``item.reassign_to`` method (this method) only moves one item at a time.
+
+        ================  ========================================================
+        **Argument**      **Description**
+        ----------------  --------------------------------------------------------
+        target_owner      Required string. The new desired owner of the item.
+        ----------------  --------------------------------------------------------
+        target_folder     Optional string. The folder to move the item to.
+        ================  ========================================================
+
+        :return:
+            A boolean indicating success (True) with the ID of the reassigned item, or failure (False).
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> item.reassign_to("User1234")
+
+        """
+        try:
+            current_folder = self.ownerFolder
+        except:
+            current_folder = None
+        resp = self._portal.reassign_item(
+            self.itemid, self._user_id, target_owner, current_folder, target_folder
+        )
+        if resp is True:
+            self._hydrate()  # refresh
+            return resp
+
+    # ----------------------------------------------------------------------
+    @property
+    def shared_with(self):
+        """
+        The ``shared_with`` property reveals the privacy or sharing status of the current item. An item can be private
+        or shared with one or more of the following:
+            1. A specified list of groups
+            2. All members in the organization
+            3. Everyone (including anonymous users).
+
+        .. note::
+            If the return is False for `org`, `everyone` and contains an empty list of `groups`, then the
+            item is private and visible only to the owner.
+
+        :return:
+            A Dictionary in the following format:
+            {
+            'groups': [],  # one or more Group objects
+            'everyone': True | False,
+            'org': True | False
+            }
+        """
+        if not self._hydrated:
+            self._hydrate()  # hydrated properties needed below
+
+        # find if portal is ArcGIS Online
+        if self._gis._portal.is_arcgisonline:
+            # Call with owner info
+            if self._user_id != self._gis.users.me.username:
+                url = "{resturl}content/items/{itemid}/groups".format(
+                    resturl=self._gis._portal.resturl, itemid=self.itemid
+                )
+                resp = self._portal.con.post(url, {"f": "json"})
+                ret_dict = {
+                    "everyone": self.access == "public",
+                    "org": (self.access == "public" or self.access == "org"),
+                    "groups": [],
+                }
+                for grpid in (
+                    resp.get("admin", [])
+                    + resp.get("other", [])
+                    + resp.get("member", [])
+                ):
+                    try:
+                        grp = Group(gis=self._gis, groupid=grpid["id"])
+                        ret_dict["groups"].append(grp)
+                    except:
+                        pass
+                return ret_dict
+            else:
+                resp = self._portal.con.get(
+                    "content/users/" + self._user_id + "/items/" + self.itemid
+                )
+
+        else:  # gis is a portal, find if item resides in a folder
+            if self._user_id != self._gis.users.me.username:
+                url = "{resturl}content/items/{itemid}/groups".format(
+                    resturl=self._gis._portal.resturl, itemid=self.itemid
+                )
+                resp = self._portal.con.post(url, {"f": "json"})
+                ret_dict = {
+                    "everyone": self.access == "public",
+                    "org": (self.access == "public" or self.access == "org"),
+                    "groups": [],
+                }
+                for grpid in (
+                    resp.get("admin", [])
+                    + resp.get("other", [])
+                    + resp.get("member", [])
+                ):
+                    try:
+                        grp = Group(gis=self._gis, groupid=grpid["id"])
+                        ret_dict["groups"].append(grp)
+                    except:
+                        pass
+                return ret_dict
+            if self.ownerFolder is not None:
+                resp = self._portal.con.get(
+                    "content/users/"
+                    + self._user_id
+                    + "/"
+                    + self.ownerFolder
+                    + "/items/"
+                    + self.itemid
+                )
+            else:
+                resp = self._portal.con.get(
+                    "content/users/" + self._user_id + "/items/" + self.itemid
+                )
+
+        # Get the sharing info
+        sharing_info = resp["sharing"]
+        ret_dict = {"everyone": False, "org": False, "groups": []}
+
+        if sharing_info["access"] == "public":
+            ret_dict["everyone"] = True
+            ret_dict["org"] = True
+
+        if sharing_info["access"] == "org":
+            ret_dict["org"] = True
+
+        if len(sharing_info["groups"]) > 0:
+            grps = []
+            for g in sharing_info["groups"]:
+                try:
+                    grps.append(Group(self._gis, g))
+                except:  # ignore groups you can't access
+                    pass
+            ret_dict["groups"] = grps
+
+        return ret_dict
+
+    # ----------------------------------------------------------------------
+    def share(
+        self,
+        everyone: bool = False,
+        org: bool = False,
+        groups: Optional[Union[list[Group], list[str]]] = None,
+        allow_members_to_edit: bool = False,
+    ):
+        """
+        The ``share`` method shares an item with the specified list of groups.
+
+        ======================  ========================================================
+        **Argument**            **Description**
+        ----------------------  --------------------------------------------------------
+        everyone                Optional boolean. Default is False, don't share with
+                                everyone.
+        ----------------------  --------------------------------------------------------
+        org                     Optional boolean. Default is False, don't share with
+                                the organization.
+        ----------------------  --------------------------------------------------------
+        groups                  Optional list of group ids as strings, or a list of
+                                arcgis.gis.Group objects, or a comma-separated list of
+                                group IDs.
+        ----------------------  --------------------------------------------------------
+        allow_members_to_edit   Optional boolean. Default is False, to allow item to be
+                                shared with groups that allow shared update
+        ======================  ========================================================
+
+        :return:
+            A dictionary with a key titled "`notSharedWith`",containing array of groups with which the item could not be
+            shared.
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> item.share(org = True, allow_members_to_edit = True)
+
+
+        """
+        if everyone:
+            org = True
+        try:
+            folder = self.ownerFolder
+        except:
+            folder = None
+
+        # get list of group IDs
+        group_ids = ""
+        if isinstance(groups, list):
+            for group in groups:
+                if isinstance(group, Group):
+                    group_ids = group_ids + "," + group.id
+
+                elif isinstance(group, str):
+                    # search for group using id
+                    search_result = self._gis.groups.search(
+                        query="id:" + group, max_groups=1
+                    )
+                    if len(search_result) > 0:
+                        group_ids = group_ids + "," + search_result[0].id
+                    else:
+                        raise Exception("Cannot find group with id: " + group)
+                else:
+                    raise Exception("Invalid group(s)")
+        elif isinstance(groups, Group):
+            group_ids = groups.id
+        elif isinstance(groups, str):
+            # old API - groups sent as comma separated group ids
+            group_ids = groups
+        if self.owner == self._gis.users.me.username:
+
+            url = "{resturl}content/users/{owner}/shareItems".format(
+                resturl=self._gis._portal.resturl, owner=self.owner
+            )
+            params = {
+                "f": "json",
+                "items": self.id,
+                "groups": group_ids,
+                "everyone": everyone,
+                "account": org,
+                "confirmItemControl": allow_members_to_edit,
+            }
+            if allow_members_to_edit:
+                params["confirmItemControl"] = allow_members_to_edit  # True
+        else:
+            url = "{resturl}content/items/{itemid}/share".format(
+                resturl=self._gis._portal.resturl, itemid=self.itemid
+            )
+            params = {
+                "f": "json",
+                "groups": group_ids,
+                "everyone": everyone,
+                "account": org,
+            }
+
+            if allow_members_to_edit:
+                if (
+                    "portal:admin:createUpdateCapableGroup"
+                    in self._gis.users.me.privileges
+                ):
+                    params["confirmItemControl"] = allow_members_to_edit  # True
+
+        res = self._portal.con.post(url, params)
+        self._hydrated = False
+        self._hydrate()
+        return res
+
+    # ----------------------------------------------------------------------
+    def unshare(self, groups: Union[list[str], list[Group]]):
+        """
+        The ``unshare`` method stops sharing of the Item with the specified list of groups.
+
+
+        ================  =========================================================================================
+        **Argument**      **Description**
+        ----------------  -----------------------------------------------------------------------------------------
+        groups            Optional list of group names as strings, or a list of :class:`~arcgis.gis.Group` objects,
+                          or a comma-separated list of group IDs.
+        ================  =========================================================================================
+
+
+        :return:
+            A Dictionary containing the key `notUnsharedFrom` containing array of groups from which the item
+            could not be unshared.
+        """
+        try:
+            folder = self.ownerFolder
+        except:
+            folder = None
+
+        # get list of group IDs
+        group_ids = ""
+        if isinstance(groups, list):
+            for group in groups:
+                if isinstance(group, Group):
+                    group_ids = group_ids + "," + group.id
+
+                elif isinstance(group, str):
+                    # search for group using id
+                    search_result = self._gis.groups.search(
+                        query="id:" + group, max_groups=1
+                    )
+                    if len(search_result) > 0:
+                        group_ids = group_ids + "," + search_result[0].id
+                    else:
+                        raise Exception("Cannot find group with id: " + group)
+                else:
+                    raise Exception("Invalid group(s)")
+
+        elif isinstance(groups, str):
+            # old API - groups sent as comma separated group ids
+            group_ids = groups
+
+        if self.access == "public":
+            return self._portal.unshare_item_as_group_admin(self.itemid, group_ids)
+        else:
+            owner = self._user_id
+            return self._portal.unshare_item(self.itemid, owner, folder, group_ids)
+
+    # ----------------------------------------------------------------------
+    def delete(self, force: bool = False, dry_run: bool = False):
+        """
+        The ``delete`` method deletes the item. If the item is unable to be deleted , a RuntimeException is raised.
+        To know if you can safely delete the item, use the optional parameter 'dry_run' in order to test the operation
+        without actually deleting the item.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        force               Optional boolean. Available in ArcGIS Enterprise 10.6.1 and higher.
+                            Force deletion is applicable only to items that were orphaned when
+                            a server federated to the ArcGIS Enterprise was removed accidentally
+                            before properly unfederating it. When called on other items, it has
+                            no effect.
+        ---------------     --------------------------------------------------------------------
+        dry_run             Optional boolean. Available in ArcGIS Enterprise 10.6.1 and higher.If
+                            True, checks if the item can be safely deleted and gives you back
+                            either a dictionary with details. If dependent items are preventing
+                            deletion, a list of such Item objects are provided.
+        ===============     ====================================================================
+
+        :return:
+            A boolean indicating success (True), or failure (False). When ``dry_run`` is used, a dictionary containing
+            details of the item is returned.
+
+        .. code-block:: python
+
+            USAGE EXAMPLE: Successful deletion of an item
+
+            item1 = gis.content.get('itemId12345')
+            item1.delete()
+
+            >> True
+
+        .. code-block:: python
+
+            USAGE EXAMPLE: Failed deletion of an item
+
+            item1 = gis.content.get('itemId12345')
+            item1.delete()
+
+            >> RuntimeError: Unable to delete item. This service item has a related Service item
+            >> (Error Code: 400)
+
+        .. code-block:: python
+
+            USAGE EXAMPLE: Dry run to check deletion of an item
+
+            item1 = gis.content.get('itemId12345abcde')
+            item1.delete(dry_run=True)
+
+            >> {'can_delete': False,
+            >> 'details': {'code': 400,
+            >> 'message': 'Unable to delete item. This service item has a related Service item',
+            >> 'offending_items': [<Item title:"Chicago_accidents_WFS" type:WFS owner:sharing1>]}}
+
+        .. note::
+            During the `dry run`, if you receive a list of offending items, attempt to delete them first before deleting
+            the current item. You can in turn call ``dry_run`` on those items to ensure they can be deleted safely.
+        """
+
+        try:
+            folder = self.ownerFolder
+        except:
+            folder = None
+
+        if dry_run:
+            can_delete_resp = self._portal.can_delete(
+                self.itemid, self._user_id, folder
+            )
+            if can_delete_resp[0]:
+                return {"can_delete": True}
+            else:
+                error_dict = {
+                    "code": can_delete_resp[1].get("code"),
+                    "message": can_delete_resp[1].get("message"),
+                    "offending_items": [
+                        Item(self._gis, e["itemId"])
+                        for e in can_delete_resp[1].get("offendingItems")
+                    ],
+                }
+
+                return {"can_delete": False, "details": error_dict}
+        else:
+            return self._portal.delete_item(self.itemid, self._user_id, folder, force)
+
+    # ----------------------------------------------------------------------
     def update(
         self,
         item_properties: Optional[dict[str, Any]] = None,
@@ -13233,6 +13328,62 @@ class Item(dict):
                 self._hydrate()
             return ret
 
+    # ----------------------------------------------------------------------
+    def update_info(self, file: str, folder_name: Optional[str] = None):
+        """
+        You can upload JSON, XML, CFG, TXT, PBF, and PNG files only. The file size limit is 100K.
+        The uploaded file is also available through the https://item-url/info/filename resource.
+
+        Must be the owner of the item to update this.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        file                Required String. The path to the file that will be uploaded.
+        ---------------     --------------------------------------------------------------------
+        folder_name         Optional String. The name of the subfolder for added information.
+        ===============     ====================================================================
+
+        :return: Success or Failure
+        """
+        url = "{resturl}content/users/{owner}/items/{itemid}/updateInfo".format(
+            resturl=self._gis._portal.resturl, owner=self.owner, itemid=self.itemid
+        )
+        params = {
+            "f": "json",
+            "file": file,
+            "folderName": folder_name,
+        }
+        res = self._portal.con.post(url, params)
+        self._hydrated = False
+        self._hydrate()
+        return res
+
+    # ----------------------------------------------------------------------
+    def delete_info(self, file: str):
+        """
+        This is available for all items and allows you to delete an individual file from an item's esriinfo folder.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        file                Required String. The file to be deleted.
+        ===============     ====================================================================
+
+        """
+        url = "{resturl}content/users/{owner}/items/{itemid}/deleteInfo".format(
+            resturl=self._gis._portal.resturl, owner=self.owner, itemid=self.itemid
+        )
+        params = {
+            "f": "json",
+            "file": file,
+        }
+        res = self._portal.con.post(url, params)
+        self._hydrated = False
+        self._hydrate()
+        return res
+
+    # ----------------------------------------------------------------------
     @cached(cache=TTLCache(maxsize=255, ttl=60))
     def usage(self, date_range: str = "7D", as_df: bool = True):
         """
@@ -13470,6 +13621,7 @@ class Item(dict):
         except:
             return None
 
+    # ----------------------------------------------------------------------
     def get_data(self, try_json: bool = True):
         """
         The ``get_data`` method retrieves the data associated with an item.
@@ -13515,6 +13667,7 @@ class Item(dict):
         else:
             return item_data
 
+    # ----------------------------------------------------------------------
     def dependent_upon(self):
 
         """
@@ -13525,6 +13678,7 @@ class Item(dict):
             with an ArcGIS Enterprise."""
         return self._portal.get_item_dependencies(self.itemid)
 
+    # ----------------------------------------------------------------------
     def dependent_to(self):
         """
         The ``dependent_to`` method returns items, urls, etc that are dependent to this item.
@@ -13535,6 +13689,7 @@ class Item(dict):
         """
         return self._portal.get_item_dependents_to(self.itemid)
 
+    # ----------------------------------------------------------------------
     _RELATIONSHIP_TYPES = frozenset(
         [
             "Area2CustomPackage",
@@ -13570,6 +13725,7 @@ class Item(dict):
 
     _RELATIONSHIP_DIRECTIONS = frozenset(["forward", "reverse"])
 
+    # ----------------------------------------------------------------------
     def related_items(self, rel_type: str, direction: str = "forward"):
         """
         The ``related_items`` method retrieves the items related to this item. Relationships can be added and deleted
@@ -13617,6 +13773,7 @@ class Item(dict):
             related_items.append(Item(self._gis, related_item["id"], related_item))
         return related_items
 
+    # ----------------------------------------------------------------------
     def add_relationship(self, rel_item: Item, rel_type: str):
 
         """The ``add_relationship`` method adds a relationship from the current item to ``rel_item``.
@@ -13668,6 +13825,7 @@ class Item(dict):
         if resp:
             return resp.get("success")
 
+    # ----------------------------------------------------------------------
     def delete_relationship(self, rel_item: Item, rel_type: str):
         """
         The ``delete_relationship`` method  deletes a relationship between this item and the rel_item.
@@ -13706,6 +13864,7 @@ class Item(dict):
         if resp:
             return resp.get("success")
 
+    # ----------------------------------------------------------------------
     def publish(
         self,
         publish_parameters: Optional[dict[str, Any]] = None,
@@ -14416,6 +14575,7 @@ class Item(dict):
             raise ValueError("Input must of type FeatureService")
         return
 
+    # ----------------------------------------------------------------------
     def protect(self, enable: bool = True):
         """
         The ``protect`` method enables or disables delete protection on this item, essentially allowing the item to be
@@ -14443,6 +14603,7 @@ class Item(dict):
         self._hydrate()
         return res
 
+    # ----------------------------------------------------------------------
     def _check_publish_status(self, ret, folder):
         """Internal method to check the status of a publishing job.
 

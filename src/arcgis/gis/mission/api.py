@@ -26,15 +26,17 @@ class MissionJob(object):
 
     # ---------------------------------------------------------------------
     def __str__(self):
-        return f"<{self.__class__.__name__} @ {self._url}>"
+        return f"< {self.__class__.__name__} @ {self._url} >"
 
     # ---------------------------------------------------------------------
     def __repr__(self):
-        return f"<{self.__class__.__name__} @ {self._url}>"
+        return f"< {self.__class__.__name__} @ {self._url} >"
 
     # ---------------------------------------------------------------------
     @cached_property
     def properties(self):
+        """returns the properties of the resource"""
+
         if self._properties is None:
             try:
                 self._properties = PropertyMap(self._con.get(self._url, {"f": "json"}))
@@ -106,6 +108,7 @@ class Mission(object):
     # ---------------------------------------------------------------------
     @cached_property
     def properties(self):
+        """returns the properties of the resource"""
         if self._properties is None:
             try:
                 r = self._con.get(self._url, {"f": "json"})
@@ -119,18 +122,19 @@ class Mission(object):
 
     # ---------------------------------------------------------------------
     def __str__(self):
-        return f"<{self.__class__.__name__} @ {self._url}>"
+        return f"< {self.__class__.__name__} @ {self._url} >"
 
     # ---------------------------------------------------------------------
     def __repr__(self):
-        return f"<{self.__class__.__name__} @ {self._url}>"
+        return f"< {self.__class__.__name__} @ {self._url} >"
 
     # ---------------------------------------------------------------------
     def delete(self) -> bool:
         """
-        Deletes a `Mission` from the server.
+        Deletes a :class:`~arcgis.gis.mission.api.Mission` from the server.
 
         :return: Boolean
+
         """
         params = {"f": "json"}
         url = f"{self._url}/delete"
@@ -154,6 +158,10 @@ class Mission(object):
         share_as_template: bool = False,
     ) -> dict:
         """
+
+        This method adds a report to the associated mission.
+
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
@@ -232,15 +240,17 @@ class MissionCatalog:
 
     # ---------------------------------------------------------------------
     def __str__(self):
-        return f"<{self.__class__.__name__} @ {self._url}>"
+        return f"< {self.__class__.__name__} @ {self._url} >"
 
     # ---------------------------------------------------------------------
     def __repr__(self):
-        return f"<{self.__class__.__name__} @ {self._url}>"
+        return f"< {self.__class__.__name__} @ {self._url} >"
 
     # ---------------------------------------------------------------------
     @cached_property
     def properties(self):
+        """returns the properties of the resource"""
+
         if self._properties is None:
             try:
                 self._properties = PropertyMap(self._con.get(self._url, {"f": "json"}))
@@ -313,7 +323,8 @@ class MissionCatalog:
         ==================     ====================================================================
 
 
-        :return: `MissionJob`
+        :return:
+            :class:`~arcgis.gis.mission.api.MissionJob`
 
 
         """
@@ -342,7 +353,7 @@ class MissionCatalog:
     # ---------------------------------------------------------------------
     @property
     def jobs(self) -> list:
-        """returns a list of jobs on the server"""
+        """returns a list of :class:`~arcgis.gis.mission.api.MissionJob` on the server"""
         url = f"{self._url}/jobs"
         params = {"f": "json"}
         resp = self._con.get(url, params)
@@ -352,7 +363,7 @@ class MissionCatalog:
     @property
     def missions(self) -> list:
         """
-        returns a list of missions on the server
+        returns a list of :class:`~arcgis.gis.mission.api.Mission` on the server
 
         :return: List
         """

@@ -231,11 +231,11 @@ class ServicesDirectory(BaseServer):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<%s at %s>" % (type(self).__name__, self.url)
+        return "< %s @ %s >" % (type(self).__name__, self.url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<%s at %s>" % (type(self).__name__, self.url)
+        return "< %s @ %s >" % (type(self).__name__, self.url)
 
     # ----------------------------------------------------------------------
     def report(self, as_html: bool = True, folder: Optional[str] = None):
