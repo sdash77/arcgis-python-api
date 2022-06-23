@@ -234,15 +234,24 @@ class WebMap(HasTraits, collections.OrderedDict):
             self._basemap = {
                 "baseMapLayers": [
                     {
-                        "id": "defaultBasemap",
+                        "id": "world-hillshade-layer",
+                        "url": "https://services.arcgisonline.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer",
                         "layerType": "ArcGISTiledMapServiceLayer",
-                        "url": "https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer",
+                        "title": "World Hillshade",
+                        "showLegend": False,
                         "visibility": True,
                         "opacity": 1,
-                        "title": "World Topographic Map",
-                    }
+                    },
+                    {
+                        "id": "topo-vector-base-layer",
+                        "styleUrl": "https://www.arcgis.com/sharing/rest/content/items/7dc6cea0b1764a1f9af2e679f642f0f5/resources/styles/root.json",
+                        "layerType": "VectorTileLayer",
+                        "title": "World Topo",
+                        "visibility": True,
+                        "opacity": 1,
+                    },
                 ],
-                "title": "Topographic",
+                "title": "Topographic Vector",
             }
             self._gallery_basemaps = {}
             self._webmapdict = {
@@ -367,8 +376,13 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         .. code-block:: python
 
+            # Create a WebMap from an existing WebMap Item.
             wm = WebMap(<webmap_item_id>)
-            layer = wm.layers[0] # A vector tile layer
+            # Get and add the layer to the map
+            vtl = gis.content.get("<vector tile layer id>")
+            wm.add_layer(vtl.layers[0])
+            # Move the layer to the basemap
+            layer = wm.layers[0]
             wm.move_to_basemap(layer)
             wm.update()
         """
@@ -381,10 +395,10 @@ class WebMap(HasTraits, collections.OrderedDict):
             "ArcGISVectorTileLayer",
         ]
         if layer in self.layers and layer["layerType"] in layer_types:
-            self._webmapdict["baseMap"]["baseMapLayers"].append(layer)
+            self._webmapdict["baseMap"]["baseMapLayers"].append(dict(layer))
             self._webmapdict["operationalLayers"].remove(layer)
             self.definition = _mixins.PropertyMap(self._webmapdict)
-            return self.definition
+            return self.basemap
         elif layer["layerType"] not in layer_types:
             raise Error(
                 "This layer type cannot be added as a basemap. See method description to know what layer types can be moved to basemap."
@@ -417,14 +431,24 @@ class WebMap(HasTraits, collections.OrderedDict):
             wm.update()
         """
         if layer in self.definition["baseMap"]["baseMapLayers"]:
+            self._webmapdict["operationalLayers"].append(_mixins.PropertyMap(layer))
             self._webmapdict["baseMap"]["baseMapLayers"].remove(layer)
-            self._webmapdict["operationalLayers"].append(layer)
             self.definition = _mixins.PropertyMap(self._webmapdict)
-            return self.definition
+            return self.basemap
         else:
             raise Error(
                 "Layer must be part of WebMap's BaseMap Layers in order to add it as an Operational Layer"
             )
+
+    def basemap_title(self, title: str):
+        """
+        Get/Set the BaseMap Title.
+        Required string title for the basemap that can be used in a table of contents.
+        If None is specified, it takes the title of the first `basemap` in the array.
+        """
+        self._webmapdict["baseMap"]["title"] = title
+        self.definition = _mixins.PropertyMap(self._webmapdict)
+        return self.basemap
 
     def add_layer(
         self,
@@ -1531,7 +1555,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             wm = WebMap(wm_item)
 
             print(wm.basemaps)
-            >> ['dark-gray', 'dark-gray-vector', 'gray', 'gray-vector', 'hybrid', 'national-geographic', 'oceans', 'osm', 'satellite', 'streets', 'streets-navigation-vector', 'streets-night-vector', 'streets-relief-vector', 'streets-vector', 'terrain', 'topo', 'topo-vector']
+            >> ['dark-gray-vector', 'gray-vector', 'hybrid', 'oceans', 'osm', 'satellite', 'streets-navigation-vector', 'streets-night-vector', 'streets-relief-vector', 'streets-vector', 'terrain', 'topo-vector']
             wm.basemap = 'dark-gray'
             print(wm.gallery_basemaps)
             >> ['custom_dark_gray_canvas', 'imagery', 'imagery_hybrid', 'light_gray_canvas', 'custom_basemap_vector_(proxy)', 'world_imagery_(proxy)', 'world_street_map_(proxy)']
@@ -1548,12 +1572,9 @@ class WebMap(HasTraits, collections.OrderedDict):
             wm.basemap = wm2
 
         """
-        if self._basemap:
-            return _mixins.PropertyMap(self._basemap)
-        else:
-            if "baseMap" in self._webmapdict.keys():
-                self._basemap = self._webmapdict["baseMap"]
-            return _mixins.PropertyMap(self._basemap)
+        if "baseMap" in self._webmapdict.keys():
+            self._basemap = self._webmapdict["baseMap"]
+        return _mixins.PropertyMap(self._basemap)
 
     def _determine_layer_type(self, item):
         # this function determines the basemap layer type for the Web Map Specification
@@ -1675,22 +1696,17 @@ class WebMap(HasTraits, collections.OrderedDict):
         :attr:`~arcgis.mapping.WebMap.basemap` for the ``WebMap``.
         """
         basemaps = [
-            "dark-gray",
             "dark-gray-vector",
-            "gray",
             "gray-vector",
             "hybrid",
-            "national-geographic",
             "oceans",
             "osm",
             "satellite",
-            "streets",
             "streets-navigation-vector",
             "streets-night-vector",
             "streets-relief-vector",
             "streets-vector",
             "terrain",
-            "topo",
             "topo-vector",
         ]
         return basemaps
