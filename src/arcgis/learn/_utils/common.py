@@ -255,7 +255,7 @@ class ArcGISMSImage(Image):
                     x = x / div
 
                 # Remove data values which are outside our data range.
-                # Data Range is as read from EMD. 
+                # Data Range is as read from EMD.
                 # Handles No data values.
                 x.clamp_(0, 1)
         return cls(x)
