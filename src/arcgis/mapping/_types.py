@@ -4003,6 +4003,7 @@ class WebScene(collections.OrderedDict):
         # with _tempinput(self.__str__()) as tempfilename:
         self.item.update({"text": self.__str__()})
 
+
 ###########################################################################
 class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
     """
@@ -4021,308 +4022,6 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
             raise Warning("Manager not available. Update version of Enterprise")
         super(EnterpriseVectorTileLayerManager, self).__init__(url, gis)
         self._vtl = vect_tile_lyr
-
-    ########## These methods are ok if the VTL was published through a Feature Layer ##########
-    # ----------------------------------------------------------------------
-    def edit_tile_service(
-        self,
-        source_item_id: str | None = None,
-        export_tiles_allowed: bool | None = None,
-        min_scale: float | None = None,
-        max_scale: float | None = None,
-        max_export_tile_count: int | None = None,
-        layers: list[dict] | None = None,
-        cache_max_age: int | None = None,
-        max_zoom: int | None = None,
-    ) -> dict:
-        """
-        The edit operation enables editing the service source item id, min scale, max scale,
-        export tiles allowed and max export tiles count parameters.
-
-        ======================      =======================================================
-        **Argument**                **Description**
-        ----------------------      -------------------------------------------------------
-        source_item_id              Optional String. The Source Item ID is the GeoWarehouse
-                                    Item ID of the tile service.
-        ----------------------      -------------------------------------------------------
-        export_tiles_allowed        Optional boolean. ``exports_tiles_allowed`` sets
-                                   the value to let users export tiles
-        ----------------------      -------------------------------------------------------
-        min_scale                   Optional float. Sets the services minimum scale for
-                                    caching.
-        ----------------------      -------------------------------------------------------
-        max_scale                   Optional float. Sets the services maximum scale for
-                                    caching.
-        ----------------------      -------------------------------------------------------
-        max_export_tile_count       Optional int. ``max_export_tile_count`` sets the
-                                    maximum amount of tiles to be exported from a single
-                                    call.
-        ----------------------      -------------------------------------------------------
-        layers                      Optional list of dictionaries. Each dict representing a layer.
-
-                                    Syntax Example:
-                                        layers = [
-                                            {
-                                                "name": "Layer Name",
-                                                "id": 1159321,
-                                                "layerId": 0,
-                                                "tableName": "tableName",
-                                                "type": "Feature Layer",
-                                                "xssTrustedFields": ""
-                                            }
-                                        ]
-        ----------------------      -------------------------------------------------------
-        cache_max_age               Optional int. The maximum cache age.
-        ----------------------      -------------------------------------------------------
-        max_zoom                    Optional int. The maximum zoom level.
-        ======================      =======================================================
-
-        .. code-block:: python
-
-            # USAGE EXAMPLE
-
-            >>> from arcgis.mapping import VectorTileLayer
-            >>> from arcgis.gis import GIS
-
-            # connect to your GIS and get the tile layer item
-            >>> gis = GIS(url, username, password)
-
-            >>> vector_layer_item = gis.content.get('abcd_item-id')
-            >>> source_item_id = vector_tile_item.related_items(rel_type="Service2Data", direction="forward")[0]["id"]
-            >>> vector_tile_layer = VectorTileLayer.fromitem(vector_layer_item)
-            >>> vtl_manager = vector_tile_layer.manager
-            >>> vtl_manager.edit_tile_service(
-                                            min_scale = 50,
-                                            max_scale = 100,
-                                            source_item_id = source_item_id,
-                                            export_tiles_allowed = True,
-                                            max_Export_Tile_Count = 10000
-                                            )
-        """
-        params = {
-            "f": "json",
-            "serviceDefinition": {},
-        }
-        if min_scale:
-            params["serviceDefinition"]["minScale"] = min_scale
-        if max_scale:
-            params["serviceDefinition"]["maxScale"] = max_scale
-        if max_export_tile_count:
-            params["serviceDefinition"]["maxExportTilesCount"] = max_export_tile_count
-        if export_tiles_allowed and export_tiles_allowed in [True, False]:
-            params["serviceDefinition"]["exportTilesAllowed"] = export_tiles_allowed
-        if source_item_id:
-            params["sourceItemId"] = source_item_id
-        if layers:
-            params["serviceDefinition"]["layerProperties"] = {"layers": layers}
-        if cache_max_age:
-            params["serviceDefinition"]["cacheMaxAge"] = cache_max_age
-        if max_zoom:
-            params["serviceDefinition"]["maxZoom"] = max_zoom
-        url = self._url + "/edit"
-        return self._con.post(path=url, params=params)
-
-    # ----------------------------------------------------------------------
-    def update_tiles(
-        self, levels: str | list | None = None, extent: str | dict | None = None
-    ) -> dict:
-        """
-        The update_tiles operation supports updating the cooking extent and
-        cache levels in a hosted vector tile service. The results of the
-        operation is a response indicating success, which redirects you
-        to the Job Statistics page, or failure.
-
-        ===============     ====================================================
-        **Argument**        **Description**
-        ---------------     ----------------------------------------------------
-        levels              Optional String / List of integers, The level of details
-                            to update. Example: "1,2,10,20" or [1,2,10,20]
-        ---------------     ----------------------------------------------------
-        extent              Optional String / Dict. The area to update as Xmin, YMin, XMax, YMax
-                            example: "-100,-50,200,500" or
-                            {'xmin':100, 'ymin':200, 'xmax':105, 'ymax':205}
-        ===============     ====================================================
-
-        :returns:
-           Dictionary with a job id and result indicating success.
-
-        .. code-block:: python
-
-            # USAGE EXAMPLE
-
-            >>> from arcgis.mapping import VectorTileLayer
-            >>> from arcgis.gis import GIS
-
-            # connect to your GIS and get the web map item
-            >>> gis = GIS(url, username, password)
-            >>> vector_layer_item = gis.content.get('abcd_item-id')
-            >>> vector_tile_layer = VectorTileLayer.fromitem(vector_layer_item)
-            >>> vtl_manager = vector_tile_layer.manager
-            >>> update_tiles = vtl_manager.update_tiles(levels = "11-20",
-                                                        extent = {"xmin":6224324.092137296,
-                                                                    "ymin":487347.5253569535,
-                                                                    "xmax":11473407.698535524,
-                                                                    "ymax":4239488.369818687,
-                                                                    "spatialReference":{"wkid":102100}
-                                                                    }
-                                                        )
-            >>> type(update_tiles)
-            <Dictionary>
-        """
-        url = "%s/updateTiles" % self._url
-        params = {"f": "json"}
-        if levels:
-            if isinstance(levels, list):
-                levels = ",".join(str(e) for e in levels)
-            params["levels"] = levels
-        if extent:
-            if isinstance(extent, dict):
-                extent2 = "{},{},{},{}".format(
-                    extent["xmin"],
-                    extent["ymin"],
-                    extent["xmax"],
-                    extent["ymax"],
-                )
-                extent = extent2
-            params["extent"] = extent
-        return self._con.post(url, params)
-
-
-    # ----------------------------------------------------------------------
-    def refresh(self):
-        """
-        The refresh operation clears and refreshes the service cache.
-        """
-        url = self._url + "/refresh"
-        params = {"f": "json"}
-        return self._con.post(path=url, params=params)
-
-    # ----------------------------------------------------------------------
-    def rebuild_cache(self):
-        """
-        The rebuild_cache operation update the vector tile layer cache to reflect
-        any changes made to the feature layer used to publish this vector tile layer.
-        The results of the operation is a response indicating success, which
-        redirects you to the Job Statistics page, or failure.
-        """
-        url = self._url + "/rebuildCache"
-        params = {"f": "json"}
-        return self._con.get(url, params)
-
-    # ----------------------------------------------------------------------
-    def status(self) -> dict:
-        """
-        The status operation returns a dictionary indicating
-        whether a service is started (available) or stopped.
-        """
-        url = self._url + "/status"
-        params = {"f": "json"}
-        return self._con.get(url, params)
-
-    # ----------------------------------------------------------------------
-    def jobs(self) -> dict:
-        """
-        The tile service job summary (jobs) resource represents a
-        summary of all jobs associated with a vector tile service.
-        Each job contains a jobid that corresponds to the specific
-        jobid run and redirects you to the Job Statistics page.
-
-        """
-        url = self._url + "/jobs"
-        params = {"f": "json"}
-        return self._con.get(url, params)
-
-    # ----------------------------------------------------------------------
-    def job_statistics(self, job_id: str) -> dict:
-        """
-        The tile service job summary (jobs) resource represents a
-        summary of all jobs associated with a vector tile service.
-        Each job contains a jobid that corresponds to the specific
-        jobid run and redirects you to the Job Statistics page.
-
-        """
-        url = self._url + "/jobs/{job_id}".format(job_id=job_id)
-        params = {"f": "json"}
-        return self._con.post(url, params)
-
-    # ----------------------------------------------------------------------
-    def delete_job(self, job_id: str) -> dict:
-        """
-        This operation deletes the specified asynchronous job being run by
-        the geoprocessing service. If the current status of the job is
-        SUBMITTED or EXECUTING, it will cancel the job. Regardless of status,
-        it will remove all information about the job from the system. To cancel a
-        job in progress without removing information, use the Cancel Job operation.
-        """
-        url = self._url + "jobs/{job_id}/delete".format(job_id=job_id)
-        params = {"f": "json"}
-        return self._con.post(url, params)
-
-    # ----------------------------------------------------------------------
-    def cancel_job(self, job_id: str) -> dict:
-        """
-        The cancel operation supports cancelling a job while update
-        tiles is running from a hosted feature service. The result of this
-        operation is a response indicating success or failure with error
-        code and description.
-        """
-        url = self._url + "jobs/{job_id}/cancel".format(job_id=job_id)
-        params = {"f": "json"}
-        return self._con.post(url, params)
-
-    # ----------------------------------------------------------------------
-    def rerun_job(self, code, job_id: str) -> dict:
-        """
-        The ``rerun_job`` operation supports re-running a canceled job from a
-        hosted map service. The result of this operation is a response
-        indicating success or failure with error code and description.
-
-        ===============     ====================================================
-        **Argument**        **Description**
-        ---------------     ----------------------------------------------------
-        code                required string, parameter used to re-run a given
-                            jobs with a specific error
-                            code: ``ALL | ERROR | CANCELED``
-        ---------------     ----------------------------------------------------
-        job_id              required string, job to reprocess
-        ===============     ====================================================
-
-        :returns:
-           A boolean or dictionary
-        """
-        if self._gis._is_agol:
-            url = self._url + "/jobs/%s/rerun" % job_id
-            params = {"f": "json", "rerun": code}
-            return self._con.post(url, params)
-        else:
-            raise Exception("Refresh method is not available for Enterprise Service.")
-
-    # ----------------------------------------------------------------------
-    def rerun_job(self, code, job_id):
-        """
-        The ``rerun_job`` operation supports re-running a canceled job from a
-        hosted map service. The result of this operation is a response
-        indicating success or failure with error code and description.
-
-        ===============     ====================================================
-        **Argument**        **Description**
-        ---------------     ----------------------------------------------------
-        code                required string, parameter used to re-run a given
-                            jobs with a specific error
-                            code: ``ALL | ERROR | CANCELED``
-        ---------------     ----------------------------------------------------
-        job_id              required string, job to reprocess
-        ===============     ====================================================
-
-        :returns:
-           A boolean or dictionary
-        """
-        if self._gis._is_agol:
-            url = self._url + "/jobs/%s/rerun" % job_id
-            params = {"f": "json", "rerun": code}
-            return self._con.post(url, params)
-        else:
-            raise Exception("Refresh method is not available for Enterprise Service.")
 
 
 ###########################################################################
@@ -4447,23 +4146,19 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
 
     # ----------------------------------------------------------------------
     def update_tiles(
-        self, levels: str | list | None = None, extent: str | dict | None = None
+        self,
+        merge_bundle: bool = False,
     ) -> dict:
         """
         The update_tiles operation supports updating the cooking extent and
-        cache levels in a hosted vector tile service. The results of the
-        operation is a response indicating success, which redirects you
+        cache levels in a Hosted Vector Tile Service. The results of the
+        operation is a response indicating success and a url
         to the Job Statistics page, or failure.
 
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
-        levels              Optional String / List of integers, The level of details
-                            to update. Example: "1,2,10,20" or [1,2,10,20]
-        ---------------     ----------------------------------------------------
-        extent              Optional String / Dict. The area to update as Xmin, YMin, XMax, YMax
-                            example: "-100,-50,200,500" or
-                            {'xmin':100, 'ymin':200, 'xmax':105, 'ymax':205}
+        merge_bundle        Optional bool. Default is False.
         ===============     ====================================================
 
         :returns:
@@ -4482,34 +4177,13 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
             >>> vector_layer_item = gis.content.get('abcd_item-id')
             >>> vector_tile_layer = VectorTileLayer.fromitem(vector_layer_item)
             >>> vtl_manager = vector_tile_layer.manager
-            >>> update_tiles = vtl_manager.update_tiles(levels = "11-20",
-                                                        extent = {"xmin":6224324.092137296,
-                                                                    "ymin":487347.5253569535,
-                                                                    "xmax":11473407.698535524,
-                                                                    "ymax":4239488.369818687,
-                                                                    "spatialReference":{"wkid":102100}
-                                                                    }
-                                                        )
+            >>> update_tiles = vtl_manager.update_tiles()
             >>> type(update_tiles)
             <Dictionary>
         """
         if self._gis._portal.is_arcgisonline:
             url = "%s/updateTiles" % self._url
-            params = {"f": "json"}
-            if levels:
-                if isinstance(levels, list):
-                    levels = ",".join(str(e) for e in levels)
-                params["levels"] = levels
-            if extent:
-                if isinstance(extent, dict):
-                    extent2 = "{},{},{},{}".format(
-                        extent["xmin"],
-                        extent["ymin"],
-                        extent["xmax"],
-                        extent["ymax"],
-                    )
-                    extent = extent2
-                params["extent"] = extent
+            params = {"f": "json", "mergeBundle": merge_bundle}
             return self._con.post(url, params)
         return None
 
@@ -4597,33 +4271,6 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
 
     # ----------------------------------------------------------------------
     def rerun_job(self, code, job_id: str) -> dict:
-        """
-        The ``rerun_job`` operation supports re-running a canceled job from a
-        hosted map service. The result of this operation is a response
-        indicating success or failure with error code and description.
-
-        ===============     ====================================================
-        **Argument**        **Description**
-        ---------------     ----------------------------------------------------
-        code                required string, parameter used to re-run a given
-                            jobs with a specific error
-                            code: ``ALL | ERROR | CANCELED``
-        ---------------     ----------------------------------------------------
-        job_id              required string, job to reprocess
-        ===============     ====================================================
-
-        :returns:
-           A boolean or dictionary
-        """
-        if self._gis._is_agol:
-            url = self._url + "/jobs/%s/rerun" % job_id
-            params = {"f": "json", "rerun": code}
-            return self._con.post(url, params)
-        else:
-            raise Exception("Refresh method is not available for Enterprise Service.")
-
-    # ----------------------------------------------------------------------
-    def rerun_job(self, code, job_id):
         """
         The ``rerun_job`` operation supports re-running a canceled job from a
         hosted map service. The result of this operation is a response
