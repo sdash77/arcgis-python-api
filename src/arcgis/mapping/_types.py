@@ -4374,11 +4374,13 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         The swap operation replaces the current service cache with an existing one.
         .. note::
             The ``swap`` operation is for ArcGIS Online only.
+
         ====================        ====================================================
         **Argument**                **Description**
         --------------------        ----------------------------------------------------
         target_service_name         Required string. Name of service you want to swap with.
         ====================        ====================================================
+        
         :returns: Dictionary indicating success or error
         """
         if self._gis._is_agol:
