@@ -31,7 +31,7 @@ class TestVectorTileLayerManager(unittest.TestCase):
         """
         Test update tiles
         """
-        update = manager.update_tiles(levels="0-4")
+        update = manager.update_tiles()
         assert update
 
     def test_jobs(self):

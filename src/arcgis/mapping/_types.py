@@ -8,6 +8,7 @@ from contextlib import contextmanager
 from typing import Any, Optional, Union
 from arcgis.features.layer import FeatureLayer
 from arcgis.gis import Error, Item
+from arcgis._impl.common._deprecate import deprecated
 from arcgis.auth.tools import LazyLoader
 
 collections = LazyLoader("collections")
@@ -4113,8 +4114,8 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         max_zoom: int | None = None,
     ) -> dict:
         """
-        The edit operation enables editing the service source item id, min scale, max scale,
-        export tiles allowed and max export tiles count parameters.
+        The edit operation enables editing many parameters in the service definition as well as
+        the source_item_id which can be found by looking at the Vector Tile Layer's related items.
 
         ======================      =======================================================
         **Argument**                **Description**
@@ -4347,6 +4348,61 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         if self._gis._is_agol:
             url = self._url + "/jobs/%s/rerun" % job_id
             params = {"f": "json", "rerun": code}
+            return self._con.post(url, params)
+        else:
+            raise Exception("Refresh method is not available for Enterprise Service.")
+
+    # ----------------------------------------------------------------------
+    @deprecated(deprecated_in="2.1.0", removed_in=None, current_version="2.1.0")
+    def delete_tiles(self, levels, extent=None):
+        """
+        The ``delete_tiles`` method deletes tiles from the current cache.
+
+        ===============     ====================================================
+        **Argument**        **Description**
+        ---------------     ----------------------------------------------------
+        extent              Optional dictionary,  If specified, the tiles within
+                            this extent will be deleted or will be deleted based
+                            on the service's full extent.
+        ---------------     ----------------------------------------------------
+        levels              Required string, The level to delete.
+                            Example, 0-5,10,11-20 or 1,2,3 or 0-5
+        ===============     ====================================================
+
+        :return:
+           A dictionary
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE
+
+            >>> from arcgis.mapping import VectorTileLayer
+            >>> from arcgis.gis import GIS
+
+            # connect to your GIS
+            >>> gis = GIS(url, username, password)
+
+            >>> vector_layer_item = gis.content.get('abcd_item-id')
+            >>> vector_tile_layer = VectorTileLayer.fromitem(vector_layer_item)
+            >>> vtl_manager = vector_tile_layer.manager
+            >>> deleted_tiles = vtl_manager.delete_tiles(levels = "11-20",
+                                                  extent = {"xmin":6224324.092137296,
+                                                            "ymin":487347.5253569535,
+                                                            "xmax":11473407.698535524,
+                                                            "ymax":4239488.369818687,
+                                                            "spatialReference":{"wkid":102100}
+                                                            }
+                                                  )
+            >>> type(deleted_tiles)
+        """
+        if self._gis._is_agol:
+            params = {
+                "f": "json",
+                "levels": levels,
+            }
+            if extent:
+                params["extent"] = extent
+            url = self._url + "/deleteTiles"
             return self._con.post(url, params)
         else:
             raise Exception("Refresh method is not available for Enterprise Service.")
