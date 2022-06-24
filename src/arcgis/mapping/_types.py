@@ -4116,7 +4116,6 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         super(VectorTileLayerManager, self).__init__(url, gis)
         self._vtl = vect_tile_lyr
 
-    ########## These methods are ok if the VTL was published through a Feature Layer ##########
     # ----------------------------------------------------------------------
     def edit_tile_service(
         self,
@@ -4368,12 +4367,14 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         else:
             raise Exception("Refresh method is not available for Enterprise Service.")
 
-    # ----------------------------------------------------------------------
+    ######################### These Methods Only Apply to VTL Service from a Service Directory and have been deprecated #################################
+    @deprecated(deprecated_in="2.1.0", removed_in=None, current_version="2.1.0")
     def swap(self, target_service_name):
         """
         The swap operation replaces the current service cache with an existing one.
         .. note::
-            The ``swap`` operation is for ArcGIS Online only.
+            The ``swap`` operation is for ArcGIS Online only and cannot be used for a service
+            published from a feature layer.
 
         ====================        ====================================================
         **Argument**                **Description**
