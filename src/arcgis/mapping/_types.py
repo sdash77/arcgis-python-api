@@ -4400,10 +4400,10 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         # request sent to AGO Org
         if self._gis._is_agol:
             params = {
-                "minScale": 0.0,
-                "maxScale": 0.0,
-                "exportTilesAllowed": False,
-                "maxExportTilesCount": 100000,
+                "minScale": self.properties.minScale,
+                "maxScale": self.properties.maxScale,
+                "exportTilesAllowed": self.properties.exportTilesAllowed,
+                "maxExportTilesCount": self.properties.maxExportTilesCount,
                 "f": "json",
             }
 
@@ -4415,8 +4415,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
                 params["maxScale"] = float(max_scale)
             else:
                 params.pop("maxScale", None)
-            if export_tiles_allowed:
-
+            if not export_tiles_allowed is None:
                 params["exportTilesAllowed"] = export_tiles_allowed
             else:
                 params["exportTilesAllowed"] = self.properties.exportTilesAllowed
