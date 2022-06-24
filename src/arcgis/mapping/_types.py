@@ -4380,7 +4380,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         --------------------        ----------------------------------------------------
         target_service_name         Required string. Name of service you want to swap with.
         ====================        ====================================================
-        
+
         :returns: Dictionary indicating success or error
         """
         if self._gis._is_agol:
