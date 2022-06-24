@@ -7406,7 +7406,7 @@ class Raster:
         The ``catalog_paths`` property represents the full paths and the names of each item comprising a mosaic dataset.
 
         :return:
-            A String
+            A list of paths of each item comprising a mosaic dataset.
         """
         return self._engine_obj.catalog_paths
 
@@ -7436,7 +7436,7 @@ class Raster:
         The ``names`` property returns the names of each item comprising a mosaic dataset.
 
         :return:
-            A String
+            A list of names of each item comprising a mosaic dataset.
         """
         return self._engine_obj.names
 
