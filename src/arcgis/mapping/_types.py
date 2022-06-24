@@ -4369,6 +4369,26 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
             raise Exception("Refresh method is not available for Enterprise Service.")
 
     # ----------------------------------------------------------------------
+    def swap(self, target_service_name):
+        """
+        The swap operation replaces the current service cache with an existing one.
+        .. note::
+            The ``swap`` operation is for ArcGIS Online only.
+        ====================        ====================================================
+        **Argument**                **Description**
+        --------------------        ----------------------------------------------------
+        target_service_name         Required string. Name of service you want to swap with.
+        ====================        ====================================================
+        :returns: Dictionary indicating success or error
+        """
+        if self._gis._is_agol:
+            url = self._url + "/swap"
+            params = {"f": "json", "targetServiceName": target_service_name}
+            return self._con.post(url, params)
+        else:
+            raise Exception("Swap method is not available for Enterprise Service.")
+
+    # ----------------------------------------------------------------------
     @deprecated(deprecated_in="2.1.0", removed_in=None, current_version="2.1.0")
     def delete_tiles(self, levels, extent=None):
         """
