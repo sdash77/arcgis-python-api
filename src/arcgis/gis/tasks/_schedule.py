@@ -495,12 +495,12 @@ class TaskManager(object):
 
                                Example:
 
-                                   {
-                                       "service_url": <scene service URL>,
-                                       "num_of_caching_service_instances": 2, (2 instances are required)
-                                       "layer": "{<list of scene layers to cook>}", //The default is all layers
-                                       "update_mode": "PARTIAL_UPDATE_NODES"
-                                   }
+                                   | {
+                                   |    "service_url": <scene service URL>,
+                                   |    "num_of_caching_service_instances": 2, (2 instances are required)
+                                   |    "layer": "{<list of scene layers to cook>}", //The default is all layers
+                                   |    "update_mode": "PARTIAL_UPDATE_NODES"
+                                   | }
 
 
         ==================     ====================================================================

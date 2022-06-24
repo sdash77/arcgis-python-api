@@ -3,7 +3,7 @@ from arcgis.gis import GIS
 
 
 class DependencyManager:
-    """Provides the ability for the manager to rebuild Item Dependencies"""
+    """Provides the ability for the manager to rebuild :class:`~arcgis.gis.Item` dependencies"""
 
     _gis: GIS = None
     _urls: dict = None
