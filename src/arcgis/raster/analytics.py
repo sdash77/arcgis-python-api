@@ -29,7 +29,7 @@ from .._impl.common._deprecate import deprecated
 def get_datastores(gis: Optional[GIS] = None):
     """
     Returns a helper object to manage raster analytics datastores in the GIS.
-    If a gis isn't specified, returns datastore manager of :attr:`arcgis.env.active_gis`
+    If a gis isn't specified, returns datastore manager of :attr:`~arcgis.env.active_gis`
     """
     gis = _arcgis.env.active_gis if gis is None else gis
 
@@ -43,7 +43,7 @@ def get_datastores(gis: Optional[GIS] = None):
 def is_supported(gis: Optional[GIS] = None):
     """
     Returns True if the GIS supports raster analytics. If a gis isn't specified,
-    checks if :attr:`arcgis.env.active_gis` supports raster analytics
+    checks if :attr:`~arcgis.env.active_gis` supports raster analytics
     """
     gis = _arcgis.env.active_gis if gis is None else gis
     if "rasterAnalytics" in gis.properties.helperServices:
@@ -1000,7 +1000,7 @@ def generate_raster(
     """
     .. image:: _static/images/ra_generate_raster/ra_generate_raster.png
 
-    Function  allows you to execute raster analysis on a distributed server deployment.
+    Function allows you to execute raster analysis on a distributed server deployment.
 
     ====================================     ==================================================================================================================
     **Argument**                             **Description**
@@ -1029,6 +1029,8 @@ def generate_raster(
     ------------------------------------     ------------------------------------------------------------------------------------------------------------------
     output_raster_properties                 Optional dict, can be used to set the output raster's key metadata properties.
 
+                                             Example:
+
                                                 {"SensorName": "Landsat 8", "CloudCover": 20}
     ------------------------------------     ------------------------------------------------------------------------------------------------------------------
     output_name                              Optional String. If not provided, an Image Service is created by the method and used as the output raster.
@@ -1051,13 +1053,13 @@ def generate_raster(
 
                                              - Extent (extent): A bounding box that defines the analysis area.
 
-                                                Example:
+                                               Example:
 
-                                                    | {"extent": {"xmin": -122.68,
-                                                    | "ymin": 45.53,
-                                                    | "xmax": -122.45,
-                                                    | "ymax": 45.6,
-                                                    | "spatialReference": {"wkid": 4326}}}
+                                                | {"extent": {"xmin": -122.68,
+                                                | "ymin": 45.53,
+                                                | "xmax": -122.45,
+                                                | "ymax": 45.6,
+                                                | "spatialReference": {"wkid": 4326}}}
 
                                              - Output Spatial Reference (outSR): The output raster will be
                                                projected into the output spatial reference.
@@ -1076,8 +1078,9 @@ def generate_raster(
                                              - Mask (mask): Only cells that fall within the analysis
                                                mask will be considered in the operation.
 
-                                                Example:
-                                                    {"mask": {"url": "<image_service_url>"}}
+                                               Example:
+
+                                                   {"mask": {"url": "<image_service_url>"}}
 
                                              - Cell Size (cellSize): The output raster will have the resolution
                                                specified by cell size.
@@ -1091,7 +1094,7 @@ def generate_raster(
 
                                                Example:
 
-                                                   Syntax example with a specified number of processing instances:
+                                               Syntax example with a specified number of processing instances:
 
                                                    {"parallelProcessingFactor": "2"}
 
@@ -1109,7 +1112,7 @@ def generate_raster(
                                                    {'resamplingMethod': "NEAREST"}
 
     ------------------------------------     ------------------------------------------------------------------------------------------------------------------
-    gis                                      Optional GIS object. If not specified, the currently active connection
+    gis                                      Optional :class:`~arcgis.gis.GIS` object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     ------------------------------------------------------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
@@ -1117,7 +1120,7 @@ def generate_raster(
     ------------------------------------     ------------------------------------------------------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+                                             The dictionary returned by the :meth:`gis.content.create_folder <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
 
                                              Example:
 
@@ -1217,52 +1220,53 @@ def convert_feature_to_raster(
 
                                              This function has the following settings:
 
-                                              - Extent (extent): A bounding box that defines the analysis area.
+                                             - Extent (extent): A bounding box that defines the analysis area.
 
-                                                Example:
+                                               Example:
+
                                                     | {"extent": {"xmin": -122.68,
                                                     | "ymin": 45.53,
                                                     | "xmax": -122.45,
                                                     | "ymax": 45.6,
                                                     | "spatialReference": {"wkid": 4326}}}
 
-                                              - Output Spatial Reference (outSR): The output raster will be
-                                                projected into the output spatial reference.
+                                             - Output Spatial Reference (outSR): The output raster will be
+                                               projected into the output spatial reference.
 
-                                                Example:
+                                               Example:
 
-                                                    {"outSR": {spatial reference}}
+                                                   {"outSR": {spatial reference}}
 
-                                              - Snap Raster (snapRaster): The output raster will have its
-                                                cells aligned with the specified snap raster.
+                                             - Snap Raster (snapRaster): The output raster will have its
+                                               cells aligned with the specified snap raster.
 
-                                                Example:
+                                               Example:
 
-                                                    {'snapRaster': {'url': '<image_service_url>'}}
+                                                   {'snapRaster': {'url': '<image_service_url>'}}
 
-                                              - Mask (mask): Only cells that fall within the analysis
-                                                mask will be considered in the operation.
+                                             - Mask (mask): Only cells that fall within the analysis
+                                               mask will be considered in the operation.
 
-                                                Example:
+                                               Example:
 
-                                                    {"mask": {"url": "<image_service_url>"}}
+                                                   {"mask": {"url": "<image_service_url>"}}
 
-                                              - Parallel Processing Factor (parallelProcessingFactor): controls
-                                                Raster Processing (CPU) service instances.
+                                             - Parallel Processing Factor (parallelProcessingFactor): controls
+                                               Raster Processing (CPU) service instances.
 
-                                                Example:
+                                               Example:
 
-                                                    Syntax example with a specified number of processing instances:
+                                               Syntax example with a specified number of processing instances:
 
-                                                    {"parallelProcessingFactor": "2"}
+                                                   {"parallelProcessingFactor": "2"}
 
-                                                    Syntax example with a specified percentage of total
-                                                    processing instances:
+                                               Syntax example with a specified percentage of total
+                                               processing instances:
 
-                                                    {"parallelProcessingFactor": "60%"}
+                                                   {"parallelProcessingFactor": "60%"}
 
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS object. If not specified, the currently active connection
+    gis                                      Optional :class:`~arcgis.gis.GIS` object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
@@ -1270,7 +1274,7 @@ def convert_feature_to_raster(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+                                             The dictionary returned by the :meth:`gis.content.create_folder <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
 
                                              Example:
 
@@ -1350,7 +1354,10 @@ def copy_raster(
     --------------------------------     --------------------------------------------------------------------
     output_cellsize                      Required dict. The cell size and unit for the output imagery layer.
                                          The available units are Feet, Miles, Meters, and Kilometers.
-                                         eg - {"distance":60,"units":meters}
+
+                                         Example:
+
+                                            {"distance":60,"units":meters}
     --------------------------------     --------------------------------------------------------------------
     resampling_method                    Optional string.  The field that will be used to assign values to the
                                          output raster.
@@ -1381,31 +1388,33 @@ def copy_raster(
                                          
                                          This function has the following settings:
 
-                                         - **Output Spatial Reference (outSR)**: The output raster will be projected into the output spatial reference.
+                                         - Output Spatial Reference (outSR): The output raster will be projected into the output spatial reference.
                                                 
-                                            Example: 
+                                           Example:
+
                                                 {"outSR": {spatial reference}}
 
-                                         - **Upload Properties (upload_properties)**: ``upload_properties`` key can be used to control specific upload parameters when trying to create hosted imagery layers in ArcGIS Online from local raster datasets.
-                                            
-                                         Available options:
+                                         - Upload Properties (upload_properties): ``upload_properties`` key can be used to control specific upload parameters when trying to create hosted imagery layers in ArcGIS Online from local raster datasets.
 
-                                            - "maxUploadConcurrency": Optional integer. Maximum number of parallel connections \
-                                                to use for large uploads (when individual file/blob size exceeds 64MB). \
-                                                This is the **max_concurrency** parameter of the `BlobClient.upload_blob() <https://docs.microsoft.com/en-us/python/api/azure-storage-blob/azure.storage.blob.blobclient?view=azure-python#upload-blob-data--blob-type--blobtype-blockblob---blockblob----length-none--metadata-none----kwargs->`__ method. \
-                                                (The default is 6)
-                                            - "maxWorkerThreads": Optional integer. Maximum number of threads to execute asynchronously \
-                                                when uploading multiple files. This is the **max_workers** parameter of the `ThreadPoolExecutor() <https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor>`__ class. \
-                                                (The default is None)
-                                            - "displayProgress": Optional boolean. If set to True, a progress bar will be \
-                                                displayed for tracking the progress of the uploads to user's rasterstore. \
-                                                (The default is False)
+                                           Available options:
 
-                                         Example:
-                                            | {"upload_properties":{"maxUploadConcurrency":8,
-                                            |                       "maxWorkerThreads":20,
-                                            |                       "displayProgress":True}
-                                            | }
+                                           - "maxUploadConcurrency": Optional integer. Maximum number of parallel connections \
+                                             to use for large uploads (when individual file/blob size exceeds 64MB). \
+                                             This is the **max_concurrency** parameter of the `BlobClient.upload_blob() <https://docs.microsoft.com/en-us/python/api/azure-storage-blob/azure.storage.blob.blobclient?view=azure-python#upload-blob-data--blob-type--blobtype-blockblob---blockblob----length-none--metadata-none----kwargs->`__ method. \
+                                             (The default is 6)
+                                           - "maxWorkerThreads": Optional integer. Maximum number of threads to execute asynchronously \
+                                             when uploading multiple files. This is the **max_workers** parameter of the `ThreadPoolExecutor() <https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor>`__ class. \
+                                             (The default is None)
+                                           - "displayProgress": Optional boolean. If set to True, a progress bar will be \
+                                             displayed for tracking the progress of the uploads to user's rasterstore. \
+                                             (The default is False)
+
+                                           Example:
+
+                                                | {"upload_properties": {"maxUploadConcurrency":8,
+                                                |                       "maxWorkerThreads":20,
+                                                |                       "displayProgress":True}
+                                                | }
 
                                          The context parameter can also be used to specify whether to
                                          build footprints, pixel value that represents the NoData,
@@ -1413,6 +1422,7 @@ def copy_raster(
 
 
                                          Example:
+
                                             | {"buildFootprints":True,                                            
                                             | "footprintsArguments":{"method":"RADIOMETRY","minValue":1,"maxValue":5,
                                             | "shrinkDistance":50,"skipOverviews":True,"updateBoundary":True,
@@ -1507,6 +1517,7 @@ def copy_raster(
                                          gis.content.create_folder() can also be passed in as input.
 
                                          Example:
+
                                             {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
     --------------------------------     --------------------------------------------------------------------
     tiles_only                           Keyword only parameter. Optional boolean. 
@@ -1742,7 +1753,7 @@ def summarize_raster_within(
                                          
                                              This function has the following settings:
 
-                                              - Extent (extent): A bounding box that defines the analysis area.
+                                             - Extent (extent): A bounding box that defines the analysis area.
                                             
                                                 Example: 
                                                     {"extent": {"xmin": -122.68,
@@ -1751,36 +1762,36 @@ def summarize_raster_within(
                                                     "ymax": 45.6, 
                                                     "spatialReference": {"wkid": 4326}}}
 
-                                              - Output Spatial Reference (outSR): The output raster will be 
-                                                projected into the output spatial reference.
+                                             - Output Spatial Reference (outSR): The output raster will be
+                                               projected into the output spatial reference.
                                                 
                                                 Example: 
                                                     {"outSR": {spatial reference}}
 
-                                              - Snap Raster (snapRaster): The output raster will have its 
-                                                cells aligned with the specified snap raster.
+                                             - Snap Raster (snapRaster): The output raster will have its
+                                               cells aligned with the specified snap raster.
                                                         
                                                 Example: 
                                                     {'snapRaster': {'url': '<image_service_url>'}}
 
-                                              - Mask (mask): Only cells that fall within the analysis 
-                                                mask will be considered in the operation.
+                                             - Mask (mask): Only cells that fall within the analysis
+                                               mask will be considered in the operation.
 
                                                 Example: 
                                                     {"mask": {"url": "<image_service_url>"}}
 
-                                              - Cell Size (cellSize): The output raster will have the resolution 
-                                                specified by cell size.
+                                             - Cell Size (cellSize): The output raster will have the resolution
+                                               specified by cell size.
 
-                                                Example:
-                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                               Example:
+                                                   {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
-                                              - Resampling Method (resamplingMethod): The output raster will be 
-                                                resampled to method specified.
-                                                The supported values are: Bilinear, Nearest, Cubic.
+                                             - Resampling Method (resamplingMethod): The output raster will be
+                                               resampled to method specified.
+                                               The supported values are: Bilinear, Nearest, Cubic.
 
-                                                Example:
-                                                    {'resamplingMethod': "Nearest"} 
+                                               Example:
+                                                   {'resamplingMethod': "Nearest"}
     ------------------------------------     --------------------------------------------------------------------
     process_as_multidimensional              Optional bool, Process as multidimensional if set to True, 
                                              if the input is multidimensional raster.
@@ -1803,13 +1814,13 @@ def summarize_raster_within(
     ------------------------------------     --------------------------------------------------------------------
     percentile_interpolation_type            Optional str. Specifies the method of interpolation to be used when the 
                                              specified percentile value lies between two input cell values.
-                                                - AUTO_DETECT - If the input value raster has integer pixel type, the NEAREST method is used. If the input value raster has floating point pixel type, then the LINEAR method is used. This is the default.
-                                                - NEAREST - Nearest value to the desired percentile. In this case, the output pixel type is same as that of the input value raster.
-                                                - LINEAR - Weighted average of two surrounding values from the desired percentile. In this case, the output pixel type is floating point.
+                                             - AUTO_DETECT - If the input value raster has integer pixel type, the NEAREST method is used. If the input value raster has floating point pixel type, then the LINEAR method is used. This is the default.
+                                             - NEAREST - Nearest value to the desired percentile. In this case, the output pixel type is same as that of the input value raster.
+                                             - LINEAR - Weighted average of two surrounding values from the desired percentile. In this case, the output pixel type is floating point.
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS object. If not specified, the currently active connection
+    gis                                      Optional :class:`~arcgis.gis.GIS` object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and 
@@ -1817,7 +1828,7 @@ def summarize_raster_within(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+                                             The dictionary returned by the :meth:`gis.content.create_folder <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
@@ -2360,47 +2371,47 @@ def create_viewshed(
 
                                              This function has the following settings:
 
-                                              - Extent (extent): A bounding box that defines the analysis area.
+                                             - Extent (extent): A bounding box that defines the analysis area.
 
-                                                Example:
+                                               Example:
                                                     {"extent": {"xmin": -122.68,
                                                     "ymin": 45.53,
                                                     "xmax": -122.45,
                                                     "ymax": 45.6,
                                                     "spatialReference": {"wkid": 4326}}}
 
-                                              - Output Spatial Reference (outSR): The output raster will be
-                                                projected into the output spatial reference.
+                                             - Output Spatial Reference (outSR): The output raster will be
+                                               projected into the output spatial reference.
 
-                                                Example:
+                                               Example:
                                                     {"outSR": {spatial reference}}
 
-                                              - Snap Raster (snapRaster): The output raster will have its
-                                                cells aligned with the specified snap raster.
+                                             - Snap Raster (snapRaster): The output raster will have its
+                                               cells aligned with the specified snap raster.
 
-                                                Example:
+                                               Example:
                                                     {'snapRaster': {'url': '<image_service_url>'}}
 
-                                              - Mask (mask): Only cells that fall within the analysis
-                                                mask will be considered in the operation.
+                                             - Mask (mask): Only cells that fall within the analysis
+                                               mask will be considered in the operation.
 
-                                                Example:
+                                               Example:
                                                     {"mask": {"url": "<image_service_url>"}}
 
-                                              - Cell Size (cellSize): The output raster will have the resolution
-                                                specified by cell size.
+                                            - Cell Size (cellSize): The output raster will have the resolution
+                                              specified by cell size.
 
-                                                Example:
+                                              Example:
                                                     {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
-                                              - Resampling Method (resamplingMethod): The output raster will be
-                                                resampled to method specified.
-                                                The supported values are: Bilinear, Nearest, Cubic.
+                                            - Resampling Method (resamplingMethod): The output raster will be
+                                              resampled to method specified.
+                                              The supported values are: Bilinear, Nearest, Cubic.
 
-                                                Example:
+                                              Example:
                                                     {'resamplingMethod': "Nearest"}
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS object. If not specified, the currently active connection
+    gis                                      Optional :class:`~arcgis.gis.GIS` object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
@@ -2408,7 +2419,7 @@ def create_viewshed(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+                                             The dictionary returned by the :meth:`gis.content.create_folder <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
@@ -2425,9 +2436,9 @@ def create_viewshed(
 
     named tuple with name values being:
 
-     - output_raster
+    - output_raster
 
-     - output_above_ground_level_raster (generated if value specified for above_ground_level_output_name)
+    - output_above_ground_level_raster (generated if value specified for above_ground_level_output_name)
 
     .. code-block:: python
 
@@ -2592,40 +2603,40 @@ def interpolate_points(
 
                                              This function has the following settings:
 
-                                              - Extent (extent): A bounding box that defines the analysis area.
+                                             - Extent (extent): A bounding box that defines the analysis area.
 
-                                                Example:
-                                                    {"extent": {"xmin": -122.68,
+                                               Example:
+                                                   {"extent": {"xmin": -122.68,
                                                     "ymin": 45.53,
                                                     "xmax": -122.45,
                                                     "ymax": 45.6,
                                                     "spatialReference": {"wkid": 4326}}}
 
-                                              - Output Spatial Reference (outSR): The output raster will be
-                                                projected into the output spatial reference.
+                                             - Output Spatial Reference (outSR): The output raster will be
+                                               projected into the output spatial reference.
 
-                                                Example:
-                                                    {"outSR": {spatial reference}}
+                                               Example:
+                                                   {"outSR": {spatial reference}}
 
-                                              - Snap Raster (snapRaster): The output raster will have its
-                                                cells aligned with the specified snap raster.
+                                             - Snap Raster (snapRaster): The output raster will have its
+                                               cells aligned with the specified snap raster.
 
-                                                Example:
-                                                    {'snapRaster': {'url': '<image_service_url>'}}
+                                               Example:
+                                                   {'snapRaster': {'url': '<image_service_url>'}}
 
-                                              - Mask (mask): Only cells that fall within the analysis
-                                                mask will be considered in the operation.
+                                             - Mask (mask): Only cells that fall within the analysis
+                                               mask will be considered in the operation.
 
-                                                Example:
-                                                    {"mask": {"url": "<image_service_url>"}}
+                                               Example:
+                                                   {"mask": {"url": "<image_service_url>"}}
 
-                                              - Cell Size (cellSize): The output raster will have the resolution
-                                                specified by cell size.
+                                             - Cell Size (cellSize): The output raster will have the resolution
+                                               specified by cell size.
 
-                                                Example:
-                                                    {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
+                                               Example:
+                                                   {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS object. If not specified, the currently active connection
+    gis                                      Optional :class:`~arcgis.gis.GIS` object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
@@ -2633,7 +2644,7 @@ def interpolate_points(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+                                             The dictionary returned by the :meth:`gis.content.create_folder <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
@@ -2794,7 +2805,6 @@ def classify(
                                               {'resamplingMethod': "Nearest"}
 
                                          - processAsMultidimensional - Specifies whether to process the input as a multidimensional raster.
-
                                             - False - The input will not be processed as a multidimensional raster.
                                               If the input is multidimensional, only the slice that is currently
                                               displayed will be processed.
@@ -8694,17 +8704,17 @@ def compute_change_raster(
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    input_from_raster                        Required ImageryLayer object. The initial or earlier raster to be analyzed.
+    input_from_raster                        Required :class:`~arcgis.raster.ImageryLayer` object. The initial or earlier raster to be analyzed.
     ------------------------------------     --------------------------------------------------------------------
-    input_to_raster                          Required ImageryLayer object. The final or later raster to be analyzed.
+    input_to_raster                          Required :class:`~arcgis.raster.ImageryLayer` object. The final or later raster to be analyzed.
                                              This is the raster that will be compared to the initial raster.
     ------------------------------------     --------------------------------------------------------------------
     compute_change_method                    Optional String. Specifies the type of calculation to perform between
                                              the two rasters.
 
-                                                - DIFFERENCE - The mathematical difference, or subtraction, between the pixel values in the rasters will be calculated. This is the default.
-                                                - RELATIVE_DIFFERENCE - The difference in pixel values, accounting for the quantities of the values being compared, will be calculated.
-                                                - CATEGORICAL_DIFFERENCE  - The difference between two categorical or thematic rasters will be calculated in which the output contains class transitions that occurred between the two rasters.
+                                             - DIFFERENCE - The mathematical difference, or subtraction, between the pixel values in the rasters will be calculated. This is the default.
+                                             - RELATIVE_DIFFERENCE - The difference in pixel values, accounting for the quantities of the values being compared, will be calculated.
+                                             - CATEGORICAL_DIFFERENCE  - The difference between two categorical or thematic rasters will be calculated in which the output contains class transitions that occurred between the two rasters.
 
                                              Example:
                                                 "DIFFERENCE"
@@ -8734,9 +8744,9 @@ def compute_change_raster(
                                              This parameter is honoured when the compute_change_method parameter is
                                              set to CATEGORICAL_DIFFERENCE.
 
-                                                - ALL - All pixels will be categorized in the output. This is the default.
-                                                - CHANGED_PIXELS_ONLY - Only the pixels that changed categories will be categorized in the output. All pixels that did not change categories will be grouped in a class called Other.
-                                                - UNCHANGED_PIXELS_ONLY  - Only the pixels that did not change categories will be categorized in the output. All pixels that changed categories will be groups in a class called Other.
+                                             - ALL - All pixels will be categorized in the output. This is the default.
+                                             - CHANGED_PIXELS_ONLY - Only the pixels that changed categories will be categorized in the output. All pixels that did not change categories will be grouped in a class called Other.
+                                             - UNCHANGED_PIXELS_ONLY  - Only the pixels that did not change categories will be categorized in the output. All pixels that changed categories will be groups in a class called Other.
 
                                              Example:
                                                 "ALL"
@@ -8746,9 +8756,9 @@ def compute_change_raster(
                                              This parameter is honoured when the compute_change_method parameter is
                                              set to CATEGORICAL_DIFFERENCE.
 
-                                                - AVERAGE - Use an average of the colors of the from class and to class for the output classes. This is the default.
-                                                - FROM_COLOR - Use colors of the from classes for the output.
-                                                - TO_COLOR  - Use the colors of the to classes for the output.
+                                             - AVERAGE - Use an average of the colors of the from class and to class for the output classes. This is the default.
+                                             - FROM_COLOR - Use colors of the from classes for the output.
+                                             - TO_COLOR  - Use the colors of the to classes for the output.
 
                                              Example:
                                                 "AVERAGE"
@@ -8767,7 +8777,7 @@ def compute_change_raster(
 
                                              This function has the following settings:
 
-                                              - Extent (extent): A bounding box that defines the analysis area.
+                                             - Extent (extent): A bounding box that defines the analysis area.
 
                                                 Example:
                                                     {"extent": {"xmin": -122.68,
@@ -8776,26 +8786,30 @@ def compute_change_raster(
                                                     "ymax": 45.6,
                                                     "spatialReference": {"wkid": 4326}}}
 
-                                              - Output Spatial Reference (outSR): The output raster will be
-                                                projected into the output spatial reference.
+
+                                             - Output Spatial Reference (outSR): The output raster will be
+                                               projected into the output spatial reference.
 
                                                 Example:
                                                     {"outSR": {spatial reference}}
 
-                                              - Snap Raster (snapRaster): The output raster will have its
-                                                cells aligned with the specified snap raster.
+
+                                             - Snap Raster (snapRaster): The output raster will have its
+                                               cells aligned with the specified snap raster.
 
                                                 Example:
                                                     {'snapRaster': {'url': '<image_service_url>'}}
 
-                                              - Cell Size (cellSize): The output raster will have the resolution
-                                                specified by cell size.
+
+                                             - Cell Size (cellSize): The output raster will have the resolution
+                                               specified by cell size.
 
                                                 Example:
                                                     {'cellSize': 11} or {'cellSize': {'url': <image_service_url>}}  or {'cellSize': 'MaxOfIn'}
 
-                                              - Parallel Processing Factor (parallelProcessingFactor): controls
-                                                Raster Processing (CPU) service instances.
+
+                                             - Parallel Processing Factor (parallelProcessingFactor): controls
+                                               Raster Processing (CPU) service instances.
 
                                                 Example:
                                                     Syntax example with a specified number of processing instances:
@@ -8817,7 +8831,7 @@ def compute_change_raster(
                                              Use this parameter if the input does not contain these standard field names
                                              Example: "CLASSES"
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                                      Optional GIS. The :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
@@ -8831,7 +8845,7 @@ def compute_change_raster(
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+                                             The dictionary returned by the :meth:`gis.content.create_folder <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
@@ -8891,13 +8905,13 @@ def summarize_categorical_raster(
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    input_from_raster                        Required ImageryLayer object. The multidimensional, categorical raster to be summarized.
+    input_from_raster                        Required :class:`~arcgis.raster.ImageryLayer` object. The multidimensional, categorical raster to be summarized.
     ------------------------------------     --------------------------------------------------------------------
     dimension                                Optional String. The name of the dimension to use for the summary. If
                                              there is more than one dimension and no value is specified, all slices
                                              will be summarized using all combinations of dimension values.
     ------------------------------------     --------------------------------------------------------------------
-    area_of_interest                         Optional FeatureLayer object. The polygon feature layer containing the area
+    area_of_interest                         Optional :class:`~arcgis.features.layer.FeatureLayer` object. The polygon feature layer containing the area
                                              or areas of interest to use when calculating the pixel count per category.
                                              If no area of interest is specified, the entire raster will be
                                              included in the analysis.
@@ -8915,7 +8929,7 @@ def summarize_categorical_raster(
 
                                              This function has the following settings:
 
-                                              - Extent (extent): A bounding box that defines the analysis area.
+                                             - Extent (extent): A bounding box that defines the analysis area.
 
                                                 Example:
                                                     {"extent": {"xmin": -122.68,
@@ -8924,14 +8938,16 @@ def summarize_categorical_raster(
                                                     "ymax": 45.6,
                                                     "spatialReference": {"wkid": 4326}}}
 
-                                              - Output Spatial Reference (outSR): The output raster will be
-                                                projected into the output spatial reference.
+
+                                             - Output Spatial Reference (outSR): The output raster will be
+                                               projected into the output spatial reference.
 
                                                 Example:
                                                     {"outSR": {spatial reference}}
 
-                                              - Parallel Processing Factor (parallelProcessingFactor): controls
-                                                Raster Processing (CPU) service instances.
+
+                                             - Parallel Processing Factor (parallelProcessingFactor): controls
+                                               Raster Processing (CPU) service instances.
 
                                                 Example:
                                                     Syntax example with a specified number of processing instances:
@@ -8943,14 +8959,14 @@ def summarize_categorical_raster(
 
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                                      Optional GIS. The :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+                                             The dictionary returned by the :meth:`gis.content.create_folder <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
@@ -9020,10 +9036,10 @@ def train_random_trees_regression_model(
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    input_rasters                            Required ImageryLayer object. The single-band, multidimensional, or
+    input_rasters                            Required :class:`~arcgis.raster.ImageryLayer` object. The single-band, multidimensional, or
                                              multiband rasters, or mosaic datasets, containing explanatory variables.
     ------------------------------------     --------------------------------------------------------------------
-    input_target_data                        Required FeatureLayer or ImageryLayer object. The raster or feature layer
+    input_target_data                        Required :class:`~arcgis.features.layer.FeatureLayer` or :class:`~arcgis.raster.ImageryLayer` object. The raster or feature layer
                                              containing the target variable (dependant variable) data.
     ------------------------------------     --------------------------------------------------------------------
     target_value_field                       Optional String. The field name of the information to model in the target
@@ -9056,9 +9072,9 @@ def train_random_trees_regression_model(
                                              only when the input target is a feature layer.
                                              Options include:
 
-                                                - "KEEP_ALL_POINTS" — All points will be used when multiple training points fall into a single cell. \
-                                                                      This is the default.
-                                                - "AVERAGE_POINTS_PER_CELL" —The average value of the training points within a cell will be calculated.
+                                             - KEEP_ALL_POINTS — All points will be used when multiple training points fall into a single cell. \
+                                                                  This is the default.
+                                             - AVERAGE_POINTS_PER_CELL —The average value of the training points within a cell will be calculated.
     ------------------------------------     --------------------------------------------------------------------
     output_scatter_plots_name                Optional String. The name for the output scatterplots includes scatterplots
                                              of training data, test data, and location test data.
@@ -9080,42 +9096,42 @@ def train_random_trees_regression_model(
     ------------------------------------     --------------------------------------------------------------------
     context                                  Context contains additional settings that affect task execution.
 
-                                                context parameter overwrites values set through arcgis.env parameter
+                                             context parameter overwrites values set through arcgis.env parameter
 
-                                                This function has the following settings:
+                                             This function has the following settings:
 
-                                                - Cell size (cellSize) - Set the output raster cell size, or resolution
+                                             - Cell size (cellSize) - Set the output raster cell size, or resolution
 
-                                                - Extent (extent): A bounding box that defines the analysis area.
+                                             - Extent (extent): A bounding box that defines the analysis area.
 
-                                                Example:
-                                                    {"extent": {"xmin": -122.68,
-                                                    "ymin": 45.53,
-                                                    "xmax": -122.45,
-                                                    "ymax": 45.6,
-                                                    "spatialReference": {"wkid": 4326}}}
+                                             Example:
+                                                {"extent": {"xmin": -122.68,
+                                                "ymin": 45.53,
+                                                "xmax": -122.45,
+                                                "ymax": 45.6,
+                                                "spatialReference": {"wkid": 4326}}}
 
-                                                - Parallel Processing Factor (parallelProcessingFactor): controls
-                                                Raster Processing (CPU) service instances.
+                                             - Parallel Processing Factor (parallelProcessingFactor): controls
+                                               Raster Processing (CPU) service instances.
 
-                                                Example:
-                                                    Syntax example with a specified number of processing instances:
+                                            Example:
+                                                Syntax example with a specified number of processing instances:
 
-                                                    {"parallelProcessingFactor": "2"}
+                                                {"parallelProcessingFactor": "2"}
 
-                                                    Syntax example with a specified percentage of total
-                                                    processing instances:
+                                                Syntax example with a specified percentage of total
+                                                processing instances:
 
-                                                    {"parallelProcessingFactor": "60%"}
+                                                {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                                      Optional GIS. The :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
                                              results will be returned asynchronously.
     ------------------------------------     --------------------------------------------------------------------
     folder                                   Keyword only parameter. Optional str or dict. Creates a folder in the portal, if it does
                                              not exist, with the given folder name and persists the output in this folder.
-                                             The dictionary returned by the gis.content.create_folder() can also be passed in as input.
+                                             The dictionary returned by the :meth:`gis.content.create_folder <arcgis.gis.ContentManager.create_folder>` can also be passed in as input.
 
                                              Example:
                                                 {'username': 'user1', 'id': '6a3b77c187514ef7873ba73338cf1af8', 'title': 'trial'}
@@ -9184,7 +9200,7 @@ def export_to_tile_package(
     output_name         Optional string. Name of the Tile Package to be created.
                         If not provided, a Tile Package is created by the method and used as the output.
     ---------------     --------------------------------------------------------------------
-    gis                 Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                 Optional :class:`~arcgis.gis.GIS`. The GIS on which this tool runs. If not specified, the active GIS is used.
     ---------------     --------------------------------------------------------------------
     future              Optional Boolean. If True, the result will be a GPJob object and
                         results will be returned asynchronously.
