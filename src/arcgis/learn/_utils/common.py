@@ -253,6 +253,11 @@ class ArcGISMSImage(Image):
                     x = (x - min_values) / (max_values - min_values + 1e-04)
                 else:
                     x = x / div
+
+                # Remove data values which are outside our data range.
+                # Data Range is as read from EMD. 
+                # Handles No data values.
+                x.clamp_(0, 1)
         return cls(x)
 
 
