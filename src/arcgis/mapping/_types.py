@@ -4023,6 +4023,61 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
         super(EnterpriseVectorTileLayerManager, self).__init__(url, gis)
         self._vtl = vect_tile_lyr
 
+    # ----------------------------------------------------------------------
+    def edit(self, service_dictionairy):
+        """
+        To edit a service, you need to submit the complete JSON
+        representation of the service, which includes the updates to the
+        service properties. Editing a service causes the service to be
+        restarted with updated properties.
+
+        ===================     ====================================================================
+        **Argument**            **Description**
+        -------------------     --------------------------------------------------------------------
+        service_dictionairy     Required dict. The service JSON as a dictionary.
+        ===================     ====================================================================
+
+
+        :return: boolean
+        """
+        vtl_service = _services.Service(self.url, self._gis)
+        return vtl_service.edit(service_dictionairy)
+
+    # ----------------------------------------------------------------------
+    def start(self):
+        """starts the specific service"""
+        vtl_service = _services.Service(self.url, self._gis)
+        return vtl_service.start()
+
+    # ----------------------------------------------------------------------
+    def stop(self):
+        """stops the specific service"""
+        vtl_service = _services.Service(self.url, self._gis)
+        return vtl_service.stop()
+
+    # ----------------------------------------------------------------------
+    def change_provider(self, provider: str):
+        """
+        Allows for the switching of the service provide and how it is hosted on the ArcGIS Server instance.
+
+        Values:
+
+           + 'ArcObjects' means the service is running under the ArcMap runtime i.e. published from ArcMap
+           + `ArcObjects`: means the service is running under the ArcGIS Pro runtime i.e. published from ArcGIS Pro
+           + `DMaps`: means the service is running in the shared instance pool (and thus running under the ArcGIS Pro provider runtime)
+
+        :return: Boolean
+
+        """
+        vtl_service = _services.Service(self.url, self._gis)
+        return vtl_service.change_provider(provider)
+
+    # ----------------------------------------------------------------------
+    def delete(self):
+        """deletes a service from arcgis server"""
+        vtl_service = _services.Service(self.url, self._gis)
+        return vtl_service.delete()
+
 
 ###########################################################################
 class VectorTileLayerManager(arcgis.gis._GISResource):
