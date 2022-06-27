@@ -134,7 +134,7 @@ def from_featureset(fset, sr=None):
                 df = df.convert_dtypes()
                 return df
             except:
-                return df.covert_dtypes()
+                return df.convert_dtypes()
         return df
     else:
         return None
