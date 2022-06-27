@@ -1806,7 +1806,7 @@ def summarize_raster_within(
     circular_wrap_value                      Optional float. The possible highest value (upper bound) in the cyclic data. 
                                              It is a positive number, and the default is 360. This value also represents the same quantity 
                                              as the possible lowest value (lower bound).
-                                             This parameter is honored only available if the circular_calculation parameter is set to True.
+                                             This parameter is honored only if the circular_calculation parameter is set to True.
 
                                              Parameter available in ArcGIS Image Server 11 and higher.
     ------------------------------------     --------------------------------------------------------------------
@@ -8610,7 +8610,7 @@ def zonal_statistics_as_table(
     circular_wrap_value                      Optional float. The possible highest value (upper bound) in the cyclic data. 
                                              It is a positive number, and the default is 360. This value also represents the same quantity 
                                              as the possible lowest value (lower bound).
-                                             This parameter is honored only available if the circular_calculation parameter is set to True.
+                                             This parameter is honored only if the circular_calculation parameter is set to True.
 
                                              | Parameter available in ArcGIS Image Server 11 and higher.
     ------------------------------------     --------------------------------------------------------------------
