@@ -1432,7 +1432,7 @@ class Service(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def _jobs(self):
+    def _jobs(self) -> "JobManager":
 
         """returns a `JobManager` to manage asynchronous geoprocessing tasks"""
 
