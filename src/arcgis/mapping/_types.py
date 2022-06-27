@@ -4218,19 +4218,12 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
     # ----------------------------------------------------------------------
     def update_tiles(
         self,
-        merge_bundle: bool = False,
     ) -> dict:
         """
         The update_tiles operation supports updating the cooking extent and
         cache levels in a Hosted Vector Tile Service. The results of the
         operation is a response indicating success and a url
         to the Job Statistics page, or failure.
-
-        ===============     ====================================================
-        **Argument**        **Description**
-        ---------------     ----------------------------------------------------
-        merge_bundle        Optional bool. Default is False.
-        ===============     ====================================================
 
         :returns:
            Dictionary. If the product is not ArcGIS Online tile service, the
@@ -4254,7 +4247,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         """
         if self._gis._portal.is_arcgisonline:
             url = "%s/updateTiles" % self._url
-            params = {"f": "json", "mergeBundle": merge_bundle}
+            params = {"f": "json"}
             return self._con.post(url, params)
         return None
 
@@ -4367,11 +4360,11 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         else:
             raise Exception("Refresh method is not available for Enterprise Service.")
 
-    ######################### These Methods Only Apply to VTL Service from a Service Directory and have been deprecated #################################
-    @deprecated(deprecated_in="2.1.0", removed_in=None, current_version="2.1.0")
+    ######################### These Methods Only Apply to VTL Service from a Service Directory #################################
     def swap(self, target_service_name):
         """
         The swap operation replaces the current service cache with an existing one.
+
         .. note::
             The ``swap`` operation is for ArcGIS Online only and cannot be used for a service
             published from a feature layer.
@@ -4392,10 +4385,13 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
             raise Exception("Swap method is not available for Enterprise Service.")
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in=None, current_version="2.1.0")
     def delete_tiles(self, levels, extent=None):
         """
         The ``delete_tiles`` method deletes tiles from the current cache.
+
+        .. note::
+            The ``delete_tiles`` operation is for ArcGIS Online only and cannot be used for a service
+            published from a feature layer.
 
         ===============     ====================================================
         **Argument**        **Description**
