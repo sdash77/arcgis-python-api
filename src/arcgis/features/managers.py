@@ -42,7 +42,8 @@ class AttachmentManager(object):
     version                 Required Version or string. The `Version` class where
                             the branch version will take place or the
                             version name.
-    ---------------------   -------------------------------------------
+    =====================   ===========================================
+
     """
 
     def __init__(
@@ -51,8 +52,10 @@ class AttachmentManager(object):
         self._layer = layer
         if isinstance(version, str):
             self._version = version
-        else:
+        elif isinstance(version, _version.Version):
             self._version = version.properties.versionName
+        else:
+            self._version = None
 
     def search(
         self,
