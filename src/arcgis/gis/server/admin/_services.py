@@ -1413,7 +1413,7 @@ class Service(BaseServer):
         Returns the item information
 
         :return:
-            :class:`~arcgis.gis.server.admin.ItemInformationManager`
+            :class:`~arcgis.gis.server.ItemInformationManager`
 
         """
         if self._ii is None:
@@ -1424,7 +1424,7 @@ class Service(BaseServer):
     # ----------------------------------------------------------------------
     @property
     def jobs(self) -> "JobManager":
-        """returns a `JobManager` to manage asynchronous geoprocessing tasks"""
+        """returns a :class:`~arcgis.gis.server.JobManager` to manage asynchronous geoprocessing tasks"""
         if self._jm is None:
             url = "%s/jobs" % self._url
             self._jm = JobManager(url=url, con=self._con)
@@ -1434,7 +1434,7 @@ class Service(BaseServer):
     @property
     def _jobs(self):
 
-        """returns a :class:`~arcgis.gis.server.JobManager` to manage asynchronous geoprocessing tasks"""
+        """returns a `JobManager` to manage asynchronous geoprocessing tasks"""
 
         if self._jm is None:
             url = "%s/jobs" % self._url
@@ -1499,7 +1499,7 @@ class JobManager(BaseServer):
         ===============     ====================================================================
 
 
-        :return: List of :class:`~arcgis.gis.server.Job`
+        :return: List of geoprocessing service :class:`jobs <arcgis.gis.server.Job>`
 
         """
         url = "{base}/query".format(base=self._url)
@@ -1678,8 +1678,7 @@ class ItemInformationManager(BaseServer):
 
         Databases
 
-         - **byReference** - Indicates whether the service data is referenced from a registered folder or database (true)
-                             or it was copied to the server at the time the service was published (false).
+         - **byReference** - Indicates whether the service data is referenced from a registered folder or database (true) or it was copied to the server at the time the service was published (false).
          - **onPremiseConnectionString** - Path to publisher data location.
          - **onServerConnectionString** - Path to data location after publishing completes.
 
@@ -1700,8 +1699,7 @@ class ItemInformationManager(BaseServer):
         Resources
 
          - **clientName** - Machine where ArcGIS Pro or ArcGIS Desktop was used to publish the service.
-         - **onPremisePath** - Path, relative to the 'clientName' machine, where the source resource (.mxd,
-                             .3dd, .tbx files, geodatabases, and so on) originated.
+         - **onPremisePath** - Path, relative to the 'clientName' machine, where the source resource (.mxd, .3dd, .tbx files, geodatabases, and so on) originated.
          - **serverPath** - Path to the document after publishing completes.
 
         :return: Dict

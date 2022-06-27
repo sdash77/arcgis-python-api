@@ -76,7 +76,7 @@ class SystemManager(BaseServer):
     @property
     def _directories(self) -> list:
         """
-        Gets the :class:`~arcgis.gis.server.ServerDirectory` object as a list.
+        Gets the server directory object as a list.
 
         """
         directs = []
@@ -114,7 +114,7 @@ class SystemManager(BaseServer):
         ==================     ====================================================================
 
         :return:
-            The ArcGIS Server :class:`~arcgis.gis.server.ServerDirectory` as an object or None.
+            The ArcGIS Server directory as an object or None.
 
 
         """

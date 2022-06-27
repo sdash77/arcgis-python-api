@@ -498,7 +498,7 @@ class UserManager(BaseServer):
         """Helper object to manage custom roles for users
 
         :return:
-            :class:`arcgis.gis.server.RoleManager` object
+            :class:`~arcgis.gis.server.RoleManager` object
 
         """
         if self._rm is None:

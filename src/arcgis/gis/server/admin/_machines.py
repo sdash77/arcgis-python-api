@@ -103,10 +103,10 @@ class MachineManager(BaseServer):
     # ----------------------------------------------------------------------
     def list(self) -> list:
         """
-        Provides the list of machines in the cluster.
 
         :return:
-            A JSON list of the machines in the cluster.
+             A list of :class:`machines <arcgis.gis.server.Machine>` that are part of the server configuration.
+
 
         """
         if self._machines is None:
