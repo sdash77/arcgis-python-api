@@ -16437,7 +16437,7 @@ class RasterManager(object):
         ========================  ====================================================================
         **Argument**              **Description**
         ------------------------  --------------------------------------------------------------------
-        raster_ids                Required integer. The object IDs of a raster catalog items to be
+        raster_id                 Required integer. The object IDs of a raster catalog items to be
                                   updated.
         ------------------------  --------------------------------------------------------------------
         files                     Optional list. Local source location to the raster to replace the
@@ -16495,7 +16495,7 @@ class RasterManager(object):
         .. code-block:: python
 
             # Example Usage
-            updated = raster_manager.update(raster_ids = 087631,
+            updated = raster_manager.update(raster_id = 087631,
                                             item_ids = "ib740c7bb-e5d0-4156-9cea-12fa7d3a472c,ib740c7bb-e2d0-4106-9fea-12fa7d3a482c",
                                             service_url = "http://myserver/arcgis/services/Portland/ImageServer",
                                             build_thumbnail = True,
