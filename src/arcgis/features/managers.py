@@ -13,6 +13,10 @@ from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import GIS, _GISResource, Item
 import concurrent.futures as _cf
 from typing import Optional, Any, Union
+from arcgis.auth.tools import LazyLoader
+
+features = LazyLoader("arcgis.features")
+_version = LazyLoader("arcgis.features._version")
 
 _log = logging.getLogger()
 
@@ -21,14 +25,34 @@ _log = logging.getLogger()
 ###########################################################################
 class AttachmentManager(object):
     """
-    Manager class for manipulating feature layer attachments. This class is not created by users directly.
-    An instance of this class, called 'attachments', is available as a property of the FeatureLayer object,
-    if the layer supports attachments.
+    Manager class for manipulating feature layer attachments.
+
+    This class can be created by the user directly if a version is to be specified.
+
+    Otherwise, an instance of this class, called 'attachments',
+    is available as a property of the FeatureLayer object, if the layer supports attachments.
     Users call methods on this 'attachments' object to manipulate (create, get, list, delete) attachments.
+
+    =====================   ===========================================
+    **Inputs**              **Description**
+    ---------------------   -------------------------------------------
+    layer                   Required Feature Layer. The Feature Layer
+                            that supports attachments.
+    ---------------------   -------------------------------------------
+    version                 Required Version or string. The `Version` class where
+                            the branch version will take place or the
+                            version name.
+    ---------------------   -------------------------------------------
     """
 
-    def __init__(self, layer):
+    def __init__(
+        self, layer: features.FeatureLayer, version: str | _version.Version = None
+    ):
         self._layer = layer
+        if isinstance(version, str):
+            self._version = version
+        else:
+            self._version = version.properties.versionName
 
     def search(
         self,
@@ -500,62 +524,125 @@ class AttachmentManager(object):
         else:
             return self._download_all(object_ids=oid, save_folder=save_path)
 
-    def add(self, oid: str, file_path: str, keywords: Optional[str] = None):
+    def add(
+        self,
+        oid: str,
+        file_path: str,
+        keywords: Optional[str] = None,
+        return_moment: bool = False,
+    ) -> bool:
         """
-        Adds an attachment to a :class:`~arcgis.features.FeatureLayer`
+        Adds an attachment to a :class:`~arcgis.features.FeatureLayer`. Adding an attachment
+        is a feature update, but is support with either the Update or the Create capability.
+        The add operation is performed on a feature service feature resource.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        oid                 Required string of the object ID
+        oid                 Required string of the object ID.
         ---------------     --------------------------------------------------------------------
-        file_path           Required string. Path to attachement file
+        file_path           Required string. Path to the file to be uploaded as a new feature
+                            attachment. The content type, size, and name of the attachment will
+                            be derived from the uploaded file.
         ---------------     --------------------------------------------------------------------
         keywords            Optional string. Sets a text value that is stored as the keywords
-                            value for the attachment.
+                            value for the attachment. This parameter can be set when the layer has
+                            an attachmentProperties property that includes "name": "keywords"
+                            with "isEnabled": True. If the attachments have keywords enabled
+                            and the layer also includes the attachmentFields property,
+                            you can use it to understand properties like keywords field length.
+        ---------------     --------------------------------------------------------------------
+        return_moment       Optional bool. Specify whether the response will report the time
+                            attachments were added. If True, the server will return the time
+                            in the response's `editMoment` key. The default is False.
         ===============     ====================================================================
 
         :return:
             A JSON Repsonse stating 'success' or 'error'
 
         """
-        return self._layer._add_attachment(oid, file_path, keywords=keywords)
+        return self._layer._add_attachment(
+            oid,
+            file_path,
+            keywords=keywords,
+            return_moment=return_moment,
+            version=self._version,
+        )
 
-    def delete(self, oid: str, attachment_id: str):
+    def delete(
+        self,
+        oid: str,
+        attachment_id: str,
+        return_moment: bool = False,
+        rollback_on_failure: bool = True,
+    ) -> bool:
         """
-        Removes an attachment from a :class:`~arcgis.gis.FeatureLayer`
+        Removes an attachment from a :class:`~arcgis.gis.FeatureLayer`. Deleting an attachment is a feature update;
+        it requires the Update capability. The deleteAttachments operation is performed on a
+        feature service feature resource. This operation is available only if the layer has advertised that it has attachments.
+        A layer has attachments if its hasAttachments property is true.
 
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        oid                 Required string of the object ID
-        ---------------     --------------------------------------------------------------------
-        attachment_id       Required string. Id of attachment to delete
-        ===============     ====================================================================
+        ===================     ====================================================================
+        **Argument**            **Description**
+        -------------------     --------------------------------------------------------------------
+        oid                     Required string of the object ID
+        -------------------     --------------------------------------------------------------------
+        attachment_id           Required string. Ids of attachment to delete.
+                                `Syntax: attachment_id = "<attachmentId1>, <attachmentId2>"
+        -------------------     --------------------------------------------------------------------
+        return_moment           Optional boolean. Specify whether the response will report the time
+                                attachments were deleted. If True, the server will report the time
+                                in the response's `editMoment` key. The default value is False.
+        -------------------     --------------------------------------------------------------------
+        rollback_on_failure     Optional boolean. Specifies whether the edits should be applied
+                                only if all submitted edits succeed. If False, the server will apply
+                                the edits that succeed even if some of the submitted edits fail.
+                                If True, the server will apply the edits only if all edits succeed.
+                                The default value is true.
+        ===================     ====================================================================
 
         :result:
            JSON response stating 'success' or 'error'
         """
-        return self._layer._delete_attachment(oid, attachment_id)
+        return self._layer._delete_attachment(
+            oid,
+            attachment_id,
+            return_moment=return_moment,
+            rollback_on_failure=rollback_on_failure,
+            version=self._version,
+        )
 
-    def update(self, oid: str, attachment_id: str, file_path: str):
+    def update(
+        self, oid: str, attachment_id: str, file_path: str, return_moment: bool = False
+    ) -> bool:
         """
         Updates an existing attachment with a new file
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        oid                 Required string of the object ID
+        oid                 Required string of the object ID.
         ---------------     --------------------------------------------------------------------
-        attachment_id       Required string. Id of the attachement to update
+        attachment_id       Required string. Id of the attachment to update.
         ---------------     --------------------------------------------------------------------
-        file_path           Required string. Path to attachement file
+        file_path           Required string. Path to file to be uploaded as the updated feature
+                            attachment.
+        ---------------     --------------------------------------------------------------------
+        return_moment       Optional boolean. Specify whether the response will report the time
+                            attachments were deleted. If True, the server will report the time
+                            in the response's `editMoment` key. The default value is False.
         ===============     ====================================================================
 
         :result:
            JSON response stating 'success' or 'error'
         """
-        return self._layer._update_attachment(oid, attachment_id, file_path)
+        return self._layer._update_attachment(
+            oid,
+            attachment_id,
+            file_path,
+            return_moment=return_moment,
+            version=self._version,
+        )
 
 
 ###########################################################################
