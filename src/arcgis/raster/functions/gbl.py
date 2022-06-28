@@ -169,7 +169,7 @@ def _gbl_clone_layer_raster(layer, function_chain, function_chain_ra, **kwargs):
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="Please use arcgis.raster.functions.gbl.distance_accumulation() instead. ",
+    details="Please use :meth:`~arcgis.raster.functions.gbl.distance_accumulation` instead. ",
 )
 def euclidean_distance(
     in_source_data,
@@ -182,7 +182,7 @@ def euclidean_distance(
 
     Calculates, for each cell, the Euclidean distance to the closest source.
     For more information, see
-    http://pro.arcgis.com/en/pro-app/help/data/imagery/euclidean-distance-global-function.htm
+    `Euclidean Distance function <https://pro.arcgis.com/en/pro-app/help/data/imagery/euclidean-distance-global-function.htm>`_
 
     ===============================     ================================================================================
     **Argument**                        **Description**
@@ -269,7 +269,7 @@ def euclidean_distance(
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="Please use arcgis.raster.functions.gbl.distance_allocation() instead. ",
+    details="Please use :meth:`~arcgis.raster.functions.gbl.distance_allocation` instead. ",
 )
 def euclidean_allocation(
     in_source_data,
@@ -284,7 +284,7 @@ def euclidean_allocation(
     """
     Calculates, for each cell, the nearest source based on Euclidean distance.
     For more information, see
-    http://pro.arcgis.com/en/pro-app/help/data/imagery/euclidean-allocation-global-function.htm
+    `Euclidean Allocation function <https://pro.arcgis.com/en/pro-app/help/data/imagery/euclidean-allocation-global-function.htm>`_
 
     ===============================     ================================================================================
     **Argument**                        **Description**
@@ -394,7 +394,7 @@ def euclidean_allocation(
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="Please use arcgis.raster.functions.gbl.distance_accumulation() instead. ",
+    details="Please use :meth:`~arcgis.raster.functions.gbl.distance_accumulation` instead. ",
 )
 def cost_distance(
     in_source_data,
@@ -410,7 +410,7 @@ def cost_distance(
     Calculates the least accumulative cost distance for each cell from or to the least-cost
     source over a cost surface.
     For more information, see
-    http://pro.arcgis.com/en/pro-app/help/data/imagery/cost-distance-global-function.htm
+    `Cost Distance function <https://pro.arcgis.com/en/pro-app/help/data/imagery/cost-distance-global-function.htm>`_
 
 
     ===============================     ===================================================================================================================
@@ -531,7 +531,7 @@ def cost_distance(
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="Please use arcgis.raster.functions.gbl.distance_allocation() instead. ",
+    details="Please use :meth:`~arcgis.raster.functions.gbl.distance_allocation` instead. ",
 )
 def cost_allocation(
     in_source_data,
@@ -548,7 +548,7 @@ def cost_allocation(
     """
     Calculates, for each cell, its least-cost source based on the least accumulative cost over a cost surface.
     For more information, see
-    http://pro.arcgis.com/en/pro-app/help/data/imagery/cost-allocation-global-function.htm
+    `Cost Allocation function <https://pro.arcgis.com/en/pro-app/help/data/imagery/cost-allocation-global-function.htm>`_
 
 
     ===============================     ===================================================================================================================
@@ -875,8 +875,8 @@ def zonal_statistics(
 
 @deprecated(
     deprecated_in="1.9.0",
-    details="Please use arcgis.raster.functions.gbl.distance_accumulation()"
-    " and arcgis.raster.gbl.optimal_path_as_raster() instead. ",
+    details="Please use :meth:`~arcgis.raster.functions.gbl.distance_accumulation`"
+    " and :meth:`~arcgis.raster.functions.gbl.optimal_path_as_raster` instead. ",
 )
 def least_cost_path(
     in_source_data,
@@ -897,7 +897,7 @@ def least_cost_path(
     raster that records the least-cost path, or paths, from selected locations to the closest source
     pixels defined within the accumulative cost surface, in terms of cost distance.
     For more information, see
-    http://pro.arcgis.com/en/pro-app/help/data/imagery/least-cost-path-global-function.htm
+    `Least Cost Path function <https://pro.arcgis.com/en/pro-app/latest/help/analysis/raster-functions/least-cost-path-global-function.htm>`_
 
 
     ===============================     ===================================================================================================================
@@ -1636,8 +1636,8 @@ def watershed(
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="Please use arcgis.raster.functions.gbl.distance_accumulation()"
-    " (or arcgis.raster.functions.gbl.distance_allocation() for allocation output), instead. ",
+    details="Please use :meth:`~arcgis.raster.functions.gbl.distance_accumulation`"
+    " (or :meth:`~arcgis.raster.functions.gbl.distance_allocation` for allocation output), instead. ",
 )
 def calculate_travel_cost(
     in_source_data,
@@ -1706,14 +1706,14 @@ def calculate_travel_cost(
 
                                         Example:
 
-                                        | out_layer = calculate_travel_cost(in_source_data, generate_out_backlink_raster=True)
-                                        | out_var = out_layer.save()
+                                            | out_layer = calculate_travel_cost(in_source_data, generate_out_backlink_raster=True)
+                                            | out_var = out_layer.save()
 
                                         then,
 
-                                        | out_var.output_distance_service -> gives you the output distance imagery layer item
+                                            | out_var.output_distance_service -> gives you the output distance imagery layer item
 
-                                        | out_var.output_backlink_service -> gives you the output backlink raster imagery layer item
+                                            | out_var.output_backlink_service -> gives you the output backlink raster imagery layer item
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     generate_out_allocation_raster      Optional Boolean, determines whether out_allocation_raster should be generated or not.
                                         Set this parameter to True, in order to generate the out_backlink_raster.
@@ -1722,14 +1722,14 @@ def calculate_travel_cost(
 
                                         Example
 
-                                        | out_layer = calculate_travel_cost(in_source_data, generate_out_allocation_raster=False)
-                                        | out_var = out_layer.save()
+                                            | out_layer = calculate_travel_cost(in_source_data, generate_out_allocation_raster=False)
+                                            | out_var = out_layer.save()
 
                                         then,
 
-                                        | out_var.output_distance_service -> gives you the output distance imagery layer item
+                                            | out_var.output_distance_service -> gives you the output distance imagery layer item
 
-                                        | out_var.output_allocation_service -> gives you the output allocation raster imagery layer item
+                                            | out_var.output_allocation_service -> gives you the output allocation raster imagery layer item
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     gis                                 Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ===============================     ===================================================================================================================
@@ -1890,7 +1890,7 @@ def kernel_density(
     Calculates a magnitude-per-unit area from point or polyline features using a kernel function to
     fit a smoothly tapered surface to each point or polyline.
     For more information, see
-    http://pro.arcgis.com/en/pro-app/help/data/imagery/kernel-density-global-function.htm
+    `Kernel Density function <https://pro.arcgis.com/en/pro-app/help/data/imagery/kernel-density-global-function.htm>`_
 
     ===============================     ===================================================================================================================
     **Argument**                        **Description**
@@ -1944,8 +1944,7 @@ def kernel_density(
 
                                         - PLANAR-Uses planar distances between the features. This is the default.
 
-                                        - GEODESIC-Uses geodesic distances between features. This method takes into account the curvature
-                                         of the spheroid and correctly deals with data near the poles and the International dateline.
+                                        - GEODESIC-Uses geodesic distances between features. This method takes into account the curvature of the spheroid and correctly deals with data near the poles and the International dateline.
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     in_barriers                         Optional. The dataset that defines the barriers. The barriers can be a feature layer of polyline or polygon features. (Parameter available in ArcGIS Image Server 10.9 and higher.)
     ===============================     ===================================================================================================================
@@ -2033,7 +2032,7 @@ def kernel_density(
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="Please use arcgis.raster.functions.gbl.optimal_path_as_raster() instead.",
+    details="Please use :meth:`~arcgis.raster.functions.gbl.optimal_path_as_raster` instead.",
 )
 def cost_path(
     in_destination_data,
@@ -2133,8 +2132,8 @@ def cost_path(
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="Please use arcgis.raster.functions.gbl.distance_accumulation()"
-    "with value specified for output_source_direction_raster_name, instead.",
+    details="Please use :meth:`~arcgis.raster.functions.gbl.distance_accumulation`"
+    " with value specified for output_source_direction_raster_name, instead.",
 )
 def euclidean_direction(
     in_source_data,
@@ -2232,8 +2231,8 @@ def euclidean_direction(
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="Please use arcgis.raster.functions.gbl.distance_accumulation()"
-    "with value specified for output_back_direction_raster_name, instead.",
+    details="Please use :meth:`~arcgis.raster.functions.gbl.distance_accumulation`"
+    " with value specified for output_back_direction_raster_name, instead.",
 )
 def cost_backlink(
     in_source_data,
@@ -2532,7 +2531,7 @@ def corridor(in_distance_raster1: Raster, in_distance_raster2: Raster):
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="Please use arcgis.raster.functions.gbl.distance_accumulation() instead. ",
+    details="Please use :meth:`~arcgis.raster.functions.gbl.distance_accumulation` instead. ",
 )
 def path_distance(
     in_source_data,
@@ -2614,7 +2613,9 @@ def path_distance(
                                         the source resistance rate, and the source starting cost.
                                         Possible values: FROM_SOURCE, TO_SOURCE
     ===============================     ===================================================================================================================
+
     :return: output raster with function applied
+
     """
     layer1, input_source_data, raster_ra1 = _raster_input(in_source_data)
 
@@ -2740,7 +2741,7 @@ def path_distance(
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="Please use arcgis.raster.functions.gbl.distance_allocation() instead.",
+    details="Please use :meth:`~arcgis.raster.functions.gbl.distance_allocation` instead.",
 )
 def path_distance_allocation(
     in_source_data,
@@ -2964,8 +2965,8 @@ def path_distance_allocation(
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="Please use arcgis.raster.functions.gbl.distance_accumulation()"
-    "with value specified for output_back_direction_raster_name, instead.",
+    details="Please use :meth:`~arcgis.raster.functions.gbl.distance_accumulation`"
+    " with value specified for output_back_direction_raster_name, instead.",
 )
 def path_distance_back_link(
     in_source_data,
@@ -2994,7 +2995,7 @@ def path_distance_back_link(
                                         This is a raster that identifies the cells or locations from
                                         or to which the least accumulated cost distance for every output cell location is calculated.
 
-                                        For rTasters, the input type can be integer or floating point.
+                                        For rasters, the input type can be integer or floating point.
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     in_cost_raster                      Optional. A raster defining the impedance or cost to move planimetrically through each cell.
 
@@ -3179,6 +3180,9 @@ def path_distance_back_link(
 
 
 @deprecated(
+    deprecated_in="1.8.1",
+    details="Please use :meth:`~arcgis.raster.functions.gbl.distance_accumulation`"
+    " (or :meth:`~arcgis.raster.functions.gbl.distance_allocation` for allocation output) instead.",
 )
 def calculate_distance(
     in_source_data,
@@ -3191,10 +3195,8 @@ def calculate_distance(
     in_barrier_data=None,
     distance_method="PLANAR",
 ):
+
     """
-    .. deprecated:: 1.8.1
-        Please use :meth:`~arcgis.raster.functions.gbl.distance_accumulation`
-        (or :meth:`~arcgis.raster.functions.gbl.distance_allocation` for allocation output) instead.
 
     Calculates the Euclidean distance, direction, and allocation from a single source or set of sources.
 
@@ -3214,7 +3216,7 @@ def calculate_distance(
 
                                                     Example:
 
-                                                    {"distance":"60","units":"Meters"}
+                                                        {"distance":"60","units":"Meters"}
     -------------------------------------------     -------------------------------------------------------------------------------
     output_cell_size                                Optional. Specify the cell size to use for the output raster.
 
@@ -3222,7 +3224,7 @@ def calculate_distance(
 
                                                     Example:
 
-                                                    {"distance":"60","units":"Meters"}
+                                                        {"distance":"60","units":"Meters"}
     -------------------------------------------     -------------------------------------------------------------------------------
     allocation_field                                Optional. A field on the input_source_data layer that holds the values that
                                                     defines each source.
@@ -3238,15 +3240,14 @@ def calculate_distance(
 
                                                     Example:
 
-                                                    | out_layer = calculate_distance(in_source_data, generate_out_direction_raster=True)
-                                                    | out_var = out_layer.save()
+                                                        | out_layer = calculate_distance(in_source_data, generate_out_direction_raster=True)
+                                                        | out_var = out_layer.save()
 
                                                     then,
 
-                                                    | out_var.output_distance_service -> gives you the output distance imagery
-                                                    layer item
-                                                    | out_var.output_direction_service -> gives you the output backlink raster
-                                                    imagery layer item
+                                                        | out_var.output_distance_service -> gives you the output distance imagery layer item
+
+                                                        | out_var.output_direction_service -> gives you the output backlink raster imagery layer item
 
                                                     The output direction raster is in degrees, and indicates the
                                                     direction to return to the closest source from each cell center.
@@ -3257,15 +3258,17 @@ def calculate_distance(
     -------------------------------------------     -------------------------------------------------------------------------------
     generate_out_back_direction_raster              Optional Boolean, determines whether out_back_direction_raster should be generated or not.
                                                     Set this parameter to True, in order to generate the out_back_direction_raster.
-                                                    If set to true, the output will be a named tuple with name values being output_distance_service and out_back_direction_service. eg,
+                                                    If set to true, the output will be a named tuple with name values being output_distance_service and out_back_direction_service.
 
-                                                    | out_layer = calculate_distance(in_source_data, generate_out_back_direction_raster=True)
-                                                    | out_var = out_layer.save()
+                                                    Example:
+
+                                                        | out_layer = calculate_distance(in_source_data, generate_out_back_direction_raster=True)
+                                                        | out_var = out_layer.save()
 
                                                     then,
 
-                                                    | out_var.output_distance_service -> gives you the output distance imagery layer item
-                                                    | out_var.out_back_direction_service -> gives you the output back direction raster imagery layer item
+                                                        | out_var.output_distance_service -> gives you the output distance imagery layer item
+                                                        | out_var.out_back_direction_service -> gives you the output back direction raster imagery layer item
     -------------------------------------------     -------------------------------------------------------------------------------
     generate_out_allocation_raster                  Optional Boolean, determines whether out_allocation_raster should be generated
                                                     or not. Set this parameter to True, in order to generate the out_backlink_raster.
@@ -3274,15 +3277,13 @@ def calculate_distance(
 
                                                     Example:
 
-                                                    | out_layer = calculate_distance(in_source_data, generate_out_allocation_raster=True)
-                                                    | out_var = out_layer.save()
+                                                        | out_layer = calculate_distance(in_source_data, generate_out_allocation_raster=True)
+                                                        | out_var = out_layer.save()
 
                                                     then,
 
-                                                    out_var.output_distance_service -> gives you the output distance imagery
-                                                    layer item
-                                                    out_var.output_allocation_service -> gives you the output allocation raster
-                                                    imagery layer item
+                                                        | out_var.output_distance_service -> gives you the output distance image layer item
+                                                        | out_var.output_allocation_service -> gives you the output allocation raster imagery layer item
 
                                                     This parameter calculates, for each cell, the nearest source based
                                                     on Euclidean distance.
@@ -3309,10 +3310,11 @@ def calculate_distance(
                                                         One use for a geodesic line is when you want to determine the shortest
                                                         distance between two cities for an airplane's flight path. This is also
                                                         known as a great circle line if based on a sphere rather than an ellipsoid.
-    ===========================================    ================================================================================
+    ===========================================     ===============================================================================
 
 
     :return: output raster with function applied
+
     """
     if isinstance(in_source_data, ImageryLayer):
         layer1, input_source_data, raster_ra1 = _raster_input(in_source_data)
@@ -3376,7 +3378,8 @@ def calculate_distance(
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="",
+    details="Please use :meth:`~arcgis.raster.functions.gbl.distance_accumulation` "
+            "with value specified for output_back_direction_raster_name, instead.",
 )
 def euclidean_back_direction(
     in_source_data,
@@ -3386,11 +3389,6 @@ def euclidean_back_direction(
     in_barrier_data=None,
 ):
     """
-
-    .. deprecated::
-        Please use :meth:`arcgis.raster.functions.gbl.distance_accumulation` with value specified for output_back_direction_raster_name, instead.
-
-
     Calculates, for each cell, the direction, in degrees, to the neighboring cell along 
     the shortest path back to the closest source while avoiding barriers.
 
@@ -3401,8 +3399,8 @@ def euclidean_back_direction(
     Due east (right) is 90 and the values increase clockwise (180 is south, 270 is west, 
     and 360 is north).
 
-    For more information, see 
-    https://pro.arcgis.com/en/pro-app/help/data/imagery/euclidean-back-direction-function.
+    For more information, see
+    `Euclidean Back Direction function <https://pro.arcgis.com/en/pro-app/help/data/imagery/euclidean-back-direction-function.htm>`_
 
 
     ================================     ===============================================================================
@@ -3502,8 +3500,8 @@ def flow_length(
     The function can also be used to create distance-area diagrams of hypothetical 
     rainfall and runoff events using the weight raster as an impedance to movement downslope.
 
-    For more information, see 
-    https://pro.arcgis.com/en/pro-app/help/data/imagery/flow-length-function.htm
+    For more information,
+    see `Flow Length function <https://pro.arcgis.com/en/pro-app/help/data/imagery/flow-length-function.htm>`_
 
     ================================     ===============================================================================
     **Argument**                         **Description**
@@ -3574,8 +3572,8 @@ def sink(input_flow_direction_raster: Raster):
 
     The value type for the Sink function output raster layer is floating point.
 
-    For more information, see
-    https://pro.arcgis.com/en/pro-app/help/data/imagery/sink-function.htm
+    For more information,
+    see `Sink function <https://pro.arcgis.com/en/pro-app/help/data/imagery/sink-function.htm>`_
 
     ================================     ===============================================================================
     **Argument**                         **Description**
@@ -3619,8 +3617,8 @@ def snap_pour_point(
     """
     Snaps pour points to the cell of highest flow accumulation within a specified distance.
 
-    For more information, see
-    https://pro.arcgis.com/en/pro-app/help/data/imagery/snap-pour-point-function.htm
+    For more information,
+    see `Snap Pour Point function <https://pro.arcgis.com/en/pro-app/help/data/imagery/snap-pour-point-function.htm>`_
 
     ================================     ===============================================================================
     **Argument**                         **Description**
@@ -3687,8 +3685,8 @@ def stream_order(
     Creates a raster layer that assigns a numeric order to segments 
     of a raster representing branches of a linear network.
 
-    For more information, see 
-    https://pro.arcgis.com/en/pro-app/help/data/imagery/stream-order-function.htm
+    For more information, see
+    `Stream Order function <https://pro.arcgis.com/en/pro-app/help/data/imagery/stream-order-function.htm>`_
 
     ================================     ===============================================================================
     **Argument**                         **Description**
@@ -3757,7 +3755,8 @@ def stream_order(
 def expand(input_raster: Raster, number_of_cells: int, zone_values: Union[list, str]):
     """
     Expands specified zones of a raster by a specified number of cells.
-    https://pro.arcgis.com/en/pro-app/help/data/imagery/expand-function.htm
+    See `Expand function <https://pro.arcgis.com/en/pro-app/help/data/imagery/expand-function.htm>`_
+
 
     ================================     ===============================================================================
     **Argument**                         **Description**
@@ -3811,7 +3810,7 @@ def shrink(input_raster: Raster, number_of_cells: int, zone_values: Union[list, 
     """
     Shrinks the selected zones by a specified number of cells by replacing them with
     the value of the cell that is most frequent in its neighborhood.
-    https://pro.arcgis.com/en/pro-app/help/data/imagery/shrink-function.htm
+    See `Shrink function <https://pro.arcgis.com/en/pro-app/help/data/imagery/shrink-function.htm>`_
 
     ===============================     ================================================================================
     **Argument**                         **Description**
@@ -4167,7 +4166,7 @@ def distance_allocation(
 ):
     """
     Calculates, for each cell, its least-cost source based on the least accumulative cost over a cost surface, 
-    avoiding network distance distortion."
+    avoiding network distance distortion.
 
     =====================================       ============================================================================================================
     **Argument**                                **Description**
@@ -4444,7 +4443,7 @@ def optimal_path_as_raster(
 ):
     """
     Calculates, for each cell, its least-cost source based on the least accumulative cost over a cost surface, 
-    avoiding network distance distortion.",
+    avoiding network distance distortion.
 
     ===============================     ================================================================================
     **Argument**                         **Description**
@@ -4709,14 +4708,14 @@ def viewshed(
     analysis_method                      Choose the method by which the visibility will be calculated.
                                          This option allows you to trade some accuracy for increased performance.
 
-                                          - ALL_SIGHTLINES - A sightline is performed on every pixel in the raster
-                                            in order to establish visible areas. This is the default method.
+                                         - ALL_SIGHTLINES - A sightline is performed on every pixel in the raster
+                                           in order to establish visible areas. This is the default method.
 
-                                          - PERIMETER_SIGHTLINES - Sightlines are only performed to the pixels on
-                                            the perimeter of the visible areas in order to
-                                            establish visibility areas. This method has a
-                                            better performance than the ALL_SIGHTLINES method
-                                            since less sightlines are in the calculation.
+                                         - PERIMETER_SIGHTLINES - Sightlines are only performed to the pixels on
+                                           the perimeter of the visible areas in order to
+                                           establish visibility areas. This method has a
+                                           better performance than the ALL_SIGHTLINES method
+                                           since less sightlines are in the calculation.
     --------------------------------     --------------------------------------------------------------------
     analysis_type                        Choose which type of visibility analysis you wish to perform,
                                          either determining how visible each cell is to the observers, or
@@ -4783,8 +4782,8 @@ def viewshed(
     --------------------------------     --------------------------------------------------------------------
     inner_radius_is_3d                   Type of distance for the inner radius parameter.
 
-                                            - False - Inner Radius is to be interpreted as a 2D distance. This is the default.
-                                            - True - Inner Radius is to be interpreted as a 3D distance.
+                                         - False - Inner Radius is to be interpreted as a 2D distance. This is the default.
+                                         - True - Inner Radius is to be interpreted as a 3D distance.
     --------------------------------     --------------------------------------------------------------------
     outer_radius                         This value defines the maximum distance from which visibility is determined.
                                          Pixels beyond this distance are excluded from the analysis.
@@ -4796,8 +4795,8 @@ def viewshed(
     --------------------------------     --------------------------------------------------------------------
     outer_radius_is_3d                   Type of distance for the outer_radius parameter.
 
-                                            - False - outer_radius is to be interpreted as a 2D distance. This is the default.
-                                            - True - outer_radius is to be interpreted as a 3D distance.
+                                         - False - outer_radius is to be interpreted as a 2D distance. This is the default.
+                                         - True - outer_radius is to be interpreted as a 3D distance.
     --------------------------------     --------------------------------------------------------------------
     horizontal_start_angle               This value defines the start angle of the horizontal scan range.
                                          The value should be specified in degrees from 0 to 360.0, where 0 is oriented to north.
