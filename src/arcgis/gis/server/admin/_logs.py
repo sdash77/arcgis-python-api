@@ -192,10 +192,10 @@ class LogManager(BaseServer):
                                ArcGIS Server timestamp.
 
                                Example for string:
-                               startTime = "2011-08-01T15:17:20"
+                               start_time = "2011-08-01T15:17:20"
 
                                Example for integer:
-                               startTime = 1312237040123
+                               start_time = 1312237040123
 
         ------------------     --------------------------------------------------------------------
         end_time               Optional String. The oldest time to include in the result set. You
