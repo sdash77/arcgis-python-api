@@ -402,7 +402,7 @@ class EnterpriseSceneLayerManager(_GISResource):
     The ``EnterpriseSceneLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise hosted scene layers.
     A :class:`~arcgis.mapping.SceneLayer` offers access to layer content.
 
-    ..note:: Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/SceneServer/
+    .. note:: Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/SceneServer/
     """
 
     def __init__(self, url, gis=None, scene_lyr=None):

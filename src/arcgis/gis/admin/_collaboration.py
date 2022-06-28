@@ -1,11 +1,11 @@
 """
 Classes to manage a GIS Collaboration
 """
-from typing import Optional, Union
-
-from numpy import str0
-from .. import GIS, Group
+from __future__ import annotations
+import concurrent.futures
 import functools
+from .. import GIS, Group
+from typing import Optional, Union
 
 
 def _lazy_property(fn):
@@ -28,7 +28,7 @@ class CollaborationManager(object):
     _basepath = None
     _pid = None
 
-    def __init__(self, gis, portal_id=None):
+    def __init__(self, gis: GIS, portal_id: str = None):
         self._gis = gis
         self._portal = gis._portal
         self._pid = portal_id
@@ -133,7 +133,7 @@ class CollaborationManager(object):
         webauth_password: Optional[str] = None,
         webauth_cert_file: Optional[str] = None,
         webauth_cert_password: Optional[str] = None,
-    ):
+    ) -> dict:
         """
         The accept_invitation operation allows a portal to accept a
         collaboration invitation. The invitation file received securely
@@ -208,21 +208,40 @@ class CollaborationManager(object):
         return con.post(path=data_path, postdata=params, files=files)
 
     # ----------------------------------------------------------------------
-    def list(self):
+    def list(self) -> list[Collaboration]:
         """gets all collaborations for a portal"""
         data_path = "%s/collaborations" % self._basepath
         params = {"f": "json", "num": 100, "start": 1}
         res = self._portal.con.get(data_path, params)
         collabs = []
+        collab_ids = []
         while len(res["collaborations"]) > 0:
             for collab in res["collaborations"]:
-                collabs.append(
-                    Collaboration(collab_manager=self, collab_id=collab["id"])
-                )
-            res = self._portal.con.get(data_path, params)
-            params["start"] = res["nextStart"]
+                collab_ids.append(collab)
             if res["nextStart"] == -1:
+
+                with concurrent.futures.ThreadPoolExecutor(25) as tp:
+                    jobs = {
+                        tp.submit(
+                            Collaboration,
+                            **{
+                                "collab_manager": self,
+                                "collab_id": collab["id"],
+                                "portal_id": self._gis.properties.id,
+                            },
+                        ): collab
+                        for collab in collab_ids
+                    }
+                    for future in concurrent.futures.as_completed(jobs):
+                        collab = jobs[future]
+                        try:
+                            collabs.append(future.result())
+                        except Exception as exc:
+                            print("%r generated an exception: %s" % (collab, exc))
                 return collabs
+            else:
+                params["start"] = res["nextStart"]
+                res = self._portal.con.get(data_path, params)
         return collabs
 
     # ----------------------------------------------------------------------
@@ -237,7 +256,7 @@ class CollaborationManager(object):
         webauth_password: Optional[str] = None,
         webauth_cert_file: Optional[str] = None,
         webauth_cert_password: Optional[str] = None,
-    ):
+    ) -> dict:
         """
         The validate_invitation method allows a portal to
         validate a collaboration invitation. The invitation file received
@@ -311,7 +330,7 @@ class CollaborationManager(object):
     # ----------------------------------------------------------------------
     def collaborate_with(
         self, guest_gis: GIS, collaboration_name: str, collaboration_description: str
-    ):
+    ) -> bool:
         """
         A high level method to quickly establish a collaboration between two GIS. This method uses defaults
         wherever applicable and internally calls the `create`, `accept_invitation` and `invite_participant` methods.
@@ -496,7 +515,7 @@ class Collaboration(dict):
     # ----------------------------------------------------------------------
     def add_workspace(
         self, name: str, description: str, config: dict, portal_group_id: str
-    ):
+    ) -> dict:
         """
         The add_workspace resource adds a new workspace to a
         portal-to-portal collaboration. Only collaboration hosts can create
@@ -531,7 +550,7 @@ class Collaboration(dict):
         return self._portal.con.post(path, params, verify_cert=False)
 
     # ----------------------------------------------------------------------
-    def get_invitation(self, invitation_id: str):
+    def get_invitation(self, invitation_id: str) -> dict:
         """
         The get_invitation operation returns the information about an
         invitation to participate in a portal-to-portal collaboration for a
@@ -542,7 +561,7 @@ class Collaboration(dict):
         return self._portal.con.get(path, params)
 
     # ----------------------------------------------------------------------
-    def get_workspace(self, workspace_id: str):
+    def get_workspace(self, workspace_id: str) -> dict:
         """
         The workspace resource provides information about the collaboration
         workspace with a specified ID.
@@ -553,7 +572,7 @@ class Collaboration(dict):
 
     # ----------------------------------------------------------------------
     @property
-    def invitations(self):
+    def invitations(self) -> list:
         """The invitations operation returns the invitation information for
         all the invitations generated by a portal-to-portal collaboration
         host.
@@ -571,7 +590,7 @@ class Collaboration(dict):
         return invs
 
     # ----------------------------------------------------------------------
-    def delete(self):
+    def delete(self) -> bool:
         """
         The delete operation deletes a portal-to-portal collaboration from
         the host portal. This stops any sharing set up from the
@@ -589,7 +608,7 @@ class Collaboration(dict):
         return resp
 
     # ----------------------------------------------------------------------
-    def remove_workspace(self, workspace_id: str):
+    def remove_workspace(self, workspace_id: str) -> dict:
         """
         The delete operation deletes a collaboration workspace. This
         immediately disables further replication of data to and from the
@@ -613,7 +632,7 @@ class Collaboration(dict):
 
     # ----------------------------------------------------------------------
     @_lazy_property
-    def workspaces(self):
+    def workspaces(self) -> list:
         """
         The workspaces resource lists all the workspaces in a given
         collaboration. A workspace is a virtual space in the collaboration
@@ -633,7 +652,7 @@ class Collaboration(dict):
         return workspaces
 
     # ----------------------------------------------------------------------
-    def export_invitation(self, out_folder: str):
+    def export_invitation(self, out_folder: str) -> dict:
         """
         The exportInvitationResponse operation exports a collaboration
         invitation response file from a collaboration guest portal. The
@@ -668,7 +687,7 @@ class Collaboration(dict):
         webauth_password: Optional[str] = None,
         webauth_cert_file: Optional[str] = None,
         webauth_cert_password: Optional[str] = None,
-    ):
+    ) -> dict:
         """
         The importInvitationResponse operation imports an invitation
         response file from a portal collaboration guest. The operation is
@@ -716,7 +735,7 @@ class Collaboration(dict):
         return con.post(path=data_path, postdata=params, files=files, verify_cert=False)
 
     # ----------------------------------------------------------------------
-    def invalidate(self, invitation_id: str):
+    def invalidate(self, invitation_id: str) -> dict:
         """
         The invalidate operation invalidates a previously generated
         portal-to-portal collaboration invitation. If a guest accepts this
@@ -736,7 +755,7 @@ class Collaboration(dict):
         guest_portal_url: Optional[str] = None,
         guest_gis: Optional[GIS] = None,
         save_path: Optional[str] = None,
-    ):
+    ) -> str:
         """
         As a collaboration host, once you have set up a new collaboration,
         you are ready to invite other portals as participants in your
@@ -802,7 +821,7 @@ class Collaboration(dict):
         )
 
     # ----------------------------------------------------------------------
-    def get_participant(self, portal_id: str):
+    def get_participant(self, portal_id: str) -> dict:
         """
         The participant operation provides information about the
         collaboration participant with a specified ID.
@@ -813,7 +832,7 @@ class Collaboration(dict):
         return con.get(data_path, params)
 
     # ----------------------------------------------------------------------
-    def participants(self):
+    def participants(self) -> dict:
         """
         The participants resource provides information about all of the
         participants in a portal-to-portal collaboration.
@@ -829,7 +848,7 @@ class Collaboration(dict):
         participant_id: str,
         delete_contributed_items: bool = False,
         delete_received_items: bool = False,
-    ):
+    ) -> dict:
         """
         The participants resource provides information about all of the
         participants in a portal-to-portal collaboration.
@@ -860,7 +879,7 @@ class Collaboration(dict):
         return con.post(data_path, params)
 
     # ----------------------------------------------------------------------
-    def add_group_to_workspace(self, portal_group: str, workspace: str):
+    def add_group_to_workspace(self, portal_group: str, workspace: str) -> dict:
         """
         This operation adds a group to a workspace that participates in a portal-to-portal collaboration. Content shared
          to the portal group is shared to other participants in the collaboration.
@@ -896,7 +915,7 @@ class Collaboration(dict):
         return result
 
     # ----------------------------------------------------------------------
-    def _force_sync(self, workspace):
+    def _force_sync(self, workspace) -> dict:
         """
         Undocumented. This operation will force sync the collaboration and its workspaces
         :param workspace:
@@ -918,7 +937,7 @@ class Collaboration(dict):
             raise RuntimeError("Error force syncing")
 
     # ----------------------------------------------------------------------
-    def refresh(self, invitation_id: str):
+    def refresh(self, invitation_id: str) -> dict:
         """
         The refresh operation refreshes a previously generated
         portal-to-portal collaboration invitation. The new invitation file
@@ -942,7 +961,7 @@ class Collaboration(dict):
         return con.post(path=data_path, postdata=params, verify_cert=False)
 
     # ----------------------------------------------------------------------
-    def remove_participation(self):
+    def remove_participation(self) -> dict:
         """
         The removeParticipation operation removes collaboration
         participation by a guest from a collaboration, allowing a guest to
@@ -956,7 +975,7 @@ class Collaboration(dict):
         return con.post(path=data_path, postdata=params, verify_cert=False)
 
     # ----------------------------------------------------------------------
-    def remove_participant(self, portal_id: str):
+    def remove_participant(self, portal_id: str) -> dict:
         """
         The remove operation allows a collaboration host to remove a
         participant from a portal-to-portal collaboration.
@@ -977,7 +996,7 @@ class Collaboration(dict):
         return con.post(path=data_path, postdata=params)
 
     # ----------------------------------------------------------------------
-    def remove_portal_group_link(self, workspace_id: str):
+    def remove_portal_group_link(self, workspace_id: str) -> dict:
         """
         The remove_portal_group_link operation removes the link between a
         collaboration workspace and a portal group. Replication of content
@@ -1002,7 +1021,7 @@ class Collaboration(dict):
         return con.post(path=data_path, postdata=params)
 
     # ----------------------------------------------------------------------
-    def schedule(self, workspace_id: str):
+    def schedule(self, workspace_id: str) -> dict:
         """
         Collaboration guests can use the schedule resource to return a job
         schedule for synchronized items in a collaboration workspace. The
@@ -1096,7 +1115,7 @@ class Collaboration(dict):
         start_time: int,
         interval: int = 24,
         repeat_count: int = -1,
-    ):
+    ) -> bool:
         """
         Collaboration guests can use the schedule resource to return a job
         schedule for synchronized items in a collaboration workspace. The
@@ -1132,7 +1151,7 @@ class Collaboration(dict):
         return res
 
     # ----------------------------------------------------------------------
-    def sync(self, workspace_id: int, run_async: bool = False):
+    def sync(self, workspace_id: int, run_async: bool = False) -> dict:
         """
         The sync endpoint is provided to allow execution of a data sync on
         a particular workspace. The operation is allowed on the participant
@@ -1190,7 +1209,7 @@ class Collaboration(dict):
         return resp.get("status") or resp
 
     # ----------------------------------------------------------------------
-    def sync_details(self, workspace_id: str, sync_id: str):
+    def sync_details(self, workspace_id: str, sync_id: str) -> dict:
         """
         Provides a detailed description of status for a selected sync ID.
 
@@ -1222,7 +1241,7 @@ class Collaboration(dict):
         name: Optional[str] = None,
         description: Optional[str] = None,
         config: Optional[dict] = None,
-    ):
+    ) -> dict:
         """
         The updateInfo operation updates certain properties of a
         collaboration, primarily its name, description, and configuration
@@ -1263,7 +1282,7 @@ class Collaboration(dict):
         max_item_size: Optional[int] = None,
         max_replication_size: Optional[int] = None,
         copy_by_ref_on_fail: bool = False,
-    ):
+    ) -> dict:
         """
         The updateInfo operation updates certain collaboration workspace
         properties.
@@ -1311,7 +1330,7 @@ class Collaboration(dict):
     # ----------------------------------------------------------------------
     def update_access_modes(
         self, portal_id: str, workspace_access_json: Union[str, dict]
-    ):
+    ) -> dict:
         """
         The update_access_modes operation updates the access mode for a
         specific participant in a portal-to-portal collaboration.
@@ -1342,7 +1361,7 @@ class Collaboration(dict):
         copy_feature_service_data: bool = True,
         copy_by_ref_on_fail: bool = True,
         enable_bidirectional_sync: bool = True,
-    ):
+    ) -> dict:
         """
         The `update_portal_group_link` operation updates the group linked with a
         workspace for a participant in a portal-to-portal collaboration.
@@ -1393,7 +1412,7 @@ class Collaboration(dict):
         return con.post(path=data_path, postdata=params)
 
     # ----------------------------------------------------------------------
-    def validate_invitation_response(self, response_file: str):
+    def validate_invitation_response(self, response_file: str) -> dict:
         """
         Prior to importing a collaboration invitation response, the
         invitation response file can be validated by using the

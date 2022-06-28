@@ -1,3 +1,4 @@
+from __future__ import annotations
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 
@@ -25,7 +26,7 @@ class BaseMissionServer(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return f"<{self.__class__.__name__} @ {self._url}>"
+        return f"< {self.__class__.__name__} @ {self._url} >"
 
     # ----------------------------------------------------------------------
     def __repr__(self):

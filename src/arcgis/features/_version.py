@@ -57,7 +57,7 @@ class VersionManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<VersionManager @ {url}>".format(url=self._url)
+        return "< VersionManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -705,7 +705,8 @@ class Version(object):
                                The default is `False`.
         ==================     ====================================================================
 
-        :returns: Boolean
+        :returns: Boolean.
+        If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         """
         if self._mode == "edit":
@@ -1147,7 +1148,10 @@ class Version(object):
         import concurrent.futures
 
         tp = concurrent.futures.ThreadPoolExecutor(1)
-        future = tp.submit(fn=fn, **inputs)
+        try:
+            future = tp.submit(fn=fn, **inputs)
+        except:
+            future = tp.submit(fn, **inputs)
         tp.shutdown(False)
         return future
 

@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
@@ -9,7 +10,9 @@ class SystemManager(object):
     ArcGIS Mission Server site. Within this resource, you can access
     information and perform operations pertaining to licenses, Web
     Adaptors, containers, server properties, directories, Jobs, and the
-    configuration store.
+    configuration store. System Manager can be accessed via the
+    :attr:`~arcgis.gis.mission.MissionServer.system` property of
+    :class:`~arcgis.gis.mission.MissionServer` class
     """
 
     _url = None
@@ -41,11 +44,11 @@ class SystemManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<SystemManager @ {url}>".format(url=self._url)
+        return "< SystemManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<SystemManager @ {url}>".format(url=self._url)
+        return "< SystemManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -108,7 +111,9 @@ class SystemManager(object):
         """
         returns a list of web adapters
 
-        :return: List
+        :return:
+            :class:`~arcgis.gis.mission.WebAdaptorManager` object
+
         """
         if self._wam is None:
             url = self._url + "/webadaptors"
@@ -118,7 +123,12 @@ class SystemManager(object):
     # ----------------------------------------------------------------------
     @property
     def directories(self):
-        """Provides access to registering directories"""
+        """Provides access to registered directories
+
+        :return:
+            :class:`~arcgis.gis.mission._system.DirectoryManager`
+
+        """
         if self._dir is None:
             url = self._url + "/directories"
             self._dir = DirectoryManager(url=url, gis=self._gis)
@@ -144,7 +154,7 @@ class SystemManager(object):
         implementation is built on top of a file system and stores all the
         configurations in a hierarchy of folders and files.
 
-        :return: dict
+        :return: Dict
 
         """
         url = self._url + "/configStore"
@@ -155,7 +165,7 @@ class SystemManager(object):
 ########################################################################
 class DirectoryManager(object):
     """
-    A manages and maintains a collection of all server directories.
+    Manages and maintains a collection of all server directories.
     """
 
     _url = None
@@ -185,11 +195,11 @@ class DirectoryManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<DirectoryManager @ {url}>".format(url=self._url)
+        return "< DirectoryManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<DirectoryManager @ {url}>".format(url=self._url)
+        return "< DirectoryManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -229,7 +239,7 @@ class DirectoryManager(object):
         directory_type	       The type of directory. Values: DATA | WORKSPACE | OUTPUT
         ==================     ====================================================================
 
-        :return: boolean
+        :return: Boolean
 
         """
         params = {"f": "json", "name": name, "path": path, "type": directory_type}
@@ -251,7 +261,7 @@ class DirectoryManager(object):
         directory_id           Required String.  The directory ID to remove.
         ==================     ====================================================================
 
-        :return: boolean
+        :return: Boolean
 
         """
         params = {"f": "json"}
@@ -294,11 +304,11 @@ class WebAdaptorManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<WebAdapterManager @ {url}>".format(url=self._url)
+        return "<WebAdapterManager at {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<WebAdapterManager @ {url}>".format(url=self._url)
+        return "<WebAdapterManager at {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -400,9 +410,10 @@ class WebAdaptorManager(object):
     # ----------------------------------------------------------------------
     def list(self):
         """
-        Returns all registered Web Adapters
+        Returns all registered :class:`~arcgis.gis.mission._system.WebAdaptor`
 
         :return: List
+
         """
         url = self._url
         params = {"f": "json"}
@@ -470,17 +481,18 @@ class WebAdaptor(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<WebAdapter @ {url}>".format(url=self._url)
+        return "<WebAdapter at {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<WebAdapter @ {url}>".format(url=self._url)
+        return "<WebAdapter at {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def unregister(self):
         """
-        Unregisters a WebAdapter for the Mission Server
-        :return: boolean
+        Unregisters a :class:`~arcgis.gis.mission._system.WebAdaptor` for the Mission Server
+
+        :return: Boolean
         """
         url = self._url + "/unregister"
         params = {"f": "json"}

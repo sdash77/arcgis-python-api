@@ -69,5 +69,6 @@ class TestProfileManager(unittest.TestCase):
             pm.delete(DUMMY_PROFILE)
             assert DUMMY_PROFILE not in pm.list()
 
+
 if __name__ == "__main__":
     unittest.main()

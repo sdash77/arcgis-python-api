@@ -138,7 +138,7 @@ class FeatureLayer(Layer):
         value                   Required dict.
         ==================      ====================================================================
 
-        ..note::
+        .. note::
             When set, this overrides the default symbology when displaying it on a webmap.
 
         :return:
@@ -470,7 +470,7 @@ class FeatureLayer(Layer):
         :return:
             A JSON Dictionary
 
-        ..code-block:: python
+        .. code-block:: python
 
             # Example Usage
             FeatureLayer.generate_renderer(
@@ -504,7 +504,9 @@ class FeatureLayer(Layer):
             params["layer"] = self._dynamic_layer
         return self._con.post(path=url, postdata=params)
 
-    def _add_attachment(self, oid, file_path, keywords=None):
+    def _add_attachment(
+        self, oid, file_path, keywords=None, return_moment=False, version=None
+    ):
         """
         Adds an attachment to a feature service
 
@@ -519,6 +521,10 @@ class FeatureLayer(Layer):
                               value for the attachment. If the attachments have keywords enabled and
                               the layer also includes the attachmentFields property, you can use
                               it to understand properties like keywords field length.
+        -----------------     --------------------------------------------------------------------
+        return_moment         Optional bool. Specify whether the response will report the time
+                              attachments were added. If True, the server will return the time
+                              in the response's `editMoment` key. The default is False.
         =================     ====================================================================
 
         :return: A JSON Dictionary indicating 'success' or 'error'
@@ -527,7 +533,11 @@ class FeatureLayer(Layer):
         if (
             os.path.getsize(file_path) < 10e6
         ):  # (os.path.getsize(file_path) >> 20) <= 9:
-            params = {"f": "json"}
+            params = {
+                "f": "json",
+                "gdbVersion": version,
+                "returnEditMoment": return_moment,
+            }
             if self._gis.version > [7, 3] and keywords:
                 params["keywords"] = keywords
             if self._dynamic_layer:
@@ -539,7 +549,11 @@ class FeatureLayer(Layer):
             res = self._con.post(path=attach_url, postdata=params, files=files)
             return res
         else:
-            params = {"f": "json"}
+            params = {
+                "f": "json",
+                "gdbVersion": version,
+                "returnEditMoment": return_moment,
+            }
             if self._gis.version > [7, 3] and keywords:
                 params["keywords"] = keywords
             container = self.container
@@ -556,21 +570,44 @@ class FeatureLayer(Layer):
             return res
 
     # ----------------------------------------------------------------------
-    def _delete_attachment(self, oid, attachment_id):
+    def _delete_attachment(
+        self,
+        oid,
+        attachment_id,
+        return_moment=False,
+        rollback_on_failure=True,
+        version=None,
+    ):
         """
         Removes an attachment from a feature service feature
 
-        =================     ====================================================================
-        **Argument**          **Description**
-        -----------------     --------------------------------------------------------------------
-        oid                   Required string/integer. OBJECTID value to add attachment to.
-        -----------------     --------------------------------------------------------------------
-        attachment_id         Required integer. Id of the attachment to erase.
-        =================     ====================================================================
+        ===================     ====================================================================
+        **Argument**            **Description**
+        -------------------     --------------------------------------------------------------------
+        oid                     Required string/integer. OBJECTID value to add attachment to.
+        -------------------     --------------------------------------------------------------------
+        attachment_id           Required string. Ids of the attachment to erase.
+        -------------------     --------------------------------------------------------------------
+        return_moment           Optional boolean. Specify whether the response will report the time
+                                attachments were deleted. If True, the server will report the time
+                                in the response's `editMoment` key. The default value is False.
+        -------------------     --------------------------------------------------------------------
+        rollback_on_failure     Optional boolean. Specifies whether the edits should be applied
+                                only if all submitted edits succeed. If False, the server will apply
+                                the edits that succeed even if some of the submitted edits fail.
+                                If True, the server will apply the edits only if all edits succeed.
+                                The default value is true.
+        ===================     ====================================================================
 
         :return: dictionary
         """
-        params = {"f": "json", "attachmentIds": "%s" % attachment_id}
+        params = {
+            "f": "json",
+            "attachmentIds": attachment_id,
+            "gbdVersion": version,
+            "returnEditMoment": return_moment,
+            "rollbackOnFailure": rollback_on_failure,
+        }
         if self._dynamic_layer:
             url = self._url.split("?")[0] + "/%s/deleteAttachments" % oid
             params["layer"] = self._dynamic_layer
@@ -579,24 +616,35 @@ class FeatureLayer(Layer):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def _update_attachment(self, oid, attachment_id, file_path):
+    def _update_attachment(
+        self, oid, attachment_id, file_path, return_moment=False, version=None
+    ):
         """
         Updates an existing attachment with a new file
 
         =================     ====================================================================
         **Argument**          **Description**
         -----------------     --------------------------------------------------------------------
-        oid                   Required string/integer. OBJECTID value to add attachment to.
+        oid                   Required string. OBJECTID value to add attachment to.
         -----------------     --------------------------------------------------------------------
-        attachment_id         Required integer. Id of the attachment to erase.
+        attachment_id         Required string. Id of the attachment to erase.
         -----------------     --------------------------------------------------------------------
         file_path             Required string. Path to new attachment
+        -----------------     --------------------------------------------------------------------
+        return_moment         Optional boolean. Specify whether the response will report the time
+                              attachments were deleted. If True, the server will report the time
+                              in the response's `editMoment` key. The default value is False.
         =================     ====================================================================
 
         :return: dictionary
 
         """
-        params = {"f": "json", "attachmentId": "%s" % attachment_id}
+        params = {
+            "f": "json",
+            "attachmentId": attachment_id,
+            "returnEditMoment": return_moment,
+            "gbdVersion": version,
+        }
         files = {"attachment": file_path}
         if self._dynamic_layer is not None:
             url = self.url.split("?")[0] + f"/{oid}/updateAttachment"
@@ -963,19 +1011,19 @@ class FeatureLayer(Layer):
             from datetime import datetime as _datetime
 
             _fld_lu = {
-                "esriFieldTypeSmallInteger": np.int32,
-                "esriFieldTypeInteger": np.int64,
-                "esriFieldTypeSingle": float,
-                "esriFieldTypeDouble": float,
-                "esriFieldTypeFloat": float,
-                "esriFieldTypeString": str,
+                "esriFieldTypeSmallInteger": pd.Int32Dtype(),
+                "esriFieldTypeInteger": pd.Int32Dtype(),
+                "esriFieldTypeSingle": pd.Float64Dtype(),
+                "esriFieldTypeDouble": pd.Float64Dtype(),
+                "esriFieldTypeFloat": pd.Float64Dtype(),
+                "esriFieldTypeString": pd.StringDtype(),
                 "esriFieldTypeDate": _datetime,
-                "esriFieldTypeOID": np.int64,
+                "esriFieldTypeOID": pd.Int64Dtype(),
                 "esriFieldTypeGeometry": object,
                 "esriFieldTypeBlob": object,
                 "esriFieldTypeRaster": object,
-                "esriFieldTypeGUID": str,
-                "esriFieldTypeGlobalID": str,
+                "esriFieldTypeGUID": pd.StringDtype(),
+                "esriFieldTypeGlobalID": pd.StringDtype(),
                 "esriFieldTypeXML": object,
             }
 
@@ -1807,19 +1855,19 @@ class FeatureLayer(Layer):
             import pandas as pd
 
             _fld_lu = {
-                "esriFieldTypeSmallInteger": np.int32,
-                "esriFieldTypeInteger": np.int32,
-                "esriFieldTypeSingle": float,
-                "esriFieldTypeDouble": float,
-                "esriFieldTypeFloat": float,
-                "esriFieldTypeString": str,
+                "esriFieldTypeSmallInteger": pd.Int32Dtype(),
+                "esriFieldTypeInteger": pd.Int32Dtype(),
+                "esriFieldTypeSingle": pd.Float64Dtype(),
+                "esriFieldTypeDouble": pd.Float64Dtype(),
+                "esriFieldTypeFloat": pd.Float64Dtype(),
+                "esriFieldTypeString": pd.StringDtype(),
                 "esriFieldTypeDate": np.datetime64,
-                "esriFieldTypeOID": np.int64,
+                "esriFieldTypeOID": pd.Int64Dtype(),
                 "esriFieldTypeGeometry": object,
                 "esriFieldTypeBlob": object,
                 "esriFieldTypeRaster": object,
-                "esriFieldTypeGUID": str,
-                "esriFieldTypeGlobalID": str,
+                "esriFieldTypeGUID": pd.StringDtype(),
+                "esriFieldTypeGlobalID": pd.StringDtype(),
                 "esriFieldTypeXML": object,
             }
             columns = {}
@@ -2120,7 +2168,7 @@ class FeatureLayer(Layer):
 
         :return: Dictionary of the query results
 
-        ..code-block:: python
+        .. code-block:: python
             # The query results will return the related records for each objectIds
             # where TOWNSHIP is the outField and orderByField:
 
@@ -2305,14 +2353,14 @@ class FeatureLayer(Layer):
                                    not be returned.  This alters the output to be a tuple consisting of
                                    a (Boolean, Dictionary).
         ------------------------   --------------------------------------------------------------------
-        future                     Optional Boolean.  When true, the response is returned as a
-                                   :class:`~concurrent.futures.Future` object.
+        future                     Optional boolean. If True, a future object will be returned and the process
+                                   will not wait for the task to complete. The default is False, which means wait for results.
         ========================   ====================================================================
 
         :return:
             A boolean indicating success (True), or failure (False). When ``return_messages`` is True, the
             response messages will be return in addition to the boolean as a `tuple`.
-            If ``future`` = True, then the result is a `Future` object. Call ``result()`` to get the response.
+            If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         .. code-block:: python
 
@@ -2341,6 +2389,7 @@ class FeatureLayer(Layer):
                 "Append is not supported on this layer, please "
                 + "update service definition capabilities."
             )
+
         params = {
             "f": "json",
             "sourceTableName": source_table_name,
@@ -2357,6 +2406,14 @@ class FeatureLayer(Layer):
             "appendUploadFormat": upload_format,
             "rollbackOnFailure": rollback,
         }
+        if (
+            self._gis
+            and hasattr(self._gis, "_con")
+            and self._gis._con.token
+            and hasattr(self._gis, "_portal")
+            and self._gis._portal.is_arcgisonline == False
+        ):
+            params["token"] = self._gis._con.token
         if not upsert_matching_field is None:
             params["upsertMatchingField"] = upsert_matching_field
         if not skip_inserts is None:
@@ -2448,13 +2505,13 @@ class FeatureLayer(Layer):
                                    is returned per deleted row when the deleteFeatures operation is run.
                                    The default is true.
         ----------------------     --------------------------------------------------------------------
-        future                     Optional Boolean.  If future=True, then the operation will occur
-                                   asynchronously else the operation will occur synchronously.  False
-                                   is the default.
+        future                     Optional boolean. If True, a future object will be returned and the process
+                                   will not wait for the task to complete. The default is False, which means wait for results.
         ======================     ====================================================================
 
         :return:
-            A dictionary if future=False (default), else a :class:`~concurrent.futures.Future` object.
+            A dictionary if future=False (default), else If ``future = True``,
+            then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         .. code-block:: python
 
@@ -2540,7 +2597,7 @@ class FeatureLayer(Layer):
             time.sleep(2)
             future = executor.submit(
                 self._status_via_url,
-                *(self._con, res["statusUrl"], {"f": "json"}),
+                *(self._con, res["statusUrl"], {"f": "json"}, True),
             )
             executor.shutdown(False)
 
@@ -2566,7 +2623,7 @@ class FeatureLayer(Layer):
         return {}
 
     # ----------------------------------------------------------------------
-    def _status_via_url(self, con, url, params):
+    def _status_via_url(self, con, url, params, ignore_error=False):
         """
         performs the asynchronous check to see if the operation finishes
         """
@@ -2589,7 +2646,9 @@ class FeatureLayer(Layer):
             ]
         ]
         time.sleep(0.5)
-        status = con.get(url, params)
+        status = con.get(url, params, ignore_error_key=ignore_error)
+        if not "status" in status and ignore_error:
+            return status
         while (
             status["status"].lower() in status_allowed
             and status["status"].lower() != "completed"
@@ -2602,7 +2661,7 @@ class FeatureLayer(Layer):
                 break
             elif "error" in status["status"].lower():
                 break
-            status = con.get(url, params)
+            status = con.get(url, params, ignore_error_key=ignore_error)
         return status
 
     # ----------------------------------------------------------------------
@@ -2727,12 +2786,13 @@ class FeatureLayer(Layer):
                                     ===========     ===================================
 
         ---------------------   --------------------------------------------------------------------------------------
-        future                  Optional Boolean.  If `True` and the `FeatureLayer` has `supportsAsyncApplyEdits` set
-                                to `True`, then edits can be applied asynchronously.
+        future                  Optional Boolean.  If the `FeatureLayer` has `supportsAsyncApplyEdits` set
+                                to `True`, then edits can be applied asynchronously. If True, a future object will be returned and the process
+                                will not wait for the task to complete. The default is False, which means wait for results.
         =====================   ======================================================================================
 
         :return:
-            A dictionary by default, or :class:`~arcgis.features._async.EditFeatureJob` if `future=True`.
+            A dictionary by default, or If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         .. code-block:: python
 
@@ -2936,7 +2996,7 @@ class FeatureLayer(Layer):
                 res = self._con.post_multipart(path=edit_url, postdata=params)
                 future = executor.submit(
                     self._status_via_url,
-                    *(self._con, res["statusUrl"], {"f": "json"}),
+                    *(self._con, res["statusUrl"], {"f": "json"}, True),
                 )
                 executor.shutdown(False)
 
@@ -3016,9 +3076,10 @@ class FeatureLayer(Layer):
                                 `isDataBranchVersioned` property of the layer is
                                 true.
         ---------------------   ----------------------------------------------------
-        future                  Optional Boolean.  If True, the result is returned
-                                as a future object and the results are obtained in
-                                an asynchronous fashion.  False is the default.
+        future                  Optional boolean. If True, a future object will be
+                                returned and the process
+                                will not wait for the task to complete. The default is
+                                False, which means wait for results.
 
                                 **This applies to 10.8+ only**
 
@@ -3030,6 +3091,8 @@ class FeatureLayer(Layer):
              'updatedFeatureCount': 1,
              'success': True
              }
+
+            If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
         .. code-block:: python
 
@@ -3193,19 +3256,19 @@ class FeatureLayer(Layer):
             from datetime import datetime as _datetime
 
             _fld_lu = {
-                "esriFieldTypeSmallInteger": np.int32,
-                "esriFieldTypeInteger": np.int32,
-                "esriFieldTypeSingle": np.float64,
-                "esriFieldTypeDouble": np.float64,
-                "esriFieldTypeFloat": np.float64,
-                "esriFieldTypeString": str,
+                "esriFieldTypeSmallInteger": pd.Int32Dtype(),
+                "esriFieldTypeInteger": pd.Int32Dtype(),
+                "esriFieldTypeSingle": pd.Float64Dtype(),
+                "esriFieldTypeDouble": pd.Float64Dtype(),
+                "esriFieldTypeFloat": pd.Float64Dtype(),
+                "esriFieldTypeString": pd.StringDtype(),
                 "esriFieldTypeDate": object,
-                "esriFieldTypeOID": np.int64,
+                "esriFieldTypeOID": pd.Int64Dtype(),
                 "esriFieldTypeGeometry": object,
                 "esriFieldTypeBlob": object,
                 "esriFieldTypeRaster": object,
-                "esriFieldTypeGUID": str,
-                "esriFieldTypeGlobalID": str,
+                "esriFieldTypeGUID": pd.StringDtype(),
+                "esriFieldTypeGlobalID": pd.StringDtype(),
                 "esriFieldTypeXML": object,
             }
 
@@ -3676,19 +3739,19 @@ class Table(FeatureLayer):
             import pandas as pd
 
             _fld_lu = {
-                "esriFieldTypeSmallInteger": np.int32,
-                "esriFieldTypeInteger": np.int64,
-                "esriFieldTypeSingle": float,
-                "esriFieldTypeDouble": float,
-                "esriFieldTypeFloat": float,
-                "esriFieldTypeString": str,
+                "esriFieldTypeSmallInteger": pd.Int32Dtype(),
+                "esriFieldTypeInteger": pd.Int32Dtype(),
+                "esriFieldTypeSingle": pd.Float64Dtype(),
+                "esriFieldTypeDouble": pd.Float64Dtype(),
+                "esriFieldTypeFloat": pd.Float64Dtype(),
+                "esriFieldTypeString": pd.StringDtype(),
                 "esriFieldTypeDate": np.datetime64,
-                "esriFieldTypeOID": np.int64,
+                "esriFieldTypeOID": pd.Int64Dtype(),
                 "esriFieldTypeGeometry": object,
                 "esriFieldTypeBlob": object,
                 "esriFieldTypeRaster": object,
-                "esriFieldTypeGUID": str,
-                "esriFieldTypeGlobalID": str,
+                "esriFieldTypeGUID": pd.StringDtype(),
+                "esriFieldTypeGlobalID": pd.StringDtype(),
                 "esriFieldTypeXML": object,
             }
             columns = {}

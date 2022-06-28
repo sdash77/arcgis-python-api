@@ -33,7 +33,7 @@ class SurveyManager:
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<SurveyManager @ {iid}>".format(iid=self._gis._url)
+        return "< SurveyManager @ {iid} >".format(iid=self._gis._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):

@@ -7,14 +7,14 @@ from arcgis.gis import GIS
 class TestCostEstimation(unittest.TestCase):
     def test_cost_estimation_all_nones(self):
         gis = GIS(
-            profile='your_online_profile', verify_cert=False, proxy=detect_proxy(True)
+            profile="your_online_profile", verify_cert=False, proxy=detect_proxy(True)
         )
         cost = gis.content.cost()
-        assert cost['transactionCreditCost'] == 0.0
+        assert cost["transactionCreditCost"] == 0.0
 
     def test_cost_estimation_enterprise(self):
         gis = GIS(
-            profile='your_enterprise_profile',
+            profile="your_enterprise_profile",
             verify_cert=False,
             proxy=detect_proxy(True),
         )
@@ -22,7 +22,7 @@ class TestCostEstimation(unittest.TestCase):
 
     def test_cost_estimation(self):
         gis = GIS(
-            profile='your_online_profile', verify_cert=False, proxy=detect_proxy(True)
+            profile="your_online_profile", verify_cert=False, proxy=detect_proxy(True)
         )
         assert gis.content.cost(
             tile_storage=None,

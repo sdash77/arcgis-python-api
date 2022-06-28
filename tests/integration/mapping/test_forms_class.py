@@ -384,7 +384,7 @@ class Test_Forms(unittest.TestCase):
             self.assertEqual(form.elements[0].description, "test")
             self.assertEqual(form.elements[0].hint, "the name")
             self.assertEqual(form.elements[0].editable, True)
-            self.assertEqual(form.elements[0].input_type, "text-box")
+            self.assertEqual(form.elements[0].input_type["type"], "text-box")
             with self.assertRaises(ValueError):
                 form_element.field_name = "blah"
 
@@ -454,14 +454,14 @@ class Test_Forms(unittest.TestCase):
                 label="Facility Name", field_name="facname", input_type="text-area"
             )
             form.add(form_element)
-            self.assertEqual(form.elements[0].input_type, "text-area")
+            self.assertEqual(form.elements[0].input_type["type"], "text-area")
 
             # integer - no cvd
             form_element = FormFieldElement(
                 label="Shelter Capacity", field_name="sheltcap", input_type="text-area"
             )
             form.add(form_element)
-            self.assertEqual(form.elements[1].input_type, "text-area")
+            self.assertEqual(form.elements[1].input_type["type"], "text-area")
 
             # string - with cvd
             form_element = FormFieldElement(
@@ -470,14 +470,25 @@ class Test_Forms(unittest.TestCase):
                 input_type="radio-buttons",
             )
             form.add(form_element)
-            self.assertEqual(form.elements[2].input_type, "radio-buttons")
+            self.assertEqual(form.elements[2].input_type["type"], "radio-buttons")
 
             # integer - with cvd
             form_element = FormFieldElement(
                 label="Facility Type", field_name="factype", input_type="radio-buttons"
             )
             form.add(form_element)
-            self.assertEqual(form.elements[3].input_type, "radio-buttons")
+            self.assertEqual(form.elements[3].input_type["type"], "radio-buttons")
+
+            # input type with additional options
+            form_element = FormFieldElement(
+                label="Facility Type",
+                field_name="sheltcurpop",
+                input_type={"type": "text-box", "minLength": 5, "maxLength": 100},
+            )
+            form.add(form_element)
+            self.assertEqual(form.elements[4].input_type["type"], "text-box")
+            self.assertEqual(form.elements[4].input_type["minLength"], 5)
+            self.assertEqual(form.elements[4].input_type["maxLength"], 100)
 
         except AssertionError as assertErrorException:
             raise assertErrorException
@@ -536,14 +547,19 @@ class Test_Forms(unittest.TestCase):
             )
             self.assertEqual(expression.expression, "test")
             self.assertEqual(expression.title, "New Expression")
+            self.assertEqual(expression.return_type, "boolean")
             expression.title = "New Expression 2"
             self.assertEqual(expression.title, "New Expression 2")
             with self.assertRaises(ValueError):
                 expression.name = None
             self.assertEqual(expression.return_type, "boolean")
             expression_2 = FormExpressionInfo(
-                title="New Expression 3", name="expr1", expression="test"
+                title="New Expression 3",
+                name="expr1",
+                expression="test",
+                return_type="boolean",
             )
+            self.assertEqual(expression_2.return_type, "boolean")
             el = FormFieldElement(
                 label="test",
                 field_name="facname",
@@ -551,8 +567,6 @@ class Test_Forms(unittest.TestCase):
                 required_expression=expression_2,
             )
             form.add(el)
-            self.assertEqual(len(form.expressions), 0)
-            print(form)
             self.assertEqual(len(form.expressions), 2)
 
         except AssertionError as assertErrorException:
@@ -590,6 +604,96 @@ class Test_Forms(unittest.TestCase):
                 1, len(new_wm.layers[0]["formInfo"]["formElements"][0]["formElements"])
             )
             self.assertEqual(1, len(new_wm.layers[0]["formInfo"]["expressionInfos"]))
+
+        except AssertionError as assertErrorException:
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    @unittest.skipIf(
+        test_skip, "Test condition not met. Check if old outputs are present"
+    )
+    def test_form_value_expression(self):
+        try:
+            form = self.forms.get(title="Shelters")
+            expression = FormExpressionInfo(
+                title="New Value Expression",
+                name="expr0",
+                expression="test",
+                return_type="string",
+            )
+            self.assertEqual(expression.expression, "test")
+            self.assertEqual(expression.title, "New Value Expression")
+            self.assertEqual(expression.return_type, "string")
+            el = FormFieldElement(
+                label="test",
+                field_name="facname",
+                value_expression=expression,
+                editable=False,
+            )
+            form.add(el)
+            self.assertEqual(len(form.expressions), 1)
+            self.assertEqual(
+                form.to_dict()["formElements"][0]["valueExpression"], "expr0"
+            )
+            self.assertEqual(form.to_dict()["expressionInfos"][0]["name"], "expr0")
+            self.assertEqual(
+                form.to_dict()["expressionInfos"][0]["returnType"], "string"
+            )
+            self.assertEqual(form.to_dict()["expressionInfos"][0]["expression"], "test")
+            self.assertEqual(
+                form.to_dict()["expressionInfos"][0]["title"], "New Value Expression"
+            )
+
+        except AssertionError as assertErrorException:
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+    @unittest.skipIf(
+        test_skip, "Test condition not met. Check if old outputs are present"
+    )
+    def test_form_editable_expression(self):
+        try:
+            form = self.forms.get(title="Shelters")
+            expression = FormExpressionInfo(
+                title="New Editable Expression",
+                name="expr0",
+                expression="return true",
+                return_type="boolean",
+            )
+            self.assertEqual(expression.expression, "return true")
+            self.assertEqual(expression.title, "New Editable Expression")
+            self.assertEqual(expression.return_type, "boolean")
+            el = FormFieldElement(
+                label="test",
+                field_name="facname",
+                editable_expression=expression,
+                editable=False,
+            )
+            form.add(el)
+            self.assertEqual(len(form.expressions), 1)
+            self.assertEqual(
+                form.to_dict()["formElements"][0]["editableExpression"], "expr0"
+            )
+            self.assertEqual(form.to_dict()["expressionInfos"][0]["name"], "expr0")
+            self.assertEqual(
+                form.to_dict()["expressionInfos"][0]["returnType"], "boolean"
+            )
+            self.assertEqual(
+                form.to_dict()["expressionInfos"][0]["expression"], "return true"
+            )
+            self.assertEqual(
+                form.to_dict()["expressionInfos"][0]["title"], "New Editable Expression"
+            )
 
         except AssertionError as assertErrorException:
             raise assertErrorException
@@ -714,7 +818,33 @@ class Test_Forms(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
+    @unittest.skipIf(
+        test_skip, "Test condition not met. Check if old outputs are present"
+    )
+    def test_kwargs_serialization(self):
+        try:
+            form = self.forms.get(title="Shelters")
+            form.add_field(
+                field_name="facname", label="Facility Name", customArg={"name": "test"}
+            )
+            print(form.to_dict())
+            self.assertEqual(
+                form.to_dict()["formElements"][0]["customArg"]["name"], "test"
+            )
+            form.add_group(label="Facility Name", customArg={"name": "test2"})
+            self.assertEqual(
+                form.to_dict()["formElements"][1]["customArg"]["name"], "test2"
+            )
 
-# TestModule
-def tearDownModule():
-    print("**End GIS module Tests**")
+        except AssertionError as assertErrorException:
+            raise assertErrorException
+
+        except unittest.SkipTest as skipException:
+            raise skipException
+
+        except Exception as testException:
+            self.fail("Error during test: " + testException.__str__())
+
+
+if __name__ == "__main__":
+    unittest.main()

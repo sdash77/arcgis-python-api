@@ -10,6 +10,8 @@ recommended that this resource be accessed over HTTPS protocol.
 from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer
+from arcgis.gis import GIS
+from typing import Optional
 
 ########################################################################
 class Security(BaseServer):
@@ -32,7 +34,7 @@ class Security(BaseServer):
     _um = None
     _rm = None
     # ----------------------------------------------------------------------
-    def __init__(self, url, gis, initialize=False):
+    def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """Constructor
 
         ==================     ====================================================================
@@ -55,7 +57,7 @@ class Security(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def users(self):
+    def users(self) -> "UserManager":
         """
         Gets an object to control/manage users.
         """
@@ -65,7 +67,7 @@ class Security(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def roles(self):
+    def roles(self) -> "RoleManager":
         """
         Gets an object to manage a site's roles.
         """
@@ -74,7 +76,7 @@ class Security(BaseServer):
         return self._rm
 
     # ----------------------------------------------------------------------
-    def disable_primary_site_administrator(self):
+    def disable_primary_site_administrator(self) -> bool:
         """
         Use this operation to disable login privileges for the
         primary site administrator account. This operation can only be
@@ -105,7 +107,7 @@ class Security(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def primary_site_administrator_status(self):
+    def primary_site_administrator_status(self) -> dict:
         """
         Gets the disabled status of the primary site administrator account.
         """
@@ -114,7 +116,7 @@ class Security(BaseServer):
         return self._con.get(path=u_url, params=params)
 
     # ----------------------------------------------------------------------
-    def update_primary_site_administrator(self, username, password):
+    def update_primary_site_administrator(self, username: str, password: str) -> dict:
         """
         Updates account properties of the primary site administrator
 
@@ -180,7 +182,7 @@ class UserManager(BaseServer):
     _json = None
     _rm = None
     # ----------------------------------------------------------------------
-    def __init__(self, url, gis, initialize=False):
+    def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """
         Constructor
 
@@ -203,16 +205,16 @@ class UserManager(BaseServer):
             self._init(gis)
 
     # ----------------------------------------------------------------------
-    def __str__(self):
+    def __str__(self) -> str:
         return "<%s at %s>" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<%s at %s>" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     @property
-    def me(self):
+    def me(self) -> str:
         """
         Gets the user object as the current logged in user. If the username
         cannot be found, for example, the site administrator account, then
@@ -224,7 +226,14 @@ class UserManager(BaseServer):
         return res[0]
 
     # ----------------------------------------------------------------------
-    def create(self, username, password, fullname=None, description=None, email=None):
+    def create(
+        self,
+        username: str,
+        password: str,
+        fullname: Optional[str] = None,
+        description: Optional[str] = None,
+        email: Optional[str] = None,
+    ) -> dict:
         """
         Adds a user account to the user store.
 
@@ -268,7 +277,7 @@ class UserManager(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def _get_user_privileges(self, username):
+    def _get_user_privileges(self, username: str) -> dict:
         """
         Returns the privilege associated with a user.
 
@@ -287,7 +296,12 @@ class UserManager(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def _get_user_roles(self, username, user_filter=None, max_count=None):
+    def _get_user_roles(
+        self,
+        username: str,
+        user_filter: Optional[str] = None,
+        max_count: Optional[int] = None,
+    ) -> dict:
         """
         This operation returns a list of role names that have been
         assigned to a particular user account.
@@ -320,7 +334,7 @@ class UserManager(BaseServer):
         return self._con.post(path=u_url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def _list_users(self, start_index=0, page_size=10):
+    def _list_users(self, start_index: int = 0, page_size: int = 10) -> dict:
         """
         This operation gives you a pageable view of users in the user
         store. It is intended for iterating over all available user
@@ -348,7 +362,7 @@ class UserManager(BaseServer):
         return self._con.post(path=u_url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def _remove_roles_from_user(self, username, roles):
+    def _remove_roles_from_user(self, username: str, roles: str) -> bool:
         """
         This operation removes roles that have been previously assigned
         to a user account. This operation is supported only when the
@@ -375,7 +389,7 @@ class UserManager(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def _delete_user(self, username):
+    def _delete_user(self, username: str) -> bool:
         """
         Removes an existing user account from the user store. This operation is
         available only when the user store is a read-write store, such as the default
@@ -400,7 +414,7 @@ class UserManager(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def _remove_users_from_role(self, rolename, users):
+    def _remove_users_from_role(self, rolename: str, users: str) -> bool:
         """
            Removes a role assignment from multiple users.
 
@@ -426,7 +440,7 @@ class UserManager(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def search(self, username, max_results=25):
+    def search(self, username: str, max_results: int = 25) -> list:
         """
         You can use this operation to search a specific user or a group of
         users from the user store. The size of the search result can be
@@ -455,7 +469,7 @@ class UserManager(BaseServer):
         return users
 
     # ----------------------------------------------------------------------
-    def get(self, username):
+    def get(self, username: str) -> "User":
         """
         Finds a specific user.
 
@@ -475,14 +489,14 @@ class UserManager(BaseServer):
         return res[0]
 
     @property
-    def roles(self):
+    def roles(self) -> "RoleManager":
         """Helper object to manage custom roles for users"""
         if self._rm is None:
             self._rm = RoleManager(self._url, gis=self._con)
         return self._rm
 
     # ----------------------------------------------------------------------
-    def _find_users(self, criteria=None, max_count=10):
+    def _find_users(self, criteria: Optional[str] = None, max_count: int = 10) -> dict:
         """
         You can use this operation to search a specific user or a group
         of users from the user store. The size of the search result can
@@ -510,8 +524,13 @@ class UserManager(BaseServer):
 
     # ----------------------------------------------------------------------
     def _update_user(
-        self, username, password=None, fullname=None, description=None, email=None
-    ):
+        self,
+        username: str,
+        password: Optional[str] = None,
+        fullname: Optional[str] = None,
+        description: Optional[str] = None,
+        email: Optional[str] = None,
+    ) -> dict:
         """
         Updates a user account in the user store.
 
@@ -557,7 +576,7 @@ class User(dict):
     _security = None
     _user_dict = None
     # ----------------------------------------------------------------------
-    def __init__(self, usermanager, user_dict):
+    def __init__(self, usermanager: UserManager, user_dict: dict):
         """Constructor"""
         dict.__init__(self)
         if usermanager is None or user_dict is None:
@@ -569,7 +588,7 @@ class User(dict):
         self.__dict__.update(self._user_dict)
 
     # ----------------------------------------------------------------------
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> object:
         try:
             return dict.__getitem__(self, name)
         except:
@@ -579,15 +598,15 @@ class User(dict):
 
     # ----------------------------------------------------------------------
     def __getitem__(
-        self, k
-    ):  # support user attributes as dictionary keys on this object, eg. user['role']
+        self, k: str
+    ) -> object:  # support user attributes as dictionary keys on this object, eg. user['role']
         try:
             return dict.__getitem__(self, k)
         except KeyError:
             return self.__dict__[k]
 
     # ----------------------------------------------------------------------
-    def __str__(self):
+    def __str__(self) -> str:
         state = [
             "   %s=%r" % (attribute, value)
             for (attribute, value) in self.__dict__.items()
@@ -595,11 +614,11 @@ class User(dict):
         return "\n".join(state)
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<%s username:%s>" % (type(self).__name__, self.username)
 
     # ----------------------------------------------------------------------
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         fullName = "Not Provided"
         email = "Not Provided"
         description = "Not Provided"
@@ -646,7 +665,13 @@ class User(dict):
         )
 
     # ----------------------------------------------------------------------
-    def update(self, password=None, full_name=None, description=None, email=None):
+    def update(
+        self,
+        password: Optional[str] = None,
+        full_name: Optional[str] = None,
+        description: Optional[str] = None,
+        email: Optional[str] = None,
+    ) -> bool:
         """
         Updates this user account in the user store.
 
@@ -681,7 +706,7 @@ class User(dict):
         return res
 
     # ----------------------------------------------------------------------
-    def add_role(self, role_name):
+    def add_role(self, role_name: str) -> dict:
         """
         Use this operation to assign roles to a user account when
         working with a user and role store that supports reads and writes.
@@ -704,7 +729,7 @@ class User(dict):
         )
 
     # ----------------------------------------------------------------------
-    def delete(self):
+    def delete(self) -> bool:
         """
         Deletes this user account.
 
@@ -742,7 +767,7 @@ class RoleManager(BaseServer):
     _json_dict = None
     _json = None
     # ----------------------------------------------------------------------
-    def __init__(self, url, gis, initialize=False):
+    def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """
         Constructor
 
@@ -765,15 +790,15 @@ class RoleManager(BaseServer):
             self._init(gis)
 
     # ----------------------------------------------------------------------
-    def __str__(self):
+    def __str__(self) -> str:
         return "<%s at %s>" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<%s at %s>" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
-    def create(self, name, description=""):
+    def create(self, name: str, description: Optional[str] = None) -> bool:
         """
         Adds a role to the role store. This operation is available only
         when the role store is a read-write store such as the default
@@ -795,6 +820,8 @@ class RoleManager(BaseServer):
         :return:
             A JSON message as dictionary
         """
+        if description is None:
+            description = ""
         params = {"f": "json", "rolename": name, "description": description}
         a_url = self._url + "/roles/add"
         res = self._con.post(path=a_url, postdata=params)
@@ -803,7 +830,7 @@ class RoleManager(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def _add_users_to_role(self, rolename, users):
+    def _add_users_to_role(self, rolename: str, users: str) -> bool:
         """
         Assigns a role to multiple users.
 
@@ -829,7 +856,7 @@ class RoleManager(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def _assign_privilege(self, rolename, privilege="ACCESS"):
+    def _assign_privilege(self, rolename: str, privilege: str = "ACCESS") -> bool:
         """
         Assigns a privilege to the desired role.
 
@@ -871,7 +898,7 @@ class RoleManager(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def _assign_roles(self, username, roles):
+    def _assign_roles(self, username: str, roles: str) -> bool:
         """
         Assigns one or more roles to a user account. The role store must aloow read
         and write edits.
@@ -902,7 +929,7 @@ class RoleManager(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def _get_privilege_for_role(self, rolename):
+    def _get_privilege_for_role(self, rolename: str) -> dict:
         """
         Returns the privilege associated with a role.
 
@@ -922,7 +949,7 @@ class RoleManager(BaseServer):
         return self._con.post(path=pURL, postdata=params)
 
     # ----------------------------------------------------------------------
-    def _get_user_privileges(self, username):
+    def _get_user_privileges(self, username: str) -> dict:
         """
         Returns the privilege associated with a user. This operation tests all the roles to which the
         user belongs and returns the highest privilege.
@@ -943,7 +970,7 @@ class RoleManager(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def all(self, start_index=0, page_size=10):
+    def all(self, start_index: int = 0, page_size: int = 10) -> list:
         """
         This operation gives you a pageable view of roles in the role
         store. It is intended for iterating through all available role
@@ -975,7 +1002,7 @@ class RoleManager(BaseServer):
         return roles
 
     # ----------------------------------------------------------------------
-    def _get_roles_by_privilege(self, privilege):
+    def _get_roles_by_privilege(self, privilege: str) -> dict:
         """
         Returns all roles that are at the declared privilege level.
 
@@ -995,7 +1022,12 @@ class RoleManager(BaseServer):
         return self._con.post(path=u_url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def _get_user_roles(self, username, user_filter=None, max_count=None):
+    def _get_user_roles(
+        self,
+        username: str,
+        user_filter: Optional[str] = None,
+        max_count: Optional[int] = None,
+    ) -> dict:
         """
         Supplies a list of roles that have been assigned to a particular user account.
 
@@ -1026,7 +1058,12 @@ class RoleManager(BaseServer):
         return self._con.post(path=u_url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def _get_users_within_role(self, rolename, user_filter=None, max_count=20):
+    def _get_users_within_role(
+        self,
+        rolename: str,
+        user_filter: Optional[str] = None,
+        max_count: int = 20,
+    ) -> dict:
         """
         You can use this operation to conveniently see all the user
         accounts to whom this role has been assigned.
@@ -1055,7 +1092,7 @@ class RoleManager(BaseServer):
         return self._con.post(path=u_url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def _delete_role(self, rolename):
+    def _delete_role(self, rolename: str) -> dict:
         """
         Removes an existing role from the role store. This operation is
         available only when the role store is a read-write store such as
@@ -1080,7 +1117,7 @@ class RoleManager(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def _remove_roles_from_user(self, username, roles):
+    def _remove_roles_from_user(self, username: str, roles: str) -> bool:
         """
         This operation removes roles that have been previously assigned
         to a user account. This operation is supported only when the
@@ -1107,7 +1144,7 @@ class RoleManager(BaseServer):
         return res
 
     # ----------------------------------------------------------------------
-    def _remove_users_from_role(self, rolename, users):
+    def _remove_users_from_role(self, rolename: str, users: str) -> bool:
         """
         Removes a role assignment from multiple users.
 
@@ -1133,7 +1170,7 @@ class RoleManager(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def count(self):
+    def count(self) -> dict:
         """
         Gets the number of roles for ArcGIS Server.
         """
@@ -1142,7 +1179,7 @@ class RoleManager(BaseServer):
         return self._con.get(path=u_url, params=params)
 
     # ----------------------------------------------------------------------
-    def get_role(self, role_id=None, max_count=10):
+    def get_role(self, role_id: Optional[str] = None, max_count: int = 10) -> list:
         """
         Use this operation to search a specific role or a group
         of roles from the role store.
@@ -1172,7 +1209,7 @@ class RoleManager(BaseServer):
         return roles
 
     # ----------------------------------------------------------------------
-    def _update_role(self, rolename, description):
+    def _update_role(self, rolename: str, description: str) -> bool:
         """
         Updates a role description in the role store
 
@@ -1208,7 +1245,7 @@ class Role(dict):
     _roledict = None
     _security = None
     # ----------------------------------------------------------------------
-    def __init__(self, rolemanager, roledict):
+    def __init__(self, rolemanager: RoleManager, roledict: dict):
         """Constructor"""
         dict.__init__(self)
         if rolemanager is None or roledict is None:
@@ -1218,7 +1255,7 @@ class Role(dict):
         self.__dict__.update(self._roledict)
 
     # ----------------------------------------------------------------------
-    def __getattr__(self, name):
+    def __getattr__(self, name: str) -> object:
         try:
             return dict.__getitem__(self, name)
         except:
@@ -1228,15 +1265,15 @@ class Role(dict):
 
     # ----------------------------------------------------------------------
     def __getitem__(
-        self, k
-    ):  # support user attributes as dictionary keys on this object, eg. user['role']
+        self, k: str
+    ) -> object:  # support user attributes as dictionary keys on this object, eg. user['role']
         try:
             return dict.__getitem__(self, k)
         except KeyError:
             return self.__dict__[k]
 
     # ----------------------------------------------------------------------
-    def __str__(self):
+    def __str__(self) -> str:
         state = [
             "   %s=%r" % (attribute, value)
             for (attribute, value) in self.__dict__.items()
@@ -1244,11 +1281,11 @@ class Role(dict):
         return "\n".join(state)
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<%s rolename:%s>" % (type(self).__name__, self.rolename)
 
     # ----------------------------------------------------------------------
-    def update(self, description=None):
+    def update(self, description: Optional[str] = None) -> dict:
         """
         Updates this role in the role store with new information. This
         operation is available only when the role store is a read-write
@@ -1273,7 +1310,7 @@ class Role(dict):
         return res
 
     # ----------------------------------------------------------------------
-    def delete(self):
+    def delete(self) -> bool:
         """
         Deletes this current role.
 
@@ -1286,7 +1323,7 @@ class Role(dict):
         return True
 
     # ----------------------------------------------------------------------
-    def set_privileges(self, privilage):
+    def set_privileges(self, privilage: str) -> bool:
         """
         Assigns a privilege to this role.
 
@@ -1327,7 +1364,7 @@ class Role(dict):
         )
 
     # ----------------------------------------------------------------------
-    def grant(self, username):
+    def grant(self, username: str) -> bool:
         """
         Adds a user to this role.
 

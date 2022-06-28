@@ -1,4 +1,4 @@
-set TRACKER_PATH=\\DEV0000935\Build\tracking-engine\win_py%PY_VER%
+set TRACKER_PATH=\\DEV0000935\build_files\tracking-engine\win_py%PY_VER%
 ECHO Getting tracker artifacts from %TRACKER_PATH%
 if not exist arcgis\learn\_tracking mkdir arcgis\learn\_tracking
 copy %TRACKER_PATH%\_track_processor.pyd arcgis\learn\_tracking\_track_processor.pyd /Y

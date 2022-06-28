@@ -184,15 +184,18 @@ class MyFasterRCNN:
         # torchvision FasterRCNN model gives losses only on training mode that is why set your model in train mode
         # such that you can get losses for your validation datset as well after each epoch.
         train = kwargs.get("train")
+        learn.model.train()
         if train:
             self.model.roi_heads.train_val = False
+            self.model.rpn.train_val = False
             self.model.train_val = False
             self.model.transform.train_val = False
         else:
+            learn.model.backbone.eval()  # to get feature in eval mode for evaluation
             self.model.roi_heads.train_val = True
+            self.model.rpn.train_val = True
             self.model.train_val = True
             self.model.transform.train_val = True
-        learn.model.train()
 
         target_list = []
 
@@ -256,6 +259,7 @@ class MyFasterRCNN:
         xb - tensor with shape [N, C, H, W]
         """
         self.model.roi_heads.train_val = False
+        self.model.rpn.train_val = False
         self.model.train_val = False
         self.model.transform.train_val = False
         self.nms_thres = self.model.roi_heads.nms_thresh
@@ -279,6 +283,7 @@ class MyFasterRCNN:
     def transform_input_multispectral(self, xb, thresh=0.5, nms_overlap=0.1):
 
         self.model.roi_heads.train_val = False
+        self.model.rpn.train_val = False
         self.model.train_val = False
         self.model.transform.train_val = False
         self.nms_thres = self.model.roi_heads.nms_thresh
@@ -367,6 +372,8 @@ def forward_roi(self, features, proposals, image_shapes, targets=None):
             assert t["labels"].dtype == torch.int64, "target labels must of int64 type"
 
     if self.training:
+        if train_val:
+            original_prpsl = [p.clone() for p in proposals]
         (
             proposals,
             matched_idxs,
@@ -395,9 +402,17 @@ def forward_roi(self, features, proposals, image_shapes, targets=None):
         }
     if not self.training or train_val:
 
-        boxes, scores, labels = self.postprocess_detections(
-            class_logits, box_regression, proposals, image_shapes
-        )
+        if train_val:
+            box_features = self.box_roi_pool(features, original_prpsl, image_shapes)
+            box_features = self.box_head(box_features)
+            class_logits, box_regression = self.box_predictor(box_features)
+            boxes, scores, labels = self.postprocess_detections(
+                class_logits, box_regression, original_prpsl, image_shapes
+            )
+        else:
+            boxes, scores, labels = self.postprocess_detections(
+                class_logits, box_regression, proposals, image_shapes
+            )
         num_images = len(boxes)
         for i in range(num_images):
             result.append(
@@ -427,6 +442,28 @@ def postprocess_transform(self, result, image_shapes, original_image_sizes):
         return result
 
     return result
+
+
+def post_nms_top_n(self):
+
+    train_val = getattr(self, "train_val", False)
+
+    if train_val:
+        return self._post_nms_top_n["testing"]
+    elif self.training:
+        return self._post_nms_top_n["training"]
+    return self._post_nms_top_n["testing"]
+
+
+def pre_nms_top_n(self):
+
+    train_val = getattr(self, "train_val", False)
+
+    if train_val:
+        self._pre_nms_top_n["testing"]
+    elif self.training:
+        return self._pre_nms_top_n["training"]
+    return self._pre_nms_top_n["testing"]
 
 
 if HAS_FASTAI:
@@ -561,6 +598,12 @@ class FasterRCNN(ModelExtension):
         self.learn.model.transform.postprocess = types.MethodType(
             postprocess_transform, self.learn.model.transform
         )
+        self.learn.model.rpn.post_nms_top_n = types.MethodType(
+            post_nms_top_n, self.learn.model.rpn
+        )
+        self.learn.model.rpn.pre_nms_top_n = types.MethodType(
+            pre_nms_top_n, self.learn.model.rpn
+        )
         self.learn.metrics = [AveragePrecision(self, data.c - 1)]
         idx = self._freeze()
         self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
@@ -599,7 +642,7 @@ class FasterRCNN(ModelExtension):
 
     @staticmethod
     def _supported_backbones():
-        timm_models = filter_timm_models()
+        timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         return [*_resnet_family] + timm_backbones
 

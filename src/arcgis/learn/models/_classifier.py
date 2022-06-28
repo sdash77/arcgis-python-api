@@ -209,7 +209,7 @@ class FeatureClassifier(ArcGISModel):
 
                 class MultLabelFbetaModified(MultiLabelFbeta):
                     def fbeta_score(self, precision, recall):
-                        beta2 = self.beta ** 2
+                        beta2 = self.beta**2
                         fbeta = (
                             (1 + beta2)
                             * (precision * recall)
@@ -294,7 +294,7 @@ class FeatureClassifier(ArcGISModel):
 
     @staticmethod
     def _supported_backbones():
-        timm_models = filter_timm_models()
+        timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         return [*_resnet_family, models.mobilenet_v2.__name__] + timm_backbones
 

@@ -1,16 +1,6 @@
 """
 Holds Delegate and Accessor Logic
 """
-from arcgis.auth.tools import LazyLoader
-
-os = LazyLoader("os")
-copy = LazyLoader("copy")
-uuid = LazyLoader("uuid")
-shutil = LazyLoader("shutil")
-datetime = LazyLoader("datetime")
-np = LazyLoader("numpy")
-tempfile = LazyLoader("tempfile")
-warnings = LazyLoader("warnings")
 import logging
 import pandas as pd
 from collections.abc import Iterable
@@ -22,7 +12,16 @@ from ._io.fileops import (
     _sanitize_column_names,
     read_feather,
 )
+from arcgis.auth.tools import LazyLoader
 
+os = LazyLoader("os")
+copy = LazyLoader("copy")
+uuid = LazyLoader("uuid")
+shutil = LazyLoader("shutil")
+datetime = LazyLoader("datetime")
+np = LazyLoader("numpy")
+tempfile = LazyLoader("tempfile")
+warnings = LazyLoader("warnings")
 _geometry = LazyLoader("arcgis.geometry")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
 _isd = LazyLoader("arcgis._impl.common._isd")
@@ -1330,6 +1329,61 @@ class GeoAccessor(object):
                 ).format(view_box, width, height, transform, svg)
         return
 
+    # ----------------------------------------------------------------------
+    @staticmethod
+    def from_parquet(path: str, columns: list = None, **kwargs) -> pd.DataFrame:
+        """
+        Load a Parquet object from the file path, returning a Spatially Enabled DataFrame.
+
+        You can read a subset of columns in the file using the ``columns`` parameter.
+        However, the structure of the returned Spatially Enabled DataFrame will depend on which
+        columns you read:
+
+        * if no geometry columns are read, this will raise a ``ValueError`` - you
+          should use the pandas `read_parquet` method instead.
+        * if the primary geometry column saved to this file is not included in
+          columns, the first available geometry column will be set as the geometry
+          column of the returned Spatially Enabled DataFrame.
+
+        Requires 'pyarrow'.
+
+        .. versionadded:: arcgis 1.9
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        path                   Required String. path object
+        ------------------     --------------------------------------------------------------------
+        columns                Optional List[str]. The defaulti s `None`. If not None, only these
+                               columns will be read from the file.  If the primary geometry column
+                               is not included, the first secondary geometry read from the file will
+                               be set as the geometry column of the returned Spatially Enabled
+                               DataFrame.  If no geometry columns are present, a ``ValueError``
+                               will be raised.
+        ------------------     --------------------------------------------------------------------
+        **kwargs               Optional dict. Any additional kwargs that can be given to the
+                               `pyarrow.parquet.read_table` method.
+        ==================     ====================================================================
+
+
+
+        :returns: Spatially Enabled DataFrame
+
+        Examples
+        --------
+        >>> df = pd.DataFrame.spatial.read_parquet("data.parquet")  # doctest: +SKIP
+
+        Specifying columns to read:
+
+        >>> df = pd.DataFrame.spatial.read_parquet(
+        ...     "data.parquet",
+        ...     columns=["SHAPE", "pop_est"]
+        ... )  # doctest: +SKIP
+        """
+        from ._io._arrow import _read_parquet
+
+        return _read_parquet(path=path, columns=columns, **kwargs)
+
     @staticmethod
     def from_feather(path, spatial_column="SHAPE", columns=None, use_threads=True):
         """
@@ -2445,6 +2499,56 @@ class GeoAccessor(object):
         return table
 
     # ----------------------------------------------------------------------
+    def to_parquet(
+        self, path: str, index: bool = None, compression: str = "gzip", **kwargs
+    ) -> str:
+        """
+        Write a Spatially Enabled DataFrame to the Parquet format.
+
+        Any geometry columns present are serialized to WKB format in the file.
+
+        Requires 'pyarrow'.
+
+        WARNING: this is an initial implementation of Parquet file support and
+        associated metadata.  This is tracking version 0.1.0 of the metadata
+        specification at:
+        https://github.com/geopandas/geo-arrow-spec
+
+        This metadata specification does not yet make stability promises.  As such,
+        we do not yet recommend using this in a production setting unless you are
+        able to rewrite your Parquet files.
+
+
+        .. versionadded:: 2.1.0
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        path                   Required String. The save file path
+        ------------------     --------------------------------------------------------------------
+        index                  Optional Bool. If ``True``, always include the dataframe's
+                               index(es) as columns in the file output.
+                               If ``False``, the index(es) will not be written to the file.
+                               If ``None``, the index(ex) will be included as columns in the file
+                               output except `RangeIndex` which is stored as metadata only.
+        ------------------     --------------------------------------------------------------------
+        compression            Optional string. {'snappy', 'gzip', 'brotli', None}, default 'gzip'
+                               Name of the compression to use. Use ``None`` for no compression.
+        ------------------     --------------------------------------------------------------------
+        **kwargs               Optional dict. Any additional kwargs that can be given to the
+                               `pyarrow.parquet.write_table` method.
+        ==================     ====================================================================
+
+        :returns: string
+
+        """
+        from ._io._arrow import _to_parquet
+
+        return _to_parquet(
+            df=self._data, path=path, index=index, compression=compression, **kwargs
+        )
+
+    # ----------------------------------------------------------------------
     def to_featurelayer(
         self,
         title=None,
@@ -2586,7 +2690,18 @@ class GeoAccessor(object):
                     sr = 4326
             from ._array import GeoArray
 
-            df[geometry_column] = GeoArray(df[geometry_column].apply(Geometry))
+            def _set_default_sr(geom):
+                if geom["spatialReference"] is None:
+                    geom["spatialReference"] = {"wkid": 4326}
+                elif (
+                    geom["spatialReference"].get("wkid", None) is None
+                    and geom["spatialReference"].get("wkt", None) is None
+                ):
+                    geom["spatialReference"] = {"wkid": 4326}
+                return geom
+
+            series = df[geometry_column].apply(Geometry).apply(_set_default_sr)
+            df[geometry_column] = GeoArray(series)
             df.spatial.set_geometry(geometry_column)
             df.spatial.project(sr)
             return df
@@ -2917,37 +3032,31 @@ class GeoAccessor(object):
         }
         # Ensure all number values are 0 so errors do not occur.
         df = self._data.where(pd.notnull(self._data), None)
-        date_cols = [col for col in df.columns if df[col].dtype == "datetime64[ns]"]
+        date_fields = [col for col in df.columns if df[col].dtype == "datetime64[ns]"]
         cols_norm = [col for col in df.columns]
         cols_lower = [col.lower() for col in df.columns]
-        old_series = None
+
         if "objectid" in cols_lower:
             fs["objectIdFieldName"] = cols_norm[cols_lower.index("objectid")]
             fs["displayFieldName"] = cols_norm[cols_lower.index("objectid")]
             if df[fs["objectIdFieldName"]].is_unique == False:
                 old_series = df[fs["objectIdFieldName"]].copy()
                 df[fs["objectIdFieldName"]] = list(range(1, df.shape[0] + 1))
-                # res = self.__feature_set__
-                # df[fs['objectIdFieldName']] = old_series
-                # return res
+
         elif "fid" in cols_lower:
             fs["objectIdFieldName"] = cols_norm[cols_lower.index("fid")]
             fs["displayFieldName"] = cols_norm[cols_lower.index("fid")]
             if df[fs["objectIdFieldName"]].is_unique == False:
                 old_series = df[fs["objectIdFieldName"]].copy()
                 df[fs["objectIdFieldName"]] = list(range(1, df.shape[0] + 1))
-                # res = self.__feature_set__
-                # df[fs['objectIdFieldName']] = old_series
-                # return res
+
         elif "oid" in cols_lower:
             fs["objectIdFieldName"] = cols_norm[cols_lower.index("oid")]
             fs["displayFieldName"] = cols_norm[cols_lower.index("oid")]
             if df[fs["objectIdFieldName"]].is_unique == False:
                 old_series = df[fs["objectIdFieldName"]].copy()
                 df[fs["objectIdFieldName"]] = list(range(1, df.shape[0] + 1))
-                # res = self.__feature_set__
-                # df[fs['objectIdFieldName']] = old_series
-                # return res
+
         else:
             fs["objectIdFieldName"] = "OBJECTID"
             fs["displayFieldName"] = "OBJECTID"
@@ -2980,59 +3089,61 @@ class GeoAccessor(object):
             del fs["globalIdFieldName"]
         if self.name in cols_norm:
             cols_norm.pop(cols_norm.index(self.name))
-        for col in cols_norm:
-            try:
-                idx = df[col].first_valid_index()
-                col_val = df[col].loc[idx]
-            except:
-                col_val = ""
-            if isinstance(col_val, (str, np.str)) and not col in date_cols:
-                l = df[col].str.len().max()
-                if str(l) == "nan":
-                    l = 255
+        from numpy import dtype as _dtype
 
-                fields.append(
-                    {
-                        "name": col,
-                        "type": "esriFieldTypeString",
-                        "length": int(l),
-                        "alias": col,
-                    }
-                )
-                if fs["displayFieldName"] == "":
-                    fs["displayFieldName"] = col
-            elif (
-                isinstance(
-                    col_val,
-                    (
-                        datetime.datetime,
-                        pd.Timestamp,
-                        np.datetime64,
-                    ),
-                )
-                or col in date_cols
-            ):  # pd.datetime
-                fields.append({"name": col, "type": "esriFieldTypeDate", "alias": col})
-                date_fields.append(col)
-            elif isinstance(col_val, (np.int16, np.int8)) and not col in date_cols:
-                fields.append(
-                    {"name": col, "type": "esriFieldTypeSmallInteger", "alias": col}
-                )
-            elif isinstance(col_val, (int, np.int, np.int32)) and not col in date_cols:
-                fields.append(
-                    {"name": col, "type": "esriFieldTypeInteger", "alias": col}
-                )
-            elif (
-                isinstance(col_val, (float, np.float64, np.int64))
-                and not col in date_cols
-            ):
-                fields.append(
-                    {"name": col, "type": "esriFieldTypeDouble", "alias": col}
-                )
-            elif isinstance(col_val, (np.float32)) and not col in date_cols:
-                fields.append(
-                    {"name": col, "type": "esriFieldTypeSingle", "alias": col}
-                )
+        _look_up = {
+            np.int8: "esriFieldTypeInteger",
+            _dtype(np.int8): "esriFieldTypeInteger",
+            np.int16: "esriFieldTypeInteger",
+            _dtype(np.int16): "esriFieldTypeInteger",
+            np.int32: "esriFieldTypeInteger",
+            _dtype(np.int32): "esriFieldTypeInteger",
+            np.int64: "esriFieldTypeDouble",
+            _dtype(np.int64): "esriFieldTypeOID",
+            pd.Int64Dtype(): "esriFieldTypeOID",
+            pd.Int32Dtype(): "esriFieldTypeInteger",
+            int: "esriFieldTypeInteger",
+            float: "esriFieldTypeDouble",
+            np.float16: "esriFieldTypeSingle",
+            _dtype(np.float16): "esriFieldTypeSingle",
+            np.float32: "esriFieldTypeDouble",
+            _dtype(np.float32): "esriFieldTypeDouble",
+            np.float64: "esriFieldTypeDouble",
+            _dtype(np.float64): "esriFieldTypeDouble",
+            pd.Float32Dtype(): "esriFieldTypeDouble",
+            pd.Float64Dtype(): "esriFieldTypeDouble",
+            "geometry": "esriFieldTypeGeometry",
+            str: "esriFieldTypeString",
+            _dtype("O"): "esriFieldTypeString",
+            object: "esriFieldTypeString",
+            _dtype(str): "esriFieldTypeString",
+            pd.StringDtype(): "esriFieldTypeString",
+            "<M8[us]": "esriFieldTypeDate",
+            datetime: "esriFieldTypeDate",
+            np.datetime64: "esriFieldTypeDate",
+            _dtype(np.datetime64): "esriFieldTypeDate",
+            arcgis.features.geo._array.GeoType(): "esriFieldTypeGeometry",
+        }
+        fields = []
+        for idx, dtype in enumerate(self._data.dtypes):
+            col = self._data.dtypes.index[idx]
+            if fs["objectIdFieldName"] == col:
+                column = {
+                    "name": col,
+                    "type": "esriFieldTypeOID",
+                    "alias": col,
+                }
+            else:
+                column = {
+                    "name": col,
+                    "type": _look_up[dtype],
+                    "alias": col,
+                }
+            if column["type"] == "esriFieldTypeString":
+                column["length"] = int(self._data[col].str.len().max())
+            if _look_up[dtype] != "esriFieldTypeGeometry":
+                fields.append(column)
+
         fs["fields"] = fields
         for row in df.to_dict("records"):
             geom = {}
@@ -3054,7 +3165,6 @@ class GeoAccessor(object):
             del row
             del geom
         fs["features"] = features
-        # if old_series:
 
         return fs
 

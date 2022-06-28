@@ -4821,8 +4821,8 @@ class ImageryLayer(Layer):
                                                  The GIS to be used for saving the
                                                  output. Keyword only parameter.
         ------------------------------------     --------------------------------------------------------------------
-        future                                   Optional boolean. If True, the result will be a GPJob object and
-                                                 results will be returned asynchronously. Keyword only parameter.
+        future                                   Optional boolean. If True, a future object will be returned and the process
+                                                 will not wait for the task to complete. The default is False, which means wait for results.
         ------------------------------------     --------------------------------------------------------------------
         folder                                   Optional string or dictionary. Creates a folder in the portal, if it does
                                                  not exist, with the given folder name and persists the output in this folder.
@@ -5031,8 +5031,8 @@ class ImageryLayer(Layer):
         gis                                      Optional GIS object. If not speficied, the currently active connection
                                                  is used.
         ------------------------------------     --------------------------------------------------------------------
-        future                                   Keyword only parameter. Optional boolean. If True, the result will be a GPJob object and
-                                                 results will be returned asynchronously.
+        future                                   Optional boolean. If True, a future object will be returned and the process
+                                                 will not wait for the task to complete. The default is False, which means wait for results.
         ====================================     ====================================================================
 
         :return: A :class:`~arcgis.features.FeatureLayer` item.
@@ -7401,6 +7401,16 @@ class Raster:
         return self._engine_obj.catalog_path
 
     @property
+    def catalog_paths(self):
+        """
+        The ``catalog_paths`` property represents the full paths and the names of each item comprising a mosaic dataset.
+
+        :return:
+            A list of paths of each item comprising a mosaic dataset.
+        """
+        return self._engine_obj.catalog_paths
+
+    @property
     def path(self):
         """
         The ``path`` property represents the full path and name of the referenced raster.
@@ -7419,6 +7429,16 @@ class Raster:
             A String
         """
         return self._engine_obj.name
+
+    @property
+    def names(self):
+        """
+        The ``names`` property returns the names of each item comprising a mosaic dataset.
+
+        :return:
+            A list of names of each item comprising a mosaic dataset.
+        """
+        return self._engine_obj.names
 
     @property
     def has_RAT(self):
@@ -9424,19 +9444,41 @@ class _ImageServerRaster(ImageryLayer, Raster):
 
     @property
     def catalog_path(self):
+        import os
+
         if self._datastore_raster:
-            return self._uri
+            path = self._uri
+            path = (
+                path.rpartition("\\")[0]
+                if "\\" in path and not os.path.exists(path)
+                else path
+            )
+            return path
         return self._url
 
     @property
-    def path(self):
+    def catalog_paths(self):
         if self._datastore_raster:
-            return self._uri.rsplit("/", 1)[0]
-        return self._url.rsplit("/", 1)[0]
+            return [self.catalog_path]
+        return [self._url]
+
+    @property
+    def path(self):
+        import os
+
+        path_val = os.path.dirname(self.catalog_path)
+        if path_val.startswith("http"):
+            return None
+        else:
+            return path_val
 
     @property
     def name(self):
         return super().properties.name
+
+    @property
+    def names(self):
+        return [super().properties.name]
 
     @property
     def has_RAT(self):
@@ -10662,12 +10704,20 @@ class _ArcpyRaster(Raster, ImageryLayer):
         return self._raster.catalogPath
 
     @property
+    def catalog_paths(self):
+        return self._raster.catalogPaths
+
+    @property
     def path(self):
         return self._raster.path
 
     @property
     def name(self):
         return self._raster.name
+
+    @property
+    def names(self):
+        return self._raster.names
 
     @property
     def has_RAT(self):
@@ -16387,7 +16437,7 @@ class RasterManager(object):
         ========================  ====================================================================
         **Argument**              **Description**
         ------------------------  --------------------------------------------------------------------
-        raster_ids                Required integer. The object IDs of a raster catalog items to be
+        raster_id                 Required integer. The object IDs of a raster catalog items to be
                                   updated.
         ------------------------  --------------------------------------------------------------------
         files                     Optional list. Local source location to the raster to replace the
@@ -16445,7 +16495,7 @@ class RasterManager(object):
         .. code-block:: python
 
             # Example Usage
-            updated = raster_manager.update(raster_ids = 087631,
+            updated = raster_manager.update(raster_id = 087631,
                                             item_ids = "ib740c7bb-e5d0-4156-9cea-12fa7d3a472c,ib740c7bb-e2d0-4106-9fea-12fa7d3a482c",
                                             service_url = "http://myserver/arcgis/services/Portland/ImageServer",
                                             build_thumbnail = True,

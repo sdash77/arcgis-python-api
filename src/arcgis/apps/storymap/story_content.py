@@ -2,6 +2,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Optional, Union
 import uuid
+
 from arcgis.auth.tools import LazyLoader
 
 arcgis = LazyLoader("arcgis")
@@ -27,6 +28,35 @@ class TextStyles(Enum):
     HEADING = "h2"
     SUBHEADING = "h3"
     QUOTE = "quote"
+
+
+class Scales(Enum):
+    """
+    Represents the supported scales for the webmap view.
+    """
+
+    WORLD = {"scale": 147914382, "zoom": 2}
+    CONTINENT = {"scale": 50000000, "zoom": 3}
+    COUNTRIESLARGE = {"scale": 25000000, "zoom": 4}
+    COUNTRIESSMALL = {"scale": 12000000, "zoom": 5}
+    STATES = {"scale": 6000000, "zoom": 6}
+    PROVINCES = {"scale": 6000000, "zoom": 6}
+    STATE = {"scale": 3000000, "zoom": 7}
+    PROVINCE = {"scale": 3000000, "zoom": 7}
+    COUNTIES = {"scale": 1500000, "zoom": 8}
+    COUNTY = {"scale": 750000, "zoom": 9}
+    METROPOLITAN = {"scale": 320000, "zoom": 10}
+    CITIES = {"scale": 160000, "zoom": 11}
+    CITY = {"scale": 80000, "zoom": 12}
+    TOWN = {"scale": 40000, "zoom": 13}
+    NEIGHBORHOOD = {"scale": 2000, "zoom": 14}
+    STREETS = {"scale": 10000, "zoom": 15}
+    STREET = {"scale": 5000, "zoom": 16}
+    BUILDINGS = {"scale": 2500, "zoom": 17}
+    BUILDING = {"scale": 1250, "zoom": 18}
+    SMALLBUILDING = {"scale": 800, "zoom": 19}
+    ROOMS = {"scale": 400, "zoom": 20}
+    ROOM = {"scale": 100, "zoom": 22}
 
 
 ###############################################################################################################
@@ -86,6 +116,10 @@ class Image(object):
             # Determine if url or file path
             if _parse.urlparse(self._path).scheme == "https":
                 self._url = True
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return "Image"
 
     # ----------------------------------------------------------------------
     @property
@@ -407,6 +441,10 @@ class Video(object):
                 self.resource_node = "r-" + uuid.uuid4().hex[0:6]
 
     # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Video"
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -701,6 +739,10 @@ class Audio(object):
             self.resource_node = "r-" + uuid.uuid4().hex[0:6]
 
     # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Audio"
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -937,6 +979,10 @@ class Embed(object):
             }
 
     # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Embed"
+
+    # ----------------------------------------------------------------------
     @property
     def link(self):
         """
@@ -1149,10 +1195,23 @@ class Map(object):
             self._path = item
             self._type = item.type
             if item.type == "Web Map":
-                self._center = map_item._mapview.center
                 self._extent = map_item._mapview.extent
+                if map_item._mapview.center is None:
+                    x_center = (self._extent["xmin"] + self._extent["xmax"]) / 2
+                    y_center = (self._extent["ymin"] + self._extent["ymax"]) / 2
+                    self._center = {
+                        "spatialReference": map_item.definition.spatialReference,
+                        "x": x_center,
+                        "y": y_center,
+                    }
+                else:
+                    self._center = map_item._mapview.center
                 self._zoom = map_item._mapview.zoom if map_item.zoom is not False else 2
-                self._viewpoint = {}
+                self._viewpoint = {
+                    "rotation": map_item._mapview.rotation,
+                    "scale": map_item._mapview.scale,
+                    "targetGeometry": self._center,
+                }
 
                 layers = []
                 # Create layer dictionary:
@@ -1184,14 +1243,31 @@ class Map(object):
                 view = arcgis.widgets.MapView(
                     arcgis.env.active_gis, map_item, mode="3D"
                 )
-                self._center = view.center
                 self._extent = view.extent
+                if map_item._mapview.center is None:
+                    x_center = (self._extent["xmin"] + self._extent["xmax"]) / 2
+                    y_center = (self._extent["ymin"] + self._extent["ymax"]) / 2
+                    self._center = {
+                        "spatialReference": map_item.definition.spatialReference,
+                        "x": x_center,
+                        "y": y_center,
+                    }
+                else:
+                    self._center = map_item._mapview.center
                 self._zoom = view.zoom if view.zoom > -1 else 2
-                self._viewpoint = {}
+                self._viewpoint = {
+                    "rotation": map_item._mapview.rotation,
+                    "scale": map_item._mapview.scale,
+                    "targetGeometry": self._center,
+                }
                 self._camera = map_item["initialState"]["viewpoint"]
                 self._lighting_date = map_item["initialState"]["environment"][
                     "lighting"
                 ]["datetime"]
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "%s" % self._type
 
     # ----------------------------------------------------------------------
     @property
@@ -1201,7 +1277,8 @@ class Map(object):
 
         :return:
             A dictionary depicting the node dictionary and resource
-            dictionary for the map.
+            dictionary for the map. The resource dictionary depicts the
+            original map settings. The node dictionary depicts the current map settings.
             If nothing it returned, make sure the content is part of the story.
 
         .. note::
@@ -1236,7 +1313,8 @@ class Map(object):
         ==================  ========================================
 
         .. note::
-            Only replace Map with a new map of same type.
+            Only replace a Map with a new map of same type. Cannot replace a
+            2D map with 3D.
 
         :return:
             The item id for the map that is being used.
@@ -1253,6 +1331,158 @@ class Map(object):
         if self._check_node() is True:
             self._update_map(map)
             return self.map
+
+    # ----------------------------------------------------------------------
+    def set_viewpoint(self, extent: dict = None, scale: Scales = None):
+        """
+        Set the extent and/or scale for the map in the story.
+
+        If you have an extent to use from a bookmark,
+        find this extent by using the `bookmarks` property in
+        the :class:`~arcgis.mapping.WebMap` Class.
+        The `map` property on this class will return the Web Map
+        Item being used. By passing this item into
+        the :class:`~arcgis.mapping.WebMap` Class you can retrieve a list of all
+        bookmarks and their extents with the `bookmarks` property.
+
+        To see the current viewpoint call the `properties` property on the Map
+        node.
+
+        ==================  ========================================
+        **Argument**        **Description**
+        ------------------  ----------------------------------------
+        extent              Optional dictionary representing the extent of
+                            the map. This will update the extent, center and viewpoint
+                            accordingly.
+
+                            Example:
+                            {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                            'xmin': -609354.6306080809,
+                            'ymin': 2885721.2797636474,
+                            'xmax': 6068184.160383142,
+                            'ymax': 6642754.094035632}
+        ------------------  ----------------------------------------
+        scale               Optional Scales Value. Define the scale of the map.
+                            If none specified, current scale is kept.
+                            Find the available scales in the
+                            :class:`~arcgis.apps.storymap.story_content.Scales` Class.
+        ==================  ========================================
+
+        :return: The current viewpoint dictionary
+        """
+        if "viewpoint" not in self._story._properties["nodes"][self.node]["data"]:
+            self._story._properties["nodes"][self.node]["data"][
+                "viewpoint"
+            ] = self._story._properties["resources"][self.resource_node]["data"][
+                "viewpoint"
+            ]
+        # set new extent if specified
+        if extent:
+            if isinstance(extent, dict):
+                if not all(k in extent for k in ("xmin", "xmax", "ymin", "ymax")):
+                    raise ValueError(
+                        "Extent dictionary missing one or more of these keys: 'xmin', 'xmax', 'ymin', 'ymax'"
+                    )
+                if "spatialReference" not in extent:
+                    extent["spatialReference"] = self._story._properties["resources"][
+                        self.resource_node
+                    ]["data"]["extent"]["spatialReference"]
+
+                # In order to correctly edit, the viewpoint, extent, and center must be updated.
+                # update extent
+                self._story._properties["nodes"][self.node]["data"]["extent"] = extent
+                # update center
+                center_x = (extent["xmin"] + extent["xmax"]) / 2
+                center_y = (extent["ymin"] + extent["ymax"]) / 2
+                self._story._properties["nodes"][self.node]["data"]["center"] = {
+                    "spatialReference": extent["spatialReference"],
+                    "x": center_x,
+                    "y": center_y,
+                }
+                # update viewpoint
+                self._story._properties["nodes"][self.node]["data"]["viewpoint"][
+                    "targetGeometry"
+                ] = self._story._properties["nodes"][self.node]["data"]["center"]
+        # set new scale if specified
+        if scale:
+            if isinstance(scale, Scales):
+                self._story._properties["nodes"][self.node]["data"]["viewpoint"][
+                    "scale"
+                ] = scale.value["scale"]
+                self._story._properties["nodes"][self.node]["data"][
+                    "zoom"
+                ] = scale.value["zoom"]
+        return self._story._properties["nodes"][self.node]["data"]["viewpoint"]
+
+    # ----------------------------------------------------------------------
+    @property
+    def show_legend(self):
+        """Get/Set the showing legend toggle. True if enabled and False if disabled"""
+        if self._check_node() is True:
+            if "isShowingLegend" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"][
+                    "isShowingLegend"
+                ]
+            else:
+                return False
+
+    # ----------------------------------------------------------------------
+    @show_legend.setter
+    def show_legend(self, value: bool):
+        self._story._properties["nodes"][self.node]["data"]["isShowingLegend"] = value
+
+    # ----------------------------------------------------------------------
+    @property
+    def legend_pinned(self):
+        """
+        Get/Set the legend pinned toggle. True if enabled and False if disabled.
+
+        .. note::
+            If set to True, make sure `show_legend` is also True. Otherwise, you will not
+            see the legend pinned.
+        """
+        if self._check_node() is True:
+            if "legendPinned" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"][
+                    "legendPinned"
+                ]
+            else:
+                return False
+
+    # ----------------------------------------------------------------------
+    @legend_pinned.setter
+    def legend_pinned(self, value: bool):
+        self._story._properties["nodes"][self.node]["data"]["legendPinned"] = value
+
+    # ----------------------------------------------------------------------
+    @property
+    def show_search(self):
+        """Get/Set the search toggle. True if enabled and False if disabled"""
+        if self._check_node() is True:
+            if "search" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["search"]
+            else:
+                return False
+
+    # ----------------------------------------------------------------------
+    @show_search.setter
+    def show_search(self, value: bool):
+        self._story._properties["nodes"][self.node]["data"]["search"] = value
+
+    # ----------------------------------------------------------------------
+    @property
+    def time_slider(self):
+        """Get/Set the time slider toggle. True if enabled and False if disabled"""
+        if self._check_node() is True:
+            if "time_slider" in self._story._properties["nodes"][self.node]["data"]:
+                return self._story._properties["nodes"][self.node]["data"]["timeSlider"]
+            else:
+                return False
+
+    # ----------------------------------------------------------------------
+    @time_slider.setter
+    def time_slider(self, value: bool):
+        self._story._properties["nodes"][self.node]["data"]["timeSlider"] = value
 
     # ----------------------------------------------------------------------
     @property
@@ -1311,7 +1541,7 @@ class Map(object):
         """
         Get/Set the display type of the map.
 
-        ``Values: "standard" | "wide" | "full" | "float"``
+        ``Values: "standard" | "wide" | "full" | "float right" |"float left"``
         """
         if self._check_node() is True:
             if "config" in self._story._properties["nodes"][self.node]:
@@ -1323,7 +1553,23 @@ class Map(object):
     @display.setter
     def display(self, display):
         if self._check_node() is True:
-            self._story._properties["nodes"][self.node]["config"]["size"] = display
+            if "float" in display.lower():
+                self._story._properties["nodes"][self.node]["config"]["size"] = "float"
+                if "right" in display.lower():
+                    self._story._properties["nodes"][self.node]["config"][
+                        "floatAlignment"
+                    ] = "end"
+                else:
+                    self._story._properties["nodes"][self.node]["config"][
+                        "floatAlignment"
+                    ] = "start"
+            else:
+                self._story._properties["nodes"][self.node]["config"][
+                    "size"
+                ] = display.lower()
+                self._story._properties["nodes"][self.node]["config"].pop(
+                    "floatAlignment", None
+                )
             return self.display
 
     # ----------------------------------------------------------------------
@@ -1345,10 +1591,6 @@ class Map(object):
                 "map": self.resource_node,
                 "caption": "" if caption is None else caption,
                 "alt": "" if alt_text is None else alt_text,
-                "extent": self._extent,
-                "center": self._center,
-                "zoom": 2,
-                "viewpoint": self._viewpoint,
             },
             "config": {"size": display},
         }
@@ -1359,7 +1601,7 @@ class Map(object):
             "data": {
                 "extent": self._extent,
                 "center": self._center,
-                "zoom": 2,
+                "zoom": self._zoom,
                 "mapLayers": self._map_layers,
                 "viewpoint": self._viewpoint,
                 "itemId": self._path.id,
@@ -1393,23 +1635,28 @@ class Map(object):
         ):
             raise ValueError("New Map must be of same type as the exisiting map.")
 
-        # Get all the old properties but update with new map
+        # Get all the old properties but update with new map where needed
+
+        # remove old resource node
         self._story._properties["resources"][
             new_map.resource_node
         ] = self._story._properties["resources"].pop(self.resource_node)
+        # assign new resource node
         self.resource_node = new_map.resource_node
+        # set the new item id in the story resources dictionary for this resource
         self._story._properties["resources"][new_map.resource_node]["data"][
             "itemId"
         ] = new_map._path.id
+        # set the new map layers in the story resources dict for this resource
         self._story._properties["resources"][new_map.resource_node]["data"][
             "mapLayers"
         ] = new_map._map_layers
-        # Update path to resource node
+        # Update path to resource node in the node dictionary
         self._story._properties["nodes"][self.node]["data"][
             "map"
         ] = new_map.resource_node
 
-        # Add for Web Scene
+        # Extra necessary updates when it is a Web Scene (3D Map)
         if self._type == "Web Scene":
             self._story._properties["resources"][self.resource_node]["data"][
                 "lightingDate"
@@ -1444,16 +1691,19 @@ class Text(object):
     ------------------      --------------------------------------------------------------------
     text                    Required String. The text that will be shown in the story.
 
+                            .. code-block:: python
 
-                                Example:
-                                "Paragraph with <strong>bold</strong>,
-                                <em>italic</em> and
-                                <a href=\"https://www.google.com\" rel=\"noopener noreferrer\"
-                                target=\"_blank\">hyperlink</a> and a
-                                <span class=\"sm-text-color-080\">custom color</span>"
+                                # Usage Example for paragraph:
 
-                                Example for a numbered list:
-                                "<li>List Item1</li> <li>List Item2</li> <li>List Item3</li>"
+                                >>> text = Text('''Paragraph with <strong>bold</strong>, <em>italic</em>
+                                                and <a href=\"https://www.google.com\" rel=\"noopener noreferrer\"
+                                                target=\"_blank\">hyperlink</a> and a <span
+                                                class=\"sm-text-color-080\">custom color</span>''')
+
+                                # Usage Example for numbered list:
+
+                                >>> text = Text("<li>List Item1</li> <li>List Item2</li> <li>List Item3</li>")
+
     ------------------      --------------------------------------------------------------------
     style                   Optional TextStyles type. There are 7 different styles of text that can be
                             added to a story.
@@ -1545,6 +1795,10 @@ class Text(object):
                 self._color = color
             else:
                 self._color = None
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Text"
 
     # ----------------------------------------------------------------------
     @property
@@ -1655,6 +1909,10 @@ class Button(object):
             self.node = "n-" + uuid.uuid4().hex[0:6]
             self._link = link
             self._text = text
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Button"
 
     # ----------------------------------------------------------------------
     @property
@@ -1782,6 +2040,10 @@ class Gallery(object):
             # Create new empty instance
             self._children = []
             self.node = "n-" + uuid.uuid4().hex[0:6]
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Image Gallery"
 
     # ----------------------------------------------------------------------
     @property
@@ -2022,6 +2284,10 @@ class Swipe(object):
             self._media_type = ""
 
     # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Swipe"
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -2181,6 +2447,10 @@ class Sidecar(object):
         self._slides = story._properties["nodes"][node]["children"]
 
     # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Sidecar"
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """
@@ -2330,7 +2600,7 @@ class Sidecar(object):
         """
         # Remove slide and all associated children.
         self._story._properties["nodes"][self.node]["children"].remove(slide)
-        self._slide.remove(slide)
+        self._slides.remove(slide)
         self._story._delete(slide)
         self._remove_associated(slide)
 
@@ -2420,6 +2690,10 @@ class Timeline(object):
             raise Exception("This node is not of type timeline.")
         self._subtype = story._properties["nodes"][node]["data"]["type"]
         self._events = story._properties["nodes"][node]["children"]
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Timeline"
 
     # ----------------------------------------------------------------------
     @property

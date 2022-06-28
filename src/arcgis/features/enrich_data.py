@@ -10,20 +10,17 @@ from typing import Any, Optional, Union
 from arcgis.auth.tools import LazyLoader
 
 _util = LazyLoader("arcgis._impl.common._utils")
-_logging = LazyLoader("logging")
 _arcgis = LazyLoader("arcgis")
 network = LazyLoader("arcgis.network")
-FeatureCollection = LazyLoader("arcgis.features.FeatureCollection")
-FeatureLayerCollection = LazyLoader("arcgis.features.FeatureLayerCollection")
-FeatureLayer = LazyLoader("arcgis.features.FeatureLayer")
+_features = LazyLoader("arcgis.features")
 
 # --------------------------------------------------------------------------
 def enrich_layer(
     input_layer: Union[
         _arcgis.gis.Item,
-        FeatureCollection,
-        FeatureLayer,
-        FeatureLayerCollection,
+        _features.FeatureCollection,
+        _features.FeatureLayer,
+        _features.FeatureLayerCollection,
         str,
         dict[str, Any],
     ],
@@ -33,7 +30,7 @@ def enrich_layer(
     buffer_type: Optional[str] = None,
     distance: Optional[float] = None,
     units: Optional[str] = None,
-    output_name: Optional[Union[FeatureLayer, str]] = None,
+    output_name: Optional[Union[_features.FeatureLayer, str]] = None,
     context: Optional[dict[str, Any]] = None,
     gis: Optional[_arcgis.gis.GIS] = None,
     estimate: bool = False,
@@ -120,10 +117,13 @@ def enrich_layer(
 
                                                                               The default value is False.
     ---------------------------------------------------------------------     --------------------------------------------------------------------
-    future                                                                    Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                                                                    Optional, If True, a future object will be returned and the process
+                                                                              will not wait for the task to complete.
+                                                                              The default is False, which means wait for results.
     =====================================================================     ====================================================================
 
     :returns :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
+    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 

@@ -46,6 +46,25 @@ try:
 except ImportError:
     _FEATURE_INPUTS = (Feature, FeatureSet, FeatureLayer, FeatureCollection)
 
+
+def _is_dask(df):
+    """check if dask DataFrame"""
+    try:
+        import dask.dataframe as dd
+
+        if (
+            isinstance(df, dd.DataFrame)
+            and hasattr(df, "spatial")
+            and getattr(df.spatial, "name")
+        ):
+            return True
+        else:
+            return False
+    except Exception as e:
+        return False
+    return False
+
+
 __all__ = [
     "_GeoanalyticsTools",
     "_FeatureAnalysisTools",
@@ -274,6 +293,10 @@ class BaseAnalytics(object):
             input_param = point_fs
             input_param["featureSet"]["features"][0]["geometry"]["x"] = input_layer[1]
             input_param["featureSet"]["features"][0]["geometry"]["y"] = input_layer[0]
+        elif _is_dask(input_layer):
+            input_param = (
+                input_layer.spatial.to_feature_collection().compute()._lyr_dict
+            )
 
         elif isinstance(
             input_layer, dict
@@ -796,7 +819,11 @@ class _FeatureAnalysisTools(BaseAnalytics):
     # ----------------------------------------------------------------------
     def _output_name_dict(self, output_name, overwrite):
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {
+                "serviceProperties": {
+                    "name": str(output_name).strip().replace(" ", "_")
+                }
+            }
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -12471,6 +12498,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         process_as_multidimensional=False,
         percentile_value=90,
         percentile_interpolation_type="AUTO_DETECT",
+        circular_calculation=False,
+        circular_wrap_value=360,
         **kwargs,
     ):
         """
@@ -12599,7 +12628,9 @@ class _RasterAnalysisTools(BaseAnalytics):
                 gis=gis,
                 future=True,
             )
-        elif (current_version is not None) and current_version >= 10.9:
+        elif (current_version is not None) and (
+            current_version >= 10.9 and current_version < 11
+        ):
             gpjob = self._tbx.summarize_raster_within(
                 input_zone_layer=input_zone_layer,
                 zone_field=zone_field,
@@ -12611,6 +12642,23 @@ class _RasterAnalysisTools(BaseAnalytics):
                 process_as_multidimensional=process_as_multidimensional,
                 percentile_value=percentile_value,
                 percentile_interpolation_type=percentile_interpolation_type,
+                gis=gis,
+                future=True,
+            )
+        elif (current_version is not None) and current_version >= 11:
+            gpjob = self._tbx.summarize_raster_within(
+                input_zone_layer=input_zone_layer,
+                zone_field=zone_field,
+                input_raster_layerto_summarize=input_raster_layer_to_summarize,
+                output_name=output_raster,
+                statistic_type=statistic_type,
+                ignore_missing_values=ignore_missing_values,
+                context=context,
+                process_as_multidimensional=process_as_multidimensional,
+                percentile_value=percentile_value,
+                percentile_interpolation_type=percentile_interpolation_type,
+                circular_calculation=circular_calculation,
+                circular_wrap_value=circular_wrap_value,
                 gis=gis,
                 future=True,
             )
@@ -16085,6 +16133,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_name=None,
         context=None,
         future=False,
+        circular_calculation=False,
+        circular_wrap_value=360,
         **kwargs,
     ):
         """
@@ -16303,20 +16353,44 @@ class _RasterAnalysisTools(BaseAnalytics):
         else:
             output_name = json.dumps({"serviceProperties": {"name": output_name}})
 
-        gpjob = self._tbx.zonal_statistics_as_table(
-            input_zone_raster_or_features=input_zone_raster_or_features,
-            input_value_raster=input_value_raster,
-            zone_field=zone_field,
-            ignore_nodata=ignore_nodata,
-            statistic_type=statistic_type,
-            percentile_values=percentile_values,
-            process_as_multidimensional=process_as_multidimensional,
-            percentile_interpolation_type=percentile_interpolation_type,
-            output_table_name=output_name,
-            context=context,
-            gis=self._gis,
-            future=True,
-        )
+        current_version = None
+        if "currentVersion" in self._gis._tools.rasteranalysis.properties.keys():
+            current_version = self._gis._tools.rasteranalysis.properties[
+                "currentVersion"
+            ]
+
+        if (current_version is not None) and current_version < 11:
+            gpjob = self._tbx.zonal_statistics_as_table(
+                input_zone_raster_or_features=input_zone_raster_or_features,
+                input_value_raster=input_value_raster,
+                zone_field=zone_field,
+                ignore_nodata=ignore_nodata,
+                statistic_type=statistic_type,
+                percentile_values=percentile_values,
+                process_as_multidimensional=process_as_multidimensional,
+                percentile_interpolation_type=percentile_interpolation_type,
+                output_table_name=output_name,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
+        elif (current_version is not None) and current_version >= 11:
+            gpjob = self._tbx.zonal_statistics_as_table(
+                input_zone_raster_or_features=input_zone_raster_or_features,
+                input_value_raster=input_value_raster,
+                zone_field=zone_field,
+                ignore_nodata=ignore_nodata,
+                statistic_type=statistic_type,
+                percentile_values=percentile_values,
+                process_as_multidimensional=process_as_multidimensional,
+                percentile_interpolation_type=percentile_interpolation_type,
+                output_table_name=output_name,
+                context=context,
+                gis=self._gis,
+                future=True,
+                circular_calculation=circular_calculation,
+                circular_wrap_value=circular_wrap_value,
+            )
 
         gpjob._is_ra = True
         gpjob._item_properties = True
