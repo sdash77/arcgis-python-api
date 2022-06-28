@@ -1,4 +1,5 @@
 import unittest
+import time
 import concurrent.futures
 from arcgis.gis import GIS
 from arcgis.features.layer import FeatureLayerCollection
@@ -36,7 +37,7 @@ class TestTransferParcels(unittest.TestCase):
         cls.vms = cls.parcel_fabric_flc.versions
 
     def test_scenario_1(self):
-        fq_version_name = pfutils.create_version(self.vms, "api-transfer1_area")
+        fq_version_name = pfutils.create_version(self.vms, f"api-{int(time.time())}")
         transfer_parcel = {"id":"{D664B654-D8F2-453C-966F-6FA66E1AE2E2}","layerId":"24"}
         source_parcels = [
             {"id":"{8233045B-A337-4087-957A-4F8A4814FF09}","layerId":"15"},
@@ -89,3 +90,7 @@ class TestTransferParcels(unittest.TestCase):
             len(retired_lines["features"]),
             "Did not find a retired line.",
         )
+
+    @classmethod
+    def tearDownClass(cls):
+        pfutils.clean_up_versions(cls.vms)
