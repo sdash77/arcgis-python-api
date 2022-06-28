@@ -4077,6 +4077,7 @@ class FeatureLayerCollection(_GISResource):
         data_format: str = "json",
         change_extent_grid_cell: Optional[str] = None,
         return_geometry_updates: Optional[bool] = None,
+        fields_to_compare: list | None = None,
     ):
         """
         A change tracking mechanism for applications. Applications can use ``extract_changes`` to
@@ -4226,6 +4227,14 @@ class FeatureLayerCollection(_GISResource):
                                              returned as false. When a layer has multiple rows with updates,
                                              only one needs to include a geometry changes for
                                              `hasGeometryUpdates` to be set as true.
+        --------------------------------     --------------------------------------------------------------------
+        fields_to_compare                    Optional List. Introduced at 11.0. This parameter allows you to
+                                             determine if any array of fields has been updated. The accepted
+                                             values for this parameter is a fields array that include the fields
+                                             you want to evaluate. The response includes a fieldUpdates array,
+                                             which includes rows that contain any updates made to the specified
+                                             fields. If no updates were made to any fields, the fieldUpdates
+                                             array is empty.
         ================================     ====================================================================
 
         :return:
@@ -4286,7 +4295,12 @@ class FeatureLayerCollection(_GISResource):
             "dataFormat": data_format,
             "layerServerGens": servergen,
             "changesExtentGridCell": change_extent_grid_cell,
+            "fieldsToCompare": None,
         }
+        if not fields_to_compare is None:
+            params["fieldsToCompare"] = {"fields": fields_to_compare}
+        else:
+            del params["fieldsToCompare"]
         if not return_geometry_updates is None:
             params["returnHasGeometryUpdates"] = return_geometry_updates
         res = self._con.post(url, params)
