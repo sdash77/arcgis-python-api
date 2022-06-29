@@ -4411,6 +4411,32 @@ class FeatureLayerCollection(_GISResource):
             return FeatureSet.from_dict(results)
 
     # ----------------------------------------------------------------------
+    def query_data_elements(self, layers: list) -> dict:
+        """
+        The `query_data_elements` provides access to valuable information
+        for datasets exposed through a feature service such as a feature
+        layer, a table or a utility network layer. The response is
+        dependent on the type of layer that is queried.
+
+        ======================     ====================================================================
+        **Argument**               **Description**
+        ----------------------     --------------------------------------------------------------------
+        layers                     Required list. Array of layerIds for which to get the data elements.
+        ======================     ====================================================================
+
+        :returns: dict
+
+        """
+        if (
+            "supportsQueryDataElements" in self.properties
+            and self.properties.supportsQueryDataElements
+        ):
+            url = f"{self._url}/queryDataElements"
+            params = {"f": "json", "layers": layers}
+            return self._con.get(url, params)
+        return []
+
+    # ----------------------------------------------------------------------
     def query_related_records(
         self,
         object_ids: str,
