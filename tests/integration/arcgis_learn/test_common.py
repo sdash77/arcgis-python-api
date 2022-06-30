@@ -22,7 +22,6 @@ try:
     import fastai
     import torch
     import torchvision
-    import pytest
 
     HAS_DEPS = True
     print(" ================= Modules Imported ==============")
