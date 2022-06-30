@@ -1125,8 +1125,7 @@ class ParcelFabricManager(object):
 
     # ----------------------------------------------------------------------
     def reconstruct_from_seeds(
-        self,
-        extent: Union[dict, Envelope],
+        self, extent: Union[dict, Envelope],
     ):
         """
         The :meth:`~reconstructFromSeeds` operation constructs parcels from seeds enclosed by
@@ -1163,6 +1162,87 @@ class ParcelFabricManager(object):
             "gdbVersion": self._version.properties.versionName,
             "sessionId": self._version._guid,
             "extent": extent,
+            "f": "json",
+        }
+        return self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
+
+    # ----------------------------------------------------------------------
+    def transfer_parcel(
+        self,
+        transfer_parcel_feature: dict[str, Any],
+        target_parcel_features: list[dict[str, Any]],
+        record: str,
+        default_area_unit: int,
+        source_parcel_features: Optional[list[dict[str, Any]]] = None,
+    ):
+        """
+        The :meth:`~transfer_parcel` supports workflows for transferring a piece of land between parcels.
+
+        =======================     =======================================================================
+        **Argument**                **Description**
+        -----------------------     -----------------------------------------------------------------------
+        transfer_parcel_feature     Required Dict. Parameter representing the parcel to be transferred. 
+                                    Only one parcel can be specified as the transfer parcel.
+
+                                    :Syntax:
+
+                                    .. code-block:: python
+
+                                        >>> transfer_parcel_feature={"id":"<guid>","layerId":"<layerID>"}
+        -----------------------     -----------------------------------------------------------------------
+        target_parcel_features      Required List. Parameter representing the target parcels to which land 
+                                    will be transferred. These parcels will be merged with the transfer 
+                                    parcel and will become larger.
+
+                                    :Syntax:
+
+                                    .. code-block:: python
+
+                                        >>> target_parcel_features=[{"id":"<guid>","layerId":"<layerID>"},{...}]
+
+        -----------------------     -----------------------------------------------------------------------
+        record                      Required String. Parameter for the unique identifier (GUID) of the 
+                                    record being used for the transfer
+        -----------------------     -----------------------------------------------------------------------
+        default_area_unit           Required Integer. The units in which area will be stored. The parameter
+                                    is specified as a domain code from the `PF_AreaUnits` parcel fabric
+                                    domain.
+
+                                    .. code-block:: python
+
+                                        #Example Usage:
+
+                                        #Square feet
+                                        >>> default_area_unit=109405
+                                        #Square meters
+                                        >>> default_area_unit=109404
+
+        -----------------------     -----------------------------------------------------------------------
+        source_parcel_features      Optional List. Parameter representing the source parcels from which 
+                                    land will be transferred. These parcels will be clipped and will 
+                                    become smaller.
+
+                                    :Syntax:
+
+                                    .. code-block:: python
+
+                                        >>> source_parcel_features=[{"id":"<guid>","layerId":"<layerID>"},{...}]
+        =======================     =======================================================================
+
+        :return: Dictionary indicating 'success' or 'error' with a list of edited features
+
+        """
+        url = "{base}/transferParcel".format(base=self._url)
+        params = {
+            "gdbVersion": self._version.properties.versionName,
+            "sessionId": self._version._guid,
+            "transferParcelFeature": transfer_parcel_feature,
+            "sourceParcelFeatures": source_parcel_features,
+            "targetParcelFeatures": target_parcel_features,
+            "record": record,
+            "defaultAreaUnit": default_area_unit,
             "f": "json",
         }
         return self._con.post(url, params)

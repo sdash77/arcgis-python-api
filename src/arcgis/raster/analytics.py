@@ -1666,6 +1666,8 @@ def summarize_raster_within(
     process_as_multidimensional: bool = False,
     percentile_value: int = 90,
     percentile_interpolation_type: str = "AUTO_DETECT",
+    circular_calculation: bool = False,
+    circular_wrap_value: float = 360,
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
@@ -1837,6 +1839,20 @@ def summarize_raster_within(
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
+    circular_calculation                     Optional bool. Denotes whether the statistics calculations will be arithmetic or circular.
+
+                                             - False - Calculates arithmetic statistics. This is the default.
+                                             - True - Calculates circular statistics that are appropriate for cyclic quantities, such as compass direction in degrees, daytimes, and fractional parts of real numbers.
+
+                                             | Parameter available in ArcGIS Image Server 11 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    circular_wrap_value                      Optional float. The possible highest value (upper bound) in the cyclic data. 
+                                             It is a positive number, and the default is 360. This value also represents the same quantity 
+                                             as the possible lowest value (lower bound).
+                                             This parameter is honored only if the circular_calculation parameter is set to True.
+
+                                             Parameter available in ArcGIS Image Server 11 and higher.
+    ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional :class:`~arcgis.gis.GIS` object. If not specified, the currently active connection
                                              is used.
     ------------------------------------     --------------------------------------------------------------------
@@ -1900,6 +1916,8 @@ def summarize_raster_within(
         process_as_multidimensional=process_as_multidimensional,
         percentile_value=percentile_value,
         percentile_interpolation_type=percentile_interpolation_type,
+        circular_calculation=circular_calculation,
+        circular_wrap_value=circular_wrap_value,
         future=future,
         **kwargs,
     )
@@ -8782,6 +8800,8 @@ def zonal_statistics_as_table(
     percentile_interpolation_type: str = "AUTO_DETECT",
     output_name: Optional[str] = None,
     context: Optional[dict[str, Any]] = None,
+    circular_calculation: bool = False,
+    circular_wrap_value: float = 360,
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
@@ -8891,6 +8911,20 @@ def zonal_statistics_as_table(
                                              - NEAREST - Nearest value to the desired percentile.
                                              - LINEAR - Weighted average of two surrounding values from the desired percentile.
     ------------------------------------     --------------------------------------------------------------------
+    circular_calculation                     Optional bool. Denotes whether the statistics calculations will be arithmetic or circular.
+
+                                             - False - Calculates arithmetic statistics. This is the default.
+                                             - True - Calculates circular statistics that are appropriate for cyclic quantities, such as compass direction in degrees, daytimes, and fractional parts of real numbers.
+
+                                             Parameter available in ArcGIS Image Server 11 and higher.
+    ------------------------------------     --------------------------------------------------------------------
+    circular_wrap_value                      Optional float. The possible highest value (upper bound) in the cyclic data. 
+                                             It is a positive number, and the default is 360. This value also represents the same quantity 
+                                             as the possible lowest value (lower bound).
+                                             This parameter is honored only if the circular_calculation parameter is set to True.
+
+                                             | Parameter available in ArcGIS Image Server 11 and higher.
+    ------------------------------------     --------------------------------------------------------------------
     output_name                              Optional string. Name of the output feature item or table item to be created.
                                              If not provided, a random name is generated by the method and used as 
                                              the output name. 
@@ -8941,6 +8975,8 @@ def zonal_statistics_as_table(
         percentile_values=percentile_values,
         process_as_multidimensional=process_as_multidimensional,
         percentile_interpolation_type=percentile_interpolation_type,
+        circular_calculation=circular_calculation,
+        circular_wrap_value=circular_wrap_value,
         context=context,
         future=future,
         **kwargs,

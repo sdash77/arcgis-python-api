@@ -504,7 +504,9 @@ class FeatureLayer(Layer):
             params["layer"] = self._dynamic_layer
         return self._con.post(path=url, postdata=params)
 
-    def _add_attachment(self, oid, file_path, keywords=None):
+    def _add_attachment(
+        self, oid, file_path, keywords=None, return_moment=False, version=None
+    ):
         """
         Adds an attachment to a feature service
 
@@ -519,6 +521,10 @@ class FeatureLayer(Layer):
                               value for the attachment. If the attachments have keywords enabled and
                               the layer also includes the attachmentFields property, you can use
                               it to understand properties like keywords field length.
+        -----------------     --------------------------------------------------------------------
+        return_moment         Optional bool. Specify whether the response will report the time
+                              attachments were added. If True, the server will return the time
+                              in the response's `editMoment` key. The default is False.
         =================     ====================================================================
 
         :return: A JSON Dictionary indicating 'success' or 'error'
@@ -527,7 +533,11 @@ class FeatureLayer(Layer):
         if (
             os.path.getsize(file_path) < 10e6
         ):  # (os.path.getsize(file_path) >> 20) <= 9:
-            params = {"f": "json"}
+            params = {
+                "f": "json",
+                "gdbVersion": version,
+                "returnEditMoment": return_moment,
+            }
             if self._gis.version > [7, 3] and keywords:
                 params["keywords"] = keywords
             if self._dynamic_layer:
@@ -539,7 +549,11 @@ class FeatureLayer(Layer):
             res = self._con.post(path=attach_url, postdata=params, files=files)
             return res
         else:
-            params = {"f": "json"}
+            params = {
+                "f": "json",
+                "gdbVersion": version,
+                "returnEditMoment": return_moment,
+            }
             if self._gis.version > [7, 3] and keywords:
                 params["keywords"] = keywords
             container = self.container
@@ -556,21 +570,44 @@ class FeatureLayer(Layer):
             return res
 
     # ----------------------------------------------------------------------
-    def _delete_attachment(self, oid, attachment_id):
+    def _delete_attachment(
+        self,
+        oid,
+        attachment_id,
+        return_moment=False,
+        rollback_on_failure=True,
+        version=None,
+    ):
         """
         Removes an attachment from a feature service feature
 
-        =================     ====================================================================
-        **Argument**          **Description**
-        -----------------     --------------------------------------------------------------------
-        oid                   Required string/integer. OBJECTID value to add attachment to.
-        -----------------     --------------------------------------------------------------------
-        attachment_id         Required integer. Id of the attachment to erase.
-        =================     ====================================================================
+        ===================     ====================================================================
+        **Argument**            **Description**
+        -------------------     --------------------------------------------------------------------
+        oid                     Required string/integer. OBJECTID value to add attachment to.
+        -------------------     --------------------------------------------------------------------
+        attachment_id           Required string. Ids of the attachment to erase.
+        -------------------     --------------------------------------------------------------------
+        return_moment           Optional boolean. Specify whether the response will report the time
+                                attachments were deleted. If True, the server will report the time
+                                in the response's `editMoment` key. The default value is False.
+        -------------------     --------------------------------------------------------------------
+        rollback_on_failure     Optional boolean. Specifies whether the edits should be applied
+                                only if all submitted edits succeed. If False, the server will apply
+                                the edits that succeed even if some of the submitted edits fail.
+                                If True, the server will apply the edits only if all edits succeed.
+                                The default value is true.
+        ===================     ====================================================================
 
         :return: dictionary
         """
-        params = {"f": "json", "attachmentIds": "%s" % attachment_id}
+        params = {
+            "f": "json",
+            "attachmentIds": attachment_id,
+            "gbdVersion": version,
+            "returnEditMoment": return_moment,
+            "rollbackOnFailure": rollback_on_failure,
+        }
         if self._dynamic_layer:
             url = self._url.split("?")[0] + "/%s/deleteAttachments" % oid
             params["layer"] = self._dynamic_layer
@@ -579,24 +616,35 @@ class FeatureLayer(Layer):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def _update_attachment(self, oid, attachment_id, file_path):
+    def _update_attachment(
+        self, oid, attachment_id, file_path, return_moment=False, version=None
+    ):
         """
         Updates an existing attachment with a new file
 
         =================     ====================================================================
         **Argument**          **Description**
         -----------------     --------------------------------------------------------------------
-        oid                   Required string/integer. OBJECTID value to add attachment to.
+        oid                   Required string. OBJECTID value to add attachment to.
         -----------------     --------------------------------------------------------------------
-        attachment_id         Required integer. Id of the attachment to erase.
+        attachment_id         Required string. Id of the attachment to erase.
         -----------------     --------------------------------------------------------------------
         file_path             Required string. Path to new attachment
+        -----------------     --------------------------------------------------------------------
+        return_moment         Optional boolean. Specify whether the response will report the time
+                              attachments were deleted. If True, the server will report the time
+                              in the response's `editMoment` key. The default value is False.
         =================     ====================================================================
 
         :return: dictionary
 
         """
-        params = {"f": "json", "attachmentId": "%s" % attachment_id}
+        params = {
+            "f": "json",
+            "attachmentId": attachment_id,
+            "returnEditMoment": return_moment,
+            "gbdVersion": version,
+        }
         files = {"attachment": file_path}
         if self._dynamic_layer is not None:
             url = self.url.split("?")[0] + f"/{oid}/updateAttachment"
@@ -4361,6 +4409,32 @@ class FeatureLayerCollection(_GISResource):
             return results
         else:
             return FeatureSet.from_dict(results)
+
+    # ----------------------------------------------------------------------
+    def query_data_elements(self, layers: list) -> dict:
+        """
+        The `query_data_elements` provides access to valuable information
+        for datasets exposed through a feature service such as a feature
+        layer, a table or a utility network layer. The response is
+        dependent on the type of layer that is queried.
+
+        ======================     ====================================================================
+        **Argument**               **Description**
+        ----------------------     --------------------------------------------------------------------
+        layers                     Required list. Array of layerIds for which to get the data elements.
+        ======================     ====================================================================
+
+        :returns: dict
+
+        """
+        if (
+            "supportsQueryDataElements" in self.properties
+            and self.properties.supportsQueryDataElements
+        ):
+            url = f"{self._url}/queryDataElements"
+            params = {"f": "json", "layers": layers}
+            return self._con.get(url, params)
+        return []
 
     # ----------------------------------------------------------------------
     def query_related_records(
