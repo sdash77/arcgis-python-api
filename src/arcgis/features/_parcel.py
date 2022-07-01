@@ -1125,7 +1125,8 @@ class ParcelFabricManager(object):
 
     # ----------------------------------------------------------------------
     def reconstruct_from_seeds(
-        self, extent: Union[dict, Envelope],
+        self,
+        extent: Union[dict, Envelope],
     ):
         """
         The :meth:`~reconstructFromSeeds` operation constructs parcels from seeds enclosed by
@@ -1183,7 +1184,7 @@ class ParcelFabricManager(object):
         =======================     =======================================================================
         **Argument**                **Description**
         -----------------------     -----------------------------------------------------------------------
-        transfer_parcel_feature     Required Dict. Parameter representing the parcel to be transferred. 
+        transfer_parcel_feature     Required Dict. Parameter representing the parcel to be transferred.
                                     Only one parcel can be specified as the transfer parcel.
 
                                     :Syntax:
@@ -1192,8 +1193,8 @@ class ParcelFabricManager(object):
 
                                         >>> transfer_parcel_feature={"id":"<guid>","layerId":"<layerID>"}
         -----------------------     -----------------------------------------------------------------------
-        target_parcel_features      Required List. Parameter representing the target parcels to which land 
-                                    will be transferred. These parcels will be merged with the transfer 
+        target_parcel_features      Required List. Parameter representing the target parcels to which land
+                                    will be transferred. These parcels will be merged with the transfer
                                     parcel and will become larger.
 
                                     :Syntax:
@@ -1203,7 +1204,7 @@ class ParcelFabricManager(object):
                                         >>> target_parcel_features=[{"id":"<guid>","layerId":"<layerID>"},{...}]
 
         -----------------------     -----------------------------------------------------------------------
-        record                      Required String. Parameter for the unique identifier (GUID) of the 
+        record                      Required String. Parameter for the unique identifier (GUID) of the
                                     record being used for the transfer
         -----------------------     -----------------------------------------------------------------------
         default_area_unit           Required Integer. The units in which area will be stored. The parameter
@@ -1220,8 +1221,8 @@ class ParcelFabricManager(object):
                                         >>> default_area_unit=109404
 
         -----------------------     -----------------------------------------------------------------------
-        source_parcel_features      Optional List. Parameter representing the source parcels from which 
-                                    land will be transferred. These parcels will be clipped and will 
+        source_parcel_features      Optional List. Parameter representing the source parcels from which
+                                    land will be transferred. These parcels will be clipped and will
                                     become smaller.
 
                                     :Syntax:
