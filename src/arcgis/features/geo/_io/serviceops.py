@@ -130,9 +130,11 @@ def from_featureset(fset, sr=None):
                     df.iat[i, df.columns.get_loc("SHAPE")] = None
         if pandas_dtypes:
             try:
-                return df.astype(pandas_dtypes)
-            except:
+                df = df.astype(pandas_dtypes)
+                df = df.convert_dtypes()
                 return df
+            except:
+                return df.convert_dtypes()
         return df
     else:
         return None

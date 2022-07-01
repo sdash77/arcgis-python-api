@@ -1,7 +1,7 @@
 import sys
 from unittest.case import SkipTest
 
-sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
+sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from arcgis.gis import GIS, Item
 from arcgis.apps.storymap import StoryMap, Themes
@@ -15,11 +15,11 @@ from arcgis.apps.storymap import (
     Text,
     TextStyles,
     Gallery,
-    Scales
+    Scales,
 )
 
-#gis = GIS(profile="your_online_profile", verify_cert=False)
-gis = GIS("https://deldev.maps.arcgis.com", "demos_deldev", "DelDevs.1234", verify_cert=True, trust_env=True)
+gis = GIS(profile="your_online_profile", verify_cert=False)
+# gis = GIS("https://deldev.maps.arcgis.com", "demos_deldev", "DelDevs.1234", verify_cert=True, trust_env=True)
 
 # Folder path for content (insert your own path)
 content = r"C:\ipython_workfolder\Content"
@@ -76,6 +76,7 @@ class TestStoryMap(unittest.TestCase):
     def test_add_video(self):
         """Test adding a Video and seeing properties"""
         import os
+
         if os.path.isfile(content + r"\underwater.mp4"):
             vid = Video(content + r"\underwater.mp4")
             video = story.add(vid)
@@ -87,6 +88,7 @@ class TestStoryMap(unittest.TestCase):
         """Test adding an Audio and seeing properties"""
         # Node order before adding audio
         import os
+
         if os.path.isfile(content + r"\craine.mp3"):
             aud = Audio(content + r"\craine.mp3")
             print("Node Order Before Adding Audio:")
@@ -95,7 +97,7 @@ class TestStoryMap(unittest.TestCase):
             # Add audio at a certain position
             audio = story.add(aud, position=2)
             separator = story.add()
-    
+
             # See node order after audio was added
             print("Node Order After Adding Audio:")
             print(story.nodes)
@@ -131,7 +133,17 @@ class TestStoryMap(unittest.TestCase):
         Test adding a Map and seeing the properties
         Map id can be changed if not found.
         """
-        map_content = Map("df41bd54ae6044a8843f5063a26315ff")
+        from arcgis.mapping import WebMap
+
+        wm_test = WebMap()
+        wm_item = wm_test.save(
+            item_properties={
+                "title": "Test WebMap for ArcGIS StoryMap Test",
+                "tags": ["python", "storymaps"],
+                "snippet": "Creating a map for the purpose of the ArcGIS StoryMap in Python API Test.",
+            }
+        )
+        map_content = Map(wm_item.id)
         map = story.add(
             map_content, caption="This is a map that has nothing special on it."
         )
@@ -197,6 +209,7 @@ class TestStoryMap(unittest.TestCase):
 
     def test_path_to_url(self):
         import os
+
         if os.path.isfile(content + r"\underwater.mp4"):
             vid = Video(content + r"\underwater.mp4")
             video = story.add(vid)

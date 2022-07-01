@@ -428,6 +428,11 @@ class GIS(object):
         self._utoken = kwargs.pop("token", None)
         client_secret = kwargs.pop("client_secret", None)
         self._api_key = None
+        if verify_cert == False:
+            log = logging.getLogger()
+            log.warning(
+                "Setting `verify_cert` to False is a security risk, use at your own risk."
+            )
         if self._username is None:
             if "ESRI_API_KEY" in os.environ and self._utoken is None:
                 self._utoken = os.environ.get("ESRI_API_KEY", None)
