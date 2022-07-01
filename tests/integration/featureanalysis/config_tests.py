@@ -1,20 +1,26 @@
 import datetime
+import sys
+
+# sys.path.insert(0, r"/Users/cowboy/GitHub/np_geo/src")
 import requests
 import pandas as pd
 import platform
 import lxml
 from arcgis.gis import GIS, Item
 from arcgis.gis import ProfileManager
+import arcgis
 
 test_items = [
     "1ac6896bcafc4dccb29c70f45c442b00",  # Polygon Zips
-    "b96b5740372b4b838d621716264bb21d",  # Esri Offices
+    "435fcf6cff1f4f34989e151c1f25d64a",  # Esri Offices
     "c7665d3c8e6f48a79f07b79677996bed",  # Esri HQ
-    "747b24cdf0ef49acab79feb3dfcd4546",  # Cougar Habitat
+    "d3cb37b9636d47888268ca086810bd9b",  # Cougar Habitat
+    "5183636f099c48789628226e5730fb13",  # Traffic Collisions
+    "4e0ad45cc99e4f63ae5fcbc39ad9010d",  # Merge2 Polygon
 ]
 
 # scrape server page for a Kubernetes URL
-def get_kube_server(site="https://rpublicservers.esri.com/AEoK1100.php", row=2):
+def get_kube_server(site="https://rpublicservers.esri.com/AEoK1100.php", row=3):
 
     page = requests.get(site, verify=False)
     html = lxml.html.fromstring(page.content)
@@ -26,7 +32,7 @@ def get_kube_server(site="https://rpublicservers.esri.com/AEoK1100.php", row=2):
 
 # scrape credentials page for Kubernetes credentials
 def get_kube_credentials(
-    site="https://ragsreports.ags.esri.com/information/11.0_users.htm", row=16
+    site="https://ragsreports.ags.esri.com/information/11.0_users.htm", row=11
 ):
 
     # for non-Windows users, use your avworld credentials below
@@ -69,9 +75,9 @@ def setup_profiles(
 
     pm.create(
         ent_name,
-        url="https://gpportal.esri.com/portal/",
-        username="admin",
-        password="esri.agp",
+        url="https://pythonapi.playground.esri.com/portal/",
+        username="playground_test",
+        password="i_love_testing123",
     )
 
     pm.create(
@@ -99,3 +105,7 @@ def stage_data(
         for item in items:
             if not gis.content.get(item.id):
                 gis.content.add(item, item_id=item.id)
+
+
+# setup_profiles()
+# stage_data(test_items)
