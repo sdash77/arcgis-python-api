@@ -14,7 +14,11 @@ from ._base import BasePortalAdmin
 ########################################################################
 class AGOLUsageReports(BasePortalAdmin):
     """
-    Compiles Simple Usage Reports from ArcGIS Online
+    Simple Usage Reports from ArcGIS Online
+
+    .. note::
+        Usage reports can contain users outside your orgnanization.
+
     """
 
     _json_dict = {}
@@ -121,6 +125,10 @@ class AGOLUsageReports(BasePortalAdmin):
         Creates a Report as a Panda's dataframe or CSV file for a given time range
         for ArcGIS Online Organizations.
 
+        .. note::
+            Reports can contain users outside your orgnanization that consumed credits
+
+
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
@@ -213,6 +221,10 @@ class AGOLUsageReports(BasePortalAdmin):
         Creates a usage report for all users for a given organization on
         ArcGIS Online.
 
+        .. note::
+            Reports can contain users outside your orgnanization that consumed credits
+
+
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
@@ -276,6 +288,9 @@ class AGOLUsageReports(BasePortalAdmin):
         """
         Creates a usage report for all registered application logins for a
         given organization on ArcGIS Online.
+
+        .. note::
+            Reports can contain users outside your orgnanization that used the application
 
         ===============     ====================================================
         **Argument**        **Description**

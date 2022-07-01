@@ -2414,7 +2414,7 @@ class MapView(widgets.DOMWidget):
         """
         In a JupyterLab environment, calling ``toggle_window_view`` will separate
         the drawn map widget to a new window next to the open notebook,
-        allowing you to move the widget it, split it, put it in a new tab, etc.
+        allowing you to move the widget to it, split it, put it in a new tab, etc.
         If the widget is already separated in a new window, calling this
         function will restore the widget to the notebook where it originated
         from.
