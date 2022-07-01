@@ -2,7 +2,7 @@
 Raster functions allow you to define processing operations that will be applied to one or more rasters.
 These functions are applied to the raster data on the fly as the data is accessed and viewed; therefore,
 they can be applied quickly without having to endure the time it would otherwise take to create a
-processed product on disk, for which raster analytics tools like :meth:`arcgis.raster.analytics.generate_raster` can be used.
+processed product on disk, for which raster analytics tools like :meth:`~arcgis.raster.analytics.generate_raster` can be used.
 
 Functions can be applied to various rasters (or images), including the following:
 
@@ -459,12 +459,12 @@ def arg_statistics(
     bands of input rasters. The statistics can be the band index of the maximum, minimum, or median value, or the
     duration (number of bands) between a minimum and maximum value
 
-    See http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/argstatistics-function.htm
+    See `ArgStatistics function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/argstatistics-function.htm>`_
 
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required Raster/ImageryLayer objects filtered by where clause, spatial and temporal filters
+    rasters                              Required :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects filtered by where clause, spatial and temporal filters
     --------------------------------     --------------------------------------------------------------------
     stat_type                            Optional string. one of "max", "min", "median", "duration"
     --------------------------------     --------------------------------------------------------------------
@@ -522,14 +522,14 @@ def arg_max(
     which is first ordered by the input raster index, as shown in the table below, and then by the relative band order
     within each input raster.
 
-    See http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/argstatistics-function.htm
+    See `ArgStatistics function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/argstatistics-function.htm>`_
 
     The arguments for this function are as follows:
 
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required Raster/ImageryLayer objects filtered by where clause, spatial and temporal filters
+    rasters                              Required :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects filtered by where clause, spatial and temporal filters
     --------------------------------     --------------------------------------------------------------------
     undefined_class                      Requred int.
     --------------------------------     --------------------------------------------------------------------
@@ -554,14 +554,14 @@ def arg_min(
     ArgMin is the argument of the minimum, which returns the Band index for which the given pixel attains
     its minimum value.
 
-    See http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/argstatistics-function.htm
+    See `ArgStatistics function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/argstatistics-function.htm>`_
 
     The arguments for this function are as follows:
 
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required Raster/ImageryLayer objects filtered by where clause, spatial and temporal filters
+    rasters                              Required :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects filtered by where clause, spatial and temporal filters
     --------------------------------     --------------------------------------------------------------------
     undefined_class                      Required int
     --------------------------------     --------------------------------------------------------------------
@@ -591,14 +591,14 @@ def arg_median(
     one value separating the lower half of the array from the higher half. More specifically, if the ascend-sorted
     array has n values, the median is the ith (0-based) value, where: i = ( (n-1) / 2 )
 
-    See http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/argstatistics-function.htm
+    See `ArgStatistics function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/argstatistics-function.htm>`_
 
     The arguments for this function are as follows:
 
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required Raster/ImageryLayer objects filtered by where clause, spatial and temporal filters
+    rasters                              Required :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects filtered by where clause, spatial and temporal filters
     --------------------------------     --------------------------------------------------------------------
     undefined_class                      Required int.
     --------------------------------     --------------------------------------------------------------------
@@ -625,14 +625,14 @@ def duration(
     The Duration method finds the longest consecutive elements in the array, where each element has a value greater
     than or equal to min_value and less than or equal to max_value, and then returns its length.
 
-    See http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/argstatistics-function.htm
+    See `ArgStatistics function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/argstatistics-function.htm>`_
 
     The arguments for this function are as follows:
 
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required Raster/ImageryLayer objects filtered by where clause, spatial and temporal filters
+    rasters                              Required :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects filtered by where clause, spatial and temporal filters
     --------------------------------     --------------------------------------------------------------------
     undefined_class                      Required int
     --------------------------------     --------------------------------------------------------------------
@@ -668,9 +668,9 @@ def arithmetic(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster1                              Required first input Raster/ImageryLayer object filtered by where clause, spatial and temporal filters.
+    raster1                              Required first input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object filtered by where clause, spatial and temporal filters.
     --------------------------------     --------------------------------------------------------------------
-    raster2                              Required second input Raster/ImageryLayer object filtered by where clause, spatial and temporal filters.
+    raster2                              Required second input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object filtered by where clause, spatial and temporal filters.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
 
@@ -769,7 +769,7 @@ def aspect(raster: Union[Raster, ImageryLayer]):
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                               Required input Raster/ImageryLayer object.
+    raster                               Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     ================================     ====================================================================
 
     :return: aspect applied to the input raster
@@ -801,12 +801,13 @@ def band_arithmetic(
 ):
     """
     The band_arithmetic function performs an arithmetic operation on the bands of a raster. For more information,
-    see Band Arithmetic function at http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/band-arithmetic-function.htm
+    see `Band Arithmetic function <https://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/band-arithmetic-function.htm>`_
+
 
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                               Required input Raster/ImageryLayer object.
+    raster                               Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     band_indexes                         Optional string or list. Band indexes can be given as a space seperated string or a list of integers or floating point values. e.g., "4 3" or [4,3]. For user defined methods the band index can be given as an expression such as "(B3 - B1)/(B3 + B1)".
     --------------------------------     --------------------------------------------------------------------
@@ -926,13 +927,13 @@ def ndvi(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object
+    raster                               Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object
     --------------------------------     --------------------------------------------------------------------
-    band_indexes                            Optional string/list of band indexes.
+    band_indexes                         Optional string/list of band indexes.
 
-                                            * Band Indexes "NIR Red", e.g., "4 3" or [4,3]
+                                         * Band Indexes "NIR Red", e.g., "4 3" or [4,3]
     --------------------------------     --------------------------------------------------------------------
-    astype                                  Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
     ================================     ====================================================================
 
     :return: The output raster.
@@ -955,13 +956,13 @@ def savi(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object
+    raster                               Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object
     --------------------------------     --------------------------------------------------------------------
-    band_indexes                            Optional string/list of band indexes.
+    band_indexes                         Optional string/list of band indexes.
 
-                                            * "NIR Red L", for example, "4 3 0.33" or [4,3,0.33]
+                                         * "NIR Red L", for example, "4 3 0.33" or [4,3,0.33]
     --------------------------------     --------------------------------------------------------------------
-    astype                                  Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
     ================================     ====================================================================
 
     :return: The output raster.
@@ -984,7 +985,7 @@ def tsavi(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object
     --------------------------------     --------------------------------------------------------------------
     band_indexes                            Optional string/list of band indexes.
 
@@ -1014,7 +1015,7 @@ def msavi(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     band_indexes                            Optional string/list of band indexes.
 
@@ -1045,7 +1046,7 @@ def gemi(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     band_indexes                            Optional string/list of band indexes.
 
@@ -1074,7 +1075,7 @@ def pvi(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     band_indexes                            Optional string/list of band indexes.
 
@@ -1103,7 +1104,7 @@ def gvitm(
      ================================     ====================================================================
      **Argument**                         **Description**
      --------------------------------     --------------------------------------------------------------------
-     raster                                  Required input Raster/ImageryLayer object.
+     raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
      --------------------------------     --------------------------------------------------------------------
      band_indexes                            Optional string/list of band indexes.
 
@@ -1134,7 +1135,7 @@ def sultan(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object
     --------------------------------     --------------------------------------------------------------------
     band_indexes                            Optional string/list of band indexes.
 
@@ -1164,7 +1165,7 @@ def vari(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     band_indexes                            Optional string/list of band indexes.
 
@@ -1194,7 +1195,7 @@ def gndvi(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     band_indexes                            Optional string/list of band indexes.
 
@@ -1223,7 +1224,7 @@ def sr(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object
     --------------------------------     --------------------------------------------------------------------
     band_indexes                            Optional string/list of band indexes.
 
@@ -1258,7 +1259,7 @@ def ndvire(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                   Required input Raster/ImageryLayer object.
+    raster                                   Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     band_indexes                             Optional string/list of band indexes.
 
@@ -1295,7 +1296,7 @@ def srre(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object
     --------------------------------     --------------------------------------------------------------------
     band_indexes                            Optional string/list of band indexes.
 
@@ -1327,7 +1328,7 @@ def mtvi2(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     band_indexes                            Optional string/list of band indexes.
 
@@ -1358,7 +1359,7 @@ def rtvi_core(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object
     --------------------------------     --------------------------------------------------------------------
     band_indexes                            Optional string/list of band indexes.
 
@@ -1391,7 +1392,7 @@ def cire(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                   Required input Raster/ImageryLayer object
+    raster                                   Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object
     --------------------------------     --------------------------------------------------------------------
     band_indexes                             Optional string/list of band indexes.
 
@@ -1425,7 +1426,7 @@ def cig(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                   Required input Raster/ImageryLayer object
+    raster                                   Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object
     --------------------------------     --------------------------------------------------------------------
     band_indexes                             Optional string/list of band indexes.
 
@@ -1458,7 +1459,7 @@ def ndwi(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                   Required input Raster/ImageryLayer object.
+    raster                                   Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     band_indexes                             Optional string/list of band indexes.
 
@@ -1491,7 +1492,7 @@ def evi(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     band_indexes                            Optional string/list of band indexes.
 
@@ -1524,7 +1525,7 @@ def iron_oxide(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     param band_indexes                      Optional string/list of band indexes.
 
@@ -1556,7 +1557,7 @@ def ferrous_minerals(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     band_indexes                            Optional string/list of band indexes.
 
@@ -1588,7 +1589,7 @@ def clay_minerals(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                   Required input Raster/ImageryLayer object
+    raster                                   Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object
     --------------------------------     --------------------------------------------------------------------
     band_indexes                             Optional string/list of band indexes.
 
@@ -1623,7 +1624,7 @@ def wndwi(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                   Required input Raster/ImageryLayer object
+    raster                                   Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object
     --------------------------------     --------------------------------------------------------------------
     band_indexes                             Optional string/list of band indexes.
 
@@ -1648,14 +1649,14 @@ def bai(
     The Burn Area Index (BAI) uses the reflectance values in the red and NIR portion of the spectrum to identify
     the areas of the terrain affected by fire.
 
-    BAI = 1/((0.1 -RED)^2 + (0.06 - NIR)^2)
+        BAI = 1/((0.1 -RED)^2 + (0.06 - NIR)^2)
 
     The arguments for this function are as follows:
 
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                   Required input Raster/ImageryLayer object
+    raster                                   Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object
     --------------------------------     --------------------------------------------------------------------
     band_indexes                             Optional string/list of band indexes.
 
@@ -1687,7 +1688,7 @@ def nbr(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                   Required input Raster/ImageryLayer object
+    raster                                   Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object
     --------------------------------     --------------------------------------------------------------------
     band_indexes                             Optional string/list of band indexes.
 
@@ -1718,7 +1719,7 @@ def ndbi(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                   Required input Raster/ImageryLayer object
+    raster                                   Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object
     --------------------------------     --------------------------------------------------------------------
     band_indexes                             Optional string/list of band indexes.
 
@@ -1750,7 +1751,7 @@ def ndmi(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                   Required input Raster/ImageryLayer object
+    raster                                   Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object
     --------------------------------     --------------------------------------------------------------------
     band_indexes                             Optional string/list of band indexes.
 
@@ -1782,7 +1783,7 @@ def ndsi(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                   Required input Raster/ImageryLayer object
+    raster                                   Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object
     --------------------------------     --------------------------------------------------------------------
     band_indexes                             Optional string/list of band indexes.
 
@@ -1814,7 +1815,7 @@ def mndwi(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     param band_indexes                      Optional string/list of band indexes.
 
@@ -1840,14 +1841,14 @@ def expression(
 
     To identify the bands, prepend the band number with a B or b:
 
-    * For example: "(B1 + B2) / (B3 * B5)"
+    * For Example: "(B1 + B2) / (B3 * B5)"
 
     The arguments for this function are as follows:
 
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     expression                              The algebriac formula
     --------------------------------     --------------------------------------------------------------------
@@ -1875,9 +1876,9 @@ def classify(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster1                                   Required first input Raster/ImageryLayer object filtered by where clause, spatial and temporal filters
+    raster1                                   Required first input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object filtered by where clause, spatial and temporal filters
     --------------------------------     --------------------------------------------------------------------
-    raster2                                   Optional segmentation Raster/ImageryLayer object -  If provided, pixels in each segment will get same class assignments. imagery layers filtered by where clause, spatial and temporal filters
+    raster2                                   Optional segmentation :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object -  If provided, pixels in each segment will get same class assignments. imagery layers filtered by where clause, spatial and temporal filters
     --------------------------------     --------------------------------------------------------------------
     classifier_definition                     The classifier parameters as a Python dictionary / json format
     ================================     ====================================================================
@@ -1938,7 +1939,7 @@ def clip(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                   Required input Raster/ImageryLayer object
+    raster                                   Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object
     --------------------------------     --------------------------------------------------------------------
     goemetry                                 Optional dictionary. Specifies the geometry for clipping.
     --------------------------------     --------------------------------------------------------------------
@@ -1946,7 +1947,7 @@ def clip(
     --------------------------------     --------------------------------------------------------------------
     astype                                   Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
     --------------------------------     --------------------------------------------------------------------
-    clipping_raster                          Optional Raster/ImageryLayer object. Specifies the raster from which the extent needs to be used for clipping.
+    clipping_raster                          Optional :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object. Specifies the raster from which the extent needs to be used for clipping.
     --------------------------------     --------------------------------------------------------------------
     use_input_geometry                       Optional boolean. If True, the function uses the clip geometry defined by the geometry parameter. This is the default.
                                              If False, the function uses the extent of the clip geometry defined by the geometry parameter.
@@ -2025,29 +2026,28 @@ def colormap(
 ):
     """
     The colormap function transforms the pixel values to display the raster data as a color (RGB) image, based on specific colors in
-    a color map. For more information, see Colormap function at
-    http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/colormap-function.htm
+    a color map. For more information, see
+    `Colormap function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/colormap-function.htm>`_
 
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                               Required input Raster/ImageryLayer object.
+    raster                               Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     colormap_name                        Optional string. The colormap name. Available options are - "Random" | "NDVI" | "Elevation" | "Gray".
     --------------------------------     --------------------------------------------------------------------
     colormap                             Optional list.
 
-                                            Syntax
-                                                [
+                                         Syntax
 
-                                                [<value1>, <red1>, <green1>, <blue1>], //[int, int, int, int]
-                                                [<value2>, <red2>, <green2>, <blue2>]
-
-                                                ]
+                                            | [
+                                            | [<value1>, <red1>, <green1>, <blue1>], //[int, int, int, int]
+                                            | [<value2>, <red2>, <green2>, <blue2>]
+                                            | ]
     --------------------------------     --------------------------------------------------------------------
     colorramp                             Can be a string specifiying color ramp name like - "Black To White" | "Yellow To Red" | "Slope" | more... For more information about colorramp object, see color ramp object at
 
-                                          https://developers.arcgis.com/documentation/common-data-types/color-ramp-objects.htm
+                                          `Color ramp objects <https://developers.arcgis.com/documentation/common-data-types/color-ramp-objects.htm>`_
     --------------------------------     --------------------------------------------------------------------
     astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
     ================================     ====================================================================
@@ -2094,21 +2094,21 @@ def composite_band(rasters, astype: Optional[str] = None, cellsize_type: str = "
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                                   Required input Raster/ImageryLayer objects.
+    rasters                                   Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects.
     --------------------------------     --------------------------------------------------------------------
     astype                                    Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
     --------------------------------     --------------------------------------------------------------------
     cellsize_type                             Optional string. Specifies the cell size to be used for the function.
 
-                                                - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+                                              - "FirstOf" - Use the first cell size of the input rasters. This is the default.
 
-                                                - "MinOf" - Use the smallest cell size of all the input rasters.
+                                              - "MinOf" - Use the smallest cell size of all the input rasters.
 
-                                                - "MaxOf" - Use the largest cell size of all the input rasters.
+                                              - "MaxOf" - Use the largest cell size of all the input rasters.
 
-                                                - "MeanOf" - Use the mean cell size of all the input rasters.
+                                              - "MeanOf" - Use the mean cell size of all the input rasters.
 
-                                                - "LastOf" - Use the last cell size of the input rasters.
+                                              - "LastOf" - Use the last cell size of the input rasters.
     ================================     ====================================================================
 
     :return: The multiband image.
@@ -2153,7 +2153,7 @@ def contrast_brightness(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     contrast_offset                         float, between -100 to +100
     --------------------------------     --------------------------------------------------------------------
@@ -2191,14 +2191,14 @@ def convolution(
     """
     The Convolution function performs filtering on the pixel values in an image, which can be used for sharpening an
     image, blurring an image, detecting edges within an image, or other kernel-based enhancements. For more information,
-    see Convolution function at http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/convolution-function.htm
+    see Convolution function at `Convolution function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/convolution-function.htm>`_
 
     The arguments for this function are as follows:
 
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     kernel                                  well known kernel from arcgis.raster.kernels or user defined kernel passed as a list of list
     --------------------------------     --------------------------------------------------------------------
@@ -2259,14 +2259,14 @@ def curvature(
     you can tell that by looking at the curvature value. The curvature is calculated by computing the second derivative
     of the surface. Refer to this conceptual help on how it works.
 
-    http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/curvature-function.htm
+    `Curvature function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/curvature-function.htm>`_
 
     The arguments for this function are as follows:
 
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     curvature_type                          Optional string. One of 'standard', 'planform', 'profile'
     --------------------------------     --------------------------------------------------------------------
@@ -2317,7 +2317,7 @@ def NDVI(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                   Required input Raster/ImageryLayer object.
+    raster                                   Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     visible_band_id                          int (zero-based band id, e.g. 2)
     --------------------------------     --------------------------------------------------------------------
@@ -2369,7 +2369,7 @@ def elevation_void_fill(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     max_void_width                          Optional number. Maximum void width to fill. 0: fill all
     --------------------------------     --------------------------------------------------------------------
@@ -2415,7 +2415,7 @@ def extract_band(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     band_ids                                Optional list of integers, band_ids uses one-based indexing.
     --------------------------------     --------------------------------------------------------------------
@@ -2489,7 +2489,7 @@ def geometric(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     geodata_transforms                      Please refer to the Geodata Transformations documentation for more details.
     --------------------------------     --------------------------------------------------------------------
@@ -2505,7 +2505,7 @@ def geometric(
     --------------------------------     --------------------------------------------------------------------
     tolerance                               Optional float. Specify the maximum tolerable error in the geometric function, given in number of pixels.
     --------------------------------     --------------------------------------------------------------------
-    dem                                     Optional Raster/ImageryLayer. Specify the DEM to use for the Geometric function
+    dem                                     Optional :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>`. Specify the DEM to use for the Geometric function
     ================================     ====================================================================
     """
 
@@ -2571,7 +2571,7 @@ def hillshade(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    dem                                  Required Raster/ImageryLayer object created from a DEM.
+    dem                                  Required :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object created from a DEM.
     --------------------------------     --------------------------------------------------------------------
     azimuth                              Optional float. Azimuth is the sun's relative position along the horizon (in degrees). This position is indicated by the angle of the sun measured clockwise from due north. An azimuth of 0 degrees indicates north, east is 90 degrees, south is 180 degrees, and west is 270 degrees.
 
@@ -2687,7 +2687,7 @@ def local(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     operation                            Optional int. Specifies the operation to be used.
@@ -2834,7 +2834,7 @@ def plus(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -2866,6 +2866,7 @@ def plus(
         This raster operation can also be performed by adding the two input rasters using the + operator.
 
         Example:
+
         plus_op = raster1 + raster2
 
     :return: The output raster with the function applied.
@@ -2896,7 +2897,7 @@ def minus(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -2928,6 +2929,7 @@ def minus(
         This raster operation can also be performed by subtracting the second input raster from the first using the - operator.
 
         Example:
+
         diff_raster = raster1 - raster2
 
     :return: The output raster with the function applied.
@@ -2958,7 +2960,7 @@ def times(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -2990,6 +2992,7 @@ def times(
         This raster operation can also be performed by multiplying the two input rasters using the * operator.
 
         Example:
+
         prod_raster = raster1 * raster2
 
     :return: The output raster with the function applied.
@@ -3020,7 +3023,7 @@ def sqrt(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -3076,7 +3079,7 @@ def power(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -3108,6 +3111,7 @@ def power(
         This raster operation can also be performed using the ** operator.
 
         Example:
+
         pow_raster = raster1 ** raster2
 
     :return: The output raster with the function applied.
@@ -3138,7 +3142,7 @@ def acos(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -3194,7 +3198,7 @@ def asin(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -3250,7 +3254,7 @@ def atan(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -3306,7 +3310,7 @@ def atanh(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -3362,7 +3366,7 @@ def abs(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -3418,7 +3422,7 @@ def bitwise_and(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -3476,7 +3480,7 @@ def bitwise_left_shift(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -3505,9 +3509,11 @@ def bitwise_left_shift(
     ================================     ====================================================================
 
     .. tip::
+
         This raster operation can also be performed by invoking the << operator between the two input rasters.
 
         Example:
+
         op_raster = raster1 << raster2
 
     :return: The output raster with the function applied.
@@ -3539,7 +3545,7 @@ def bitwise_not(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required Raster/ImageryLayer object. If a scalar is needed for the
+    rasters                              Required :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -3595,7 +3601,7 @@ def bitwise_or(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -3652,7 +3658,7 @@ def bitwise_right_shift(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -3684,6 +3690,7 @@ def bitwise_right_shift(
         This raster operation can also be performed by invoking the >> operator between the two input rasters.
 
         Example:
+
         op_raster = raster1 >> raster2
 
     :return: The output raster with the function applied.
@@ -3715,7 +3722,7 @@ def bitwise_xor(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -3772,7 +3779,7 @@ def boolean_and(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -3804,6 +3811,7 @@ def boolean_and(
         This raster operation can also be performed by invoking the & operator between the two input rasters.
 
         Example:
+
         op_raster = raster1 & raster2
 
     :return: The output raster with the function applied.
@@ -3835,7 +3843,7 @@ def boolean_not(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required Raster/ImageryLayer object. If a scalar is needed for the
+    rasters                              Required :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -3869,6 +3877,7 @@ def boolean_not(
         This raster operation can also be performed by invoking the ~ operator in front of the input raster.
 
         Example:
+
         op_raster = ~raster1
 
     .. code-block:: python
@@ -3897,7 +3906,7 @@ def boolean_or(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -3929,6 +3938,7 @@ def boolean_or(
         This raster operation can also be performed by invoking the | operator between the two input rasters.
 
         Example:
+
         op_raster = raster1 | raster2
 
     :return: The output raster with the function applied.
@@ -3960,7 +3970,7 @@ def boolean_xor(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -3993,7 +4003,8 @@ def boolean_xor(
     .. tip::
         This raster operation can also be performed by invoking the ^ operator between the two input rasters.
 
-        Example: To perform Boolean Xor between raster1 and raster2:
+        Example:
+ To perform Boolean Xor between raster1 and raster2:
 
         op_raster = raster2 ^ raster1
 
@@ -4024,7 +4035,7 @@ def cos(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -4080,7 +4091,7 @@ def cosh(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -4168,6 +4179,7 @@ def divide(
         This raster operation can also be performed by dividing the two input rasters using the / operator.
 
         Example:
+
         op_raster = raster1 / raster2
 
     :return: The output raster with the function applied.
@@ -4199,7 +4211,7 @@ def equal_to(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -4231,6 +4243,7 @@ def equal_to(
         This raster operation can also be performed by invoking the == operator between the two input rasters.
 
         Example:
+
         equal_to_op = raster1 == raster2
 
     :return: The output raster with the function applied.
@@ -4261,7 +4274,7 @@ def exp(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -4317,7 +4330,7 @@ def exp10(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -4373,7 +4386,7 @@ def exp2(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -4429,7 +4442,7 @@ def greater_than(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -4461,6 +4474,7 @@ def greater_than(
         This raster operation can also be performed by invoking the > operator between the two input rasters.
 
         Example:
+
         gt_raster = raster1 > raster2
 
     :return: The output raster with the function applied.
@@ -4491,7 +4505,7 @@ def greater_than_equal(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -4524,6 +4538,7 @@ def greater_than_equal(
         This raster operation can also be performed by invoking the >= operator between the two input rasters.
 
         Example:
+
         ge_raster = raster1 >= raster2
 
     :return: The output raster with the function applied.
@@ -4554,7 +4569,7 @@ def INT(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -4611,7 +4626,7 @@ def is_null(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -4668,7 +4683,7 @@ def FLOAT(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -4725,7 +4740,7 @@ def less_than(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -4757,6 +4772,7 @@ def less_than(
         This raster operation can also be performed by invoking the < operator between the two input rasters.
 
         Example:
+
         lt_raster = raster1 < raster2
 
     :return: The output raster with the function applied.
@@ -4787,7 +4803,7 @@ def less_than_equal(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -4820,6 +4836,7 @@ def less_than_equal(
         This raster operation can also be performed by invoking the <= operator between the two input rasters.
 
         Example:
+
         le_raster = raster1 <= raster2
 
     :return: The output raster with the function applied.
@@ -4850,7 +4867,7 @@ def ln(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -4906,7 +4923,7 @@ def log10(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -4962,7 +4979,7 @@ def log2(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -5020,7 +5037,7 @@ def majority(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -5093,7 +5110,7 @@ def max(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -5129,6 +5146,7 @@ def max(
         This raster operation can also be performed by calling the in-built max function for the input rasters.
 
         Example:
+
         max_op = max([raster1, raster2, raster3])
 
     :return: The output raster with the function applied.
@@ -5171,7 +5189,7 @@ def mean(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer object. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -5241,7 +5259,7 @@ def med(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -5326,7 +5344,7 @@ def min(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer object. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -5394,7 +5412,7 @@ def minority(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -5465,7 +5483,7 @@ def mod(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -5497,6 +5515,7 @@ def mod(
         This raster operation can also be performed by finding the 'remainder' upon division of the two input rasters by using the % operator.
 
         Example:
+
         op_raster = raster1 % raster2
 
     :return: The output raster with the function applied.
@@ -5527,7 +5546,7 @@ def negate(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer object. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -5561,6 +5580,7 @@ def negate(
         This raster operation can also be performed by placing the - operator in front of the input raster.
 
         Example:
+
         neg_raster = -raster
 
     .. code-block:: python
@@ -5589,7 +5609,7 @@ def not_equal(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -5623,6 +5643,7 @@ def not_equal(
         This raster operation can also be performed by invoking the != operator between the two input rasters.
 
         Example:
+
         ne_op = raster1 != raster2
 
     .. code-block:: python
@@ -5653,7 +5674,7 @@ def cellstats_range(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -5719,7 +5740,7 @@ def round_down(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -5775,7 +5796,7 @@ def round_up(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -5831,7 +5852,7 @@ def set_null(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -5897,7 +5918,7 @@ def sin(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -5953,7 +5974,7 @@ def sinh(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -6009,7 +6030,7 @@ def square(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -6067,7 +6088,7 @@ def std(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -6136,7 +6157,7 @@ def sum(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -6207,7 +6228,7 @@ def tan(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -6263,7 +6284,7 @@ def tanh(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -6321,7 +6342,7 @@ def variety(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -6387,7 +6408,7 @@ def acosh(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -6443,7 +6464,7 @@ def asinh(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -6499,7 +6520,7 @@ def atan2(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -6555,7 +6576,7 @@ def float_divide(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -6611,7 +6632,7 @@ def floor_divide(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -6660,14 +6681,15 @@ def con(
     astype: Optional[str] = None,
 ):
     """
-    The con function performs a conditional if/else evaluation on each of the input cells of an input raster. For more information see, http://desktop.arcgis.com/en/arcmap/latest/tools/spatial-analyst-toolbox/con-.htm
+    The con function performs a conditional if/else evaluation on each of the input cells of an input raster. For more information see,
+    `Con <http://desktop.arcgis.com/en/arcmap/latest/tools/spatial-analyst-toolbox/con-.htm>`_
 
     The arguments for this function are as follows:
 
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -6727,7 +6749,7 @@ def _pick(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a float.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -6787,7 +6809,7 @@ def percentile(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects. If a scalar is needed for the
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
                                          operation, the scalar can be a double.
     --------------------------------     --------------------------------------------------------------------
     percentile_value                     Optional float. The percentile to calculate. The default is 90, indicating the 90th percentile.
@@ -6878,7 +6900,7 @@ def mask(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                 Required input Raster/ImageryLayer object.
+    raster                                 Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     no_data_values                         list of strings ["band0_val", "band1_val", ...]. The NoData values can be specified
                                            for each band. The index of each element in no_data_values list
@@ -6938,7 +6960,7 @@ def ml_classify(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     signature                               Required string. a signature string returned from computeClassStatistics (GSG)
     --------------------------------     --------------------------------------------------------------------
@@ -7057,7 +7079,7 @@ def remap(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     input_ranges                            [float, float, ...], input ranges are specified in pairs: from (inclusive) and to (exclusive).
     --------------------------------     --------------------------------------------------------------------
@@ -7119,7 +7141,7 @@ def resample(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object
     --------------------------------     --------------------------------------------------------------------
     resampling_type                         one of NearestNeighbor,Bilinear,Cubic,Majority,BilinearInterpolationPlus,BilinearGaussBlur,
                                             BilinearGaussBlurPlus, Average, Minimum, Maximum,VectorAverage(require two bands)
@@ -7200,7 +7222,7 @@ def segment_mean_shift(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     spectral_detail                         Optional float between 0-21. The relative importance of separating
                                             objects based on color characteristics.
@@ -7260,7 +7282,9 @@ def segment_mean_shift(
 
     .. code-block:: python
 
-        # Usage Example: Apply the segment_mean_shift function on a raster.
+        # Usage Example:
+
+        Apply the segment_mean_shift function on a raster.
 
         segmented_raster_op = segment_mean_shift(raster=raster_obj,
                                                  spectral_detail=15.5,
@@ -7324,7 +7348,7 @@ def shaded_relief(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     azimuth                                 float (e.g. 215.0)
     --------------------------------     --------------------------------------------------------------------
@@ -7346,8 +7370,8 @@ def shaded_relief(
     --------------------------------     --------------------------------------------------------------------
     colorramp                               string, specifying color ramp name like <Black To White|Yellow To Red|Slope|more..>
                                             or a color ramp object.
-                                            For more information about colorramp object, see color ramp object at
-                                            https://developers.arcgis.com/documentation/common-data-types/color-ramp-objects.htm)
+                                            For more information about colorramp object, see
+                                            `Color ramp objects <https://developers.arcgis.com/documentation/common-data-types/color-ramp-objects.htm>`_
     --------------------------------     --------------------------------------------------------------------
     hillshade_type                          new at 10.8.1. int, 0 = traditional, 1 = multi - directional; default is 0
     ================================     ====================================================================
@@ -7411,7 +7435,7 @@ def slope(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    dem                                  Required input Raster/ImageryLayer object created from a DEM.
+    dem                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object created from a DEM.
     --------------------------------     --------------------------------------------------------------------
     z_factor                             Optional float. Scaling factor used to convert the elevation values for two purposes:
 
@@ -7501,7 +7525,7 @@ def focal_statistics(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     kernel_columns                          int (e.g. 3)
     --------------------------------     --------------------------------------------------------------------
@@ -7626,7 +7650,7 @@ def stretch(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object
     --------------------------------     --------------------------------------------------------------------
     stretch_type                            Optional string, one of None, StdDev, Histogram, MinMax, PercentClip, 9 = Sigmoid
     --------------------------------     --------------------------------------------------------------------
@@ -7656,7 +7680,7 @@ def stretch(
                                             <Black To White|Yellow To Red|Slope|more..> or a color ramp object.
 
                                             For more information about colorramp object, see color ramp object at
-                                            https://developers.arcgis.com/documentation/common-data-types/color-ramp-objects.htm)
+                                            `Color ramp objects <https://developers.arcgis.com/documentation/common-data-types/color-ramp-objects.htm>`_
     ================================     ====================================================================
 
     :return: The output raster.
@@ -7733,7 +7757,7 @@ def threshold(raster: Union[Raster, ImageryLayer], astype: Optional[str] = None)
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                               Required input Raster/ImageryLayer object.
+    raster                               Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     astype                               Optional string. Output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
     ================================     ====================================================================
@@ -7799,7 +7823,7 @@ def transpose_bits(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object
     --------------------------------     --------------------------------------------------------------------
     input_bit_positions                     list of integers, required
     --------------------------------     --------------------------------------------------------------------
@@ -7809,7 +7833,7 @@ def transpose_bits(
     --------------------------------     --------------------------------------------------------------------
     constant_fill_value                     integer, required
     --------------------------------     --------------------------------------------------------------------
-    fill_raster                             optional, the fill raster (Raster/ImageryLayer object)
+    fill_raster                             optional, the fill raster (:class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object)
     --------------------------------     --------------------------------------------------------------------
     astype                                  Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
     ================================     ====================================================================
@@ -7869,7 +7893,7 @@ def unit_conversion(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     from_unit                               units constant listed above (int).
     --------------------------------     --------------------------------------------------------------------
@@ -7943,7 +7967,7 @@ def vector_field_renderer(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object
     --------------------------------     --------------------------------------------------------------------
     is_uv_components                        boolean
     --------------------------------     --------------------------------------------------------------------
@@ -8008,7 +8032,7 @@ def apply(raster: Union[Raster, ImageryLayer], fn_name, **kwargs):
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required Raster/ImageryLayer object.
+    raster                                  Required :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     fn_name                                 name of the server side raster function template, See imagery layer properties.rasterFunctionInfos
     --------------------------------     --------------------------------------------------------------------
@@ -8083,9 +8107,9 @@ def vector_field(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster_u_mag                            raster item representing 'U' or 'Magnitude' - Required input Raster/ImageryLayer object filtered by where clause, spatial and temporal filters
+    raster_u_mag                            raster item representing 'U' or 'Magnitude' - Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object filtered by where clause, spatial and temporal filters
     --------------------------------     --------------------------------------------------------------------
-    raster_v_dir                            raster item representing 'V' or 'Direction' - Required input Raster/ImageryLayer object filtered by where clause, spatial and temporal filters
+    raster_v_dir                            raster item representing 'V' or 'Direction' - Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object filtered by where clause, spatial and temporal filters
     --------------------------------     --------------------------------------------------------------------
     input_data_type                         string, 'Vector-UV' or 'Vector-MagDir' per input used in 'raster_u_mag' and 'raster_v_dir'
     --------------------------------     --------------------------------------------------------------------
@@ -8148,14 +8172,14 @@ def complex(raster: Union[Raster, ImageryLayer]):
     input raster has complex pixel type. It computes magnitude from complex
     value to convert the pixel type to floating point for each pixel. It takes
     no argument but an optional input raster. For more information, see
-    http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/complex-function.htm
+    `Complex function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/complex-function.htm>`_
 
     The arguments for this function are as follows:
 
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                   Required input Raster/ImageryLayer object.
+    raster                                   Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     ================================     ====================================================================
 
     :return: The output raster.
@@ -8183,14 +8207,14 @@ def colormap_to_rgb(raster: Union[Raster, ImageryLayer]):
     function is automatically applied: The "colormapToRGB" property of the
     image service is set to true; or, client asks to export image into jpg
     or png format. For more information, see
-    http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/colormap-to-rgb-function.htm)
+    `Colormap To RGB function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/colormap-to-rgb-function.htm>`_
 
     The arguments for this function are as follows:
 
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                   Required input Raster/ImageryLayer object.
+    raster                                   Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     ================================     ====================================================================
 
     :return: The output raster.
@@ -8231,7 +8255,7 @@ def statistics_histogram(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object
     --------------------------------     --------------------------------------------------------------------
     statistics                              list of statistics objects. (Predefined statistics for each band)
     --------------------------------     --------------------------------------------------------------------
@@ -8281,7 +8305,7 @@ def tasseled_cap(raster: Union[Raster, ImageryLayer]):
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object
     ================================     ====================================================================
 
     :return: The output raster.
@@ -8312,7 +8336,7 @@ def identity(raster: Union[Raster, ImageryLayer]):
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     ================================     ====================================================================
 
     :return: The output raster.
@@ -8340,14 +8364,14 @@ def colorspace_conversion(
     to red, green, and blue (RGB) or vice versa. An ExtractBand function and/or
     a Stretch function are sometimes used for converting the imagery into valid
     input of ColorspaceConversion function. For more information, see
-    http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/color-model-conversion-function.htm
+    `Color Model Conversion function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/color-model-conversion-function.htm>`_
 
     The arguments for this function are as follows:
 
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                   Required input Raster/ImageryLayer object.
+    raster                                   Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     conversion_type                          Optional string, one of "rgb_to_hsv" or "hsv_to_rgb". Default is "rgb_to_hsv"
     --------------------------------     --------------------------------------------------------------------
@@ -8388,7 +8412,7 @@ def grayscale(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                               Required input Raster/ImageryLayer object.
+    raster                               Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     conversion_parameters                Optional list of length N representing the weights of each band, where N is the band count.
     ================================     ====================================================================
@@ -8436,7 +8460,7 @@ def spectral_conversion(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     conversion_parameters                   list of floats (A NxN length one-dimension matrix, where N=band count.)
     ================================     ====================================================================
@@ -8479,7 +8503,7 @@ def raster_calculator(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required list of Raster/ImageryLayer objects
+    raster                                  Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects
     --------------------------------     --------------------------------------------------------------------
     input_names                             Required list of strings for arbitrary raster names.
     --------------------------------     --------------------------------------------------------------------
@@ -8564,7 +8588,7 @@ def speckle(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     filter_type                             Optional string, one of "Lee", "EnhancedLee" "Frost", "Kaun". Default is "Lee".
     --------------------------------     --------------------------------------------------------------------
@@ -8643,11 +8667,11 @@ def pansharpen(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    pan_raster                              Required Raster/ImageryLayer object, which is panchromatic.
+    pan_raster                              Required :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object, which is panchromatic.
     --------------------------------     --------------------------------------------------------------------
-    ms_raster                               Required Raster/ImageryLayer object, which is multispectral
+    ms_raster                               Required :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object, which is multispectral
     --------------------------------     --------------------------------------------------------------------
-    ir_raster                               Optional Raster/ImageryLayer object, if fourth_band_of_ms_is_ir is true or selected pansharpening method doesn't require near-infrared image
+    ir_raster                               Optional :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object, if fourth_band_of_ms_is_ir is true or selected pansharpening method doesn't require near-infrared image
     --------------------------------     --------------------------------------------------------------------
     fourth_band_of_ms_is_ir                 Optional Boolean, "true" if "ms_raster" has near-infrared image on fourth band
     --------------------------------     --------------------------------------------------------------------
@@ -8750,7 +8774,7 @@ def weighted_overlay(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required list of Raster/ImageryLayer objects.
+    raster                                  Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects.
     --------------------------------     --------------------------------------------------------------------
     fields                                  Required list of string fields of the input rasters to be used for weighting.
     --------------------------------     --------------------------------------------------------------------
@@ -8798,7 +8822,7 @@ def weighted_sum(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required list of Raster/ImageryLayer objects.
+    raster                                  Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects.
     --------------------------------     --------------------------------------------------------------------
     fields                                  Required list of string fields of the input rasters to be used for weighting.
     --------------------------------     --------------------------------------------------------------------
@@ -8848,7 +8872,7 @@ def focal_stats(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     neighborhood_type                       int, default is 1. The shape of the area around each cell used to calculate the statistic.
                                             1 = Rectangle
@@ -9001,7 +9025,7 @@ def lookup(raster: Union[Raster, ImageryLayer], field: Optional[str] = None):
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                 Required input Raster/ImageryLayer object that contains a field from
+    raster                                 Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object that contains a field from
                                            which to create a new raster.
     --------------------------------     --------------------------------------------------------------------
     field                                  Field containing the desired values for the new raster.
@@ -9152,6 +9176,7 @@ def raster_collection_function(
                                                 {"minValue":"<min value>","maxValue":"<max value>"}]
 
                                             Example:
+
                                                 [{"minValue":"2012-01-15T03:00:00","maxValue":"2012-01-15T09:00:00"},
                                                 {"minValue":"2012-01-15T12:00:00","maxValue":"2012-01-15T21:00:00"}]
     ================================     ====================================================================
@@ -9313,7 +9338,7 @@ def monitor_vegetation(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     method                                  String. The method to create the vegetation index layer.
                                             The different vegetation indexes can help highlight certain features or reduce various noise.
@@ -9390,9 +9415,9 @@ def constant_raster(
     raster_info                                Required Raster info dictionary or arcgis.raster.RasterInfo object or ImageryLayer object to set the properties of the output raster.
                                                if ImageryLayer is specified then the raster information is obtained from the ImageryLayer specified.
 
-                                                Example for RasterInfo dict -
+                                               Example for RasterInfo dict -
 
-                                                {'bandCount': 3, 'extent': {"xmin": 4488761.95,
+                                               {'bandCount': 3, 'extent': {"xmin": 4488761.95,
                                                 "ymin": 5478609.805,
                                                 "xmax": 4489727.05,
                                                 "ymax": 5479555.305,
@@ -9409,7 +9434,7 @@ def constant_raster(
                                                 'pixelSizeY': 0.1,
                                                 'pixelType': 'U8'}
     --------------------------------     --------------------------------------------------------------------
-    gis                                         Optional gis. gis parameter can be specified to render the output raster dynamically using the raster rendering service of the gis.
+    gis                                         Optional :class:`~arcgis.gis.GIS`. GIS parameter can be specified to render the output raster dynamically using the raster rendering service of the gis.
                                                 If not provided, active gis will be used to do this.
                                                 If gis parameter is not specified the output of constant_raster() cannot be displayed.
     ================================     ====================================================================
@@ -9569,7 +9594,7 @@ def random_raster(
                                                 ACM collected algorithm 599 = 1
                                                 MersenneTwister = 2
     --------------------------------     --------------------------------------------------------------------
-    gis                                     Optional gis. gis parameter can be specified to render the output raster dynamically using the raster rendering service of the gis.
+    gis                                     Optional :class:`~arcgis.gis.GIS`. GIS parameter can be specified to render the output raster dynamically using the raster rendering service of the gis.
 
                                             If not provided, active gis will be used to do this.
                                             If gis parameter is not specified the output of constant_raster() cannot be displayed.
@@ -9672,7 +9697,7 @@ def aggregate_cells(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     cell_factor                             Optional int. The factor by which to multiply the cell size of the input raster
                                             to obtain the desired resolution for the output raster. For example, a cell factor
@@ -9818,7 +9843,7 @@ def generate_trend(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     dimension_name                          Required String. The dimension along which a trend will be extracted for the
                                             variable or variables selected in the analysis.
@@ -9956,7 +9981,7 @@ def predict_using_trend(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     dimension_definition_type               Optional Integer or String. Specifies the method used to provide prediction dimension values.
 
@@ -10056,7 +10081,7 @@ def linear_spectral_unmixing(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     spectral_profile_def                    Optional dictionary. The class spectral profile information.
     --------------------------------     --------------------------------------------------------------------
@@ -10069,8 +10094,10 @@ def linear_spectral_unmixing(
 
                                             - True : Class values for each pixel are provided in decimal format with the sum of all classes equal to 1.
 
-                                                     Example:
-                                                        - Class1 = 0.16; Class2 = 0.24; Class3 = 0.60.
+                                              Example:
+
+                                                Class1 = 0.16; Class2 = 0.24; Class3 = 0.60.
+
                                             - False : The sum of all classes in a pixel can exceed 1. This is the default.
     ================================     ====================================================================
 
@@ -10121,7 +10148,7 @@ def multidimensional_filter(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input multidimensional Raster/ImageryLayer object.
+    raster                                  Required input multidimensional :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     variables                               Optional List. The list of variables that will be included in the output
                                             multidimensional raster layer. If no variable is specified, the first variable will be used.
@@ -10145,6 +10172,7 @@ def multidimensional_filter(
                                             [{"dimension":"<dimension_name>", "minValue":"<dimension_min_value>", "maxValue":"<dimension_max_value>"},{"dimension":"<dimension_name>", "minValue":"<dimension_min_value>", "maxValue":"<dimension_max_value>"}]
 
                                             Example:
+
                                                 [{"dimension":"StdTime", "minValue":"2013-05-17T00:00:00", "maxValue":"2013-05-17T03:00:00"},{"dimension":"StdZ", "minValue":"-5000", "maxValue":"-4000"}]
     --------------------------------     --------------------------------------------------------------------
     dimension_values                        Optional List of Dicts. This slices the data based on the dimension name and the value specified.
@@ -10155,6 +10183,7 @@ def multidimensional_filter(
                                             [{"dimension":"<dimension_name>", "value":"<dimension_value>"},{"dimension":"<dimension_name>", "value":"<dimension_value>"}]
 
                                             Example:
+
                                                 [{"dimension":"StdTime", "value":"2012-01-15T03:00:00"},{"dimension":" StdZ ", "value":"-4000"}]
     --------------------------------     --------------------------------------------------------------------
     start_of_first_iteration                Optional String. The beginning of the interval.
@@ -10314,7 +10343,7 @@ def s1_radiometric_calibration(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
 
                                             The Sentinel-1 Level-1 GRD or SLC input raster you want to process.
 
@@ -10367,7 +10396,7 @@ def s1_thermal_noise_removal(raster: Union[Raster, ImageryLayer]):
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                  Required input Raster/ImageryLayer object.
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
                                             The Sentinel-1 Level-1 GRD or SLC input raster you want to process.
 
                                             The function will use the LUT file either to apply the thermal correction or to
@@ -10428,7 +10457,7 @@ def interpolate_irregular_data(
     --------------------------------     --------------------------------------------------------------------
     radius                               Optional int. The number of pixels to be included for resampling. The default value is 3 pixels.
     --------------------------------     --------------------------------------------------------------------
-    gis                                  Optional gis. gis parameter can be specified to render the output raster
+    gis                                  Optional :class:`~arcgis.gis.GIS`. GIS parameter can be specified to render the output raster
                                          dynamically using the raster rendering service of the gis.
                                          If not provided, active gis will be used to do this.
                                          If gis parameter is not specified the output of interpolate_irregular_data() cannot be displayed.
@@ -10501,7 +10530,7 @@ def _simple_collection(raster: Union[Raster, ImageryLayer], md_info=None):
     mosaicking behavior of the mosaic dataset. This function is a no-op function
     and takes no arguments except a raster. For more information, see
     (http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/identity-function.htm)
-    :param raster: Required input Raster/ImageryLayer object
+    :param raster: Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object
     :return: the innput raster
     """
 
@@ -10543,118 +10572,124 @@ def aggregate(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                               Required input Raster/ImageryLayer object.
+    raster                               Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     dimension                            Optional string. This is the dimension along which the variables will be aggregated.
     --------------------------------     --------------------------------------------------------------------
     aggregation_function                 Optional string. Specifies the mathematical method that will be used to combine the aggregated slices in an interval.
 
-                                            - MEAN : Calculates the mean of a pixel's values across all slices in the interval. This is the default.
+                                         - MEAN : Calculates the mean of a pixel's values across all slices in the interval. This is the default.
 
-                                            - MAXIMUM : Calculates the maximum value of a pixel across all slices in the interval.
+                                         - MAXIMUM : Calculates the maximum value of a pixel across all slices in the interval.
 
-                                            - MAJORITY : Calculates the value that occurred most frequently for a pixel across all slices in the interval.
+                                         - MAJORITY : Calculates the value that occurred most frequently for a pixel across all slices in the interval.
 
-                                            - MINIMUM : Calculates the minimum value of a pixel across all slices in the interval.
+                                         - MINIMUM : Calculates the minimum value of a pixel across all slices in the interval.
 
-                                            - MINORITY : Calculates the value that occurred least frequently for a pixel across all slices in the interval.
+                                         - MINORITY : Calculates the value that occurred least frequently for a pixel across all slices in the interval.
 
-                                            - MEDIAN : Calculates the median value of a pixel across all slices in the interval.
+                                         - MEDIAN : Calculates the median value of a pixel across all slices in the interval.
 
-                                            - PERCENTILE : Calculates the percentile of values for a pixel across all slices in the interval. The 90th percentile is calculated by default. You can specify other values (from 0 to 100) using the percentile_value parameter.
+                                         - PERCENTILE : Calculates the percentile of values for a pixel across all slices in the interval. The 90th percentile is calculated by default. You can specify other values (from 0 to 100) using the percentile_value parameter.
 
-                                            - RANGE : Calculates the range of values for a pixel across all slices in the interval.
+                                         - RANGE : Calculates the range of values for a pixel across all slices in the interval.
 
-                                            - STD : Calculates the standard deviation of a pixel's values across all slices in the interval.
+                                         - STD : Calculates the standard deviation of a pixel's values across all slices in the interval.
 
-                                            - SUM : Calculates the sum of a pixel's values across all slices in the interval.
+                                         - SUM : Calculates the sum of a pixel's values across all slices in the interval.
 
-                                            - VARIETY : Calculates the number of unique values of a pixel across all slices in the interval.
+                                         - VARIETY : Calculates the number of unique values of a pixel across all slices in the interval.
 
                                          You may also pass custom aggregation function. Create an RFT object out of the raster function template item on the portal and specify that as the input to aggregation_function or directly specify the RFT in JSON format as the aggregation_function.
     --------------------------------     --------------------------------------------------------------------
     aggregation_definition_type          Optional string. Specifies the dimension interval for which the data will be aggregated.
 
-                                            - ALL : The data values will be aggregated across all slices. This is the default.
+                                         - ALL : The data values will be aggregated across all slices. This is the default.
 
-                                            - INTERVAL_KEYWORD : The variable data will be aggregated using a commonly known interval.
+                                         - INTERVAL_KEYWORD : The variable data will be aggregated using a commonly known interval.
 
-                                            - INTERVAL_VALUE : The variable data will be aggregated using a user-specified interval and unit.
+                                         - INTERVAL_VALUE : The variable data will be aggregated using a user-specified interval and unit.
 
-                                            - INTERVAL_RANGES : The variable data will be aggregated between specified pairs of values or dates.
+                                         - INTERVAL_RANGES : The variable data will be aggregated between specified pairs of values or dates.
     --------------------------------     --------------------------------------------------------------------
     interval_keyword                     Optional string. Specifies the keyword interval that will be used when aggregating along the dimension. This parameter is required when the aggregation_definition_type parameter is set to INTERVAL_KEYWORD, and the aggregation must be across time.
 
-                                            - HOURLY : The data values will be aggregated into hourly time steps, and the result will include every hour in the time series.
+                                         - HOURLY : The data values will be aggregated into hourly time steps, and the result will include every hour in the time series.
 
-                                            - DAILY : The data values will be aggregated into daily time steps, and the result will include every day in the time series.
+                                         - DAILY : The data values will be aggregated into daily time steps, and the result will include every day in the time series.
 
-                                            - WEEKLY : The data values will be aggregated into weekly time steps, and the result will include every week in the time series.
+                                         - WEEKLY : The data values will be aggregated into weekly time steps, and the result will include every week in the time series.
 
-                                            - DEKADLY : Divides each month into 3 periods of 10 days each (last period might have more or less than 10 days) and each month would output 3 slices.
+                                         - DEKADLY : Divides each month into 3 periods of 10 days each (last period might have more or less than 10 days) and each month would output 3 slices.
 
-                                            - PENTADLY : Divides each month into 6 periods of 5 days each (last period might have more or less than 5 days) and each month would output 6 slices.
+                                         - PENTADLY : Divides each month into 6 periods of 5 days each (last period might have more or less than 5 days) and each month would output 6 slices.
 
-                                            - MONTHLY : The data values will be aggregated into monthly time steps, and the result will include every month in the time series.
+                                         - MONTHLY : The data values will be aggregated into monthly time steps, and the result will include every month in the time series.
 
-                                            - QUARTERLY : The data values will be aggregated into quarterly time steps, and the result will include every quarter in the time series.
+                                         - QUARTERLY : The data values will be aggregated into quarterly time steps, and the result will include every quarter in the time series.
 
-                                            - YEARLY : The data values will be aggregated into yearly time steps, and the result will include every year in the time series.
+                                         - YEARLY : The data values will be aggregated into yearly time steps, and the result will include every year in the time series.
 
-                                            - RECURRING_DAILY : The data values will be aggregated into daily time steps, and the result includes each one aggregated value per day. The output will include, at most, 366 daily time slices
+                                         - RECURRING_DAILY : The data values will be aggregated into daily time steps, and the result includes each one aggregated value per day. The output will include, at most, 366 daily time slices
 
-                                            - RECURRING_WEEKLY : The data values will be aggregated into weekly time steps, and the result will include one aggregated value per week. The output will include, at most, 53 weekly time slices.
+                                         - RECURRING_WEEKLY : The data values will be aggregated into weekly time steps, and the result will include one aggregated value per week. The output will include, at most, 53 weekly time slices.
 
-                                            - RECURRING_MONTHLY : The data values will be aggregated into weekly time steps, and the result will include one aggregated value per month. The output will include, at most, 12 monthly time slices.
+                                         - RECURRING_MONTHLY : The data values will be aggregated into weekly time steps, and the result will include one aggregated value per month. The output will include, at most, 12 monthly time slices.
 
-                                            - RECURRING_QUARTERLY : The data values will be aggregated into weekly time steps, and the result will include one aggregated value per quarter. The output will include, at most, 4 quarterly time slices.
+                                         - RECURRING_QUARTERLY : The data values will be aggregated into weekly time steps, and the result will include one aggregated value per quarter. The output will include, at most, 4 quarterly time slices.
     --------------------------------     --------------------------------------------------------------------
     interval_value                       Optional string. The size of the interval that will be used for the aggregation. This parameter is required when the aggregation_definition_type parameter is set to INTERVAL_VALUE. For example, to aggregate 30 years of monthly temperature data into 5-year increments, enter 5 as the interval_value, and specify interval_unit as YEARS.
     --------------------------------     --------------------------------------------------------------------
     interval_unit                        Optional string. The unit that will be used for the interval value. This parameter is required when the dimension parameter is set to a time field and the aggregation_definition_type parameter is set to INTERVAL_VALUE. If you are aggregating over anything other than time, this option will not be available and the unit for the interval value will match the variable unit of the input multidimensional raster data.
 
-                                            - HOURS : The data values will be aggregated into hourly time slices at the interval provided.
-                                            - DAYS : The data values will be aggregated into daily time slices at the interval provided.
-                                            - WEEKS : The data values will be aggregated into weekly time slices at the interval provided.
-                                            - MONTHS : The data values will be aggregated into monthly time slices at the interval provided.
-                                            - YEARS : The data values will be aggregated into yearly time slices at the interval provided.
+                                         - HOURS : The data values will be aggregated into hourly time slices at the interval provided.
+                                         - DAYS : The data values will be aggregated into daily time slices at the interval provided.
+                                         - WEEKS : The data values will be aggregated into weekly time slices at the interval provided.
+                                         - MONTHS : The data values will be aggregated into monthly time slices at the interval provided.
+                                         - YEARS : The data values will be aggregated into yearly time slices at the interval provided.
     --------------------------------     --------------------------------------------------------------------
     interval_ranges                      Optional list of dictionary objects. Interval ranges specified as list of dictionary objects that will be used to aggregate groups of values. This parameter is required when the aggregation_definition parameter is set to INTERVAL_RANGE. If dimension is StdTime, then the value must be specified in human readable time format (YYYY-MM-DDTHH:MM:SS).
 
-                                            Syntax
+                                         Syntax
+
                                                 [{"minValue":"<min value>","maxValue":"<max value>"},
                                                 {"minValue":"<min value>","maxValue":"<max value>"}]
 
-                                            Example
+                                         Example
+
                                                 [{"minValue":"2012-01-15T03:00:00","maxValue":"2012-01-15T09:00:00"},
                                                 {"minValue":"2012-01-15T12:00:00","maxValue":"2012-01-15T21:00:00"}]
     --------------------------------     --------------------------------------------------------------------
     ignore_nodata                        Optional boolean. Specifies whether NoData values are ignored.
 
-                                            - True : The function will include all valid pixels and ignore any NoData pixels.
-                                            - False : The function will result in NoData if there are any NoData values. This is the default.
+                                         - True : The function will include all valid pixels and ignore any NoData pixels.
+                                         - False : The function will result in NoData if there are any NoData values. This is the default.
     --------------------------------     --------------------------------------------------------------------
     dimensionless                        Optional boolean. Specifies whether the layer will have dimension values. This parameter is only active if a single slice is selected to create a layer.
 
-                                            - True : The layer will not have dimension values.
-                                            - False : The layer will have dimension values. This is the default.
+                                         - True : The layer will not have dimension values.
+                                         - False : The layer will have dimension values. This is the default.
     --------------------------------     --------------------------------------------------------------------
     percentile_value                     Optional float. The percentile to calculate. The default is 90, indicating the 90th percentile. The values can range from 0 to 100. The 0th percentile is essentially equivalent to the minimum statistic, and the 100th percentile is equivalent to maximum. A value of 50 will produce essentially the same result as the median statistic. This option is only honored if the aggregation_function parameter is set to PERCENTILE.
 
                                          Example:
+
+
                                             90
     --------------------------------     --------------------------------------------------------------------
     percentile_interpolation_type        Optional string. Specifies the method of percentile interpolation that will be used when there is an even number of values from the input raster to be calculated.
 
-                                            - NEAREST : The nearest available value to the desired percentile will be used.
-                                              In this case, the output pixel type will be the same as that of the input
-                                              value raster. This is the default
+                                         - NEAREST : The nearest available value to the desired percentile will be used.
+                                           In this case, the output pixel type will be the same as that of the input
+                                           value raster. This is the default
 
-                                            - LINEAR  : The weighted average of the two surrounding values from the desired
-                                              percentile will be used. In this case, the output pixel type will be floating point.
+                                         - LINEAR  : The weighted average of the two surrounding values from the desired
+                                           percentile will be used. In this case, the output pixel type will be floating point.
 
-                                         Example:
-                                            NEAREST
+                                           Example:
+
+
+                                             NEAREST
     ================================     ====================================================================
 
     :return: The output raster with the function applied.
@@ -10859,10 +10894,10 @@ def compute_change(
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    raster1                                  Required Raster/ImageryLayer object. The first raster for compute change function.
+    raster1                                  Required :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object. The first raster for compute change function.
                                              To evaluate change from time 1 (earlier) to time 2 (later), enter the time 1 raster here.
     ------------------------------------     --------------------------------------------------------------------
-    raster2                                  Required Raster/ImageryLayer object. The second raster for compute change function.
+    raster2                                  Required :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object. The second raster for compute change function.
                                              To evaluate change from time 1 (earlier) to time 2 (later), enter the time 2 raster.
     ------------------------------------     --------------------------------------------------------------------
     method                                   Optional string. Specifies the method to be used.
@@ -10872,6 +10907,7 @@ def compute_change(
                                              - CATEGORICAL_DIFFERENCE : The difference between two categorical or thematic rasters will be calculated, where the output contains class transitions that occurred between the two rasters.
 
                                              Example:
+
                                                   "DIFFERENCE"
     ------------------------------------     --------------------------------------------------------------------
     from_class_values                        Optional list. List of integer values corresponding to the ClassValue
@@ -10903,15 +10939,19 @@ def compute_change(
     from_class_name_field_name               Optional string. A field that stores class names in the raster1.
                                              The function automatically searches for CLASSNAME field or CLASS_NAME field to use.
                                              Use this parameter if the input does not contain these standard field names
-                                             Example: "CLASSES"
+                                             Example:
+
+                                                 "CLASSES"
     ------------------------------------     --------------------------------------------------------------------
     to_class_name_field_name                 Optional string. A field that stores class names in the raster2.
                                              The function automatically searches for CLASSNAME field or CLASS_NAME field to use.
                                              Use this parameter if the input does not contain these standard field names
-                                             Example: "CLASSES"
+                                             Example:
+
+                                                "CLASSES"
     ====================================     ====================================================================
 
-    :return: Raster/ImageryLayer
+    :return: :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>`
 
     """
 
@@ -11072,27 +11112,28 @@ def detect_change_using_change_analysis_raster(
 
     """
     Function generates a raster containing pixel change information using the
-    output change analysis raster from the :meth:`arcgis.raster.analytics.analyze_changes_using_ccdc` function
-    or :meth:`arcgis.raster.analytics.analyze_changes_using_landtrendr` function.
+    output change analysis raster from the :meth:`~arcgis.raster.analytics.analyze_changes_using_ccdc` function
+    or :meth:`~arcgis.raster.analytics.analyze_changes_using_landtrendr` function.
     Function available in ArcGIS Image Server 10.8.1 and higher.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    raster                                   Required Raster/ImageryLayer object. The raster generated from the analyze_changes_using_ccdc or analyze_changes_using_landtrendr.
+    raster                                   Required :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object. The raster generated from the analyze_changes_using_ccdc or analyze_changes_using_landtrendr.
     ------------------------------------     --------------------------------------------------------------------
     change_type                              Optional String. Specifies the change information to calculate.
 
-                                                - TIME_OF_LATEST_CHANGE (0) - Each pixel will contain the date of the most recent change for that pixel in the time series.
-                                                - TIME_OF_EARLIEST_CHANGE (1) - Each pixel will contain the date of the earliest change for that pixel in the time series.
-                                                - TIME_OF_LARGEST_CHANGE (2) - Each pixel will contain the date of the most significant change for that pixel in the time series.
-                                                - NUM_OF_CHANGES (3) - Each pixel will contain the total number of times the pixel changed in the time series.
-                                                - TIME_OF_LONGEST_CHANGE (4) - Each pixel will contain the date of change at the end of the longest transition segment in the time series. Option available in ArcGIS Image Server 10.9 and higher.
-                                                - TIME_OF_SHORTEST_CHANGE (5) - Each pixel will contain the date of change at the end of the shortest transition segment in the time series. Option available in ArcGIS Image Server 10.9 and higher.
-                                                - TIME_OF_FASTEST_CHANGE (6) - Each pixel will contain the date of change at the end of the transition that occurred most quickly. Option available in ArcGIS Image Server 10.9 and higher.
-                                                - TIME_OF_SLOWEST_CHANGE (7) - Each pixel will contain the date of change at the end of the transition that occurred most slowly. Option available in ArcGIS Image Server 10.9 and higher.
+                                             - TIME_OF_LATEST_CHANGE (0) - Each pixel will contain the date of the most recent change for that pixel in the time series.
+                                             - TIME_OF_EARLIEST_CHANGE (1) - Each pixel will contain the date of the earliest change for that pixel in the time series.
+                                             - TIME_OF_LARGEST_CHANGE (2) - Each pixel will contain the date of the most significant change for that pixel in the time series.
+                                             - NUM_OF_CHANGES (3) - Each pixel will contain the total number of times the pixel changed in the time series.
+                                             - TIME_OF_LONGEST_CHANGE (4) - Each pixel will contain the date of change at the end of the longest transition segment in the time series. Option available in ArcGIS Image Server 10.9 and higher.
+                                             - TIME_OF_SHORTEST_CHANGE (5) - Each pixel will contain the date of change at the end of the shortest transition segment in the time series. Option available in ArcGIS Image Server 10.9 and higher.
+                                             - TIME_OF_FASTEST_CHANGE (6) - Each pixel will contain the date of change at the end of the transition that occurred most quickly. Option available in ArcGIS Image Server 10.9 and higher.
+                                             - TIME_OF_SLOWEST_CHANGE (7) - Each pixel will contain the date of change at the end of the transition that occurred most slowly. Option available in ArcGIS Image Server 10.9 and higher.
 
                                              Example:
+
                                                 "TIME_OF_LATEST_CHANGE"
     ------------------------------------     --------------------------------------------------------------------
     max_number_of_changes                    Optional Integer. The maximum number of changes per pixel that will
@@ -11103,6 +11144,7 @@ def detect_change_using_change_analysis_raster(
                                              This parameter is not available when the change_type parameter is set to NUM_OF_CHANGES.
 
                                              Example:
+
                                                 3
     ------------------------------------     --------------------------------------------------------------------
     segment_date                             Optional string. Specifies whether to extract the date at the beginning
@@ -11111,10 +11153,11 @@ def detect_change_using_change_analysis_raster(
                                              This parameter is available only when the input change analysis raster is
                                              the output from the arcgis.raster.analytics.analyze_changes_using_landtrendr function.
 
-                                                - BEGINNING_OF_SEGMENT - Extract the date at the beginning of a change segment. This is the default.
-                                                - END_OF_SEGMENT - Extract the date at the end of a change segment.
+                                             - BEGINNING_OF_SEGMENT - Extract the date at the beginning of a change segment. This is the default.
+                                             - END_OF_SEGMENT - Extract the date at the end of a change segment.
 
                                              Example:
+
                                                 "END_OF_SEGMENT"
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
@@ -11126,20 +11169,22 @@ def detect_change_using_change_analysis_raster(
                                              This parameter is available only when the input change analysis raster
                                              is the output from the analyze_changes_using_landtrendr function.
 
-                                                - ALL - All change directions will be included in the output. This is the default.
-                                                - INCREASE - Only change in the positive or increasing direction will be included in the output.
-                                                - DECREASE - Only change in the negative or decreasing direction will be included in the output.
+                                             - ALL - All change directions will be included in the output. This is the default.
+                                             - INCREASE - Only change in the positive or increasing direction will be included in the output.
+                                             - DECREASE - Only change in the negative or decreasing direction will be included in the output.
 
                                              Example:
+
                                                 "DECREASE"
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
     filter_by_year                           Optional boolean. Specifies whether to filter by a range of years.
 
-                                                - True - Filter results such that only changes that occurred within a specific range of years is included in the output.
-                                                - False - Do not filter results by year. This is the default.
+                                             - True - Filter results such that only changes that occurred within a specific range of years is included in the output.
+                                             - False - Do not filter results by year. This is the default.
 
                                              Example:
+
                                                 True
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
@@ -11148,6 +11193,7 @@ def detect_change_using_change_analysis_raster(
                                              is required if the filter_by_year parameter is set to True.
 
                                              Example:
+
                                                 2000
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
@@ -11156,6 +11202,7 @@ def detect_change_using_change_analysis_raster(
                                              is required if the filter_by_year parameter is set to True.
 
                                              Example:
+
                                                 2005
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
@@ -11164,10 +11211,11 @@ def detect_change_using_change_analysis_raster(
                                              This parameter is available only when the input change analysis raster
                                              is the output from the analyze_changes_using_landtrendr function.
 
-                                                - True - Filter results by duration such that only the changes that lasted a given amount of time will be included in the output.
-                                                - False - Do not filter results by duration. This is the default.
+                                            - True - Filter results by duration such that only the changes that lasted a given amount of time will be included in the output.
+                                            - False - Do not filter results by duration. This is the default.
 
                                              Example:
+
                                                 True
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
@@ -11177,6 +11225,7 @@ def detect_change_using_change_analysis_raster(
                                              is set to True
 
                                              Example:
+
                                                 2
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
@@ -11186,16 +11235,18 @@ def detect_change_using_change_analysis_raster(
                                              parameter is set to True
 
                                              Example:
+
                                                 4
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ------------------------------------     --------------------------------------------------------------------
     filter_by_magnitude                      Optional boolean. Specifies whether to filter by change magnitude.
 
-                                                - True - Filter results by magnitude such that only the changes of a given magnitude will be included in the output.
-                                                - False - Do not filter results by magnitude. This is the default.
+                                             - True - Filter results by magnitude such that only the changes of a given magnitude will be included in the output.
+                                             - False - Do not filter results by magnitude. This is the default.
 
                                              Example:
+
                                                 True
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
@@ -11205,6 +11256,7 @@ def detect_change_using_change_analysis_raster(
                                              parameter is set to True.
 
                                              Example:
+
                                                 0.25
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
@@ -11214,6 +11266,7 @@ def detect_change_using_change_analysis_raster(
                                              to True.
 
                                              Example:
+
                                                 3
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
@@ -11222,10 +11275,11 @@ def detect_change_using_change_analysis_raster(
                                              parameter is available only when the input change analysis raster
                                              is the output from the arcgis.raster.analytics.analyze_changes_using_landtrendr function.
 
-                                                - True - Filter results by start value so that only the change that starts with value defined by a range.
-                                                - False - Do not filter by start value. This is the default.
+                                             - True - Filter results by start value so that only the change that starts with value defined by a range.
+                                             - False - Do not filter by start value. This is the default.
 
                                              Example:
+
                                                 True
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
@@ -11235,6 +11289,7 @@ def detect_change_using_change_analysis_raster(
                                              to True.
 
                                              Example:
+
                                                 0.75
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
@@ -11244,6 +11299,7 @@ def detect_change_using_change_analysis_raster(
                                              set to True.
 
                                              Example:
+
                                                 0.9
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
@@ -11252,10 +11308,11 @@ def detect_change_using_change_analysis_raster(
                                              is available only when the input change analysis raster is the output
                                              from the arcgis.raster.analytics.analyze_changes_using_landtrendr function.
 
-                                                - True - Filter results by end value so that only the change that ends with value defined by a range.
-                                                - False - Do not filter results by end value. This is the default.
+                                             - True - Filter results by end value so that only the change that ends with value defined by a range.
+                                             - False - Do not filter results by end value. This is the default.
 
                                              Example:
+
                                                 True
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
@@ -11265,6 +11322,7 @@ def detect_change_using_change_analysis_raster(
                                              to True.
 
                                              Example:
+
                                                 -0.12
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
@@ -11274,12 +11332,13 @@ def detect_change_using_change_analysis_raster(
                                              to True.
 
                                              Example:
+
                                                 0.35
 
                                              Parameter available in ArcGIS Image Server 10.9 and higher.
     ====================================     ====================================================================
 
-    :return: Raster/ImageryLayer
+    :return: :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>`
 
     """
 
@@ -11425,7 +11484,7 @@ def trend_to_rgb(raster: Union[Raster, ImageryLayer], model_type: str = 0):
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    raster                                   Required input Raster/ImageryLayer object.
+    raster                                   Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     ------------------------------------     --------------------------------------------------------------------
     model_type                               Optional String. Specifies the model type.
 
@@ -11434,6 +11493,7 @@ def trend_to_rgb(raster: Union[Raster, ImageryLayer], model_type: str = 0):
                                                 - "HARMONIC" (1)
 
                                              Example:
+
                                                   "LINEAR"
     ====================================     ====================================================================
 
@@ -11484,7 +11544,7 @@ def apparent_reflectance(
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    raster                                   Required Raster/ImageryLayer object.
+    raster                                   Required :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     ------------------------------------     --------------------------------------------------------------------
     radiance_gain_values                     Optional list. The radiance gain values
     ------------------------------------     --------------------------------------------------------------------
@@ -11502,9 +11562,9 @@ def apparent_reflectance(
                                              by scientific users for complex modeling and technical
                                              remote-sensing applications.
 
-                                                - False - The function returns apparent reflectance values. This is the default.
+                                             - False - The function returns apparent reflectance values. This is the default.
 
-                                                - True - The function returns 32-bit floating-point values, which most commonly are in the range of 0.0 to 1.0. No data clipping is performed if this option is selected.
+                                             - True - The function returns 32-bit floating-point values, which most commonly are in the range of 0.0 to 1.0. No data clipping is performed if this option is selected.
     ------------------------------------     --------------------------------------------------------------------
     scale_factor                             Optional int. Your apparent reflectance output value can be expressed
                                              as an integer. The scaling factor is multiplied by the albedo to
@@ -11630,7 +11690,7 @@ def buffered(raster: Union[Raster, ImageryLayer]):
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                                   Required Raster/ImageryLayer object.
+    raster                                   Required :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     ================================     ====================================================================
 
     :return: The output raster with the function applied.
@@ -11662,7 +11722,7 @@ def rasterize_features(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                               Required input Raster/ImageryLayer object
+    raster                               Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object
     --------------------------------     --------------------------------------------------------------------
     feature_class                        Required FeatureLayer. The input point feature layer.
     --------------------------------     --------------------------------------------------------------------
@@ -11806,11 +11866,12 @@ def reproject(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                               Required input Raster/ImageryLayer object. The raster dataset to be reprojected or resampled.
+    raster                               Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object. The raster dataset to be reprojected or resampled.
     --------------------------------     --------------------------------------------------------------------
     spatial_reference                    Optional dict. The coordinate system used to reproject the data.
 
                                          Example:
+
                                             | {
                                             |    "wkid" : 4176,
                                             |    "latestWkid" : 4176
@@ -11880,10 +11941,10 @@ def heat_index(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    temperature_raster                   Required input Raster/ImageryLayer object. The raster that represent temperature. A single-band raster where pixel
+    temperature_raster                   Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object. The raster that represent temperature. A single-band raster where pixel
                                          values represent ambient air temperature.
     --------------------------------     --------------------------------------------------------------------
-    relative_humidity_raster             Required input Raster/ImageryLayer object. The raster that represent relative humidity. A single-band raster
+    relative_humidity_raster             Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object. The raster that represent relative humidity. A single-band raster
                                          where pixel values represent relative humidity as a percentage value between 0 and 100.
     --------------------------------     --------------------------------------------------------------------
     temperature_units                    Optional String. The unit of measurement associated with the input
@@ -11947,10 +12008,10 @@ def wind_chill(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    temperature_raster                   Required Raster/ImageryLayer object that represent temperature. A single-band raster where pixel
+    temperature_raster                   Required :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object that represent temperature. A single-band raster where pixel
                                          values represent ambient air temperature.
     --------------------------------     --------------------------------------------------------------------
-    wind_speed_raster                    Required Raster/ImageryLayer object that represent relative humidity. A single-band raster
+    wind_speed_raster                    Required :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object that represent relative humidity. A single-band raster
                                          where pixel values represent wind speed.
     --------------------------------     --------------------------------------------------------------------
     temperature_units                    Optional String. The unit of measurement associated with the input
@@ -12015,7 +12076,7 @@ def aspect_slope(raster: Union[Raster, ImageryLayer], z_factor: float = 1):
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                               Required input Raster/ImageryLayer object.
+    raster                               Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     z_factor                             Optional float. A multiplication factor that converts the vertical (elevation) values
                                          to the linear units of the horizontal (x,y) coordinate system.
@@ -12066,7 +12127,7 @@ def contour(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                               Required input Raster/ImageryLayer object created from a DEM.
+    raster                               Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object created from a DEM.
     --------------------------------     --------------------------------------------------------------------
     adaptive_smoothing                   Optional float. The amount of smoothing to apply to the contour line. The default value is 2.5. A lower value produces a contour line with more granularity and less smoothing, while a higher value produces a contour line with more smoothing that appears less jagged.
     --------------------------------     --------------------------------------------------------------------
@@ -12152,19 +12213,21 @@ def ccdc_analysis(
     method and generates a change analysis raster containing the model results.
 
     .. note::
-        This raster function is only supported in conjunction with the detect_change_using_change_analysis_raster function.
+        This raster function is only supported in conjunction with the :meth:`~arcgis.raster.functions.detect_change_using_change_analysis_raster` .
         To persist the output give the output of the ccdc_analysis function as input to the :meth:`~arcgis.raster.functions.detect_change_using_change_analysis_raster`
         method and use the ``save()`` method on the resulting layer.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    raster                                   Required Raster/ImageryLayer object. The input multidimensional raster.
+    raster                                   Required :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object. The input multidimensional raster.
     ------------------------------------     --------------------------------------------------------------------
     bands_for_detecting_change               Optional List. The band IDs to use for change detection.
                                              If no band IDs are provided, all the bands from the input raster dataset will be used.
 
                                              Example:
+
+
                                                   [1,2,3,4,6]
     ------------------------------------     --------------------------------------------------------------------
     bands_for_temporal_masking               Optional List. The band IDs of the green band and the SWIR band, to be used to
@@ -12174,6 +12237,8 @@ def ccdc_analysis(
                                              the number of bands of the input raster.
 
                                              Example:
+
+
                                                 [1,2]
     ------------------------------------     --------------------------------------------------------------------
     chi_squared_threshold                    Optional Float. The chi-square change probability threshold. If an
@@ -12182,6 +12247,8 @@ def ccdc_analysis(
                                              event. The default value is 0.99.
 
                                              Example:
+
+
                                                 0.99
     ------------------------------------     --------------------------------------------------------------------
     min_anomaly_observations                 Optional Integer. The minimum number of consecutive anomaly observations
@@ -12190,12 +12257,16 @@ def ccdc_analysis(
                                              time slices before it is considered a true change. The default value is 6.
 
                                              Example:
+
+
                                                 6
     ------------------------------------     --------------------------------------------------------------------
     update_frequency                         Optional Float. The value that represents the update frequency.
                                              The default value is 1.
 
                                              Example:
+
+
                                                 1
     ====================================     ====================================================================
 
@@ -12274,13 +12345,14 @@ def landtrendr_analysis(
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    raster                                   Required Raster/ImageryLayer object. The input multidimensional raster.
+    raster                                   Required :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object. The input multidimensional raster.
     ------------------------------------     --------------------------------------------------------------------
     processing_band                          Optional string. The band to use for segmenting the pixel value
                                              trajectories over time. Choose the band that will best capture the
                                              changes in the feature you want to observe.
 
                                              Example:
+
                                                   "Band_1"
     ------------------------------------     --------------------------------------------------------------------
     snapping_date                            Optional string. The date used to select a slice for each year in the
@@ -12291,12 +12363,16 @@ def landtrendr_analysis(
                                              The default is "06-30" (or June 30), approximately midway through a calendar year.
 
                                              Example:
+
+
                                                 "06-30"
     ------------------------------------     --------------------------------------------------------------------
     max_num_segments                         Optional integer. The maximum number of segments to be fitted to the
                                              time series for each pixel. The default is 5.
 
                                              Example:
+
+
                                                 5
     ------------------------------------     --------------------------------------------------------------------
     vertex_count_overshoot                   Optional integer. The number of additional vertices beyond
@@ -12306,6 +12382,8 @@ def landtrendr_analysis(
                                              max_num_segments + 1. The default is 2.
 
                                              Example:
+
+
                                                 2
     ------------------------------------     --------------------------------------------------------------------
     spike_threshold                          Optional float. The threshold to use for dampening spikes or anomalies
@@ -12313,6 +12391,8 @@ def landtrendr_analysis(
                                              where 1 means no dampening. The default is 0.9.
 
                                              Example:
+
+
                                                 0.9
     ------------------------------------     --------------------------------------------------------------------
     recovery_threshold                       Optional float. The recovery threshold value, in years. If a segment
@@ -12321,6 +12401,8 @@ def landtrendr_analysis(
                                              range between 0 and 1. The default is 0.25.
 
                                              Example:
+
+
                                                 0.25
     ------------------------------------     --------------------------------------------------------------------
     prevent_one_year_recovery                Optional boolean. Specifies whether segments that exhibit a one year
@@ -12331,6 +12413,8 @@ def landtrendr_analysis(
                                                 - False - Segments that exhibit a one year recovery will not be excluded.
 
                                              Example:
+
+
                                                 True
     ------------------------------------     --------------------------------------------------------------------
     increasing_recovery_trend                Optional boolean. Specifies whether the recovery has an increasing (positive) trend.
@@ -12340,6 +12424,8 @@ def landtrendr_analysis(
                                                 - False - The recovery has a decreasing trend.
 
                                              Example:
+
+
                                                 True
     ------------------------------------     --------------------------------------------------------------------
     min_num_observations                     Optional integer. The minimum number of valid observations required to
@@ -12347,6 +12433,8 @@ def landtrendr_analysis(
                                              dataset must be equal to or greater than this value. The default is 6.
 
                                              Example:
+
+
                                                 6
     ------------------------------------     --------------------------------------------------------------------
     best_model_proportion                    Optional float. The best model proportion value. During the model
@@ -12358,6 +12446,8 @@ def landtrendr_analysis(
                                              The default is 1.25.
 
                                              Example:
+
+
                                                 1.25
     ------------------------------------     --------------------------------------------------------------------
     pvalue_threshold                         Optional float. The p-value threshold for a model to be selected.
@@ -12373,6 +12463,8 @@ def landtrendr_analysis(
                                              The default is 0.01.
 
                                              Example:
+
+
                                                 0.01
     ------------------------------------     --------------------------------------------------------------------
     output_other_bands                       Optional boolean. Specifies whether other bands will be included in the
@@ -12383,6 +12475,8 @@ def landtrendr_analysis(
                                                 - False - Other bands will not be included. This is the default.
 
                                              Example:
+
+
                                                 True
     ====================================     ====================================================================
 
@@ -12479,7 +12573,7 @@ def dimensional_moving_statistics(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    raster                               Required multidimensional Raster/ImageryLayer object.
+    raster                               Required multidimensional :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     --------------------------------     --------------------------------------------------------------------
     dimension                            Optional string. The name of the dimension along which the window will move.
 
@@ -12664,7 +12758,7 @@ def mosaic_rasters(rasters: Union[Raster, ImageryLayer], mosaic_type: str = "BLE
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of Raster/ImageryLayer objects.
+    rasters                              Required list of :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` objects.
     --------------------------------     --------------------------------------------------------------------
     mosaic_type                          Optional string. Resolve any conflict when you have parts of two or
                                          more images that overlap. The options include the following:
@@ -12739,7 +12833,7 @@ def interpolate_raster_by_dimension(
     ====================================     ====================================================================
     **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
-    raster                                   Required Raster/ImageryLayer object.
+    raster                                   Required :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
     ------------------------------------     --------------------------------------------------------------------
     interpolation_method                     Optional string. Specifies the interpolation method.
 
@@ -12765,6 +12859,8 @@ def interpolate_raster_by_dimension(
                                              [{"dimension":"<dimension_name>", "value":"<dimension_value>"},{"dimension":"<dimension_name>", "value":"<dimension_value>"}]
 
                                              Example:
+
+
                                                  [{"dimension":"StdTime", "value":"2012-01-15T03:00:00"}]
     ------------------------------------     --------------------------------------------------------------------
     dimension                                Optional String. The dimension along which the variables will be interpolated.
@@ -12789,7 +12885,7 @@ def interpolate_raster_by_dimension(
                                                 - MONTHS - Uses months as the specified unit of time.
                                                 - YEARS -Uses years as the specified unit of time.
     ------------------------------------     --------------------------------------------------------------------
-    target_raster                            Optional Raster/ImageryLayer object. Parameter used to specify the target raster from which the dimension definition would be taken.
+    target_raster                            Optional :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object. Parameter used to specify the target raster from which the dimension definition would be taken.
                                              Required when dimension_definition is set to BY_TARGET_RASTER
     ------------------------------------     --------------------------------------------------------------------
     ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored in the interpolation.
