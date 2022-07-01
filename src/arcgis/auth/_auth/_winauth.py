@@ -143,7 +143,11 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
                 token_str = self._tokens[server_url]
             else:
                 token = requests.post(
-                    token_url, data=postdata, auth=self.auth, proxies=self.proxies
+                    token_url,
+                    data=postdata,
+                    auth=self.auth,
+                    proxies=self.proxies,
+                    verify=self.verify_cert,
                 )
                 token_str = token.json().get("token", None)
                 if token_str is None:

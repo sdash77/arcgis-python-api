@@ -23,7 +23,8 @@ class VersionManager(object):
     ---------------     --------------------------------------------------------------------
     url                 Required String.  The URI to the web resource.
     ---------------     --------------------------------------------------------------------
-    gis                 Required GIS. The enterprise connection to the Portal site.
+    gis                 Required GIS. The enterprise connection to the Portal site. A connection
+                        can be passed in such as a Service Directory connection.
     ---------------     --------------------------------------------------------------------
     flc                 Optional FeatureLayerCollection. This is the parent container that
                         the branch versioning is enabled on.
@@ -43,9 +44,12 @@ class VersionManager(object):
         """init"""
         if isinstance(gis, GIS):
             self._gis = gis
+            self._con = self._gis._portal.con
+        elif hasattr(gis, "_con"):
+            self._gis = gis
+            self._con = gis._con
         else:
             raise ValueError("gis must be of type GIS")
-        self._con = self._gis._portal.con
         self._url = url
         if isinstance(flc, FeatureLayer):
             self._flc = flc.container
@@ -268,7 +272,7 @@ class Version(object):
     _validation = None
     # ----------------------------------------------------------------------
 
-    def __init__(self, url, flc, gis=None, session_guid=None, mode=None):
+    def __init__(self, url, flc=None, gis=None, session_guid=None, mode=None):
         """Constructor"""
         if mode:
             self.mode = mode
