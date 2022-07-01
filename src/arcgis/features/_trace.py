@@ -3,6 +3,9 @@ from typing import Any
 from arcgis import env
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.features._utility import TraceConfigurationsManager
+from arcgis.auth.tools import LazyLoader
+
+geometry = LazyLoader("arcgis.geometry")
 
 ########################################################################
 class TraceNetworkManager(object):
@@ -95,7 +98,7 @@ class TraceNetworkManager(object):
                                 starting points and barriers. An empty array must
                                 be used when performing a subnetwork trace if a
                                 subnetworkName is provided as part of the
-                                `configuration`—for example, `locations=[]`.
+                                `configuration` - for example, `locations=[]`.
 
 
                                 The location is ignored by the trace if the following
@@ -207,7 +210,7 @@ class TraceNetworkManager(object):
     # ----------------------------------------------------------------------
     def validate_topology(
         self,
-        envelope: dict[str, Any],
+        envelope: dict[str, Any] | geometry.Envelope,
         return_edits: bool = False,
     ) -> dict:
         """
@@ -220,7 +223,7 @@ class TraceNetworkManager(object):
         ====================================        ====================================================================
         **Argument**                                **Description**
         ------------------------------------        --------------------------------------------------------------------
-        envelope                                    Required Dictionary. The envelope of the area to validate.
+        envelope                                    Required Dictionary or Envelope. The envelope of the area to validate.
 
                                                     .. code-block:: python
                                                         {
