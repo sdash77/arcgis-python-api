@@ -978,7 +978,7 @@ def tsavi(
     """
     Transformed Soil Adjusted Vegetation Index
 
-    TSAVI = (s(NIR-s*Red-a))/(a*NIR+Red-a*s+X*(1+s^2))
+        TSAVI = (s(NIR-s*Red-a))/(a*NIR+Red-a*s+X*(1+s^2))
 
     The arguments for this function are as follows:
 
@@ -1037,9 +1037,9 @@ def gemi(
     """
     Global Environmental Monitoring Index
 
-    GEMI = eta*(1-0.25*eta)-((Red-0.125)/(1-Red))
+        GEMI = eta*(1-0.25*eta)-((Red-0.125)/(1-Red))
 
-    where eta = (2*(NIR^2-Red^2)+1.5*NIR+0.5*Red)/(NIR+Red+0.5)
+        where eta = (2*(NIR^2-Red^2)+1.5*NIR+0.5*Red)/(NIR+Red+0.5)
 
     The arguments for this function are as follows:
 
@@ -1097,23 +1097,24 @@ def gvitm(
     """
     Green Vegetation Index - Landsat TM
 
-     GVITM = -0.2848*Band1-0.2435*Band2-0.5436*Band3+0.7243*Band4+0.0840*Band5-0.1800*Band7
+    GVITM = -0.2848*Band1-0.2435*Band2-0.5436*Band3+0.7243*Band4+0.0840*Band5-0.1800*Band7
 
-     The arguments for this function are as follows:
+    The arguments for this function are as follows:
 
-     ================================     ====================================================================
-     **Argument**                         **Description**
-     --------------------------------     --------------------------------------------------------------------
-     raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
-     --------------------------------     --------------------------------------------------------------------
-     band_indexes                            Optional string/list of band indexes.
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    raster                                  Required input :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object.
+    --------------------------------     --------------------------------------------------------------------
+    band_indexes                            Optional string/list of band indexes.
 
                                              * "Band1 Band2 Band3 Band4 Band5 Band7", e.g., "1 2 3 4 5 6" or [1,2,3,4,5,6]
-     --------------------------------     --------------------------------------------------------------------
-     astype                                  Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
-     ================================     ====================================================================
+    --------------------------------     --------------------------------------------------------------------
+    astype                                  Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
 
-     :return: The output raster.
+    :return: The output raster.
+
     """
     return band_arithmetic(raster, band_indexes, astype, 7)
 
@@ -1158,7 +1159,7 @@ def vari(
     """
     Visible Atmospherically Resistant Index
 
-    VARI = (Green - Red)/(Green + Red - Blue)
+        VARI = (Green - Red)/(Green + Red - Blue)
 
     The arguments for this function are as follows:
 
@@ -1616,8 +1617,8 @@ def wndwi(
     including water turbidity, small water bodies, or shadow in remote sensing scenes.
     Supported from 10.8.
 
-    WNDWI = [Green – α * NIR – (1 – α) * SWIR ] / [Green + α * NIR + (1 – α) * SWIR]
-    where α = a weighted coefficient ranging from 0 to 1.
+        WNDWI = [Green – α * NIR – (1 – α) * SWIR ] / [Green + α * NIR + (1 – α) * SWIR]
+        where α = a weighted coefficient ranging from 0 to 1.
 
     The arguments for this function are as follows:
 
@@ -2583,9 +2584,9 @@ def hillshade(
     --------------------------------     --------------------------------------------------------------------
     z_factor                             Optional float. Scaling factor used to convert the elevation values for two purposes:
 
-                                          - Convert the elevation units (such as meters or feet) to the horizontal coordinate units of the dataset, which may be feet, meters, or degrees.
+                                         - Convert the elevation units (such as meters or feet) to the horizontal coordinate units of the dataset, which may be feet, meters, or degrees.
 
-                                          - Add vertical exaggeration for visual effect.
+                                         - Add vertical exaggeration for visual effect.
 
                                          Default is 0.3.
     --------------------------------     --------------------------------------------------------------------
@@ -6912,10 +6913,10 @@ def mask(
     no_data_interpretation                 int. 0=MatchAny, 1=MatchAll. This parameter refers to how the NoData
                                            values will impact the output image.
 
-                                            - 0 (MatchAny) : If the NoData value you specify occurs for a cell in a\
-                                            specified band, then that cell in the output image will be NoData.
-                                            - 1 (MatchAll) :  The NoData values you specify for each band must occur\
-                                            in the same cell for the output image to contain the NoData cell.
+                                           - 0 (MatchAny) : If the NoData value you specify occurs for a cell in a\
+                                           specified band, then that cell in the output image will be NoData.
+                                           - 1 (MatchAll) :  The NoData values you specify for each band must occur\
+                                           in the same cell for the output image to contain the NoData cell.
     --------------------------------     --------------------------------------------------------------------
     astype                                  Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
     ================================     ====================================================================
@@ -7072,7 +7073,7 @@ def remap(
 ):
     """
     The remap function allows you to change or reclassify the pixel values of the raster data. For more information,
-    see `remap function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/remap-function.htm>`__.
+    see `Remap function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/remap-function.htm>`__.
 
     The arguments for this function are as follows:
 
@@ -7265,8 +7266,8 @@ def segment_mean_shift(
                                             around each segment. This is helpful so you can distinguish
                                             adjacent segments that have similar colors.
 
-                                             - True : The segment boundaries are displayed with black contour lines around each segment.
-                                             - False : The segment boundaries are not displayed. This is the default.
+                                            - True : The segment boundaries are displayed with black contour lines around each segment.
+                                            - False : The segment boundaries are not displayed. This is the default.
     --------------------------------     --------------------------------------------------------------------
     max_num_pixels_per_segment              Optional integer. The maximum size of a segment. Segments that are larger than
                                             the specified size will be divided. Use this parameter to prevent
@@ -7341,7 +7342,7 @@ def shaded_relief(
 ):
     """
     Shaded relief is a color 3D model of the terrain, created by merging the images from the Elevation-coded and
-    Hillshade methods. For more information, see `Shaded relief <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/shaded-relief-function.htm>`__ function.
+    Hillshade methods. For more information, see `Shaded relief function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/shaded-relief-function.htm>`_
 
     The arguments for this function are as follows:
 
@@ -7439,17 +7440,17 @@ def slope(
     --------------------------------     --------------------------------------------------------------------
     z_factor                             Optional float. Scaling factor used to convert the elevation values for two purposes:
 
-                                          - Convert the elevation units (such as meters or feet) to the horizontal coordinate units of the dataset, which may be feet, meters, or degrees.
+                                         - Convert the elevation units (such as meters or feet) to the horizontal coordinate units of the dataset, which may be feet, meters, or degrees.
 
-                                          - Add vertical exaggeration for visual effect.
+                                         - Add vertical exaggeration for visual effect.
 
                                           Default is 0.3.
     --------------------------------     --------------------------------------------------------------------
     slope_type                           (New at 10.2) Optional float. Available options are -
 
-                                            - 1=DEGREE
-                                            - 2=PERCENTRISE
-                                            - 3=SCALED.
+                                         - 1=DEGREE
+                                         - 2=PERCENTRISE
+                                         - 3=SCALED.
 
                                          Default is 1.
     --------------------------------     --------------------------------------------------------------------
@@ -7556,19 +7557,19 @@ def focal_statistics(
     :return: The output raster.
 
     .. note::
-        The focal_statistics() function is different from the focal_stats() function in the following aspects:
+        The :meth:`~arcgis.raster.functions.focal_statistics` function is different from the :meth:`~arcgis.raster.functions.focal_stats` function in the following aspects:
 
-        The focal_statistics() function supports  Minimum, Maximum, Mean, and Standard Deviation, Median, Majority, Minority.
-        The focal_stats() function supports Mean, Majority, Maximum, Median, Minimum, Minority, Range, Standard deviation, Sum, and Variety.
+        The :meth:`~arcgis.raster.functions.focal_statistics` function supports  Minimum, Maximum, Mean, and Standard Deviation, Median, Majority, Minority.
+        The :meth:`~arcgis.raster.functions.focal_stats` function supports Mean, Majority, Maximum, Median, Minimum, Minority, Range, Standard deviation, Sum, and Variety.
 
-        The focal_statistics() function supports only Rectangle.
-        The focal_stats() function supports Rectangle, Circle, Annulus, Wedge, Irregular, and Weight neighborhoods.
+        The :meth:`~arcgis.raster.functions.focal_statistics` function supports only Rectangle.
+        The :meth:`~arcgis.raster.functions.focal_stats` function supports Rectangle, Circle, Annulus, Wedge, Irregular, and Weight neighborhoods.
 
-        The option to determine if NoData pixels are to be processed out is available in the focal_statistics() function by setting a boolean value for fill_no_data_only param.
-        This option is not present in the focal_stats() function.
+        The option to determine if NoData pixels are to be processed out is available in the :meth:`~arcgis.raster.functions.focal_statistics` function by setting a boolean value for fill_no_data_only param.
+        This option is not present in the :meth:`~arcgis.raster.functions.focal_stats` function.
 
-        The option to determine whether NoData values are ignored or not is available in the focal_stats() function by setting a boolean value for ignore_no_data param.
-        This option is not present in the focal_statistics() function.
+        The option to determine whether NoData values are ignored or not is available in the :meth:`~arcgis.raster.functions.focal_stats` function by setting a boolean value for ignore_no_data param.
+        This option is not present in the :meth:`~arcgis.raster.functions.focal_statistics` function.
 
     """
 
@@ -7630,7 +7631,7 @@ def stretch(
 ):
     """
     The stretch function enhances an image through multiple stretch types. For more information, see
-    `stretch function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/stretch-function.htm>`__.
+    `Stretch function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/stretch-function.htm>`__.
 
     Gamma stretch works with all stretch types. The Gamma parameter is needed when UseGamma is set to true. Min and Max
     can be used to define output minimum and maximum. DRA is used to get statistics from the extent in the export_image request.
@@ -8099,8 +8100,8 @@ def vector_field(
     The VectorField function is used to composite two single-band rasters (each raster represents U/V or Magnitude/Direction)
     into a two-band raster (each band represents U/V or Magnitude/Direction). Data combination type (U-V or Magnitude-Direction)
     can also be converted interchangeably with this function.
-    For more information, see Vector Field function
-    (http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/vector-field-function.htm)
+    For more information, see
+    `Vector Field function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/vector-field-function.htm>`_
 
     The arguments for this function are as follows:
 
@@ -8247,8 +8248,8 @@ def statistics_histogram(
     """
     The function is used to define the statistics and histogram of a raster.
     It is normally used for control the default display of exported image.
-    For more information, see Statistics and Histogram function,
-    http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/statistics-and-histogram-function.htm
+    For more information, see
+    `Statistics and Histogram function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/statistics-and-histogram-function.htm>`_
 
     The arguments for this function are as follows:
 
@@ -8296,9 +8297,8 @@ def tasseled_cap(raster: Union[Raster, ImageryLayer]):
     this function, there should not be any functions that would alter the pixel
     values in the function chain, such as the Stretch, Apparent Reflectance or
     Pansharpening function. The only exception is for Landsat ETM+; when using
-    Landsat ETM+, the Apparent Reflectance function must precede the Tasseled
-    Cap function. For more information, see
-    http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/tasseled-cap-transformation.htm
+    Landsat ETM+, the Apparent Reflectance function must precede the
+    `Tasseled Cap function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/tasseled-cap-transformation.htm>`_
 
     The arguments for this function are as follows:
 
@@ -8329,7 +8329,7 @@ def identity(raster: Union[Raster, ImageryLayer]):
     The function is used to define the source raster as part of the default
     mosaicking behavior of the mosaic dataset. This function is a no-op function
     and takes no arguments except a raster. For more information, see
-    (http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/identity-function.htm)
+    `Identity function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/identity-function.htm>`_
 
     The arguments for this function are as follows:
 
@@ -8407,7 +8407,7 @@ def grayscale(
     The Grayscale function converts a multi-band image into a single-band grayscale
     image. Specified weights are applied to each of the input bands, and a
     normalization is applied for output. For more information, see
-    http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/grayscale-function.htm
+    `Grayscale function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/grayscale-function.htm>`_
 
     ================================     ====================================================================
     **Argument**                         **Description**
@@ -8453,7 +8453,7 @@ def spectral_conversion(
     can be assigned to all the input bands to calculate each of the output
     bands. The column/row size of the matrix equals to the band count of input
     raster. For more information, see Spectral Conversion function
-    http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/spectral-conversion-function.htm
+    `Spectral Conversion function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/spectral-conversion-function.htm>_`
 
     The arguments for this function are as follows:
 
@@ -8496,7 +8496,7 @@ def raster_calculator(
     bands in a multispectral image as part of a function chain, you can use
     the Extract Bands Function before the RasterCalculator function.
     For more info including operators supported, see Calculator function
-    http://pro.arcgis.com/en/pro-app/help/data/imagery/calculator-function.htm
+    `Calculator function <http://pro.arcgis.com/en/pro-app/help/data/imagery/calculator-function.htm>`_
 
     The arguments for this function are as follows:
 
@@ -8511,25 +8511,25 @@ def raster_calculator(
     --------------------------------     --------------------------------------------------------------------
     extent_type                             Optional string. Specifies the extent to be used for the function.
 
-                                                - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+                                            - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
 
-                                                - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+                                            - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
 
-                                                - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+                                            - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
 
-                                                - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+                                            - "LastOf" - Use the extent of the last input raster to determine the processing extent.
     --------------------------------     --------------------------------------------------------------------
     cellsize_type                           Optional string. Specifies the cell size to be used for the function.
 
-                                                - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+                                            - "FirstOf" - Use the first cell size of the input rasters. This is the default.
 
-                                                - "MinOf" - Use the smallest cell size of all the input rasters.
+                                            - "MinOf" - Use the smallest cell size of all the input rasters.
 
-                                                - "MaxOf" - Use the largest cell size of all the input rasters.
+                                            - "MaxOf" - Use the largest cell size of all the input rasters.
 
-                                                - "MeanOf" - Use the mean cell size of all the input rasters.
+                                            - "MeanOf" - Use the mean cell size of all the input rasters.
 
-                                                - "LastOf" - Use the last cell size of the input rasters.
+                                            - "LastOf" - Use the last cell size of the input rasters.
     --------------------------------     --------------------------------------------------------------------
     astype                                  Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
     ================================     ====================================================================
@@ -8580,8 +8580,8 @@ def speckle(
     noise while retaining the edges or sharp features in the image. Four speckle
     reduction filtering algorithms are provided through this function. For more
     information including required and optional parameters for each filter and
-    the default parameter values, see Speckle function
-    http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/speckle-function.htm
+    the default parameter values, see
+    `Speckle function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/speckle-function.htm>`_
 
     The arguments for this function are as follows:
 
@@ -8660,7 +8660,7 @@ def pansharpen(
     The Pansharpening function uses a higher-resolution panchromatic raster to
     fuse with a lower-resolution, multiband raster. It can generate colorized
     multispectral image with higher resolution. For more information, see
-    http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/pansharpening-function.htm
+    `Pansharpening function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/pansharpening-function.htm>`_
 
     The arguments for this function are as follows:
 
@@ -8767,7 +8767,8 @@ def weighted_overlay(
 
     """
     The WeightedOverlay function allows you to overlay several rasters using a common measurement scale and weights each according to its importance. For more information, see
-    http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/weighted-overlay-function.htm
+
+    `Weighted Overlay function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/weighted-overlay-function.htm>`_
 
     The arguments for this function are as follows:
 
@@ -8815,7 +8816,7 @@ def weighted_sum(
 
     """
     The weighted_sum function allows you to overlay several rasters, multiplying each by their given weight and summing them together. For more information, see
-    http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/weighted-sum-function.htm
+    `Weighted Sum function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/weighted-sum-function.htm>`_
 
     The arguments for this function are as follows:
 
@@ -8865,7 +8866,7 @@ def focal_stats(
 ):
     """
     Calculates for each input cell location a statistic of the values within a specified neighborhood around it.
-    For more information see, https://pro.arcgis.com/en/pro-app/help/data/imagery/focal-statistics-function.htm
+    For more information see, `Focal Statistics function <https://pro.arcgis.com/en/pro-app/help/data/imagery/focal-statistics-function.htm>`_
 
     The arguments for this function are as follows:
 
@@ -8947,18 +8948,18 @@ def focal_stats(
     :return: The output raster.
 
     .. note::
-        The focal_stats() function is different from the focal_statistics() function in the following aspects:
+        The :meth:`~arcgis.raster.functions.focal_stats` function is different from the :meth:`~arcgis.raster.functions.focal_statistics` function in the following aspects:
 
-        The focal_stats() function supports Mean, Majority, Maximum, Median, Minimum, Minority, Percentile, Range, Standard deviation, Sum, and Variety.
-        The focal_statistics() function supports only Minimum, Maximum, Mean, and Standard Deviation.
+        The :meth:`~arcgis.raster.functions.focal_stats` function supports Mean, Majority, Maximum, Median, Minimum, Minority, Percentile, Range, Standard deviation, Sum, and Variety.
+        The :meth:`~arcgis.raster.functions.focal_statistics` function supports only Minimum, Maximum, Mean, and Standard Deviation.
 
-        The focal_stats() function supports Rectangle, Circle, Annulus, Wedge, Irregular, and Weight neighborhoods. The focal_statistics() function supports only Rectangle.
+        The :meth:`~arcgis.raster.functions.focal_stats` function supports Rectangle, Circle, Annulus, Wedge, Irregular, and Weight neighborhoods. The :meth:`~arcgis.raster.functions.focal_statistics` function supports only Rectangle.
 
-        The option to determine whether NoData values are ignored or not is available in the focal_stats() function by setting a boolean value for ignore_no_data param.
-        This option is not present in the focal_statistics() function.
+        The option to determine whether NoData values are ignored or not is available in the :meth:`~arcgis.raster.functions.focal_stats` function by setting a boolean value for ignore_no_data param.
+        This option is not present in the :meth:`~arcgis.raster.functions.focal_statistics` function.
 
-        The option to determine if NoData pixels are to be processed out is available in the focal_statistics() function by setting a boolean value for fill_no_data_only param.
-        This option is not present in the focal_stats() function.
+        The option to determine if NoData pixels are to be processed out is available in the :meth:`~arcgis.raster.functions.focal_statistics` function by setting a boolean value for fill_no_data_only param.
+        This option is not present in the :meth:`~arcgis.raster.functions.focal_stats` function.
     
     """
 
@@ -9018,7 +9019,8 @@ def lookup(raster: Union[Raster, ImageryLayer], field: Optional[str] = None):
 
     """
     Creates a new raster by looking up values found in another field in the table of the input raster.
-    For more information see, https://pro.arcgis.com/en/pro-app/help/data/imagery/lookup-function.htm
+    For more information see,
+    `Lookup function <https://pro.arcgis.com/en/pro-app/help/data/imagery/lookup-function.htm>`_
 
     The arguments for this function are as follows:
 
@@ -9101,47 +9103,47 @@ def raster_collection_function(
                                             when the aggregation_definition_type parameter is set to INTERVAL_KEYWORD, and
                                             the aggregation must be across time.
 
-                                             - HOURLY : The data values will be aggregated into hourly time steps,
-                                               and the result will include every hour in the time series.
+                                            - HOURLY : The data values will be aggregated into hourly time steps,
+                                              and the result will include every hour in the time series.
 
-                                             - DAILY : The data values will be aggregated into daily time steps,
-                                               and the result will include every day in the time series.
+                                            - DAILY : The data values will be aggregated into daily time steps,
+                                              and the result will include every day in the time series.
 
-                                             - WEEKLY : The data values will be aggregated into weekly time steps,
-                                               and the result will include every week in the time series.
+                                            - WEEKLY : The data values will be aggregated into weekly time steps,
+                                              and the result will include every week in the time series.
 
-                                             - DEKADLY : Divides each month into 3 periods of 10 days each
-                                               (last period might have more or less than 10 days)
-                                               and each month would output 3 slices.
+                                            - DEKADLY : Divides each month into 3 periods of 10 days each
+                                              (last period might have more or less than 10 days)
+                                              and each month would output 3 slices.
 
-                                             - PENTADLY : Divides each month into 6 periods of 5 days each
-                                               (last period might have more or less than 5 days)
-                                               and each month would output 6 slices.
+                                            - PENTADLY : Divides each month into 6 periods of 5 days each
+                                              (last period might have more or less than 5 days)
+                                              and each month would output 6 slices.
 
-                                             - MONTHLY : The data values will be aggregated into monthly time steps,
-                                               and the result will include every month in the time series.
+                                            - MONTHLY : The data values will be aggregated into monthly time steps,
+                                              and the result will include every month in the time series.
 
-                                             - QUARTERLY : The data values will be aggregated into quarterly time steps,
-                                               and the result will include every quarter in the time series.
+                                            - QUARTERLY : The data values will be aggregated into quarterly time steps,
+                                              and the result will include every quarter in the time series.
 
-                                             - YEARLY : The data values will be aggregated into yearly time steps,
-                                               and the result will include every year in the time series.
+                                            - YEARLY : The data values will be aggregated into yearly time steps,
+                                              and the result will include every year in the time series.
 
-                                             - RECURRING_DAILY : The data values will be aggregated into daily time steps,
-                                               and the result includes each one aggregated value per day.
-                                               The output will include, at most, 366 daily time slices
+                                            - RECURRING_DAILY : The data values will be aggregated into daily time steps,
+                                              and the result includes each one aggregated value per day.
+                                              The output will include, at most, 366 daily time slices
 
-                                             - RECURRING_WEEKLY : The data values will be aggregated into weekly time steps,
-                                               and the result will include one aggregated value per week.
-                                               The output will include, at most, 53 weekly time slices.
+                                            - RECURRING_WEEKLY : The data values will be aggregated into weekly time steps,
+                                              and the result will include one aggregated value per week.
+                                              The output will include, at most, 53 weekly time slices.
 
-                                             - RECURRING_MONTHLY : The data values will be aggregated into weekly time steps,
-                                               and the result will include one aggregated value per month.
-                                               The output will include, at most, 12 monthly time slices.
+                                            - RECURRING_MONTHLY : The data values will be aggregated into weekly time steps,
+                                              and the result will include one aggregated value per month.
+                                              The output will include, at most, 12 monthly time slices.
 
-                                             - RECURRING_QUARTERLY : The data values will be aggregated into weekly time steps,
-                                               and the result will include one aggregated value per quarter.
-                                               The output will include, at most, 4 quarterly time slices.
+                                            - RECURRING_QUARTERLY : The data values will be aggregated into weekly time steps,
+                                              and the result will include one aggregated value per quarter.
+                                              The output will include, at most, 4 quarterly time slices.
     --------------------------------     --------------------------------------------------------------------
     interval_value                          Optional String. The size of the interval that will be used for the
                                             aggregation. This parameter is required when the aggregation_definition_type
@@ -9172,6 +9174,7 @@ def raster_collection_function(
                                             If dimension is StdTime, then the value must be specified in human readable time format (YYYY-MM-DDTHH:MM:SS).
 
                                             Syntax:
+
                                                 [{"minValue":"<min value>","maxValue":"<max value>"},
                                                 {"minValue":"<min value>","maxValue":"<max value>"}]
 
@@ -9331,7 +9334,9 @@ def monitor_vegetation(
     """
     The monitor_vegetation function performs an arithmetic operation on the bands of a multiband raster layer
     to reveal vegetation coverage information of the study area.
-    see Band Arithmetic function at http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/band-arithmetic-function.htm
+    see Band Arithmetic function at
+
+    `Band Arithmetic function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/band-arithmetic-function.htm>_`
 
     The arguments for this function are as follows:
 
@@ -9508,37 +9513,37 @@ def random_raster(
 
                                             Example for RasterInfo dict -
 
-                                            {'bandCount': 3, 'extent': {"xmin": 4488761.95,
-                                            "ymin": 5478609.805,
-                                            "xmax": 4489727.05,
-                                            "ymax": 5479555.305,
-                                            "spatialReference": {
-                                            "wkt": "PROJCS[\"Deutsches_Hauptdreiecksnetz_Transverse_Mercator\",
-                                            GEOGCS[\"GCS_Deutsches_Hauptdreiecksnetz\", DATUM[\"D_Deutsches_Hauptdreiecksnetz\",
-                                            SPHEROID[\"Bessel_1841\", 6377397.155,299.1528128]], PRIMEM[\"Greenwich\",0.0],
-                                            UNIT[\"Degree\", 0.0174532925199433]], PROJECTION[\"Transverse_Mercator\"],
-                                            PARAMETER[\"false_easting\", 4500000.0], PARAMETER[\"false_northing\", 0.0],
-                                            PARAMETER[\"central_meridian\", 12.0], PARAMETER[\"scale_factor\", 1.0],
-                                            PARAMETER[\"latitude_of_origin\", 0.0], UNIT[\"Meter\", 1.0]]"
-                                            }},
-                                            'pixelSizeX': 0.0999999999999614,
-                                            'pixelSizeY': 0.1,
-                                            'pixelType': 'U8'}
+                                            | {'bandCount': 3, 'extent': {"xmin": 4488761.95,
+                                            | "ymin": 5478609.805,
+                                            | "xmax": 4489727.05,
+                                            | "ymax": 5479555.305,
+                                            | "spatialReference": {
+                                            | "wkt": "PROJCS[\"Deutsches_Hauptdreiecksnetz_Transverse_Mercator\",
+                                            | GEOGCS[\"GCS_Deutsches_Hauptdreiecksnetz\", DATUM[\"D_Deutsches_Hauptdreiecksnetz\",
+                                            | SPHEROID[\"Bessel_1841\", 6377397.155,299.1528128]], PRIMEM[\"Greenwich\",0.0],
+                                            | UNIT[\"Degree\", 0.0174532925199433]], PROJECTION[\"Transverse_Mercator\"],
+                                            | PARAMETER[\"false_easting\", 4500000.0], PARAMETER[\"false_northing\", 0.0],
+                                            | PARAMETER[\"central_meridian\", 12.0], PARAMETER[\"scale_factor\", 1.0],
+                                            | PARAMETER[\"latitude_of_origin\", 0.0], UNIT[\"Meter\", 1.0]]"
+                                            | }},
+                                            | 'pixelSizeX': 0.0999999999999614,
+                                            | 'pixelSizeY': 0.1,
+                                            | 'pixelType': 'U8'}
     --------------------------------     --------------------------------------------------------------------
     distribution:                           Optional int. Specify the random value distribution method to use.
                                             Default is 1. i,e; Uniform
 
-                                                Choice list:
+                                            Choice list:
 
-                                                    Uniform = 1
-                                                    UniformInteger = 2
-                                                    Normal = 3
-                                                    Exponential = 4
-                                                    Poisson = 5
-                                                    Gamma = 6
-                                                    Binomial = 7
-                                                    Geometric = 8
-                                                    NegativeBinomial = 9
+                                                Uniform = 1
+                                                UniformInteger = 2
+                                                Normal = 3
+                                                Exponential = 4
+                                                Poisson = 5
+                                                Gamma = 6
+                                                Binomial = 7
+                                                Geometric = 8
+                                                NegativeBinomial = 9
 
                                             - Uniform - A uniform distribution with the defined range.
 
@@ -10440,20 +10445,20 @@ def interpolate_irregular_data(
     --------------------------------     --------------------------------------------------------------------
     interpolation_method                 Optional int or string. The resampling method to use for interpolation:
 
-                                          -  0 or NEAREST_NEIGBOR : Calculates pixel value using the nearest pixel. If no source pixel
-                                             exists, no new pixel can be created in the output. This is the default.
+                                         -  0 or NEAREST_NEIGBOR : Calculates pixel value using the nearest pixel. If no source pixel
+                                            exists, no new pixel can be created in the output. This is the default.
 
-                                          -  2 or LINEAR_TINNING : Uses a triangular irregular network from the center
-                                             points of each cell in the irregular raster to interpolate a surface
-                                             that is then converted to a regular raster.
+                                         -  2 or LINEAR_TINNING : Uses a triangular irregular network from the center
+                                            points of each cell in the irregular raster to interpolate a surface
+                                            that is then converted to a regular raster.
 
-                                          -  3 or NATURAL_NEIGHBOR : Finds the closest subset of input samples to a
-                                             query point and applies weights to them based on proportionate
-                                             areas to interpolate a value.
+                                         -  3 or NATURAL_NEIGHBOR : Finds the closest subset of input samples to a
+                                            query point and applies weights to them based on proportionate
+                                            areas to interpolate a value.
 
-                                          -  4 or INVERSE_DISTANCE_WEIGHTED : Determines cell values using a
-                                             linearly weighted combination of a set of sample points or cells.
-                                             The weight is a function of the inverse of the distance from the known points or cells.
+                                         -  4 or INVERSE_DISTANCE_WEIGHTED : Determines cell values using a
+                                            linearly weighted combination of a set of sample points or cells.
+                                            The weight is a function of the inverse of the distance from the known points or cells.
     --------------------------------     --------------------------------------------------------------------
     radius                               Optional int. The number of pixels to be included for resampling. The default value is 3 pixels.
     --------------------------------     --------------------------------------------------------------------
@@ -11488,9 +11493,9 @@ def trend_to_rgb(raster: Union[Raster, ImageryLayer], model_type: str = 0):
     ------------------------------------     --------------------------------------------------------------------
     model_type                               Optional String. Specifies the model type.
 
-                                                - "LINEAR" (0)
+                                             - "LINEAR" (0)
 
-                                                - "HARMONIC" (1)
+                                             - "HARMONIC" (1)
 
                                              Example:
 
@@ -12020,11 +12025,11 @@ def wind_chill(
     wind_speed_units                     Optional String.  Defines the unit of measurement for the wind-speed raster.
                                          Available input units are mph, km/h, ft/s and kn. Each represents
 
-                                           - Miles Per Hour (mph)
-                                           - Kilometers Per Hour (km/h)
-                                           - Meters Per Second (m/s)
-                                           - Feet Per Second (ft/s)
-                                           - Knots (kn)
+                                         - Miles Per Hour (mph)
+                                         - Kilometers Per Hour (km/h)
+                                         - Meters Per Second (m/s)
+                                         - Feet Per Second (ft/s)
+                                         - Knots (kn)
     --------------------------------     --------------------------------------------------------------------
     wind_chill_units                     Optional String. The unit of measurement associated with the output
                                          raster. Available output units are Celsius, Fahrenheit, and Kelvin.
@@ -12215,7 +12220,7 @@ def ccdc_analysis(
     .. note::
         This raster function is only supported in conjunction with the :meth:`~arcgis.raster.functions.detect_change_using_change_analysis_raster` .
         To persist the output give the output of the ccdc_analysis function as input to the :meth:`~arcgis.raster.functions.detect_change_using_change_analysis_raster`
-        method and use the ``save()`` method on the resulting layer.
+        method and use the :meth:`~arcgis.raster.ImageryLayer.save` method on the resulting layer.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -12340,7 +12345,7 @@ def landtrendr_analysis(
     .. note::
         This raster function is only supported in conjunction with the detect_change_using_change_analysis_raster function.
         To persist the output give the output of the landtrendr_analysis function as input to the :meth:`~arcgis.raster.functions.detect_change_using_change_analysis_raster`
-        method and use the ``save()`` method on the resulting layer.
+        method and use the :meth:`~arcgis.raster.ImageryLayer.save` method on the resulting layer.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -12408,9 +12413,9 @@ def landtrendr_analysis(
     prevent_one_year_recovery                Optional boolean. Specifies whether segments that exhibit a one year
                                              recovery will be excluded.
 
-                                                - True - Segments that exhibit a one year recovery will be excluded. This is the default.
+                                             - True - Segments that exhibit a one year recovery will be excluded. This is the default.
 
-                                                - False - Segments that exhibit a one year recovery will not be excluded.
+                                             - False - Segments that exhibit a one year recovery will not be excluded.
 
                                              Example:
 
@@ -12419,9 +12424,9 @@ def landtrendr_analysis(
     ------------------------------------     --------------------------------------------------------------------
     increasing_recovery_trend                Optional boolean. Specifies whether the recovery has an increasing (positive) trend.
 
-                                                - True - The recovery has an increasing trend. This is the default.
+                                             - True - The recovery has an increasing trend. This is the default.
 
-                                                - False - The recovery has a decreasing trend.
+                                             - False - The recovery has a decreasing trend.
 
                                              Example:
 
@@ -12470,9 +12475,9 @@ def landtrendr_analysis(
     output_other_bands                       Optional boolean. Specifies whether other bands will be included in the
                                              segmentation process.
 
-                                                - True - Other bands will be included. The segmentation and vertices information from the initial segmentation band specified in the processing_band parameter will also be fitted to the remaining bands in the multiband images. The model results will include the segmentation band first, then the remaining bands.
+                                             - True - Other bands will be included. The segmentation and vertices information from the initial segmentation band specified in the processing_band parameter will also be fitted to the remaining bands in the multiband images. The model results will include the segmentation band first, then the remaining bands.
 
-                                                - False - Other bands will not be included. This is the default.
+                                             - False - Other bands will not be included. This is the default.
 
                                              Example:
 
@@ -12566,7 +12571,7 @@ def dimensional_moving_statistics(
 
     .. note::
         This raster function does not support on the fly rendering and can only be used to generate persisted output.
-        To persist the output use the ``save()`` method on the resulting layer.
+        To persist the output use the :meth:`~arcgis.raster.ImageryLayer.save` method on the resulting layer.
 
     The arguments for this function are as follows:
 
@@ -12595,44 +12600,44 @@ def dimensional_moving_statistics(
     nodata_handling                      Optional string. Specifies how NoData values will be handled by the 
                                          statistic calculation.
 
-                                            - DATA - NoData values in the value input will be ignored in the \
-                                            results of the defined window that they fall within. This is the \
-                                            default.
+                                         - DATA - NoData values in the value input will be ignored in the \
+                                           results of the defined window that they fall within. This is the \
+                                           default.
 
-                                            - NODATA - Output values will be NoData if any NoData values are \
-                                            found in the input within the defined window.
+                                        - NODATA - Output values will be NoData if any NoData values are \
+                                          found in the input within the defined window.
 
-                                            - FILL_NODATA - NoData cell values will be replaced using the selected \
-                                            statistic on the values within the defined window.
+                                        - FILL_NODATA - NoData cell values will be replaced using the selected \
+                                          statistic on the values within the defined window.
     --------------------------------     --------------------------------------------------------------------
     statistics_type                      Optional string. Statistic type to be calculated.
 
-                                            - MEAN - The mean (average value) of the cells in the defined \
-                                            window will be calculated. This is the default.
+                                         - MEAN - The mean (average value) of the cells in the defined \
+                                         window will be calculated. This is the default.
 
-                                            - CIRCULAR_MEAN - The circular mean (average value) of the cells \
-                                            in the window will be calculated. When this statistics type is \
-                                            selected, use the ``circular_wrap_value`` parameter to designate \
-                                            a wrap value to use.
+                                         - CIRCULAR_MEAN - The circular mean (average value) of the cells \
+                                         in the window will be calculated. When this statistics type is \
+                                         elected, use the ``circular_wrap_value`` parameter to designate \
+                                         a wrap value to use.
 
-                                            - MAJORITY - The majority (value that occurs most often) of the \
-                                            cells in the defined window will be identified.
+                                         - MAJORITY - The majority (value that occurs most often) of the \
+                                         cells in the defined window will be identified.
 
-                                            - MAXIMUM - The maximum (largest value) of the cells in the \
-                                            defined window will be identified.
+                                         - MAXIMUM - The maximum (largest value) of the cells in the \
+                                         defined window will be identified.
 
-                                            - MEDIAN - The median of the cells in the defined window will be \
-                                            identified.
+                                         - MEDIAN - The median of the cells in the defined window will be \
+                                         identified.
 
-                                            - MINIMUM - The minimum (smallest value) of the cells in the \
-                                            defined window will be identified.
+                                         - MINIMUM - The minimum (smallest value) of the cells in the \
+                                         defined window will be identified.
 
-                                            - PERCENTILE - A percentile of the cells in the defined window \
-                                            will be calculated. When this statistics_type is selected, the \
-                                            ``percentile_value`` and ``percentile_interpolation_type`` parameters \
-                                            become available. Use these new parameters to designate the \
-                                            percentile to calculate and choose the interpolation type to \
-                                            use, respectively.
+                                         - PERCENTILE - A percentile of the cells in the defined window \
+                                         will be calculated. When this statistics_type is selected, the \
+                                         ``percentile_value`` and ``percentile_interpolation_type`` parameters \
+                                         become available. Use these new parameters to designate the \
+                                         percentile to calculate and choose the interpolation type to \
+                                         use, respectively.
     --------------------------------     --------------------------------------------------------------------
     percentile_value                     Optional float. The percentile value that will be calculated.
                                          The default is 90, for the 90th percentile.
@@ -12647,15 +12652,15 @@ def dimensional_moving_statistics(
     percentile_interpolation_type        Optional string. Specifies the method of interpolation to be used when the 
                                          specified percentile value lies between two input cell values.
 
-                                            - AUTO_DETECT - If the input value raster has integer pixel type, the \
-                                            NEAREST method is used. If the input value raster has floating point \
-                                            pixel type, then the LINEAR method is used. This is the default.
+                                         - AUTO_DETECT - If the input value raster has integer pixel type, the \
+                                         NEAREST method is used. If the input value raster has floating point \
+                                         pixel type, then the LINEAR method is used. This is the default.
 
-                                            - NEAREST - Nearest value to the desired percentile. In this case, the \
-                                            output pixel type is same as that of the input value raster.
+                                         - NEAREST - Nearest value to the desired percentile. In this case, the \
+                                         output pixel type is same as that of the input value raster.
 
-                                            - LINEAR - Weighted average of two surrounding values from the desired \
-                                            percentile. In this case, the output pixel type is floating point.
+                                         - LINEAR - Weighted average of two surrounding values from the desired \
+                                         percentile. In this case, the output pixel type is floating point.
 
                                          This parameter is only supported if the ``statistics_type`` parameter is
                                          set to MEDIAN or PERCENTILE.
@@ -12846,9 +12851,9 @@ def interpolate_raster_by_dimension(
     ------------------------------------     --------------------------------------------------------------------
     dimension_definition                     Optional String. Specifies the dimension definition. It can be one of the following:
 
-                                                - BY_VALUES
-                                                - BY_INTERVAL
-                                                - BY_TARGET_RASTER
+                                             - BY_VALUES
+                                             - BY_INTERVAL
+                                             - BY_TARGET_RASTER
     ------------------------------------     --------------------------------------------------------------------
     dimension_values                         Optional List of Dictionaries. This slices the data based on the dimension name and the value specified.
                                              This parameter is required when the dimension_definition is set to BY_VALUES.
@@ -12879,11 +12884,11 @@ def interpolate_raster_by_dimension(
                                              This parameter is required when the dimension_definition is set to BY_INTERVAL
                                              and the dimension parameter is set to StdTime.
 
-                                                - HOURS - Uses hours as the specified unit of time.
-                                                - DAYS - Uses days as the specified unit of time.
-                                                - WEEKS - Uses weeks as the specified unit of time.
-                                                - MONTHS - Uses months as the specified unit of time.
-                                                - YEARS -Uses years as the specified unit of time.
+                                             - HOURS - Uses hours as the specified unit of time.
+                                             - DAYS - Uses days as the specified unit of time.
+                                             - WEEKS - Uses weeks as the specified unit of time.
+                                             - MONTHS - Uses months as the specified unit of time.
+                                             - YEARS -Uses years as the specified unit of time.
     ------------------------------------     --------------------------------------------------------------------
     target_raster                            Optional :class:`Raster/ImageryLayer <arcgis.raster.ImageryLayer>` object. Parameter used to specify the target raster from which the dimension definition would be taken.
                                              Required when dimension_definition is set to BY_TARGET_RASTER
