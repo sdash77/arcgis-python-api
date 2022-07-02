@@ -1,8 +1,9 @@
 """
 The orthomapping python API allows automating orthomapping tasks in the server environment.
 
-For more information about orthomapping workflows in ArcGIS, please visit the help documentation at 
-http://desktop.arcgis.com/en/arcmap/10.4/manage-data/raster-and-images/block-adjustment-for-mosaic-datasets.htm.
+For more information about orthomapping workflows in ArcGIS, please visit the help documentation at
+`Block adjustment for mosaic datasets <https://desktop.arcgis.com/en/arcmap/10.4/manage-data/raster-and-images/block-adjustment-for-mosaic-datasets.htm>`_
+
 """
 
 from __future__ import annotations
@@ -103,7 +104,7 @@ def _create_output_image_service(gis, output_name, task):
 def is_supported(gis=None):
     """
     Returns True if the GIS supports orthomapping. If a gis isn't specified,
-    checks if arcgis.env.active_gis supports raster analytics
+    checks if :meth:`~arcgis.env.active_gis` supports raster analytics
     """
     gis = arcgis.env.active_gis if gis is None else gis
     if "orthoMapping" in gis.properties.helperServices:
@@ -172,13 +173,14 @@ def compute_sensor_model(
                            candidates after the adjustment.
 
                            Example:
-                           {
-                           "computeCandidate": False,
-                           "maxoverlap": 0.6,
-                           "maxloss": 0.05,
-                           }
+
+                               {
+                               "computeCandidate": False,
+                               "maxoverlap": 0.6,
+                               "maxloss": 0.05,
+                               }
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
 
     :return:
@@ -261,6 +263,7 @@ def alter_processing_states(
                            blockadjustment, dem, gcp, seamlines, colorcorrection, adjust_index, imagetype
 
                            Example:
+
                                | {"blockadjustment": "raw",
                                |  "dem": "Dense_Natual_Neighbor",
                                |  "seamlines":"VORONOI",
@@ -268,7 +271,7 @@ def alter_processing_states(
                                |  "imagetype": "UAV/UAS",
                                |  "adjust_index": 0}
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
 
     :return:
@@ -327,7 +330,7 @@ def get_processing_states(
 
                            The image_collection must exist.
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
 
     :return:
@@ -404,17 +407,18 @@ def append_control_points(image_collection, control_points, gis = None):
                                                  not be used in computation. A non-zero value indicates otherwise.
 
                             Example:
-                            {"geometry": {
-                                "x":-118.15,"y":33.80,"z":10.0,
-                                "spatialReference":{"wkid":4326}},  
-                                "attributes": {
-                                   "imageID": 22,
-                                   "pointID": 2, 
-                                   "type": 2,
-                                   "status": 1, 
-                                 },
-                            <more points>
-                            }
+           
+                                {"geometry": {
+                                    "x":-118.15,"y":33.80,"z":10.0,
+                                    "spatialReference":{"wkid":4326}},  
+                                    "attributes": {
+                                       "imageID": 22,
+                                       "pointID": 2, 
+                                       "type": 2,
+                                       "status": 1, 
+                                     },
+                                <more points>
+                                }
 
     '''
     gis = arcgis.env.active_gis if gis is None else gis
@@ -477,6 +481,7 @@ def match_control_points(
                            -- imageID (int) - Image identification using the ObjectID from the mosaic dataset footprint table.
 
                            Example:
+
                                | [{
                                | "status": 1,
                                | "type": 2,
@@ -538,8 +543,9 @@ def match_control_points(
     context                Optional dictionary.Additional settings such as the input control points 
                            spatial reference can be specified here. 
 
-                           For example:
-                           {"groundControlPointsSpatialReference": {"wkid": 3459}, "imagePointSpatialReference": {"wkid": 3459}}
+                           For Example:
+
+                                {"groundControlPointsSpatialReference": {"wkid": 3459}, "imagePointSpatialReference": {"wkid": 3459}}
 
                            Note: The ground control points spatial reference and image point spatial reference 
                            spatial reference set in the context parameter is to decide the returned point set's 
@@ -549,7 +555,7 @@ def match_control_points(
                            then the default ground control points coordinates are in lon/lat and image points 
                            coordinates are in image coordinate system. 
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
 
     :return:
@@ -616,9 +622,9 @@ def color_correction(
 ):
     """
     Color balance the image collection. 
-    Refer to the "Color Balance Mosaic Dataset" GP tool for 
+    Refer to the `Color Balance Mosaic Dataset <https://pro.arcgis.com/en/pro-app/tool-reference/data-management/color-balance-mosaic-dataset.htm>`_ GP tool for
     documentation on color balancing mosaic datasets.
-    http://pro.arcgis.com/en/pro-app/tool-reference/data-management/color-balance-mosaic-dataset.htm
+
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -702,9 +708,10 @@ def color_correction(
                                              users to customize the statistics computation settings.
 
                                              Example:
-                                             {"skipRows": 10, "skipCols": 10, "reCalculateStats": "OVERWRITE"}
+
+                                                {"skipRows": 10, "skipCols": 10, "reCalculateStats": "OVERWRITE"}
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Optional GIS. the GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                                      Optional :class:`~arcgis.gis.GIS` . the GIS on which this tool runs. If not specified, the active GIS is used.
     ====================================     ====================================================================
 
     :return:
@@ -784,7 +791,7 @@ def compute_control_points(
     This service tool is used for computing matching control points between images
     within an image collection and/or matching control points between the image 
     collection images and the reference image.
-    http://pro.arcgis.com/en/pro-app/tool-reference/data-management/compute-control-points.htm
+    `Compute Control Points <https://pro.arcgis.com/en/pro-app/tool-reference/data-management/compute-control-points.htm>`_
     
     ====================================    ====================================================================
     **Argument**                            **Description**
@@ -824,38 +831,39 @@ def compute_control_points(
 
                                             pointSimilarity- Sets LOW, MEDIUM, or HIGH tolerance for computing control points with varying levels of potential error.
                                                              
-                                                             - LOW tolerance will produce the most control point, but may have a higher \
-                                                             level of error. 
-                                                             
-                                                             - HIGH tolerance will produce the least number of control point, \
-                                                             but each matching pair will have a lower level of error. 
+                                            - LOW tolerance will produce the most control point, but may have a higher \
+                                              level of error.
 
-                                                             - MEDIUM tolerance will set the similarity tolerance to medium.
+                                            - HIGH tolerance will produce the least number of control point, \
+                                              but each matching pair will have a lower level of error.
+
+                                            - MEDIUM tolerance will set the similarity tolerance to medium.
 
                                             pointDensity- Sets the number of tie points (LOW, MEDIUM, or HIGH), to be created. 
                                                           
-                                                          - LOW point density will create the fewest number of tie points. \
+                                            - LOW point density will create the fewest number of tie points. \
 
-                                                          - MEDIUM point density will create a moderate number of tie points. \
-                                                          
-                                                          - HIGH point density will create the highest number of tie points. \
+                                            - MEDIUM point density will create a moderate number of tie points. \
+
+                                            - HIGH point density will create the highest number of tie points. \
 
                                             pointDistribution- Randomly generates points that are better for overlapping areas with irregular shapes.
                                                                
-                                                               - RANDOM- will generate points that are better for overlapping areas \
-                                                               with irregular shapes. 
+                                            - RANDOM- will generate points that are better for overlapping areas \
+                                              with irregular shapes.
 
-                                                               - REGULAR- will generate points based on a \
-                                                               fixed pattern and uses the point density to determine how frequently to create points.
+                                            - REGULAR- will generate points based on a \
+                                              fixed pattern and uses the point density to determine how frequently to create points.
+
                                             Example:
 
-                                            {
-                                            "pointSimilarity":"MEDIUM",
-                                            "pointDensity": "MEDIUM",
-                                            "pointDistribution": "RANDOM"
-                                            }
+                                                {
+                                                "pointSimilarity":"MEDIUM",
+                                                "pointDensity": "MEDIUM",
+                                                "pointDistribution": "RANDOM"
+                                                }
     ------------------------------------    --------------------------------------------------------------------
-    gis                                     Optional GIS. the GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                                     Optional :class:`~arcgis.gis.GIS` . the GIS on which this tool runs. If not specified, the active GIS is used.
     ====================================    ====================================================================
 
     :return:
@@ -925,8 +933,9 @@ def compute_seamlines(
     block adjusted. Seamlines are helpful for generating the seamless mosaicked 
     display of overlapped images in image collection. The seamlines are computed
     only for candidates that will eventually be used for generating the result
-    ortho-mosaicked image.  
-    http://pro.arcgis.com/en/pro-app/tool-reference/data-management/build-seamlines.htm
+    ortho-mosaicked image.
+
+    `Build Seamlines <https://pro.arcgis.com/en/pro-app/tool-reference/data-management/build-seamlines.htm>`_
 
     ==================     ====================================================================
     **Argument**           **Description**
@@ -937,41 +946,42 @@ def compute_seamlines(
     ------------------     --------------------------------------------------------------------
     seamlines_method       Required string. These are supported methods for generated seamlines for the image collection.
     
-                            - VORONOI-Generate seamlines using the area Voronoi diagram. 
+                           - VORONOI-Generate seamlines using the area Voronoi diagram.
 
-                            - DISPARITY-Generate seamlines based on the disparity images of stereo pairs.
-                            
-                            - GEOMETRY - Generate seamlines for overlapping areas based on the intersection \
-                            of footprints. Areas with no overlapping imagery will merge the footprints. 
+                           - DISPARITY-Generate seamlines based on the disparity images of stereo pairs.
 
-                            - RADIOMETRY - Generate seamlines based on the spectral patterns of features \
-                            within the imagery.
+                           - GEOMETRY - Generate seamlines for overlapping areas based on the intersection \
+                             of footprints. Areas with no overlapping imagery will merge the footprints.
 
-                            - EDGE_DETECTION - Generate seamlines over intersecting areas based on the \
-                            edges of features in the area.
+                           - RADIOMETRY - Generate seamlines based on the spectral patterns of features \
+                             within the imagery.
 
-                            This method can avoid seamlines cutting through buildings. 
+                           - EDGE_DETECTION - Generate seamlines over intersecting areas based on the \
+                             edges of features in the area.
+
+                             This method can avoid seamlines cutting through buildings.
     ------------------     --------------------------------------------------------------------
     context                Optional dictionary. Context contains additional settings that allows users to customize
                            the seamlines generation. 
                            Example:
-                           {"minRegionSize": 100,
-                           "pixelSize": "",
-                           "blendType": "Both",
-                           "blendWidth": null,
-                           "blendUnit": "Pixels",
-                           "requestSizeType": "Pixels",
-                           "requestSize": 1000,
-                           "minThinnessRatio": 0.05,
-                           "maxSilverSize": 20
-                           }
+
+                               {"minRegionSize": 100,
+                               "pixelSize": "",
+                               "blendType": "Both",
+                               "blendWidth": null,
+                               "blendUnit": "Pixels",
+                               "requestSizeType": "Pixels",
+                               "requestSize": 1000,
+                               "minThinnessRatio": 0.05,
+                               "maxSilverSize": 20
+                               }
 
                            Allowed keys are:
                            "minRegionSize", "pixelSize", "blendType", "blendWidth", 
                            "blendUnit", "requestSizeType", "requestSize", 
                            "minThinnessRatio", "maxSilverSize"
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
 
     :return:
@@ -1063,6 +1073,7 @@ def edit_control_points(
                            -- imageID (int) - Image identification using the ObjectID from the mosaic dataset footprint table.
 
                            Example:
+
                                | [{
                                | "status": 1,
                                | "type": 2,
@@ -1111,7 +1122,7 @@ def edit_control_points(
 
 
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
 
     :return:
@@ -1160,9 +1171,9 @@ def generate_dem(
     **kwargs,
 ):
     """
-    Generate a DEM from the image collection. Refer to "Interpolate From Point Cloud"
+    Generate a DEM from the image collection. Refer to `Interpolate From Point Cloud <http://pro.arcgis.com/en/pro-app/tool-reference/data-management/interpolate-from-point-cloud.htm>`_
     GP tool for more documentation
-    http://pro.arcgis.com/en/pro-app/tool-reference/data-management/interpolate-from-point-cloud.htm
+
     
     ==================     ====================================================================
     **Argument**           **Description**
@@ -1209,13 +1220,14 @@ def generate_dem(
                            Information Sciences, Volume 1-3, (2012): 371-376. 
 
                            Refer to the documentation
-                           of "matching_method" parameter of the "Generate Point Cloud"
-                           GP tool @ http://pro.arcgis.com/en/pro-app/tool-reference/data-management/generate-point-cloud.htm
+                           of "matching_method" parameter of the `Generate Point Cloud <http://pro.arcgis.com/en/pro-app/tool-reference/data-management/generate-point-cloud.htm>`_
+                           GP tool
     ------------------     --------------------------------------------------------------------
     context                Optional dictionary. Additional allowed point cloud generation parameter and DEM 
                            interpolation parameter can be assigned here.  
                            
-                           For example: 
+                           For Example:
+
                                 | Point cloud generation parameters -  
                                 | {"maxObjectSize": 50, 
                                 | "groundSpacing": None, 
@@ -1233,7 +1245,7 @@ def generate_dem(
                                 | {"method": "TRIANGULATION", 
                                 | "smoothingMethod": "GAUSS5x5", 
                                 | "applyToOrtho": True, 
-                                | "fillDEM": "https://...." 
+                                | "fillDEM": ``https://....``
                                 | } 
  
                            Note:  
@@ -1244,7 +1256,7 @@ def generate_dem(
                            background elevation to fill the area when elevation model pixels cannot be 
                            interpolated from the point cloud.  
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
 
     :return:
@@ -1432,13 +1444,13 @@ def generate_orthomosaic(
                                                |   "maxSliverSize": 20
                                                |   "colorCorrectionMethod": "DODGING",
                                                |   "dodgingSurface": "Single_Color",
-                                               |   "referenceImg": {"url": https://..."},
+                                               |   "referenceImg": {"url": ``https://...`` "},
                                                |   "skipRows": 10,
                                                |   "skipCols": 10,
                                                |   "reCalculateSats": "OVERWRITE"
                                                |  }
     -----------------------------------    --------------------------------------------------------------------
-    gis                                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ===================================    ====================================================================
 
     :return:
@@ -1545,14 +1557,14 @@ def generate_report(
     ===================    ====================================================================
     **Argument**           **Description**
     -------------------    --------------------------------------------------------------------
-    image_collection       Required. the input image collection that should be
+    image_collection       Required. The input image collection that should be
                            used to generate a report from.
                            The image_collection can be a portal Item or an image service URL or a URI
                            The image_collection must exist.
     -------------------    --------------------------------------------------------------------
     report_format          Type of the format to be generated. Possible PDF, HTML. Default - PDF
     -------------------    --------------------------------------------------------------------
-    gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ===================    ====================================================================
 
     :return:
@@ -1612,9 +1624,11 @@ def query_camera_info(
                            Digital camera database can be queried using the fields Make, Model,
                            Focallength, Columns, Rows, PixelSize.
 
-                           Eg. "Make='Rollei' and Model='RCP-8325'"
+                           Example:
+
+                            "Make='Rollei' and Model='RCP-8325'"
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
 
 
@@ -1677,9 +1691,11 @@ def query_control_points(
     ------------------     --------------------------------------------------------------------
     query                  Required string. a SQL statement used for querying the point;
 
-                           e.g. "pointID > 100"
+                           Example:
+
+                            "pointID > 100"
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
 
 
@@ -1740,7 +1756,7 @@ def reset_image_collection(
 
                            The image_collection must exist.
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ==================     ====================================================================
 
     :return:
@@ -1769,14 +1785,16 @@ def compute_spatial_reference_factory_code(latitude: float, longitude: float):
     """
     Computes spatial reference factory code. This value may be used as out_sr value in create image collection function
 
-    Parameters
-    ----------
-    latitude : latitude value in decimal degress that will be used to compute UTM zone
-    longitude : longitude value in decimal degress that will be used to compute UTM zone
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    latitude               latitude value in decimal degrees that will be used to compute UTM zone
+    ------------------     --------------------------------------------------------------------
+    longitude              longitude value in decimal degrees that will be used to compute UTM zone
+    ==================     ====================================================================
 
-    Returns
-    -------
-    factory_code : spatial reference factory code
+    :return:
+        factory_code : spatial reference factory code
     """
     from math import isnan, fabs, floor
 
