@@ -88,11 +88,12 @@ def calculate_density(
     -------------------------    ---------------------------------------------------------
     classification_type          Optional string. Determines how density values will be classified into polygons.
                                  Choice list: ['EqualInterval', 'GeometricInterval', 'NaturalBreaks', 'EqualArea', 'StandardDeviation']
-                                    * EqualInterval - Polygons are created such that the range of density values is equal for each area.
-                                    * GeometricInterval - Polygons are based on class intervals that have a geometric series. This method ensures that each class range has approximately the same number of values within each class and that the change between intervals is consistent.
-                                    * NaturalBreaks - Class intervals for polygons are based on natural groupings of the data. Class break values are identified that best group similar values and that maximize the differences between classes.
-                                    * EqualArea - Polygons are created such that the size of each area is equal. For example, if the result has more high density values than low density values, more polygons will be created for high densities.
-                                    * StandardDeviation - Polygons are created based upon the standard deviation of the predicted density values.
+
+                                 * EqualInterval - Polygons are created such that the range of density values is equal for each area.
+                                 * GeometricInterval - Polygons are based on class intervals that have a geometric series. This method ensures that each class range has approximately the same number of values within each class and that the change between intervals is consistent.
+                                 * NaturalBreaks - Class intervals for polygons are based on natural groupings of the data. Class break values are identified that best group similar values and that maximize the differences between classes.
+                                 * EqualArea - Polygons are created such that the size of each area is equal. For example, if the result has more high density values than low density values, more polygons will be created for high densities.
+                                 * StandardDeviation - Polygons are created based upon the standard deviation of the predicted density values.
     -------------------------    ---------------------------------------------------------
     num_classes                  Optional int. This value is used to divide the range of predicted values into distinct classes. The range of values in each class is determined by the classification_type parameter.
     -------------------------    ---------------------------------------------------------
@@ -119,7 +120,7 @@ def calculate_density(
                                                      "outSR": {"wkid": 3857},
                                                      "overwrite": True}
     -------------------------    ---------------------------------------------------------
-    gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                          Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
     -------------------------    ---------------------------------------------------------
     estimate                     Optional Boolean. Is true, the number of credits needed to run the operation will be returned as a float.
     -------------------------    ---------------------------------------------------------
@@ -250,7 +251,7 @@ def summarize_center_and_dispersion(
                                                 "outSR": {"wkid": 3857},
                                                 "overwrite": True}
     --------------------    ---------------------------------------------------------
-    gis                     Optional, the GIS on which this tool runs. If not
+    gis                     Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not
                             specified, the active GIS is used.
     --------------------    ---------------------------------------------------------
     estimate                Optional Boolean. If True, the number of credits to run the operation will be returned.
@@ -381,7 +382,7 @@ def find_point_clusters(
                                                 "outSR": {"wkid": 3857},
                                                 "overwrite": True}
     --------------------    ---------------------------------------------------------
-    gis                     Optional, the GIS on which this tool runs. If not
+    gis                     Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not
                             specified, the active GIS is used.
     --------------------    ---------------------------------------------------------
     estimate                Optional Boolean. If True, the number of credits to run the operation will be returned.
@@ -396,7 +397,7 @@ def find_point_clusters(
 
     .. code-block:: python
 
-        USAGE EXAMPLE: To find patterns of taffic accidents purely on spatial location.
+        USAGE EXAMPLE: To find patterns of traffic accidents purely on spatial location.
         clusters= find_point_clusters(collision,
                                       min_features_cluster=200,
                                       search_distance=2,
@@ -488,10 +489,10 @@ def find_hot_spots(
     -------------------------------------------------------------------     ---------------------------------------------------------
     analysis_field                                                          Optional string. The numeric field that will be analyzed. The field you select might represent:
 
-                                                                                + counts (such as the number of traffic accidents)
-                                                                                + rates (such as the number of crimes per square mile)
-                                                                                + averages (such as the mean math test score)
-                                                                                + indices (such as a customer satisfaction score)
+                                                                            + counts (such as the number of traffic accidents)
+                                                                            + rates (such as the number of crimes per square mile)
+                                                                            + averages (such as the mean math test score)
+                                                                            + indices (such as a customer satisfaction score)
 
                                                                             If an ``analysis_field`` is not supplied, hot spot results are based on point densities only.
     -------------------------------------------------------------------     ---------------------------------------------------------
@@ -532,14 +533,14 @@ def find_hot_spots(
                                                                                                 "outSR": {"wkid": 3857},
                                                                                                 "overwrite": True}
     -------------------------------------------------------------------     ---------------------------------------------------------
-    gis                                                                     Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                                                                     Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
     -------------------------------------------------------------------     ---------------------------------------------------------
     estimate                                                                Optional Boolean. Is true, the number of credits needed to run the operation will be returned as a float.
     -------------------------------------------------------------------     ---------------------------------------------------------
     shape_type                                                              Optional string. The shape of the polygon mesh the input features will be aggregated into.
 
-                                                                             * ``Fishnet``-The input features will be aggregated into a grid of square (fishnet) cells.
-                                                                             * ``Hexagon``-The input features will be aggregated into a grid of hexagonal cells.
+                                                                            * ``Fishnet``-The input features will be aggregated into a grid of square (fishnet) cells.
+                                                                            * ``Hexagon``-The input features will be aggregated into a grid of hexagonal cells.
     -------------------------------------------------------------------     ---------------------------------------------------------
     cell_size                                                               Optional float. The size of the grid cells used to aggregate your features.
                                                                             When aggregating into a hexagon grid, this distance is used as the height to construct the hexagon polygons.
@@ -961,7 +962,7 @@ def interpolate_points(
                                                      "outSR": {"wkid": 3857},
                                                      "overwrite": True}
     ---------------------------  -------------------------------------------------------------------------------------------
-    gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                          Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
     ---------------------------  -------------------------------------------------------------------------------------------
     estimate                     Optional boolean. If True, the number of credits to run the operation will be returned.
     ---------------------------  -------------------------------------------------------------------------------------------
