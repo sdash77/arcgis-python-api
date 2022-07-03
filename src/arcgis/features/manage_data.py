@@ -151,7 +151,7 @@ def dissolve_boundaries(
     if they have the same value for State_Name. The end result is a layer of state boundaries.
 
     ====================================     =====================================================================================
-    **Argument**                            **Description**
+    **Argument**                             **Description**
     ------------------------------------     -------------------------------------------------------------------------------------
     input_layer                              Required layer. The layer containing polygon features that will be dissolved. See :ref:`Feature Input<FeatureInput>`.
     ------------------------------------     -------------------------------------------------------------------------------------
@@ -238,8 +238,9 @@ def dissolve_boundaries(
                                              will not wait for the task to complete. The default is False, which means wait for results.
     ====================================     =====================================================================================
 
-    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`Feature Collection <arcgis.features.FeatureCollection>`.
-    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
+    :return:
+        result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`Feature Collection <arcgis.features.FeatureCollection>`.
+        If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
 
     .. code-block:: python
@@ -595,9 +596,10 @@ def overlay_layers(
                         Choice list: ['Input', 'Line', 'Point']
 
                         *  ``Input`` - The features returned will be the same geometry type as the ``input_layer`` or ``overlay_layer`` with the lowest dimension geometry.
-                        If all inputs are polygons, the output will contain polygons. If one or more of the inputs are lines and none of the inputs are points, the output will be line.
-                        If one or more of the inputs are points, the output will contain points. This is the default.
+                           If all inputs are polygons, the output will contain polygons. If one or more of the inputs are lines and none of the inputs are points, the output will be line. If one or more of the inputs are points, the output will contain points. This is the default.
+
                         *  ``Line`` - Line intersections will be returned. This is only valid if none of the inputs are points.
+
                         *  ``Point`` - Point intersections will be returned. If the inputs are line or polygon, the output will be a multipoint layer.
     ----------------    ---------------------------------------------------------------
     tolerance           Optional float. A float value of the minimum distance separating all feature coordinates
@@ -688,7 +690,7 @@ def create_route_layers(
 
 
     =========================    =========================================================
-    **Argument**                **Description**
+    **Argument**                 **Description**
     -------------------------    ---------------------------------------------------------
     route_data                   Required item. The item id for the route data item that is used to create route layer items.
                                  Before running this task, the route data must be added to your portal as an item.

@@ -438,24 +438,24 @@ def create_buffers(
     containing building footprints. The end result is a layer of those buildings within
     one mile of the school.
 
-    =========================    =========================================================
-    **Argument**                **Description**
-    -------------------------    ---------------------------------------------------------
+    =========================    =======================================================================================================================
+    **Argument**                 **Description**
+    -------------------------    -----------------------------------------------------------------------------------------------------------------------
     input_layer                  Required point, line or polygon feature layer. The input features to be buffered. See :ref:`Feature Input<FeatureInput>`.
-    -------------------------    ---------------------------------------------------------
+    -------------------------    -----------------------------------------------------------------------------------------------------------------------
     distances                    Optional list of floats to buffer the input features. The distance(s) that will be buffered. You must supply values
                                  for either the ``distances`` or ``field`` parameter. You can enter a single distance value or multiple values.
                                  The units of the distance values is suppied by the units parameter.
-    -------------------------    ---------------------------------------------------------
+    -------------------------    -----------------------------------------------------------------------------------------------------------------------
     field                        Optional string. A field on the ``input_layer`` containing a buffer distance. Buffers will be created using field values.
                                  Unlike the ``distances`` parameter, multiple distances are not supported on field input.
-    -------------------------    ---------------------------------------------------------
+    -------------------------    -----------------------------------------------------------------------------------------------------------------------
     units                        Optional string. The linear unit to be used with the distance value(s) specified in distances or contained in the field value.
 
                                  Choice list: ['Meters', 'Kilometers', 'Feet', 'Miles', 'NauticalMiles', 'Yards']
 
                                  The default is 'Meters'.
-    -------------------------    ---------------------------------------------------------
+    -------------------------    -----------------------------------------------------------------------------------------------------------------------
     dissolve_type                Optional string. Determines how overlapping buffers are processed.
 
                                  Choice list: ['None', 'Dissolve']
@@ -466,7 +466,7 @@ def create_buffers(
                                  | |Dissolve| | ``Dissolve``-Overlapping areas are combined.                                    |
                                  +------------+---------------------------------------------------------------------------------+
 
-    -------------------------    ---------------------------------------------------------
+    -------------------------    --------------------------------------------------------------------------------------------------
     ring_type                    Optional string. Determines how multiple-distance buffers are processed.
 
                                  Choice list: ['Disks', 'Rings']
@@ -479,7 +479,7 @@ def create_buffers(
                                  |           | be two buffers, one from 0 to 10 and one from 10 to 14.                                          |
                                  +-----------+--------------------------------------------------------------------------------------------------+
 
-    -------------------------    ---------------------------------------------------------
+    -------------------------    -----------------------------------------------------------------------------------------------------------------------
     side_type                    Optional string. When buffering line features, you can choose which side of the line to buffer.
 
                                  Typically, you choose both sides (Full, which is the default). Left and right are determined as
@@ -507,7 +507,7 @@ def create_buffers(
                                  |               | This is the  default for polygon features.                                                         |
                                  +---------------+----------------------------------------------------------------------------------------------------+
 
-    -------------------------    ---------------------------------------------------------
+    -------------------------    -----------------------------------------------------------------------------------------------------------------------
     end_type                     Optional string. The shape of the buffer at the end of line input features. This parameter is not
                                  valid for polygon input features. At the ends of lines the buffer can be rounded (Round) or be
                                  straight across (Flat).
@@ -520,12 +520,12 @@ def create_buffers(
                                  | |Flat|  | ``Flat``-buffers will be flat at the ends of lines.                           |
                                  +---------+-------------------------------------------------------------------------------+
 
-    -------------------------    ---------------------------------------------------------
+    -------------------------    -----------------------------------------------------------------------------------------------------------------------
     output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
                                  feature layer will cause the new layer to be appended to the Feature Service.
                                  If overwrite is True in context, new layer will overwrite existing layer.
                                  If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
-    -------------------------    ---------------------------------------------------------
+    -------------------------    -----------------------------------------------------------------------------------------------------------------------
     context                      Optional dict. Additional settings such as processing extent
                                  and output spatial reference.
                                  For create_buffers, there are three settings.
@@ -544,14 +544,14 @@ def create_buffers(
                                                              "spatialReference":{"wkid":102100,"latestWkid":3857}},
                                                      "outSR": {"wkid": 3857},
                                                      "overwrite": True}
-    -------------------------    ---------------------------------------------------------
+    -------------------------    -----------------------------------------------------------------------------------------------------------------------
     gis                          Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
-    -------------------------    ---------------------------------------------------------
+    -------------------------    -----------------------------------------------------------------------------------------------------------------------
     estimate                     Optional boolean. If True, the estimated number of credits required to run the operation will be returned.
-    -------------------------    ---------------------------------------------------------
+    -------------------------    -----------------------------------------------------------------------------------------------------------------------
     future                       Optional boolean. If True, a future object will be returned and the process
                                  will not wait for the task to complete. The default is False, which means wait for results.
-    =========================    =========================================================
+    =========================    =======================================================================================================================
 
     :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
 
@@ -665,7 +665,7 @@ def create_drive_time_areas(
     that runs this task.
 
     =========================    =========================================================
-    **Argument**                **Description**
+    **Argument**                 **Description**
     -------------------------    ---------------------------------------------------------
     input_layer                  Required point feature layer. The points around which travel areas
                                  based on a mode of transportation will be drawn.
@@ -981,7 +981,7 @@ def find_nearest(
     The connecting line layer contains information about the start and nearest locations and the distances between.
 
     =========================    =========================================================
-    **Argument**                **Description**
+    **Argument**                 **Description**
     -------------------------    ---------------------------------------------------------
     analysis_layer               Required layer. The features from which the nearest locations are found. This layer can have point, line, or polygon features. See :ref:`Feature Input<FeatureInput>`.
     -------------------------    ---------------------------------------------------------
@@ -1286,7 +1286,7 @@ def plan_routes(
     due to the given parameter settings; and a layer of directions containing the travel itinerary for each route.
 
     ============================    ==================================================================================================
-    **Argument**                   **Description**
+    **Argument**                    **Description**
     ----------------------------    --------------------------------------------------------------------------------------------------
     stops_layer                     Required feature layer. The points that the vehicles, drivers, or routes, should visit.
                                     The fields on the input stops are included in the output stops, so if your input

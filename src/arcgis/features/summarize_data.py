@@ -526,33 +526,33 @@ def summarize_center_and_dispersion(
     * How dispersed, compact, or integrated are the features?
     * Are there directional trends?s
 
-    ====================    =========================================================
+    ====================    ============================================================================================
     **Argument**            **Description**
-    --------------------    ---------------------------------------------------------
+    --------------------    --------------------------------------------------------------------------------------------
     analysis_layer          Required feature layer. The point, line, or polygon features to be analyzed. See :ref:`Feature Input<FeatureInput>`.
-    --------------------    ---------------------------------------------------------
+    --------------------    --------------------------------------------------------------------------------------------
     summarize_type          Required list of strings. The method with which to summarize the ``analysis_layer``.
 
                             Choice list: ["CentralFeature", "MeanCenter", "MedianCenter", "Ellipse"]
-    --------------------    ---------------------------------------------------------
+    --------------------    --------------------------------------------------------------------------------------------
     ellipse_size            Optional string. The size of the output ellipse in standard deviations.
 
                             Choice list: ['1 standard deviations', '2 standard deviations', '3 standard deviations']
 
                             The default ellipse size is '1 standard deviations'.
-    --------------------    ---------------------------------------------------------
+    --------------------    --------------------------------------------------------------------------------------------
     weight_field            Optional field. A numeric field in the ``analysis_layer`` to be used to
                             weight locations according to their relative importance.
-    --------------------    ---------------------------------------------------------
+    --------------------    --------------------------------------------------------------------------------------------
     group_field             Optional field. The field used to group features for separate directional
                             distribution calculations. The ``group_field`` can be of
                             integer, date, or string type.
-    --------------------    ---------------------------------------------------------
+    --------------------    --------------------------------------------------------------------------------------------
     output_name             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
                             feature layer will cause the new layer to be appended to the Feature Service.
                             If overwrite is True in context, new layer will overwrite existing layer.
                             If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
-    --------------------    ---------------------------------------------------------
+    --------------------    --------------------------------------------------------------------------------------------
     context                 Optional dict. Additional settings such as processing extent and output spatial reference.
                             For summarize_center_and_dispersion, there are three settings.
 
@@ -570,18 +570,19 @@ def summarize_center_and_dispersion(
                                                         "spatialReference":{"wkid":102100,"latestWkid":3857}},
                                                 "outSR": {"wkid": 3857},
                                                 "overwrite": True}
-    --------------------    ---------------------------------------------------------
+    --------------------    --------------------------------------------------------------------------------------------
     estimate                Optional boolean. If True, the number of credits to run the operation will be returned.
-    --------------------    ---------------------------------------------------------
+    --------------------    --------------------------------------------------------------------------------------------
     future                  Optional boolean. If True, a future object will be returned and the process
                             will not wait for the task to complete. The default is False, which means wait for results.
-    ====================    =========================================================
+    ====================    ============================================================================================
 
     :return: list of items if ``output_name`` is supplied else, a Python dictionary with the following keys:
-        "central_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
-        "mean_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
-        "median_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
-        "ellipse_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+
+        | "central_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+        | "mean_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+        | "median_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+        | "ellipse_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
     .. code-block:: python
 
@@ -871,14 +872,14 @@ def join_features(
 
                                                                                                     Choice list: ['JoinOneToOne', 'JoinOneToMany']
 
-                                                                                                    * ``JoinOneToOne`` - If multiple join features are found that have the same relationships with asingle target feature, the attributes from the multiple join features will be aggregated using
-                                                                                                        the specified summary statistics. For example, if a point target feature is found within two separate polygon join features, the attributes from the two polygons will be aggregated before
-                                                                                                        being transferred to the output point feature class. If one polygon has an attribute value of 3 and the other has a value of 7, and a SummaryField of sum is selected, the aggregated value
-                                                                                                        in the output feature class will be 10. There will always be a Count field calculated, with a value of 2, for the number of features specified. This is the default.
+                                                                                                    * ``JoinOneToOne`` - If multiple join features are found that have the same relationships with asingle target feature, the attributes from the multiple join features will be aggregated using the specified summary statistics.
+                                                                                                      For example, if a point target feature is found within two separate polygon join features, the attributes from the two polygons will be aggregated before being transferred to the output point feature class.
+                                                                                                      If one polygon has an attribute value of 3 and the other has a value of 7, and a SummaryField of sum is selected, the aggregated value
+                                                                                                      in the output feature class will be 10. There will always be a Count field calculated, with a value of 2, for the number of features specified. This is the default.
 
-                                                                                                    * ``JoinOneToMany`` - If multiple join features are found that have the same relationship with a single target feature, the output feature class will contain multiple copies (records) of
-                                                                                                        the target feature. For example, if a single point target feature is found within two separate polygon join features, the output feature class will contain two copies of the target feature:
-                                                                                                        one record with the attributes of the first polygon, and another record with the attributes of the second polygon. There are no summary statistics calculated with this method.
+                                                                                                    * ``JoinOneToMany`` - If multiple join features are found that have the same relationship with a single target feature, the output feature class will contain multiple copies (records) of the target feature.
+                                                                                                      For example, if a single point target feature is found within two separate polygon join features, the output feature class will contain two copies of the target feature:
+                                                                                                      one record with the attributes of the first polygon, and another record with the attributes of the second polygon. There are no summary statistics calculated with this method.
     --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
     summary_fields                                                                                  Optional list of dicts. A list of field names and statistical summary types that you want to calculate. Note that the count is always returned by default.
 

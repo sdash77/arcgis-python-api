@@ -876,80 +876,81 @@ def interpolate_points(
     * nbrMin - 15
     * nbrMax - 15
 
-    ===========================  ===========================================================================================
-    **Argument**                 **Description**
-    ---------------------------  -------------------------------------------------------------------------------------------
-    input_layer                  Required layer. The point layer whose features will be interpolated. See :ref:`Feature Input<FeatureInput>`.
-    ---------------------------  -------------------------------------------------------------------------------------------
-    field                        Required string. Name of the numeric field containing the values you wish to interpolate.
-    ---------------------------  -------------------------------------------------------------------------------------------
-    interpolate_option           Optional integer. Integer value declaring your preference for speed versus accuracy, from 1 (fastest) to 9 (most accurate).
-                                 More accurate predictions take longer to calculate.
 
-                                 Choice list: [1, 5, 9].
+    ===========================    ===========================================================================================
+    **Argument**                   **Description**
+    ---------------------------    -------------------------------------------------------------------------------------------
+    input_layer                    Required layer. The point layer whose features will be interpolated. See :ref:`Feature Input<FeatureInput>`.
+    ---------------------------    -------------------------------------------------------------------------------------------
+    field                          Required string. Name of the numeric field containing the values you wish to interpolate.
+    ---------------------------    -------------------------------------------------------------------------------------------
+    interpolate_option             Optional integer. Integer value declaring your preference for speed versus accuracy, from 1 (fastest) to 9 (most accurate).
+                                   More accurate predictions take longer to calculate.
 
-                                 The default is 5.
-    ---------------------------  -------------------------------------------------------------------------------------------
-    output_prediction_error      Optional boolean. If True, a polygon layer of standard errors for the interpolation
-                                 predictions will be returned in the ``prediction_error`` output parameter.
+                                   Choice list: [1, 5, 9].
 
-                                 Standard errors are useful because they provide information about the reliability of the predicted values.
-                                 A simple rule of thumb is that the true value will fall within two standard errors of the predicted
-                                 value 95 percent of the time. For example, suppose a new location gets a predicted value of 50 with a
-                                 standard error of 5. This means that this task's best guess is that the true value at that location is 50,
-                                 but it reasonably could be as low as 40 or as high as 60. To calculate this range of reasonable values,
-                                 multiply the standard error by 2, add this value to the predicted value to get the upper end of the range,
-                                 and subtract it from the predicted value to get the lower end of the range.
-    ---------------------------  -------------------------------------------------------------------------------------------
-    classification_type          Optional string. Determines how predicted values will be classified into areas.
+                                   The default is 5.
+    ---------------------------    -------------------------------------------------------------------------------------------
+    output_prediction_error        Optional boolean. If True, a polygon layer of standard errors for the interpolation
+                                   predictions will be returned in the ``prediction_error`` output parameter.
 
-                                 * ``EqualArea`` - Polygons are created such that the number of data values in each area is equal.
+                                   Standard errors are useful because they provide information about the reliability of the predicted values.
+                                   A simple rule of thumb is that the true value will fall within two standard errors of the predicted
+                                   value 95 percent of the time. For example, suppose a new location gets a predicted value of 50 with a
+                                   standard error of 5. This means that this task's best guess is that the true value at that location is 50,
+                                   but it reasonably could be as low as 40 or as high as 60. To calculate this range of reasonable values,
+                                   multiply the standard error by 2, add this value to the predicted value to get the upper end of the range,
+                                   and subtract it from the predicted value to get the lower end of the range.
+    ---------------------------    -------------------------------------------------------------------------------------------
+    classification_type            Optional string. Determines how predicted values will be classified into areas.
+
+                                   * ``EqualArea`` - Polygons are created such that the number of data values in each area is equal.
                                    For example, if the data has more large values than small values, more areas will be created for large values.
-                                 * ``EqualInterval`` - Polygons are created such that the range of predicted values is equal for each area.
-                                 * ``GeometricInterval`` - Polygons are based on class intervals that have a geometrical series.
-                                   This method ensures that each class range has approximately the same number of values within
-                                   each class and that the change between intervals is consistent.
-                                 * ``Manual`` - You to define your own range of values for areas. These values will be entered in
-                                   the ``class_breaks`` parameter below.
 
-                                 Choice list: ['EqualArea', 'EqualInterval', 'GeometricInterval', 'Manual']
+                                   * ``EqualInterval`` - Polygons are created such that the range of predicted values is equal for each area.
 
-                                 The default is 'GeometricInterval'.
-    ---------------------------  -------------------------------------------------------------------------------------------
-    num_classes                  Optional integer. This value is used to divide the range of interpolated values into distinct classes.
-                                 The range of values in each class is determined by the ``classification_type`` parameter.
-                                 Each class defines the boundaries of the result polygons.
+                                   * ``GeometricInterval`` - Polygons are based on class intervals that have a geometrical series. This method ensures that each class range has approximately the same number of values within each class and that the change between intervals is consistent.
 
-                                 The default is 10. The maximum value is 32.
-    ---------------------------  -------------------------------------------------------------------------------------------
-    class_breaks                 Optional list of floats. If ``classification_type`` is Manual, supply desired class break values separated by spaces.
-                                 These values define the upper limit of each class, so the number of classes will equal the number of entered values.
-                                 Areas will not be created for any locations with predicted values above the largest entered break value.
-                                 You must enter at least two values and no more than 32.
-    ---------------------------  -------------------------------------------------------------------------------------------
-    bounding_polygon_layer       Optional layer. A layer specifying the polygon(s) where you want values to be interpolated.  For example,
-                                 if you are interpolating densities of fish within a lake, you can use the boundary of the lake in this
-                                 parameter and the output will only contain polygons within the boundary of the lake. See :ref:`Feature Input<FeatureInput>`.
-    ---------------------------  -------------------------------------------------------------------------------------------
-    predict_at_point_layer       Optional layer. An optional layer specifying point locations to calculate prediction values.
-                                 This allows you to make predictions at specific locations of interest. For example, if the ``input_layer`` represents
-                                 measurements of pollution levels, you can use this parameter to predict the pollution levels of locations with large
-                                 at-risk populations, such as schools or hospitals. You can then use this information to give recommendations to health
-                                 officials in those locations.
+                                   * ``Manual`` - You to define your own range of values for areas. These values will be entered in the ``class_breaks`` parameter below.
 
-                                 If supplied, the output ``predicted_point_layer`` will contain predictions at the specified locations. See :ref:`Feature Input<FeatureInput>`.
-    ---------------------------  -------------------------------------------------------------------------------------------
-    output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
-                                 feature layer will cause the new layer to be appended to the Feature Service.
-                                 If overwrite is True in context, new layer will overwrite existing layer.
-                                 If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
-    -------------------------    ---------------------------------------------------------
-    context                      Optional dict. Additional settings such as processing extent and output spatial reference.
-                                 For interpolate_points, there are three settings.
+                                   Choice list: ['EqualArea', 'EqualInterval', 'GeometricInterval', 'Manual']
 
-                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
-                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+                                   The default is 'GeometricInterval'.
+    ---------------------------    -------------------------------------------------------------------------------------------
+    num_classes                    Optional integer. This value is used to divide the range of interpolated values into distinct classes.
+                                   The range of values in each class is determined by the ``classification_type`` parameter.
+                                   Each class defines the boundaries of the result polygons.
+
+                                   The default is 10. The maximum value is 32.
+    ---------------------------    -------------------------------------------------------------------------------------------
+    class_breaks                   Optional list of floats. If ``classification_type`` is Manual, supply desired class break values separated by spaces.
+                                   These values define the upper limit of each class, so the number of classes will equal the number of entered values.
+                                   Areas will not be created for any locations with predicted values above the largest entered break value.
+                                   You must enter at least two values and no more than 32.
+    ---------------------------    -------------------------------------------------------------------------------------------
+    bounding_polygon_layer         Optional layer. A layer specifying the polygon(s) where you want values to be interpolated.  For example,
+                                   if you are interpolating densities of fish within a lake, you can use the boundary of the lake in this
+                                   parameter and the output will only contain polygons within the boundary of the lake. See :ref:`Feature Input<FeatureInput>`.
+    ---------------------------    -------------------------------------------------------------------------------------------
+    predict_at_point_layer         Optional layer. An optional layer specifying point locations to calculate prediction values.
+                                   This allows you to make predictions at specific locations of interest. For example, if the ``input_layer`` represents
+                                   measurements of pollution levels, you can use this parameter to predict the pollution levels of locations with large
+                                   at-risk populations, such as schools or hospitals. You can then use this information to give recommendations to health
+                                   officials in those locations.
+
+                                   If supplied, the output ``predicted_point_layer`` will contain predictions at the specified locations. See :ref:`Feature Input<FeatureInput>`.
+    ---------------------------    -------------------------------------------------------------------------------------------
+    output_name                    Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                   feature layer will cause the new layer to be appended to the Feature Service.
+                                   If overwrite is True in context, new layer will overwrite existing layer.
+                                   If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+    -------------------------      -------------------------------------------------------------------------------------------
+    context                        Optional dict. Additional settings such as processing extent and output spatial reference.
+                                   For interpolate_points, there are three settings.
+
+                                   - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                   - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                   - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                      .. code-block:: python
 
@@ -961,17 +962,19 @@ def interpolate_points(
                                                              "spatialReference":{"wkid":102100,"latestWkid":3857}},
                                                      "outSR": {"wkid": 3857},
                                                      "overwrite": True}
-    ---------------------------  -------------------------------------------------------------------------------------------
-    gis                          Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
-    ---------------------------  -------------------------------------------------------------------------------------------
-    estimate                     Optional boolean. If True, the number of credits to run the operation will be returned.
-    ---------------------------  -------------------------------------------------------------------------------------------
-    future                       Optional, If True, a future object will be returned and the process
-                                 will not wait for the task to complete.
-                                 The default is False, which means wait for results.
-    ===========================  ===========================================================================================
+    ---------------------------    -------------------------------------------------------------------------------------------
+    gis                            Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
+    ---------------------------    -------------------------------------------------------------------------------------------
+    estimate                       Optional boolean. If True, the number of credits to run the operation will be returned.
+    ---------------------------    -------------------------------------------------------------------------------------------
+    future                         Optional, If True, a future object will be returned and the process
+                                   will not wait for the task to complete.
+                                   The default is False, which means wait for results.
+    ===========================    ===========================================================================================
 
-    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else Python dictionary with the following keys:
+
+    :return:
+        result_layer : :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else Python dictionary with the following keys:
 
         "result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
