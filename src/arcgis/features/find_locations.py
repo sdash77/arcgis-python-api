@@ -1284,7 +1284,7 @@ def create_viewshed(
     The results are areas where the observers can see the observed objects (and the observed objects can see the observers).
 
     =========================    =========================================================
-    **Parameter**                **Description**
+    **Argument**                 **Description**
     -------------------------    ---------------------------------------------------------
     input_layer                  Required point feature layer. The features to use as the observer locations. See :ref:`Feature Input<FeatureInput>`.
     -------------------------    ---------------------------------------------------------
@@ -1458,7 +1458,7 @@ def create_watersheds(
 
 
     =========================    =========================================================
-    **Parameter**                **Description**
+    **Argument**                 **Description**
     -------------------------    ---------------------------------------------------------
     input_layer                  Required point feature layer. The point features used for calculating watersheds.
                                  These are referred to as pour points, because it is the location at which water pours out of the watershed.

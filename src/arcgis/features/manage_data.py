@@ -39,7 +39,7 @@ def generate_tessellation(
     Generates a tessellated grid of regular polygons.
 
     ====================================     ====================================================================
-    **Argument**                            **Description**
+    **Argument**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     extent_layer                             Optional layer. A layer defining the processing extent.
     ------------------------------------     --------------------------------------------------------------------

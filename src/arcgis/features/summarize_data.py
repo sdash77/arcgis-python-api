@@ -255,7 +255,7 @@ def summarize_nearby(
     =========================   ====================================================================================================================
     **Argument**                **Description**
     -------------------------   --------------------------------------------------------------------------------------------------------------------
-    sum_nearby_layer            Required feature layer. Point, line, or polygon features from which distances will be measured to features in the ``summary_layer``. See :ref:`Feature Input<FeatureInput>`.
+    sum_nearby_layer            Required :class:`~arcgis.features.FeatureLayer` . Point, line, or polygon features from which distances will be measured to features in the ``summary_layer``. See :ref:`Feature Input<FeatureInput>`.
     -------------------------   --------------------------------------------------------------------------------------------------------------------
     summary_layer               Required layer. Point, line, or polygon features. Features in this layer that are within the specified distance to features in the ``sum_nearby_layer`` will be summarized. See :ref:`Feature Input<FeatureInput>`.
     -------------------------   --------------------------------------------------------------------------------------------------------------------
@@ -433,11 +433,11 @@ def summarize_nearby(
     :return:
         result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection` dictionary.
 
-         dict with the following keys:
+        dict with the following keys:
 
-         "result_layer" : layer (FeatureCollection)
+        "result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
-         "group_by_summary" : layer (FeatureCollection)
+        "group_by_summary" : layer (:class:`~arcgis.features.FeatureCollection`)
 
     .. code-block:: python
 
@@ -529,7 +529,7 @@ def summarize_center_and_dispersion(
     ====================    ============================================================================================
     **Argument**            **Description**
     --------------------    --------------------------------------------------------------------------------------------
-    analysis_layer          Required feature layer. The point, line, or polygon features to be analyzed. See :ref:`Feature Input<FeatureInput>`.
+    analysis_layer          Required :class:`~arcgis.features.FeatureLayer` . The point, line, or polygon features to be analyzed. See :ref:`Feature Input<FeatureInput>`.
     --------------------    --------------------------------------------------------------------------------------------
     summarize_type          Required list of strings. The method with which to summarize the ``analysis_layer``.
 
@@ -670,11 +670,11 @@ def summarize_within(
     =====================================   =========================================================
     **Argument**                            **Description**
     -------------------------------------   ---------------------------------------------------------
-    sum_within_layer                        Required feature layer. The polygon features. Features, or
+    sum_within_layer                        Required :class:`~arcgis.features.FeatureLayer` . The polygon features. Features, or
                                             portions of features, in the ``summary_layer`` (below) that fall within
                                             the boundaries of these polygons will be summarized. See :ref:`Feature Input<FeatureInput>`.
     -------------------------------------   ---------------------------------------------------------
-    summary_layer                           Required feature layer. Point, line, or polygon features that will be summarized for each polygon in the ``sum_within_layer``.
+    summary_layer                           Required :class:`~arcgis.features.FeatureLayer` . Point, line, or polygon features that will be summarized for each polygon in the ``sum_within_layer``.
                                             See :ref:`Feature Input<FeatureInput>`.
     -------------------------------------   ---------------------------------------------------------
     sum_shape                               Optional boolean. A boolean value that instructs the task to calculate statistics

@@ -34,6 +34,12 @@ except ImportError:
     import_exception = traceback.format_exc()
     HAS_FASTAI = False
 
+import sys
+import mock
+
+MOCK_MODULES = ['torch.utils.data', 'torch.utils.data.Dataset']
+for mod_name in MOCK_MODULES:
+    sys.modules[mod_name] = mock.Mock()
 
 def remap_label(data, class_mapping):
     """
