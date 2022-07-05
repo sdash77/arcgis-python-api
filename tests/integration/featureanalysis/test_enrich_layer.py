@@ -6,31 +6,36 @@ import datetime
 from arcgis.features import FeatureLayer
 from arcgis.gis import Item
 from arcgis.gis import GIS
-from arcgis.features.analyze_patterns import find_hot_spots
+from arcgis.features.enrich_data import enrich_layer
 
 profiles = ["online_test", "ent_test", "kube_test"]
 
 
-class TestFindHotSpots(unittest.TestCase):
+class TestEnrichLayer(unittest.TestCase):
     def test_overwrite(self):
         # establish gis connection
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
             print("User: ", gis.users.me.username)
             # gather layer
-            traffic_item = gis.content.get("5183636f099c48789628226e5730fb13")
-            assert isinstance(traffic_item, Item)
-            traffic_lyr = traffic_item.layers[0]
-            assert isinstance(traffic_lyr, FeatureLayer)
+            office_item = gis.content.get("435fcf6cff1f4f34989e151c1f25d64a")
+            assert isinstance(office_item, Item)
+            office_lyr = office_item.layers[0]
+            assert isinstance(office_lyr, FeatureLayer)
 
             # create layer that will be overwritten
             test_id = str(datetime.datetime.now().microsecond)
-            output_name = "overwrite_find_hot_spots_" + test_id
+            output_name = "overwrite_enrich_layer_" + test_id
             print("Creating ", output_name)
-            target_item = find_hot_spots(
-                analysis_layer=traffic_lyr,
-                shape_type="hexagon",
+            target_item = enrich_layer(
+                input_layer=office_lyr,
+                analysis_variables=["AtRisk.MP27002A_B"],
+                country="US",
+                buffer_type="Walking Distance",
+                distance=4,
+                units="Meters",
                 output_name=output_name,
+                return_boundaries=True,
             )
 
             # verify layer matches expected types
@@ -40,10 +45,15 @@ class TestFindHotSpots(unittest.TestCase):
 
             # test overwriting first test
             print("Creating overwrite layer")
-            overwrite = find_hot_spots(
-                analysis_layer=traffic_lyr,
-                shape_type="fishnet",
+            overwrite = enrich_layer(
+                input_layer=office_lyr,
+                analysis_variables=["crime.CRMCYTOTC"],
+                country="US",
+                buffer_type="Driving Distance",
+                distance=3,
+                units="Miles",
                 output_name=target_lyr,
+                return_boundaries=True,
                 context={"overwrite": True},
             )
             assert isinstance(overwrite, Item)

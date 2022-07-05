@@ -6,30 +6,30 @@ import datetime
 from arcgis.features import FeatureLayer
 from arcgis.gis import Item
 from arcgis.gis import GIS
-from arcgis.features.analyze_patterns import find_hot_spots
+from arcgis.features.manage_data import dissolve_boundaries
 
 profiles = ["online_test", "ent_test", "kube_test"]
 
 
-class TestFindHotSpots(unittest.TestCase):
+class TestDissolveBoundaries(unittest.TestCase):
     def test_overwrite(self):
         # establish gis connection
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
             print("User: ", gis.users.me.username)
             # gather layer
-            traffic_item = gis.content.get("5183636f099c48789628226e5730fb13")
-            assert isinstance(traffic_item, Item)
-            traffic_lyr = traffic_item.layers[0]
-            assert isinstance(traffic_lyr, FeatureLayer)
+            merge_item = gis.content.get("a6cb2a0688d841fd803cd82b4d8282b4")
+            assert isinstance(merge_item, Item)
+            buffer_lyr = merge_item.layers[0]
+            assert isinstance(buffer_lyr, FeatureLayer)
 
             # create layer that will be overwritten
             test_id = str(datetime.datetime.now().microsecond)
-            output_name = "overwrite_find_hot_spots_" + test_id
+            output_name = "overwrite_dissolve_boundaries_" + test_id
             print("Creating ", output_name)
-            target_item = find_hot_spots(
-                analysis_layer=traffic_lyr,
-                shape_type="hexagon",
+            target_item = dissolve_boundaries(
+                input_layer=buffer_lyr,
+                multi_part_features=False,
                 output_name=output_name,
             )
 
@@ -40,9 +40,9 @@ class TestFindHotSpots(unittest.TestCase):
 
             # test overwriting first test
             print("Creating overwrite layer")
-            overwrite = find_hot_spots(
-                analysis_layer=traffic_lyr,
-                shape_type="fishnet",
+            overwrite = dissolve_boundaries(
+                input_layer=buffer_lyr,
+                multi_part_features=True,
                 output_name=target_lyr,
                 context={"overwrite": True},
             )

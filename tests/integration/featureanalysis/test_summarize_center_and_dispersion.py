@@ -11,7 +11,7 @@ from arcgis.features.summarize_data import summarize_center_and_dispersion
 profiles = ["online_test", "ent_test", "kube_test"]
 
 
-class TestFindPointClusters(unittest.TestCase):
+class TestSummarizeCenterAndDispersion(unittest.TestCase):
     def test_overwrite(self):
         # establish gis connection
         for profile in profiles:
