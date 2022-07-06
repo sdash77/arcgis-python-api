@@ -432,7 +432,13 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
     """
     out_location = os.path.dirname(location)
     fc_name = os.path.basename(location)
-    df = geo._data
+    df = geo._data.copy()
+    df[df.select_dtypes(np.number).columns.tolist()] = df[
+        df.select_dtypes(np.number).columns.tolist()
+    ].replace(pd.NA, 0)
+    df[df.select_dtypes(pd.StringDtype()).columns.tolist()] = df[
+        df.select_dtypes(pd.StringDtype()).columns.tolist()
+    ].replace(pd.NA, "")
     old_column, old_index = None, None
     if sanitize_columns:
         old_column = df.columns.tolist()
@@ -484,6 +490,21 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
                         dtypes.append((col, type(df[col][0])))
                     except:
                         dtypes.append((col, "<U254"))
+            elif df[col].dtype.name == "string":
+                try:
+                    u = type(df[col][df[col].first_valid_index()])
+                except:
+                    u = pd.unique(df[col].apply(type)).tolist()[0]
+                if issubclass(u, str):
+                    mlen = df[col].str.len().max()
+                    if int(mlen) == 0:
+                        mlen = 1
+                    dtypes.append((col, "<U%s" % int(mlen)))
+                else:
+                    try:
+                        dtypes.append((col, type(df[col][0])))
+                    except:
+                        dtypes.append((col, "<U254"))
             elif df[col].dtype.name == "int64":
                 dtypes.append((col, np.float64))
             elif df[col].dtype.name == "bool":
@@ -499,12 +520,12 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
         icols = [
             fld.name
             for fld in fields
-            if fld.type not in ["OID", "Geometry"] and fld.name in df.columns
+            if fld.type not in ["OID", "Geometry", "FID"] and fld.name in df.columns
         ]
         dfcols = [
             fld.name
             for fld in fields
-            if fld.type not in ["OID", "Geometry"] and fld.name in df.columns
+            if fld.type not in ["OID", "Geometry", "FID"] and fld.name in df.columns
         ]
         with arcpy.da.InsertCursor(fc, icols) as irows:
             for idx, row in df[dfcols].iterrows():
@@ -815,7 +836,7 @@ def to_featureclass(
     """
     out_location = os.path.dirname(location)
     fc_name = os.path.basename(location)
-    df = geo._data
+    df = geo._data.copy()
     old_idx = df.index
     df.reset_index(drop=True, inplace=True)
     if geo.name is None:
@@ -836,6 +857,12 @@ def to_featureclass(
         if not isinstance(col, str):
             df.rename(columns={col: str(col)}, inplace=True)
             col = str(col)
+    df[df.select_dtypes(np.number).columns.tolist()] = df[
+        df.select_dtypes(np.number).columns.tolist()
+    ].replace(pd.NA, 0)
+    df[df.select_dtypes(pd.StringDtype()).columns.tolist()] = df[
+        df.select_dtypes(pd.StringDtype()).columns.tolist()
+    ].replace(pd.NA, "")
 
     if HASARCPY:
         try:
