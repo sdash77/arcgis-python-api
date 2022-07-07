@@ -473,7 +473,11 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
         #
         oidfld = arcpy.da.Describe(fc)["OIDFieldName"]
         for col in columns[:]:
-            if col.lower() in ["fid", "oid", "objectid"]:
+            if (col.lower() == oidfld.lower()) or (
+                col.lower() in ["fid", "oid", "objectid"] and location.endswith(".dbf")
+            ):
+                pass
+            elif col.lower() in ["fid", "oid", "objectid"]:
                 dtypes.append((col, np.int32))
             elif df[col].dtype.name == "datetime64[ns]":
                 dtypes.append((col, "<M8[us]"))
