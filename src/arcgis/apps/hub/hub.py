@@ -354,11 +354,13 @@ class Initiative(OrderedDict):
     def add_content(self, items_list: list):
         """
         Adds a batch of items to the initiative content library.
+
         =====================     ====================================================================
         **Argument**              **Description**
         ---------------------     --------------------------------------------------------------------
         items_list                Required list. A list of Item or item ids to add to the initiative
         =====================     ====================================================================
+
         """
         # Fetch Initiative Collaboration group
         _collab_group = self._gis.groups.get(self.collab_group_id)
@@ -661,6 +663,7 @@ class InitiativeManager(object):
     ):
         """
         Adds a new initiative to the Hub.
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -676,7 +679,7 @@ class InitiativeManager(object):
         ===============     ====================================================================
 
         :return:
-           The initiative if successfully added, None if unsuccessful.
+           The :class:`~arcgis.apps.hub.Initiative` object if successfully added, None if unsuccessful.
 
         .. code-block:: python
 
@@ -870,7 +873,7 @@ class InitiativeManager(object):
         ===============     ====================================================================
 
         :return:
-           Initiative.
+            :class:`~arcgis.apps.hub.Initiative` object
 
         .. code-block:: python
 
@@ -939,7 +942,7 @@ class InitiativeManager(object):
         =======================    =============================================================
 
         :return:
-            The initiative object if the item is found, None if the item is not found.
+            The :class:`~arcgis.apps.hub.Initiative` object if the item is found, None if the item is not found.
 
         .. code-block:: python
 
@@ -987,7 +990,7 @@ class InitiativeManager(object):
         ===============     ====================================================================
 
         :return:
-           A list of matching initiatives.
+           A list of matching :class:`~arcgis.apps.hub.Initiative` objects.
         """
 
         initiativelist = []
@@ -1279,48 +1282,49 @@ class EventManager(object):
         """
         Adds an event for an initiative.
 
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        event_properties    Required dictionary. See table below for the keys and values.
-        ===============     ====================================================================
+        =================     ====================================================================
+        **Argument**          **Description**
+        -----------------     --------------------------------------------------------------------
+        event_properties      Required dictionary. See table below for the keys and values.
+        =================     ====================================================================
 
 
         *Key:Value Dictionary Options for Argument event_properties*
-        =================  =====================================================================
-        **Key**            **Value**
-        -----------------  ---------------------------------------------------------------------
-        title              Required string. Name of event.
-        -----------------  ---------------------------------------------------------------------
-        description        Required string. Description of the event.
-        -----------------  ---------------------------------------------------------------------
-        initiaitve_id      Required string. Name label of the item.
-        -----------------  ---------------------------------------------------------------------
-        venue              Required string. Venue name for the event.
-        -----------------  ---------------------------------------------------------------------
-        address1           Required string. Street address for the venue.
-        -----------------  ---------------------------------------------------------------------
-        status             Required string. Access of event. Valid values are private, planned,
-                           public, draft.
-        -----------------  ---------------------------------------------------------------------
-        startDate          Required start date of the event in milliseconds since UNIX epoch.
-        -----------------  ---------------------------------------------------------------------
-        endDate            Required end date of the event in milliseconds since UNIX epoch.
-        -----------------  ---------------------------------------------------------------------
-        isAllDay           Required boolean. Indicates if the event is a day long event.
-        -----------------  ---------------------------------------------------------------------
-        capacity           Optional integer. The attendance capacity of the event venue.
-        -----------------  ---------------------------------------------------------------------
-        address2           Optional string.  Additional information about event venue street address.
-        -----------------  ---------------------------------------------------------------------
-        onlineLocation     Optional string. Web URL or other details for online event.
-        -----------------  ---------------------------------------------------------------------
-        organizers         Optional list of dictionary of keys `name` and `contact` for each organizer's
-                           name and email. Default values are name, email, username of event creator.
-        -----------------  ---------------------------------------------------------------------
-        sponsors           Optional list of dictionary of keys `name` and `contact` for each sponsor's
-                           name and contact.
-        =================  =====================================================================
+
+        =================   =====================================================================
+        **Key**             **Value**
+        -----------------   ---------------------------------------------------------------------
+        title               Required string. Name of event.
+        -----------------   ---------------------------------------------------------------------
+        description         Required string. Description of the event.
+        -----------------   ---------------------------------------------------------------------
+        initiaitve_id       Required string. Name label of the item.
+        -----------------   ---------------------------------------------------------------------
+        venue               Required string. Venue name for the event.
+        -----------------   ---------------------------------------------------------------------
+        address1            Required string. Street address for the venue.
+        -----------------   ---------------------------------------------------------------------
+        status              Required string. Access of event. Valid values are private, planned,
+                            public, draft.
+        -----------------   ---------------------------------------------------------------------
+        startDate           Required start date of the event in milliseconds since UNIX epoch.
+        -----------------   ---------------------------------------------------------------------
+        endDate             Required end date of the event in milliseconds since UNIX epoch.
+        -----------------   ---------------------------------------------------------------------
+        isAllDay            Required boolean. Indicates if the event is a day long event.
+        -----------------   ---------------------------------------------------------------------
+        capacity            Optional integer. The attendance capacity of the event venue.
+        -----------------   ---------------------------------------------------------------------
+        address2            Optional string.  Additional information about event venue street address.
+        -----------------   ---------------------------------------------------------------------
+        onlineLocation      Optional string. Web URL or other details for online event.
+        -----------------   ---------------------------------------------------------------------
+        organizers          Optional list of dictionary of keys `name` and `contact` for each organizer's
+                            name and email. Default values are name, email, username of event creator.
+        -----------------   ---------------------------------------------------------------------
+        sponsors            Optional list of dictionary of keys `name` and `contact` for each sponsor's
+                            name and contact.
+        =================   =====================================================================
 
         :return:
             Event if successfully added.
@@ -1464,7 +1468,7 @@ class EventManager(object):
         =======================    =============================================================
 
         :return:
-            The event object.
+            The :class:`~arcgis.apps.hub.Event` object.
 
         """
         url = (
