@@ -698,6 +698,8 @@ def zonal_statistics(
     process_as_multidimensional: Optional[bool] = None,
     percentile_value: float = 90,
     percentile_interpolation_type: str = "AUTO_DETECT",
+    circular_calculation: bool = False,
+    circular_wrap_value: float = 360,
 ):
 
     """
@@ -753,7 +755,7 @@ def zonal_statistics(
                                         output pixel.
 
                                         - STD-Calculates the standard deviation of all pixels in \
-                                        the Value Rasterthat belong to the same zone as the output pixel.
+                                        the Value Raster that belong to the same zone as the output pixel.
 
                                         - SUM-Calculates the total value of all pixels in the Value Raster that \
                                         belong to the same zone as the output pixel.
@@ -773,7 +775,7 @@ def zonal_statistics(
                                         Minimum statistic, and the 100th percentile is equivalent to Maximum.
                                         A value of 50 will produce essentially the same result as the Median statistic.
 
-                                        This parameter is honoured only available if the statistics_type parameter is
+                                        This parameter is honoured only if the statistics_type parameter is
                                         set to PERCENTILE.
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     percentile_interpolation_type       Optional string. Specifies the method of interpolation to be used when the
@@ -788,11 +790,24 @@ def zonal_statistics(
                                           the output pixel type is floating point.
 
                                         Parameter available in ArcGIS Image Server 10.9 and higher.
+    -------------------------------     -------------------------------------------------------------------------------------------------------------------
+    circular_calculation                Optional bool. Denotes whether the statistics calculations will be arithmetic or circular.
+
+                                        - False - Calculates arithmetic statistics. This is the default.
+                                        - True - Calculates circular statistics that are appropriate for cyclic quantities, such as compass direction in degrees, daytimes, and fractional parts of real numbers.
+
+                                        Parameter available in ArcGIS Image Server 11 and higher.
+    -------------------------------     -------------------------------------------------------------------------------------------------------------------
+    circular_wrap_value                 Optional float. The possible highest value (upper bound) in the cyclic data. It is a positive number, and the default is 360. This value also represents the same quantity
+                                        as the possible lowest value (lower bound). This parameter is honored only if the circular_calculation parameter is set to True.
+
+                                        Parameter available in ArcGIS Image Server 11 and higher.
     ===============================     ===================================================================================================================
 
     :return: output raster with function applied
 
     """
+
     layer1, in_zone_data, raster_ra1 = _raster_input(in_zone_data)
     layer2, in_value_raster, raster_ra2 = _raster_input(in_value_raster)
 
@@ -865,6 +880,22 @@ def zonal_statistics(
         template_dict["rasterFunctionArguments"][
             "percentile_interpolation_type"
         ] = percentile_interpolation_type
+
+    if circular_calculation is not None:
+        if isinstance(circular_calculation, bool):
+            if circular_calculation == True:
+                template_dict["rasterFunctionArguments"][
+                    "circular_calculation"
+                ] = "CIRCULAR"
+            else:
+                template_dict["rasterFunctionArguments"][
+                    "circular_calculation"
+                ] = "ARITHMETIC"
+
+    if circular_wrap_value is not None:
+        template_dict["rasterFunctionArguments"][
+            "circular_wrap_value"
+        ] = circular_wrap_value
 
     function_chain_ra = copy.deepcopy(template_dict)
     function_chain_ra["rasterFunctionArguments"]["in_zone_data"] = raster_ra1
@@ -1697,7 +1728,7 @@ def calculate_travel_cost(
                                         the source resistance rate, and the source starting cost.
                                         Possible values: FROM_SOURCE, TO_SOURCE
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
-    allocation_field                    Optional. A field on theinputSourceRasterOrFeatures layer that holds the values that define each source.
+    allocation_field                    Optional. A field on `in_source_data` layer that holds the values that define each source.
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     generate_out_backlink_raster        Optional Boolean, determines whether out_backlink_raster should be generated or not.
                                         Set this parameter to True, in order to generate the out_backlink_raster.
@@ -1730,8 +1761,6 @@ def calculate_travel_cost(
                                             | out_var.output_distance_service -> gives you the output distance imagery layer item
 
                                             | out_var.output_allocation_service -> gives you the output allocation raster imagery layer item
-    -------------------------------     -------------------------------------------------------------------------------------------------------------------
-    gis                                 Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     ===============================     ===================================================================================================================
 
     :return: output raster with function applied
@@ -2402,7 +2431,7 @@ def region_group(
                                         excluded_value parameter, and subject to the spatial requirements \
                                         specified by the number_of_neighbor_cells parameter.
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
-    add_link Optional                   Specifies whether a link field will be added to the table of the output
+    add_link                            Optional. Specifies whether a link field will be added to the table of the output
                                         when the zone_connectivity parameter is set to WITHIN. It is ignored if that
                                         parameter is set to CROSS.
 
@@ -3233,8 +3262,26 @@ def calculate_distance(
 
                                                     The default for this parameter is 'Value.
     -------------------------------------------     -------------------------------------------------------------------------------
+    generate_out_allocation_raster                  Optional Boolean, determines whether out_allocation_raster should be generated
+                                                    or not. Set this parameter to True, in order to generate the out_allocation_raster.
+                                                    If set to true, the output will be a named tuple with name values being
+                                                    output_distance_service and output_allocation_service.
+
+                                                    Example:
+
+                                                        | out_layer = calculate_distance(in_source_data, generate_out_allocation_raster=True)
+                                                        | out_var = out_layer.save()
+
+                                                    then,
+
+                                                        | out_var.output_distance_service -> gives you the output distance image layer item
+                                                        | out_var.output_allocation_service -> gives you the output allocation raster imagery layer item
+
+                                                    This parameter calculates, for each cell, the nearest source based
+                                                    on Euclidean distance.
+    -------------------------------------------     -------------------------------------------------------------------------------
     generate_out_direction_raster                   Optional Boolean, determines whether out_direction_raster should be generated
-                                                    or not.Set this parameter to True, in order to generate the out_direction_raster.
+                                                    or not. Set this parameter to True, in order to generate the out_direction_raster.
                                                     If set to true, the output will be a named tuple with name values being
                                                     output_distance_service and output_direction_service.
 
@@ -3269,24 +3316,6 @@ def calculate_distance(
 
                                                         | out_var.output_distance_service -> gives you the output distance imagery layer item
                                                         | out_var.out_back_direction_service -> gives you the output back direction raster imagery layer item
-    -------------------------------------------     -------------------------------------------------------------------------------
-    generate_out_allocation_raster                  Optional Boolean, determines whether out_allocation_raster should be generated
-                                                    or not. Set this parameter to True, in order to generate the out_backlink_raster.
-                                                    If set to true, the output will be a named tuple with name values being
-                                                    output_distance_service and output_allocation_service.
-
-                                                    Example:
-
-                                                        | out_layer = calculate_distance(in_source_data, generate_out_allocation_raster=True)
-                                                        | out_var = out_layer.save()
-
-                                                    then,
-
-                                                        | out_var.output_distance_service -> gives you the output distance image layer item
-                                                        | out_var.output_allocation_service -> gives you the output allocation raster imagery layer item
-
-                                                    This parameter calculates, for each cell, the nearest source based
-                                                    on Euclidean distance.
     -------------------------------------------     -------------------------------------------------------------------------------
     in_barrier_data                                 Optional barrier raster. The input raster that defines the barriers.
                                                     The dataset must contain NoData where there are no barriers.
@@ -3389,14 +3418,14 @@ def euclidean_back_direction(
     in_barrier_data=None,
 ):
     """
-    Calculates, for each cell, the direction, in degrees, to the neighboring cell along 
+    Calculates, for each cell, the direction, in degrees, to the neighboring cell along
     the shortest path back to the closest source while avoiding barriers.
 
-    The direction is calculated from each cell center to the center of the source cell 
+    The direction is calculated from each cell center to the center of the source cell
     that's nearest to it.
 
     The range of values is from 0 degrees to 360 degrees, with 0 reserved for the source cells.
-    Due east (right) is 90 and the values increase clockwise (180 is south, 270 is west, 
+    Due east (right) is 90 and the values increase clockwise (180 is south, 270 is west,
     and 360 is north).
 
     For more information, see
@@ -3490,14 +3519,14 @@ def flow_length(
     input_weight_raster: Optional[Raster] = None,
 ):
     """
-    Creates a raster layer of upstream or downstream distance, or weighted distance, 
+    Creates a raster layer of upstream or downstream distance, or weighted distance,
     along the flow path for each cell.
 
-    A primary use of the Flow Length function is to calculate the length of the longest 
-    flow path within a given basin. This measure is often used to calculate the time of 
-    concentration of a basin. This would be done using the Upstream option. 
+    A primary use of the Flow Length function is to calculate the length of the longest
+    flow path within a given basin. This measure is often used to calculate the time of
+    concentration of a basin. This would be done using the Upstream option.
 
-    The function can also be used to create distance-area diagrams of hypothetical 
+    The function can also be used to create distance-area diagrams of hypothetical
     rainfall and runoff events using the weight raster as an impedance to movement downslope.
 
     For more information,
@@ -3682,7 +3711,7 @@ def stream_order(
     order_method: str = "STRAHLER",
 ):
     """
-    Creates a raster layer that assigns a numeric order to segments 
+    Creates a raster layer that assigns a numeric order to segments
     of a raster representing branches of a linear network.
 
     For more information, see
@@ -3877,7 +3906,7 @@ def distance_accumulation(
     output_source_location_raster_name: Optional[str] = None,
 ):
     """
-    Calculates the least accumulative cost distance for each cell from or to the 
+    Calculates the least accumulative cost distance for each cell from or to the
     least-cost source over a cost surface, preserving euclidean distance metric
 
     =====================================       ============================================================================================================
@@ -3941,13 +3970,12 @@ def distance_accumulation(
                                                 projection, the results do not change.
 
                                                 .. note::
-
-                                                One use for a geodesic line is when you want to determine the shortest
-                                                distance between two cities for an airplane's flight path. This is also
-                                                known as a great circle line if based on a sphere rather than an ellipsoid.
+                                                    One use for a geodesic line is when you want to determine the shortest
+                                                    distance between two cities for an airplane's flight path. This is also
+                                                    known as a great circle line if based on a sphere rather than an ellipsoid.
     -------------------------------------       ------------------------------------------------------------------------------------------------------------
     source_initial_accumulation                 Optional. The starting cost from which to begin the cost calculations.
-    
+
                                                 Allows for the specification of the fixed
                                                 cost associated with a source. Instead of starting at a cost of zero, the cost algorithm will begin with
                                                 the value set by source_start_cost.
@@ -4165,7 +4193,7 @@ def distance_allocation(
     output_source_location_raster_name: Optional[str] = None,
 ):
     """
-    Calculates, for each cell, its least-cost source based on the least accumulative cost over a cost surface, 
+    Calculates, for each cell, its least-cost source based on the least accumulative cost over a cost surface,
     avoiding network distance distortion.
 
     =====================================       ============================================================================================================
@@ -4215,7 +4243,7 @@ def distance_allocation(
                                                 will take precedence over any setting for the source field.
     -------------------------------------       ------------------------------------------------------------------------------------------------------------
     source_initial_accumulation                 Optional. The starting cost from which to begin the cost calculations.
-    
+
                                                 Allows for the specification of the fixed
                                                 cost associated with a source. Instead of starting at a cost of zero, the cost algorithm will begin with
                                                 the value set by source_start_cost.
@@ -4249,10 +4277,9 @@ def distance_allocation(
                                                 projection, the results do not change.
 
                                                 .. note::
-
-                                                One use for a geodesic line is when you want to determine the shortest
-                                                distance between two cities for an airplane's flight path. This is also
-                                                known as a great circle line if based on a sphere rather than an ellipsoid.
+                                                    One use for a geodesic line is when you want to determine the shortest
+                                                    distance between two cities for an airplane's flight path. This is also
+                                                    known as a great circle line if based on a sphere rather than an ellipsoid.
     -------------------------------------       ------------------------------------------------------------------------------------------------------------
     output_back_direction_raster_name           Optional string, determines whether back_direction_raster should be generated or not.
                                                 Set this parameter, in order to generate the back_direction_raster.
