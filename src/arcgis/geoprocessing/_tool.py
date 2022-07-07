@@ -592,7 +592,14 @@ _log = _logging.getLogger(__name__)
     src_code += '\n_url = "' + url + '"'
     src_code += "\n_use_async = " + str(use_async) + "\n\n"
     listed_params = {}
-    if len(tbx.properties.tasks) < 4:
+    if (
+        len(tbx.properties.tasks) < 4
+        or gis._portal.is_kubernetes
+        or isinstance(
+            gis._con._session.auth,
+            (arcgis.auth.EsriKerberosAuth, arcgis.auth.EsriWindowsAuth),
+        )
+    ):
         for task in tbx.properties.tasks:
             fn_src, choice_list, func_name = _generate_fn(task, tbx)
             src_code += fn_src

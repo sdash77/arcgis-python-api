@@ -1,5 +1,6 @@
 """ Defines Exception subclasses for errors raised by the survey123-python-api. """
 
+
 class SurveyError(Exception):
     """
     Abstract base class for exceptions thrown by the Survey123-python-api
@@ -24,10 +25,11 @@ class ServerError(SurveyError):
 
     def __init__(self, error):
         """:param error: An error string returned by the server."""
-        message = "An error occurred while generating reports. Details: {}".format(error)
+        message = "An error occurred while generating reports. Details: {}".format(
+            error
+        )
         super().__init__(message)
         self.errors = error
 
     def __repr__(self):
         return "ServerError({})".format(repr(self.errors))
-
