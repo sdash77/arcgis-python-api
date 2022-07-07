@@ -11,22 +11,22 @@ from arcgis.features import FeatureLayerCollection, FeatureLayer
 
 class VersionManager(object):
     """
-    VersionManager allows users to manage the branch versioning for FeatureLayerCollection
+    VersionManager allows users to manage the branch versioning for :class:`~arcgis.features.FeatureLayerCollection`
     services. The Version Management Service is responsible for exposing the management
     capabilities necessary to support feature services that work with branch versioned
     datasets.
 
-    See the following for more information: https://developers.arcgis.com/rest/services-reference/version-management-service.htm
+    See the `Version Management Service <https://developers.arcgis.com/rest/services-reference/version-management-service.htm>`_ for more information
 
     ===============     ====================================================================
     **Argument**        **Description**
     ---------------     --------------------------------------------------------------------
     url                 Required String.  The URI to the web resource.
     ---------------     --------------------------------------------------------------------
-    gis                 Required GIS. The enterprise connection to the Portal site. A connection
+    gis                 Required :class:`~arcgis.gis.GIS` . The enterprise connection to the Portal site. A connection
                         can be passed in such as a Service Directory connection.
     ---------------     --------------------------------------------------------------------
-    flc                 Optional FeatureLayerCollection. This is the parent container that
+    flc                 Optional :class:`~arcgis.features.FeatureLayerCollection` . This is the parent container that
                         the branch versioning is enabled on.
     ===============     ====================================================================
 
@@ -217,9 +217,9 @@ class VersionManager(object):
 
                             Values:
 
-                                - edit - starts editing mode
-                                - read - starts reading mode
-                                - None - no mode is started.  This is default.
+                            - edit - starts editing mode
+                            - read - starts reading mode
+                            - None - no mode is started.  This is default.
         ===============     ====================================================================
 
         """
@@ -241,9 +241,9 @@ class Version(object):
     ---------------     --------------------------------------------------------------------
     url                 Required String.  The URI to the web resource.
     ---------------     --------------------------------------------------------------------
-    gis                 Required GIS. The enterprise connection to the Portal site.
+    gis                 Required :class:`~arcgis.gis.GIS` . The enterprise connection to the Portal site.
     ---------------     --------------------------------------------------------------------
-    flc                 Optional FeatureLayerCollection. This is the parent container that
+    flc                 Optional :class:`~arcgis.features.FeatureLayerCollection` . This is the parent container that
                         the branch versioning is enabled on.
     ---------------     --------------------------------------------------------------------
     session_guid        Optional String. If a GUID is known for specific version, a user
@@ -255,8 +255,8 @@ class Version(object):
 
                         Allowed Values:
 
-                            + edit - starts an edit session
-                            + read - starts a read session
+                        + edit - starts an edit session
+                        + read - starts a read session
 
     ===============     ====================================================================
 
@@ -302,7 +302,9 @@ class Version(object):
         """
         Provides access to a validation manager.
 
-        :return: :class:`~arcgis.features.ValidationManager`
+        :return:
+            :class:`~arcgis.features.ValidationManager`
+
         """
         if self._validation is None:
             from arcgis.mapping import MapImageLayer
@@ -325,7 +327,9 @@ class Version(object):
         """
         Provides access to a parcel fabric manager
 
-        :return: :class:`~arcgis.features.ParcelFabricManager`
+        :return:
+            :class:`~arcgis.features.ParcelFabricManager`
+
         """
         if (
             "controllerDatasetLayers" in self._flc.properties
@@ -376,20 +380,20 @@ class Version(object):
     # ----------------------------------------------------------------------
     @property
     def layers(self):
-        """returns the layers in the FeatureLayerCollection"""
+        """returns the layers in the :class:`~arcgis.features.FeatureLayerCollection` """
         return self._flc.layers
 
     # ----------------------------------------------------------------------
     @property
     def tables(self):
-        """returns the tables in the FeatureLayerCollection"""
+        """returns the tables in the :class:`~arcgis.features.FeatureLayerCollection` """
         return self._flc.tables
 
     # ----------------------------------------------------------------------
     @property
     def mode(self):
         """
-        The `mode` allows versoin editors to start and stop edit, read, or
+        The `mode` allows version editors to start and stop edit, read, or
         view mode.
 
         ==================      ====================================================================
@@ -750,23 +754,26 @@ class Version(object):
         ------------------     --------------------------------------------------------------------
         rows                   Required List.  An array of the rows to be restored
 
-                               **Syntax**
+                               Syntax
 
-                               [
-
-                                    {
-
-                                       "layerId": <layerId>,
-                                       "objectIds":[<objectId>]
-
-                                    }
-                               ]
+                                   | [
+                                   |
+                                   |      {
+                                   |
+                                   |        "layerId": <layerId>,
+                                   |        "objectIds":[<objectId>]
+                                   |
+                                   |     }
+                                   | ]
 
 
 
         ==================     ====================================================================
 
-        :return: Boolean and String. Bool: True if successful else False. String: the moment
+        :return:
+            Boolean and String.
+            Bool: True if successful else False.
+            String: the moment
 
         """
         url = "%s/restoreRows" % self._url
@@ -787,7 +794,7 @@ class Version(object):
         permission: Optional[str] = None,
     ):
         """
-        The ```alter``` operation changes the geodatabase version's name,
+        The ``alter`` operation changes the geodatabase version's name,
         description, and access permissions.
 
         ===============     ====================================================================
@@ -835,7 +842,7 @@ class Version(object):
     ):
 
         """
-        The ```differences``` operation allows you to view differences between
+        The ``differences`` operation allows you to view differences between
         the current version and the default version. The two versions can
         be compared to check for the following conditions.
 
@@ -921,7 +928,7 @@ class Version(object):
     # ----------------------------------------------------------------------
     def conflicts(self):
         """
-        The ```conflicts``` operation allows you to view the conflicts by layer
+        The ``conflicts`` operation allows you to view the conflicts by layer
         and type (update-update, update-delete, delete-update) that were
         identified during the last Reconcile operation. The features that
         are in conflicts will also be returned as they existed in the branch,
@@ -943,7 +950,7 @@ class Version(object):
         set_inspected: bool = False,
     ):
         """
-        The ```inspect``` operation allows the client to annotate conflicts
+        The ``inspect`` operation allows the client to annotate conflicts
         from the conflict set that was obtained during the last reconcile
         operation. Users can mark the conflicts as being inspected;
         additionally, a description or note can be associated with the
@@ -957,26 +964,26 @@ class Version(object):
 
                             Parameter Format:
 
-                            [
-                                {
-                                  "layerId" : <layerId>,
-                                  "features" : [
-                                    {
-                                      "objectId" : <objectId>,
-                                      "note" : string
-                                    }
-                                  ]
-                                }
-                            ]
+                                | [
+                                |    {
+                                |      "layerId" : <layerId>,
+                                |      "features" : [
+                                |        {
+                                |          "objectId" : <objectId>,
+                                |          "note" : string
+                                |
+                                |        }
+                                |      ]
+                                |    }
+                                | ]
 
                             The objectId key is required. The note parameter is optional.
-
         ---------------     --------------------------------------------------------------------
         inspect_all         Optional Boolean. This parameter, if true, will mark all conflicts
                             as being inspected.
         ---------------     --------------------------------------------------------------------
         set_inspected       Optional Boolean. If True, the examined values will be set to
-                            inspected. If ```inspect_all``` is True, this parameter is ignored.
+                            inspected. If ``inspect_all`` is True, this parameter is ignored.
         ===============     ====================================================================
 
 
@@ -1027,7 +1034,7 @@ class Version(object):
                                         }
                                        ]
         ---------------     --------------------------------------------------------------------
-        future              Optional Boolean. If `True", the operation runs as an asynchronous
+        future              Optional Boolean. If "True", the operation runs as an asynchronous
                             job. The results are returned as a Url pointing to a location that
                             indicates the status of the job.
         ===============     ====================================================================
@@ -1101,16 +1108,16 @@ class Version(object):
         =====================   ===========================================
         **Inputs**              **Description**
         ---------------------   -------------------------------------------
-        layer                   Required FeatureLayer. The layer to perform
+        layer                   Required :class:`~arcgis.features.FeatureLayer` . The layer to perform
                                 the edit on.
         ---------------------   -------------------------------------------
-        adds                    Optional FeatureSet/List. The array of
+        adds                    Optional :class:`~arcgis.features.FeatureSet` /List. The array of
                                 features to be added.
         ---------------------   -------------------------------------------
-        updates                 Optional FeatureSet/List. The array of
-                                features to be updateded.
+        updates                 Optional :class:`~arcgis.features.FeatureSet` /List. The array of
+                                features to be updated.
         ---------------------   -------------------------------------------
-        deletes                 Optional FeatureSet/List. string of OIDs to
+        deletes                 Optional :class:`~arcgis.features.FeatureSet` /List. String of OIDs to
                                 remove from service
         ---------------------   -------------------------------------------
         use_global_ids          Optional boolean. Instead of referencing

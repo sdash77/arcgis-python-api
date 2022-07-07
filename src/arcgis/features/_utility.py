@@ -20,7 +20,7 @@ class UtilityNetworkManager(object):
     ---------------------   -------------------------------------------
     version                 Optional Version. The `Version` class where the branch version will take place.
     ---------------------   -------------------------------------------
-    gis                     Optional GIS. The `GIS` connection object.
+    gis                     Optional :class:`~arcgis.gis.GIS` . The `GIS` connection object.
     =====================   ===========================================
 
 
@@ -197,15 +197,15 @@ class UtilityNetworkManager(object):
 
         When the topology is disabled, the following happens:
 
-             - All current rows in the topology tables are deleted.
-             - No dirty areas are generated from edits.
-             - Remaining error features still exist and can be cleaned up without the overhead of dirty areas.
+        - All current rows in the topology tables are deleted.
+        - No dirty areas are generated from edits.
+        - Remaining error features still exist and can be cleaned up without the overhead of dirty areas.
 
         To perform certain network configuration tasks, the network
         topology must be disabled.
 
-             - This operation must be executed by the portal utility network owner.
-             - The topology can be disabled in the default version or in a named version.
+        - This operation must be executed by the portal utility network owner.
+        - The topology can be disabled in the default version or in a named version.
 
         :return: Dictionary indicating 'success' or 'error'
 

@@ -72,25 +72,25 @@ class ValidationManager(object):
         ---------------     --------------------------------------------------------------------
         error_features      Required List.  The error features to be updated.
 
-                            **Syntax**
+                            Syntax
 
-                            ```
-                            [
-                                {
-                                  "errorType" : "object" | "point" | "line" |
-                                               "polygon",
-                                  "features" : [
-                                    {
-                                      "globalId" : <guid>,
-                                      "fields" : {
-                                        "name1" : <value1>,
-                                        "name2" : <value2>
-                                      }
-                                    }
-                                  ]
-                                }
-                            ]
-                            ```
+
+                            | [
+                            |    {
+                            |      "errorType" : "object" | "point" | "line" |
+                            |                   "polygon",
+                            |      "features" : [
+                            |        {
+                            |          "globalId" : <guid>,
+                            |          "fields" : {
+                            |            "name1" : <value1>,
+                            |            "name2" : <value2>
+                            |          }
+                            |        }
+                            |      ]
+                            |    }
+                            | ]
+
         ---------------     --------------------------------------------------------------------
         return_edits        Optional Boolean. `return_edits` returns features edited due to
                             errors update. Results returned are organized in a layer by layer
@@ -174,22 +174,22 @@ class ValidationManager(object):
 
                                  If the `evaluation_type` is **topology** this parameter is ignored.
 
-                                 **Syntax**
+                                 Syntax
 
-                                 ```
-                                 [
-                                    {
-                                      "id" : <layerId1>,
-                                      "globalIds" : [ <globalId> ],
-                                      "objectIds" : [ <objectId> ]
-                                    },
-                                    {
-                                      "id" : <layerId2>,
-                                      "globalIds" : [ <globalId> ].
-                                      "objectIds" : [ <objectId> ]
-                                    }
-                                 ]
-                                 ```
+
+                                     | [
+                                     |   {
+                                     |     "id" : <layerId1>,
+                                     |     "globalIds" : [ <globalId> ],
+                                     |     "objectIds" : [ <objectId> ]
+                                     |   },
+                                     |   {
+                                     |     "id" : <layerId2>,
+                                     |     "globalIds" : [ <globalId> ].
+                                     |     "objectIds" : [ <objectId> ]
+                                     |   }
+                                     | ]
+
 
         --------------------     --------------------------------------------------------------------
         return_edits             Optional Boolean. returns features edited due to feature evaluation.
