@@ -1,14 +1,18 @@
 import unittest
 import sys
 
-# sys.path.insert(0, r"/Users/cowboy/GitHub/np_geo/src")
+sys.path.insert(0, r"/Users/cowboy/GitHub/np_geo/src")
 import datetime
 from arcgis.features import FeatureLayer
 from arcgis.gis import Item
 from arcgis.gis import GIS
 from arcgis.features.analyze_patterns import find_point_clusters
+from config_tests import setup_profiles, stage_data
 
+test_items = ["5183636f099c48789628226e5730fb13"]  # Traffic Collisions
 profiles = ["online_test", "ent_test", "kube_test"]
+setup_profiles(profiles[0], profiles[1], profiles[2])
+stage_data(test_items)
 
 
 class TestFindPointClusters(unittest.TestCase):

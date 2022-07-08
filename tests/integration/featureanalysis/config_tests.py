@@ -1,4 +1,3 @@
-import datetime
 import sys
 
 # sys.path.insert(0, r"/Users/cowboy/GitHub/np_geo/src")
@@ -8,7 +7,6 @@ import platform
 import lxml
 from arcgis.gis import GIS, Item
 from arcgis.gis import ProfileManager
-import arcgis
 
 test_items = [
     "1ac6896bcafc4dccb29c70f45c442b00",  # Polygon Zips
@@ -20,10 +18,16 @@ test_items = [
     "9c04c0c5bcb549549d801cdfd76652ac",  # Bay Area Geodatabase
     "00fbc412f68645958520d946806f90c0",  # Tennessee Town
     "4147267f9bcc46e79825950d800c1e6a",  # Comparison US Towns
+    "5fdb2869753140c8836353097b207591",  # US Hospitals
+    "2150d4ebe2124f4c821f43de49a6c679",  # US Airports
 ]
 
 # scrape server page for a Kubernetes URL
 def get_kube_server(site="https://rpublicservers.esri.com/AEoK1100.php", row=3):
+
+    # Important note: code is based off of current rpublicservers page. If
+    # page format or data gets changed, row parameter may have to be altered.
+    # currently set up to find 1100publdapwa server.
 
     page = requests.get(site, verify=False)
     html = lxml.html.fromstring(page.content)
@@ -49,6 +53,10 @@ def get_kube_credentials(
 
         page = requests.get(site, auth=HttpNtlmAuth("USERNAME", "PASSWORD"))
 
+    # Important note: code is based off of current ragsreports page. If page
+    # format or data gets changed, row parameter may have to be altered.
+    # Currently set up to get creator2 credentials.
+
     html = lxml.html.fromstring(page.content)
     table = html.xpath("//table")[0]
     row_list = table.xpath("//tr")[row]
@@ -60,40 +68,56 @@ def get_kube_credentials(
 
 # make sure profiles are set up with proper accounts
 def setup_profiles(
-    online_name="online_test", ent_name="ent_test", kube_name="kube_test"
+    online_name="online_test",
+    ent_name="ent_test",
+    kube_name="kube_test",
+    reset=False,
 ):
     # remove profiles if they already exist
     pm = ProfileManager()
     profile_list = pm.list()
-    for profile in [online_name, ent_name, kube_name]:
-        if profile in profile_list:
-            pm.delete(profile)
+    if reset is True:
+        for profile in [online_name, ent_name, kube_name]:
+            if profile in profile_list:
+                pm.delete(profile)
+                print("Deleted " + profile)
 
-    pm.create(
-        online_name,
-        url="https://www.arcgis.com",
-        username="arcgis_python",
-        password="amazing_arcgis_123",
-    )
+    updated_list = pm.list()
 
-    pm.create(
-        ent_name,
-        url="https://pythonapi.playground.esri.com/portal/",
-        username="playground_test",
-        password="i_love_testing123",
-    )
+    if not online_name in updated_list:
+        print("Creating online profile")
+        pm.create(
+            online_name,
+            url="https://www.arcgis.com",
+            username="arcgis_python",
+            password="amazing_arcgis_123",
+        )
 
-    pm.create(
-        kube_name,
-        url=get_kube_server(),
-        username=get_kube_credentials()[0],
-        password=get_kube_credentials()[1],
-    )
+    if not ent_name in updated_list:
+        print("Creating ent profile")
+        pm.create(
+            ent_name,
+            url="https://pythonapi.playground.esri.com/portal/",
+            username="playground_test",
+            password="i_love_testing123",
+        )
+
+    if not kube_name in updated_list:
+        print("Creating kube profile")
+        pm.create(
+            kube_name,
+            url=get_kube_server(),
+            username=get_kube_credentials()[0],
+            password=get_kube_credentials()[1],
+        )
 
 
 # stage data from list of AGOL items into ent & kube
 def stage_data(
-    data_list, online_prof="online_test", ent_prof="ent_test", kube_prof="kube_test"
+    data_list,
+    online_prof="online_test",
+    ent_prof="ent_test",
+    kube_prof="kube_test",
 ):
     # extract necessarity items from AGOL
     gis_agol = GIS(profile=online_prof, verify_cert=False)
@@ -110,5 +134,6 @@ def stage_data(
                 gis.content.add(item, item_id=item.id)
 
 
-setup_profiles()
-stage_data(test_items)
+if __name__ == "__main__":
+    setup_profiles(reset=True)
+    stage_data(test_items)

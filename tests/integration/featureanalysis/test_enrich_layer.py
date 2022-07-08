@@ -7,8 +7,12 @@ from arcgis.features import FeatureLayer
 from arcgis.gis import Item
 from arcgis.gis import GIS
 from arcgis.features.enrich_data import enrich_layer
+from config_tests import setup_profiles, stage_data
 
+test_items = ["435fcf6cff1f4f34989e151c1f25d64a"]  # Esri Offices
 profiles = ["online_test", "ent_test", "kube_test"]
+setup_profiles(profiles[0], profiles[1], profiles[2])
+stage_data(test_items)
 
 
 class TestEnrichLayer(unittest.TestCase):

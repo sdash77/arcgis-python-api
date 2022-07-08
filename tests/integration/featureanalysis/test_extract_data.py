@@ -7,8 +7,15 @@ from arcgis.features import FeatureLayer
 from arcgis.gis import Item
 from arcgis.gis import GIS
 from arcgis.features.manage_data import extract_data
+from config_tests import setup_profiles, stage_data
 
+test_items = [
+    "d3cb37b9636d47888268ca086810bd9b",  # Cougar Habitat
+    "a6cb2a0688d841fd803cd82b4d8282b4",  # Boundary Polygon
+]
 profiles = ["online_test", "ent_test", "kube_test"]
+setup_profiles(profiles[0], profiles[1], profiles[2])
+stage_data(test_items)
 
 
 class TestExtractData(unittest.TestCase):

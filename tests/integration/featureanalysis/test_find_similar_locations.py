@@ -7,8 +7,15 @@ from arcgis.features import FeatureLayer
 from arcgis.gis import Item
 from arcgis.gis import GIS
 from arcgis.features.find_locations import find_similar_locations
+from config_tests import setup_profiles, stage_data
 
+test_items = [
+    "00fbc412f68645958520d946806f90c0",  # Tennessee Town
+    "4147267f9bcc46e79825950d800c1e6a",  # Comparison US Towns
+]
 profiles = ["online_test", "ent_test", "kube_test"]
+setup_profiles(profiles[0], profiles[1], profiles[2])
+stage_data(test_items)
 
 
 class TestFindSimilarLocations(unittest.TestCase):

@@ -1,26 +1,18 @@
 import sys
 
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
+# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import datetime
 import unittest
 import pandas as pd
 from arcgis.gis import GIS, Item
 from arcgis.features import FeatureLayer
 from arcgis.features.manage_data import overlay_layers
-from arcgis.gis import ProfileManager
+from config_tests import setup_profiles, stage_data
 
-profile_list = ProfileManager().list()
-
-if not "ent11" in profile_list:
-    GIS(
-        url="https://gpportal.esri.com/portal/",
-        username="admin",
-        password="esri.agp",
-        profile="ent11",
-    )  # create enterprise 11 connection
-
-
-profiles = ["your_online_profile", "ent11"]
+test_items = ["d3cb37b9636d47888268ca086810bd9b"]  # Cougar Habitat
+profiles = ["online_test", "ent_test", "kube_test"]
+setup_profiles(profiles[0], profiles[1], profiles[2])
+stage_data(test_items)
 
 
 class TestOverlayLayers(unittest.TestCase):
@@ -32,11 +24,11 @@ class TestOverlayLayers(unittest.TestCase):
             print("User: ", gis.users.me.username)
             # gather layers
             if gis._is_agol:
-                cougar_item = gis.content.get("747b24cdf0ef49acab79feb3dfcd4546")
+                cougar_item = gis.content.get("d3cb37b9636d47888268ca086810bd9b")
                 park = cougar_item.layers[4]
                 watershed = cougar_item.layers[6]
             else:
-                cougar_item = gis.content.get("8599c3fd627a4f818ea22be321e084f7")
+                cougar_item = gis.content.get("d3cb37b9636d47888268ca086810bd9b")
                 park = cougar_item.layers[0]
                 watershed = cougar_item.layers[1]
             # create layer that will be overwritten

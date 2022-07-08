@@ -7,8 +7,16 @@ from arcgis.features import FeatureLayer
 from arcgis.gis import Item
 from arcgis.gis import GIS
 from arcgis.features.manage_data import create_route_layers
+from config_tests import setup_profiles, stage_data
 
+test_items = ["9c04c0c5bcb549549d801cdfd76652ac"]  # Bay Area Geodatabase
 profiles = ["online_test", "ent_test", "kube_test"]
+setup_profiles(
+    profiles[0],
+    profiles[1],
+    profiles[2],
+)
+stage_data(test_items)
 
 
 class TestCreateRouteLayers(unittest.TestCase):
