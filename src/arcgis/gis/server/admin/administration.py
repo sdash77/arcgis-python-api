@@ -490,7 +490,7 @@ class Server(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def _upgrade(self, run_async: bool = False) -> dict:
+    def _upgrade(self, run_async: bool = False, debug: bool | None = None) -> dict:
         """
         This is the first operation that must be invoked during an ArcGIS
         Server upgrade. Once the new software version has been installed
@@ -514,6 +514,12 @@ class Server(BaseServer):
         ------------------     --------------------------------------------------------------------
         run_async              Optional boolean. A flag to indicate if the operation needs to be run
                                asynchronously. The default value is False.
+        ------------------     --------------------------------------------------------------------
+        debug                  Optional Boolean. Introduced at 11.0. This parameter sets the log
+                               level for the upgrade process. If true, the log level is set to
+                               DEBUG during the upgrade, which can aid in troubleshooting issues
+                               related to the upgrade process. If false, the log level is set to
+                               VERBOSE during the upgrade process. The default value is false.
         ==================     ====================================================================
 
 
@@ -522,6 +528,8 @@ class Server(BaseServer):
         """
         url = self._url + "/upgrade"
         params = {"f": "json", "runAsync": run_async}
+        if not debug is None:
+            params["enableDebug"] = debug
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
