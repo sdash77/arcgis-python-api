@@ -11,7 +11,7 @@ class Indicator(_BaseWidget):
     =========================   ===========================================
     **Argument**                **Description**
     -------------------------   -------------------------------------------
-    item                        Required Portal Item object. Item object can
+    item                        Required Portal :class:`~arcgis.gis.Item` object. Item object can
                                 be a Feature Layer or a MapWidget.
     -------------------------   -------------------------------------------
     name                        Optional string. Name of the Indicator
@@ -83,7 +83,7 @@ class Indicator(_BaseWidget):
     @property
     def max_features(self):
         """
-        :return: max features for widget.
+        :return: Maximum features for widget.
         """
         return self._max_features
 
@@ -97,7 +97,7 @@ class Indicator(_BaseWidget):
     @property
     def show_last_update(self):
         """
-        :return: show last update or not.
+        :return: Show last update or not.
         """
         return self._show_last_update
 

@@ -13,7 +13,8 @@ class Dashboard(object):
     """
     Creates a Dashboard Object.
 
-    :return Dashboard object
+    :return:
+        Dashboard object
     """
 
     def __init__(self):
@@ -47,7 +48,7 @@ class Dashboard(object):
         -------------------------   -------------------------------------------
         tags                        Optional string. Comma separated tags.
         -------------------------   -------------------------------------------
-        gis                         Optional GIS to publish dashboard.
+        gis                         Optional :class:`~arcgis.gis.GIS` to publish dashboard.
                                     By default uses active gis.
         -------------------------   -------------------------------------------
         overwrite                   Optional Boolean.
@@ -77,7 +78,8 @@ class Dashboard(object):
     @property
     def header(self):
         """
-        :return: Header Object
+        :return:
+            :class:`~arcgis.apps.dashboard.Header` object
         """
         return self._header
 
@@ -91,7 +93,8 @@ class Dashboard(object):
     @property
     def side_panel(self):
         """
-        :return Side Panel Object
+        :return:
+            :class:`~arcgis.apps.dashboard.SidePanel` object
         """
         return self._side_panel
 

@@ -11,13 +11,13 @@ class Details(_BaseWidget):
     =========================   ===========================================
     **Argument**                **Description**
     -------------------------   -------------------------------------------
-    item                        Required Portal Item object. Item object should
+    item                        Required Portal :class:`~arcgis.gis.Item` object. Item object should
                                 be a Feature Layer.
     -------------------------   -------------------------------------------
     name                        Optional string. Name of the element.
     -------------------------   -------------------------------------------
-    layer                       Optional integer. Layer index for the Feature
-                                Layer Collection item. Default value is 0
+    layer                       Optional integer. Layer index for the :class:`~arcgis.features.FeatureLayerCollection`
+                                item. Default value is 0
     -------------------------   -------------------------------------------
     title                       Optional string. Title of the widget.
     -------------------------   -------------------------------------------
@@ -26,6 +26,8 @@ class Details(_BaseWidget):
     max_features_displayed      Optional integer. Maximum number of features
                                 to display.
     =========================   ===========================================
+
+
     """
 
     def __init__(

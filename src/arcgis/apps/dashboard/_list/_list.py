@@ -11,7 +11,7 @@ class List(_BaseWidget):
     =========================   ===========================================
     **Argument**                **Description**
     -------------------------   -------------------------------------------
-    item                        Required Portal Item object. Item object can
+    item                        Required Portal :class:`~arcgis.gis.Item` object. Item object can
                                 be a Feature Layer or a MapWidget.
     -------------------------   -------------------------------------------
     name                        Optional string. Name of the List widget.
@@ -104,7 +104,8 @@ class List(_BaseWidget):
     @property
     def seperator_color(self):
         """
-        :return: seperator color.
+        :return: Separator color.
+
         """
         return self._seperator_color
 
