@@ -3998,7 +3998,7 @@ class UserManager(object):
 
             # Usage Example
 
-            >>> gis.users.advanced_search(query ="1234", sort_field = "username", max_users=20, as_dict=20)
+            >>> gis.users.advanced_search(query ="1234", sort_field = "username", max_users=20, as_dict=False)
         """
         from arcgis.gis._impl import _search
 
