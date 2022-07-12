@@ -16,7 +16,7 @@ from .exceptions import ServerError
 class SurveyManager:
     """
     Survey Manager allows users and administrators of Survey 123 Surveys to
-    analysis, report on , and access the data for various surveys.
+    analysis, report on, and access the data for various surveys.
 
     """
 
@@ -65,7 +65,7 @@ class SurveyManager:
 
     # ----------------------------------------------------------------------
     def get(self, survey_id: Union[Item, str]):
-        """returns a single `Survey` object from and Item ID or Item"""
+        """returns a single :class:`~arcgis.apps.survey123.Survey` object from and Item ID or Item"""
         if isinstance(survey_id, Item):
             survey_id = survey_id.id
         item = self._gis.content.get(survey_id)
@@ -233,7 +233,7 @@ class Survey:
         save_folder       Optional String. Specify the folder location where the output file should be stored.
         ================  ===============================================================
 
-        :Returns: string or pd.DataFrame
+        :Returns: String or DataFrame
         """
 
         title = "a%s" % uuid.uuid4().hex
@@ -268,7 +268,7 @@ class Survey:
         save_folder: Optional[str] = tempfile.gettempdir(),
     ) -> str:
         """
-        Creates a MS Word Report or PDF.  The `generate_report` method allows users to either save the
+        Creates an MS Word Report or PDF.  The `generate_report` method allows users to either save the
         report to the enterprise or export it directly to disk.
 
         To save to disk, do not specify a `folder_id`.
@@ -278,7 +278,7 @@ class Survey:
         ================  ===============================================================
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
-        report_template   Required Item.  The report template Item.
+        report_template   Required :class:`~arcgis.gis.Item` .  The report template Item.
         ----------------  ---------------------------------------------------------------
         where             Optional String. This is the select statement used to export
                           part or whole of the dataset.  If the record count is > 1, then
@@ -302,7 +302,7 @@ class Survey:
         save_folder       Optional String. Specify the folder location where the output file should be stored.
                           If `folder_id` is specified the save_folder will be ignored.
         ----------------  ---------------------------------------------------------------
-        output_format     Optional string. Currently only docx and pdf are supported.
+        output_format     Optional String. Currently only docx and pdf are supported.
         ----------------  ---------------------------------------------------------------
         folder_id         Optional String. The folder ID of the user's content.
         ----------------  ---------------------------------------------------------------
@@ -316,9 +316,9 @@ class Survey:
                           + `nextPage` - Print multiple records in merge mode, the content of the next record starts on the next new page.
                           + `continuous` - Print multiple records in merge mode, the content of the next record starts on the same page of the previous record.
         ----------------  ---------------------------------------------------------------
-        survey_item       Optional Item. Survey `Item`, to make the operation survey awareness.
+        survey_item       Optional :class:`~arcgis.gis.Item` . Survey `Item`, to make the operation survey awareness.
         ----------------  ---------------------------------------------------------------
-        webmap_item       Optional Item. Specify the base map for printing task when printing
+        webmap_item       Optional :class:`~arcgis.gis.Item` . Specify the base map for printing task when printing
                           a point/polyline/polygon. This takes precedence over the map set for
                           each question inside a survey.
         ----------------  ---------------------------------------------------------------
@@ -398,7 +398,7 @@ class Survey:
         """
         Returns a list of saved report items
 
-        :returns: list of `Items`
+        :returns: list of :class:`Items <arcgis.gis.Item>`
         """
         related_items = self._si.related_items(
             direction="forward", rel_type="Survey2Data"
@@ -426,7 +426,7 @@ class Survey:
     ):
         """
         The `create_report_template` creates a simple default template that
-        can be downloaded locally, editted and uploaded back up as a report
+        can be downloaded locally, edited and uploaded back up as a report
         template.
 
         ================  ===============================================================
@@ -441,7 +441,7 @@ class Survey:
         save_folder       Optional String. Specify the folder location where the output file should be stored.
         ================  ===============================================================
 
-        :returns: string
+        :returns: String
         """
         if self._si._gis.users.me.username != self._si.owner:
             raise TypeError("Stakeholders cannot create report templates")
@@ -532,7 +532,7 @@ class Survey:
         self, template_file: Optional[str] = None, template_name: Optional[str] = None
     ):
         """
-        Check report template syntax to idenfify any syntax which will lead to a failure
+        Check report template syntax to identify any syntax which will lead to a failure
         when generating reports in the given feature. Uploads the report to the organization
         and associates it with the survey.
 
@@ -585,7 +585,7 @@ class Survey:
 
     def update_report_template(self, template_file: Optional[str] = None):
         """
-        Check report template syntax to idenfify any syntax which will lead to a failure
+        Check report template syntax to identify any syntax which will lead to a failure
         when generating reports in the given feature and updates existing Report template Org item.
 
         ================  ===============================================================
@@ -622,7 +622,7 @@ class Survey:
         ================  ===============================================================
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
-        report_template   Required Item.  The report template Item.
+        report_template   Required :class:`~arcgis.gis.Item` .  The report template Item.
         ----------------  ---------------------------------------------------------------
         where             Optional String. This is the select statement used to export
                           part or whole of the dataset. If the filtered result has more
@@ -689,7 +689,7 @@ class Survey:
         ================  ===============================================================
         **Argument**      **Description**
         ----------------  ---------------------------------------------------------------
-        report_template   Required Item.  The report template Item.
+        report_template   Required :class:`~arcgis.gis.Item`  .  The report template Item.
         ----------------  ---------------------------------------------------------------
         where             Optional String. This is the select statement used to export
                           part or whole of the dataset.  If the record count is > 1, then
@@ -710,7 +710,7 @@ class Survey:
                           report file (merged mode) or multiple files (split mode), and if
                           in merge mode, start the next record on a new page or continue
                           with the current page. Note: A merged file larger than 500MB
-                          will be split into mulitple files.
+                          will be split into multiple files.
 
                           + `none` - Print multiple records in split mode, each record becomes a separated report file. This is the default value.
                           + `nextPage` - Print multiple records in merge mode, the content of the next record starts on the next new page.
@@ -718,9 +718,9 @@ class Survey:
         ----------------  ---------------------------------------------------------------
         save_folder       Optional String. Specify the folder location where the output file should be stored.
         ----------------  ---------------------------------------------------------------
-        survey_item       Optional Item. Survey `Item`, to make the operation survey awareness.
+        survey_item       Optional :class:`~arcgis.gis.Item` . Survey `Item`, to make the operation survey awareness.
         ----------------  ---------------------------------------------------------------
-        webmap_item       Optional Item. Specify the base map for printing task when printing
+        webmap_item       Optional :class:`~arcgis.gis.Item` . Specify the base map for printing task when printing
                           a point/polyline/polygon. This takes precedence over the map set for
                           each question inside a survey.
         ----------------  ---------------------------------------------------------------
@@ -729,7 +729,7 @@ class Survey:
         locale            Optional String. Specify the locale setting to format number and date values.
         ================  ===============================================================
 
-        :Returns: string
+        :Returns: String
 
         """
         try:
