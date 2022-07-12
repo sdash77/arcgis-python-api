@@ -864,9 +864,9 @@ class InitiativeManager(object):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        initiative          Required Initiative object of initiative to be cloned.
+        initiative          Required :class:`~arcgis.apps.hub.Initiative` object of initiative to be cloned.
         ---------------     --------------------------------------------------------------------
-        origin_hub          Optional Hub object. Required only for cross-org clones where the
+        origin_hub          Optional :class:`~arcgis.apps.hub.Hub` object. Required only for cross-org clones where the
                             initiative being cloned is not an item with public access.
         ---------------     --------------------------------------------------------------------
         title               Optional String.
