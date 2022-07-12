@@ -4452,7 +4452,7 @@ class RoleManager(object):
             >>> org_roles = role_mgr.all()
 
             >>> for role in org_roles:
-                print(f"{role.name:25}{role.role_id}"
+            >>>     print(f"{role.name:25}{role.role_id}")
 
                 Viewer                   iAAAAAAAAAAAAAAA
                 Data Editor              iBBBBBBBBBBBBBBB
