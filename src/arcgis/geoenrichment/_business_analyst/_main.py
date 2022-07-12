@@ -1768,6 +1768,13 @@ class BusinessAnalyst(object):
                 )
                 > 0
             )
+        elif (
+            "appInfo" in self.source.properties
+            and self.source.properties.appInfo.privileges
+            and "premium:user:geoenrichment"
+            in self.source.properties.appInfo.privileges
+        ):
+            has_ge = True
         else:
             has_ge = False
         assert has_ge, (
