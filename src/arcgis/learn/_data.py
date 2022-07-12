@@ -2703,7 +2703,9 @@ def prepare_data(
         data._extract_bands = None
         data._do_normalize = False
         data.chip_size = 127
-        data._temp_folder = _prepare_working_dir(path)
+        if working_dir is not None:
+            data.path = Path(os.path.abspath(working_dir))
+        data._temp_folder = _prepare_working_dir(data.path)
         return data
     else:
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))
