@@ -194,7 +194,7 @@ class MobileUserManager:
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        users                  Required List of String or :class:`~arcgis.gis.User`.
+        users                  Required List of strings or :class:`~arcgis.gis.User`.
                                The list of usernames/users to add as Mobile Users
         ==================     ====================================================================
         """
@@ -214,7 +214,7 @@ class MobileUserManager:
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        users                  Required List of String or :class:`~arcgis.gis.User`.
+        users                  Required List of strings or :class:`~arcgis.gis.User`.
                                The list of usernames/users to remove as Mobile Users.
         ==================     ====================================================================
         """
@@ -231,7 +231,7 @@ class MobileUserManager:
         """
         List of all the Track Viewers
 
-        :return: List of String representing usernames
+        :return: List of strings representing usernames
         """
         pattern = re.compile(self._VDQ_RE)
         match = pattern.match(self.view_definition_query)
