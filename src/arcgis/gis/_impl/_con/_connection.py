@@ -519,6 +519,7 @@ class Connection(object):
                 referer=self._referer,
                 expiration=self._expiration,
                 verify_cert=self._verify_cert,
+                proxies=proxies,
             )
         elif self._auth.lower() == "builtin":
             if self._check_product() == "SERVER":
