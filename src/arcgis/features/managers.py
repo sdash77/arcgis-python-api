@@ -2326,11 +2326,9 @@ class FeatureLayerCollectionManager(_GISResource):
 
         2. The original data used to publish this layer should be available on the portal
 
-        3. The data file used to overwrite should be of the same format and filename as the original that was used to
-        publish the layer
+        3. The data file used to overwrite should be of the same format and filename as the original that was used to publish the layer
 
-        4. The schema (column names, column data types) of the data_file should be the same as original. You can have
-        additional or fewer rows (features).
+        4. The schema (column names, column data types) of the data_file should be the same as original. You can have additional or fewer rows (features).
 
         In addition to overwriting the features, this operation also updates the data of the item used to published this
         layer.
