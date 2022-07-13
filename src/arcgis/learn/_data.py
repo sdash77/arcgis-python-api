@@ -1541,6 +1541,7 @@ def prepare_data(
             "Pix2Pix",
             "ChangeDetection",
             "ObjectTracking",
+            "PSETAE",
         ]
         and has_esri_files
     ):
@@ -2626,6 +2627,21 @@ def prepare_data(
             data._do_normalize = False
 
         return data
+
+    elif dataset_type == "PSETAE":
+        from ._data_utils.psetae_data import prepare_psetae_data
+
+        data = prepare_psetae_data(
+            path=path,
+            batch_size=batch_size,
+            val_split_pct=val_split_pct,
+            working_dir=working_dir,
+            class_mapping=class_mapping,
+            **kwargs,
+        )
+
+        return data
+
     elif dataset_type == "WNet_cGAN":
         from osgeo import gdal
         from ._utils.cyclegan import get_files, image_extensions
