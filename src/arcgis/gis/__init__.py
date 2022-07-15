@@ -13995,7 +13995,7 @@ class Item(dict):
         buildInitialCache = build_initial_cache
         if file_type is None:
             if self["type"] == "GeoPackage":
-                fileType = "gpkg"
+                fileType = "geoPackage"
             elif self["type"].lower().find("excel") > -1:
                 fileType = "excel"
             elif self["type"] == "Compact Tile Package":
