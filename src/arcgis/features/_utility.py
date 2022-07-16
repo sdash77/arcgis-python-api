@@ -18,7 +18,7 @@ class UtilityNetworkManager(object):
     ---------------------   -------------------------------------------
     url                     Required String. The web endpoint to the utility service.
     ---------------------   -------------------------------------------
-    version                 Optional Version. The `Version` class where the branch version will take place.
+    version                 Optional :class:`~arcgis.features._version.Version`. The `Version` class where the branch version will take place.
     ---------------------   -------------------------------------------
     gis                     Optional :class:`~arcgis.gis.GIS` . The `GIS` connection object.
     =====================   ===========================================
@@ -106,6 +106,7 @@ class UtilityNetworkManager(object):
 
                                 The location is ignored by the trace if the following
                                 required properties are not defined:
+
                                 * `percentAlong` : required for edge features and objects.
                                 * `terminalID` : required for junction features and objects.
 
@@ -157,17 +158,19 @@ class UtilityNetworkManager(object):
 
         :return:
             A dictionary with keys and value types of:
-            {
-                "traceResults": {
-                    "elements": list,
-                    "diagramName": str,
-                    "globalFunctionResults": list,
-                    "kFeaturesForKNNFound": bool,
-                    "startingPointsIgnored" bool,
-                    "warnings": list
-                }
-                "success": bool
-            }
+
+                | {
+                |    "traceResults": {
+                |        "elements": list,
+                |        "diagramName": str,
+                |        "globalFunctionResults": list,
+                |        "kFeaturesForKNNFound": bool,
+                |        "startingPointsIgnored" bool,
+                |        "warnings": list
+                |    }
+                |    "success": bool
+                | }
+
         """
         url = "%s/trace" % self._url
 
@@ -414,12 +417,14 @@ class UtilityNetworkManager(object):
 
         :return:
             A dictionary with keys and value types of:
-            {
-                "moment": int,
-                "url": str,
-                "subnetworkHasBeenDeleted": bool,
-                "success": bool
-            }
+
+                | {
+                |    "moment": int,
+                |    "url": str,
+                |    "subnetworkHasBeenDeleted": bool,
+                |    "success": bool
+                | }
+
         """
 
         url = "%s/exportSubnetwork" % self._url
@@ -460,16 +465,22 @@ class UtilityNetworkManager(object):
         moments_to_return                           Optional List of Strings. Represents the collection of validate moments to
                                                     return. Default is all.
 
-                                                    `Values: ["initialEnableTopology" | "fullValidateTopology" |
-                                                            "partialValidateTopology" | "enableTopology" | "disableTopology" |
-                                                            "definitionModification" | "updateIsConnected" | "indexUpdate" | "all" ]`
+                                                    Values:
+
+                                                            | "initialEnableTopology" | "fullValidateTopology" |
+                                                            | "partialValidateTopology" | "enableTopology" | "disableTopology" |
+                                                            | "definitionModification" | "updateIsConnected" | "indexUpdate" | "all"
         ------------------------------------        --------------------------------------------------------------------
         moment                                      Optional Integer. Specify the session moment if you do not want to use
                                                     the current moment.
         ====================================        ====================================================================
 
         :return:
-            A dictionary with keys and value types of: {"networkMoments": list, "validateNetworkTopology": bool, "success": bool}
+            A dictionary with keys and value types of:
+
+                | {"networkMoments": list,
+                | "validateNetworkTopology": bool,
+                | "success": bool}
         """
         url = "%s/queryNetworkMoments" % self._url
         params = {
@@ -541,10 +552,10 @@ class UtilityNetworkManager(object):
         ------------------------------------        --------------------------------------------------------------------
         containment_associations                    Optional Boolean. Whether to return containment associations.
         ------------------------------------        --------------------------------------------------------------------
-        count                                       **Required** Int. Represents the maximum number of geometries that
+        count                                       Required Int. Represents the maximum number of geometries that
                                                     can be synthesized and returned in the result.
         ------------------------------------        --------------------------------------------------------------------
-        extent                                      **Required** Dictionary. Represents the envelope of the area to
+        extent                                      Required Dictionary. Represents the envelope of the area to
                                                     synthesize association geometries.
 
                                                     .. code-block:: python
@@ -566,7 +577,11 @@ class UtilityNetworkManager(object):
         ====================================        ====================================================================
 
         :return:
-            A dictionary with keys and value types of: {"maxGeometryCountExceeded": bool, "associations": list, "success": bool}
+            A dictionary with keys and value types of:
+
+            | {"maxGeometryCountExceeded": bool,
+            | "associations": list,
+            | "success": bool}
         """
         url = "%s/synthesizeAssociationGeometries" % self._url
         params = {
@@ -857,21 +872,26 @@ class UtilityNetworkManager(object):
         and are marked as dirty. Completes a downward traversal, followed by an
         ascending traversal, with an exit filter on the first spatial feature in each
         direction.
+
         * firstContainers—Completes an ascending traversal on containment associations,
         with an exit filter on the first spatial feature.
+
         * spatialParents—Completes an ascending traversal on all association types,
         with an exit filter on the first spatial feature.
+
         * topContainers—Completes an ascending traversal to return associations and
         objects with no exit filter.
+
         * errorsNotModified—Completes a downward traversal to return associations in error,
         with an exit filter on the first spatial feature.
+
         * modifiedObjects—Completes a downward traversal to return associations
         that are dirty, with an exit filter on the first spatial feature.
 
         To create a custom traversal the `direction`, `dirty_filter`,
         `error_filter`, `stop_at_first_spatial`, and `max_depth` parameters can be used.
         When a traversal type is specified using the type parameter other than the default
-        "unspecified", these parameters are ignored.
+        ``unspecified``, these parameters are ignored.
 
         Available starting at Enterprise 10.9.1
 
@@ -884,7 +904,7 @@ class UtilityNetworkManager(object):
         **Argument**                                **Description**
         ------------------------------------        --------------------------------------------------------------------
         elements                                    Required List of Dictionary. The feature or object elements for which
-                                                    the association is querried.
+                                                    the association is queried.
 
                                                     .. code-block:: python
                                                         [{
@@ -1014,7 +1034,12 @@ class UtilityNetworkManager(object):
         ====================================        ====================================================================
 
         :return:
-            A dictionary with keys and value types of {"exceededTransferLimit": bool, "objects": list, "associations": list, "success": bool}
+            A dictionary with keys and value types of
+
+            | {"exceededTransferLimit": bool,
+            | "objects": list,
+            | "associations": list,
+            | "success": bool}
         """
 
         if self._gis.version >= [9, 2]:
@@ -1059,6 +1084,7 @@ class TraceConfigurationsManager(object):
     The traceConfigurations resource provides access to all trace configuration
     operations for a utility network. It is returned as an array of named trace
     configurations with the creator, name, and global ID for each.
+
 
     The TraceConfigurationsManager allows methods to be done on a trace configuration.
     """

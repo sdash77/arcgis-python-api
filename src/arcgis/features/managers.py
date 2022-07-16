@@ -36,7 +36,7 @@ class AttachmentManager(object):
     =====================   ===========================================
     **Inputs**              **Description**
     ---------------------   -------------------------------------------
-    layer                   Required Feature Layer. The Feature Layer
+    layer                   Required :class:`~arcgis.features.FeatureLayer` . The Feature Layer
                             that supports attachments.
     ---------------------   -------------------------------------------
     version                 Required Version or string. The `Version` class where
@@ -86,25 +86,35 @@ class AttachmentManager(object):
                                     related to the specified object Ids, only those records that
                                     conform to this expression will be returned.
 
-                                        Example: where="STATE_NAME = 'Alaska'".
+                                    Example:
+
+                                        where="STATE_NAME = 'Alaska'".
 
                                     The query results will return all attachments in Alaska.
         -------------------------   ---------------------------------------------------------------
         object_ids                  Optional list/string. The object IDs of this layer/table to be
                                     queried.
 
-                                        Syntax: objectIds=<objectId1>,<objectId2>
+                                    Syntax:
 
-                                        Example: objectIds=2
+                                        object_ids = <object_id1>, <object_id2>
+
+                                    Example:
+
+                                        object_ids = 2
 
                                     The query results will return attachments only for the specified object id.
         -------------------------   ---------------------------------------------------------------
         global_ids                  Optional list/string. The global IDs of this layer/table to be
                                     queried.
 
-                                        Syntax: globalIds=<globalIds1>,<globalIds2>
+                                    Syntax:
 
-                                        Example: globalIds=6s430c5a-kb75-4d52-a0db-b30bg060f0b9,35f0d027-8fc0-4905-a2f6-373c9600d017
+                                        global_ids = <globalIds1>,<globalIds2>
+
+                                    Example:
+
+                                        global_ids = 6s430c5a-kb75-4d52-a0db-b30bg060f0b9, 35f0d027-8fc0-4905-a2f6-373c9600d017
 
                                     The query results will return attachments only for specified
                                     global id.
@@ -120,13 +130,17 @@ class AttachmentManager(object):
                                     pptx, txt, zip, 7z, gz, gtar, tar, tgz, vrml, gml, json, xml,
                                     mdb, geodatabase
 
-                                        Example: attachment_types='image/jpeg'
+                                    Example:
+
+                                        attachment_types='image/jpeg'
         -------------------------   ---------------------------------------------------------------
         size                        Optional tuple/list. The file size of the attachment is
                                     specified in bytes. You can enter a file size range
                                     (1000,15000) to query for attachments with the specified range.
 
-                                        Example: size=1000,15000.
+                                    Example:
+
+                                        size= (1000,15000)
 
                                     The query results will return all attachments within the
                                     specified file size range (1000 - 15000) bytes.
@@ -135,7 +149,9 @@ class AttachmentManager(object):
                                     be assigned to the uploaded file.  By passing a keyword value,
                                     the values will be searched.
 
-                                        Example: keywords='airplanes'
+                                    Example:
+
+                                        keywords='airplanes'
         -------------------------   ---------------------------------------------------------------
         show_images                 Optional bool. The default is False, when the value is True,
                                     the results will be displayed as a HTML table. If the as_df is
@@ -439,13 +455,13 @@ class AttachmentManager(object):
         save_path: Optional[str] = None,
     ):
         """
-        Downloads attachment and returns it's path on disk.
+        Downloads attachment and returns its path on disk.
 
         The download tool works as follows:
 
         * If nothing is given, all attachments will be downloaded
 
-           - Example: download()
+          Example: download()
 
         * If a single oid and attachment_id are given, the single file will download
 
@@ -567,7 +583,7 @@ class AttachmentManager(object):
         ===============     ====================================================================
 
         :return:
-            A JSON Repsonse stating 'success' or 'error'
+            A JSON Response stating 'success' or 'error'
 
         """
         return self._layer._add_attachment(
@@ -597,7 +613,10 @@ class AttachmentManager(object):
         oid                     Required string of the object ID
         -------------------     --------------------------------------------------------------------
         attachment_id           Required string. Ids of attachment to delete.
-                                `Syntax: attachment_id = "<attachmentId1>, <attachmentId2>"
+
+                                Syntax:
+
+                                    attachment_id = "<attachmentId1>, <attachmentId2>"
         -------------------     --------------------------------------------------------------------
         return_moment           Optional boolean. Specify whether the response will report the time
                                 attachments were deleted. If True, the server will report the time
@@ -751,10 +770,11 @@ class SyncManager(object):
                                             tables that you want changed from the default are required.
 
                                             Example:
+
                                                 | layer_queries = {"0":{"queryOption": "useFilter", "useGeometry": true,
                                                 | "where": "requires_inspection = Yes"}}
         -----------------------------       --------------------------------------------------------------------
-        geometry_filter                     Optional dictionary. Spatial filter from :mod:`arcgis.geometry.filters` module
+        geometry_filter                     Optional dictionary. Spatial filter from :mod:`~arcgis.geometry.filters` module
                                             to filter results by a spatial relationship with another geometry.
         -----------------------------       --------------------------------------------------------------------
         replica_sr                          Optional WKID or a spatial reference JSON object. The spatial
@@ -768,7 +788,10 @@ class SyncManager(object):
                                             transport_type is esriTransportTypeUrl. If dataFormat is sqlite, the
                                             transportFormat will always be esriTransportTypeUrl regardless of how
                                             the parameter is set.
-                                            Values: esriTransportTypeUrl | esriTransportTypeEmbedded.
+
+                                            Values:
+
+                                                esriTransportTypeUrl | esriTransportTypeEmbedded.
         -----------------------------       --------------------------------------------------------------------
         return_attachments                  If True, attachments are added to the replica and returned in the
                                             response. Otherwise, attachments are not included. The default is
@@ -789,7 +812,10 @@ class SyncManager(object):
         attachments_sync_direction          Client can specify the attachmentsSyncDirection when creating a
                                             replica. AttachmentsSyncDirection is currently a createReplica property
                                             and cannot be overridden during sync.
-                                            Values: none, upload, bidirectional
+
+                                            Values:
+
+                                                none, upload, bidirectional
         -----------------------------       --------------------------------------------------------------------
         sync_model                          This parameter is used to indicate that the replica is being created
                                             for per-layer sync or per-replica sync. To determine which model types
@@ -812,14 +838,21 @@ class SyncManager(object):
                                             property of the feature service to see if this model type is supported.
 
                                             See the RollbackOnFailure and Sync Models topic for more details.
-                                            Values: perReplica | perLayer | none
+
+                                            Values:
+
+                                                perReplica | perLayer | none
 
                                             Example:
-                                                syncModel=perLayer
+
+                                                sync_model = perLayer
         -----------------------------       --------------------------------------------------------------------
         data_format                         The format of the replica geodatabase returned in the response. The
                                             default is json.
-                                            Values: filegdb, json, sqlite, shapefile
+
+                                            Values:
+
+                                                filegdb, json, sqlite, shapefile
         -----------------------------       --------------------------------------------------------------------
         replica_options                     This parameter instructs the create operation to create a new replica
                                             based on an existing replica definition (refReplicaId). It can be used
@@ -836,15 +869,21 @@ class SyncManager(object):
                                             when the targetType is server. If set, only bidirectional is supported
                                             when targetType is client. If set, only upload or download are
                                             supported when targetType is server.
-                                            Values: download | upload | bidirectional
-                                            Example: syncDirection=download
+
+                                            Values:
+
+                                                download | upload | bidirectional
+
+                                            Example:
+
+                                                sync_direction=download
         -----------------------------       --------------------------------------------------------------------
         target_type                         Can be set to either server or client. If not set, the default is
                                             client. This option was added at 10.5.1.
         -----------------------------       --------------------------------------------------------------------
         transformations                     Optional List. Introduced at 10.8. This parameter applies a datum
                                             transformation on each layer when the spatial reference used in
-                                            geometry is different than the layer's spatial reference.
+                                            geometry is different from the layer's spatial reference.
         -----------------------------       --------------------------------------------------------------------
         time_reference_unknown_client       Setting timeReferenceUnknownClient as true indicates that the client is
                                             capable of working with data values that are not in UTC. If its not set
@@ -970,7 +1009,9 @@ class SyncManager(object):
         ------------------     --------------------------------------------------------------------
         period_unit            Optional String.  The units of the retention period.
 
-                               Values: `days`, `seconds`, `minutes`, or `hours`
+                               Values:
+
+                                    `days`, `seconds`, `minutes`, or `hours`
 
         ------------------     --------------------------------------------------------------------
         min_server_gen         Optional String.  In addition to the retention period, the change
@@ -1650,7 +1691,10 @@ class FeatureLayerCollectionManager(_GISResource):
 
     @property
     def webhook_manager(self) -> WebHookServiceManager:
-        """ """
+        """
+        :return:
+            :class:`~arcgis.features.managers.WebHookServiceManager`
+        """
         if self._gis.version >= [8, 2] and self._gis._portal.is_arcgisonline:
             if self._wh is None:
                 self._wh = WebHookServiceManager(
@@ -1755,7 +1799,12 @@ class FeatureLayerCollectionManager(_GISResource):
         updateable               Optional bool. Default is True. Determines if view can update values
         --------------------     --------------------------------------------------------------------
         capabilities             Optional string. Specify capabilities as a comma separated string.
-                                 For example "Query, Update, Delete". Default is 'Query'.
+
+                                 Example:
+
+                                    "Query, Update, Delete"
+
+                                 Default is 'Query'.
         --------------------     --------------------------------------------------------------------
         view_layers              Optional list. Specify list of layers present in the :class:`~arcgis.features.FeatureLayerCollection`
                                  that you want in the view.
@@ -1776,7 +1825,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
         .. code-block:: python  (optional)
 
-           USAGE EXAMPLE: Create a veiw from a hosted feature layer
+           USAGE EXAMPLE: Create a view from a hosted feature layer
 
            crime_fl_item = gis.content.search("2012 crime")[0]
            crime_flc = FeatureLayerCollection.fromitem(crime_fl_item)
@@ -2189,7 +2238,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
         :return:
            JSON message as dictionary when `future=False`
-           when `future=True`, ```concurrent.futures.Future``` is returned.
+           when `future=True`, `Future <https://docs.python.org/3/library/concurrent.futures.html>`_ object is returned. Call ``result()`` to get the response.
 
         """
         definition = None

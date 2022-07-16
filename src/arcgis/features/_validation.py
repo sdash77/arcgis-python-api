@@ -72,24 +72,19 @@ class ValidationManager(object):
         ---------------     --------------------------------------------------------------------
         error_features      Required List.  The error features to be updated.
 
-                            Syntax
+                            Syntax:
 
 
-                            | [
-                            |    {
-                            |      "errorType" : "object" | "point" | "line" |
-                            |                   "polygon",
-                            |      "features" : [
-                            |        {
-                            |          "globalId" : <guid>,
-                            |          "fields" : {
-                            |            "name1" : <value1>,
-                            |            "name2" : <value2>
-                            |          }
-                            |        }
-                            |      ]
-                            |    }
-                            | ]
+                                | [{
+                                |      "errorType" : "object" | "point" | "line" |
+                                |                   "polygon",
+                                |      "features" : [
+                                |        {
+                                |          "globalId" : <guid>,
+                                |          "fields" : {
+                                |            "name1" : <value1>,
+                                |            "name2" : <value2>
+                                |          }}]}]
 
         ---------------     --------------------------------------------------------------------
         return_edits        Optional Boolean. `return_edits` returns features edited due to

@@ -21,7 +21,7 @@ class ParcelFabricManager(object):
     --------------------     --------------------------------------------------------------------
     gis                      Required :class:`~arcgis.gis.GIS`. The enterprise connection.
     --------------------     --------------------------------------------------------------------
-    version                  Required Version. This is the version object where the modification
+    version                  Required :class:`~arcgis.features._version.Version`. This is the version object where the modification
                              will occur.
     --------------------     --------------------------------------------------------------------
     flc                      Required :class:`~arcgis.features.FeatureLayerCollection` . This is the parent container for
@@ -277,7 +277,7 @@ class ParcelFabricManager(object):
                                     .. code-block:: python
 
                                         # Example:
-                                        >>> clipping_parcels = [{"id":"{D01D3F47-5FE2-4E39-8C07-E356B46DBC78}","layerId":"16"}]``
+                                        >>> clipping_parcels = [{"id":"{D01D3F47-5FE2-4E39-8C07-E356B46DBC78}","layerId":"16"}]
 
                                     .. note::
                                         Either `clipping_parcels` or `geometry` is required.
@@ -1103,7 +1103,7 @@ class ParcelFabricManager(object):
 
                                  Syntax
 
-                                    source_record=<guid>
+                                    target_record=<guid>
 
         --------------------     --------------------------------------------------------------------
         delete_source_record     Required Bool. Parameter indicating whether to delete the original

@@ -328,7 +328,7 @@ class Version(object):
         Provides access to a parcel fabric manager
 
         :return:
-            :class:`~arcgis.features.ParcelFabricManager`
+            :class:`~arcgis.features._parcel.ParcelFabricManager`
 
         """
         if (
@@ -401,9 +401,10 @@ class Version(object):
         ------------------      --------------------------------------------------------------------
         value                   Required string.
                                 Values:
-                                + edit - calls the `start_editing` method and creates a lock
-                                + read - calls the `start_reading` method and creates a lock
-                                + None - terminates all sessions and lets a user view the version information (default)
+
+                                    + edit - calls the `start_editing` method and creates a lock
+                                    + read - calls the `start_reading` method and creates a lock
+                                    + None - terminates all sessions and lets a user view the version information (default)
         ==================      ====================================================================
 
         """
@@ -756,15 +757,10 @@ class Version(object):
 
                                Syntax
 
-                                   | [
-                                   |
-                                   |      {
-                                   |
+                                   | [{
                                    |        "layerId": <layerId>,
                                    |        "objectIds":[<objectId>]
-                                   |
-                                   |     }
-                                   | ]
+                                   |     }]
 
 
 
@@ -850,7 +846,7 @@ class Version(object):
         - Updates - features that have different attributes or geometry in the current version than the default version
         - Deletions - features that are present in the default version but not in the current version
 
-        Both differences and conflicts will be returned. It is the clients
+        Both differences and conflicts will be returned. It is the clients'
         responsibility to determine which are differences, and which are conflicts.
 
         ===============     ====================================================================
@@ -964,18 +960,12 @@ class Version(object):
 
                             Parameter Format:
 
-                                | [
-                                |    {
+                                | [{
                                 |      "layerId" : <layerId>,
-                                |      "features" : [
-                                |        {
+                                |      "features" : [{
                                 |          "objectId" : <objectId>,
                                 |          "note" : string
-                                |
-                                |        }
-                                |      ]
-                                |    }
-                                | ]
+                                |        }]}]
 
                             The objectId key is required. The note parameter is optional.
         ---------------     --------------------------------------------------------------------
