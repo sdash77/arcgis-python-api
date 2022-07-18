@@ -2,10 +2,9 @@ import sys
 
 # sys.path.insert(0, r"/Users/cowboy/GitHub/np_geo/src")
 import requests
-import pandas as pd
 import platform
 import lxml
-from arcgis.gis import GIS, Item
+from arcgis.gis import GIS
 from arcgis.gis import ProfileManager
 
 test_items = [
@@ -42,7 +41,9 @@ def get_kube_credentials(
     site="https://ragsreports.ags.esri.com/information/11.0_users.htm", row=11
 ):
 
-    # for non-Windows users, use your avworld credentials below
+    # for non-Windows users, you will either have to set environment
+    # variables for your AVWORLD username & password, or enter them
+    # in via the command line every time you run the methods
 
     if platform.system() is "Windows":
         from requests_negotiate_sspi import HttpNegotiateAuth
@@ -50,8 +51,23 @@ def get_kube_credentials(
         page = requests.get(site, auth=HttpNegotiateAuth())
     else:
         from requests_ntlm import HttpNtlmAuth
+        import os
 
-        page = requests.get(site, auth=HttpNtlmAuth("USERNAME", "PASSWORD"))
+        env_dict = os.environ
+
+        # check if env variables exist, if not set them
+        # note: this does not set them permanently
+        if not "AVWORLD_USERNAME" in env_dict:
+            inp = input("Please enter your AVWORLD username: ")
+            os.environ["AVWORLD_USERNAME"] = inp
+
+        if not "AVWORLD_PASSWORD" in env_dict:
+            inp = input("Please enter your AVWORLD password: ")
+            os.environ["AVWORLD_PASSWORD"] = inp
+
+        av_username = env_dict.get("AVWORLD_USERNAME")
+        av_password = env_dict.get("AVWORLD_PASSWORD")
+        page = requests.get(site, auth=HttpNtlmAuth(av_username, av_password))
 
     # Important note: code is based off of current ragsreports page. If page
     # format or data gets changed, row parameter may have to be altered.
