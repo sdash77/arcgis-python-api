@@ -3,6 +3,7 @@ The System resource is a collection of miscellaneous server-wide
 resources such as server properties, server directories, the
 configuration store, Web Adaptors, and licenses.
 """
+from __future__ import annotations
 from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer
@@ -396,6 +397,56 @@ class SystemManager(BaseServer):
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
+    @property
+    def soap_config(self) -> dict:
+        """
+        The `soap_config` resource lists the URLs for domains allowed to
+        make cross-domain requests, including SOAP and OGC service requests.
+        If the value for `origins` is not updated, no restrictions on
+        cross-domain requests will be made.
+
+        The `set` operation allows you to restrict cross-domain requests to
+        specific domains, including SOAP and OGC service requests. By default,
+        no domains are restricted.
+
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        origins                Optional String. A comma-separated list of URLs of domains allowed
+                               to make requests. The default value, *, denotes all domains, meaning
+                               none are restricted.
+        ==================     ====================================================================
+
+        :returns: dict
+        """
+        url = self._url + "/handlers/soap/soaphandlerconfig"
+        return self._con.get(path=url, postdata=params)
+
+    # ----------------------------------------------------------------------
+    @soap_config.setter
+    def soap_config(self, origins: str):
+        """
+        The `set` operation allows you to restrict cross-domain requests to
+        specific domains, including SOAP and OGC service requests. By default,
+        no domains are restricted.
+
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        origins                Optional String. A comma-separated list of URLs of domains allowed
+                               to make requests. The default value, *, denotes all domains, meaning
+                               none are restricted.
+        ==================     ====================================================================
+
+        :returns: dict
+        """
+        params = {"f": "json", "allowedOrigins": origins}
+        url = self._url + "/handlers/soap/soaphandlerconfig/edit"
+        self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
     def _edit_services_directory(
         self,
         allowed_origins: str,
@@ -406,6 +457,9 @@ class SystemManager(BaseServer):
         jsapi_arcgis_css2: str,
         jsapi_arcgis_sdk: str,
         service_dir_enabled: str,
+        callback_functions: bool | None = None,
+        map_text: str | None = None,
+        arcgis_map: str | None = None,
     ) -> bool:
         """
         Allows you to update the Services Directory configuration.  You can do such thing as
@@ -441,6 +495,13 @@ class SystemManager(BaseServer):
         --------------------     --------------------------------------------------------------------
         service_dir_enabled      Required string. Flag to enable/disable the HTML view of the
                                  services directory.
+        --------------------     --------------------------------------------------------------------
+        callback_functions       Optional boolean. Introduced at 11.0. The flag to enable or disable
+                                 the ability to make JSONP callback requests. The JSONP callback
+                                 feature is enabled by default (true) and allows older clients a way
+                                 to make CORS requests without being restricted by the same-origin
+                                 policy. This is useful for older browsers or other clients that do
+                                 not supports CORS requests.
         ====================     ====================================================================
 
 
@@ -458,7 +519,12 @@ class SystemManager(BaseServer):
             "jsapi.arcgis.css2": jsapi_arcgis_css2,
             "jsapi.arcgis.sdk": jsapi_arcgis_sdk,
             "servicesDirEnabled": service_dir_enabled,
+            "callbackFunctionsEnabled": callback_functions,
         }
+        keys = list(params.keys())
+        for key in keys:
+            if params[key] is None:
+                del params[key]
         url = self._url + "/handlers/rest/servicesdirectory/edit"
         res = self._con.post(path=url, postdata=params)
         if "status" in res:
