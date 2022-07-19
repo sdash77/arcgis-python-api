@@ -4029,7 +4029,7 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
     applied to such Vector Tile Services.
     A :class:`~arcgis.mapping.VectorTileLayer` offers access to layer content.
 
-    .. note:: Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/VectorTileServer/
+    .. note:: Url must be admin url such as: https://services.myserver.com/arcgis/server/admin/services/serviceName.VectorTileServer/
     """
 
     def __init__(self, url, gis=None, vect_tile_lyr=None):
@@ -4139,6 +4139,28 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
         """
         vtl_service = _services.Service(self.url, self._gis)
         return vtl_service.delete()
+
+    # ----------------------------------------------------------------------
+    def rebuild_cache(self):
+        """
+        The rebuild_cache operation update the vector tile layer cache to reflect
+        any changes made to the feature layer used to publish this vector tile layer.
+        The results of the operation is a response indicating success, which
+        redirects you to the Job Statistics page, or failure.
+        """
+        url = (
+            self._gis.hosting_servers[0].url
+            + "/System/CachingControllers/GPServer/Manage%20Vector%20Tile%20Cache/submitJob"
+        )
+        params = {
+            "f": "json",
+            "serviceName": self.properties.serviceName,
+            "serviceFolder": "Hosted",
+            "minScale": None,
+            "maxScale": None,
+            "tilingFormat": "INDEXED",
+        }
+        return self._con.post(url, params)
 
 
 ###########################################################################
@@ -4283,6 +4305,9 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         cache levels in a Hosted Vector Tile Service. The results of the
         operation is a response indicating success and a url
         to the Job Statistics page, or failure.
+
+        It is recommended to use the `rebuild_cache` method when your layer has been
+        published through a Feature Layer since edits require regeneration of the tiles.
 
         ===============     ====================================================
         **Argument**        **Description**
