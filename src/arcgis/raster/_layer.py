@@ -13501,8 +13501,12 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
 
     @property
     def _rasters_list(self):
-        ras_list = self.get_field_values("Raster")
-        return ras_list
+        value_rasters = []
+        for i in range(0, len(self)):
+            value_rasters.append(
+                Raster(self._raster_collection[i]["Raster"])
+            )
+        return value_rasters
 
     def __iter__(self):
         return iter(self._df.to_dict("records", into=dict))
