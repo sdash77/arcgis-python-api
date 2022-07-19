@@ -2205,7 +2205,7 @@ def solve_vehicle_routing_problem(
                                               ----------------------------------------  ------------------------------------------------
                                               ALLOW_DEAD_ENDS_ONLY                      |ALLOW_DEAD_ENDS_ONLY|
                                                                                         U-turns are prohibited at all junctions and interesections
-                                                                                          nd are permitted only at dead ends.
+                                                                                        and are permitted only at dead ends.
                                               ----------------------------------------  ------------------------------------------------
                                               NO_UTURNS                                 U-turns are prohibited at all junctions, intersections, and dead-ends.
                                                                                         Note that even when this parameter value is chosen, a route can still
@@ -2219,21 +2219,21 @@ def solve_vehicle_routing_problem(
 
                                               Choice list:['High', 'Medium', 'Low']
 
-                                                * ``High`` - Places more importance on arriving at stops on time
-                                                  than on minimizing drive times. Organizations that make
-                                                  time-critical deliveries or that are very concerned with customer
-                                                  service would choose High.
+                                              * ``High`` - Places more importance on arriving at stops on time
+                                                than on minimizing drive times. Organizations that make
+                                                time-critical deliveries or that are very concerned with customer
+                                                service would choose High.
 
-                                                * ``Medium`` - This is the default value. Balances the importance
-                                                  of minimizing drive times and arriving within time
-                                                  windows.
+                                              * ``Medium`` - This is the default value. Balances the importance
+                                                of minimizing drive times and arriving within time
+                                                windows.
 
-                                                * ``Low`` - Places more importance on minimizing drive times and
-                                                  less on arriving at stops on time. You may want to use this setting
-                                                  if you have a growing backlog of service requests. For the purpose
-                                                  of servicing more orders in a day and reducing the backlog, you can
-                                                  choose Low even though customers might be inconvenienced with your
-                                                  late arrivals.
+                                              * ``Low`` - Places more importance on minimizing drive times and
+                                                less on arriving at stops on time. You may want to use this setting
+                                                if you have a growing backlog of service requests. For the purpose
+                                                of servicing more orders in a day and reducing the backlog, you can
+                                                choose Low even though customers might be inconvenienced with your
+                                                late arrivals.
 
                                               The default value is 'Medium'.
     --------------------------------------    ------------------------------------------------------------------------------------------------------------------------------------------
@@ -2302,6 +2302,7 @@ def solve_vehicle_routing_problem(
 
                                               Here are a few rules and options to consider when also
                                               working with route seed points:
+                                              
                                               * The reload/unload point, or renewal location, can be
                                                 different from the start or end depot.
 
@@ -2354,6 +2355,7 @@ def solve_vehicle_routing_problem(
                                               the lab within two hours.
                                               When specifying the order pairs, you need to set properties for each one, such as the names of the two orders,
                                               by using attributes. The order pairs can be specified with the following attributes:
+                                              
                                               * ``ObjectID``: The system-managed ID field.
 
                                               * ``FirstOrderName``: The name of the first order of the pair. This field is a
@@ -2451,6 +2453,7 @@ def solve_vehicle_routing_problem(
                                               completely or adds time or distance when it is crossed. The value
                                               for this attribute is specified as one of the following
                                               integers (use the numeric code, not the name in parentheses):
+                                              
                                                 * 0 (Restriction) - Prohibits travel through the barrier. The barrier
                                                   is referred to as a restriction point barrier since it acts as a
                                                   restriction.
@@ -2487,13 +2490,14 @@ def solve_vehicle_routing_problem(
                                                 The field value is specified as one of the following integers (use the numeric code,
                                                 not the name in parentheses):
 
-                                                  * 0 (Either side of vehicle): The barrier affects travel over the edge in both directions.
-                                                  * 1 (Right side of vehicle): Vehicles are only affected if the barrier is on their right
-                                                    side during the approach. Vehicles that traverse the same edge but approach the barrier
-                                                    on their left side are not affected by the barrier.
-                                                  * 2 (Left side of vehicle): Vehicles are only affected if the barrier is on their left side
-                                                    during the approach. Vehicles that traverse the same edge but approach the barrier on their
-                                                    right side are not affected by the barrier.
+                                                * 0 (Either side of vehicle): The barrier affects travel over the edge in both directions.
+                                                * 1 (Right side of vehicle): Vehicles are only affected if the barrier is on their right
+                                                  side during the approach. Vehicles that traverse the same edge but approach the barrier
+                                                  on their left side are not affected by the barrier.
+                                                * 2 (Left side of vehicle): Vehicles are only affected if the barrier is on their left side
+                                                  during the approach. Vehicles that traverse the same edge but approach the barrier on their
+                                                  right side are not affected by the barrier.
+                                                  
                                                 Since junctions are points and don't have a side, barriers on junctions affect all vehicles
                                                 regardless of the curb approach.
 
@@ -2547,6 +2551,7 @@ def solve_vehicle_routing_problem(
                                               number of streets intersected by all the lines cannot exceed
                                               500.
                                               When specifying the line barriers, you can set a name property for each one by using the following attribute:
+
                                               * ``Name``: The name of the barrier.
     --------------------------------------    ------------------------------------------------------------------------------------------------------------------------------------------
     polygon_barriers                          Optional :class:`~arcgis.features.FeatureSet` . Specify polygons that either completely restrict travel or
@@ -2561,6 +2566,7 @@ def solve_vehicle_routing_problem(
                                               When specifying the polygon barriers, you can set properties for each one,
                                               such as its name or barrier type, by using attributes.
                                               The polygon barriers can be specified with the following attributes:
+
                                               * ``Name``: The name of the barrier.
 
                                               * ``BarrierType``: Specifies whether the barrier restricts travel completely
@@ -2861,30 +2867,30 @@ def solve_vehicle_routing_problem(
                                               the following string values or their equivalent numeric values
                                               listed within the parentheses:
 
-                                                * ``PROHIBITED`` (-1) - Travel on the roads using the restriction is completely
-                                                  prohibited.
+                                              * ``PROHIBITED`` (-1) - Travel on the roads using the restriction is completely
+                                                prohibited.
 
-                                                * ``AVOID_HIGH`` (5) - It
-                                                  is highly unlikely for the tool to include in the route the roads
-                                                  that are associated with the restriction.
+                                              * ``AVOID_HIGH`` (5) - It
+                                                is highly unlikely for the tool to include in the route the roads
+                                                that are associated with the restriction.
 
-                                                * ``AVOID_MEDIUM`` (2) - It
-                                                  is unlikely for the tool to include in the route the roads that are
-                                                  associated with the restriction.
+                                              * ``AVOID_MEDIUM`` (2) - It
+                                                is unlikely for the tool to include in the route the roads that are
+                                                associated with the restriction.
 
-                                                * ``AVOID_LOW`` (1.3) - It
-                                                  is somewhat unlikely for the tool to include in the route the roads
-                                                  that are associated with the restriction.
+                                              * ``AVOID_LOW`` (1.3) - It
+                                                is somewhat unlikely for the tool to include in the route the roads
+                                                that are associated with the restriction.
 
-                                                * ``PREFER_LOW`` (0.8) - It
-                                                  is somewhat likely for the tool to include in the route the roads
-                                                  that are associated with the restriction.
+                                              * ``PREFER_LOW`` (0.8) - It
+                                                is somewhat likely for the tool to include in the route the roads
+                                                that are associated with the restriction.
 
-                                                * ``PREFER_MEDIUM`` (0.5) - It is likely for the tool to include in the route the roads that
-                                                  are associated with the restriction.
+                                              * ``PREFER_MEDIUM`` (0.5) - It is likely for the tool to include in the route the roads that
+                                                are associated with the restriction.
 
-                                                * ``PREFER_HIGH`` (0.2) - It is highly likely for the tool to include in the route the roads
-                                                  that are associated with the restriction.
+                                              * ``PREFER_HIGH`` (0.2) - It is highly likely for the tool to include in the route the roads
+                                                that are associated with the restriction.
 
                                               In most cases, you can use the default value, PROHIBITED,
                                               for the Restriction Usage if the restriction is dependent on a
@@ -3079,8 +3085,9 @@ def solve_vehicle_routing_problem(
 
                                               Choice list:['NA Desktop', 'NA Navigation']
 
-                                              ``NA Desktop``: Generates turn-by-turn directions suitable for printing.
-                                              ``NA Navigation``: Generates turn-by-turn directions designed for an in-vehicle navigation device.
+                                              * `NA Desktop`: Generates turn-by-turn directions suitable for printing.
+
+                                              * `NA Navigation`: Generates turn-by-turn directions designed for an in-vehicle navigation device.
     --------------------------------------    ------------------------------------------------------------------------------------------------------------------------------------------
     travel_mode                               Optional string. Specify the mode of transportation to model in the analysis. Travel modes are managed in ArcGIS Online and can be configured by the administrator of your
                                               organization to better reflect your organization's workflows. You need to specify the name of a travel mode supported by your organization.
@@ -3183,15 +3190,16 @@ def solve_vehicle_routing_problem(
                                               `False` - The solve operation will fail when any invalid orders are encountered. An invalid order is an order that the VRP solver can't reach. An order may be unreachable for a variety of reasons, including if it's located on a prohibited network element, it isn't located on the network at all, or it's located on a disconnected portion of the network.
     ======================================    ==========================================================================================================================================
 
-      :return: the following as a named tuple:
+    :return: the following as a named tuple:
 
-      * out_unassigned_stops - Output Unassigned Stops as a FeatureSet
-      * out_stops - Output Stops as a FeatureSet
-      * out_routes - Output Routes as a FeatureSet
-      * out_directions - Output Directions as a FeatureSet
-      * solve_succeeded - Solve Succeeded as a bool
-      * out_network_analysis_layer - Output Network Analysis Layer as a file
-      * out_route_data - Output Route Data as a file
+    * out_unassigned_stops - Output Unassigned Stops as a FeatureSet
+    * out_stops - Output Stops as a FeatureSet
+    * out_routes - Output Routes as a FeatureSet
+    * out_directions - Output Directions as a FeatureSet
+    * solve_succeeded - Solve Succeeded as a bool
+    * out_network_analysis_layer - Output Network Analysis Layer as a file
+    * out_route_data - Output Route Data as a file
+
     """
     if gis is None:
         gis = arcgis.env.active_gis

@@ -206,68 +206,64 @@ def generate_origin_destination_cost_matrix(
     ======================================  ==========================================================================================================================================
     **Argument**                            **Description**
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    origins                                 Required FeatureSet. Specify locations that function as starting points in generating the paths to destinations.
+    origins                                 Required :class:`~arcgis.features.FeatureSet` . Specify locations that function as starting points in generating the paths to destinations.
                                             You can add up to 200 origins.
                                             When specifying the origins, you can set properties for each one, such as its name or the number of destinations
-                                            to find from the origin, by using attributes. The origins can be specified with the following attributes
-                                                * ``Name`` - The name of the origin. The name can be an unique identifier for the origin. The name is included in
-                                                  the output lines (as the OriginName field) and in the output origins (as the Name field) and can be used to join
-                                                  additional information from the tool outputs to the attributes of your origins.
-                                                  If the name is not specified, a unique name prefixed with Location is automatically generated in the output origins.
-                                                  An auto-generated origin name is not included in the output lines.
-                                                * ``TargetDestinationCount``-The maximum number of
-                                                  destinations that must be found for the origin. If a value is not specified, the value from the Number of Destinations
-                                                  to Find parameter is used. Cutoff-Specify the travel time or travel distance value at which to stop searching for
-                                                  destinations from the origin. Any destination beyond the cutoff value will not be considered.  The value needs to be
-                                                  in the units specified by the Time Units parameter if the impedance attribute in your travel mode is time based or in
-                                                  the units specified by the Distance Units parameter if the impedance attribute in your travel mode is distance based.
-                                                  If a value is not specified, the value from the Cutoff parameter is used.
-                                                * ``CurbApproach`` - Specifies the direction a vehicle may depart from the origin. The field value is specified as one of the
-                                                  following integers (use the numeric code, not the name in parentheses):
-                                                    * 0 (Either side of vehicle)-The vehicle can depart the origin in either direction, so a U-turn is allowed
-                                                      at the origin. This setting can be chosen if it is possible and practical for your vehicle to turn around at the origin.
-                                                      This decision may depend on the width of the road and the amount of traffic or whether the origin has a parking lot where
-                                                      vehicles can enter and turn around.
-                                                    * 1 ( Right side of vehicle)-When the vehicle departs the origin, the origin must be on
-                                                      the right side of the vehicle. A U-turn is prohibited. This is typically used for vehicles such as buses that must depart
-                                                      from the bus stop on the right-hand side.
-                                                    * 2 (Left side of vehicle)-When the vehicle departs the origin, the curb must be
-                                                      on the left side of the vehicle. A U-turn is prohibited. This is typically used for vehicles such as buses that must depart
-                                                      from the bus stop on the left-hand side.
-                                                    * 3 (No U-Turn)-For this tool, the No U-turn (3) value functions the same as Either
-                                                      side of vehicle. The CurbApproach property is designed to work with both kinds of national driving standards: right-hand traffic
-                                                      (United States) and left-hand traffic (United Kingdom). First, consider an origin on the left side of a vehicle. It is always
-                                                      on the left side regardless of whether the vehicle travels on the left or right half of the road. What may change with national
-                                                      driving standards is your decision to depart the origin from one of two directions, that is, so it ends up on the right or left
-                                                      side of the vehicle. For example, if you want to depart from an origin and not have a lane of traffic between the vehicle and the
-                                                      origin, you would choose Right side of vehicle (1) in the United States but Left side of vehicle (2) in the United Kingdom.
+                                            to find from the origin, by using attributes. The origins can be specified with the following attributes:
+
+                                            * ``Name`` - The name of the origin. The name can be an unique identifier for the origin. The name is included in the output lines (as the OriginName field) and in the output origins (as the Name field) and can be used to join additional information from the tool outputs to the attributes of your origins. If the name is not specified, a unique name prefixed with Location is automatically generated in the output origins. An auto-generated origin name is not included in the output lines.
+                                            * ``TargetDestinationCount``-The maximum number of
+                                              destinations that must be found for the origin. If a value is not specified, the value from the Number of Destinations
+                                              to Find parameter is used. Cutoff-Specify the travel time or travel distance value at which to stop searching for
+                                              destinations from the origin. Any destination beyond the cutoff value will not be considered.  The value needs to be
+                                              in the units specified by the Time Units parameter if the impedance attribute in your travel mode is time based or in
+                                              the units specified by the Distance Units parameter if the impedance attribute in your travel mode is distance based.
+                                              If a value is not specified, the value from the Cutoff parameter is used.
+                                            * ``CurbApproach`` - Specifies the direction a vehicle may depart from the origin. The field value is specified as one of the
+                                              following integers (use the numeric code, not the name in parentheses):
+                                              * 0 (Either side of vehicle)-The vehicle can depart the origin in either direction, so a U-turn is allowed
+                                                at the origin. This setting can be chosen if it is possible and practical for your vehicle to turn around at the origin.
+                                                This decision may depend on the width of the road and the amount of traffic or whether the origin has a parking lot where
+                                                vehicles can enter and turn around.
+                                              * 1 ( Right side of vehicle)-When the vehicle departs the origin, the origin must be on
+                                                the right side of the vehicle. A U-turn is prohibited. This is typically used for vehicles such as buses that must depart
+                                                from the bus stop on the right-hand side.
+                                              * 2 (Left side of vehicle)-When the vehicle departs the origin, the curb must be
+                                                on the left side of the vehicle. A U-turn is prohibited. This is typically used for vehicles such as buses that must depart
+                                                from the bus stop on the left-hand side.
+                                              * 3 (No U-Turn)-For this tool, the No U-turn (3) value functions the same as Either
+                                                side of vehicle. The CurbApproach property is designed to work with both kinds of national driving standards: right-hand traffic
+                                                (United States) and left-hand traffic (United Kingdom). First, consider an origin on the left side of a vehicle. It is always
+                                                on the left side regardless of whether the vehicle travels on the left or right half of the road. What may change with national
+                                                driving standards is your decision to depart the origin from one of two directions, that is, so it ends up on the right or left
+                                                side of the vehicle. For example, if you want to depart from an origin and not have a lane of traffic between the vehicle and the
+                                                origin, you would choose Right side of vehicle (1) in the United States but Left side of vehicle (2) in the United Kingdom.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    destinations                            Required FeatureSet. Specify locations that function as ending points in generating the paths from origins.
+    destinations                            Required :class:`~arcgis.features.FeatureSet` . Specify locations that function as ending points in generating the paths from origins.
                                             You can add up to 200 destinations. When specifying the destinations, you can set properties for each one, such as its name,
                                             by using attributes. The destinations can be specified with the following attributes:
-                                                * ``Name`` - The name of the destination. The name can be an unique identifier for the destination. The name is included in
-                                                  the output lines (as the DestinationName field) and in the output destinations (as the Name field) and can be used to join
-                                                  additional information from the tool outputs to the attributes of your destinations.
-                                                  If the name is not specified, a unique name prefixed with Location is automatically generated in the output destinations.
-                                                  An auto-generated destination name is not included in the output lines.
-                                                * ``CurbApproach`` - Specifies the direction a vehicle may arrive at the destination. The field value is specified as one of the following
-                                                  integers (use the numeric code, not the name in parentheses):
-                                                * 0 (Either side of vehicle)-The vehicle can arrive the destination in either direction, so a U-turn is allowed at the destination.
-                                                  This setting can be chosen if it is possible and practical for your vehicle to turn around at the destination. This decision may
-                                                  depend on the width of the road and the amount of traffic or whether the destination has a parking lot where vehicles can enter
-                                                  and turn around.
-                                                * 1 ( Right side of vehicle)-When the vehicle arrives at the destination, the destination must be on the right side
-                                                  of the vehicle. A U-turn is prohibited. This is typically used for vehicles such as buses that must arrive at the bus stop on the
-                                                  right-hand side.
-                                                * 2 (Left side of vehicle)-When the vehicle arrives at the destination, the curb must be on the left side of the vehicle.
-                                                  A U-turn is prohibited. This is typically used for vehicles such as buses that must arrive at the bus stop on the left-hand side.
-                                                * 3 (No U-Turn)-For this tool, the No U-turn (3) value functions the same as Either side of vehicle. The CurbApproach property is
-                                                  designed to work with both kinds of national driving standards: right-hand traffic (United States) and left-hand traffic (United Kingdom).
-                                                  First, consider a destination on the left side of a vehicle. It is always on the left side regardless of whether the vehicle travels
-                                                  on the left or right half of the road. What may change with national driving standards is your decision to arrive at the destination
-                                                  from one of two directions, that is, so it ends up on the right or left side of the vehicle. For example, if you want to arrive at the
-                                                  destination and not have a lane of traffic between the vehicle and the destination, you would choose Right side of vehicle (1) in the
-                                                  United States but Left side of vehicle (2) in the United Kingdom.
+                                            
+                                            * ``Name`` - The name of the destination. The name can be an unique identifier for the destination. The name is included in
+                                              the output lines (as the DestinationName field) and in the output destinations (as the Name field) and can be used to join
+                                              additional information from the tool outputs to the attributes of your destinations.
+                                              If the name is not specified, a unique name prefixed with Location is automatically generated in the output destinations.
+                                              An auto-generated destination name is not included in the output lines.
+                                            * ``CurbApproach`` - Specifies the direction a vehicle may arrive at the destination. The field value is specified as one of the following
+                                              integers (use the numeric code, not the name in parentheses):
+                                              
+                                              * 0 (Either side of vehicle)- The vehicle can arrive the destination in either direction, so a U-turn is allowed at the destination. This setting can be chosen if it is possible and practical for your vehicle to turn around at the destination. This decision may depend on the width of the road and the amount of traffic or whether the destination has a parking lot where vehicles can enter and turn around.
+                                              * 1 ( Right side of vehicle)- When the vehicle arrives at the destination, the destination must be on the right side
+                                                of the vehicle. A U-turn is prohibited. This is typically used for vehicles such as buses that must arrive at the bus stop on the
+                                                right-hand side.
+                                              * 2 (Left side of vehicle)-When the vehicle arrives at the destination, the curb must be on the left side of the vehicle.
+                                                A U-turn is prohibited. This is typically used for vehicles such as buses that must arrive at the bus stop on the left-hand side.
+                                              * 3 (No U-Turn)-For this tool, the No U-turn (3) value functions the same as Either side of vehicle. The CurbApproach property is
+                                                designed to work with both kinds of national driving standards: right-hand traffic (United States) and left-hand traffic (United Kingdom).
+                                                First, consider a destination on the left side of a vehicle. It is always on the left side regardless of whether the vehicle travels
+                                                on the left or right half of the road. What may change with national driving standards is your decision to arrive at the destination
+                                                from one of two directions, that is, so it ends up on the right or left side of the vehicle. For example, if you want to arrive at the
+                                                destination and not have a lane of traffic between the vehicle and the destination, you would choose Right side of vehicle (1) in the
+                                                United States but Left side of vehicle (2) in the United Kingdom.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     travel_mode                             Optional string. Specify the mode of transportation to model in the analysis. Travel modes are managed in ArcGIS Online and can be configured by the administrator of your
                                             organization to better reflect your organization's workflows. You need to specify the name of a travel mode supported by your organization.
@@ -326,52 +322,40 @@ def generate_origin_destination_cost_matrix(
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     time_zone_for_time_of_day               Optional string. Specifies the time zone of the Time of Day parameter.
 
-                                                * ``Geographically Local``: The Time of Day parameter refers to the time zone in which the first stop of a route is located.  If you are generating many
-                                                  routes that start in multiple times zones,  the start times are staggered in Coordinated Universal Time (UTC). For example, a Time of Day value of
-                                                  10:00 a.m., 2 January, would mean a start time of  10:00 a.m. Eastern Standard Time (3:00 p.m. UTC) for routes beginning in the Eastern Time Zone
-                                                  and 10:00 a.m. Central Standard Time (4:00 p.m. UTC) for routes beginning in the Central Time Zone. The start times are offset by one hour in UTC.
-                                                  The arrive and depart times and dates recorded in the output Stops feature class will refer to the local time zone of the first stop for each route.
-                                                * ``UTC``: The Time of Day parameter refers to Coordinated Universal Time (UTC). Choose this option if you want to generate a route for a specific time,
-                                                  such as now, but aren't certain in which time zone the first stop will be located. If you are generating many routes spanning multiple times zones,
-                                                  the start times in UTC are simultaneous. For example, a Time of Day value of 10:00 a.m., 2 January, would mean a start time of  5:00 a.m. Eastern Standard
-                                                  Time (UTC-5:00) for routes beginning in the Eastern Time Zone and 4:00 a.m. Central Standard Time (UTC-6:00) for routes beginning in the Central Time
-                                                  Zone. Both routes would start at 10:00 a.m. UTC. The arrive and depart times and dates recorded in the output Stops feature class will refer to UTC.
+                                            * ``Geographically Local``: The Time of Day parameter refers to the time zone in which the first stop of a route is located.  If you are generating many
+                                              routes that start in multiple times zones,  the start times are staggered in Coordinated Universal Time (UTC). For example, a Time of Day value of
+                                              10:00 a.m., 2 January, would mean a start time of  10:00 a.m. Eastern Standard Time (3:00 p.m. UTC) for routes beginning in the Eastern Time Zone
+                                              and 10:00 a.m. Central Standard Time (4:00 p.m. UTC) for routes beginning in the Central Time Zone. The start times are offset by one hour in UTC.
+                                              The arrive and depart times and dates recorded in the output Stops feature class will refer to the local time zone of the first stop for each route.
+                                            * ``UTC``: The Time of Day parameter refers to Coordinated Universal Time (UTC). Choose this option if you want to generate a route for a specific time,
+                                              such as now, but aren't certain in which time zone the first stop will be located. If you are generating many routes spanning multiple times zones,
+                                              the start times in UTC are simultaneous. For example, a Time of Day value of 10:00 a.m., 2 January, would mean a start time of  5:00 a.m. Eastern Standard
+                                              Time (UTC-5:00) for routes beginning in the Eastern Time Zone and 4:00 a.m. Central Standard Time (UTC-6:00) for routes beginning in the Central Time
+                                              Zone. Both routes would start at 10:00 a.m. UTC. The arrive and depart times and dates recorded in the output Stops feature class will refer to UTC.
 
                                             Choice list:['Geographically Local', 'UTC']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    point_barriers                          Optional FeatureSet. Specify one or more points to act as temporary restrictions or represent additional time or
+    point_barriers                          Optional :class:`~arcgis.features.FeatureSet`  . Specify one or more points to act as temporary restrictions or represent additional time or
                                             distance that may be required to travel on the underlying streets. For example, a point
                                             barrier can be used to represent a fallen tree along a street or time delay spent at a railroad crossing.
 
                                             The tool imposes a limit of 250 points that can be added as barriers.
                                             When specifying the point barriers, you can set properties for each one, such as its name or barrier type,
                                             by using attributes. The point barriers can be specified with the following attributes:
-                                                * ``Name``: The name of the barrier.
-                                                * ``BarrierType``: Specifies whether the point barrier restricts travel
-                                                  completely or adds time or distance when it is crossed. The value
-                                                  for this attribute is specified as one of the following
-                                                  integers (use the numeric code, not the name in parentheses):
+                                            
+                                            * ``Name``: The name of the barrier.
+                                            * ``BarrierType``: Specifies whether the point barrier restricts travel completely or adds time or distance when it is crossed. The value for this attribute is specified as one of the following integers (use the numeric code, not the name in parentheses):
 
-                                                    * 0 (Restriction)-Prohibits travel through the barrier. The barrier
-                                                      is referred to as a restriction point barrier since it acts as a
-                                                      restriction.
-
-                                                    * 2 (Added Cost)-Traveling through the barrier increases the travel
-                                                      time or distance by the amount specified in the
-                                                * ``Additional_Time`` or Additional_Distance field. This barrier type is
-                                                  referred to as an added-cost point barrier.
-                                                * ``Additional_Time``: Indicates how much travel time is added when the
-                                                  barrier is traversed. This field is applicable only for added-cost
-                                                  barriers and only if the measurement units are time based. This field
-                                                  value must be greater than or equal to zero, and its units are the same as those specified in the
-                                                  Measurement Units parameter.
-                                                * ``Additional_Distance``: Indicates how much distance is added when the barrier is
-                                                  traversed. This field is applicable only for added-cost barriers
-                                                  and only if the measurement units are distance based. The field value
-                                                  must be greater than or equal to zero, and its units are the same as those specified in the
-                                                  Measurement Units parameter.
+                                              * 0 (Restriction)-Prohibits travel through the barrier. The barrier
+                                                is referred to as a restriction point barrier since it acts as a
+                                                restriction.
+                                              * 2 (Added Cost)-Traveling through the barrier increases the travel
+                                                time or distance by the amount specified in the ``Additional_Time`` or ``Additional_Distance`` field. This barrier type is referred to as an added-cost point barrier.
+                                                
+                                            * ``Additional_Time``: Indicates how much travel time is added when the barrier is traversed. This field is applicable only for added-cost barriers and only if the measurement units are time based. This field value must be greater than or equal to zero, and its units are the same as those specified in the Measurement Units parameter.
+                                            * ``Additional_Distance``: Indicates how much distance is added when the barrier is traversed. This field is applicable only for added-cost barriers and only if the measurement units are distance based. The field value must be greater than or equal to zero, and its units are the same as those specified in the Measurement Units parameter.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    line_barriers                           Optional FeatureSet. Specify one or more lines that prohibit travel anywhere
+    line_barriers                           Optional :class:`~arcgis.features.FeatureSet`  . Specify one or more lines that prohibit travel anywhere
                                             the lines intersect the streets. For example, a parade or protest
                                             that blocks traffic across several street segments can be modeled
                                             with a line barrier. A line barrier can also quickly fence off
@@ -385,9 +369,10 @@ def generate_origin_destination_cost_matrix(
                                             number of streets intersected by all the lines cannot exceed
                                             500.
                                             When specifying the line barriers, you can set a name property for each one by using the following attribute:
-                                                * ``Name``: The name of the barrier.
+                                            
+                                            * ``Name``: The name of the barrier.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    polygon_barriers                        Optional FeatureSet. Specify polygons that either completely restrict travel or
+    polygon_barriers                        Optional :class:`~arcgis.features.FeatureSet`  . Specify polygons that either completely restrict travel or
                                             proportionately scale the time or distance required to travel on
                                             the streets intersected by the polygons.
 
@@ -398,37 +383,37 @@ def generate_origin_destination_cost_matrix(
                                             polygons should not exceed 2,000.
                                             When specifying the polygon barriers, you can set properties for each one, such as its name or barrier type,
                                             by using attributes. The polygon barriers can be specified with the following attributes:
-                                                * ``Name``: The name of the barrier.
-                                                * ``BarrierType``: Specifies whether the barrier restricts travel completely
-                                                  or scales the time or distance for traveling through it. The field
-                                                  value is specified as one of the following integers (use the numeric code, not the name in parentheses):
+                                            
+                                            * ``Name``: The name of the barrier.
+                                            * ``BarrierType``: Specifies whether the barrier restricts travel completely or scales the time or distance for traveling through it. The field value is specified as one of the following integers (use the numeric code, not the name in parentheses):
 
-                                                    * 0 (Restriction)-Prohibits traveling through any part of the barrier.
-                                                     The barrier is referred to as a restriction polygon barrier since it
-                                                     prohibits traveling on streets intersected by the barrier. One use
-                                                     of this type of barrier is to model floods covering areas of the
-                                                     street that make traveling on those streets impossible.
-
-                                                    * 1 (Scaled Cost)-Scales the time or distance required to travel the
-                                                      underlying streets by a factor specified using the ScaledTimeFactor
-                                                      or ScaledDistanceFactor fields. If the streets are partially
-                                                      covered by the barrier, the travel time or distance is apportioned
-                                                      and then scaled. For example, a factor 0.25 would mean that travel
-                                                      on underlying streets is expected to be four times faster than
-                                                      normal. A factor of 3.0 would mean it is expected to take three
-                                                      times longer than normal to travel on underlying streets. This
-                                                      barrier type is referred to as a scaled-cost polygon barrier. It
-                                                      might be used to model storms that reduce travel speeds in specific
-                                                      regions.
-                                                * ``ScaledTimeFactor``: This is the factor by which the travel time of the streets
-                                                  intersected by the barrier is multiplied. This field is applicable
-                                                  only for scaled-cost barriers and only if the measurement units are time
-                                                  based. The field value must be greater than zero.
-                                                * ``ScaledDistanceFactor``: This is the factor by which the distance of the streets
-                                                  intersected by the barrier is multiplied. This attribute is
-                                                  applicable only for scaled-cost barriers and only if the measurement
-                                                  units are distance based. The attribute value must be greater than
-                                                  zero.
+                                              * 0 (Restriction)-Prohibits traveling through any part of the barrier.
+                                               The barrier is referred to as a restriction polygon barrier since it
+                                               prohibits traveling on streets intersected by the barrier. One use
+                                               of this type of barrier is to model floods covering areas of the
+                                               street that make traveling on those streets impossible.
+                                              
+                                              * 1 (Scaled Cost)-Scales the time or distance required to travel the
+                                                underlying streets by a factor specified using the ScaledTimeFactor
+                                                or ScaledDistanceFactor fields. If the streets are partially
+                                                covered by the barrier, the travel time or distance is apportioned
+                                                and then scaled. For example, a factor 0.25 would mean that travel
+                                                on underlying streets is expected to be four times faster than
+                                                normal. A factor of 3.0 would mean it is expected to take three
+                                                times longer than normal to travel on underlying streets. This
+                                                barrier type is referred to as a scaled-cost polygon barrier. It
+                                                might be used to model storms that reduce travel speeds in specific
+                                                regions.
+                                                
+                                            * ``ScaledTimeFactor``: This is the factor by which the travel time of the streets
+                                              intersected by the barrier is multiplied. This field is applicable
+                                              only for scaled-cost barriers and only if the measurement units are time
+                                              based. The field value must be greater than zero.
+                                            * ``ScaledDistanceFactor``: This is the factor by which the distance of the streets
+                                              intersected by the barrier is multiplied. This attribute is
+                                              applicable only for scaled-cost barriers and only if the measurement
+                                              units are distance based. The attribute value must be greater than
+                                              zero.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     uturn_at_junctions                      Optional string. The U-Turn policy at junctions. Allowing U-turns implies the solver can turn around at a
                                             junction and double back on the same street.
@@ -672,7 +657,7 @@ def generate_origin_destination_cost_matrix(
                                             'Through Traffic Prohibited', 'Truck with Trailers Restriction', 'Use Preferred Hazmat Routes', 'Use Preferred Truck Routes',
                                             'Walking', 'Weight Restriction', 'Weight per Axle Restriction', 'Width Restriction']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    attribute_parameter_values              Optional FeatureSet. Specify additional values required by some restrictions, such as the weight of a vehicle
+    attribute_parameter_values              Optional :class:`~arcgis.features.FeatureSet`  . Specify additional values required by some restrictions, such as the weight of a vehicle
                                             for Weight Restriction. You can also use the attribute parameter to specify whether any restriction prohibits,
                                             avoids, or prefers travel on roads that use the restriction. If the restriction is
                                             meant to avoid or prefer roads, you can further specify the degree
@@ -681,160 +666,152 @@ def generate_origin_destination_cost_matrix(
                                             prefer them.
                                             The value you provide for this parameter is ignored unless Travel Mode is set to Custom, which is the default value.
                                             If you specify the Attribute Parameter Values parameter from a feature class, the field names on the feature class must match the fields as described below:
-                                              * ``AttributeName``: Lists the name of the restriction.
-                                              * ``ParameterName``: Lists the name of the parameter associated with the restriction. A restriction can have one or more ParameterName field
-                                                values based on its intended use.
-                                              * ``ParameterValue``: The value for ``ParameterName`` used by the tool when evaluating the restriction.
-                                                Attribute Parameter Values is dependent on the Restrictions parameter. The ParameterValue field is applicable only
-                                                if the restriction name is specified as the value for the
-                                                Restrictions parameter.
-                                                In Attribute Parameter Values, each restriction (listed as AttributeName) has a ParameterName field
-                                                value, Restriction Usage, that specifies whether the restriction
-                                                prohibits, avoids, or prefers travel on the roads associated with
-                                                the restriction and the degree to which the roads are avoided or
-                                                preferred. The Restriction Usage ParameterName can be assigned any of
-                                                the following string values or their equivalent numeric values
-                                                listed within the parentheses:
-                                                  * ``PROHIBITED`` (-1) - Travel on the roads using the restriction is completely
-                                                    prohibited.
-                                                   * ``AVOID_HIGH`` (5) - It
-                                                    is highly unlikely for the tool to include in the route the roads
-                                                    that are associated with the restriction.
-                                                   * ``AVOID_MEDIUM`` (2) - It
-                                                    is unlikely for the tool to include in the route the roads that are
-                                                    associated with the restriction.
-                                                   * ``AVOID_LOW`` (1.3) - It
-                                                    is somewhat unlikely for the tool to include in the route the roads
-                                                    that are associated with the restriction.
-                                                   * ``PREFER_LOW`` (0.8) - It
-                                                    is somewhat likely for the tool to include in the route the roads
-                                                    that are associated with the restriction.
-                                                   * ``PREFER_MEDIUM`` (0.5) - It is likely for the tool to include in the route the roads that
-                                                    are associated with the restriction.
-                                                   * ``PREFER_HIGH`` (0.2) - It is highly likely for the tool to include in the route the roads
-                                                    that are associated with the restriction.
-                                                In most cases, you can use the default value, PROHIBITED,
-                                                for the Restriction Usage if the restriction is dependent on a
-                                                vehicle-characteristic such as vehicle height. However, in some
-                                                cases, the value for Restriction Usage depends on your routing
-                                                preferences. For example, the Avoid Toll Roads restriction has the
-                                                default value of AVOID_MEDIUM for the Restriction Usage parameter.
-                                                This means that when the restriction is used, the tool will try to
-                                                route around toll roads when it can. AVOID_MEDIUM also indicates
-                                                how important it is to avoid toll roads when finding the best
-                                                route; it has a medium priority. Choosing AVOID_LOW would put lower
-                                                importance on avoiding tolls; choosing AVOID_HIGH instead would
-                                                give it a higher importance and thus make it more acceptable for
-                                                the service to generate longer routes to avoid tolls. Choosing
-                                                PROHIBITED would entirely disallow travel on toll roads, making it
-                                                impossible for a route to travel on any portion of a toll road.
-                                                Keep in mind that avoiding or prohibiting toll roads, and thus
-                                                avoiding toll payments, is the objective for some; in contrast,
-                                                others prefer to drive on toll roads because avoiding traffic is
-                                                more valuable to them than the money spent on tolls. In the latter
-                                                case, you would choose PREFER_LOW, PREFER_MEDIUM, or PREFER_HIGH as
-                                                the value for Restriction Usage. The higher the preference, the
-                                                farther the tool will go out of its way to travel on the roads
-                                                associated with the restriction.
+                                            
+                                            * ``AttributeName``: Lists the name of the restriction.
+                                            * ``ParameterName``: Lists the name of the parameter associated with the restriction. A restriction can have one or more ParameterName field values based on its intended use.
+                                            * ``ParameterValue``: The value for ``ParameterName`` used by the tool when evaluating the restriction.
+                                              Attribute Parameter Values is dependent on the Restrictions parameter. The ParameterValue field is applicable only
+                                              if the restriction name is specified as the value for the
+                                              Restrictions parameter.
+                                              In Attribute Parameter Values, each restriction (listed as AttributeName) has a ParameterName field
+                                              value, Restriction Usage, that specifies whether the restriction
+                                              prohibits, avoids, or prefers travel on the roads associated with
+                                              the restriction and the degree to which the roads are avoided or
+                                              preferred. The Restriction Usage ParameterName can be assigned any of
+                                              the following string values or their equivalent numeric values
+                                              listed within the parentheses:
+                                              
+                                              * ``PROHIBITED`` (-1) - Travel on the roads using the restriction is completely
+                                                  prohibited.
+                                              * ``AVOID_HIGH`` (5) - It is highly unlikely for the tool to include in the route the roads that are associated with the restriction.
+                                              * ``AVOID_MEDIUM`` (2) - It is unlikely for the tool to include in the route the roads that are associated with the restriction. 
+                                              * ``AVOID_LOW`` (1.3) - It is somewhat unlikely for the tool to include in the route the roads that are associated with the restriction. 
+                                              * ``PREFER_LOW`` (0.8) - It is somewhat likely for the tool to include in the route the roads that are associated with the restriction.
+                                              * ``PREFER_MEDIUM`` (0.5) - It is likely for the tool to include in the route the roads that are associated with the restriction.
+                                              * ``PREFER_HIGH`` (0.2) - It is highly likely for the tool to include in the route the roads.
+                                              
+                                              In most cases, you can use the default value, PROHIBITED,
+                                              for the Restriction Usage if the restriction is dependent on a
+                                              vehicle-characteristic such as vehicle height. However, in some
+                                              cases, the value for Restriction Usage depends on your routing
+                                              preferences. For example, the Avoid Toll Roads restriction has the
+                                              default value of AVOID_MEDIUM for the Restriction Usage parameter.
+                                              This means that when the restriction is used, the tool will try to
+                                              route around toll roads when it can. AVOID_MEDIUM also indicates
+                                              how important it is to avoid toll roads when finding the best
+                                              route; it has a medium priority. Choosing AVOID_LOW would put lower
+                                              importance on avoiding tolls; choosing AVOID_HIGH instead would
+                                              give it a higher importance and thus make it more acceptable for
+                                              the service to generate longer routes to avoid tolls. Choosing
+                                              PROHIBITED would entirely disallow travel on toll roads, making it
+                                              impossible for a route to travel on any portion of a toll road.
+                                              Keep in mind that avoiding or prohibiting toll roads, and thus
+                                              avoiding toll payments, is the objective for some; in contrast,
+                                              others prefer to drive on toll roads because avoiding traffic is
+                                              more valuable to them than the money spent on tolls. In the latter
+                                              case, you would choose PREFER_LOW, PREFER_MEDIUM, or PREFER_HIGH as
+                                              the value for Restriction Usage. The higher the preference, the
+                                              farther the tool will go out of its way to travel on the roads
+                                              associated with the restriction.
 
-                                                ========================================  =========================  =======================
-                                                **AttributeName**                         **ParameterName**          **ParameterValue**
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Any Hazmat Prohibited                     Restriction Usage           PROHIBITED
+                                              ========================================  =========================  =======================
+                                              **AttributeName**                         **ParameterName**          **ParameterValue**
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Any Hazmat Prohibited                     Restriction Usage           PROHIBITED
 
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Avoid Carpool Roads                       Restriction Usage          PROHIBITED
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Avoid Express Lanes                       Restriction Usage          PROHIBITED
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Avoid Ferries                             Restriction Usage          AVOID_MEDIUM
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Avoid Gates                               Restriction Usage          AVOID_MEDIUM
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Avoid Limited Access Roads                Restriction Usage          AVOID_MEDIUM
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Avoid Private Roads                       Restriction Usage          AVOID_MEDIUM
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Avoid Roads Unsuitable for Pedestrians    Restriction Usage          AVOID_HIGH
-                                                Avoid Stairways                           Restriction Usage          AVOID_HIGH
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Avoid Toll Roads                          Restriction Usage          AVOID_MEDIUM
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Avoid Toll Roads for Trucks               Restriction Usage          AVOID_MEDIUM
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Avoid Truck Restricted Roads              Restriction Usage          AVOID_HIGH
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Avoid Unpaved Roads                       Restriction Usage          AVOID_HIGH
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Axle Count Restriction                    Number of Axles            0
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Avoid Carpool Roads                       Restriction Usage          PROHIBITED
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Avoid Express Lanes                       Restriction Usage          PROHIBITED
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Avoid Ferries                             Restriction Usage          AVOID_MEDIUM
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Avoid Gates                               Restriction Usage          AVOID_MEDIUM
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Avoid Limited Access Roads                Restriction Usage          AVOID_MEDIUM
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Avoid Private Roads                       Restriction Usage          AVOID_MEDIUM
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Avoid Roads Unsuitable for Pedestrians    Restriction Usage          AVOID_HIGH
+                                              Avoid Stairways                           Restriction Usage          AVOID_HIGH
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Avoid Toll Roads                          Restriction Usage          AVOID_MEDIUM
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Avoid Toll Roads for Trucks               Restriction Usage          AVOID_MEDIUM
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Avoid Truck Restricted Roads              Restriction Usage          AVOID_HIGH
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Avoid Unpaved Roads                       Restriction Usage          AVOID_HIGH
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Axle Count Restriction                    Number of Axles            0
 
-                                                                                          Restriction Usage          PROHIBITED
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Driving a Bus                             Restriction Usage          PROHIBITED
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Driving a Taxi                            Restriction Usage          PROHIBITED
-                                                ---------------------------------------  -------------------------  -----------------------
-                                                Driving a Truck                           Restriction Usage          PROHIBITED
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Driving an Automobile                     Restriction Usage          PROHIBITED
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Driving an Emergency Vehicle              Restriction Usage          PROHIBITED
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Height Restriction                        Restriction Usage          PROHIBITED
+                                                                                        Restriction Usage          PROHIBITED
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Driving a Bus                             Restriction Usage          PROHIBITED
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Driving a Taxi                            Restriction Usage          PROHIBITED
+                                              ---------------------------------------  -------------------------  -----------------------
+                                              Driving a Truck                           Restriction Usage          PROHIBITED
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Driving an Automobile                     Restriction Usage          PROHIBITED
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Driving an Emergency Vehicle              Restriction Usage          PROHIBITED
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Height Restriction                        Restriction Usage          PROHIBITED
 
-                                                                                          Vehicle Height (meters)    0
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Kingpin to Rear Axle                      Restriction Usage          PROHIBITED
-                                                Length Restriction
-                                                                                          Vehicle Kingpin to Rear    0
-                                                                                          Axle Length (meters)
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Length Restriction                        Restriction Usage          PROHIBITED
-                                                                                          Vehicle Length (meters)    0
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Preferred for Pedestrians                 Restriction Usage          PREFER_LOW
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Riding a Motorcycle                       Restriction Usage          PROHIBITED
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Roads Under Construction Prohibited       Restriction Usage          PROHIBITED
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Semi or Tractor with One                  Restriction Usage          PROHIBITED
-                                                or more trailers prohibited
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Single Axle Vehicles Prohibited           Restriction Usage          PROHIBITED
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Tandem Axle Vehicles Prohibited           Restriction Usage          PROHIBITED
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Through Traffic Prohibited                Restriction Usage          AVOID_HIGH
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Truck with Trailers Restriction           Restriction Usage          PROHIBITED
+                                                                                        Vehicle Height (meters)    0
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Kingpin to Rear Axle                      Restriction Usage          PROHIBITED
+                                              Length Restriction
+                                                                                        Vehicle Kingpin to Rear    0
+                                                                                        Axle Length (meters)
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Length Restriction                        Restriction Usage          PROHIBITED
+                                                                                        Vehicle Length (meters)    0
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Preferred for Pedestrians                 Restriction Usage          PREFER_LOW
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Riding a Motorcycle                       Restriction Usage          PROHIBITED
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Roads Under Construction Prohibited       Restriction Usage          PROHIBITED
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Semi or Tractor with One                  Restriction Usage          PROHIBITED
+                                              or more trailers prohibited
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Single Axle Vehicles Prohibited           Restriction Usage          PROHIBITED
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Tandem Axle Vehicles Prohibited           Restriction Usage          PROHIBITED
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Through Traffic Prohibited                Restriction Usage          AVOID_HIGH
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Truck with Trailers Restriction           Restriction Usage          PROHIBITED
 
-                                                                                          Number of Trailers         0
-                                                                                          on Truck
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Use Preferred Hazmat Routes               Restriction Usage          PREFER_MEDIUM
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Use Preferred Truck Routes                Restriction Usage          PREFER_HIGH
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Walking                                   Restriction Usage          PROHIBITED
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                WalkTime                                  Walking Speed (km/h)       5
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Weight Restriction                        Restriction Usage          PROHIBITED
+                                                                                        Number of Trailers         0
+                                                                                        on Truck
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Use Preferred Hazmat Routes               Restriction Usage          PREFER_MEDIUM
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Use Preferred Truck Routes                Restriction Usage          PREFER_HIGH
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Walking                                   Restriction Usage          PROHIBITED
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              WalkTime                                  Walking Speed (km/h)       5
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Weight Restriction                        Restriction Usage          PROHIBITED
 
-                                                                                          Vehicle Weight             0
-                                                                                          (kilograms)
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Weight per Axle Restriction               Restriction Usage          PROHIBITED
+                                                                                        Vehicle Weight             0
+                                                                                        (kilograms)
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Weight per Axle Restriction               Restriction Usage          PROHIBITED
 
-                                                                                          Vehicle Weight per          0
-                                                                                          Axle (kilograms)
-                                                ----------------------------------------  -------------------------  -----------------------
-                                                Width Restriction                         Restriction Usage          PROHIBITED
+                                                                                        Vehicle Weight per          0
+                                                                                        Axle (kilograms)
+                                              ----------------------------------------  -------------------------  -----------------------
+                                              Width Restriction                         Restriction Usage          PROHIBITED
 
-                                                                                          Vehicle Width              0
-                                                                                          (meters)
-                                                ========================================  =========================  =======================
+                                                                                        Vehicle Width              0
+                                                                                        (meters)
+                                              ========================================  =========================  =======================
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     impedance                               Optional string.  Specify the impedance, which is a value that represents the effort or cost of traveling along
                                             road segments or on other parts of the transportation network.
@@ -861,12 +838,11 @@ def generate_origin_destination_cost_matrix(
                                             or no geometry at all. In both cases, the route is always computed along the street network by minimizing the
                                             travel time or the travel distance, never using the straight-line
                                             distance between origins and destinations.
-                                            Straight Line: Straight lines connect origins and destinations.
-                                            None: Do not return any shapes for the lines that connect origins and destinations.
-                                            This is useful when you have a large number of origins and destinations and are interested only
-                                            in the OD cost matrix table (and not the output line shapes).
+                                            
+                                            ``Straight Line``: Straight lines connect origins and destinations.
+                                            ``None``: Do not return any shapes for the lines that connect origins and destinations. This is useful when you have a large number of origins and destinations and are interested only in the OD cost matrix table (and not the output line shapes).
 
-                                             list:['None', 'Straight Line']
+                                            Choice list:['None', 'Straight Line']
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     save_output_layer                       Optional boolean. Specify if the tool should save the analysis settings as a network analysis layer file.
                                             You cannot directly work with this file even when you open the file in an ArcGIS Desktop application like ArcMap.
@@ -896,22 +872,23 @@ def generate_origin_destination_cost_matrix(
     output_format                           Optional. Specify the format in which the output features are created.
 
                                             Choose from the following formats:
-                                                 * Feature Set - The output features are returned as feature classes and tables. This is the default.
-                                                 * JSON File - The output features are returned as a compressed file containing the JSON representation of the outputs. When this option is specified, the output is a single file (with a .zip extension) that contains one or more JSON files (with a .json extension) for each of the outputs created by the service.
-                                                 * GeoJSON File - The output features are returned as a compressed file containing the GeoJSON representation of the outputs. When this option is specified, the output is a single file (with a .zip extension) that contains one or more GeoJSON files (with a .geojson extension) for each of the outputs created by the service.
+                                            
+                                            * Feature Set - The output features are returned as feature classes and tables. This is the default.
+                                            * JSON File - The output features are returned as a compressed file containing the JSON representation of the outputs. When this option is specified, the output is a single file (with a .zip extension) that contains one or more JSON files (with a .json extension) for each of the outputs created by the service.
+                                            * GeoJSON File - The output features are returned as a compressed file containing the GeoJSON representation of the outputs. When this option is specified, the output is a single file (with a .zip extension) that contains one or more GeoJSON files (with a .geojson extension) for each of the outputs created by the service.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
-    gis                                     Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                                     Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     future                                  Optional boolean. If True, a future object will be returned and the process
                                             will not wait for the task to complete. The default is False, which means wait for results.
     ======================================  ==========================================================================================================================================
 
-    :: returns the following as a named tuple:
+    :returns: the following as a named tuple:
 
-        * solve_succeeded - Solve Succeeded as a bool
-        * output_origin_destination_lines - Output Origin Destination Lines as a FeatureSet
-        * output_origins - Output Origins as a FeatureSet
-        * output_destinations - Output Destinations as a FeatureSet
+    * solve_succeeded - Solve Succeeded as a bool
+    * output_origin_destination_lines - Output Origin Destination Lines as a FeatureSet
+    * output_origins - Output Origins as a FeatureSet
+    * output_destinations - Output Destinations as a FeatureSet
 
     Click `GenerateOriginDestinationCostMatrix`_ for additional help.
     """
