@@ -14,7 +14,7 @@ test_items = [
     "d3cb37b9636d47888268ca086810bd9b",  # Cougar Habitat
     "5183636f099c48789628226e5730fb13",  # Traffic Collisions
     "a6cb2a0688d841fd803cd82b4d8282b4",  # Boundary Polygon
-    "9c04c0c5bcb549549d801cdfd76652ac",  # Bay Area Geodatabase
+    "3793ab5f2baa47919bd4212b3d0f08e2",  # LA Route Geodatabase
     "00fbc412f68645958520d946806f90c0",  # Tennessee Town
     "4147267f9bcc46e79825950d800c1e6a",  # Comparison US Towns
     "5fdb2869753140c8836353097b207591",  # US Hospitals
@@ -147,7 +147,13 @@ def stage_data(
         gis = GIS(profile=prof, verify_cert=False)
         for item in items:
             if not gis.content.get(item.id):
-                gis.content.add(item, item_id=item.id)
+                if item.type == ("File Geodatabase" or "CSV"):
+                    temp_path = item.get_data()
+                    gis.content.add(
+                        item_properties=item, data=temp_path, item_id=item.id
+                    )
+                else:
+                    gis.content.add(item, item_id=item.id)
 
 
 if __name__ == "__main__":

@@ -3,13 +3,12 @@ import sys
 
 # sys.path.insert(0, r"/Users/cowboy/GitHub/np_geo/src")
 import datetime
-from arcgis.features import FeatureLayer
 from arcgis.gis import Item
 from arcgis.gis import GIS
 from arcgis.features.manage_data import create_route_layers
 from config_tests import setup_profiles, stage_data
 
-test_items = ["9c04c0c5bcb549549d801cdfd76652ac"]  # Bay Area Geodatabase
+test_items = ["3793ab5f2baa47919bd4212b3d0f08e2"]  # LA Route Geodatabase
 profiles = ["online_test", "ent_test", "kube_test"]
 setup_profiles(
     profiles[0],
@@ -26,7 +25,7 @@ class TestCreateRouteLayers(unittest.TestCase):
             gis = GIS(profile=profile, verify_cert=False)
             print("User: ", gis.users.me.username)
             # gather layer
-            stops_item = gis.content.get("9c04c0c5bcb549549d801cdfd76652ac")
+            stops_item = gis.content.get("3793ab5f2baa47919bd4212b3d0f08e2")
             assert isinstance(stops_item, Item)
 
             # create layer that will be overwritten
