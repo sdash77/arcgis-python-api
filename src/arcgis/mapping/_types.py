@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from typing import Any, Optional, Union
 from arcgis.features.layer import FeatureLayer
 from arcgis.gis import Error, Item
-from arcgis._impl.common._deprecate import deprecated
+from arcgis.geoprocessing import import_toolbox
 from arcgis.auth.tools import LazyLoader
 
 collections = LazyLoader("collections")
@@ -4032,6 +4032,8 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
     .. note:: Url must be admin url such as: https://services.myserver.com/arcgis/server/admin/services/serviceName.VectorTileServer/
     """
 
+    _gptbx = None
+
     def __init__(self, url, gis=None, vect_tile_lyr=None):
         if url.split("/")[-1].isdigit():
             url = url.replace(f"/{url.split('/')[-1]}", "")
@@ -4141,26 +4143,30 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
         return vtl_service.delete()
 
     # ----------------------------------------------------------------------
+    @property
+    def _tbx(self):
+        """gets the toolbox"""
+        if self._gptbx is None:
+            self._gptbx = import_toolbox(
+                url_or_item=self._gis.hosting_servers[0].url
+                + "/System/CachingControllers/GPServer",
+                gis=self._gis,
+            )
+            self._gptbx._is_fa = True
+        return self._gptbx
+
+    # ----------------------------------------------------------------------
     def rebuild_cache(self):
         """
-        The rebuild_cache operation update the vector tile layer cache to reflect
-        any changes made to the feature layer used to publish this vector tile layer.
-        The results of the operation is a response indicating success, which
-        redirects you to the Job Statistics page, or failure.
+        The rebuild_cache operation update the scene layer cache to reflect
+        any changes made to the feature layer used to publish this scene layer.
+        The results of the operation is the url to the scene service once it is
+        done rebuilding.
         """
-        url = (
-            self._gis.hosting_servers[0].url
-            + "/System/CachingControllers/GPServer/Manage%20Vector%20Tile%20Cache/submitJob"
+        return self._tbx.manage_vector_tile_cache(
+            service_name=self.properties.serviceName,
+            service_folder="Hosted",
         )
-        params = {
-            "f": "json",
-            "serviceName": self.properties.serviceName,
-            "serviceFolder": "Hosted",
-            "minScale": None,
-            "maxScale": None,
-            "tilingFormat": "INDEXED",
-        }
-        return self._con.post(url, params)
 
 
 ###########################################################################
