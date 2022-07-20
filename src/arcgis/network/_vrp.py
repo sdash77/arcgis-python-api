@@ -2449,10 +2449,7 @@ def solve_vehicle_routing_problem(
 
                                               * ``Name``: The name of the barrier.
 
-                                              * ``BarrierType``: Specifies whether the point barrier restricts travel
-                                              completely or adds time or distance when it is crossed. The value
-                                              for this attribute is specified as one of the following
-                                              integers (use the numeric code, not the name in parentheses):
+                                              * ``BarrierType``: Specifies whether the point barrier restricts travel completely or adds time or distance when it is crossed. The value for this attribute is specified as one of the following integers (use the numeric code, not the name in parentheses):
                                               
                                                 * 0 (Restriction) - Prohibits travel through the barrier. The barrier
                                                   is referred to as a restriction point barrier since it acts as a

@@ -221,23 +221,11 @@ def generate_origin_destination_cost_matrix(
                                               If a value is not specified, the value from the Cutoff parameter is used.
                                             * ``CurbApproach`` - Specifies the direction a vehicle may depart from the origin. The field value is specified as one of the
                                               following integers (use the numeric code, not the name in parentheses):
-                                              * 0 (Either side of vehicle)-The vehicle can depart the origin in either direction, so a U-turn is allowed
-                                                at the origin. This setting can be chosen if it is possible and practical for your vehicle to turn around at the origin.
-                                                This decision may depend on the width of the road and the amount of traffic or whether the origin has a parking lot where
-                                                vehicles can enter and turn around.
-                                              * 1 ( Right side of vehicle)-When the vehicle departs the origin, the origin must be on
-                                                the right side of the vehicle. A U-turn is prohibited. This is typically used for vehicles such as buses that must depart
-                                                from the bus stop on the right-hand side.
-                                              * 2 (Left side of vehicle)-When the vehicle departs the origin, the curb must be
-                                                on the left side of the vehicle. A U-turn is prohibited. This is typically used for vehicles such as buses that must depart
-                                                from the bus stop on the left-hand side.
-                                              * 3 (No U-Turn)-For this tool, the No U-turn (3) value functions the same as Either
-                                                side of vehicle. The CurbApproach property is designed to work with both kinds of national driving standards: right-hand traffic
-                                                (United States) and left-hand traffic (United Kingdom). First, consider an origin on the left side of a vehicle. It is always
-                                                on the left side regardless of whether the vehicle travels on the left or right half of the road. What may change with national
-                                                driving standards is your decision to depart the origin from one of two directions, that is, so it ends up on the right or left
-                                                side of the vehicle. For example, if you want to depart from an origin and not have a lane of traffic between the vehicle and the
-                                                origin, you would choose Right side of vehicle (1) in the United States but Left side of vehicle (2) in the United Kingdom.
+                                              
+                                              * 0 (Either side of vehicle)-The vehicle can depart the origin in either direction, so a U-turn is allowed at the origin. This setting can be chosen if it is possible and practical for your vehicle to turn around at the origin. This decision may depend on the width of the road and the amount of traffic or whether the origin has a parking lot where vehicles can enter and turn around.
+                                              * 1 ( Right side of vehicle)-When the vehicle departs the origin, the origin must be on the right side of the vehicle. A U-turn is prohibited. This is typically used for vehicles such as buses that must depart from the bus stop on the right-hand side.
+                                              * 2 (Left side of vehicle)-When the vehicle departs the origin, the curb must be on the left side of the vehicle. A U-turn is prohibited. This is typically used for vehicles such as buses that must depart from the bus stop on the left-hand side.
+                                              * 3 (No U-Turn)-For this tool, the No U-turn (3) value functions the same as Either side of vehicle. The CurbApproach property is designed to work with both kinds of national driving standards: right-hand traffic (United States) and left-hand traffic (United Kingdom). First, consider an origin on the left side of a vehicle. It is always on the left side regardless of whether the vehicle travels on the left or right half of the road. What may change with national driving standards is your decision to depart the origin from one of two directions, that is, so it ends up on the right or left side of the vehicle. For example, if you want to depart from an origin and not have a lane of traffic between the vehicle and the origin, you would choose Right side of vehicle (1) in the United States but Left side of vehicle (2) in the United Kingdom.                                          
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     destinations                            Required :class:`~arcgis.features.FeatureSet` . Specify locations that function as ending points in generating the paths from origins.
                                             You can add up to 200 destinations. When specifying the destinations, you can set properties for each one, such as its name,
@@ -387,12 +375,7 @@ def generate_origin_destination_cost_matrix(
                                             * ``Name``: The name of the barrier.
                                             * ``BarrierType``: Specifies whether the barrier restricts travel completely or scales the time or distance for traveling through it. The field value is specified as one of the following integers (use the numeric code, not the name in parentheses):
 
-                                              * 0 (Restriction)-Prohibits traveling through any part of the barrier.
-                                               The barrier is referred to as a restriction polygon barrier since it
-                                               prohibits traveling on streets intersected by the barrier. One use
-                                               of this type of barrier is to model floods covering areas of the
-                                               street that make traveling on those streets impossible.
-                                              
+                                              * 0 (Restriction)-Prohibits traveling through any part of the barrier. The barrier is referred to as a restriction polygon barrier since it prohibits traveling on streets intersected by the barrier. One use of this type of barrier is to model floods covering areas of the street that make traveling on those streets impossible.                                             
                                               * 1 (Scaled Cost)-Scales the time or distance required to travel the
                                                 underlying streets by a factor specified using the ScaledTimeFactor
                                                 or ScaledDistanceFactor fields. If the streets are partially
@@ -681,8 +664,7 @@ def generate_origin_destination_cost_matrix(
                                               the following string values or their equivalent numeric values
                                               listed within the parentheses:
                                               
-                                              * ``PROHIBITED`` (-1) - Travel on the roads using the restriction is completely
-                                                  prohibited.
+                                              * ``PROHIBITED`` (-1) - Travel on the roads using the restriction is completely prohibited.
                                               * ``AVOID_HIGH`` (5) - It is highly unlikely for the tool to include in the route the roads that are associated with the restriction.
                                               * ``AVOID_MEDIUM`` (2) - It is unlikely for the tool to include in the route the roads that are associated with the restriction. 
                                               * ``AVOID_LOW`` (1.3) - It is somewhat unlikely for the tool to include in the route the roads that are associated with the restriction. 

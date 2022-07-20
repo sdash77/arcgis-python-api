@@ -883,14 +883,10 @@ def find_routes(
                                             can be specified with the following attributes:
 
                                             * ``Name``: The name of the barrier.
-                                            * ``BarrierType``: Specifies whether the point barrier restricts travel
-                                              completely or adds time or distance when it is crossed. The value
-                                              for this attribute is specified as one of the following
-                                              integers (use the numeric code, not the name in parentheses):
-                                            
+                                            * ``BarrierType``: Specifies whether the point barrier restricts travel completely or adds time or distance when it is crossed. The value for this attribute is specified as one of the following integers (use the numeric code, not the name in parentheses):
                                               * 0 (Restriction) - Prohibits travel through the barrier. The barrier is referred to as a restriction point barrier since it acts as a restriction.
                                               * 2 (Added Cost) - Traveling through the barrier increases the travel time or distance by the amount specified in the Additional_Time or Additional_Distance field. This barrier type is referred to as an added-cost point barrier.
-                                            
+                                              
                                             * ``Additional_Time``: Indicates how much travel time is added when the
                                               barrier is traversed. This field is applicable only for added-cost
                                               barriers and only if the measurement units are time based. This field
