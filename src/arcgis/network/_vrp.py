@@ -1081,8 +1081,9 @@ def edit_vehicle_routing_problem(
     ------------------------------------     --------------------------------------------------------------------
     ignore_invalid_order_locations           Specifies whether invalid orders will be ignored when solving the vehicle routing problem.
 
-                                             `True` - The solve operation will ignore any invalid orders and return a solution, given it didn't encounter any other errors. If you need to generate routes and deliver them to drivers immediately, you may be able to ignore invalid orders, solve, and distribute the routes to your drivers. Next, resolve any invalid orders from the last solve and include them in the VRP analysis for the next workday or work shift.
-                                             `False` - The solve operation will fail when any invalid orders are encountered. An invalid order is an order that the VRP solver can't reach. An order may be unreachable for a variety of reasons, including if it's located on a prohibited network element, it isn't located on the network at all, or it's located on a disconnected portion of the network.
+                                             ``True`` - The solve operation will ignore any invalid orders and return a solution, given it didn't encounter any other errors. If you need to generate routes and deliver them to drivers immediately, you may be able to ignore invalid orders, solve, and distribute the routes to your drivers. Next, resolve any invalid orders from the last solve and include them in the VRP analysis for the next workday or work shift.
+
+                                             ``False`` - The solve operation will fail when any invalid orders are encountered. An invalid order is an order that the VRP solver can't reach. An order may be unreachable for a variety of reasons, including if it's located on a prohibited network element, it isn't located on the network at all, or it's located on a disconnected portion of the network.
     ====================================     ====================================================================
 
     :return: Named Tuple
