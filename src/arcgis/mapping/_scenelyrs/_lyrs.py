@@ -17,6 +17,12 @@ class SceneLayerManager(_GISResource):
             url = url.replace(f"/{url.split('/')[-1]}", "")
         super(SceneLayerManager, self).__init__(url, gis)
         self._sl = scene_lyr
+        # Scene Layers published from Scene Layer Package are read only.
+        self._source_type = (
+            "Feature Service"
+            if "updateEnabled" in self.properties.layers[0]
+            else "Scene Layer Package"
+        )
 
     # ----------------------------------------------------------------------
     def refresh(self):
@@ -24,16 +30,18 @@ class SceneLayerManager(_GISResource):
         The ``refresh`` operation refreshes a service, which clears the web
         server cache for the service.
         """
-        url = self._url + "SceneServer/refresh"
-        params = {"f": "json"}
+        if self._source_type is "Scene Layer Package":
+            url = self._url + "SceneServer/refresh"
+            params = {"f": "json"}
 
-        res = self._con.post(url, params)
+            res = self._con.post(url, params)
 
-        super(SceneLayerManager, self)._refresh()
+            super(SceneLayerManager, self)._refresh()
 
-        self._ms._refresh()
+            self._ms._refresh()
 
-        return res
+            return res
+        return None
 
     # ----------------------------------------------------------------------
     def swap(self, target_service_name: str):
@@ -52,9 +60,11 @@ class SceneLayerManager(_GISResource):
         :returns: dictionary indicating success or error
 
         """
-        url = self._url + "/swap"
-        params = {"f": "json", "targetServiceName": target_service_name}
-        return self._con.post(url, params)
+        if self._source_type is "Scene Layer Package":
+            url = self._url + "/swap"
+            params = {"f": "json", "targetServiceName": target_service_name}
+            return self._con.post(url, params)
+        return None
 
     # ----------------------------------------------------------------------
     def jobs(self):
@@ -65,9 +75,11 @@ class SceneLayerManager(_GISResource):
         jobid run and redirects you to the Job Statistics page.
 
         """
-        url = self._url + "/jobs"
-        params = {"f": "json"}
-        return self._con.get(url, params)
+        if self._source_type is "Scene Layer Package":
+            url = self._url + "/jobs"
+            params = {"f": "json"}
+            return self._con.get(url, params)
+        return None
 
     # ----------------------------------------------------------------------
     def cancel_job(self, job_id: str):
@@ -84,9 +96,11 @@ class SceneLayerManager(_GISResource):
         ===============     ====================================================
 
         """
-        url = self._url + "/jobs/%s/cancel" % job_id
-        params = {"f": "json"}
-        return self._con.post(url, params)
+        if self._source_type is "Scene Layer Package":
+            url = self._url + "/jobs/%s/cancel" % job_id
+            params = {"f": "json"}
+            return self._con.post(url, params)
+        return None
 
     # ----------------------------------------------------------------------
     def job_statistics(self, job_id: str):
@@ -94,60 +108,13 @@ class SceneLayerManager(_GISResource):
         Returns the job statistics for the given jobId
 
         """
-        url = self._url + "/jobs/%s" % job_id
-        params = {"f": "json"}
-        return self._con.post(url, params)
-
-    # ----------------------------------------------------------------------
-    def import_item(self, item: Union[str, Item]):
-        """
-        The ``import`` method imports from an :class:`~arcgis.gis.Item` object.
-
-        ===============     ====================================================
-        **Argument**        **Description**
-        ---------------     ----------------------------------------------------
-        item                Required ItemId or :class:`~arcgis.gis.Item` object. The TPK file's item id.
-                            This TPK file contains to-be-extracted bundle files
-                            which are then merged into an existing cache service.
-        ===============     ====================================================
-
-        :return:
-            A dictionary
-
-        """
-        params = {
-            "f": "json",
-            "sourceItemId": None,
-        }
-        if isinstance(item, str):
-            params["sourceItemId"] = item
-        elif isinstance(item, Item):
-            params["sourceItemId"] = item.itemid
-        else:
-            raise ValueError("The `item` must be a string or Item")
-        url = self._url + "/import"
-        res = self._con.post(url, params)
-        return res
-
-    # ----------------------------------------------------------------------
-    def update(self):
-        """
-        The ``update`` method starts tile generation for ArcGIS Online. The levels of detail
-        and the extent are needed to determine the area where tiles need
-        to be rebuilt.
-
-        :return:
-           Dictionary. If the product is not ArcGIS Online tile service, the
-           result will be None.
-        """
-        if self._gis._portal.is_arcgisonline:
-            url = "%s/update" % self._url
+        if self._source_type is "Scene Layer Package":
+            url = self._url + "/jobs/%s" % job_id
             params = {"f": "json"}
             return self._con.post(url, params)
         return None
 
-    # ----------------------------------------------------------------------
-    @property
+    # -----------------------------------------------------------------------
     def rerun_job(self, job_id: str, code: str):
         """
         The ``rerun_job`` operation supports re-running a canceled job from a
@@ -167,9 +134,59 @@ class SceneLayerManager(_GISResource):
         :return:
            A boolean or dictionary
         """
-        url = self._url + "/jobs/%s/rerun" % job_id
-        params = {"f": "json", "rerun": code}
-        return self._con.post(url, params)
+        if self._source_type is "Scene Layer Package":
+            url = self._url + "/jobs/%s/rerun" % job_id
+            params = {"f": "json", "rerun": code}
+            return self._con.post(url, params)
+        return None
+
+    # ----------------------------------------------------------------------
+    def import_item(self, item: Union[str, Item]):
+        """
+        The ``import`` method imports from an :class:`~arcgis.gis.Item` object.
+
+        ===============     ====================================================
+        **Argument**        **Description**
+        ---------------     ----------------------------------------------------
+        item                Required ItemId or :class:`~arcgis.gis.Item` object. The TPK file's item id.
+                            This TPK file contains to-be-extracted bundle files
+                            which are then merged into an existing cache service.
+        ===============     ====================================================
+
+        :return:
+            A dictionary
+
+        """
+        if self._source_type is "Scene Layer Package":
+            params = {
+                "f": "json",
+                "sourceItemId": None,
+            }
+            if isinstance(item, str):
+                params["sourceItemId"] = item
+            elif isinstance(item, Item):
+                params["sourceItemId"] = item.itemid
+            else:
+                raise ValueError("The `item` must be a string or Item")
+            url = self._url + "/import"
+            res = self._con.post(url, params)
+            return res
+        return None
+
+    # ----------------------------------------------------------------------
+    def update(self):
+        """
+        The ``update`` method starts update generation for ArcGIS Online.
+
+        :return:
+           Dictionary. If the product is not ArcGIS Online tile service, the
+           result will be None.
+        """
+        if self._gis._portal.is_arcgisonline:
+            url = "%s/update" % self._url
+            params = {"f": "json"}
+            return self._con.post(url, params)
+        return None
 
     # ----------------------------------------------------------------------
     def edit_item(self, item: Union[str, Item]):
@@ -188,19 +205,44 @@ class SceneLayerManager(_GISResource):
             A dictionary
 
         """
-        params = {
-            "f": "json",
-            "sourceItemId": None,
-        }
-        if isinstance(item, str):
-            params["sourceItemId"] = item
-        elif isinstance(item, Item):
-            params["sourceItemId"] = item.itemid
-        else:
-            raise ValueError("The `item` must be a string or Item")
-        url = self._url + "/edit"
-        res = self._con.post(url, params)
-        return res
+        if self._source_type is "Scene Layer Package":
+            params = {
+                "f": "json",
+                "sourceItemId": None,
+            }
+            if isinstance(item, str):
+                params["sourceItemId"] = item
+            elif isinstance(item, Item):
+                params["sourceItemId"] = item.itemid
+            else:
+                raise ValueError("The `item` must be a string or Item")
+            url = self._url + "/edit"
+            res = self._con.post(url, params)
+            return res
+        return None
+
+    # ----------------------------------------------------------------------
+    def rebuild_cache(self, layers: str):
+        """
+        The rebuild_cache operation update the scene layer cache to reflect
+        any changes made to the feature layer used to publish this scene layer.
+        The results of the operation is a response indicating success, which
+        redirects you to the Job Statistics page, or failure.
+
+        =====================       ====================================================
+        **Argument**                **Description**
+        ---------------------       ----------------------------------------------------
+        layers                      Required String. Comma seperated values indicating
+                                    the id of the layers to rebuild in the cache.
+
+                                    Ex: "0,1,2"
+        =====================       ====================================================
+        """
+        if self._source_type is "Feature Service":
+            url = self._url + "/rebuildCache"
+            params = {"f": "json", "layers": layers}
+            return self._con.post(url, params)
+        return None
 
 
 ###########################################################################
