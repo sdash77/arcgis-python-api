@@ -716,7 +716,7 @@ class SyncManager(object):
     ):
         """
         The create operation is performed on a :class:`~arcgis.features.FeatureLayerCollection` resource.
-        This operationcreates the replica between the feature dataset and a client based on a client-supplied
+        This operation creates the replica between the feature dataset and a client based on a client-supplied
         replica definition. It requires the Sync capability. See Sync overview for more
         information on sync. The response for create includes replicaID, replica generation
         number, and data similar to the response from the :meth:`arcgis.features.FeatureLayerCollection.query`
@@ -819,14 +819,14 @@ class SyncManager(object):
         -----------------------------       --------------------------------------------------------------------
         out_path                            out_path - folder path to save the file.
         -----------------------------       --------------------------------------------------------------------
-        syncDirection                       Defaults to bidirectional when the targetType is client and download
+        sync_direction                      Defaults to bidirectional when the targetType is client and download
                                             when the targetType is server. If set, only bidirectional is supported
                                             when targetType is client. If set, only upload or download are
                                             supported when targetType is server.
                                             Values: download | upload | bidirectional
                                             Example: syncDirection=download
         -----------------------------       --------------------------------------------------------------------
-        targetType                          Can be set to either server or client. If not set, the default is
+        target_type                         Can be set to either server or client. If not set, the default is
                                             client. This option was added at 10.5.1.
         -----------------------------       --------------------------------------------------------------------
         transformations                     Optional List. Introduced at 10.8. This parameter applies a datum

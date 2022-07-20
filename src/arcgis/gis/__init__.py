@@ -13619,7 +13619,7 @@ class Item(dict):
                     df = pd.DataFrame([], columns=["Date", "Usage"])
                 elif len(res["data"]):
                     df = pd.DataFrame(res["data"][0]["num"], columns=["Date", "Usage"])
-                    res.Date = pd.to_datetime(res["Date"], unit="ms")
+                    df.Date = pd.to_datetime(df["Date"], unit="ms")
                     df.Usage = df.Usage.astype(int)
                 return df
             return res
@@ -13995,7 +13995,7 @@ class Item(dict):
         buildInitialCache = build_initial_cache
         if file_type is None:
             if self["type"] == "GeoPackage":
-                fileType = "gpkg"
+                fileType = "geoPackage"
             elif self["type"].lower().find("excel") > -1:
                 fileType = "excel"
             elif self["type"] == "Compact Tile Package":
