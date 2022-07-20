@@ -14,6 +14,11 @@ profiles = ["online_test", "ent_test", "kube_test"]
 setup_profiles(profiles[0], profiles[1], profiles[2])
 stage_data(test_items)
 
+# Note: for enterprise versions below 11, the second call of this
+# method will append, not overwrite. This test will keep the same name
+# and not throw an exception for target items with extra layers, as this
+# was the previously intended functionality.
+
 
 class TestFindPointClusters(unittest.TestCase):
     def test_overwrite(self):

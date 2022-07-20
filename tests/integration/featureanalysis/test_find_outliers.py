@@ -14,6 +14,12 @@ profiles = ["online_test", "ent_test", "kube_test"]
 setup_profiles(profiles[0], profiles[1], profiles[2])
 stage_data(test_items)
 
+# Note: until overwrite functionality is added, the second
+# call of this method will just append another layer to the
+# target item in enterprise. As this is the intended functionality,
+# the name will remain the same and adding an extra layer will not
+# throw an exception until overwriting has been implemented.
+
 
 class TestFindOutliers(unittest.TestCase):
     def test_overwrite(self):

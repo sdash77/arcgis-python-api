@@ -20,7 +20,7 @@ stage_data(test_items)
 
 
 class TestCreateRouteLayers(unittest.TestCase):
-    def test_overwrite(self):
+    def test_routing(self):
         # establish gis connection
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
@@ -31,7 +31,7 @@ class TestCreateRouteLayers(unittest.TestCase):
 
             # create layer that will be overwritten
             test_id = str(datetime.datetime.now().microsecond)
-            output_name = "overwrite_create_route_layers_" + test_id
+            output_name = "test_create_route_layers_" + test_id
             print("Creating ", output_name)
             target_item = create_route_layers(
                 route_data_item=stops_item,

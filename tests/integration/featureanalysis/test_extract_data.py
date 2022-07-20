@@ -19,7 +19,7 @@ stage_data(test_items)
 
 
 class TestExtractData(unittest.TestCase):
-    def test_overwrite(self):
+    def test_extracting(self):
         # establish gis connection
         for profile in profiles:
             gis = GIS(profile=profile, verify_cert=False)
@@ -36,7 +36,7 @@ class TestExtractData(unittest.TestCase):
 
             # create layer that will be overwritten
             test_id = str(datetime.datetime.now().microsecond)
-            output_name = "overwrite_extract_data_" + test_id
+            output_name = "test_extract_data_" + test_id
             print("Creating ", output_name)
             target_item = extract_data(
                 input_layers=[highway_lyr],
