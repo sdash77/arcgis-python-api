@@ -124,9 +124,9 @@ class UtilityNetworkManager(object):
                                 will be executed to analyze the network. Can be
                                 configured using the `configuration` parameter.
 
-                                `Values: 'connected' | 'subnetwork' | 'subnetworkController' |
-                                'upstream' | 'downstream' | 'loops' | 'shortestPath' |
-                                'isolation'`
+                                Values:
+
+                                    'connected' | 'subnetwork' | 'subnetworkController' | 'upstream' | 'downstream' | 'loops' | 'shortestPath' | 'isolation'
         --------------------    --------------------------------------------------
         moment                  Optional Integer. Specifies the session moment. This
                                 should only be specified if you do not want to use
@@ -391,7 +391,7 @@ class UtilityNetworkManager(object):
         ------------------------------------        --------------------------------------------------------------------
         trace_configuration                         Optional Dictionary. Specifies the collection of trace
                                                     configuration parameters.
-                                                    See: `Parameters <https://developers.arcgis.com/rest/services-reference/enterprise/trace-utility-network-server-.htm#GUID-F0C932FD-B403-4223-9B00-E44D156C7DF9/>`_
+                                                    See: `Trace <https://developers.arcgis.com/rest/services-reference/enterprise/trace-utility-network-server-.htm#GUID-F0C932FD-B403-4223-9B00-E44D156C7DF9/>`_
         ------------------------------------        --------------------------------------------------------------------
         export_acknowledgement                      Optional Boolean. Specify whether the export is acknowledged.
         ------------------------------------        --------------------------------------------------------------------
@@ -467,9 +467,7 @@ class UtilityNetworkManager(object):
 
                                                     Values:
 
-                                                            | "initialEnableTopology" | "fullValidateTopology" |
-                                                            | "partialValidateTopology" | "enableTopology" | "disableTopology" |
-                                                            | "definitionModification" | "updateIsConnected" | "indexUpdate" | "all"
+                                                            "initialEnableTopology" | "fullValidateTopology" | "partialValidateTopology" | "enableTopology" | "disableTopology" | "definitionModification" | "updateIsConnected" | "indexUpdate" | "all"
         ------------------------------------        --------------------------------------------------------------------
         moment                                      Optional Integer. Specify the session moment if you do not want to use
                                                     the current moment.
@@ -546,7 +544,7 @@ class UtilityNetworkManager(object):
         ====================================        ====================================================================
         **Argument**                                **Description**
         ------------------------------------        --------------------------------------------------------------------
-        attachment_associations                     Optional Boolean. Whether to return attachement associations.
+        attachment_associations                     Optional Boolean. Whether to return attachment associations.
         ------------------------------------        --------------------------------------------------------------------
         connectivity_associations                   Optional Boolean. Represents whether to return connectivity associations.
         ------------------------------------        --------------------------------------------------------------------
@@ -579,9 +577,9 @@ class UtilityNetworkManager(object):
         :return:
             A dictionary with keys and value types of:
 
-            | {"maxGeometryCountExceeded": bool,
-            | "associations": list,
-            | "success": bool}
+                | {"maxGeometryCountExceeded": bool,
+                | "associations": list,
+                | "success": bool}
         """
         url = "%s/synthesizeAssociationGeometries" % self._url
         params = {
@@ -790,7 +788,9 @@ class UtilityNetworkManager(object):
 
         Available starting at Enterprise 10.9.1
 
-        :return: A dictionary with two keys {"associations":list, "success": bool}
+        :return: A dictionary with two keys
+
+            {"associations":list, "success": bool}
         """
 
         if self._gis.version >= [9, 2]:
@@ -830,9 +830,9 @@ class UtilityNetworkManager(object):
         ------------------------------------        --------------------------------------------------------------------
         types                                       Optional List of String(s). Specify teh association types to be queried.
 
-                                                    `Values: "connectivity" | "attachment" | "contianment" |
-                                                    "junctionEdgeFromConnectivity" | "junctionMidspanConnectivity" |
-                                                    "junctionEdgeToConnectivity"`
+                                                    Values:
+
+                                                        "connectivity" | "attachment" | "contianment" | "junctionEdgeFromConnectivity" | "junctionMidspanConnectivity" | "junctionEdgeToConnectivity"
         ------------------------------------        --------------------------------------------------------------------
         return_deletes                              Optional Boolean. Specify whether to return logically deleted associations.
         ====================================        ====================================================================
@@ -868,30 +868,19 @@ class UtilityNetworkManager(object):
 
         The `type` parameter is used to provide the following predefined traversal types:
 
-        * dirtyAreaExpansion—Returns associations and objects that have been modified
-        and are marked as dirty. Completes a downward traversal, followed by an
-        ascending traversal, with an exit filter on the first spatial feature in each
-        direction.
+        * dirtyAreaExpansion—Returns associations and objects that have been modified and are marked as dirty. Completes a downward traversal, followed by an ascending traversal, with an exit filter on the first spatial feature in each direction.
 
-        * firstContainers—Completes an ascending traversal on containment associations,
-        with an exit filter on the first spatial feature.
+        * firstContainers—Completes an ascending traversal on containment associations, with an exit filter on the first spatial feature.
 
-        * spatialParents—Completes an ascending traversal on all association types,
-        with an exit filter on the first spatial feature.
+        * spatialParents—Completes an ascending traversal on all association types, with an exit filter on the first spatial feature.
 
-        * topContainers—Completes an ascending traversal to return associations and
-        objects with no exit filter.
+        * topContainers—Completes an ascending traversal to return associations and objects with no exit filter.
 
-        * errorsNotModified—Completes a downward traversal to return associations in error,
-        with an exit filter on the first spatial feature.
+        * errorsNotModified—Completes a downward traversal to return associations in error, with an exit filter on the first spatial feature.
 
-        * modifiedObjects—Completes a downward traversal to return associations
-        that are dirty, with an exit filter on the first spatial feature.
+        * modifiedObjects—Completes a downward traversal to return associations that are dirty, with an exit filter on the first spatial feature.
 
-        To create a custom traversal the `direction`, `dirty_filter`,
-        `error_filter`, `stop_at_first_spatial`, and `max_depth` parameters can be used.
-        When a traversal type is specified using the type parameter other than the default
-        ``unspecified``, these parameters are ignored.
+        To create a custom traversal the `direction`, `dirty_filter`, `error_filter`, `stop_at_first_spatial`, and `max_depth` parameters can be used. When a traversal type is specified using the type parameter other than the default `unspecified``, these parameters are ignored.
 
         Available starting at Enterprise 10.9.1
 
@@ -918,12 +907,15 @@ class UtilityNetworkManager(object):
         ------------------------------------        --------------------------------------------------------------------
         type                                        Optional List of String(s). Specify teh association types to be queried.
 
-                                                    `Values: "unspecified" | "dirtyAreaExpansion" | "firstContainers" |
-                                                    "spatialParents" | "topContainers" | "errorsNotModified" | "modifiedObjects"`
+                                                    Values:
+
+                                                        "unspecified" | "dirtyAreaExpansion" | "firstContainers" | "spatialParents" | "topContainers" | "errorsNotModified" | "modifiedObjects"
         ------------------------------------        --------------------------------------------------------------------
         direction                                   Optional String. Specify the direction of the association traversal.
 
-                                                    `Values: "ascending" | "descending"`
+                                                    Values:
+
+                                                        "ascending" | "descending"
         ------------------------------------        --------------------------------------------------------------------
         dirty_filter                                Optional String. Specify whether to filter based on the dirty status
                                                     of the association.
@@ -932,12 +924,16 @@ class UtilityNetworkManager(object):
                                                         When `dirty_filter` and `error_filter` are specified together,
                                                         the filters are combined using the AND expression
 
-                                                    `Values: "none" | "dirty" | "notDirty"`
+                                                    Values:
+
+                                                        "none" | "dirty" | "notDirty"
         ------------------------------------        --------------------------------------------------------------------
         error_filter                                Optional String. Specify whether to filter associations based on the
                                                     error code.
 
-                                                    `Values: "none" | "inError" | "notInError"`
+                                                    Values:
+
+                                                       "none" | "inError" | "notInError"
         ------------------------------------        --------------------------------------------------------------------
         stop_at_first_spatial                       Optional Bool. Specify whether to stop the traversal of associations
                                                     from nonspatial objext to feature when a spatial feature is encountered.
@@ -1036,10 +1032,10 @@ class UtilityNetworkManager(object):
         :return:
             A dictionary with keys and value types of
 
-            | {"exceededTransferLimit": bool,
-            | "objects": list,
-            | "associations": list,
-            | "success": bool}
+                | {"exceededTransferLimit": bool,
+                | "objects": list,
+                | "associations": list,
+                | "success": bool}
         """
 
         if self._gis.version >= [9, 2]:
@@ -1227,9 +1223,9 @@ class TraceConfigurationsManager(object):
                                     will be used to analyze the network. Trace types
                                     can be configured using the `trace_config` parameter.
 
-                                    `Values: "connected" | "subnetwork" | "upstream" |
-                                    "subnetworkController" | "downstream" | "loops" |
-                                    "shortenPath" | "isolation"`
+                                    Values:
+
+                                        "connected" | "subnetwork" | "upstream" | "subnetworkController" | "downstream" | "loops" | "shortenPath" | "isolation"
         ----------------------      -----------------------------------------------
         trace_config                Required Dictionary. Specify the collection of
                                     altered trace configuration properties.
@@ -1310,9 +1306,9 @@ class TraceConfigurationsManager(object):
                                     will be used to analyze the network. Trace types
                                     can be configured using the `trace_config` parameter.
 
-                                    `Values: "connected" | "subnetwork" | "upstream" |
-                                    "subnetworkController" | "downstream" | "loops" |
-                                    "shortenPath" | "isolation"`
+                                    Values:
+
+                                            "connected" | "subnetwork" | "upstream" | "subnetworkController" | "downstream" | "loops" | "shortenPath" | "isolation"
         ----------------------      -----------------------------------------------
         trace_config                Optional Dictionary. Specify the collection of
                                     altered trace configuration properties.

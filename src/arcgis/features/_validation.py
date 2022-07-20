@@ -75,7 +75,7 @@ class ValidationManager(object):
                             Syntax:
 
 
-                                | [{
+                                | error_features = [{
                                 |      "errorType" : "object" | "point" | "line" |
                                 |                   "polygon",
                                 |      "features" : [
@@ -152,9 +152,11 @@ class ValidationManager(object):
         --------------------     --------------------------------------------------------------------
         evaluation               Required List of Strings.  A list of evaluation types.
 
-                                 `Values: "validationRules" | "calculationRules" | "topologyRules"`
+                                 Values:
+
+                                    "validationRules" | "calculationRules" | "topologyRules"
         --------------------     --------------------------------------------------------------------
-        area                     Optional Envelope/Dict. Extent of the area to evaluate.
+        area                     Optional :class:`~arcgis.geometry.Envelope` /Dict. Extent of the area to evaluate.
         --------------------     --------------------------------------------------------------------
         changes_in_version       Optional Boolean. representing whether to perform the evaluation on
                                  the features that have changed in the version (default is false).
@@ -172,8 +174,7 @@ class ValidationManager(object):
                                  Syntax
 
 
-                                     | [
-                                     |   {
+                                     | [{
                                      |     "id" : <layerId1>,
                                      |     "globalIds" : [ <globalId> ],
                                      |     "objectIds" : [ <objectId> ]
@@ -182,8 +183,7 @@ class ValidationManager(object):
                                      |     "id" : <layerId2>,
                                      |     "globalIds" : [ <globalId> ].
                                      |     "objectIds" : [ <objectId> ]
-                                     |   }
-                                     | ]
+                                     |   }]
 
 
         --------------------     --------------------------------------------------------------------

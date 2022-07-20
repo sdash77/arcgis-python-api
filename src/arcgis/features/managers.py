@@ -711,7 +711,7 @@ class SyncManager(object):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        replica_id          Required string. replicaId returned by the feature service when
+        replica_id          Required string. replica_id returned by the feature service when
                             the replica was created.
         ===============     ====================================================================
 
@@ -826,10 +826,10 @@ class SyncManager(object):
                                             applies to all layers in the replica. If the syncModel is perLayer, the
                                             syncDirection is defined on a layer-by-layer basis.
 
-                                            If syncModel is perReplica, the response will have replicaServerGen.
-                                            A perReplica syncModel requires the replicaServerGen on sync. The
+                                            If sync_model is perReplica, the response will have replicaServerGen.
+                                            A perReplica sync_model requires the replicaServerGen on sync. The
                                             replicaServerGen tells the server the point in time from which to send
-                                            back changes. If syncModel is perLayer, the response will include an
+                                            back changes. If sync_model is perLayer, the response will include an
                                             array of server generation numbers for the layers in layerServerGens. A
                                             perLayer sync model requires the layerServerGens on sync. The
                                             layerServerGens tell the server the point in time from which to send
@@ -837,7 +837,7 @@ class SyncManager(object):
                                             the data without creating a replica. Query the supportsSyncModelNone
                                             property of the feature service to see if this model type is supported.
 
-                                            See the RollbackOnFailure and Sync Models topic for more details.
+                                            See the `RollbackOnFailure and Sync Models <https://developers.arcgis.com/rest/services-reference/enterprise/rollbackonfailure-and-sync-models.htm>`_ topic for more details.
 
                                             Values:
 
@@ -866,9 +866,9 @@ class SyncManager(object):
         out_path                            out_path - folder path to save the file.
         -----------------------------       --------------------------------------------------------------------
         sync_direction                      Defaults to bidirectional when the targetType is client and download
-                                            when the targetType is server. If set, only bidirectional is supported
-                                            when targetType is client. If set, only upload or download are
-                                            supported when targetType is server.
+                                            when the target_type is server. If set, only bidirectional is supported
+                                            when target_type is client. If set, only upload or download are
+                                            supported when target_type is server.
 
                                             Values:
 
@@ -885,12 +885,12 @@ class SyncManager(object):
                                             transformation on each layer when the spatial reference used in
                                             geometry is different from the layer's spatial reference.
         -----------------------------       --------------------------------------------------------------------
-        time_reference_unknown_client       Setting timeReferenceUnknownClient as true indicates that the client is
+        time_reference_unknown_client       Setting time_reference_unknown_client as true indicates that the client is
                                             capable of working with data values that are not in UTC. If its not set
                                             to true, and the service layer's datesInUnknownTimeZone property is true,
                                             then an error is returned. The default is false
 
-                                            Its possible to define a service's time zone of date fields as unknown.
+                                            It's possible to define a service's time zone of date fields as unknown.
                                             Setting the time zone as unknown means that date values will be returned
                                             as-is from the database, rather than as date values in UTC. Non-hosted feature
                                             services can be set to use an unknown time zone using ArcGIS Server Manager.

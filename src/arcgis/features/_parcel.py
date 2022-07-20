@@ -130,7 +130,9 @@ class ParcelFabricManager(object):
                                  features. Either the Created By Record or Retired By Record field is
                                  to be updated with the global ID of the assigned record.
 
-                                 Allowed Values: `CreatedByRecord` or `RetiredByRecord`
+                                 Allowed Values:
+
+                                    `CreatedByRecord` or `RetiredByRecord`
 
         --------------------     --------------------------------------------------------------------
         moment                   Optional Integer. This should only be specified by the client when
@@ -183,7 +185,7 @@ class ParcelFabricManager(object):
         ====================     ====================================================================
         **Argument**             **Description**
         --------------------     --------------------------------------------------------------------
-        extent                   Optional Envelope. The extent to build.
+        extent                   Optional :class:`~arcgis.geometry.Envelope` . The extent to build.
 
 
                                  :Syntax:
@@ -284,7 +286,7 @@ class ParcelFabricManager(object):
 
         -----------------------     --------------------------------------------------------------------
         geometry                    Optional Polygon. Allows for the clipping a parcel based on geometry instead of
-                                    'clippingParcels' geometry. No parcel lineage is created.
+                                    'clipping_parcels' geometry. No parcel lineage is created.
 
                                     .. note::
                                         Either `clipping_parcels` or `geometry` is required.
@@ -981,9 +983,10 @@ class ParcelFabricManager(object):
                                     If missing, no parcel history is created.
         --------------------------- --------------------------------------------------------------------
         divide_option               Required String. The type of division to be performed.
-                                        - `ProportionalArea`
-                                        - `EqualArea`
-                                        - `EqualWidth`
+
+                                    - `ProportionalArea`
+                                    - `EqualArea`
+                                    - `EqualWidth`
         --------------------------- --------------------------------------------------------------------
         divide_number_of_parts      Required Integer. The number parts into which the parcel will
                                     be divided.

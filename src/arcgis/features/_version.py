@@ -93,7 +93,9 @@ class VersionManager(object):
         permission          Optional String. The access permissions of the new version. The
                             default access permission is public.
 
-                            Values: "private" | "public" | "protected" | "hidden"
+                            Values:
+
+                                "private" | "public" | "protected" | "hidden"
         ---------------     --------------------------------------------------------------------
         description         Optional String. The description of the new version
         ===============     ====================================================================
@@ -303,7 +305,10 @@ class Version(object):
         Provides access to a validation manager.
 
         :return:
-            :class:`~arcgis.features.ValidationManager`
+            :class:`~arcgis.features._validation.ValidationManager`
+
+
+
 
         """
         if self._validation is None:
@@ -400,11 +405,12 @@ class Version(object):
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
         value                   Required string.
+
                                 Values:
 
-                                    + edit - calls the `start_editing` method and creates a lock
-                                    + read - calls the `start_reading` method and creates a lock
-                                    + None - terminates all sessions and lets a user view the version information (default)
+                                + edit - calls the `start_editing` method and creates a lock
+                                + read - calls the `start_reading` method and creates a lock
+                                + None - terminates all sessions and lets a user view the version information (default)
         ==================      ====================================================================
 
         """
@@ -511,7 +517,9 @@ class Version(object):
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
         value                   Required bool.
-                                Values: True | False
+                                Values:
+
+                                    True | False
         ==================      ====================================================================
 
         When set to true, any edits performed on the version will be saved.
@@ -567,7 +575,7 @@ class Version(object):
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         save                Optional Boolean. States if the values should be saved. If the value
-                            is set, the `save_edits` property will be overrided.
+                            is set, it will override the :attr:`~arcgis.features._version.Version.save_edits` property.
         ===============     ====================================================================
 
 
@@ -701,7 +709,9 @@ class Version(object):
                                .. note::
                                    This parameter was introduced at ArcGIS Enterprise 10.9
 
-                               Values: `byObject` | `byAttribute`
+                               Values:
+
+                                   byObject | byAttribute
 
         ------------------     --------------------------------------------------------------------
         future                 Optional boolean. If `True`, the request is processed as an asynchronous
@@ -714,8 +724,8 @@ class Version(object):
                                The default is `False`.
         ==================     ====================================================================
 
-        :returns: Boolean.
-        If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
+        :return: Boolean.
+        If ``future = True``, then the result is a `Future <https://docs.python.org/3/library/concurrent.futures.html>`_ object. Call ``result()`` to get the response.
 
         """
         if self._mode == "edit":
@@ -802,7 +812,9 @@ class Version(object):
         ---------------     --------------------------------------------------------------------
         permission          Optional String. The new access level of the version.
 
-                            Values: private, public, protected, or hidden
+                            Values:
+
+                                "private" | "public" | "protected" | "hidden"
         ---------------     --------------------------------------------------------------------
         description         Optional String. The description of the new version
         ===============     ====================================================================
@@ -855,7 +867,9 @@ class Version(object):
         result_type         Required String.  Determines the type of results to return.
                             The default result type is `objectIds`.
 
-                            Values : `objectIds` or `features`
+                            Values :
+
+                                "objectIds" | "features"
         ---------------     --------------------------------------------------------------------
         moment              Required String. Moment used to compare current version with
                             default.
