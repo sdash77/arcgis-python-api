@@ -11787,6 +11787,7 @@ class RasterCollection:
         # super().__init__(rasters, gis)
 
         # self._do_not_hydrate=False
+        import pandas as pd
         local_class = True
 
         if engine is not None and engine not in [
@@ -11818,6 +11819,11 @@ class RasterCollection:
                 context=context,
             )
         else:
+            if isinstance(rasters, pd.DataFrame):
+                rc_dict = rasters.to_dict('list')
+                rasters = rc_dict.pop("Raster")
+                attribute_dict = rc_dict
+
             if isinstance(rasters, str):
                 if "https://" in rasters or "http://" in rasters:
                     self._ras_coll_engine = _ImageServerRasterCollection
@@ -11884,6 +11890,7 @@ class RasterCollection:
                         gis=gis,
                         context=context,
                     )
+
 
     def set_engine(self, engine: str):
         """
@@ -12955,7 +12962,7 @@ class RasterCollection:
             dimension_field_names=dimension_field_names,
         )
 
-    def max(self, ignore_nodata: bool = True):
+    def max(self, ignore_nodata: bool = True, extent_type: str = "FIRST", cellsize_type: str = "FIRST"):
         """
         The ``max`` method returns a :class:`~arcgis.raster.Raster` object in which each band contains the
         maximum pixel values for that band across all rasters in the raster collection.
@@ -12973,14 +12980,36 @@ class RasterCollection:
 
                                                     - True : The method will include all valid pixels and ignore any NoData pixels. This is the default.
                                                     - False : The method will result in NoData if there are any NoData values.
+        ------------------------------------     --------------------------------------------------------------------
+        extent_type                              Optional string. Specifies the extent to be used for the function.
+
+                                                    - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                                    - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                                    - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                                    - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+        ------------------------------------     --------------------------------------------------------------------
+        cellsize_type                            Optional string. Specifies the cell size to be used for the function.
+
+                                                    - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                                    - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                                    - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                                    - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                                    - "LastOf" - Use the last cell size of the input rasters.
         ====================================     ====================================================================
 
         :return: A :class:`~arcgis.raster.Raster` object
 
         """
-        return self._ras_coll_engine_obj.max(ignore_nodata=ignore_nodata)
+        return self._ras_coll_engine_obj.max(ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
 
-    def min(self, ignore_nodata: bool = True):
+    def min(self, ignore_nodata: bool = True, extent_type: str = "FIRST", cellsize_type: str = "FIRST"):
         """
         The ``min`` method returns a :class:`~arcgis.raster.Raster` object in which each band contains the
         minimum pixel values for that band across all rasters in the :class:`~arcgis.raster.RasterCollection`.
@@ -12998,13 +13027,35 @@ class RasterCollection:
 
                                                     - True : The method will include all valid pixels and ignore any NoData pixels. This is the default.
                                                     - False : The method will result in NoData if there are any NoData values.
+        ------------------------------------     --------------------------------------------------------------------
+        extent_type                              Optional string. Specifies the extent to be used for the function.
+
+                                                    - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                                    - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                                    - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                                    - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+        ------------------------------------     --------------------------------------------------------------------
+        cellsize_type                            Optional string. Specifies the cell size to be used for the function.
+
+                                                    - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                                    - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                                    - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                                    - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                                    - "LastOf" - Use the last cell size of the input rasters.
         ====================================     ====================================================================
 
         :return: a :class:`~arcgis.raster.Raster` object
         """
-        return self._ras_coll_engine_obj.min(ignore_nodata=ignore_nodata)
+        return self._ras_coll_engine_obj.min(ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
 
-    def median(self, ignore_nodata: bool = True):
+    def median(self, ignore_nodata: bool = True, extent_type: str = "FIRST", cellsize_type: str = "FIRST"):
         """
         The ``median`` method returns a :class:`~arcgis.raster.Raster` object in which each band contains the
         median pixel values for that band across all rasters in the :class:`~arcgis.raster.RasterCollection`.
@@ -13023,13 +13074,35 @@ class RasterCollection:
 
                                                     - True : The method will include all valid pixels and ignore any NoData pixels. This is the default.
                                                     - False : The method will result in NoData if there are any NoData values.
+        ------------------------------------     --------------------------------------------------------------------
+        extent_type                              Optional string. Specifies the extent to be used for the function.
+
+                                                    - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                                    - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                                    - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                                    - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+        ------------------------------------     --------------------------------------------------------------------
+        cellsize_type                            Optional string. Specifies the cell size to be used for the function.
+
+                                                    - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                                    - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                                    - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                                    - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                                    - "LastOf" - Use the last cell size of the input rasters.
         ====================================     ====================================================================
 
         :return: A :class:`~arcgis.raster.Raster` object
         """
-        return self._ras_coll_engine_obj.median(ignore_nodata=ignore_nodata)
+        return self._ras_coll_engine_obj.median(ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
 
-    def mean(self, ignore_nodata: bool = True):
+    def mean(self, ignore_nodata: bool = True, extent_type: str = "FIRST", cellsize_type: str = "FIRST"):
         """
         The ``mean`` method returns a :class:`~arcgis.raster.Raster` object in which each band contains the average
         pixel values for that band across all rasters in the raster collection.
@@ -13048,13 +13121,35 @@ class RasterCollection:
 
                                                     - True : The method will include all valid pixels and ignore any NoData pixels. This is the default.
                                                     - False : The method will result in NoData if there are any NoData values.
+        ------------------------------------     --------------------------------------------------------------------
+        extent_type                              Optional string. Specifies the extent to be used for the function.
+
+                                                    - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                                    - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                                    - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                                    - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+        ------------------------------------     --------------------------------------------------------------------
+        cellsize_type                            Optional string. Specifies the cell size to be used for the function.
+
+                                                    - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                                    - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                                    - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                                    - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                                    - "LastOf" - Use the last cell size of the input rasters.
         ====================================     ====================================================================
 
         :return: A :class:`~arcgis.raster.Raster` object
         """
-        return self._ras_coll_engine_obj.mean(ignore_nodata=ignore_nodata)
+        return self._ras_coll_engine_obj.mean(ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
 
-    def majority(self, ignore_nodata: bool = True):
+    def majority(self, ignore_nodata: bool = True, extent_type: str = "FIRST", cellsize_type: str = "FIRST"):
         """
         The ``majority`` method returns a :class:`~arcgis.raster.Raster` object in which each band contains the pixel
         value that occurs most frequently for that band across all
@@ -13075,14 +13170,36 @@ class RasterCollection:
 
                                                     - True : The method will include all valid pixels and ignore any NoData pixels. This is the default.
                                                     - False : The method will result in NoData if there are any NoData values.
+        ------------------------------------     --------------------------------------------------------------------
+        extent_type                              Optional string. Specifies the extent to be used for the function.
+
+                                                    - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                                    - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                                    - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                                    - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+        ------------------------------------     --------------------------------------------------------------------
+        cellsize_type                            Optional string. Specifies the cell size to be used for the function.
+
+                                                    - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                                    - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                                    - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                                    - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                                    - "LastOf" - Use the last cell size of the input rasters.
         ====================================     ====================================================================
 
         :return: A :class:`~arcgis.raster.Raster` object
 
         """
-        return self._ras_coll_engine_obj.majority(ignore_nodata=ignore_nodata)
+        return self._ras_coll_engine_obj.majority(ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
 
-    def sum(self, ignore_nodata: bool = True):
+    def sum(self, ignore_nodata: bool = True, extent_type: str = "FIRST", cellsize_type: str = "FIRST"):
         """
         The ``sum`` method returns a :class:`~arcgis.raster.Raster` object in which each band contains the sum
         of pixel values for that band across all rasters in the :class:`~arcgis.raster.RasterCollection`.
@@ -13101,11 +13218,80 @@ class RasterCollection:
 
                                                     - True : The method will include all valid pixels and ignore any NoData pixels. This is the default.
                                                     - False : The method will result in NoData if there are any NoData values.
+        ------------------------------------     --------------------------------------------------------------------
+        extent_type                              Optional string. Specifies the extent to be used for the function.
+
+                                                    - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                                    - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                                    - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                                    - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+        ------------------------------------     --------------------------------------------------------------------
+        cellsize_type                            Optional string. Specifies the cell size to be used for the function.
+
+                                                    - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                                    - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                                    - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                                    - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                                    - "LastOf" - Use the last cell size of the input rasters.
         ====================================     ====================================================================
 
         :return: A :class:`~arcgis.raster.Raster` object
         """
-        return self._ras_coll_engine_obj.sum(ignore_nodata=ignore_nodata)
+        return self._ras_coll_engine_obj.sum(ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
+
+    def std(self, ignore_nodata: bool = True, extent_type: str = "FIRST", cellsize_type: str = "FIRST"):
+        """
+        The ``std`` method returns a :class:`~arcgis.raster.Raster` object in which each band contains the std
+        of pixel values for that band across all rasters in the :class:`~arcgis.raster.RasterCollection`.
+
+        For example, if there are ten raster items in the raster collection,
+        each with four bands, the std method will calculate the std of pixel
+        values for each pixel that occurs across all raster items for band 1,
+        band 2, band 3, and band 4; a four-band raster is returned.
+        Band numbers are matched between raster items using the band index,
+        so the items in the raster collection must follow the same band order.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored.
+
+                                                    - True : The method will include all valid pixels and ignore any NoData pixels. This is the default.
+                                                    - False : The method will result in NoData if there are any NoData values.
+        ------------------------------------     --------------------------------------------------------------------
+        extent_type                              Optional string. Specifies the extent to be used for the function.
+
+                                                    - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                                    - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                                    - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                                    - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+        ------------------------------------     --------------------------------------------------------------------
+        cellsize_type                            Optional string. Specifies the cell size to be used for the function.
+
+                                                    - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                                    - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                                    - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                                    - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                                    - "LastOf" - Use the last cell size of the input rasters.
+        ====================================     ====================================================================
+
+        :return: A :class:`~arcgis.raster.Raster` object
+        """
+        return self._ras_coll_engine_obj.std(ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
 
     def mosaic(self, mosaic_method: str = "FIRST"):
         """
@@ -13331,6 +13517,110 @@ class RasterCollection:
 
         """
         return self._ras_coll_engine_obj.reduce(func=func, func_args=func_args)
+
+    def merge(self, collection2):
+        """
+        The ``merge`` method merges two image collections into one. The output has all the items that were in either collection. 
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        collection2                              RasterCollection object. The second collection to merge.
+        ====================================     ====================================================================
+
+        :return: a new Collection that has all the items that were in either collection.
+
+        .. code-block:: python
+
+            # Usage Example 1: merges two image collections rc1 and rc2 into one.
+
+            rc1 = rc.filter_by_attribute("OBJECTID", "EQUALS", 1)
+            rc2 = rc.filter_by_attribute("OBJECTID", "EQUALS", 2)
+            new_rc = rc1.merge(rc2)
+
+        """
+
+        return self._ras_coll_engine_obj.merge(collection2._ras_coll_engine_obj)
+
+
+    def summarize_field(self, field_name, summary_type="ALL"):
+        """
+        Summarizes a numeric field of the RasterCollection based on the specified summary_type
+        :param field_name: str, the field name to be summarized
+        :param summary_type: str or list of str representing the summary type."COUNT", "COUNT_DISTINCT", "FIRST","HISTOGRAM", "MAX", "MEAN", "MIN",
+                        "PRODUCT", "SAMPLE_SD", "SAMPLE_VAR", "SUM", "TOTAL_SD", "TOTAL_VAR", "ALL".
+        :return: a dictionary with key being the summary type and the value being the summary value.
+        """
+        property_values = self.get_field_values(field_name)
+        summary_dict = {}
+        import numbers
+
+        if not isinstance(summary_type, list):
+            summary_type = [summary_type]
+
+        if "ALL" in map(str.upper, summary_type):
+            summary_type = ["COUNT", "COUNT_DISTINCT", "FIRST", "HISTOGRAM", "MAX", "MEAN", "MIN",
+                        "PRODUCT", "SAMPLE_SD", "SAMPLE_VAR", "SUM", "TOTAL_SD", "TOTAL_VAR"]
+
+        from operator import is_not
+        from functools import partial
+        property_values_not_none = list(filter(partial(is_not, None), property_values))
+
+        all_num = all(isinstance(x, numbers.Number) for x in property_values_not_none)
+        if not all_num:
+            raise RuntimeError("Only numeric fields can be summarized")
+        try:
+            for summary in summary_type:
+                val = None
+                summary = summary.lower()
+                if summary == 'count':
+                    val = len(property_values_not_none)
+
+                elif summary == 'count_distinct':
+                    val = len(np.unique(property_values_not_none))
+
+                elif summary == 'first':
+                    val = property_values_not_none[0]
+
+                elif summary == 'histogram':
+                    unique, counts = np.unique(property_values_not_none, return_counts=True)
+                    val = dict(zip(unique, counts))
+
+                elif summary == 'max':
+                    val = np.max(property_values_not_none)
+
+                elif summary == 'mean':
+                    val = np.mean(property_values_not_none)
+
+                elif summary == 'min':
+                    val = np.min(property_values_not_none)
+
+                elif summary == 'product':
+                    val = np.prod(property_values_not_none)
+
+                elif summary == 'sample_sd':
+                    val = np.std(property_values_not_none, ddof=1)
+
+                elif summary == 'sample_var':
+                    val = np.var(property_values_not_none, ddof=1)
+
+                elif summary == 'sum':
+                    val = np.sum(property_values_not_none)
+
+                elif summary == 'total_sd':
+                    val = np.std(property_values_not_none)
+
+                elif summary == 'total_var':
+                    val = np.var(property_values_not_none)
+
+                else:
+                    raise ValueError('invalid summary_type value')
+
+                summary_dict.update({summary:val})
+        except:
+            raise RuntimeError("Failed to summarize the property")
+
+        return summary_dict
 
 
     def _as_df(
@@ -13713,23 +14003,26 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
             )
         )
 
-    def max(self, ignore_nodata=True):
-        return Raster(self._raster_collection.max(ignore_nodata=ignore_nodata))
+    def max(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
+        return Raster(self._raster_collection.max(ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type))
 
-    def min(self, ignore_nodata=True):
-        return Raster(self._raster_collection.min(ignore_nodata=ignore_nodata))
+    def min(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
+        return Raster(self._raster_collection.min(ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type))
 
-    def median(self, ignore_nodata=True):
-        return Raster(self._raster_collection.median(ignore_nodata=ignore_nodata))
+    def median(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
+        return Raster(self._raster_collection.median(ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type))
 
-    def mean(self, ignore_nodata=True):
-        return Raster(self._raster_collection.mean(ignore_nodata=ignore_nodata))
+    def mean(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
+        return Raster(self._raster_collection.mean(ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type))
 
-    def majority(self, ignore_nodata=True):
-        return Raster(self._raster_collection.majority(ignore_nodata=ignore_nodata))
+    def majority(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
+        return Raster(self._raster_collection.majority(ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type))
 
-    def sum(self, ignore_nodata=True):
-        return Raster(self._raster_collection.sum(ignore_nodata=ignore_nodata))
+    def sum(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
+        return Raster(self._raster_collection.sum(ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type))
+
+    def std(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
+        return Raster(self._raster_collection.std(ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type))
 
     def mosaic(self, mosaic_method):
         return Raster(self._raster_collection.mosaic(mosaic_method=mosaic_method))
@@ -13771,6 +14064,18 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         rasters = self._rasters_list
         reduced_raster = func(rasters, **func_args)
         return reduced_raster
+
+    def merge(self, collection2):
+
+        newcollection = self._clone_raster_collection()
+
+        newcollection._ras_coll_engine_obj._raster_collection = (
+            self._raster_collection.merge(collection2._raster_collection)
+        )
+        newcollection._ras_coll_engine_obj._df = (
+            newcollection._ras_coll_engine_obj._as_df()
+        )
+        return newcollection
 
     def _as_df(
         self, result_offset=None, result_record_count=None, return_all_records=False
@@ -14264,59 +14569,40 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         lyr._engine_obj._mdinfo = {"multidimensionalInfo": md_info}
         return lyr
 
-    def max(self, ignore_nodata=True):
-        from arcgis.raster.functions import raster_collection_function
+    def max(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
+        from arcgis.raster.functions import max
 
-        opnum = 67 if ignore_nodata else 39
-        raster_function_json = _local_function_template(opnum)
-        return raster_collection_function(
-            self, aggregation_function=raster_function_json
-        )
+        return max(self._rasters_list, ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
 
-    def min(self, ignore_nodata=True):
-        from arcgis.raster.functions import raster_collection_function
+    def min(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
+        from arcgis.raster.functions import min
 
-        opnum = 70 if ignore_nodata else 42
-        raster_function_json = _local_function_template(opnum)
-        return raster_collection_function(
-            self, aggregation_function=raster_function_json
-        )
+        return min(self._rasters_list, ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
 
-    def median(self, ignore_nodata=True):
-        from arcgis.raster.functions import raster_collection_function
+    def median(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
+        from arcgis.raster.functions import med
 
-        opnum = 69 if ignore_nodata else 41
-        raster_function_json = _local_function_template(opnum)
-        return raster_collection_function(
-            self, aggregation_function=raster_function_json
-        )
+        return med(self._rasters_list, ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
 
-    def mean(self, ignore_nodata=True):
-        from arcgis.raster.functions import raster_collection_function
+    def mean(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
+        from arcgis.raster.functions import mean
 
-        opnum = 68 if ignore_nodata else 40
-        raster_function_json = _local_function_template(opnum)
-        return raster_collection_function(
-            self, aggregation_function=raster_function_json
-        )
+        return mean(self._rasters_list, ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
 
-    def majority(self, ignore_nodata=True):
-        from arcgis.raster.functions import raster_collection_function
+    def majority(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
+        from arcgis.raster.functions import majority
 
-        opnum = 66 if ignore_nodata else 38
-        raster_function_json = _local_function_template(opnum)
-        return raster_collection_function(
-            self, aggregation_function=raster_function_json
-        )
+        return majority(self._rasters_list, ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
 
-    def sum(self, ignore_nodata=True):
-        from arcgis.raster.functions import raster_collection_function
+    def sum(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
+        from arcgis.raster.functions import sum
 
-        opnum = 74 if ignore_nodata else 55
-        raster_function_json = _local_function_template(opnum)
-        return raster_collection_function(
-            self, aggregation_function=raster_function_json
-        )
+        return sum(self._rasters_list, ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
+
+    def std(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
+        from arcgis.raster.functions import std
+
+        return std(self._rasters_list, ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
 
     def mosaic(self, mosaic_method):
         from arcgis.raster.functions import raster_collection_function
@@ -14462,6 +14748,48 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         reduced_raster = func(rasters, **func_args)
         return reduced_raster
 
+    def merge(self, collection2):
+
+        import pandas as pd
+
+        rc1=self._as_df()
+        rc2=collection2._as_df()
+
+        merged_collection = pd.concat([rc1, rc2], axis=0)
+        merged_collection.reset_index(drop=True, inplace=True)
+
+        return RasterCollection(merged_collection)
+
+    def _generate_raster_item_rft(self, raster_id):
+        template_dict = {"rasterFunction": "RasterItem", "rasterFunctionArguments": {}}
+
+        if self is not None and isinstance(self, ImageryLayer):
+            url = self.url
+
+            try:
+                if (
+                    (hasattr(self, "_lazy_token")) and self._lazy_token is None
+                ) or not hasattr(self, "_lazy_token"):
+                    from .functions.utility import _generate_layer_token
+
+                    self._lazy_token = _generate_layer_token(self, url)
+                if isinstance(self._lazy_token, str):
+                    url = url + "?token=" + self._lazy_token
+                    token = self._lazy_token
+            except:
+                url = self.url
+
+            template_dict["rasterFunctionArguments"]["URL"] = url
+            template_dict["rasterFunctionArguments"]["Raster"] = url
+
+
+        if self is not None and isinstance(self, str):
+            template_dict["rasterFunctionArguments"]["URL"] = self
+
+        if raster_id is not None:
+            template_dict["rasterFunctionArguments"]["RasterID"] = raster_id
+        return template_dict
+
     def _as_df(
         self, result_offset=None, result_record_count=None, return_all_records=False
     ):
@@ -14499,7 +14827,10 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
             oid_name = self._object_id_name()
             for i in range(0, len(df.index)):
                 # self._do_not_hydrate=True
-                df.loc[i, "Raster"] = _raster_item(self, int(df[oid_name].loc[i]))
+                rft = self._generate_raster_item_rft(int(df[oid_name].loc[i]))
+                df.loc[i, "Raster"] = Raster(rft)
+                df.loc[i, "Raster"]._engine_obj._fn  = rft
+                df.loc[i, "Raster"]._engine_obj._fnra = rft
                 df.loc[i, "Raster"]._engine_obj._do_not_hydrate = True
 
         return df
@@ -15173,35 +15504,40 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
         lyr._engine_obj._fnra["rasterFunctionArguments"]["Raster"] = json.dumps(fnra)
         return lyr
 
-    def max(self, ignore_nodata=True):
+    def max(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
         from arcgis.raster.functions import max
 
-        return max(self._rasters_list, ignore_nodata=ignore_nodata)
+        return max(self._rasters_list, ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
 
-    def min(self, ignore_nodata=True):
+    def min(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
         from arcgis.raster.functions import min
 
-        return min(self._rasters_list, ignore_nodata=ignore_nodata)
+        return min(self._rasters_list, ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
 
-    def median(self, ignore_nodata=True):
+    def median(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
         from arcgis.raster.functions import med
 
-        return med(self._rasters_list, ignore_nodata=ignore_nodata)
+        return med(self._rasters_list, ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
 
-    def mean(self, ignore_nodata=True):
+    def mean(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
         from arcgis.raster.functions import mean
 
-        return mean(self._rasters_list, ignore_nodata=ignore_nodata)
+        return mean(self._rasters_list, ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
 
-    def majority(self, ignore_nodata=True):
+    def majority(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
         from arcgis.raster.functions import majority
 
-        return majority(self._rasters_list, ignore_nodata=ignore_nodata)
+        return majority(self._rasters_list, ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
 
-    def sum(self, ignore_nodata=True):
+    def sum(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
         from arcgis.raster.functions import sum
 
-        return sum(self._rasters_list, ignore_nodata=ignore_nodata)
+        return sum(self._rasters_list, ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
+
+    def std(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
+        from arcgis.raster.functions import std
+
+        return std(self._rasters_list, ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
 
     def mosaic(self, mosaic_method):
         raise RuntimeError("Local RasterCollection does not support mosaic function")
@@ -15328,6 +15664,18 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
         rasters = self._rasters_list
         reduced_raster = func(rasters, **func_args)
         return reduced_raster
+
+    def merge(self, collection2):
+
+        import pandas as pd
+
+        rc1=self._as_df()
+        rc2=collection2._as_df()
+
+        merged_collection = pd.concat([rc1, rc2], axis=0)
+        merged_collection.reset_index(drop=True, inplace=True)
+
+        return RasterCollection(merged_collection)
 
     def _as_df(
         self, result_offset=None, result_record_count=None, return_all_records=False
