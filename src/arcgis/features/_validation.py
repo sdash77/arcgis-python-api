@@ -155,6 +155,10 @@ class ValidationManager(object):
                                  Values:
 
                                     "validationRules" | "calculationRules" | "topologyRules"
+
+                                 Example:
+
+                                    evaluation=["calculationRules"]
         --------------------     --------------------------------------------------------------------
         area                     Optional :class:`~arcgis.geometry.Envelope` /Dict. Extent of the area to evaluate.
         --------------------     --------------------------------------------------------------------

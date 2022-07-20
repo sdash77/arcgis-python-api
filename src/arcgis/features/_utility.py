@@ -467,7 +467,10 @@ class UtilityNetworkManager(object):
 
                                                     Values:
 
-                                                            "initialEnableTopology" | "fullValidateTopology" | "partialValidateTopology" | "enableTopology" | "disableTopology" | "definitionModification" | "updateIsConnected" | "indexUpdate" | "all"
+                                                            [ "initialEnableTopology" | "fullValidateTopology" | "partialValidateTopology" | "enableTopology" | "disableTopology" | "definitionModification" | "updateIsConnected" | "indexUpdate" | "all"]
+                                                    Example:
+
+                                                        moments_to_return=["enableTopology","initialEnableTopology"]
         ------------------------------------        --------------------------------------------------------------------
         moment                                      Optional Integer. Specify the session moment if you do not want to use
                                                     the current moment.
@@ -905,7 +908,7 @@ class UtilityNetworkManager(object):
         moment                                      Optional Epoch time in milliseconds. Specify if you do not want to
                                                     use the current moment.
         ------------------------------------        --------------------------------------------------------------------
-        type                                        Optional List of String(s). Specify teh association types to be queried.
+        type                                        Optional String. Specify teh association types to be queried.
 
                                                     Values:
 
