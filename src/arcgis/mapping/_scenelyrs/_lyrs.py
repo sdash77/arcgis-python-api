@@ -648,6 +648,119 @@ class IntegratedMeshLayer(Layer):
 
 
 ###########################################################################
+
+
+class VoxelLayer(Layer):
+    """
+    The ``VoxelLayer`` class represents a Web Scene Voxel layer.
+
+    .. note::
+        Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
+        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    url                    Required string, specify the url ending in /SceneServer/
+    ------------------     --------------------------------------------------------------------
+    gis                    Optional GIS object. If not specified, the active GIS connection is
+                           used.
+    ==================     ====================================================================
+
+    .. code-block:: python
+
+        # USAGE EXAMPLE 1: Instantiating a SceneLayer object
+
+        from arcgis.mapping import SceneLayer
+        s_layer = SceneLayer(url='https://your_portal.com/arcgis/rest/services/service_name/SceneServer/')
+
+        type(s_layer)
+        >> arcgis.mapping._types.VoxelLayer
+
+        print(s_layer.properties.layers[0].name)
+        >> 'your layer name'
+    """
+
+    def __init__(self, url, gis=None):
+        """
+        Constructs a SceneLayer given a web scene layer URL
+        """
+        super(VoxelLayer, self).__init__(url, gis)
+        self._admin = None
+
+    @property
+    def _lyr_dict(self):
+        url = self.url
+
+        lyr_dict = {"type": "VoxelLayer", "url": url}
+        if self._token is not None:
+            lyr_dict["serviceToken"] = self._token
+
+        if self.filter is not None:
+            lyr_dict["filter"] = self.filter
+        if self._time_filter is not None:
+            lyr_dict["time"] = self._time_filter
+        return lyr_dict
+
+    # ----------------------------------------------------------------------
+    @property
+    def _lyr_json(self):
+        url = self.url
+        if self._token is not None:  # causing geoanalytics Invalid URL error
+            url += "?token=" + self._token
+
+        lyr_dict = {"type": "VoxelLayer", "url": url}
+
+        if self.filter is not None:
+            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
+        if self._time_filter is not None:
+            lyr_dict["time"] = self._time_filter
+        return lyr_dict
+
+    # ----------------------------------------------------------------------
+    @property
+    def manager(self):
+        if self._admin is None:
+            """
+            The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
+            or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
+            which provides methods and properties for administering this service.
+            """
+            if self._gis._portal.is_arcgisonline:
+                rd = {"/rest/services/": "/rest/admin/services/"}
+                adminURL = self._str_replace(self._url, rd)
+                if adminURL.split("/")[-1].isdigit():
+                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+                self._admin = SceneLayerManager(adminURL, self._gis, self)
+            else:
+                rd = {"/rest/": "/admin/", "/SceneServer": ".SceneServer"}
+                adminURL = self._str_replace(self._url, rd)
+                if adminURL.split("/")[-1].isdigit():
+                    adminURL = adminURL.replace(f'/{adminURL.split("/")[-1]}', "")
+                self._admin = EnterpriseSceneLayerManager(adminURL, self._gis, self)
+        return self._admin
+
+    # ----------------------------------------------------------------------
+    def _str_replace(self, mystring, rd):
+        """Replaces a value based on a key/value pair where the
+        key is the text to replace and the value is the new value.
+
+        The find/replace is case insensitive.
+
+        """
+        import re
+
+        patternDict = {}
+        for key, value in rd.items():
+            pattern = re.compile(re.escape(key), re.IGNORECASE)
+            patternDict[value] = pattern
+        for key in patternDict:
+            regex_obj = patternDict[key]
+            mystring = regex_obj.sub(key, mystring)
+        return mystring
+
+
+###########################################################################
 class Point3DLayer(Layer):
     """
     The ``Point3DLayer`` class represents a Web scene 3D Point layer.
@@ -1028,6 +1141,8 @@ class _SceneLayerFactory(type):
             return BuildingLayer(url=url, gis=gis)
         elif str(lt).lower() == "IntegratedMesh".lower():
             return IntegratedMeshLayer(url=url, gis=gis)
+        elif str(lt).lower() == "voxel":
+            return VoxelLayer(url=url, gis=gis)
         return lyr
 
 
