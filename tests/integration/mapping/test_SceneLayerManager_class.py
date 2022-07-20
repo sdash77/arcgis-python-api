@@ -7,6 +7,12 @@ import os
 from arcgis.gis import GIS
 from arcgis.mapping import SceneLayer
 
+gis = GIS(profile="your_enterprise_profile")
+scn_item = gis.content.get("43da12a04c314269a524b6b1c32cb2f5")
+scn_lyr = SceneLayer(scn_item.url, gis)
+mngr = scn_lyr.manager
+mngr._tbx
+
 # Initialize manager
 online_admin = GIS(
     profile="your_online_profile",

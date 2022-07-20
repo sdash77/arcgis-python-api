@@ -1,6 +1,7 @@
+from __future__ import annotations
 import json
-from typing import Optional, Union
-from arcgis.gis import Layer, _GISResource, Item, GIS
+from arcgis.gis import Layer, _GISResource, Item
+from arcgis.geoprocessing import import_toolbox
 from arcgis.auth.tools import LazyLoader
 
 _services = LazyLoader("arcgis.gis.server.admin._services")
@@ -141,7 +142,7 @@ class SceneLayerManager(_GISResource):
         return None
 
     # ----------------------------------------------------------------------
-    def import_item(self, item: Union[str, Item]):
+    def import_package(self, item: str | Item):
         """
         The ``import`` method imports from an :class:`~arcgis.gis.Item` object.
 
@@ -176,11 +177,12 @@ class SceneLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def update(self):
         """
-        The ``update`` method starts update generation for ArcGIS Online.
+        The ``update`` method starts update generation for ArcGIS Online. It updates
+        the underlying source dataset for the service, essentially refreshing the
+        underlying package data.
 
         :return:
-           Dictionary. If the product is not ArcGIS Online tile service, the
-           result will be None.
+           Dictionary.
         """
         if self._gis._portal.is_arcgisonline:
             url = "%s/update" % self._url
@@ -189,9 +191,9 @@ class SceneLayerManager(_GISResource):
         return None
 
     # ----------------------------------------------------------------------
-    def edit_item(self, item: Union[str, Item]):
+    def edit(self, item: str | Item):
         """
-        The ``edit_item`` method edits from an :class:`~arcgis.gis.Item` object.
+        The ``edit`` method edits from an :class:`~arcgis.gis.Item` object.
 
         ===============     ====================================================
         **Argument**        **Description**
@@ -244,6 +246,53 @@ class SceneLayerManager(_GISResource):
             return self._con.post(url, params)
         return None
 
+    # ----------------------------------------------------------------------
+    def update_cache(self, layers: str):
+        """
+        Update Cache is a "light rebuild" where attributes and geometries of
+        the layers selected are updated and can be used for change tracking on
+        the feature layer to only update nodes with dirty tiles.
+        The results of the operation is a response indicating success, which
+        redirects you to the Job Statistics page, or failure.
+
+        =====================       ====================================================
+        **Argument**                **Description**
+        ---------------------       ----------------------------------------------------
+        layers                      Required String. Comma seperated values indicating
+                                    the id of the layers to update in the cache.
+
+                                    Ex: "0,1,2"
+        =====================       ====================================================
+        """
+        if self._source_type is "Feature Service":
+            url = self._url + "/updateCache"
+            params = {"f": "json", "layers": layers}
+            return self._con.post(url, params)
+        return None
+
+    # ----------------------------------------------------------------------
+    def update_attribute(self, layers: str):
+        """
+        Update atrribute is a "light rebuild" where attributes of
+        the layers selected are updated and can be used for change tracking.
+        The results of the operation is a response indicating success, which
+        redirects you to the Job Statistics page, or failure.
+
+        =====================       ====================================================
+        **Argument**                **Description**
+        ---------------------       ----------------------------------------------------
+        layers                      Required String. Comma seperated values indicating
+                                    the id of the layers to update in the cache.
+
+                                    Ex: "0,1,2"
+        =====================       ====================================================
+        """
+        if self._source_type is "Feature Service":
+            url = self._url + "/updateAttribute"
+            params = {"f": "json", "layers": layers}
+            return self._con.post(url, params)
+        return None
+
 
 ###########################################################################
 class EnterpriseSceneLayerManager(_GISResource):
@@ -254,10 +303,12 @@ class EnterpriseSceneLayerManager(_GISResource):
     .. note:: Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/SceneServer/
     """
 
+    _gptbx = None
+
     def __init__(self, url, gis=None, scene_lyr=None):
         if url.split("/")[-1].isdigit():
             url = url.replace(f"/{url.split('/')[-1]}", "")
-        super(SceneLayerManager, self).__init__(url, gis)
+        super(EnterpriseSceneLayerManager, self).__init__(url, gis)
         self._sl = scene_lyr
 
     # ----------------------------------------------------------------------
@@ -313,6 +364,65 @@ class EnterpriseSceneLayerManager(_GISResource):
         """deletes a service from arcgis server"""
         sl_service = _services.Service(self.url, self._gis)
         return sl_service.delete()
+
+    # ----------------------------------------------------------------------
+    @property
+    def _tbx(self):
+        """gets the toolbox"""
+        if self._gptbx is None:
+            self._gptbx = import_toolbox(
+                url_or_item=self._gis.hosting_servers[0].url
+                + "/System/SceneCachingControllers/GPServer",
+                gis=self._gis,
+            )
+            self._gptbx._is_fa = True
+        return self._gptbx
+
+    # ----------------------------------------------------------------------
+    def rebuild_cache(self):
+        """
+        The rebuild_cache operation update the scene layer cache to reflect
+        any changes made to the feature layer used to publish this scene layer.
+        The results of the operation is the url to the scene service once it is
+        done rebuilding.
+        """
+        return self._tbx.manage_scene_cache(
+            service_url=self._sl.url,
+            num_of_caching_service_instances=2,
+            layer={},
+            update_mode="RECREATE_ALL_NODES",
+        )
+
+    # ----------------------------------------------------------------------
+    def update_cache(self):
+        """
+        Update Cache is a "light rebuild" where attributes and geometries of
+        the layers selected are updated and can be used for change tracking on
+        the feature layer to only update nodes with dirty tiles,.
+        The results of the operation is the url to the scene service once it is
+        done updating.
+        """
+        return self._tbx.manage_scene_cache(
+            service_url=self._sl.url,
+            num_of_caching_service_instances=2,
+            layer={},
+            update_mode="PARTIAL_UPDATE_NODES",
+        )
+
+    # ----------------------------------------------------------------------
+    def update_attribute(self):
+        """
+        Update atrribute is a "light rebuild" where attributes of
+        the layers selected are updated and can be used for change tracking.
+        The results of the operation is the url to the scene service once it is
+        done updating.
+        """
+        return self._tbx.manage_scene_cache(
+            service_url=self._sl.url,
+            num_of_caching_service_instances=2,
+            layer={},
+            update_mode="PARTIAL_UPDATE_ATTRIBUTES",
+        )
 
 
 ###########################################################################
