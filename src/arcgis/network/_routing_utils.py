@@ -23,14 +23,16 @@ def get_travel_modes(gis: Optional[GIS] = None):
 
     Get a list of travel modes that can be used with directions and routing services available in your portal.
 
-    Parameters:
+    =================================================     ========================================================================
+    **Argument**                                          **Description**
+    -------------------------------------------------     ------------------------------------------------------------------------
+    gis                                                   Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
+    =================================================     ========================================================================
 
-    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
-
-    Returns the following as a named tuple:
-       supported_travel_modes - Supported Travel Modes as a FeatureSet
-       default_travel_mode - Default Travel Mode as a str
+    :return: the following as a named tuple:
+    * supported_travel_modes - Supported Travel Modes as a FeatureSet
+    * default_travel_mode - Default Travel Mode as a str
 
     See https://logistics.arcgis.com/arcgis/rest/directories/arcgisoutput/World/Utilities_GPServer/World_Utilities/GetTravelModes.htm for additional help.
     """
