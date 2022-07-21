@@ -35,7 +35,7 @@ def get_travel_modes(gis: Optional[GIS] = None):
     * default_travel_mode - Default Travel Mode as a str
 
 
-    See `GetTravelModes <https://logistics.arcgis.com/arcgis/rest/directories/arcgisoutput/World/Utilities_GPServer/World_Utilities/GetTravelModes.htm>`_ for additional help.
+    See `GetTravelModes <https://developers.arcgis.com/rest/network/api-reference/gettravelmodes-synchronous-task.htm>`_ for additional help.
     """
 
     if gis is None:

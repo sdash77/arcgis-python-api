@@ -1641,7 +1641,7 @@ def find_routes(
     * output_route_data - Output Route Data as a DataFile
     * output_result_file - Output Result File as a DataFile
 
-      Click `FindRoutes`_ for additional help.
+      Click `FindRoutes <https://developers.arcgis.com/rest/network/api-reference/route-asynchronous-service.htm>`_ for additional help.
     """
 
     if gis is None:

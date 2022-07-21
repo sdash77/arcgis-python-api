@@ -1494,7 +1494,7 @@ def find_closest_facilities(
     * output_closest_facilities - Output Closest Facilities as a FeatureSet
 
 
-    Click `FindClosestFacilities`_ for additional help.
+    Click `FindClosestFacilities <https://developers.arcgis.com/rest/network/api-reference/closest-facility-asynchronous-service.htm>`_ for additional help.
 
     """
     if gis is None:

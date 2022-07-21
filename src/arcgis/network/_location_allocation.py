@@ -865,7 +865,7 @@ def solve_location_allocation(
 
     * output_demand_points - Output Demand Points as a FeatureSet
 
-    Click `solveLocationAllocation`_ for additional help.
+    Click `solveLocationAllocation <https://developers.arcgis.com/rest/network/api-reference/location-allocation-service.htm>`_ for additional help.
     """
 
     if gis is None:

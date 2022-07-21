@@ -1219,7 +1219,7 @@ def generate_service_areas(
     * service_areas - Service Areas as a FeatureSet
     * solve_succeeded - Solve Succeeded as a boolean
 
-    Click `GenerateServiceAreas`_ for additional help.
+    Click `GenerateServiceAreas <https://developers.arcgis.com/rest/network/api-reference/service-area-asynchronous-service.htm>`_ for additional help.
 
     .. code-block:: python
 

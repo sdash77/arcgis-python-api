@@ -872,7 +872,7 @@ def generate_origin_destination_cost_matrix(
     * output_origins - Output Origins as a FeatureSet
     * output_destinations - Output Destinations as a FeatureSet
 
-    Click `GenerateOriginDestinationCostMatrix`_ for additional help.
+    Click `GenerateOriginDestinationCostMatrix <https://developers.arcgis.com/rest/network/api-reference/origin-destination-cost-matrix-service.htm>`_ for additional help.
     """
 
     if gis is None:
