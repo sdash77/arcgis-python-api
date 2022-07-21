@@ -1645,7 +1645,7 @@ class MapView(widgets.DOMWidget):
                 output_layers.append(layer)
         elif isinstance(arg, FeatureSet):
             fc = FeatureCollection.from_featureset(arg)
-            for layer in fc:
+            for layer in fc["layers"]:
                 output_layers.append(layer)
         elif isinstance(arg, dict):
             output_layers.append(arg)

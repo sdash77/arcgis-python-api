@@ -18104,6 +18104,7 @@ class _GeoanalyticsTools(_AsyncService):
         out_extent=None,
         datastore="GDB",
         context=None,
+        output_name=None,
     ):
         """
 
@@ -18180,7 +18181,7 @@ class _GeoanalyticsTools(_AsyncService):
             params["gax:env:datastore"] = datastore
         if context is not None:
             params["context"] = context
-
+        output_service = self._create_output_service(output_name, task)
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -18211,6 +18212,7 @@ class _GeoanalyticsTools(_AsyncService):
         out_extent=None,
         datastore="GDB",
         context=None,
+        output_name=None,
     ):
         """
 
@@ -18250,7 +18252,7 @@ class _GeoanalyticsTools(_AsyncService):
             params["gax:env:datastore"] = datastore
         if context is not None:
             params["context"] = context
-
+        output_service = self._create_output_service(output_name, task)
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -18281,6 +18283,7 @@ class _GeoanalyticsTools(_AsyncService):
         out_extent=None,
         datastore="GDB",
         context=None,
+        output_name=None,
     ):
         """
 
@@ -18319,6 +18322,7 @@ class _GeoanalyticsTools(_AsyncService):
             params["gax:env:datastore"] = datastore
         if context is not None:
             params["context"] = context
+        output_service = self._create_output_service(output_name, task)
 
         task_url, job_info, job_id = super()._analysis_job(task, params)
 

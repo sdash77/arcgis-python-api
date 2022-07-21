@@ -98,6 +98,8 @@ class Attr(Mapping):
 
         NOTE: Addition is not commutative. a + b != b + a.
         """
+        from pandas import merge
+
         if not isinstance(other, Mapping):
             return NotImplemented
 
@@ -111,6 +113,8 @@ class Attr(Mapping):
 
         NOTE: Addition is not commutative. a + b != b + a.
         """
+        from pandas import merge
+
         if not isinstance(other, Mapping):
             return NotImplemented
 

@@ -136,7 +136,7 @@ class GeoJSONLayer(BaseOGC):
         :return: String
         """
 
-        if validate_url(value=data):
+        if validate_url(data):
             self._url = data
         elif _is_file(data):
             with open(data, "r") as r:
