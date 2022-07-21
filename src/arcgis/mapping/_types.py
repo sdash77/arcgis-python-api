@@ -4156,16 +4156,28 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
         return self._gptbx
 
     # ----------------------------------------------------------------------
-    def rebuild_cache(self):
+    def rebuild_cache(self, min_scale=None, max_scale=None):
         """
         The rebuild_cache operation update the scene layer cache to reflect
         any changes made to the feature layer used to publish this scene layer.
         The results of the operation is the url to the scene service once it is
         done rebuilding.
+
+        ======================      =======================================================
+        **Argument**                **Description**
+        ----------------------      -------------------------------------------------------
+        min_scale                   Optional Float. Represents the minimum scale of the tiles.
+                                    If nothing is provided, default value is used.
+        ----------------------      -------------------------------------------------------
+        max_scale                   Optional Float. Represents the maximum scale of the tiles.
+                                    If nothing is provided, default value is used.
+        ======================      =======================================================
         """
         return self._tbx.manage_vector_tile_cache(
             service_name=self.properties.serviceName,
             service_folder="Hosted",
+            min_scale=min_scale,
+            max_scale=max_scale,
         )
 
 
