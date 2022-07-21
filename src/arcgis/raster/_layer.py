@@ -11788,6 +11788,7 @@ class RasterCollection:
 
         # self._do_not_hydrate=False
         import pandas as pd
+
         local_class = True
 
         if engine is not None and engine not in [
@@ -11820,7 +11821,7 @@ class RasterCollection:
             )
         else:
             if isinstance(rasters, pd.DataFrame):
-                rc_dict = rasters.to_dict('list')
+                rc_dict = rasters.to_dict("list")
                 rasters = rc_dict.pop("Raster")
                 attribute_dict = rc_dict
 
@@ -11890,7 +11891,6 @@ class RasterCollection:
                         gis=gis,
                         context=context,
                     )
-
 
     def set_engine(self, engine: str):
         """
@@ -12962,7 +12962,12 @@ class RasterCollection:
             dimension_field_names=dimension_field_names,
         )
 
-    def max(self, ignore_nodata: bool = True, extent_type: str = "FIRST", cellsize_type: str = "FIRST"):
+    def max(
+        self,
+        ignore_nodata: bool = True,
+        extent_type: str = "FirstOf",
+        cellsize_type: str = "FirstOf",
+    ):
         """
         The ``max`` method returns a :class:`~arcgis.raster.Raster` object in which each band contains the
         maximum pixel values for that band across all rasters in the raster collection.
@@ -13007,9 +13012,19 @@ class RasterCollection:
         :return: A :class:`~arcgis.raster.Raster` object
 
         """
-        return self._ras_coll_engine_obj.max(ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
+        print(extent_type)
+        return self._ras_coll_engine_obj.max(
+            ignore_nodata=ignore_nodata,
+            extent_type=extent_type,
+            cellsize_type=cellsize_type,
+        )
 
-    def min(self, ignore_nodata: bool = True, extent_type: str = "FIRST", cellsize_type: str = "FIRST"):
+    def min(
+        self,
+        ignore_nodata: bool = True,
+        extent_type: str = "FirstOf",
+        cellsize_type: str = "FirstOf",
+    ):
         """
         The ``min`` method returns a :class:`~arcgis.raster.Raster` object in which each band contains the
         minimum pixel values for that band across all rasters in the :class:`~arcgis.raster.RasterCollection`.
@@ -13053,9 +13068,18 @@ class RasterCollection:
 
         :return: a :class:`~arcgis.raster.Raster` object
         """
-        return self._ras_coll_engine_obj.min(ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
+        return self._ras_coll_engine_obj.min(
+            ignore_nodata=ignore_nodata,
+            extent_type=extent_type,
+            cellsize_type=cellsize_type,
+        )
 
-    def median(self, ignore_nodata: bool = True, extent_type: str = "FIRST", cellsize_type: str = "FIRST"):
+    def median(
+        self,
+        ignore_nodata: bool = True,
+        extent_type: str = "FirstOf",
+        cellsize_type: str = "FirstOf",
+    ):
         """
         The ``median`` method returns a :class:`~arcgis.raster.Raster` object in which each band contains the
         median pixel values for that band across all rasters in the :class:`~arcgis.raster.RasterCollection`.
@@ -13100,9 +13124,18 @@ class RasterCollection:
 
         :return: A :class:`~arcgis.raster.Raster` object
         """
-        return self._ras_coll_engine_obj.median(ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
+        return self._ras_coll_engine_obj.median(
+            ignore_nodata=ignore_nodata,
+            extent_type=extent_type,
+            cellsize_type=cellsize_type,
+        )
 
-    def mean(self, ignore_nodata: bool = True, extent_type: str = "FIRST", cellsize_type: str = "FIRST"):
+    def mean(
+        self,
+        ignore_nodata: bool = True,
+        extent_type: str = "FirstOf",
+        cellsize_type: str = "FirstOf",
+    ):
         """
         The ``mean`` method returns a :class:`~arcgis.raster.Raster` object in which each band contains the average
         pixel values for that band across all rasters in the raster collection.
@@ -13147,9 +13180,18 @@ class RasterCollection:
 
         :return: A :class:`~arcgis.raster.Raster` object
         """
-        return self._ras_coll_engine_obj.mean(ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
+        return self._ras_coll_engine_obj.mean(
+            ignore_nodata=ignore_nodata,
+            extent_type=extent_type,
+            cellsize_type=cellsize_type,
+        )
 
-    def majority(self, ignore_nodata: bool = True, extent_type: str = "FIRST", cellsize_type: str = "FIRST"):
+    def majority(
+        self,
+        ignore_nodata: bool = True,
+        extent_type: str = "FirstOf",
+        cellsize_type: str = "FirstOf",
+    ):
         """
         The ``majority`` method returns a :class:`~arcgis.raster.Raster` object in which each band contains the pixel
         value that occurs most frequently for that band across all
@@ -13197,9 +13239,18 @@ class RasterCollection:
         :return: A :class:`~arcgis.raster.Raster` object
 
         """
-        return self._ras_coll_engine_obj.majority(ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
+        return self._ras_coll_engine_obj.majority(
+            ignore_nodata=ignore_nodata,
+            extent_type=extent_type,
+            cellsize_type=cellsize_type,
+        )
 
-    def sum(self, ignore_nodata: bool = True, extent_type: str = "FIRST", cellsize_type: str = "FIRST"):
+    def sum(
+        self,
+        ignore_nodata: bool = True,
+        extent_type: str = "FirstOf",
+        cellsize_type: str = "FirstOf",
+    ):
         """
         The ``sum`` method returns a :class:`~arcgis.raster.Raster` object in which each band contains the sum
         of pixel values for that band across all rasters in the :class:`~arcgis.raster.RasterCollection`.
@@ -13244,9 +13295,18 @@ class RasterCollection:
 
         :return: A :class:`~arcgis.raster.Raster` object
         """
-        return self._ras_coll_engine_obj.sum(ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
+        return self._ras_coll_engine_obj.sum(
+            ignore_nodata=ignore_nodata,
+            extent_type=extent_type,
+            cellsize_type=cellsize_type,
+        )
 
-    def std(self, ignore_nodata: bool = True, extent_type: str = "FIRST", cellsize_type: str = "FIRST"):
+    def std(
+        self,
+        ignore_nodata: bool = True,
+        extent_type: str = "FirstOf",
+        cellsize_type: str = "FirstOf",
+    ):
         """
         The ``std`` method returns a :class:`~arcgis.raster.Raster` object in which each band contains the std
         of pixel values for that band across all rasters in the :class:`~arcgis.raster.RasterCollection`.
@@ -13291,7 +13351,11 @@ class RasterCollection:
 
         :return: A :class:`~arcgis.raster.Raster` object
         """
-        return self._ras_coll_engine_obj.std(ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
+        return self._ras_coll_engine_obj.std(
+            ignore_nodata=ignore_nodata,
+            extent_type=extent_type,
+            cellsize_type=cellsize_type,
+        )
 
     def mosaic(self, mosaic_method: str = "FIRST"):
         """
@@ -13478,9 +13542,9 @@ class RasterCollection:
         """
         return self._ras_coll_engine_obj.map(func=func, context=context)
 
-    def reduce(self, func, func_args={}): 
+    def reduce(self, func, func_args={}):
         """
-        The ``reduce`` method composite all the images in the collection to a single image based on a reducer function. 
+        The ``reduce`` method composite all the images in the collection to a single image based on a reducer function.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -13520,7 +13584,7 @@ class RasterCollection:
 
     def merge(self, collection2):
         """
-        The ``merge`` method merges two image collections into one. The output has all the items that were in either collection. 
+        The ``merge`` method merges two image collections into one. The output has all the items that were in either collection.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
@@ -13542,7 +13606,6 @@ class RasterCollection:
 
         return self._ras_coll_engine_obj.merge(collection2._ras_coll_engine_obj)
 
-
     def summarize_field(self, field_name, summary_type="ALL"):
         """
         Summarizes a numeric field of the RasterCollection based on the specified summary_type
@@ -13559,11 +13622,25 @@ class RasterCollection:
             summary_type = [summary_type]
 
         if "ALL" in map(str.upper, summary_type):
-            summary_type = ["COUNT", "COUNT_DISTINCT", "FIRST", "HISTOGRAM", "MAX", "MEAN", "MIN",
-                        "PRODUCT", "SAMPLE_SD", "SAMPLE_VAR", "SUM", "TOTAL_SD", "TOTAL_VAR"]
+            summary_type = [
+                "COUNT",
+                "COUNT_DISTINCT",
+                "FIRST",
+                "HISTOGRAM",
+                "MAX",
+                "MEAN",
+                "MIN",
+                "PRODUCT",
+                "SAMPLE_SD",
+                "SAMPLE_VAR",
+                "SUM",
+                "TOTAL_SD",
+                "TOTAL_VAR",
+            ]
 
         from operator import is_not
         from functools import partial
+
         property_values_not_none = list(filter(partial(is_not, None), property_values))
 
         all_num = all(isinstance(x, numbers.Number) for x in property_values_not_none)
@@ -13573,55 +13650,56 @@ class RasterCollection:
             for summary in summary_type:
                 val = None
                 summary = summary.lower()
-                if summary == 'count':
+                if summary == "count":
                     val = len(property_values_not_none)
 
-                elif summary == 'count_distinct':
+                elif summary == "count_distinct":
                     val = len(np.unique(property_values_not_none))
 
-                elif summary == 'first':
+                elif summary == "first":
                     val = property_values_not_none[0]
 
-                elif summary == 'histogram':
-                    unique, counts = np.unique(property_values_not_none, return_counts=True)
+                elif summary == "histogram":
+                    unique, counts = np.unique(
+                        property_values_not_none, return_counts=True
+                    )
                     val = dict(zip(unique, counts))
 
-                elif summary == 'max':
+                elif summary == "max":
                     val = np.max(property_values_not_none)
 
-                elif summary == 'mean':
+                elif summary == "mean":
                     val = np.mean(property_values_not_none)
 
-                elif summary == 'min':
+                elif summary == "min":
                     val = np.min(property_values_not_none)
 
-                elif summary == 'product':
+                elif summary == "product":
                     val = np.prod(property_values_not_none)
 
-                elif summary == 'sample_sd':
+                elif summary == "sample_sd":
                     val = np.std(property_values_not_none, ddof=1)
 
-                elif summary == 'sample_var':
+                elif summary == "sample_var":
                     val = np.var(property_values_not_none, ddof=1)
 
-                elif summary == 'sum':
+                elif summary == "sum":
                     val = np.sum(property_values_not_none)
 
-                elif summary == 'total_sd':
+                elif summary == "total_sd":
                     val = np.std(property_values_not_none)
 
-                elif summary == 'total_var':
+                elif summary == "total_var":
                     val = np.var(property_values_not_none)
 
                 else:
-                    raise ValueError('invalid summary_type value')
+                    raise ValueError("invalid summary_type value")
 
-                summary_dict.update({summary:val})
+                summary_dict.update({summary: val})
         except:
             raise RuntimeError("Failed to summarize the property")
 
         return summary_dict
-
 
     def _as_df(
         self, result_offset=None, result_record_count=None, return_all_records=False
@@ -13793,9 +13871,7 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
     def _rasters_list(self):
         value_rasters = []
         for i in range(0, len(self)):
-            value_rasters.append(
-                Raster(self._raster_collection[i]["Raster"])
-            )
+            value_rasters.append(Raster(self._raster_collection[i]["Raster"]))
         return value_rasters
 
     def __iter__(self):
@@ -14004,25 +14080,71 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         )
 
     def max(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
-        return Raster(self._raster_collection.max(ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type))
+        return Raster(
+            self._raster_collection.max(
+                ignore_nodata=ignore_nodata,
+                extent_type=extent_type,
+                cellsize_type=cellsize_type,
+            )
+        )
 
     def min(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
-        return Raster(self._raster_collection.min(ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type))
+        return Raster(
+            self._raster_collection.min(
+                ignore_nodata=ignore_nodata,
+                extent_type=extent_type,
+                cellsize_type=cellsize_type,
+            )
+        )
 
-    def median(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
-        return Raster(self._raster_collection.median(ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type))
+    def median(
+        self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"
+    ):
+        return Raster(
+            self._raster_collection.median(
+                ignore_nodata=ignore_nodata,
+                extent_type=extent_type,
+                cellsize_type=cellsize_type,
+            )
+        )
 
     def mean(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
-        return Raster(self._raster_collection.mean(ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type))
+        return Raster(
+            self._raster_collection.mean(
+                ignore_nodata=ignore_nodata,
+                extent_type=extent_type,
+                cellsize_type=cellsize_type,
+            )
+        )
 
-    def majority(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
-        return Raster(self._raster_collection.majority(ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type))
+    def majority(
+        self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"
+    ):
+        return Raster(
+            self._raster_collection.majority(
+                ignore_nodata=ignore_nodata,
+                extent_type=extent_type,
+                cellsize_type=cellsize_type,
+            )
+        )
 
     def sum(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
-        return Raster(self._raster_collection.sum(ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type))
+        return Raster(
+            self._raster_collection.sum(
+                ignore_nodata=ignore_nodata,
+                extent_type=extent_type,
+                cellsize_type=cellsize_type,
+            )
+        )
 
     def std(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
-        return Raster(self._raster_collection.std(ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type))
+        return Raster(
+            self._raster_collection.std(
+                ignore_nodata=ignore_nodata,
+                extent_type=extent_type,
+                cellsize_type=cellsize_type,
+            )
+        )
 
     def mosaic(self, mosaic_method):
         return Raster(self._raster_collection.mosaic(mosaic_method=mosaic_method))
@@ -14060,7 +14182,7 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
 
         return RasterCollection(rasters, attribute_dict, context=context)
 
-    def reduce(self, func, func_args={}): 
+    def reduce(self, func, func_args={}):
         rasters = self._rasters_list
         reduced_raster = func(rasters, **func_args)
         return reduced_raster
@@ -14572,37 +14694,76 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
     def max(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
         from arcgis.raster.functions import max
 
-        return max(self._rasters_list, ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
+        return max(
+            self._rasters_list,
+            ignore_nodata=ignore_nodata,
+            extent_type=extent_type,
+            cellsize_type=cellsize_type,
+        )
 
     def min(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
         from arcgis.raster.functions import min
 
-        return min(self._rasters_list, ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
+        return min(
+            self._rasters_list,
+            ignore_nodata=ignore_nodata,
+            extent_type=extent_type,
+            cellsize_type=cellsize_type,
+        )
 
-    def median(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
+    def median(
+        self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"
+    ):
         from arcgis.raster.functions import med
 
-        return med(self._rasters_list, ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
+        return med(
+            self._rasters_list,
+            ignore_nodata=ignore_nodata,
+            extent_type=extent_type,
+            cellsize_type=cellsize_type,
+        )
 
     def mean(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
         from arcgis.raster.functions import mean
 
-        return mean(self._rasters_list, ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
+        return mean(
+            self._rasters_list,
+            ignore_nodata=ignore_nodata,
+            extent_type=extent_type,
+            cellsize_type=cellsize_type,
+        )
 
-    def majority(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
+    def majority(
+        self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"
+    ):
         from arcgis.raster.functions import majority
 
-        return majority(self._rasters_list, ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
+        return majority(
+            self._rasters_list,
+            ignore_nodata=ignore_nodata,
+            extent_type=extent_type,
+            cellsize_type=cellsize_type,
+        )
 
     def sum(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
         from arcgis.raster.functions import sum
 
-        return sum(self._rasters_list, ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
+        return sum(
+            self._rasters_list,
+            ignore_nodata=ignore_nodata,
+            extent_type=extent_type,
+            cellsize_type=cellsize_type,
+        )
 
     def std(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
         from arcgis.raster.functions import std
 
-        return std(self._rasters_list, ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
+        return std(
+            self._rasters_list,
+            ignore_nodata=ignore_nodata,
+            extent_type=extent_type,
+            cellsize_type=cellsize_type,
+        )
 
     def mosaic(self, mosaic_method):
         from arcgis.raster.functions import raster_collection_function
@@ -14743,7 +14904,7 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
 
             return RasterCollection(rasters, attribute_dict, context=context)
 
-    def reduce(self, func, func_args={}): 
+    def reduce(self, func, func_args={}):
         rasters = self._rasters_list
         reduced_raster = func(rasters, **func_args)
         return reduced_raster
@@ -14752,8 +14913,8 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
 
         import pandas as pd
 
-        rc1=self._as_df()
-        rc2=collection2._as_df()
+        rc1 = self._as_df()
+        rc2 = collection2._as_df()
 
         merged_collection = pd.concat([rc1, rc2], axis=0)
         merged_collection.reset_index(drop=True, inplace=True)
@@ -14781,7 +14942,6 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
 
             template_dict["rasterFunctionArguments"]["URL"] = url
             template_dict["rasterFunctionArguments"]["Raster"] = url
-
 
         if self is not None and isinstance(self, str):
             template_dict["rasterFunctionArguments"]["URL"] = self
@@ -14829,7 +14989,7 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
                 # self._do_not_hydrate=True
                 rft = self._generate_raster_item_rft(int(df[oid_name].loc[i]))
                 df.loc[i, "Raster"] = Raster(rft)
-                df.loc[i, "Raster"]._engine_obj._fn  = rft
+                df.loc[i, "Raster"]._engine_obj._fn = rft
                 df.loc[i, "Raster"]._engine_obj._fnra = rft
                 df.loc[i, "Raster"]._engine_obj._do_not_hydrate = True
 
@@ -15507,37 +15667,76 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
     def max(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
         from arcgis.raster.functions import max
 
-        return max(self._rasters_list, ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
+        return max(
+            self._rasters_list,
+            ignore_nodata=ignore_nodata,
+            extent_type=extent_type,
+            cellsize_type=cellsize_type,
+        )
 
     def min(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
         from arcgis.raster.functions import min
 
-        return min(self._rasters_list, ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
+        return min(
+            self._rasters_list,
+            ignore_nodata=ignore_nodata,
+            extent_type=extent_type,
+            cellsize_type=cellsize_type,
+        )
 
-    def median(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
+    def median(
+        self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"
+    ):
         from arcgis.raster.functions import med
 
-        return med(self._rasters_list, ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
+        return med(
+            self._rasters_list,
+            ignore_nodata=ignore_nodata,
+            extent_type=extent_type,
+            cellsize_type=cellsize_type,
+        )
 
     def mean(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
         from arcgis.raster.functions import mean
 
-        return mean(self._rasters_list, ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
+        return mean(
+            self._rasters_list,
+            ignore_nodata=ignore_nodata,
+            extent_type=extent_type,
+            cellsize_type=cellsize_type,
+        )
 
-    def majority(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
+    def majority(
+        self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"
+    ):
         from arcgis.raster.functions import majority
 
-        return majority(self._rasters_list, ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
+        return majority(
+            self._rasters_list,
+            ignore_nodata=ignore_nodata,
+            extent_type=extent_type,
+            cellsize_type=cellsize_type,
+        )
 
     def sum(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
         from arcgis.raster.functions import sum
 
-        return sum(self._rasters_list, ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
+        return sum(
+            self._rasters_list,
+            ignore_nodata=ignore_nodata,
+            extent_type=extent_type,
+            cellsize_type=cellsize_type,
+        )
 
     def std(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
         from arcgis.raster.functions import std
 
-        return std(self._rasters_list, ignore_nodata=ignore_nodata, extent_type=extent_type, cellsize_type=cellsize_type)
+        return std(
+            self._rasters_list,
+            ignore_nodata=ignore_nodata,
+            extent_type=extent_type,
+            cellsize_type=cellsize_type,
+        )
 
     def mosaic(self, mosaic_method):
         raise RuntimeError("Local RasterCollection does not support mosaic function")
@@ -15660,7 +15859,7 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
 
         return RasterCollection(rasters, attribute_dict, context=context)
 
-    def reduce(self, func, func_args={}): 
+    def reduce(self, func, func_args={}):
         rasters = self._rasters_list
         reduced_raster = func(rasters, **func_args)
         return reduced_raster
@@ -15669,8 +15868,8 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
 
         import pandas as pd
 
-        rc1=self._as_df()
-        rc2=collection2._as_df()
+        rc1 = self._as_df()
+        rc2 = collection2._as_df()
 
         merged_collection = pd.concat([rc1, rc2], axis=0)
         merged_collection.reset_index(drop=True, inplace=True)
