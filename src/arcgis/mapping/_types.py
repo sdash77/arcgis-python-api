@@ -4801,7 +4801,7 @@ class VectorTileLayer(arcgis.gis.Layer):
 ###########################################################################
 class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
     """
-    The ``EnterpriseMapImageLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise hosted map image layers.
+    The ``EnterpriseMapImageLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise Map Image Layers and Tile Layers.
     A :class:`~arcgis.mapping.MapImageLayer` offers access to layer content.
 
     .. note:: Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/MapServer/
@@ -4872,10 +4872,17 @@ class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
 ###########################################################################
 class MapImageLayerManager(arcgis.gis._GISResource):
     """
-    The ``MapImageLayerManager`` class allows administration (if access permits) of ArcGIS Online hosted Tile Services.
-    A :class:`~arcgis.mapping.MapImageLayer` offers access to the Map Server service to edit and update tiles.
-    Map Image Layers are created from Enterprise Services and their manager can
-    be accessed through the EnterpriseMapImageLayerManager.
+    The ``MapImageLayerManager`` class allows administration (if access permits) of ArcGIS Online Hosted Tile Layers
+    or Cached Map Services.
+    A :class:`~arcgis.mapping.MapImageLayer` offers access to the Map Server endpoints
+    that allow you to edit the tile service, update tiles, refresh, and more.
+
+    To use this manager off of the MapImageLayer Class, pass in a url ending with /MapServer
+    when instantiating that class.
+
+    .. note::
+        Map Image Layers are created from Enterprise Services and their manager can
+        be accessed through the EnterpriseMapImageLayerManager.
     """
 
     def __init__(self, url, gis=None, map_img_lyr=None):
