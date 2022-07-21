@@ -13012,7 +13012,6 @@ class RasterCollection:
         :return: A :class:`~arcgis.raster.Raster` object
 
         """
-        print(extent_type)
         return self._ras_coll_engine_obj.max(
             ignore_nodata=ignore_nodata,
             extent_type=extent_type,
