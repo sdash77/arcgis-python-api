@@ -4872,8 +4872,10 @@ class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
 ###########################################################################
 class MapImageLayerManager(arcgis.gis._GISResource):
     """
-    The ``MapImageLayerManager`` class allows administration (if access permits) of ArcGIS Online hosted map image layers.
-    A :class:`~arcgis.mapping.MapImageLayer` offers access to map and layer content.
+    The ``MapImageLayerManager`` class allows administration (if access permits) of ArcGIS Online hosted Tile Services.
+    A :class:`~arcgis.mapping.MapImageLayer` offers access to the Map Server service to edit and update tiles.
+    Map Image Layers are created from Enterprise Services and their manager can
+    be accessed through the EnterpriseMapImageLayerManager.
     """
 
     def __init__(self, url, gis=None, map_img_lyr=None):
@@ -4883,13 +4885,13 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         self._ms = map_img_lyr
 
     # ----------------------------------------------------------------------
-    def refresh(self, service_definition: bool = True):
+    def refresh(self):
         """
         The ``refresh`` operation refreshes a service, which clears the web
         server cache for the service.
         """
         url = self._url + "/refresh"
-        params = {"f": "json", "serviceDefinition": service_definition}
+        params = {"f": "json"}
 
         res = self._con.post(url, params)
 
@@ -4898,27 +4900,6 @@ class MapImageLayerManager(arcgis.gis._GISResource):
             self._ms._refresh()
 
         return res
-
-    # ----------------------------------------------------------------------
-    def swap(self, target_service_name):
-        """
-        The swap operation replaces the current service cache with an existing one.
-
-        .. note::
-            The ``swap`` operation is for ArcGIS Online only.
-
-        ====================        ====================================================
-        **Argument**                **Description**
-        --------------------        ----------------------------------------------------
-        target_service_name         Required string. Name of service you want to swap with.
-        ====================        ====================================================
-
-        :returns: dictionary indicating success or error
-
-        """
-        url = self._url + "/swap"
-        params = {"f": "json", "targetServiceName": target_service_name}
-        return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
     def cancel_job(self, job_id):
@@ -4948,91 +4929,6 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         url = self._url + "/jobs/%s" % job_id
         params = {"f": "json"}
         return self._con.post(url, params)
-
-    # ----------------------------------------------------------------------
-    def import_tiles(
-        self,
-        item: _gis.Item,
-        levels: Optional[Union[str, list[int]]] = None,
-        extent: Optional[Union[str, dict[str, int]]] = None,
-        merge: bool = False,
-        replace: bool = False,
-    ):
-        """
-        The ``import_tiles`` method imports tiles from an :class:`~arcgis.gis.Item` object.
-
-        ===============     ====================================================
-        **Argument**        **Description**
-        ---------------     ----------------------------------------------------
-        item                Required ItemId or :class:`~arcgis.gis.Item` object. The TPK file's item id.
-                            This TPK file contains to-be-extracted bundle files
-                            which are then merged into an existing cache service.
-        ---------------     ----------------------------------------------------
-        levels              Optional String / List of integers, The level of details
-                            to update. Example: "1,2,10,20" or [1,2,10,20]
-        ---------------     ----------------------------------------------------
-        extent              Optional String / Dict. The area to update as Xmin, YMin, XMax, YMax
-                            example: "-100,-50,200,500" or
-                            {'xmin':100, 'ymin':200, 'xmax':105, 'ymax':205}
-        ---------------     ----------------------------------------------------
-        merge               Optional Boolean. Default is false and applicable to
-                            compact cache storage format. It controls whether
-                            the bundle files from the TPK file are merged with
-                            the one in the existing cached service. Otherwise,
-                            the bundle files are overwritten.
-        ---------------     ----------------------------------------------------
-        replace             Optional Boolean. Default is false, applicable to
-                            compact cache storage format and used when
-                            merge=true. It controls whether the new tiles will
-                            replace the existing ones when merging bundles.
-        ===============     ====================================================
-
-        :return:
-            A dictionary
-
-        .. code-block:: python
-
-            # USAGE EXAMPLE
-
-            >>> from arcgis.mapping import MapImageLayer
-            >>> from arcgis.gis import GIS
-
-            # connect to your GIS and get the web map item
-            >>> gis = GIS(url, username, password)
-            >>> map_image_layer = MapImageLayer("<url>", gis)
-            >>> mil_manager = map_image_layer.manager
-            >>> imported_tiles = mil_manager.import_tiles(item="<item-id>",
-                                                          levels = "11-20",
-                                                          extent = {"xmin":6224324.092137296,
-                                                                    "ymin":487347.5253569535,
-                                                                    "xmax":11473407.698535524,
-                                                                    "ymax":4239488.369818687,
-                                                                    "spatialReference":{"wkid":102100}
-                                                                    },
-                                                          merge = True,
-                                                        replace = True
-                                                          )
-            >>> type(imported_tiles)
-            <Dictionary>
-
-        """
-        params = {
-            "f": "json",
-            "sourceItemId": None,
-            "extent": extent,
-            "levels": levels,
-            "mergeBundle": merge,
-            "replaceTiles": replace,
-        }
-        if isinstance(item, str):
-            params["sourceItemId"] = item
-        elif isinstance(item, _gis.Item):
-            params["sourceItemId"] = item.itemid
-        else:
-            raise ValueError("The `item` must be a string or Item")
-        url = self._url + "/importTiles"
-        res = self._con.post(url, params)
-        return res
 
     # ----------------------------------------------------------------------
     def update_tiles(
