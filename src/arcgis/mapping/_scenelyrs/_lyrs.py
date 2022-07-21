@@ -2,6 +2,7 @@ from __future__ import annotations
 import json
 from arcgis.gis import Layer, _GISResource, Item
 from arcgis.geoprocessing import import_toolbox
+from arcgis.geometry import Geometry
 from arcgis.auth.tools import LazyLoader
 
 _services = LazyLoader("arcgis.gis.server.admin._services")
@@ -379,50 +380,259 @@ class EnterpriseSceneLayerManager(_GISResource):
         return self._gptbx
 
     # ----------------------------------------------------------------------
-    def rebuild_cache(self):
+    def rebuild_cache(
+        self,
+        layer: dict | None = None,
+        number_cache_service_instances: int = 2,
+        extent: dict | None = None,
+        area_of_interest: dict | None = None,
+    ):
         """
         The rebuild_cache operation update the scene layer cache to reflect
         any changes made to the feature layer used to publish this scene layer.
         The results of the operation is the url to the scene service once it is
         done rebuilding.
+
+        ===============================     ====================================================================
+        **Argument**                        **Description**
+        -------------------------------     --------------------------------------------------------------------
+        layer                               Optional dict. The service JSON as a dictionary.
+        -------------------------------     --------------------------------------------------------------------
+        number_cache_service_instances      Optional int. The number of caching service instances to create. The
+                                            default is 2.
+        -------------------------------     --------------------------------------------------------------------
+        extent                              Optional dict. The updated extent to be used. If nothing is specified,
+                                            the default extent is used.
+        -------------------------------     --------------------------------------------------------------------
+        area_of_interest                    Optional dict representing a feature. Specify the updated area
+                                            of interest.
+
+                                            Syntax:
+                                                {
+                                                    "displayFieldName": "",
+                                                    "geometryType": "esriGeometryPolygon",
+                                                    "spatialReference": {
+                                                    "wkid": 54051,
+                                                    "latestWkid": 54051
+                                                    },
+                                                    "fields": [
+                                                    {
+                                                    "name": "OID",
+                                                    "type": "esriFieldTypeOID",
+                                                    "alias": "OID"
+                                                    },
+                                                    {
+                                                    "name": "updateGeom_Length",
+                                                    "type": "esriFieldTypeDouble",
+                                                    "alias": "updateGeom_Length"
+                                                    },
+                                                    {
+                                                    "name": "updateGeom_Area",
+                                                    "type": "esriFieldTypeDouble",
+                                                    "alias": "updateGeom_Area"
+                                                    }
+                                                    ],
+                                                    "features": [],
+                                                    "exceededTransferLimit": False
+                                                }
+        ===============================     ====================================================================
+
+        :return: If successful, the url to the scene service
+
         """
-        return self._tbx.manage_scene_cache(
-            service_url=self._sl.url,
-            num_of_caching_service_instances=2,
-            layer={},
-            update_mode="RECREATE_ALL_NODES",
-        )
+        if layer is None:
+            layer = {}
+        if extent is None:
+            extent = "DEFAULT"
+        if number_cache_service_instances is None:
+            number_cache_service_instances = 2
+        if area_of_interest is None:
+            return self._tbx.manage_scene_cache(
+                service_url=self._sl.url,
+                num_of_caching_service_instances=number_cache_service_instances,
+                layer=layer,
+                update_mode="RECREATE_ALL_NODES",
+                update_extent=extent,
+            )
+        else:
+            return self._tbx.manage_scene_cache(
+                service_url=self._sl.url,
+                num_of_caching_service_instances=number_cache_service_instances,
+                layer=layer,
+                update_mode="RECREATE_ALL_NODES",
+                update_extent=extent,
+                area_of_interest=area_of_interest,
+            )
 
     # ----------------------------------------------------------------------
-    def update_cache(self):
+    def update_cache(
+        self,
+        layer: dict | None = None,
+        number_cache_service_instances: int = None,
+        extent: dict | None = None,
+        area_of_interest: dict | None = None,
+    ):
         """
         Update Cache is a "light rebuild" where attributes and geometries of
         the layers selected are updated and can be used for change tracking on
         the feature layer to only update nodes with dirty tiles,.
         The results of the operation is the url to the scene service once it is
         done updating.
+
+        ===============================     ====================================================================
+        **Argument**                        **Description**
+        -------------------------------     --------------------------------------------------------------------
+        layer                               Optional dict. The service JSON as a dictionary.
+        -------------------------------     --------------------------------------------------------------------
+        number_cache_service_instances      Optional int. The number of caching service instances to create. The
+                                            default is 2.
+        -------------------------------     --------------------------------------------------------------------
+        extent                              Optional dict. The updated extent to be used. If nothing is specified,
+                                            the default extent is used.
+        -------------------------------     --------------------------------------------------------------------
+        area_of_interest                    Optional dict representing a feature. Specify the updated area
+                                            of interest.
+
+                                            Syntax:
+                                                {
+                                                    "displayFieldName": "",
+                                                    "geometryType": "esriGeometryPolygon",
+                                                    "spatialReference": {
+                                                    "wkid": 54051,
+                                                    "latestWkid": 54051
+                                                    },
+                                                    "fields": [
+                                                    {
+                                                    "name": "OID",
+                                                    "type": "esriFieldTypeOID",
+                                                    "alias": "OID"
+                                                    },
+                                                    {
+                                                    "name": "updateGeom_Length",
+                                                    "type": "esriFieldTypeDouble",
+                                                    "alias": "updateGeom_Length"
+                                                    },
+                                                    {
+                                                    "name": "updateGeom_Area",
+                                                    "type": "esriFieldTypeDouble",
+                                                    "alias": "updateGeom_Area"
+                                                    }
+                                                    ],
+                                                    "features": [],
+                                                    "exceededTransferLimit": False
+                                                }
+        ===============================     ====================================================================
+
+        :return: If successful, the url to the scene service
+
         """
-        return self._tbx.manage_scene_cache(
-            service_url=self._sl.url,
-            num_of_caching_service_instances=2,
-            layer={},
-            update_mode="PARTIAL_UPDATE_NODES",
-        )
+        if layer is None:
+            layer = {}
+        if extent is None:
+            extent = "DEFAULT"
+        if number_cache_service_instances is None:
+            number_cache_service_instances = 2
+        if area_of_interest is None:
+            return self._tbx.manage_scene_cache(
+                service_url=self._sl.url,
+                num_of_caching_service_instances=number_cache_service_instances,
+                layer=layer,
+                update_mode="PARTIAL_UPDATE_NODES",
+                update_extent=extent,
+            )
+        else:
+            return self._tbx.manage_scene_cache(
+                service_url=self._sl.url,
+                num_of_caching_service_instances=number_cache_service_instances,
+                layer=layer,
+                update_mode="PARTIAL_UPDATE_NODES",
+                update_extent=extent,
+                area_of_interest=area_of_interest,
+            )
 
     # ----------------------------------------------------------------------
-    def update_attribute(self):
+    def update_attribute(
+        self,
+        layer=None,
+        number_cache_service_instances=None,
+        extent=None,
+        area_of_interest=None,
+    ):
         """
         Update atrribute is a "light rebuild" where attributes of
         the layers selected are updated and can be used for change tracking.
         The results of the operation is the url to the scene service once it is
         done updating.
+
+        ===============================     ====================================================================
+        **Argument**                        **Description**
+        -------------------------------     --------------------------------------------------------------------
+        layer                               Optional dict. The service JSON as a dictionary.
+        -------------------------------     --------------------------------------------------------------------
+        number_cache_service_instances      Optional int. The number of caching service instances to create. The
+                                            default is 2.
+        -------------------------------     --------------------------------------------------------------------
+        extent                              Optional dict. The updated extent to be used. If nothing is specified,
+                                            the default extent is used.
+        -------------------------------     --------------------------------------------------------------------
+        area_of_interest                    Optional dict representing a feature. Specify the updated area
+                                            of interest.
+
+                                            Syntax:
+                                                {
+                                                    "displayFieldName": "",
+                                                    "geometryType": "esriGeometryPolygon",
+                                                    "spatialReference": {
+                                                    "wkid": 54051,
+                                                    "latestWkid": 54051
+                                                    },
+                                                    "fields": [
+                                                    {
+                                                    "name": "OID",
+                                                    "type": "esriFieldTypeOID",
+                                                    "alias": "OID"
+                                                    },
+                                                    {
+                                                    "name": "updateGeom_Length",
+                                                    "type": "esriFieldTypeDouble",
+                                                    "alias": "updateGeom_Length"
+                                                    },
+                                                    {
+                                                    "name": "updateGeom_Area",
+                                                    "type": "esriFieldTypeDouble",
+                                                    "alias": "updateGeom_Area"
+                                                    }
+                                                    ],
+                                                    "features": [],
+                                                    "exceededTransferLimit": false
+                                                }
+        ===============================     ====================================================================
+
+        :return: If successful, the url to the scene service
         """
-        return self._tbx.manage_scene_cache(
-            service_url=self._sl.url,
-            num_of_caching_service_instances=2,
-            layer={},
-            update_mode="PARTIAL_UPDATE_ATTRIBUTES",
-        )
+        if layer is None:
+            layer = {}
+        if extent is None:
+            extent = "DEFAULT"
+        if number_cache_service_instances is None:
+            number_cache_service_instances = 2
+        if area_of_interest is None:
+            return self._tbx.manage_scene_cache(
+                service_url=self._sl.url,
+                num_of_caching_service_instances=number_cache_service_instances,
+                layer=layer,
+                update_mode="PARTIAL_UPDATE_ATTRIBUTES",
+                update_extent=extent,
+            )
+        else:
+            return self._tbx.manage_scene_cache(
+                service_url=self._sl.url,
+                num_of_caching_service_instances=number_cache_service_instances,
+                layer=layer,
+                update_mode="PARTIAL_UPDATE_ATTRIBUTES",
+                update_extent=extent,
+                area_of_interest=area_of_interest,
+            )
 
 
 ###########################################################################
