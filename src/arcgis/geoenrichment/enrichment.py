@@ -397,10 +397,14 @@ class Country(object):
 
         """
         if isinstance(self._gis, GIS):
-            lvlid = [lvl["id"] for lvl in self.levels if lvl["isWholeCountry"]][0]
+            try:
+                lvlid = [lvl["id"] for lvl in self.levels if lvl["isWholeCountry"]][0]
+                layers = [lvlid]
+            except:
+                layers = None
             df = standard_geography_query(
                 source_country=self.properties.iso2,
-                layers=[lvlid],
+                layers=layers,
                 ids=["01"],
                 return_sub_geography=False,
                 return_geometry=True,
