@@ -646,7 +646,7 @@ def find_similar_locations(
 
     - Which of your stores are most similar to your top performers with regard to customer profiles?
     - Based on characteristics of villages hardest hit by the disease, which other villages are high risk?
-    
+
     To answer questions such as these, you provide the reference locations (the ``input_layer`` parameter), the candidate
     locations (the ``search_layer`` parameter), and the fields representing the criteria you want to match. For example,
     the ``input_layer`` might be a layer containing your top performing stores or the villages hardest hit by the disease.
