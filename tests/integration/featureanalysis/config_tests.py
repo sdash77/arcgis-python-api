@@ -50,7 +50,7 @@ def get_kube_credentials(
 
         page = requests.get(site, auth=HttpNegotiateAuth())
     else:
-        from requests_ntlm import HttpNtlmAuth
+        from requests_ntlm2 import HttpNtlmAuth
         import os
 
         env_dict = os.environ
