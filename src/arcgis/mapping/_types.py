@@ -4227,7 +4227,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
                                     Item ID of the tile service.
         ----------------------      -------------------------------------------------------
         export_tiles_allowed        Optional boolean. ``exports_tiles_allowed`` sets
-                                   the value to let users export tiles
+                                    the value to let users export tiles
         ----------------------      -------------------------------------------------------
         min_scale                   Optional float. Sets the services minimum scale for
                                     caching. At the moment this parameter can only be set if
