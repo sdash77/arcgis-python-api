@@ -29,7 +29,6 @@ requirements:
   - requests-toolbelt
   - requests-kerberos
   - requests-oauthlib
-  - requests_ntlm
   - requests-ntlm2
   - requests-negotiate-sspi [win]
   - pywin32-security [win]
@@ -59,7 +58,6 @@ requirements:
   - requests-toolbelt
   - requests-kerberos
   - requests-oauthlib
-  - requests_ntlm
   - requests-ntlm2
   - requests-negotiate-sspi [win]
   - pywin32-security [win]

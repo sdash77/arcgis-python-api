@@ -87,7 +87,6 @@ else:
         "requests >=2.27.1",
         "requests-oauthlib",
         "requests_toolbelt",
-        "requests_ntlm",
         "requests-ntlm2",
         'requests-negotiate-sspi;platform_system=="Windows"',
         'requests-kerberos;platform_system=="Windows"',
@@ -317,9 +316,7 @@ kwargs = {
     # dependencies). You can install these using the following syntax,
     # for example:
     # $ pip install -e .[dev,test]
-    "extras_require": {
-        "gp": ["dill"],
-    },
+    "extras_require": {"gp": ["dill"],},
     "distclass": BinaryDistribution,
     # extras_require={
     #     'dev': ['check-manifest'],
