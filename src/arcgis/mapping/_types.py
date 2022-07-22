@@ -4801,7 +4801,7 @@ class VectorTileLayer(arcgis.gis.Layer):
 ###########################################################################
 class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
     """
-    The ``EnterpriseMapImageLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise hosted map image layers.
+    The ``EnterpriseMapImageLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise Map Image Layers and Tile Layers.
     A :class:`~arcgis.mapping.MapImageLayer` offers access to layer content.
 
     .. note:: Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/MapServer/
@@ -4872,8 +4872,17 @@ class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
 ###########################################################################
 class MapImageLayerManager(arcgis.gis._GISResource):
     """
-    The ``MapImageLayerManager`` class allows administration (if access permits) of ArcGIS Online hosted map image layers.
-    A :class:`~arcgis.mapping.MapImageLayer` offers access to map and layer content.
+    The ``MapImageLayerManager`` class allows administration (if access permits) of ArcGIS Online Hosted Tile Layers
+    or Cached Map Services.
+    A :class:`~arcgis.mapping.MapImageLayer` offers access to the Map Server endpoints
+    that allow you to edit the tile service, update tiles, refresh, and more.
+
+    To use this manager off of the MapImageLayer Class, pass in a url ending with /MapServer
+    when instantiating that class.
+
+    .. note::
+        Map Image Layers are created from Enterprise Services and their manager can
+        be accessed through the EnterpriseMapImageLayerManager.
     """
 
     def __init__(self, url, gis=None, map_img_lyr=None):
@@ -4883,13 +4892,13 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         self._ms = map_img_lyr
 
     # ----------------------------------------------------------------------
-    def refresh(self, service_definition: bool = True):
+    def refresh(self):
         """
         The ``refresh`` operation refreshes a service, which clears the web
         server cache for the service.
         """
         url = self._url + "/refresh"
-        params = {"f": "json", "serviceDefinition": service_definition}
+        params = {"f": "json"}
 
         res = self._con.post(url, params)
 
@@ -4898,27 +4907,6 @@ class MapImageLayerManager(arcgis.gis._GISResource):
             self._ms._refresh()
 
         return res
-
-    # ----------------------------------------------------------------------
-    def swap(self, target_service_name):
-        """
-        The swap operation replaces the current service cache with an existing one.
-
-        .. note::
-            The ``swap`` operation is for ArcGIS Online only.
-
-        ====================        ====================================================
-        **Argument**                **Description**
-        --------------------        ----------------------------------------------------
-        target_service_name         Required string. Name of service you want to swap with.
-        ====================        ====================================================
-
-        :returns: dictionary indicating success or error
-
-        """
-        url = self._url + "/swap"
-        params = {"f": "json", "targetServiceName": target_service_name}
-        return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
     def cancel_job(self, job_id):
@@ -4961,6 +4949,13 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         """
         The ``import_tiles`` method imports tiles from an :class:`~arcgis.gis.Item` object.
 
+        Before executing this operation, you will need to make certain the following prerequisites are met:
+
+        - Upload the TPK you wish to merge with the existing service, take note of its item ID.
+        - Make certain that the uploaded TPK item's tiling scheme matches with the service you wish to import into.
+        - The source service LOD's should include all the LOD's that are part of the imported TPK item. For example, if the source service has tiles from levels 0 through 10, you can import tiles only within these levels and not above it.
+
+
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
@@ -4986,17 +4981,12 @@ class MapImageLayerManager(arcgis.gis._GISResource):
                             merge=true. It controls whether the new tiles will
                             replace the existing ones when merging bundles.
         ===============     ====================================================
-
         :return:
             A dictionary
-
         .. code-block:: python
-
             # USAGE EXAMPLE
-
             >>> from arcgis.mapping import MapImageLayer
             >>> from arcgis.gis import GIS
-
             # connect to your GIS and get the web map item
             >>> gis = GIS(url, username, password)
             >>> map_image_layer = MapImageLayer("<url>", gis)
@@ -5014,7 +5004,6 @@ class MapImageLayerManager(arcgis.gis._GISResource):
                                                           )
             >>> type(imported_tiles)
             <Dictionary>
-
         """
         params = {
             "f": "json",
@@ -5039,6 +5028,8 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         self,
         levels: Optional[Union[str, list[int]]] = None,
         extent: Optional[Union[str, dict[str, int]]] = None,
+        merge: bool = False,
+        replace: bool = False,
     ):
         """
         The ``update_tiles`` method starts tile generation for ArcGIS Online. The levels of detail
@@ -5057,6 +5048,17 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         extent              Optional String / Dict. The area to update as Xmin, YMin, XMax, YMax
                             example: "-100,-50,200,500" or
                             {'xmin':100, 'ymin':200, 'xmax':105, 'ymax':205}
+        ---------------     ----------------------------------------------------
+        merge               Optional Boolean. Default is false and applicable to
+                            compact cache storage format. It controls whether
+                            the bundle files from the TPK file are merged with
+                            the one in the existing cached service. Otherwise,
+                            the bundle files are overwritten.
+        ---------------     ----------------------------------------------------
+        replace             Optional Boolean. Default is false, applicable to
+                            compact cache storage format and used when
+                            merge=true. It controls whether the new tiles will
+                            replace the existing ones when merging bundles.
         ===============     ====================================================
 
         :return:
@@ -5087,7 +5089,11 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         """
         if self._gis._portal.is_arcgisonline:
             url = "%s/updateTiles" % self._url
-            params = {"f": "json"}
+            params = {
+                "f": "json",
+                "mergeBundle": merge,
+                "replaceTiles": replace,
+            }
             if levels:
                 if isinstance(levels, list):
                     levels = ",".join(str(e) for e in levels)

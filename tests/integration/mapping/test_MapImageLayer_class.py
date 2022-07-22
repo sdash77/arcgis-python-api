@@ -12,7 +12,7 @@ gis = GIS(profile="your_online_profile", verify_cert=False)
 
 # MapImageLayer
 try:
-    item = gis.content.search("USA_Demographics_and_Boundaries_2021")[0]
+    item = gis.content.get("74c98b4c65c545f59a31573a7e4a7749")
 except:
     fp = "./demographics_and_boundaries"
     if os.path.isfile(path=fp):
