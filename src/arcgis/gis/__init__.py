@@ -25,6 +25,13 @@ from datetime import datetime
 import logging
 from typing import Any, Optional, Union
 from urllib.error import HTTPError
+from arcgis.gis._impl import (
+    ItemTypeEnum,
+    ItemProperties,
+    MetadataFormatEnum,
+    CreateServiceParameter,
+    ServiceTypeEnum,
+)
 import concurrent.futures
 
 from cachetools import cached, TTLCache
@@ -3998,7 +4005,7 @@ class UserManager(object):
 
             # Usage Example
 
-            >>> gis.users.advanced_search(query ="1234", sort_field = "username", max_users=20, as_dict=20)
+            >>> gis.users.advanced_search(query ="1234", sort_field = "username", max_users=20, as_dict=False)
         """
         from arcgis.gis._impl import _search
 
@@ -4452,7 +4459,7 @@ class RoleManager(object):
             >>> org_roles = role_mgr.all()
 
             >>> for role in org_roles:
-                print(f"{role.name:25}{role.role_id}"
+            >>>     print(f"{role.name:25}{role.role_id}")
 
                 Viewer                   iAAAAAAAAAAAAAAA
                 Data Editor              iBBBBBBBBBBBBBBB
@@ -5359,7 +5366,7 @@ class ContentManager(object):
     # ----------------------------------------------------------------------
     def add(
         self,
-        item_properties: dict[str, Any],
+        item_properties: dict[str, Any] | ItemProperties,
         data: Optional[str] = None,
         thumbnail: Optional[str] = None,
         metadata: Optional[str] = None,
@@ -5492,8 +5499,17 @@ class ContentManager(object):
         """
 
         filetype = None
-        if not isinstance(item_properties, dict):
-            raise ValueError("`item_properties` must be  dictionary.")
+
+        if not isinstance(item_properties, (dict, ItemProperties)):
+            raise ValueError(
+                "`item_properties` must be  dictionary or `ItemProperties`."
+            )
+        elif isinstance(item_properties, ItemProperties):
+            thumbnail = thumbnail or item_properties.thumbnail
+            metadata = metadata or item_properties.metadata
+            item_properties = item_properties.to_dict()
+            item_properties.pop("thumbnail", None)
+            item_properties.pop("metadata", None)
         if item_id and isinstance(item_id, str) and len(item_id) == 32:
             item_properties["itemIdToCreate"] = item_id
         if isinstance(data, arcgis.features.FeatureCollection):
@@ -5636,7 +5652,8 @@ class ContentManager(object):
         else:
             if filetype:
                 item_properties["fileName"] = os.path.basename(data)
-
+            if "text" in kwargs:
+                item_properties["text"] = kwargs.pop("text", None)
             itemid = self._portal.add_item(
                 item_properties, data, thumbnail, metadata, owner_name, folder
             )
@@ -5792,6 +5809,42 @@ class ContentManager(object):
         params["analyzeParameters"] = json.dumps(params["analyzeParameters"])
 
         return gis._con.post(path=surl, postdata=params, files=files)
+
+    # ----------------------------------------------------------------------
+    def create_empty_service(
+        self, parameters: CreateServiceParameter, *, owner: User = None
+    ) -> Item:
+        """
+        Creates a blank or view based service.
+
+        =======================    =============================================================
+        **Argument**               **Description**
+        -----------------------    -------------------------------------------------------------
+        parameters                 Required CreateServiceParameter. A dataclass that provides the
+                                   create service parameters.
+        -----------------------    -------------------------------------------------------------
+        owner                      Optional User. The user to save the service to.
+        =======================    =============================================================
+
+        :returns: Item
+        """
+
+        if owner:
+            username = owner.username
+        else:
+            owner = self._gis.users.me
+            username = owner.username
+        self._gis._portal.resturl
+        url = f"{self._gis._portal.resturl}content/users/{username}/createService"
+        params = parameters.to_dict()
+        params["f"] = "json"
+        res = self._gis._con.post(url, params)
+        itemid = res.get("itemId", None)
+
+        if itemid:
+            return self.get(itemid)
+        else:
+            return res
 
     # ----------------------------------------------------------------------
     def create_service(
@@ -13129,7 +13182,7 @@ class Item(dict):
     # ----------------------------------------------------------------------
     def update(
         self,
-        item_properties: Optional[dict[str, Any]] = None,
+        item_properties: Optional[dict[str, Any]] | ItemProperties = None,
         data: Optional[str] = None,
         thumbnail: Optional[str] = None,
         metadata: Optional[str] = None,
@@ -13220,6 +13273,26 @@ class Item(dict):
              item.update(description ="aggregated US hurricane data", title = "US Hurricane Data",
                              tags = "Hurricanes, USA, Natural Disasters")
         """
+        if isinstance(item_properties, ItemProperties):
+            if (
+                thumbnail is None
+                and item_properties.thumbnail
+                and (
+                    os.path.isfile(item_properties.thumbnail)
+                    or item_properties.thumbnail_url
+                )
+            ):
+                thumbnail = item_properties.thumbnail or item_properties.thumbnail_url
+            if (
+                metadata is None
+                and item_properties.metadata
+                and os.path.isfile(item_properties.metadata)
+            ):
+                metadata = item_properties.metadata
+
+            item_properties = item_properties.to_dict()
+            item_properties.pop("metadata", None)
+            item_properties.pop("thumbnail", None)
         if (
             data
             and isinstance(data, str)

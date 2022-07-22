@@ -63,6 +63,7 @@ if conda_install_mode:
     dependencies = []
 else:
     dependencies = [
+        "pillow",
         "urllib3",
         "cachetools",
         "six",

@@ -876,7 +876,15 @@ class Version(object):
         ---------------     --------------------------------------------------------------------
         from_moment         Optional string. Time epoch value in milliseconds specifying the
                             time from which to obtain the differences between this value
-                            and the specific `moment` argument.
+                            and the specified ``moment`` argument value.
+
+                            .. note::
+                                - By default, if this parameter is not specified, the ``differences`` operation returns the edits (inserts, updates, and deletes) at the specified value of the ``moment`` argument.
+
+                                - This parameter is only supported on the default version. For a named branch, this parameter will return an error if specified. The common ancestor moment is automatically used.
+
+                                - This parameter was introduced at ArcGIS Enterprise 10.9
+
         ---------------     --------------------------------------------------------------------
         layers              Optional list. The layer id values for which differences should
                             be returned. If not specified, the differences for all layers will

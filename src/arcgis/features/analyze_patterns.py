@@ -688,7 +688,7 @@ def find_outliers(
 
                                                                         Choice list: ['Speed', 'Balance', 'Presision']
 
-                                                                        * ``Speed`` - implements 199 permutations and results in p-values with a precision of 0.01.
+                                                                        * ``Speed`` - implements 199 permutations and results in p-values with a precision of 0.005.
                                                                         * ``Balance`` - implements 499 permutations and results in p-values with a precision of 0.002.
                                                                         * ``Precision`` - implements 999 permutations and results in p-values with a precision of 0.001.
     ------------------------------------------------------------------  ---------------------------------------------------------------
