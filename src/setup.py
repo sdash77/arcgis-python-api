@@ -87,6 +87,7 @@ else:
         "requests-oauthlib",
         "requests_toolbelt",
         "requests_ntlm",
+        "requests-ntlm2",
         'requests-negotiate-sspi;platform_system=="Windows"',
         'requests-kerberos;platform_system=="Windows"',
         'winkerberos;platform_system=="Windows"',
