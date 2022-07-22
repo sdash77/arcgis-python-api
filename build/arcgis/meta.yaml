@@ -11,6 +11,7 @@ package:
 requirements:
   build:
   - python
+  - pillow
   - cachetools
   - ujson >=3
   - setuptools
@@ -41,6 +42,7 @@ requirements:
   - geomet
   run:
   - python
+  - pillow
   - six
   - cachetools
   - notebook
