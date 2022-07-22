@@ -2559,8 +2559,8 @@ class GeoAccessor(object):
         folder=None,
         sanitize_columns=False,
         service_name=None,
-        overwrite = False,
-        layer = None
+        overwrite=False,
+        layer=None,
     ):
         """
         The ``to_featurelayer`` method publishes a spatial dataframe to a new
@@ -2644,17 +2644,25 @@ class GeoAccessor(object):
         else:
             # check that overwrite parameters are included
             if layer is None:
-                raise ValueError("Need to provide a dictionary for the layer parameter. Indicate the feature service id and the layer index to overwrite.")
+                raise ValueError(
+                    "Need to provide a dictionary for the layer parameter. Indicate the feature service id and the layer index to overwrite."
+                )
             if "FeatureServiceId" not in layer and "layer" not in layer:
-                raise ValueError("Ensure that the keys: 'FeatureServiceId' and 'layer' are present in the layer parameter.")
-            
+                raise ValueError(
+                    "Ensure that the keys: 'FeatureServiceId' and 'layer' are present in the layer parameter."
+                )
+
             # check that feature service exists and has layers before beginning
             fs_item = content.get(layer["FeatureServiceId"])
             if fs_item is None:
-                raise ValueError("The Feature Service is not reachable or does not exist. Please ensure this is the correct id.")
+                raise ValueError(
+                    "The Feature Service is not reachable or does not exist. Please ensure this is the correct id."
+                )
             if fs_item.layers is None:
-                raise ValueError("The Feature Service provided has no layers to overwrite")
-            
+                raise ValueError(
+                    "The Feature Service provided has no layers to overwrite"
+                )
+
             # 1. Call Update on the Feature Service and Enable
             flc = FeatureLayerCollection(fs_item)
             if flc.manager.properties["preserveLayerIds"] is False:
@@ -2662,17 +2670,18 @@ class GeoAccessor(object):
                 revert = True
 
             # 2. Call Delete from definition to remove the Feature Layer:
-            flc.manager.delete_from_definition({"layers":[{"id": layer["layer"]}]})
-            
+            flc.manager.delete_from_definition({"layers": [{"id": layer["layer"]}]})
+
             # 3. Add the new layer by calling add to definition
             #     a. Set ID to the removed index position in part 2
             #     {"layers" : [{"id" : <index position>, .... other properties... }]}
-            
+
             # 4. Append New Data
-            
+
             # 5. Reset the preserveLayerIds to original state if needed.
             if revert is True:
                 flc.manager.update_definition({"preserveLayerIds": False})
+
     # ----------------------------------------------------------------------
     @staticmethod
     def from_df(
