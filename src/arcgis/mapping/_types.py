@@ -4938,10 +4938,98 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
+    def import_tiles(
+        self,
+        item: _gis.Item,
+        levels: Optional[Union[str, list[int]]] = None,
+        extent: Optional[Union[str, dict[str, int]]] = None,
+        merge: bool = False,
+        replace: bool = False,
+    ):
+        """
+        The ``import_tiles`` method imports tiles from an :class:`~arcgis.gis.Item` object.
+
+        Before executing this operation, you will need to make certain the following prerequisites are met:
+
+        - Upload the TPK you wish to merge with the existing service, take note of its item ID.
+        - Make certain that the uploaded TPK item's tiling scheme matches with the service you wish to import into.
+        - The source service LOD's should include all the LOD's that are part of the imported TPK item. For example, if the source service has tiles from levels 0 through 10, you can import tiles only within these levels and not above it.
+
+
+        ===============     ====================================================
+        **Argument**        **Description**
+        ---------------     ----------------------------------------------------
+        item                Required ItemId or :class:`~arcgis.gis.Item` object. The TPK file's item id.
+                            This TPK file contains to-be-extracted bundle files
+                            which are then merged into an existing cache service.
+        ---------------     ----------------------------------------------------
+        levels              Optional String / List of integers, The level of details
+                            to update. Example: "1,2,10,20" or [1,2,10,20]
+        ---------------     ----------------------------------------------------
+        extent              Optional String / Dict. The area to update as Xmin, YMin, XMax, YMax
+                            example: "-100,-50,200,500" or
+                            {'xmin':100, 'ymin':200, 'xmax':105, 'ymax':205}
+        ---------------     ----------------------------------------------------
+        merge               Optional Boolean. Default is false and applicable to
+                            compact cache storage format. It controls whether
+                            the bundle files from the TPK file are merged with
+                            the one in the existing cached service. Otherwise,
+                            the bundle files are overwritten.
+        ---------------     ----------------------------------------------------
+        replace             Optional Boolean. Default is false, applicable to
+                            compact cache storage format and used when
+                            merge=true. It controls whether the new tiles will
+                            replace the existing ones when merging bundles.
+        ===============     ====================================================
+        :return:
+            A dictionary
+        .. code-block:: python
+            # USAGE EXAMPLE
+            >>> from arcgis.mapping import MapImageLayer
+            >>> from arcgis.gis import GIS
+            # connect to your GIS and get the web map item
+            >>> gis = GIS(url, username, password)
+            >>> map_image_layer = MapImageLayer("<url>", gis)
+            >>> mil_manager = map_image_layer.manager
+            >>> imported_tiles = mil_manager.import_tiles(item="<item-id>",
+                                                          levels = "11-20",
+                                                          extent = {"xmin":6224324.092137296,
+                                                                    "ymin":487347.5253569535,
+                                                                    "xmax":11473407.698535524,
+                                                                    "ymax":4239488.369818687,
+                                                                    "spatialReference":{"wkid":102100}
+                                                                    },
+                                                          merge = True,
+                                                        replace = True
+                                                          )
+            >>> type(imported_tiles)
+            <Dictionary>
+        """
+        params = {
+            "f": "json",
+            "sourceItemId": None,
+            "extent": extent,
+            "levels": levels,
+            "mergeBundle": merge,
+            "replaceTiles": replace,
+        }
+        if isinstance(item, str):
+            params["sourceItemId"] = item
+        elif isinstance(item, _gis.Item):
+            params["sourceItemId"] = item.itemid
+        else:
+            raise ValueError("The `item` must be a string or Item")
+        url = self._url + "/importTiles"
+        res = self._con.post(url, params)
+        return res
+
+    # ----------------------------------------------------------------------
     def update_tiles(
         self,
         levels: Optional[Union[str, list[int]]] = None,
         extent: Optional[Union[str, dict[str, int]]] = None,
+        merge: bool = False,
+        replace: bool = False,
     ):
         """
         The ``update_tiles`` method starts tile generation for ArcGIS Online. The levels of detail
@@ -4960,6 +5048,17 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         extent              Optional String / Dict. The area to update as Xmin, YMin, XMax, YMax
                             example: "-100,-50,200,500" or
                             {'xmin':100, 'ymin':200, 'xmax':105, 'ymax':205}
+        ---------------     ----------------------------------------------------
+        merge               Optional Boolean. Default is false and applicable to
+                            compact cache storage format. It controls whether
+                            the bundle files from the TPK file are merged with
+                            the one in the existing cached service. Otherwise,
+                            the bundle files are overwritten.
+        ---------------     ----------------------------------------------------
+        replace             Optional Boolean. Default is false, applicable to
+                            compact cache storage format and used when
+                            merge=true. It controls whether the new tiles will
+                            replace the existing ones when merging bundles.
         ===============     ====================================================
 
         :return:
@@ -4990,7 +5089,11 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         """
         if self._gis._portal.is_arcgisonline:
             url = "%s/updateTiles" % self._url
-            params = {"f": "json"}
+            params = {
+                "f": "json",
+                "mergeBundle": merge,
+                "replaceTiles": replace,
+            }
             if levels:
                 if isinstance(levels, list):
                     levels = ",".join(str(e) for e in levels)
