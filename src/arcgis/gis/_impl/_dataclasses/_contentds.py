@@ -215,10 +215,10 @@ class ItemProperties:
     _dict_data: dict | None = field(init=False)
 
     def __str__(self):
-        return "<ItemProperties>"
+        return f"<ItemProperties: title={self.title}, type={self.item_type}>"
 
     def __repr__(self):
-        return "<ItemProperties>"
+        return self.__str__()
 
     def __post_init__(self):
         self._dict_data = {
