@@ -523,7 +523,7 @@ def summarize_center_and_dispersion(
     * Where is the center?
     * Which feature is the most accessible from all other features?
     * How dispersed, compact, or integrated are the features?
-    * Are there directional trends?s
+    * Are there directional trends?
 
     ====================    =========================================================
     **Argument**            **Description**
