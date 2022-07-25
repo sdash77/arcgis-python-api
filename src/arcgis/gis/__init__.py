@@ -7119,8 +7119,8 @@ class ContentManager(object):
                     # Get properties from the newly created feature layer, assign correct id
                     new_fl = new_item.layers[0]
                     new_props = new_fl.properties
-                    new_props.update(old_props)
                     new_props["id"] = fl_index
+                    new_props["name"] = old_props["name"]
 
                     # Perform edit on the flc
                     # Step 1: Preserve layer ids
