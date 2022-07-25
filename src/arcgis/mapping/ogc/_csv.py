@@ -72,7 +72,7 @@ class CSVLayer(BaseOpenData):
     def __str__(self):
         if self._item:
             return f"<CSV @ {self._item.itemid}>"
-        return f"<CSV @ {self._url}>"
+        return f"< CSV @ {self._url} >"
 
     # ----------------------------------------------------------------------
     @property

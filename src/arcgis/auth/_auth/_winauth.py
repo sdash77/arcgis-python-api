@@ -112,6 +112,7 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
             r.text.lower().find("invalid token") > -1
             or r.text.lower().find("token required") > -1
             or r.text.lower().find("token not found") > -1
+            or r.status_code == 401
         ) or parsed.netloc in self._server_log:
             expiration = 16000
             if parsed.port:
@@ -143,7 +144,11 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
                 token_str = self._tokens[server_url]
             else:
                 token = requests.post(
-                    token_url, data=postdata, auth=self.auth, proxies=self.proxies
+                    token_url,
+                    data=postdata,
+                    auth=self.auth,
+                    proxies=self.proxies,
+                    verify=self.verify_cert,
                 )
                 token_str = token.json().get("token", None)
                 if token_str is None:

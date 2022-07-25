@@ -23,7 +23,8 @@ class VersionManager(object):
     ---------------     --------------------------------------------------------------------
     url                 Required String.  The URI to the web resource.
     ---------------     --------------------------------------------------------------------
-    gis                 Required GIS. The enterprise connection to the Portal site.
+    gis                 Required GIS. The enterprise connection to the Portal site. A connection
+                        can be passed in such as a Service Directory connection.
     ---------------     --------------------------------------------------------------------
     flc                 Optional FeatureLayerCollection. This is the parent container that
                         the branch versioning is enabled on.
@@ -43,9 +44,12 @@ class VersionManager(object):
         """init"""
         if isinstance(gis, GIS):
             self._gis = gis
+            self._con = self._gis._portal.con
+        elif hasattr(gis, "_con"):
+            self._gis = gis
+            self._con = gis._con
         else:
             raise ValueError("gis must be of type GIS")
-        self._con = self._gis._portal.con
         self._url = url
         if isinstance(flc, FeatureLayer):
             self._flc = flc.container
@@ -57,7 +61,7 @@ class VersionManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<VersionManager @ {url}>".format(url=self._url)
+        return "< VersionManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -268,7 +272,7 @@ class Version(object):
     _validation = None
     # ----------------------------------------------------------------------
 
-    def __init__(self, url, flc, gis=None, session_guid=None, mode=None):
+    def __init__(self, url, flc=None, gis=None, session_guid=None, mode=None):
         """Constructor"""
         if mode:
             self.mode = mode
@@ -831,7 +835,7 @@ class Version(object):
     ):
 
         """
-        The ```differences``` operation allows you to view differences between
+        The ``differences`` operation allows you to view differences between
         the current version and the default version. The two versions can
         be compared to check for the following conditions.
 
@@ -855,7 +859,15 @@ class Version(object):
         ---------------     --------------------------------------------------------------------
         from_moment         Optional string. Time epoch value in milliseconds specifying the
                             time from which to obtain the differences between this value
-                            and the specific `moment` argument.
+                            and the specified ``moment`` argument value.
+
+                            .. note::
+                                - By default, if this parameter is not specified, the ``differences`` operation returns the edits (inserts, updates, and deletes) at the specified value of the ``moment`` argument.
+
+                                - This parameter is only supported on the default version. For a named branch, this parameter will return an error if specified. The common ancestor moment is automatically used.
+
+                                - This parameter was introduced at ArcGIS Enterprise 10.9
+
         ---------------     --------------------------------------------------------------------
         layers              Optional list. The layer id values for which differences should
                             be returned. If not specified, the differences for all layers will
@@ -1104,7 +1116,7 @@ class Version(object):
                                 features to be added.
         ---------------------   -------------------------------------------
         updates                 Optional FeatureSet/List. The array of
-                                features to be updateded.
+                                features to be updated.
         ---------------------   -------------------------------------------
         deletes                 Optional FeatureSet/List. string of OIDs to
                                 remove from service

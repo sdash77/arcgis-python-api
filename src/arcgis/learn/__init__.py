@@ -249,7 +249,7 @@ def detect_objects(
     found in the imagery data using the designated deep learning model. Note that the deep learning
     library needs to be installed separately, in addition to the server's built in Python 3.x library.
     .. note::
-            This function is supported with ArcGIS Enterprise (Image Server)
+            This function is supported with ArcGIS Enterprise (Image Server) and ArcGIS Image for ArcGIS Online.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -440,7 +440,7 @@ def classify_pixels(
     Note that the deep learning library needs to be installed separately,
     in addition to the server's built in Python 3.x library.
     .. note::
-            This function is supported with ArcGIS Enterprise (Image Server)
+            This function is supported with ArcGIS Enterprise (Image Server) and ArcGIS Image for ArcGIS Online.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -978,7 +978,7 @@ def classify_objects(
     Function can be used to output feature service with assigned class label for each feature based on
     information from overlapped imagery data using the designated deep learning model.
     .. note::
-            This function is supported with ArcGIS Enterprise (Image Server)
+            This function is supported with ArcGIS Enterprise (Image Server) and ArcGIS Image for ArcGIS Online.
 
     ====================================     ====================================================================
     **Argument**                             **Description**

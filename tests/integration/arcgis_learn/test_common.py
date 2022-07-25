@@ -98,6 +98,8 @@ accuracy_values = {
         "mmdetection": 0,
         "mlmodel": 0,
         "automl": 0,
+        "maxdeeplab":0,
+        "detreg":0,
     }
 }
 
@@ -107,9 +109,9 @@ success_stat = {
         "total": 0,
         "pass": 0,
         "fail": 0,
-        "od_total": 5,
+        "od_total": 6,
         "od": 0,
-        "pc_total": 10,
+        "pc_total": 11,
         "pc": 0,
         "co_total": 1,
         "co": 0,
@@ -456,6 +458,8 @@ def commonTestCases(
                 result = float(model_object.compute_metrics()["SSIM"])
             elif regression_parameter == "f1_score":
                 result = model_object.f1_score()
+            elif regression_parameter == "panoptic_quality":
+                result = model_object.panoptic_quality()
             elif regression_parameter == "compute_metrics":
                 if model_test == "siammask_test":
                     result = float(model_object.compute_metrics()["mean_IOU"])
@@ -835,7 +839,7 @@ class TestTraining(unittest.TestCase):
             success_stat["attributes"]["pass"] = success_stat["attributes"]["pass"] + 1
             if test_name == "ms":
                 pass
-            elif test_name in ["ssd", "rn", "fasterrcnn", "yolov3", "maskrcnn"]:
+            elif test_name in ["ssd", "rn", "fasterrcnn", "yolov3", "maskrcnn", "detreg"]:
                 success_stat["attributes"]["od"] = success_stat["attributes"]["od"] + 1
             elif test_name in [
                 "unet",
@@ -848,6 +852,7 @@ class TestTraining(unittest.TestCase):
                 "bdcnedgedetector",
                 "changedetection",
                 "mtre",
+                "maxdeeplab"
             ]:
                 success_stat["attributes"]["pc"] = success_stat["attributes"]["pc"] + 1
             elif test_name in ["fc"]:

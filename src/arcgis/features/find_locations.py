@@ -642,10 +642,11 @@ def find_similar_locations(
 
     The ``find_similar_locations`` method measures the similarity of candidate locations to one or more reference locations.
 
-    Based on criteria you specify, Find ``find_similar_locations`` can answer questions such as the following:
+    Based on criteria you specify,``find_similar_locations`` can answer questions such as the following:
 
-    Which of your stores are most similar to your top performers with regard to customer profiles?
-    Based on characteristics of villages hardest hit by the disease, which other villages are high risk?
+    - Which of your stores are most similar to your top performers with regard to customer profiles?
+    - Based on characteristics of villages hardest hit by the disease, which other villages are high risk?
+
     To answer questions such as these, you provide the reference locations (the ``input_layer`` parameter), the candidate
     locations (the ``search_layer`` parameter), and the fields representing the criteria you want to match. For example,
     the ``input_layer`` might be a layer containing your top performing stores or the villages hardest hit by the disease.
@@ -712,7 +713,7 @@ def find_similar_locations(
 
                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online Only.
 
                                     .. code-block:: python
 

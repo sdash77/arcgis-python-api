@@ -1,3 +1,6 @@
+import sys
+sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
+sys.path.insert(1, r"C:\ipython_workfolder\geosaurus\tests")
 from unittest.mock import patch
 
 from utils.mocks import MockMapView
@@ -49,10 +52,10 @@ def test_set_basemap_using_webmap_object():
     from arcgis.mapping import WebMap
 
     wm = WebMap()
-    wm.basemap = "dark-gray"
+    wm.basemap = "dark-gray-vector"
     wm2 = WebMap()
     wm2.basemap = wm
-    assert "dark-gray" in str(wm.basemap["baseMapLayers"]) and "dark-gray" in str(
+    assert "dark-gray-base-layer" in str(wm.basemap["baseMapLayers"]) and "Dark Gray Vector" in str(
         wm._webmapdict
     )
 
@@ -62,7 +65,7 @@ def test_default_basemap_no_gis():
     from arcgis.mapping import WebMap
 
     wm = WebMap()
-    assert "World Topographic Map" in str(wm.basemap)
+    assert "World Topo" in str(wm.basemap)
 
 
 @patch("arcgis.widgets.MapView", MockMapView)
