@@ -5,7 +5,6 @@ import logging
 import pandas as pd
 from collections.abc import Iterable
 
-from arcgis.features.layer import FeatureLayerCollection
 from ._internals import register_dataframe_accessor, register_series_accessor
 from ._array import GeoType
 from ._io.fileops import (
@@ -24,6 +23,7 @@ datetime = LazyLoader("datetime")
 np = LazyLoader("numpy")
 tempfile = LazyLoader("tempfile")
 warnings = LazyLoader("warnings")
+features = LazyLoader("arcgis.features")
 _geometry = LazyLoader("arcgis.geometry")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
 _isd = LazyLoader("arcgis._impl.common._isd")
@@ -2559,8 +2559,7 @@ class GeoAccessor(object):
         folder=None,
         sanitize_columns=False,
         service_name=None,
-        overwrite=False,
-        layer=None,
+        **kwargs
     ):
         """
         The ``to_featurelayer`` method publishes a spatial dataframe to a new
@@ -2587,16 +2586,25 @@ class GeoAccessor(object):
         service_name                    Optional String. The name for the service that will be added to the Item.
                                         Name cannot be used already and cannot contain special characters, spaces,
                                         or a numerical value as the first letter.
+        ===========================     ====================================================================
+
+        When publishing a Spatial Dataframe, additional options can be given:
+
+        ===========================     ====================================================================
+        **Optional Arguments**          **Description**
         ---------------------------     --------------------------------------------------------------------
-        overwrite                       Optional boolean. If True, the specified layer in the `layer` parameter
+        overwrite                       Optional boolean. If True, the specified layer in the `service` parameter
                                         will be overwritten.
         ---------------------------     --------------------------------------------------------------------
-        layer                           Dictionary that is required if `overwrite = True`. Dictionary with two
+        service                         Dictionary that is required if `overwrite = True`. Dictionary with two
                                         keys: "FeatureServiceId" and "layers".
-                                        "FeatureServiceId" value is a string of the feature service id that the layer
+                                        "featureServiceId" value is a string of the feature service id that the layer
                                         belongs to.
-                                        "layers" value is an integer depicting the index value of the layer to
+                                        "layer" value is an integer depicting the index value of the layer to
                                         overwrite.
+
+                                        Example:
+                                        {"featureServiceId" : "9311d21a9a2047d19c0faaebd6f2cca6", "layer": 0}
         ===========================     ====================================================================
 
         :return:
@@ -2629,58 +2637,19 @@ class GeoAccessor(object):
                 raise ValueError(
                     "This service name is unavailable for Feature Service."
                 )
-        if overwrite is False:
-            result = content.import_data(
-                self._data,
-                folder=folder,
-                title=title,
-                tags=tags,
-                sanitize_columns=sanitize_columns,
-                service_name=service_name,
-            )
-            self._data.columns = origin_columns
-            self._data.index = origin_index
-            return result
-        else:
-            # check that overwrite parameters are included
-            if layer is None:
-                raise ValueError(
-                    "Need to provide a dictionary for the layer parameter. Indicate the feature service id and the layer index to overwrite."
-                )
-            if "FeatureServiceId" not in layer and "layer" not in layer:
-                raise ValueError(
-                    "Ensure that the keys: 'FeatureServiceId' and 'layer' are present in the layer parameter."
-                )
 
-            # check that feature service exists and has layers before beginning
-            fs_item = content.get(layer["FeatureServiceId"])
-            if fs_item is None:
-                raise ValueError(
-                    "The Feature Service is not reachable or does not exist. Please ensure this is the correct id."
-                )
-            if fs_item.layers is None:
-                raise ValueError(
-                    "The Feature Service provided has no layers to overwrite"
-                )
-
-            # 1. Call Update on the Feature Service and Enable
-            flc = FeatureLayerCollection(fs_item)
-            if flc.manager.properties["preserveLayerIds"] is False:
-                flc.manager.update_definition({"preserveLayerIds": True})
-                revert = True
-
-            # 2. Call Delete from definition to remove the Feature Layer:
-            flc.manager.delete_from_definition({"layers": [{"id": layer["layer"]}]})
-
-            # 3. Add the new layer by calling add to definition
-            #     a. Set ID to the removed index position in part 2
-            #     {"layers" : [{"id" : <index position>, .... other properties... }]}
-
-            # 4. Append New Data
-
-            # 5. Reset the preserveLayerIds to original state if needed.
-            if revert is True:
-                flc.manager.update_definition({"preserveLayerIds": False})
+        result = content.import_data(
+            self._data,
+            folder=folder,
+            title=title,
+            tags=tags,
+            sanitize_columns=sanitize_columns,
+            service_name=service_name,
+            **kwargs,
+        )
+        self._data.columns = origin_columns
+        self._data.index = origin_index
+        return result
 
     # ----------------------------------------------------------------------
     @staticmethod
