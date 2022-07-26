@@ -2607,19 +2607,19 @@ class UserManager(object):
         return self.__str__()
 
     # ----------------------------------------------------------------------
-    def delete_users(self, users: list[User]) -> dict[str, Any]:
+    def delete_users(self, users: list[User]) -> list[str]:
         """
         Allows the administrator to remove users from a portal. Before the
         administrator can remove the user, all of the user's content and
         groups must be reassigned or deleted.
 
-        ================  ===============================================================================
+        ================  =========]======================================================================
         **Keys**          **Description**
         ----------------  -------------------------------------------------------------------------------
         users             Required list[User]. A list of users to delete from the organization.
         ================  ===============================================================================
 
-        :returns: dict[str, Any]
+        :returns: list[str] containing the users who could not be removed.
         """
         from arcgis._impl.common._utils import chunks as _chunks
 
