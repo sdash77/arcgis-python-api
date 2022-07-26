@@ -221,16 +221,16 @@ def generate_origin_destination_cost_matrix(
                                               If a value is not specified, the value from the Cutoff parameter is used.
                                             * ``CurbApproach`` - Specifies the direction a vehicle may depart from the origin. The field value is specified as one of the
                                               following integers (use the numeric code, not the name in parentheses):
-                                              
+
                                               * 0 (Either side of vehicle)-The vehicle can depart the origin in either direction, so a U-turn is allowed at the origin. This setting can be chosen if it is possible and practical for your vehicle to turn around at the origin. This decision may depend on the width of the road and the amount of traffic or whether the origin has a parking lot where vehicles can enter and turn around.
                                               * 1 ( Right side of vehicle)-When the vehicle departs the origin, the origin must be on the right side of the vehicle. A U-turn is prohibited. This is typically used for vehicles such as buses that must depart from the bus stop on the right-hand side.
                                               * 2 (Left side of vehicle)-When the vehicle departs the origin, the curb must be on the left side of the vehicle. A U-turn is prohibited. This is typically used for vehicles such as buses that must depart from the bus stop on the left-hand side.
-                                              * 3 (No U-Turn)-For this tool, the No U-turn (3) value functions the same as Either side of vehicle. The CurbApproach property is designed to work with both kinds of national driving standards: right-hand traffic (United States) and left-hand traffic (United Kingdom). First, consider an origin on the left side of a vehicle. It is always on the left side regardless of whether the vehicle travels on the left or right half of the road. What may change with national driving standards is your decision to depart the origin from one of two directions, that is, so it ends up on the right or left side of the vehicle. For example, if you want to depart from an origin and not have a lane of traffic between the vehicle and the origin, you would choose Right side of vehicle (1) in the United States but Left side of vehicle (2) in the United Kingdom.                                          
+                                              * 3 (No U-Turn)-For this tool, the No U-turn (3) value functions the same as Either side of vehicle. The CurbApproach property is designed to work with both kinds of national driving standards: right-hand traffic (United States) and left-hand traffic (United Kingdom). First, consider an origin on the left side of a vehicle. It is always on the left side regardless of whether the vehicle travels on the left or right half of the road. What may change with national driving standards is your decision to depart the origin from one of two directions, that is, so it ends up on the right or left side of the vehicle. For example, if you want to depart from an origin and not have a lane of traffic between the vehicle and the origin, you would choose Right side of vehicle (1) in the United States but Left side of vehicle (2) in the United Kingdom.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     destinations                            Required :class:`~arcgis.features.FeatureSet` . Specify locations that function as ending points in generating the paths from origins.
                                             You can add up to 200 destinations. When specifying the destinations, you can set properties for each one, such as its name,
                                             by using attributes. The destinations can be specified with the following attributes:
-                                            
+
                                             * ``Name`` - The name of the destination. The name can be an unique identifier for the destination. The name is included in
                                               the output lines (as the DestinationName field) and in the output destinations (as the Name field) and can be used to join
                                               additional information from the tool outputs to the attributes of your destinations.
@@ -238,7 +238,7 @@ def generate_origin_destination_cost_matrix(
                                               An auto-generated destination name is not included in the output lines.
                                             * ``CurbApproach`` - Specifies the direction a vehicle may arrive at the destination. The field value is specified as one of the following
                                               integers (use the numeric code, not the name in parentheses):
-                                              
+
                                               * 0 (Either side of vehicle)- The vehicle can arrive the destination in either direction, so a U-turn is allowed at the destination. This setting can be chosen if it is possible and practical for your vehicle to turn around at the destination. This decision may depend on the width of the road and the amount of traffic or whether the destination has a parking lot where vehicles can enter and turn around.
                                               * 1 ( Right side of vehicle)- When the vehicle arrives at the destination, the destination must be on the right side
                                                 of the vehicle. A U-turn is prohibited. This is typically used for vehicles such as buses that must arrive at the bus stop on the
@@ -330,7 +330,7 @@ def generate_origin_destination_cost_matrix(
                                             The tool imposes a limit of 250 points that can be added as barriers.
                                             When specifying the point barriers, you can set properties for each one, such as its name or barrier type,
                                             by using attributes. The point barriers can be specified with the following attributes:
-                                            
+
                                             * ``Name``: The name of the barrier.
                                             * ``BarrierType``: Specifies whether the point barrier restricts travel completely or adds time or distance when it is crossed. The value for this attribute is specified as one of the following integers (use the numeric code, not the name in parentheses):
 
@@ -339,7 +339,7 @@ def generate_origin_destination_cost_matrix(
                                                 restriction.
                                               * 2 (Added Cost)-Traveling through the barrier increases the travel
                                                 time or distance by the amount specified in the ``Additional_Time`` or ``Additional_Distance`` field. This barrier type is referred to as an added-cost point barrier.
-                                                
+
                                             * ``Additional_Time``: Indicates how much travel time is added when the barrier is traversed. This field is applicable only for added-cost barriers and only if the measurement units are time based. This field value must be greater than or equal to zero, and its units are the same as those specified in the Measurement Units parameter.
                                             * ``Additional_Distance``: Indicates how much distance is added when the barrier is traversed. This field is applicable only for added-cost barriers and only if the measurement units are distance based. The field value must be greater than or equal to zero, and its units are the same as those specified in the Measurement Units parameter.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
@@ -357,7 +357,7 @@ def generate_origin_destination_cost_matrix(
                                             number of streets intersected by all the lines cannot exceed
                                             500.
                                             When specifying the line barriers, you can set a name property for each one by using the following attribute:
-                                            
+
                                             * ``Name``: The name of the barrier.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     polygon_barriers                        Optional :class:`~arcgis.features.FeatureSet`  . Specify polygons that either completely restrict travel or
@@ -371,11 +371,11 @@ def generate_origin_destination_cost_matrix(
                                             polygons should not exceed 2,000.
                                             When specifying the polygon barriers, you can set properties for each one, such as its name or barrier type,
                                             by using attributes. The polygon barriers can be specified with the following attributes:
-                                            
+
                                             * ``Name``: The name of the barrier.
                                             * ``BarrierType``: Specifies whether the barrier restricts travel completely or scales the time or distance for traveling through it. The field value is specified as one of the following integers (use the numeric code, not the name in parentheses):
 
-                                              * 0 (Restriction)-Prohibits traveling through any part of the barrier. The barrier is referred to as a restriction polygon barrier since it prohibits traveling on streets intersected by the barrier. One use of this type of barrier is to model floods covering areas of the street that make traveling on those streets impossible.                                             
+                                              * 0 (Restriction)-Prohibits traveling through any part of the barrier. The barrier is referred to as a restriction polygon barrier since it prohibits traveling on streets intersected by the barrier. One use of this type of barrier is to model floods covering areas of the street that make traveling on those streets impossible.
                                               * 1 (Scaled Cost)-Scales the time or distance required to travel the
                                                 underlying streets by a factor specified using the ScaledTimeFactor
                                                 or ScaledDistanceFactor fields. If the streets are partially
@@ -387,7 +387,7 @@ def generate_origin_destination_cost_matrix(
                                                 barrier type is referred to as a scaled-cost polygon barrier. It
                                                 might be used to model storms that reduce travel speeds in specific
                                                 regions.
-                                                
+
                                             * ``ScaledTimeFactor``: This is the factor by which the travel time of the streets
                                               intersected by the barrier is multiplied. This field is applicable
                                               only for scaled-cost barriers and only if the measurement units are time
@@ -649,7 +649,7 @@ def generate_origin_destination_cost_matrix(
                                             prefer them.
                                             The value you provide for this parameter is ignored unless Travel Mode is set to Custom, which is the default value.
                                             If you specify the Attribute Parameter Values parameter from a feature class, the field names on the feature class must match the fields as described below:
-                                            
+
                                             * ``AttributeName``: Lists the name of the restriction.
                                             * ``ParameterName``: Lists the name of the parameter associated with the restriction. A restriction can have one or more ParameterName field values based on its intended use.
                                             * ``ParameterValue``: The value for ``ParameterName`` used by the tool when evaluating the restriction.
@@ -663,15 +663,15 @@ def generate_origin_destination_cost_matrix(
                                               preferred. The Restriction Usage ParameterName can be assigned any of
                                               the following string values or their equivalent numeric values
                                               listed within the parentheses:
-                                              
+
                                               * ``PROHIBITED`` (-1) - Travel on the roads using the restriction is completely prohibited.
                                               * ``AVOID_HIGH`` (5) - It is highly unlikely for the tool to include in the route the roads that are associated with the restriction.
-                                              * ``AVOID_MEDIUM`` (2) - It is unlikely for the tool to include in the route the roads that are associated with the restriction. 
-                                              * ``AVOID_LOW`` (1.3) - It is somewhat unlikely for the tool to include in the route the roads that are associated with the restriction. 
+                                              * ``AVOID_MEDIUM`` (2) - It is unlikely for the tool to include in the route the roads that are associated with the restriction.
+                                              * ``AVOID_LOW`` (1.3) - It is somewhat unlikely for the tool to include in the route the roads that are associated with the restriction.
                                               * ``PREFER_LOW`` (0.8) - It is somewhat likely for the tool to include in the route the roads that are associated with the restriction.
                                               * ``PREFER_MEDIUM`` (0.5) - It is likely for the tool to include in the route the roads that are associated with the restriction.
                                               * ``PREFER_HIGH`` (0.2) - It is highly likely for the tool to include in the route the roads.
-                                              
+
                                               In most cases, you can use the default value, PROHIBITED,
                                               for the Restriction Usage if the restriction is dependent on a
                                               vehicle-characteristic such as vehicle height. However, in some
@@ -820,7 +820,7 @@ def generate_origin_destination_cost_matrix(
                                             or no geometry at all. In both cases, the route is always computed along the street network by minimizing the
                                             travel time or the travel distance, never using the straight-line
                                             distance between origins and destinations.
-                                            
+
                                             ``Straight Line``: Straight lines connect origins and destinations.
                                             ``None``: Do not return any shapes for the lines that connect origins and destinations. This is useful when you have a large number of origins and destinations and are interested only in the OD cost matrix table (and not the output line shapes).
 
@@ -854,7 +854,7 @@ def generate_origin_destination_cost_matrix(
     output_format                           Optional. Specify the format in which the output features are created.
 
                                             Choose from the following formats:
-                                            
+
                                             * Feature Set - The output features are returned as feature classes and tables. This is the default.
                                             * JSON File - The output features are returned as a compressed file containing the JSON representation of the outputs. When this option is specified, the output is a single file (with a .zip extension) that contains one or more JSON files (with a .json extension) for each of the outputs created by the service.
                                             * GeoJSON File - The output features are returned as a compressed file containing the GeoJSON representation of the outputs. When this option is specified, the output is a single file (with a .zip extension) that contains one or more GeoJSON files (with a .geojson extension) for each of the outputs created by the service.

@@ -1,6 +1,7 @@
 """
 Holds Delegate and Accessor Logic
 """
+from __future__ import annotations
 import logging
 import pandas as pd
 from collections.abc import Iterable
@@ -22,6 +23,7 @@ datetime = LazyLoader("datetime")
 np = LazyLoader("numpy")
 tempfile = LazyLoader("tempfile")
 warnings = LazyLoader("warnings")
+gis = LazyLoader("arcgis.gis")
 _geometry = LazyLoader("arcgis.geometry")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
 _isd = LazyLoader("arcgis._impl.common._isd")
@@ -2401,6 +2403,73 @@ class GeoAccessor(object):
 
             # return the map widget so it will be displayed below the cell in Jupyter Notebook
             return map_widget
+
+    # ----------------------------------------------------------------------
+    def insert_layer(
+        self,
+        feature_service: gis.Item | str,
+        gis=None,
+        sanitize_columns: bool = False,
+        service_name: str = None,
+    ):
+        """
+                This method creates a feature layer from the spatially enabled dataframe and adds (inserts)
+                it to an existing feature service.
+
+                ============================    ====================================================================
+                **Argument**                    **Description**
+        l        ---------------------------    --------------------------------------------------------------------
+                feature_service                 Required Item or Feature Service Id. Depicts the feature service to
+                                                which the layer will be added.
+                ----------------------------    --------------------------------------------------------------------
+                gis                             Optional GIS. The GIS connection object
+                ----------------------------    --------------------------------------------------------------------
+                sanitize_columns                Optional Boolean. If True, column names will be converted to string,
+                                                invalid characters removed and other checks will be performed. The
+                                                default is False.
+                ----------------------------    --------------------------------------------------------------------
+                service_name                    Optional String. The name for the service that will be added to the Item.
+                                                Name cannot be used already and cannot contain special characters, spaces,
+                                                or a numerical value as the first letter.
+                ============================    ====================================================================
+        """
+        from arcgis import env
+        import copy
+
+        if gis is None:
+            gis = env.active_gis
+            if gis is None:
+                raise ValueError("GIS object must be provided")
+        content = gis.content
+        origin_columns = self._data.columns.tolist()
+        origin_index = copy.deepcopy(self._data.index)
+        if isinstance(feature_service, gis.Item):
+            fs_id = feature_service.id
+        else:
+            fs_id = feature_service
+
+        if service_name:
+            # sanitize name
+            service_name = service_name.replace(" ", "")
+            if service_name[0].isnumeric():
+                raise ValueError(
+                    "First character of service_name cannot be an integer."
+                )
+            if (
+                content.is_service_name_available(service_name, "featureService")
+                is False
+            ):
+                raise ValueError(
+                    "This service name is unavailable for Feature Service."
+                )
+        result = content.import_data(
+            self._data,
+            sanitize_columns=sanitize_columns,
+            service_name=service_name,
+        )
+        self._data.columns = origin_columns
+        self._data.index = origin_index
+        return result
 
     # ----------------------------------------------------------------------
     def to_featureclass(

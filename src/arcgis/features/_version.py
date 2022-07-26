@@ -385,13 +385,13 @@ class Version(object):
     # ----------------------------------------------------------------------
     @property
     def layers(self):
-        """returns the layers in the :class:`~arcgis.features.FeatureLayerCollection` """
+        """returns the layers in the :class:`~arcgis.features.FeatureLayerCollection`"""
         return self._flc.layers
 
     # ----------------------------------------------------------------------
     @property
     def tables(self):
-        """returns the tables in the :class:`~arcgis.features.FeatureLayerCollection` """
+        """returns the tables in the :class:`~arcgis.features.FeatureLayerCollection`"""
         return self._flc.tables
 
     # ----------------------------------------------------------------------

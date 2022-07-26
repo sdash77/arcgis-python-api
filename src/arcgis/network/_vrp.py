@@ -1329,13 +1329,13 @@ def solve_vehicle_routing_problem(
                                                 If the first time window is null, as specified by the ``TimeWindowStart1`` and ``TimeWindowEnd1`` fields, the second time window must also be null.
 
                                                 If both time windows are non null, they can't overlap. Also, the second time window must occur after the first.
-                                              
+
                                               * ``TimeWindowEnd2``: The ending time of the second time window for the network location. This field can contain a null value.
 
                                                 When ``TimeWindowStart2`` and ``TimeWindowEnd2`` are both null, there is no second time window.
 
                                                 When ``TimeWindowStart2`` is not null but ``TimeWindowEnd2`` is null, there is a second time window that has a starting time but no ending time. This is valid.
-                                              
+
                                               * ``MaxViolationTime1``: A time window is considered violated if the arrival time occurs after the time window has ended. This field specifies the maximum allowable violation time for the first time window of the order. It can contain a zero value but can't contain negative values. A zero value indicates that a time window violation at the first time window of the order is unacceptable; that is, the first time window is hard. On the other hand, a null value indicates that there is no limit on the allowable violation time. A nonzero value specifies the maximum amount of lateness; for example, a route can arrive at an order up to 30 minutes beyond the end of its first time window.
 
                                                 The unit for this field value is specified by the Time Field Units parameter
@@ -1358,7 +1358,7 @@ def solve_vehicle_routing_problem(
                                                 these three approaches. In any case, however, the solver will
                                                 return an error if the value set for ``MaxViolationTime1`` is
                                                 surpassed.
-                                              
+
                                               * ``MaxViolationTime2``: The maximum allowable violation time for the second time window of the order. This field is analogous to the ``MaxViolationTime1`` field.
                                               * ``InboundArriveTime``: Defines when the item to be delivered to the order will be ready at the starting depot. The order can be assigned to a route only if the inbound arrive time the route's latest start time value; this way, the route cannot leave the depot before the item is ready to be loaded onto it.
 
@@ -1369,7 +1369,7 @@ def solve_vehicle_routing_problem(
                                                 assigned to the order, the order's inbound arrive time is set to 11:00 a.m. The special materials
                                                 arrive at 11:00 a.m., they are loaded onto the vehicle, and the vehicle departs from the depot
                                                 to visit its assigned orders.
-                                                
+
                                                 .. note::
                                                     * The route's start time, which includes service times, must occur after the inbound arrive time.
                                                       If a route begins before an order's inbound arrive time, the order cannot be assigned to the route.
@@ -1380,7 +1380,7 @@ def solve_vehicle_routing_problem(
                                                       date with the time. In that case, specify all such fields with a date and time (for example, 7/11/2015 11:00 AM).
                                                     * The VRP solver honors InboundArriveTime regardless of the DeliveryQuantities value.
                                                     * If an outbound depart time is also specified, its time value must occur after the inbound arrive time.
-                                              
+
                                               * ``OutboundDepartTime``: Defines when the item to be picked up at the order must arrive at the ending depot.
                                                 The order can be assigned to a route only if the route can visit the order and reach its end depot before
                                                 the specified outbound depart time.
@@ -1392,7 +1392,7 @@ def solve_vehicle_routing_problem(
                                                 directly to a central processing station. To avoid delaying the high-priority packages until the next day's 3:00 p.m.
                                                 trip, the shipping company tries to have delivery trucks pick up the high-priority packages from orders and bring them
                                                 to the depot before the 3:00 p.m. deadline. This is done by setting  the outbound depart time to 3:00 p.m.
-                                              
+
                                                 .. note::
                                                     * The route's end time, including service times, must occur before the outbound depart time. If a route reaches
                                                       a depot but doesn't complete its end-depot service time prior to the order's outbound depart time, the order cannot
@@ -1437,7 +1437,7 @@ def solve_vehicle_routing_problem(
                                                 values in relation to the capacity count, or dimensions being
                                                 tracked, the remaining values are treated as zeros. Delivery
                                                 quantities can't be negative.
-                                              
+
                                               * ``PickupQuantities``: The size of the pickup. You can specify size in any
                                                 dimension you want, such as weight, volume, or quantity. You can
                                                 even specify multiple dimensions, for example, weight and volume.
@@ -1446,7 +1446,7 @@ def solve_vehicle_routing_problem(
 
                                                 In the case of an exchange visit, an order can have
                                                 both delivery and pickup quantities.
-                                              
+
                                               * ``Revenue``: The income generated if the order is included in a
                                                 solution. This field can contain a null value-a null value
                                                 indicates zero revenue-but it can't have a negative
@@ -1457,7 +1457,7 @@ def solve_vehicle_routing_problem(
                                                 that is, the TotalCost field in the route class never includes
                                                 revenue in its output. However, revenue weights the relative
                                                 importance of servicing orders.
-                                              
+
                                               * ``SpecialtyNames``: A space-separated string containing the names of the
                                                 specialties required by the order. A null value indicates that the
                                                 order doesn't require specialties.
@@ -1478,7 +1478,7 @@ def solve_vehicle_routing_problem(
                                                 orders without special needs to any route, but it only assigns
                                                 orders that need bucket trucks to routes that have
                                                 them.
-                                              
+
                                               * ``AssignmentRule``: This field specifies the rule for assigning the order to a
                                                 route. It is constrained by a domain of values, which are listed
                                                 below (use the numeric code, not the name in parentheses).
@@ -1514,7 +1514,7 @@ def solve_vehicle_routing_problem(
                                                   order during the solve operation. It assigns a route to the order and makes it the last
                                                   order on that route to minimize the overall value of the objective function.
                                                   This field can't contain a null value.
-                                              
+
                                               * ``CurbApproach``:  Specifies the direction a vehicle may arrive at and depart from the order.
                                                 The field value is specified as one of the following integers shown in the parentheses (use the
                                                 numeric code, not the name in parentheses):
@@ -1565,7 +1565,7 @@ def solve_vehicle_routing_problem(
 
                                                 After a solve operation, if the order is routed, the ``RouteName`` field contains the name of the route to which the order is
                                                 assigned.
-                                              
+
                                               * ``Sequence``: This indicates the sequence of the order on its assigned route.
 
                                                 As an input field, this field is used to specify the
@@ -1585,14 +1585,14 @@ def solve_vehicle_routing_problem(
                                                 and breaks; start from 1 (at the starting depot); and are
                                                 consecutive. So the smallest possible output sequence value for a
                                                 routed order is 2, since a route always begins at a depot.
-                                              
+
                                               * ``Bearing``: The direction in which a point is moving. The units are degrees and are measured
                                                 clockwise from true north. This field is used in conjunction with the BearingTol field.
                                                 Bearing data is usually sent automatically from a mobile device equipped with a GPS receiver.
                                                 Try to include bearing data if you are loading an input location that is moving, such as a pedestrian or a vehicle.
                                                 Using this field tends to prevent adding locations to the wrong edges, which can occur when a vehicle is near an
                                                 intersection or an overpass for example. Bearing also helps the tool determine on which side of the street the point is.
-                                              
+
                                               * ``BearingTol``: The bearing tolerance value creates a range of acceptable bearing values when
                                                 locating moving points on an edge using the Bearing field. If the value from the Bearing field is
                                                 within the range of acceptable values that are generated from the bearing tolerance on an edge, the
@@ -1602,7 +1602,7 @@ def solve_vehicle_routing_problem(
                                                 A value of 30 means that when ArcGIS Network Analyst extension attempts to add a network location on an
                                                 edge, a range of acceptable bearing values is generated 15 degrees to either side of the edge (left and right)
                                                 and in both digitized directions of the edge.
-                                              
+
                                               * ``NavLatency``: This field is only used in the solve process if Bearing and BearingTol also have values; however,
                                                 entering a ``NavLatency`` value is optional, even when values are present in Bearing and ``BearingTol``. ``NavLatency``
                                                 indicates how much time is expected to elapse from the moment GPS information is sent from a moving vehicle
@@ -1621,14 +1621,14 @@ def solve_vehicle_routing_problem(
                                               The orders can be specified with the following attributes:
 
                                               * ``ObjectID``: The system-managed ID field.
-                                              
+
                                               * ``Name``: The name of the depot. The ``StartDepotName`` and ``EndDepotName`` fields of the Routes record set reference the names you specify
                                                 here. It is also referenced by the Route Renewals record set, when used. Depot names are case insensitive and have to be nonempty and unique.
-                                              
+
                                               * ``Description`` : The descriptive information about the depot location. This can contain any textual information and has
                                                 no restrictions for uniqueness.For example, if you want to note which region a depot is in or the depot's address and telephone number, you can enter
                                                 the information here rather than in the Name field.
-                                              
+
                                               * ``TimeWindowStart1``: The beginning time of the first time window for the network location. This field can contain a null value;
                                                 a null value indicates no beginning time.
 
@@ -1637,11 +1637,11 @@ def solve_vehicle_routing_problem(
                                                 values (for example, 7/11/2010 8:00 AM) allows you to set time windows that span multiple days.
 
                                                 When solving a problem that spans multiple time zones, each depot's time-window values refer to the time zone in which the depot is located.
-                                              
+
                                               * ``TimeWindowEnd1``: The ending time of the first window for the network
                                                 location. This field can contain a null value; a null value
                                                 indicates no ending time.
-                                              
+
                                               * ``TimeWindowStart2``: The beginning time of the second time window for the network location.
                                                 This field can contain a null value; a null value indicates that there is no second time window.
 
@@ -1651,7 +1651,7 @@ def solve_vehicle_routing_problem(
 
                                                 If both time windows are nonnull, they can't overlap.
                                                 Also, the second time window must occur after the first.
-                                                
+
                                               * ``TimeWindowEnd2``: The ending time of the second time window for the network
                                                 location. This field can contain a null value.
 
@@ -1661,7 +1661,7 @@ def solve_vehicle_routing_problem(
                                                 When ``TimeWindowStart2`` is not null but ``TimeWindowEnd2`` is
                                                 null, there is a second time window that has a starting time but no
                                                 ending time. This is valid.
-                                                
+
                                               * ``CurbApproach``:  Specifies the direction a vehicle may arrive at and depart
                                                 from the depot. The field value is specified as one of the
                                                 following integers shown in the parentheses (use the numeric code, not the name in parentheses):
@@ -1715,7 +1715,7 @@ def solve_vehicle_routing_problem(
                                                 or an overpass, for example. Bearing also helps the tool
                                                 determine on which side of the street the point is.
                                                 For more information, see the Bearing and Bearing Tolerance Help topic (http://links.esri.com/bearing-and-bearing-tolerance).
-                                                
+
                                               * ``BearingTol``: The bearing tolerance value creates a range of acceptable
                                                 bearing values when locating moving points on an edge using the
                                                 Bearing field. If the value from the Bearing field is within the
@@ -1732,7 +1732,7 @@ def solve_vehicle_routing_problem(
                                                 values is generated 15 degrees to either side of the edge (left and
                                                 right) and in both digitized directions of the edge.
                                                 For more information, see the Bearing and Bearing Tolerance topic in the ArcGIS help system (http://links.esri.com/bearing-and-bearing-tolerance).
-                                              
+
                                               * ``NavLatency``: This field is only used in the solve process if Bearing
                                                 and BearingTol also have values; however, entering a ``NavLatency``
                                                 value is optional, even when values are present in Bearing and
@@ -1977,7 +1977,7 @@ def solve_vehicle_routing_problem(
                                               * ``AssignmentRule``: This specifies whether the route can be used or not when
                                                 solving the problem. This field is constrained by a domain of
                                                 values, which are listed below (use the numeric code, not the name in parentheses).
-                                                
+
                                                 * 1 (Include)  - The route is included in the solve operation.
                                                   This is the default value.
 
@@ -1994,12 +1994,12 @@ def solve_vehicle_routing_problem(
                                               time.
                                               When specifying the breaks, you can set properties for each one, such as its name or service time, by using attributes.
                                               The breaks parameter can be specified with the following attributes:
-                                              
+
                                               * ``RouteName``: The name of the route that the break applies to. Although a break is assigned to exactly one route, many breaks can be assigned to the same route.
 
                                                 This field is a foreign key to the Name field in the
                                                 routes parameter, so it can't have a null value.
-                                                
+
                                               * ``Precedence``: Precedence values sequence the breaks of a given route.
                                                 Breaks with a precedence value of 1 occur before those with a value
                                                 of 2, and so on.
@@ -2007,11 +2007,11 @@ def solve_vehicle_routing_problem(
                                                 All breaks must have a precedence value, regardless of
                                                 whether they are time-window, maximum-travel-time, or
                                                 maximum-work-time breaks.
-                                                
+
                                               * ``ServiceTime``: The duration of the break. This field can contain null
                                                 values; a null value indicates no service time.
                                                 The unit for this field value is specified by the time_units parameter.
-                                                
+
                                               * ``TimeWindowStart``: The starting time of the break's time window.
 
                                                 If this field is null and ``TimeWindowEnd`` has a valid
@@ -2037,7 +2037,7 @@ def solve_vehicle_routing_problem(
                                                 When solving a problem that spans multiple time zones, each break's time-window
                                                 values refer to the time zone in which the associated route, as specified by the ``RouteName`` field,
                                                 is located.
-                                                
+
                                               * ``TimeWindowEnd``: The ending time of the break's time window.
 
                                                 If this field is null and ``TimeWindowStart`` has a valid
@@ -2048,7 +2048,7 @@ def solve_vehicle_routing_problem(
                                                 ``MaxCumulWorkTime`` must be null; moreover, all other breaks in the
                                                 analysis layer must have null values for ``MaxTravelTimeBetweenBreaks``
                                                 and ``MaxCumulWorkTime``.
-                                                
+
                                               * ``MaxViolationTime``: This field specifies the maximum allowable violation time
                                                 for a time-window break. A time window is considered violated if
                                                 the arrival time falls outside the time range.
@@ -2066,7 +2066,7 @@ def solve_vehicle_routing_problem(
                                                 ``MaxTravelTimeBetweenBreaks`` or ``MaxCumulWorkTime`` has a value,
                                                 ``MaxViolationTime`` must be null.
                                                 The unit for this field value is specified by the time_units parameter.
-                                                
+
                                               * ``MaxTravelTimeBetweenBreaks``: The maximum amount of travel time that can be accumulated
                                                 before the break is taken. The travel time is accumulated either
                                                 from the end of the previous break or, if a break has not yet been
@@ -2089,7 +2089,7 @@ def solve_vehicle_routing_problem(
                                                 ``MaxViolationTime``, and ``MaxCumulWorkTime`` must be null for an analysis
                                                 to solve successfully.
                                                 The unit for this field value is specified by the time_units parameter.
-                                                
+
                                               * ``MaxCumulWorkTime``: The maximum amount of work time that can be accumulated
                                                 before the break is taken. Work time is always accumulated from the
                                                 beginning of the route.
@@ -2121,13 +2121,13 @@ def solve_vehicle_routing_problem(
                                                 ``MaxViolationTime``, and ``MaxTravelTimeBetweenBreaks`` must be null for
                                                 an analysis to solve successfully.
                                                 The unit for this field value is specified by the time_units parameter.
-                                                
+
                                               * ``IsPaid``: A Boolean value indicating whether the break is paid or
                                                 unpaid. A True value indicates that the time spent at the break is
                                                 included in the route cost computation and overtime determination.
                                                 A False value indicates otherwise. The default value is
                                                 True.
-                                                
+
                                               * ``Sequence``: As an input field, this indicates the sequence of the
                                                 break on its route. This field can contain null values. The input
                                                 sequence values are positive and unique for each route (shared
@@ -2139,9 +2139,9 @@ def solve_vehicle_routing_problem(
                                                 Output sequence values for a route are shared across depot visits,
                                                 orders, and breaks; start from 1 (at the starting depot); and are
                                                 consecutive.
-                                                
+
                                               * ``ArriveTimeUTC``: The date and time value indicating the arrival time in UTC time.
-                                              
+
                                               * ``DepartTimeUTC``: The date and time value indicating the departure time in UTC time.
     --------------------------------------    ------------------------------------------------------------------------------------------------------------------------------------------
     time_units                                Optional string. The time units for all time-based field values in the
@@ -2303,7 +2303,7 @@ def solve_vehicle_routing_problem(
 
                                               Here are a few rules and options to consider when also
                                               working with route seed points:
-                                              
+
                                               * The reload/unload point, or renewal location, can be
                                                 different from the start or end depot.
 
@@ -2356,7 +2356,7 @@ def solve_vehicle_routing_problem(
                                               the lab within two hours.
                                               When specifying the order pairs, you need to set properties for each one, such as the names of the two orders,
                                               by using attributes. The order pairs can be specified with the following attributes:
-                                              
+
                                               * ``ObjectID``: The system-managed ID field.
 
                                               * ``FirstOrderName``: The name of the first order of the pair. This field is a
@@ -2390,7 +2390,7 @@ def solve_vehicle_routing_problem(
                                                 travel time between order pairs) can be tracked and weighted by the
                                                 solver. Because of this, you can direct the VRP solver to take one
                                                 of three approaches:
-                                                
+
                                                 * Minimize the overall excess transit time, regardless of
                                                   the increase in travel cost for the fleet.
 
@@ -2451,7 +2451,7 @@ def solve_vehicle_routing_problem(
                                               * ``Name``: The name of the barrier.
 
                                               * ``BarrierType``: Specifies whether the point barrier restricts travel completely or adds time or distance when it is crossed. The value for this attribute is specified as one of the following integers (use the numeric code, not the name in parentheses):
-                                              
+
                                                 * 0 (Restriction) - Prohibits travel through the barrier. The barrier
                                                   is referred to as a restriction point barrier since it acts as a
                                                   restriction.
@@ -2495,7 +2495,7 @@ def solve_vehicle_routing_problem(
                                                 * 2 (Left side of vehicle): Vehicles are only affected if the barrier is on their left side
                                                   during the approach. Vehicles that traverse the same edge but approach the barrier on their
                                                   right side are not affected by the barrier.
-                                                  
+
                                                 Since junctions are points and don't have a side, barriers on junctions affect all vehicles
                                                 regardless of the curb approach.
 
@@ -2588,12 +2588,12 @@ def solve_vehicle_routing_problem(
                                                   barrier type is referred to as a scaled-cost polygon barrier. It
                                                   might be used to model storms that reduce travel speeds in specific
                                                   regions.
-                                                  
+
                                               * ``ScaledTimeFactor``: This is the factor by which the travel time of the streets
                                                 intersected by the barrier is multiplied. This field is applicable
                                                 only for scaled-cost barriers and only if the measurement units are time
                                                 based. The field value must be greater than zero.
-                                                
+
                                               * ``ScaledDistanceFactor``: This is the factor by which the distance of the streets
                                                 intersected by the barrier is multiplied. This attribute is
                                                 applicable only for scaled-cost barriers and only if the measurement

@@ -342,7 +342,7 @@ class GPService:
     # ----------------------------------------------------------------------
     @property
     def tasks(self) -> list:
-        """returns the :class:`GP Tasks <arcgis.geoprocessing.GPTask>` """
+        """returns the :class:`GP Tasks <arcgis.geoprocessing.GPTask>`"""
         if self._tasks is None:
             self._tasks = [
                 GPTask(
