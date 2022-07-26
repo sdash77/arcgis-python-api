@@ -114,8 +114,7 @@ class WebMap(HasTraits, collections.OrderedDict):
 
     .. note::
         To learn more about web maps, see the
-        `Web maps <https://doc.arcgis.com/en/arcgis-online/reference/what-is-web-map.htm>`_ page in the ArcGIS
-        REST API documentation.
+        `Web maps <https://doc.arcgis.com/en/arcgis-online/reference/what-is-web-map.htm>`_ page
 
     ``Web maps`` can be used across ArcGIS apps because they adhere to the same web map specification. This provides
     the functionality to author web maps in one ArcGIS app (including the Python API) and view and modify them in
@@ -123,8 +122,7 @@ class WebMap(HasTraits, collections.OrderedDict):
 
     .. note::
         To learn more about the web map specification, refer to the
-        `Web Map Specification <https://developers.arcgis.com/web-map-specification/>`_ page in the ArcGIS REST API
-        documentation.
+        `Web Map Specification <https://developers.arcgis.com/web-map-specification/>`_ page
 
     ==================     ====================================================================
     **Argument**           **Description**
@@ -333,7 +331,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         ------------------     --------------------------------------------------------------------
         table                  Required object. You can add:
 
-                                   - :class:`~arcgis.features.Table` objects
+                               - :class:`~arcgis.features.Table` objects
         ------------------     --------------------------------------------------------------------
         options                Optional dict. Specify properties such as ``title``, ``symbol``, ``opacity``,
                                ``visibility``, and ``renderer``
@@ -347,7 +345,7 @@ class WebMap(HasTraits, collections.OrderedDict):
 
             wm = WebMap()
             table = Table('https://some-url.com/')
-            wm.add_layer(table)
+            wm.add_table(table)
         """
         if not isinstance(table, _arcgis_features.Table):
             raise Exception("Type of object passed in must of type 'Table'")
@@ -358,11 +356,17 @@ class WebMap(HasTraits, collections.OrderedDict):
         Move a layer to be a basemap layer.
         A basemap layer is a layer that provides geographic context to the map.
         A web map always contains a basemap. The following is a list of possible basemap layer types:
+
         * Image Service Layer
+
         * Image Service Vector Layer
+
         * Map Service Layer
+
         * Tiled Image Service Layer
+
         * Tiled Map Service Layer
+
         * Vector Tile Layer
 
         =====================       ===================================================================
@@ -475,13 +479,13 @@ class WebMap(HasTraits, collections.OrderedDict):
         ------------------     --------------------------------------------------------------------
         layer                  Required object. You can add:
 
-                                   - Layer objects such as :class:`~arcgis.features.FeatureLayer`, ``MapImageLayer``,
-                                   ``ImageryLayer`` etc.
-                                   - :class:`~arcgis.gis.Item` objects, :class:`~arcgis.features.FeatureSet` and
-                                   :class:`~arcgis.features.FeatureCollection`
-                                   - :class:`~arcgis.features.Table` objects
+                               - Layer objects such as :class:`~arcgis.features.FeatureLayer`, :class:`~arcgis.mapping.MapImageLayer`, :class:`~arcgis.raster.ImageryLayer` etc.
+
+                               - :class:`~arcgis.gis.Item` objects, :class:`~arcgis.features.FeatureSet` and :class:`~arcgis.features.FeatureCollection`
+
+                               - :class:`~arcgis.features.Table` objects
         ------------------     --------------------------------------------------------------------
-        options                Optional dict. Specify properties such as title, symbol, opacity, visibility, renderer
+        options                Optional Dict. Specify properties such as title, symbol, opacity, visibility, renderer
                                for the layer that is added. If not specified, appropriate defaults are applied.
         ==================     ====================================================================
 
@@ -990,7 +994,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         ==================      ====================================================================
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
-        layer                   Required Feature Layer or Feature Layer dictionary.
+        layer                   Required :class:`~arcgis.features.FeatureLayer` or Feature Layer dictionary.
                                 The existing webmap layer with updated properties.
                                 In order to get a layer on the webmap, use the ``layers`` method and
                                 assign the output to a value. Make edits on the this value and pass
@@ -1867,7 +1871,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         The ``offline_areas`` property is the resource manager for offline areas cached for the ``WebMap`` object.
 
         :return:
-            The :class:`~arcgis.mapping.WebMap.OfflineMapAreaManager` for the ``WebMap`` object.
+            The :class:`~arcgis.mapping.OfflineMapAreaManager` for the ``WebMap`` object.
         """
         return OfflineMapAreaManager(self.item, self._gis)
 
@@ -2326,14 +2330,12 @@ class WebMap(HasTraits, collections.OrderedDict):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        file_format            | Required `string <https://docs.python.org/3/library/stdtypes.html#str>`_.
-                               Specifies the output file format. Valid types:
+        file_format            Required String. Specifies the output file format. Valid types:
+
                                ``PNG8`` | ``PNG32`` | ``JPG`` | ``GIF`` | ``PDF`` | ``EPS``
                                | ``SVG`` | ``SVGZ``.
         ------------------     --------------------------------------------------------------------
-        extent                 | Required `dictionary <https://docs.python.org/3/tutorial/datastructures.html?highlight=dictionary#dictionaries>`_.
-
-                               Specify the extent to be printed.
+        extent                 Required Dictionary. Specify the extent to be printed.
 
                                .. code-block:: python
 
@@ -2352,19 +2354,15 @@ class WebMap(HasTraits, collections.OrderedDict):
                                of the map on the output page or the ``output_dimensions``,
                                you might notice more features on the output map.
         ------------------     --------------------------------------------------------------------
-        dpi                    | Optional `integer <https://docs.python.org/3/library/functions.html#int>`_.
-
-                               Specify the print resolution of the output file. ``dpi`` stands for
+        dpi                    Optional integer. Specify the print resolution of the output file. ``dpi`` stands for
                                *dots per inch*. A higher number implies better resolution and a
                                larger file size.
         ------------------     --------------------------------------------------------------------
-        output_dimensions      | Optional `tuple <https://docs.python.org/3/library/stdtypes.html?highlight=tuple#tuple>`_ of `integers <https://docs.python.org/3/library/functions.html#int>`_.
-                               Specify the dimensions of the output file in pixels. If the
+        output_dimensions      Optional tuple. Specify the dimensions of the output file in pixels. If the
                                ``layout_template`` is not ``MAP_ONLY``, the specific layout
                                template chosen takes precedence over this paramter.
         ------------------     --------------------------------------------------------------------
-        scale                  | Optional `float <https://docs.python.org/3/library/functions.html?highlight=float#float>`_.
-                               Specify the map scale to be printed. The map scale at which you
+        scale                  Optional float. Specify the map scale to be printed. The map scale at which you
                                want your map to be printed. This parameter is optional but
                                recommended for optimal results. The ``scale`` property is
                                especially useful when map services in the web map have
@@ -2379,25 +2377,21 @@ class WebMap(HasTraits, collections.OrderedDict):
                                output map is drawn at the requested scale centered on the center
                                of the extent.
         ------------------     --------------------------------------------------------------------
-        rotation               | Optional `float <https://docs.python.org/3/library/functions.html?highlight=float#float>`_.
-                               Specify the number of degrees by which the map frame will be
+        rotation               Optional float. Specify the number of degrees by which the map frame will be
                                rotated, measured counterclockwise from the north. To rotate
                                clockwise, use a negative value.
         ------------------     --------------------------------------------------------------------
-        spatial_reference      | Optional `dictionary <https://docs.python.org/3/tutorial/datastructures.html?highlight=dictionary#dictionaries>`_.
-                               Specify the spatial reference in which map should be printed. When
+        spatial_reference      Optional Dictionary.Specify the spatial reference in which map should be printed. When
                                not specified, the following is the order of precedence:
 
-                                 - read from the ``extent`` parameter
-                                 - read from the base map layer of your web map
-                                 - read from the ``layout_template`` chosen
+                               - read from the ``extent`` parameter
+                               - read from the base map layer of your web map
+                               - read from the ``layout_template`` chosen
         ------------------     --------------------------------------------------------------------
-        layout_template        | Optional `string <https://docs.python.org/3/tutorial/introduction.html#strings>`_.
-                               The default value ``MAP_ONLY`` does not use any template. To get the
+        layout_template        Optional String. The default value ``MAP_ONLY`` does not use any template. To get the
                                list of available templates run :meth:`~arcgis.mapping.get_layout_templates()`.
         ------------------     --------------------------------------------------------------------
-        time_extent            | Optional `list <https://docs.python.org/3/tutorial/introduction.html#lists>`_.
-                               If there is a time-aware layer and you want it
+        time_extent            Optional List . If there is a time-aware layer and you want it
                                to be drawn at a specified time, specify this property. This order
                                list can have one or two elements. Add two elements (``startTime``
                                followed by ``endTime``) to represent a time extent, or provide
@@ -2412,8 +2406,7 @@ class WebMap(HasTraits, collections.OrderedDict):
 
                                    >>> time_extent = [1199145600000, 1230768000000]
         ------------------     --------------------------------------------------------------------
-        layout_options         | Optional `dictionary <https://docs.python.org/3/tutorial/datastructures.html?highlight=dictionary#dictionaries>`_.
-                               This defines settings for different available page layout elements
+        layout_options         Optional Dictionary. This defines settings for different available page layout elements
                                and is only needed when an available ``layout_template`` is chosen.
                                Page layout elements include ``title``, ``copyright text``,
                                ``scale bar``, ``author name``, and ``custom text elements``.
@@ -2508,8 +2501,8 @@ class PackagingJob(object):
     ================  ===============================================================
     **Argument**      **Description**
     ----------------  ---------------------------------------------------------------
-    future            Required ``current.futures.Future`` object. The async object created by
-                      the ``geoprocessing`` (GP) task.
+    future            Required `Future <https://docs.python.org/3/library/concurrent.futures.html>`_ object. The async object created by
+                      the ``geoprocessing`` :class:`~arcgis.geoprocessing.GPTask`.
     ----------------  ---------------------------------------------------------------
     notify            Optional Boolean.  When set to ``True``, a message will inform the
                       user that the ``geoprocessing`` task has completed. The default is
@@ -2541,7 +2534,7 @@ class PackagingJob(object):
         The ``ellapse_time`` property retrieves the ``Ellapse Time`` for the ``Job``.
 
         :return:
-            The Ellapsed Time
+            The elapsed time
 
         """
         if self._end_time:
@@ -2662,7 +2655,7 @@ class OfflineMapAreaManager(object):
     .. note::
         Users should not instantiate this class
         directly, instead, should access the methods exposed by accessing the
-        :attr:`~arcgis.mapping.WebMap.offline_area` property on the :class:`~arcgis.mapping.WebMap`
+        :attr:`~arcgis.mapping.WebMap.offline_areas` property on the :class:`~arcgis.mapping.WebMap`
         object.
     """
 
@@ -2717,16 +2710,18 @@ class OfflineMapAreaManager(object):
 
                                If property is present, must be one of the following values:
 
-                               Allowed Values: [features, features_and_attachments, None]
+                               Allowed Values:
+
+                                    features, features_and_attachments, None
         ------------------     --------------------------------------------------------------------
         sync                   `sync` applies to editing layers only.  This string value indicates
                                how the data is synced.
 
                                Allowed Values:
 
-                               sync_features_and_attachments  - bidirectional sync
-                               sync_features_upload_attachments - bidirection sync for feaures but upload only for attachments
-                               upload_features_and_attachments - upload only for both features and attachments (initial replica is just a schema)
+                                   ``sync_features_and_attachments``  - bidirectional sync
+                                   ``sync_features_upload_attachments`` - bidirection sync for feaures but upload only for attachments
+                                   ``upload_features_and_attachments`` - upload only for both features and attachments (initial replica is just a schema)
 
 
         ------------------     --------------------------------------------------------------------
@@ -2936,31 +2931,32 @@ class OfflineMapAreaManager(object):
         ------------------     --------------------------------------------------------------------
         area                   Required object.  Bookmark or extent. Specify as either:
 
-                                   + bookmark name
+                               + bookmark name
 
-                                    .. code-block:: python
+                                 .. code-block:: python
 
-                                        >>> area = 'Bookmark1'
+                                    >>> area = 'Bookmark1'
 
-                                    .. note:: `WebMap.definition.bookmarks` returns list of bookmarks.
+                                 .. note:: :attr:`~arcgis.mapping.WebMap.bookmarks` returns list of bookmarks.
 
-                                   + list of coordinate pairs:
 
-                                    .. code-block:: python
+                               + list of coordinate pairs:
 
-                                        >>> area = [['xmin', 'ymin'], ['xmax', 'ymax']]
+                                 .. code-block:: python
 
-                                   + dictionary:
+                                    >>> area = [['xmin', 'ymin'], ['xmax', 'ymax']]
 
-                                    .. code-block:: python
+                               + dictionary:
 
-                                        >>> area = {
-                                                    'xmin': <value>,
-                                                    'ymin': <value>,
-                                                    'xmax': <value>,
-                                                    'ymax': <value>,
-                                                    'spatialReference' : {'wkid' : <value>}
-                                                   }
+                                 .. code-block:: python
+
+                                    >>> area = {
+                                                'xmin': <value>,
+                                                'ymin': <value>,
+                                                'xmax': <value>,
+                                                'ymax': <value>,
+                                                'spatialReference' : {'wkid' : <value>}
+                                               }
 
                                .. note::
                                     If spatial reference is not specified, it is assumed 'wkid': 4326.
@@ -2988,10 +2984,10 @@ class OfflineMapAreaManager(object):
 
                                The following are valid variables:
 
-                                    + ``Never`` - never refreshes the offline package (default)
-                                    + ``Daily`` - refreshes everyday
-                                    + ``Weekly`` - refreshes once a week
-                                    + ``Monthly`` - refreshes once a month
+                               + ``Never`` - never refreshes the offline package (default)
+                               + ``Daily`` - refreshes everyday
+                               + ``Weekly`` - refreshes once a week
+                               + ``Monthly`` - refreshes once a month
 
         ------------------     --------------------------------------------------------------------
         refresh_rates          Optional dict. This parameter allows for the customization of the
@@ -3064,7 +3060,7 @@ class OfflineMapAreaManager(object):
         .. note::
             Your ``min_scale`` value is always bigger in value than your ``max_scale``.
 
-        **Key:** ``Value Dictionary Options`` for **Argument:** ``item_properties``
+        Key:Value Dictionary options for argument ``item_properties``
 
         =================  =====================================================================
         **Key**            **Value**
@@ -3698,22 +3694,22 @@ class OfflineMapAreaManager(object):
 
                                          The following are valid variables:
 
-                                            + Never - never refreshes the offline package (default)
-                                            + Daily - refreshes everyday
-                                            + Weekly - refreshes once a week
-                                            + Monthly - refreshes once a month
+                                         + Never - never refreshes the offline package (default)
+                                         + Daily - refreshes everyday
+                                         + Weekly - refreshes once a week
+                                         + Monthly - refreshes once a month
         ----------------------------     --------------------------------------------------------------------
         refresh_rates                    Optional dict. This parameter allows for the customization of the
                                          scheduler. Note all time is in UTC.
 
                                          The dictionary accepts the following:
 
-                                         {
-                                         "hour" : 1
-                                         "minute" = 0
-                                         "nthday" = 3
-                                         "day_of_week" = 0
-                                         }
+                                             {
+                                             "hour" : 1
+                                             "minute" = 0
+                                             "nthday" = 3
+                                             "day_of_week" = 0
+                                             }
 
                                          - hour - a value between 0-23 (integers)
                                          - minute a value between 0-60 (integers)
@@ -3722,20 +3718,20 @@ class OfflineMapAreaManager(object):
 
                                          Example **Daily**:
 
-                                         {
-                                         "hour": 10,
-                                         "minute" : 30
-                                         }
+                                             {
+                                             "hour": 10,
+                                             "minute" : 30
+                                             }
 
                                          This means every day at 10:30 AM UTC
 
                                          Example **Weekly**:
 
-                                         {
-                                         "hour" : 23,
-                                         "minute" : 59,
-                                         "day_of_week" : 4
-                                         }
+                                             {
+                                             "hour" : 23,
+                                             "minute" : 59,
+                                             "day_of_week" : 4
+                                             }
 
                                          This means every Wednesday at 11:59 PM UTC
 
@@ -3745,9 +3741,9 @@ class OfflineMapAreaManager(object):
             A boolean indicating success (True), or failure (False)
 
 
-        ## Updates Offline Package Building Everyday at 10:30 AM UTC
-
         .. code-block:: python
+
+            ## Updates Offline Package Building Everyday at 10:30 AM UTC
 
             gis = GIS(profile='owner_profile')
             item = gis.content.get('9b93887c640a4c278765982aa2ec999c')
@@ -3892,7 +3888,7 @@ class OfflineMapAreaManager(object):
 
         .. note::
             - Offline map area functionality is only available if your :class:`~arcgis.gis.GIS` is ArcGIS Online.
-            - You need to be the owner of the web map or an administrator of your ``GIS``.
+            - You need to be the owner of the web map or an administrator of your :class:`~arcgis.gis.GIS`.
 
         ============================     ====================================================================
         **Argument**                     **Description**
