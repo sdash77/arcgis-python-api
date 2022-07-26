@@ -1143,13 +1143,13 @@ class Connection(object):
             )
         except requests.exceptions.HTTPError as errh:
             raise requests.exceptions.HTTPError("Http Error: %s" % errh)
-        except requests.exceptions.RequestException as errRE:
-            raise requests.exceptions.RequestException(
-                "A general expection was raised: %s" % errRE
-            )
         except requests.exceptions.MissingSchema as errMS:
             raise requests.exceptions.MissingSchema(
                 "URL scheme must be provided: %s" % errMS
+            )
+        except requests.exceptions.RequestException as errRE:
+            raise requests.exceptions.RequestException(
+                "A general expection was raised: %s" % errRE
             )
         except Exception as e:
             raise Exception("A general error occurred: %s" % e)
@@ -1388,13 +1388,13 @@ class Connection(object):
             )
         except requests.exceptions.HTTPError as errh:
             raise requests.exceptions.HTTPError("Http Error: %s" % errh)
-        except requests.exceptions.RequestException as errRE:
-            raise requests.exceptions.RequestException(
-                "A general expection was raised: %s" % errRE
-            )
         except requests.exceptions.MissingSchema as errMS:
             raise requests.exceptions.MissingSchema(
                 "URL scheme must be provided: %s" % errMS
+            )
+        except requests.exceptions.RequestException as errRE:
+            raise requests.exceptions.RequestException(
+                "A general expection was raised: %s" % errRE
             )
         except Exception as e:
             raise Exception("A general error occurred: %s" % e)

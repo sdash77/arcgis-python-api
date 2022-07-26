@@ -232,7 +232,7 @@ class NotebookManager(object):
                             status["status"].lower().find("fail") > -1
                             or status["status"].lower().find("error") > -1
                         ):
-                            raise Exception(f"Job Fail {jobstatus}")
+                            raise Exception(f"Job Fail {status}")
                         status = nbs.system.job_details(job_id)
                     return status
                 return resp

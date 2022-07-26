@@ -510,7 +510,6 @@ class GeoArray(ExtensionArray):
         return cls(data)
 
     def _values_for_factorize(self):
-        # type: () -> Tuple[np.ndarray, Any]
         """Return an array and missing value suitable for factorization.
 
         Returns
@@ -528,7 +527,7 @@ class GeoArray(ExtensionArray):
         return self, 0
 
     @classmethod
-    def _from_factorized(cls, values, original):
+    def _from_factorized(cls, values):
         """
         Reconstruct an ExtensionArray after factorization.
 
@@ -536,8 +535,6 @@ class GeoArray(ExtensionArray):
         ----------
         values : ndarray
             An integer ndarray with the factorized values.
-        original : ExtensionArray
-            The original ExtensionArray that factorize was called on.
 
         See Also
         --------

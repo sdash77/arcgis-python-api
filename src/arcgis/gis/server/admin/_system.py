@@ -421,7 +421,8 @@ class SystemManager(BaseServer):
         :returns: dict
         """
         url = self._url + "/handlers/soap/soaphandlerconfig"
-        return self._con.get(path=url, postdata=params)
+        params = {"f": "json"}
+        return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
     @soap_config.setter
@@ -662,7 +663,7 @@ class PlatformServiceManager(BaseServer):
             for ps in self._json_dict["platformservices"]:
                 if ps["type"].lower() == service.lower():
                     return PlatformService(
-                        url="%s/%s" % (self._url, ps["id"]), gis=self._con
+                        url="%s/%s" % (self._url, ps["id"]), connection=self._con
                     )
         return None
 

@@ -15,7 +15,7 @@ class RasterOverlay:
         self.opacity = opacity
 
     def as_dict(self) -> dict:
-        return {href: self.img_url, extent: self.extent, opacity: self.opacity}
+        return {"href": self.img_url, "extent": self.extent, "opacity": self.opacity}
 
 
 class RasterData:

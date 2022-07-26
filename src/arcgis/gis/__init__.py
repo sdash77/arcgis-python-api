@@ -3849,7 +3849,7 @@ class UserManager(object):
         return False
 
     # ----------------------------------------------------------------------
-    def assign_categories(self, users: List[User], categories: List[str]) -> list:
+    def assign_categories(self, users: list[User], categories: list[str]) -> list:
         """ """
         results = []
         for user in users:
