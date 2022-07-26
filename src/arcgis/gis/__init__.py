@@ -2605,33 +2605,28 @@ class UserManager(object):
     # ----------------------------------------------------------------------
     def __repr__(self):
         return self.__str__()
-    
+
     # ----------------------------------------------------------------------
-    def delete_users(self, users:list[User]) -> dict[str, Any]:
+    def delete_users(self, users: list[User]) -> dict[str, Any]:
         """"""
         from arcgis._impl.common._utils import chunks as _chunks
+
         url = f"{self._gis._portal.resturl}portals/self/removeUsers"
         results = []
         with concurrent.futures.ThreadPoolExecutor(5) as executor:
             jobs = []
             for chunk in _chunks(users, n=100):
                 users_str = ",".join([u.username for u in chunk])
-                params = {
-                    "f" : "json",
-                    "users" : users_str
-                }
+                params = {"f": "json", "users": users_str}
                 future = executor.submit(
-                    self._gis._con.post, **{'path': url, "params": params})                
+                    self._gis._con.post, **{"path": url, "params": params}
+                )
                 jobs.append(future)
             for future in concurrent.futures.as_completed(jobs):
                 users = future.result().get("notRemoved", [])
-                results.extend(users)            
-                
+                results.extend(users)
+
         return results
-            
-        
-        
-        
 
     # ----------------------------------------------------------------------
     @property
@@ -4134,7 +4129,7 @@ class UserManager(object):
         sort_field: str = None,
         sort_order: str = None,
         as_dict: bool = False,
-        exclude: bool= False,
+        exclude: bool = False,
     ) -> tuple[User] | tuple[dict[str, Any]]:
         """
         The `org_search` method allows users to find users within the organization only.
@@ -4160,7 +4155,7 @@ class UserManager(object):
         :returns: Tuple[User] | Tuple[dict[str,Any]]
         """
         results = []
-        
+
         if query is None:
             query = "*"
         if exclude:
@@ -4192,11 +4187,11 @@ class UserManager(object):
             with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
                 future_users = {}
                 for i in range(iterations):
-                    params['start'] = 1 + i * params['num']
+                    params["start"] = 1 + i * params["num"]
 
                     future_users[
                         executor.submit(
-                            self._gis._con.get, **{'path': url, "params": params}
+                            self._gis._con.get, **{"path": url, "params": params}
                         )
                     ] = i
                 for future in concurrent.futures.as_completed(future_users):
