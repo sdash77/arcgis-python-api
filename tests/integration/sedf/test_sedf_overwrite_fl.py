@@ -1810,7 +1810,7 @@ class TestSeDFOverwrite(unittest.TestCase):
                 )  # layer with polygon geom
             else:
                 polygon_item = gis.content.get(
-                    "80b683b0c70a4bf8ba9e916b8786dd0a"
+                    "66872ac18e1046ca9cdd785816f1817d"
                 )  # layer with polygon geom
 
             # Basis Assertions

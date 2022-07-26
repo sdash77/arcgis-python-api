@@ -1810,7 +1810,7 @@ class TestSeDFOverwrite(unittest.TestCase):
                 )  # layer with polygon geom
             else:
                 polygon_item = gis.content.get(
-                    "80b683b0c70a4bf8ba9e916b8786dd0a"
+                    "66872ac18e1046ca9cdd785816f1817d"
                 )  # layer with polygon geom
 
             # Basis Assertions
@@ -1823,7 +1823,7 @@ class TestSeDFOverwrite(unittest.TestCase):
 
             # Check to see if different layer but same service
             assert point_item.id == updated_item.id
-            assert num_layers == len(updated_item.layers) + 1
+            assert num_layers + 1 == len(updated_item.layers)
             related_items = updated_item.related_items("Service2Data")
             for related_item in related_items:
                 related_item.delete()
