@@ -779,7 +779,7 @@ def generate_service_areas(
 
                                                           When specifying the line barriers, you can set a name property for each one by using the following
                                                           attribute:
-                                                          
+
                                                           * ``Name``: The name of the barrier.
     -------------------------------------------------     ------------------------------------------------------------------------
     polygon_barriers                                      Optional :class:`~arcgis.features.FeatureSet`  . Specify polygons that either completely restrict travel or
@@ -792,10 +792,10 @@ def generate_service_areas(
                                                           polygons should not exceed 2,000.
                                                           When specifying the polygon barriers, you can set properties for each one, such as its name or barrier type,
                                                           by using attributes. The polygon barriers can be specified with the following attributes:
-                                                          
+
                                                           * ``Name``: The name of the barrier.
                                                           * ``BarrierType``: Specifies whether the barrier restricts travel completely or scales the time or distance for traveling through it. The field value is specified as one of the following integers (use the numeric code, not the name in parentheses):
-                                                            
+
                                                             * 0 (Restriction) - Prohibits traveling through any part of the barrier.
                                                               The barrier is referred to as a restriction polygon barrier since it
                                                               prohibits traveling on streets intersected by the barrier. One use
@@ -812,7 +812,7 @@ def generate_service_areas(
                                                               barrier type is referred to as a scaled-cost polygon barrier. It
                                                               might be used to model storms that reduce travel speeds in specific
                                                               regions.
-                                                              
+
                                                             * ``ScaledTimeFactor``: This is the factor by which the travel time of the streets
                                                               intersected by the barrier is multiplied. This field is applicable
                                                               only for scaled-cost barriers and only if the measurement units are time
@@ -1067,8 +1067,8 @@ def generate_service_areas(
                                                             preferred. The Restriction Usage ParameterName can be assigned any of the following string values or
                                                             their equivalent numeric values listed within the parentheses:
 
-                                                            *  PROHIBITED (-1) - Travel on the roads using the restriction is completely prohibited. 
-                                                            *  AVOID_HIGH (5) - It is highly unlikely for the tool to include in the route the roads that are associated with the restriction. 
+                                                            *  PROHIBITED (-1) - Travel on the roads using the restriction is completely prohibited.
+                                                            *  AVOID_HIGH (5) - It is highly unlikely for the tool to include in the route the roads that are associated with the restriction.
                                                             *  AVOID_MEDIUM (2) - It is unlikely for the tool to include in the route the roads that are associated with the restriction.
                                                             *  AVOID_LOW (1.3) - It is somewhat unlikely for the tool to include in the route the roads that are associated with the restriction.
                                                             *  PREFER_LOW (0.8) - It is somewhat likely for the tool to include in the route the roads that are associated with the restriction.
