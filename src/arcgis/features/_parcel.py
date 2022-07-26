@@ -19,12 +19,12 @@ class ParcelFabricManager(object):
     --------------------     --------------------------------------------------------------------
     url                      Required String. The URI to the service endpoint.
     --------------------     --------------------------------------------------------------------
-    gis                      Required GIS. The enterprise connection.
+    gis                      Required :class:`~arcgis.gis.GIS`. The enterprise connection.
     --------------------     --------------------------------------------------------------------
-    version                  Required Version. This is the version object where the modification
+    version                  Required :class:`~arcgis.features._version.Version`. This is the version object where the modification
                              will occur.
     --------------------     --------------------------------------------------------------------
-    flc                      Required FeatureLayerCollection. This is the parent container for
+    flc                      Required :class:`~arcgis.features.FeatureLayerCollection` . This is the parent container for
                              ParcelFabricManager.
     ====================     ====================================================================
 
@@ -70,7 +70,7 @@ class ParcelFabricManager(object):
 
     @property
     def layer(self):
-        """returns the Parcel Layer for the service"""
+        """returns the Parcel Layer ( :class:`~arcgis.features.FeatureLayer` object or None ) for the service"""
         if (
             "controllerDatasetLayers" in self._flc.properties
             and "parcelLayerId" in self._flc.properties.controllerDatasetLayers
@@ -130,7 +130,9 @@ class ParcelFabricManager(object):
                                  features. Either the Created By Record or Retired By Record field is
                                  to be updated with the global ID of the assigned record.
 
-                                 Allowed Values: `CreatedByRecord` or `RetiredByRecord`
+                                 Allowed Values:
+
+                                    `CreatedByRecord` or `RetiredByRecord`
 
         --------------------     --------------------------------------------------------------------
         moment                   Optional Integer. This should only be specified by the client when
@@ -183,7 +185,7 @@ class ParcelFabricManager(object):
         ====================     ====================================================================
         **Argument**             **Description**
         --------------------     --------------------------------------------------------------------
-        extent                   Optional Envelope. The extent to build.
+        extent                   Optional :class:`~arcgis.geometry.Envelope` . The extent to build.
 
 
                                  :Syntax:
@@ -277,14 +279,14 @@ class ParcelFabricManager(object):
                                     .. code-block:: python
 
                                         # Example:
-                                        >>> clipping_parcels = [{"id":"{D01D3F47-5FE2-4E39-8C07-E356B46DBC78}","layerId":"16"}]``
+                                        >>> clipping_parcels = [{"id":"{D01D3F47-5FE2-4E39-8C07-E356B46DBC78}","layerId":"16"}]
 
                                     .. note::
                                         Either `clipping_parcels` or `geometry` is required.
 
         -----------------------     --------------------------------------------------------------------
         geometry                    Optional Polygon. Allows for the clipping a parcel based on geometry instead of
-                                    'clippingParcels' geometry. No parcel lineage is created.
+                                    'clipping_parcels' geometry. No parcel lineage is created.
 
                                     .. note::
                                         Either `clipping_parcels` or `geometry` is required.
@@ -295,9 +297,9 @@ class ParcelFabricManager(object):
         -----------------------     --------------------------------------------------------------------
         option                      Optional String. Represents the type of clip to perform:
 
-                                      -  `PreserveArea` - Preserve the areas that intersect and discard the remainder areas. (default)
-                                      -  `DiscardArea` - Discard the areas that intersect and preserve the remainder areas.
-                                      -  `PreserveBothAreasSplit` - Preserve both the intersecting and remainder areas.
+                                    -  `PreserveArea` - Preserve the areas that intersect and discard the remainder areas. (default)
+                                    -  `DiscardArea` - Discard the areas that intersect and preserve the remainder areas.
+                                    -  `PreserveBothAreasSplit` - Preserve both the intersecting and remainder areas.
         -----------------------     --------------------------------------------------------------------
         area_unit                   Optional String. Area units to be used when calculating the stated
                                     areas of the clipped parcels. The stated area of the clipped parcels
@@ -367,7 +369,7 @@ class ParcelFabricManager(object):
 
                                  .. code-block:: python
 
-                                     >>> attributeOverrides = [
+                                     >>> attribute_overrides = [
                                                                {
                                                                 "type": "PropertySet",
                                                                 "propertySetItems": [
@@ -694,7 +696,7 @@ class ParcelFabricManager(object):
                                     specified by the client when they do not want to use the current
                                     moment.
         -----------------------     --------------------------------------------------------------------
-        extent                      Optional Dict/arcgis.Geometry.Envelope. The envelope of the extent
+        extent                      Optional Dict/ :class:`~arcgis.geometry.Envelope` . The envelope of the extent
                                     in which to create seeds.
         =======================     ====================================================================
 
@@ -732,9 +734,9 @@ class ParcelFabricManager(object):
 
         Parcels can be duplicated in the following ways:
 
-          -  Duplicate to a different parcel type.
-          -  Duplicate to a different subtype in the same parcel type.
-          -  Duplicate to a different subtype in a different parcel type.
+        -  Duplicate to a different parcel type.
+        -  Duplicate to a different subtype in the same parcel type.
+        -  Duplicate to a different subtype in a different parcel type.
 
         Similarly, parcel seeds can be duplicated to subtypes and different parcel types.
 
@@ -976,14 +978,15 @@ class ParcelFabricManager(object):
         divide_parcel_type          Required Integer. Parameter representing the parcel type layer ID in
                                     which the new, divided parcels will be created.
         --------------------------- --------------------------------------------------------------------
-        divide_record               Required String: Parameter for the unique identifier `guid` of the
+        divide_record               Required String. Parameter for the unique identifier `guid` of the
                                     record being used for the divide.
                                     If missing, no parcel history is created.
         --------------------------- --------------------------------------------------------------------
         divide_option               Required String. The type of division to be performed.
-                                        - `ProportionalArea`
-                                        - `EqualArea`
-                                        - `EqualWidth`
+
+                                    - `ProportionalArea`
+                                    - `EqualArea`
+                                    - `EqualWidth`
         --------------------------- --------------------------------------------------------------------
         divide_number_of_parts      Required Integer. The number parts into which the parcel will
                                     be divided.
@@ -1092,14 +1095,18 @@ class ParcelFabricManager(object):
                                  parcel features to be reassigned.
 
 
-                                    :Syntax: ``source_record=<guid>``
+                                 Syntax:
+
+                                  source_record=<guid>
 
         --------------------     --------------------------------------------------------------------
         target_record            Required String. GlobalID representing the target record to which
                                  the parcel features will be reassigned.
 
 
-                                    :Syntax: ``source_record=<guid>``
+                                 Syntax
+
+                                    target_record=<guid>
 
         --------------------     --------------------------------------------------------------------
         delete_source_record     Required Bool. Parameter indicating whether to delete the original
@@ -1129,8 +1136,7 @@ class ParcelFabricManager(object):
         extent: Union[dict, Envelope],
     ):
         """
-        The :meth:`~reconstructFromSeeds` operation constructs parcels from seeds enclosed by
-        parcel lines in the specified extent. The tool reconstructs parcels regardless of the parcel
+        This operation constructs parcels from seeds enclosed by parcel lines in the specified extent. The tool reconstructs parcels regardless of the parcel
         lines associations with records.
 
         ====================     ====================================================================

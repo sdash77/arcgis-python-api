@@ -34,7 +34,6 @@ except ImportError:
     import_exception = traceback.format_exc()
     HAS_FASTAI = False
 
-
 def remap_label(data, class_mapping):
     """
     class_mapping will be required in case of multiclasss

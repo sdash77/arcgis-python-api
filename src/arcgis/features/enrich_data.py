@@ -47,7 +47,7 @@ def enrich_layer(
     The result will be a new layer of input features that includes all demographic and geographic information from given data collections.
 
     =====================================================================     ====================================================================
-    **Parameter**                                                             **Description**
+    **Argument**                                                              **Description**
     ---------------------------------------------------------------------     --------------------------------------------------------------------
     input_layer                                                               Required layer. The features to enrich with new data. See :ref:`Feature Input<FeatureInput>`.
     ---------------------------------------------------------------------     --------------------------------------------------------------------
@@ -106,8 +106,7 @@ def enrich_layer(
                                                                                                   "overwrite": True}
 
     ---------------------------------------------------------------------     --------------------------------------------------------------------
-    gis                                                                       Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-    ---------------------------------------------------------------------     --------------------------------------------------------------------
+    gis                                                                       Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
     ---------------------------------------------------------------------     --------------------------------------------------------------------
     return_boundaries                                                         Optional boolean. Applies only for point and line input features. If True, a result layer of areas is returned.
                                                                               The returned areas are defined by the specified buffer_type. For example, if using a buffer_type of StraightLine with
