@@ -3971,7 +3971,7 @@ class OfflineMapAreaManager(object):
 ###########################################################################
 class WebScene(collections.OrderedDict):
     """
-    The ``WebScene``represents a web scene and provides access to its basemaps and operational layers as well
+    The ``WebScene`` represents a web scene and provides access to its basemaps and operational layers as well
     as functionality to visualize and interact with them.
 
     If you would like more robust webscene authoring functionality,
@@ -4025,7 +4025,7 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
     applied to such Vector Tile Services.
     A :class:`~arcgis.mapping.VectorTileLayer` offers access to layer content.
 
-    .. note:: Url must be admin url such as: https://services.myserver.com/arcgis/server/admin/services/serviceName.VectorTileServer/
+    .. note:: Url must be admin url such as: ``https://services.myserver.com/arcgis/server/admin/services/serviceName.VectorTileServer/``
     """
 
     _gptbx = None
@@ -4065,16 +4065,17 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
         service_dictionairy     Required dict. The JSON representation of the service and the
                                 properties that have been updated or added.
 
-                                Examples:
-                                    {
-                                        "serviceName": "RI_Fed2019_WM",
-                                        "type": "VectorTileServer",
-                                        "description": "",
-                                        "capabilities": "TilesOnly,Tilemap",
-                                        "extensions": [],
-                                        "frameworkProperties": {},
-                                        "datasets": []
-                                        }
+                                Example:
+
+                                    |    {
+                                    |        "serviceName": "RI_Fed2019_WM",
+                                    |        "type": "VectorTileServer",
+                                    |        "description": "",
+                                    |        "capabilities": "TilesOnly,Tilemap",
+                                    |        "extensions": [],
+                                    |        "frameworkProperties": {},
+                                    |        "datasets": []
+                                    |        }
         ===================     ====================================================================
 
 
@@ -4186,7 +4187,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
     A :class:`~arcgis.mapping.VectorTileLayer` offers access to layer content.
 
     .. note::
-        Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/VectorTileServer/
+        Url must be admin url such as: ``https://services.myserver.com/arcgis/rest/admin/services/serviceName/VectorTileServer/``
     """
 
     def __init__(self, url, gis=None, vect_tile_lyr=None):
@@ -4240,16 +4241,15 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         layers                      Optional list of dictionaries. Each dict representing a layer.
 
                                     Syntax Example:
-                                        layers = [
-                                            {
-                                                "name": "Layer Name",
-                                                "id": 1159321,
-                                                "layerId": 0,
-                                                "tableName": "tableName",
-                                                "type": "Feature Layer",
-                                                "xssTrustedFields": ""
-                                            }
-                                        ]
+
+                                        | layers = [{
+                                        |        "name": "Layer Name",
+                                        |        "id": 1159321,
+                                        |        "layerId": 0,
+                                        |        "tableName": "tableName",
+                                        |        "type": "Feature Layer",
+                                        |        "xssTrustedFields": ""
+                                        |    }]
         ----------------------      -------------------------------------------------------
         cache_max_age               Optional int. The maximum cache age. At the moment this
                                     parameter can only be set if the Vector Tile Layer was
@@ -4626,8 +4626,8 @@ class VectorTileLayer(arcgis.gis.Layer):
     # ----------------------------------------------------------------------
     def tile_fonts(self, fontstack: str, stack_range: str):
         """
-         The ``tile_fonts`` method retrieves glyphs in
-         `protocol buffer format. <https://developers.google.com/protocol-buffers/>`_
+        The ``tile_fonts`` method retrieves glyphs in
+        `protocol buffer format. <https://developers.google.com/protocol-buffers/>`_
 
         ============================    ===================================================================================================================
         **Argument**                    **Description**
@@ -4636,7 +4636,7 @@ class VectorTileLayer(arcgis.gis.Layer):
 
                                         .. note::
                                             The template url for this fonts resource is represented in the
-                                            'Vector Tile Style <https://developers.arcgis.com/rest/services-reference/enterprise/vector-tile-style.htm>'_
+                                            `Vector Tile Style <https://developers.arcgis.com/rest/services-reference/enterprise/vector-tile-style.htm>`_
                                             resource.
         ----------------------------    -------------------------------------------------------------------------------------------------------------------
         stack_range                     Required string that depict a range. Ex: "0-255"
@@ -4691,7 +4691,7 @@ class VectorTileLayer(arcgis.gis.Layer):
         ----------------------------    ------------------------------------------------
         out_format                      Optional string. Default is "sprite.json".
 
-                                        Values: "sprite.json" | "sprite.png" | "sprite@2x.png"
+                                        Values: ``sprite.json`` | ``sprite.png`` | ``sprite@2x.png``
         ============================    ================================================
 
         :return:
@@ -4876,7 +4876,7 @@ class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
     The ``EnterpriseMapImageLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise Map Image Layers and Tile Layers.
     A :class:`~arcgis.mapping.MapImageLayer` offers access to layer content.
 
-    .. note:: Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/MapServer/
+    .. note:: Url must be admin url such as: ``https://services.myserver.com/arcgis/rest/admin/services/serviceName/MapServer/``
     """
 
     def __init__(self, url, gis=None, map_img_lyr=None):
@@ -4924,9 +4924,9 @@ class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
 
         Provider parameter options:
 
-           + `ArcObjects` means the service is running under the ArcMap runtime i.e. published from ArcMap
-           + `ArcObjects11`: means the service is running under the ArcGIS Pro runtime i.e. published from ArcGIS Pro
-           + `DMaps`: means the service is running in the shared instance pool (and thus running under the ArcGIS Pro provider runtime)
+        + `ArcObjects` means the service is running under the ArcMap runtime i.e. published from ArcMap
+        + `ArcObjects11`: means the service is running under the ArcGIS Pro runtime i.e. published from ArcGIS Pro
+        + `DMaps`: means the service is running in the shared instance pool (and thus running under the ArcGIS Pro provider runtime)
 
         :return: Boolean
 
@@ -4991,7 +4991,7 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
-        job_id               Required String. The ``job id`` to cancel.
+        job_id               Required String. The job id to cancel.
         ===============     ====================================================
 
         """
@@ -5118,8 +5118,8 @@ class MapImageLayerManager(arcgis.gis._GISResource):
                             to update. Example: "1,2,10,20" or [1,2,10,20]
         ---------------     ----------------------------------------------------
         extent              Optional String / Dict. The area to update as Xmin, YMin, XMax, YMax
-                            example: "-100,-50,200,500" or
-                            {'xmin':100, 'ymin':200, 'xmax':105, 'ymax':205}
+                            Example:
+                                "-100,-50,200,500" or {'xmin':100, 'ymin':200, 'xmax':105, 'ymax':205}
         ---------------     ----------------------------------------------------
         merge               Optional Boolean. Default is false and applicable to
                             compact cache storage format. It controls whether
@@ -5451,12 +5451,12 @@ class MapImageLayer(arcgis.gis.Layer):
 
     @property
     def manager(self):
+        """
+        The ``manager`` property returns an instance of :class:`~arcgis.mapping.MapImageLayerManager` class
+        for ArcGIS Online and :class:`~arcgis.mapping.EnterpriseMapImageLayerManager` class for ArcGIS Enterprise
+        which provides methods and properties for administering this service.
+        """
         if self._admin is None:
-            """
-            The ``manager`` property returns an instance of :class:`~arcgis.mapping.MapImageLayerManager` class
-            for ArcGIS Online and :class:`~arcgis.mapping.EnterpriseMapImageLayerManager` class for ArcGIS Enterprise
-            which provides methods and properties for administering this service.
-            """
             if self._gis._portal.is_arcgisonline:
                 rd = {"/rest/services/": "/rest/admin/services/"}
                 adminURL = self._str_replace(self._url, rd)
@@ -5483,33 +5483,35 @@ class MapImageLayer(arcgis.gis.Layer):
         =================     ====================================================================
         **Argument**          **Description**
         -----------------     --------------------------------------------------------------------
-        layer                 required dict.  Dynamic layer/table source definition.
+        layer                 Required dict.  Dynamic layer/table source definition.
+
                               Syntax:
-                              {
-                                "id": <layerOrTableId>,
-                                "source": <layer source>, //required
-                                "definitionExpression": "<definitionExpression>",
-                                "drawingInfo":
-                                {
-                                  "renderer": <renderer>,
-                                  "transparency": <transparency>,
-                                  "scaleSymbols": <true,false>,
-                                  "showLabels": <true,false>,
-                                  "labelingInfo": <labeling info>
-                                },
-                                "layerTimeOptions": //supported only for time enabled map layers
-                                {
-                                  "useTime" : <true,false>,
-                                  "timeDataCumulative" : <true,false>,
-                                  "timeOffset" : <timeOffset>,
-                                  "timeOffsetUnits" : "<esriTimeUnitsCenturies,esriTimeUnitsDays,
-                                                    esriTimeUnitsDecades,esriTimeUnitsHours,
-                                                    esriTimeUnitsMilliseconds,esriTimeUnitsMinutes,
-                                                    esriTimeUnitsMonths,esriTimeUnitsSeconds,
-                                                    esriTimeUnitsWeeks,esriTimeUnitsYears |
-                                                    esriTimeUnitsUnknown>"
-                                }
-                              }
+
+                                  | {
+                                  |   "id": <layerOrTableId>,
+                                  |   "source": <layer source>, //required
+                                  |   "definitionExpression": "<definitionExpression>",
+                                  |   "drawingInfo":
+                                  |   {
+                                  |     "renderer": <renderer>,
+                                  |     "transparency": <transparency>,
+                                  |     "scaleSymbols": <true,false>,
+                                  |     "showLabels": <true,false>,
+                                  |     "labelingInfo": <labeling info>
+                                  |   },
+                                  |   "layerTimeOptions": //supported only for time enabled map layers
+                                  |   {
+                                  |     "useTime" : <true,false>,
+                                  |     "timeDataCumulative" : <true,false>,
+                                  |     "timeOffset" : <timeOffset>,
+                                  |     "timeOffsetUnits" : "<esriTimeUnitsCenturies,esriTimeUnitsDays,
+                                  |                       esriTimeUnitsDecades,esriTimeUnitsHours,
+                                  |                       esriTimeUnitsMilliseconds,esriTimeUnitsMinutes,
+                                  |                       esriTimeUnitsMonths,esriTimeUnitsSeconds,
+                                  |                       esriTimeUnitsWeeks,esriTimeUnitsYears |
+                                  |                       esriTimeUnitsUnknown>"
+                                  |   }
+                                  | }
         =================     ====================================================================
 
         :return:
@@ -5569,7 +5571,7 @@ class MapImageLayer(arcgis.gis.Layer):
     @property
     def kml(self):
         """
-        The ``kml`` method ``retrieves the KML file for the layer.
+        The ``kml`` method retrieves the KML file for the layer.
 
         :return:
             A KML file
@@ -5702,7 +5704,8 @@ class MapImageLayer(arcgis.gis.Layer):
         geometry_type          Required string.The type of geometry specified by the geometry
                                parameter. The geometry type could be a point, line, polygon, or an
                                envelope.
-                               Values: "Point" | "Multipoint" | "Polyline" | "Polygon" | "Envelope"
+                               Values:
+                                    "Point" | "Multipoint" | "Polyline" | "Polygon" | "Envelope"
         ------------------     --------------------------------------------------------------------
         map_extent             Required string. The extent or bounding box of the map currently
                                being viewed.
@@ -5728,9 +5731,10 @@ class MapImageLayer(arcgis.gis.Layer):
         ------------------     --------------------------------------------------------------------
         layers                 Optional string. The layers to perform the identify operation on.
                                There are three ways to specify which layers to identify on:
-                                - top: Only the top-most layer at the specified location.
-                                - visible: All visible layers at the specified location.
-                                - all: All layers at the specified location.
+
+                               - ``top``: Only the top-most layer at the specified location.
+                               - ``visible``: All visible layers at the specified location.
+                               - ``all``: All layers at the specified location.
         ------------------     --------------------------------------------------------------------
         tolerance              Optional integer. The distance in screen pixels from the specified
                                geometry within which the identify should be performed. The value for
@@ -5742,7 +5746,10 @@ class MapImageLayer(arcgis.gis.Layer):
                                layers visible in the current extent. They are also used to
                                calculate the distance on the map to search based on the tolerance
                                in screen pixels.
-                               Syntax: <width>, <height>, <dpi>
+
+                               Syntax:
+
+                                    <width>, <height>, <dpi>
         ------------------     --------------------------------------------------------------------
         return_geometry        Optional boolean. If true, the resultset will include the geometries
                                associated with each result. The default is true.
@@ -5938,9 +5945,10 @@ class MapImageLayer(arcgis.gis.Layer):
         ------------------     --------------------------------------------------------------------
         layers                 Optional string. The layers to perform the identify operation on.
                                There are three ways to specify which layers to identify on:
-                                - top: Only the top-most layer at the specified location.
-                                - visible: All visible layers at the specified location.
-                                - all: All layers at the specified location.
+
+                               - top: Only the top-most layer at the specified location.
+                               - visible: All visible layers at the specified location.
+                               - all: All layers at the specified location.
         ------------------     --------------------------------------------------------------------
         contains               Optional boolean. If false, the operation searches for an exact
                                match of the search_text string. An exact match is case sensitive.
@@ -6186,7 +6194,7 @@ class MapImageLayer(arcgis.gis.Layer):
                                Unless the bbox_sr parameter has been specified, the bbox is assumed
                                to be in the spatial reference of the map.
         ------------------     --------------------------------------------------------------------
-        bbox_sr                Optional integer, ``SpatialReference``. spatial reference of the bbox.
+        bbox_sr                Optional integer, :class:`~arcgis.geometry.SpatialReference`. The spatial reference of the bbox.
         ------------------     --------------------------------------------------------------------
         size                   Optional string. size - size of image in pixels
         ------------------     --------------------------------------------------------------------
@@ -6197,8 +6205,8 @@ class MapImageLayer(arcgis.gis.Layer):
         ------------------     --------------------------------------------------------------------
         image_format           Optional string. The format of the exported image.
                                The default format is .png.
-                               Values: `png | png8 | png24 | jpg | pdf | bmp | gif
-                                       | svg | svgz | emf | ps | png32`
+                               Values: 
+                                    png | png8 | png24 | jpg | pdf | bmp | gif | svg | svgz | emf | ps | png32
         ------------------     --------------------------------------------------------------------
         layer_defs             Optional dict. Allows you to filter the features of individual
                                layers in the exported map by specifying definition expressions for
@@ -6207,16 +6215,14 @@ class MapImageLayer(arcgis.gis.Layer):
         ------------------     --------------------------------------------------------------------
         layers                 Optional string. Determines which layers appear on the exported map.
                                There are four ways to specify which layers are shown:
-                                 show: Only the layers specified in this list will
-                                       be exported.
-                                 hide: All layers except those specified in this
-                                       list will be exported.
-                                 include: In addition to the layers exported by
-                                          default, the layers specified in this list
-                                          will be exported.
-                                 exclude: The layers exported by default excluding
-                                          those specified in this list will be
-                                          exported.
+
+                               ``show``: Only the layers specified in this list will be exported.
+
+                               ``hide``: All layers except those specified in this list will be exported.
+
+                               ``include``: In addition to the layers exported by default, the layers specified in this list will be exported.
+
+                               ``exclude``: The layers exported by default excluding those specified in this list will be exported.
         ------------------     --------------------------------------------------------------------
         transparent            Optional boolean. If true, the image will be exported with the
                                background color of the map set as its transparent color. The
@@ -6395,7 +6401,8 @@ class MapImageLayer(arcgis.gis.Layer):
         export_by              Required string. The criteria that will be used to select the tile
                                service levels to export. The values can be Level IDs, cache scales
                                or the Resolution (in the case of image services).
-                               Values: "LevelID" | "Resolution" | "Scale"
+                               Values:
+                                    "LevelID" | "Resolution" | "Scale"
         ------------------     --------------------------------------------------------------------
         levels                 Required string. Specify the tiled service levels for which you want
                                to get the estimates. The values should correspond to Level IDs,
@@ -6420,9 +6427,12 @@ class MapImageLayer(arcgis.gis.Layer):
         area_of_interest       Optional dictionary or Polygon. This allows exporting tiles within
                                the specified polygon areas. This parameter supersedes extent
                                parameter.
-                               Example: { "features": [{"geometry":{"rings":[[[-100,35],
-                                          [-100,45],[-90,45],[-90,35],[-100,35]]],
-                                          "spatialReference":{"wkid":4326}}}]}
+
+                               Example:
+
+                                    | { "features": [{"geometry":{"rings":[[[-100,35],
+                                    |       [-100,45],[-90,45],[-90,35],[-100,35]]],
+                                    |       "spatialReference":{"wkid":4326}}}]}
         ------------------     --------------------------------------------------------------------
         asynchronous           Optional boolean. The estimate function is run asynchronously
                                requiring the tool status to be checked manually to force it to
@@ -6520,7 +6530,7 @@ class MapImageLayer(arcgis.gis.Layer):
         .. note::
             In ArcGIS Server 10.2.2 and later versions, exportTiles is supported as an
             operation of the Map Server. The use of the
-            http://Map_Service/exportTiles/submitJob operation is deprecated.
+            ``http://Map_Service/exportTiles/submitJob`` operation is deprecated.
             You can provide arguments to the exportTiles operation as defined
             in the following parameters table:
 
@@ -6539,7 +6549,8 @@ class MapImageLayer(arcgis.gis.Layer):
         export_by              Required string. The criteria that will be used to select the tile
                                service levels to export. The values can be Level IDs, cache scales.
                                or the resolution.  The defaut is 'LevelID'.
-                               Values: `LevelID | Resolution | Scale`
+                               Values:
+                                    `LevelID | Resolution | Scale`
         ------------------     --------------------------------------------------------------------
         tile_package           Optional boolean. Allows exporting either a tile package or a cache
                                raster data set. If the value is true, output will be in tile
@@ -6551,11 +6562,13 @@ class MapImageLayer(arcgis.gis.Layer):
                                include a spatial reference, the extent values are assumed to be in
                                the spatial reference of the map. The default value is full extent
                                of the tiled map service.
-                               Syntax: <xmin>, <ymin>, <xmax>, <ymax>
+                               Syntax:
+                                    <xmin>, <ymin>, <xmax>, <ymax>
                                Example 1: -104,35.6,-94.32,41
-                               Example 2: {"xmin" : -109.55, "ymin" : 25.76,
-                                            "xmax" : -86.39, "ymax" : 49.94,
-                                            "spatialReference" : {"wkid" : 4326}}
+                               Example 2:
+                                    | {"xmin" : -109.55, "ymin" : 25.76,
+                                    | "xmax" : -86.39, "ymax" : 49.94,
+                                    | "spatialReference" : {"wkid" : 4326}}
         ------------------     --------------------------------------------------------------------
         optimize_for_size      Optional boolean. Use this parameter to enable compression of JPEG
                                tiles and reduce the size of the downloaded tile package or the
@@ -6576,9 +6589,12 @@ class MapImageLayer(arcgis.gis.Layer):
         area_of_interest       Optional dictionary, Polygon. The area_of_interest polygon allows
                                exporting tiles within the specified polygon areas. This parameter
                                supersedes the exportExtent parameter.
-                               Example: { "features": [{"geometry":{"rings":[[[-100,35],
-                                                      [-100,45],[-90,45],[-90,35],[-100,35]]],
-                                                      "spatialReference":{"wkid":4326}}}]}
+                               
+                               Example:
+                               
+                                   | { "features": [{"geometry":{"rings":[[[-100,35],
+                                   |   [-100,45],[-90,45],[-90,35],[-100,35]]],
+                                   |   "spatialReference":{"wkid":4326}}}]}
         ------------------     --------------------------------------------------------------------
         asynchronous           Optional boolean. Default False, this value ensures the returns are
                                returned to the user instead of the user having the check the job
@@ -6586,8 +6602,8 @@ class MapImageLayer(arcgis.gis.Layer):
         ------------------     --------------------------------------------------------------------
         storage_format         Optional string. Specifies the type of tile package that will be created.
 
-                               `tpk` - Tiles are stored using Compact storage format. It is supported across the ArcGIS platform.
-                               `tpkx` - Tiles are stored using CompactV2 storage format, which provides better performance on network shares and cloud store directories. This improved and simplified package structure type is supported by newer versions of ArcGIS products such as ArcGIS Online 7.1, ArcGIS Enterprise 10.7, and ArcGIS Runtime 100.5. This is the default.
+                               | ``tpk`` - Tiles are stored using Compact storage format. It is supported across the ArcGIS platform.
+                               | ``tpkx`` - Tiles are stored using CompactV2 storage format, which provides better performance on network shares and cloud store directories. This improved and simplified package structure type is supported by newer versions of ArcGIS products such as ArcGIS Online 7.1, ArcGIS Enterprise 10.7, and ArcGIS Runtime 100.5. This is the default.
         ==================     ====================================================================
 
         :return:
