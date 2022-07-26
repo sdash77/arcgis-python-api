@@ -7,7 +7,7 @@ The module also provides simple types that can be used as parameters for these t
 from arcgis.geoprocessing._types import LinearUnit, DataFile, RasterData
 from arcgis.geoprocessing._tool import import_toolbox
 from arcgis.geoprocessing._job import GPJob
-from arcgis.geoprocessing._service import GPService, GPTask
+from arcgis.geoprocessing._service import GPService, GPTask, GPInfo
 
 __all__ = [
     "LinearUnit",
@@ -17,4 +17,5 @@ __all__ = [
     "GPJob",
     "GPService",
     "GPTask",
+    "GPInfo"
 ]
