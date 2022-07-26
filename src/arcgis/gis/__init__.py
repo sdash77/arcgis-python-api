@@ -2607,6 +2607,40 @@ class UserManager(object):
         return self.__str__()
 
     # ----------------------------------------------------------------------
+    def delete_users(self, users: list[User]) -> list[str]:
+        """
+        Allows the administrator to remove users from a portal. Before the
+        administrator can remove the user, all of the user's content and
+        groups must be reassigned or deleted.
+
+        ================  =========]======================================================================
+        **Keys**          **Description**
+        ----------------  -------------------------------------------------------------------------------
+        users             Required list[User]. A list of users to delete from the organization.
+        ================  ===============================================================================
+
+        :returns: list[str] containing the users who could not be removed.
+        """
+        from arcgis._impl.common._utils import chunks as _chunks
+
+        url = f"{self._gis._portal.resturl}portals/self/removeUsers"
+        results = []
+        with concurrent.futures.ThreadPoolExecutor(5) as executor:
+            jobs = []
+            for chunk in _chunks(users, n=100):
+                users_str = ",".join([u.username for u in chunk])
+                params = {"f": "json", "users": users_str}
+                future = executor.submit(
+                    self._gis._con.post, **{"path": url, "params": params}
+                )
+                jobs.append(future)
+            for future in concurrent.futures.as_completed(jobs):
+                users = future.result().get("notRemoved", [])
+                results.extend(users)
+
+        return results
+
+    # ----------------------------------------------------------------------
     @property
     def user_settings(self):
         """
@@ -4102,8 +4136,13 @@ class UserManager(object):
         return None
 
     def org_search(
-        self, query: str = None, sort_field: str = None, sort_order: str = None
-    ) -> tuple:
+        self,
+        query: str = None,
+        sort_field: str = None,
+        sort_order: str = None,
+        as_dict: bool = False,
+        exclude: bool = False,
+    ) -> tuple[User] | tuple[dict[str, Any]]:
         """
         The `org_search` method allows users to find users within the organization only.
         Users can search for details such as `provider`, `fullName` and other user properties
@@ -4119,35 +4158,66 @@ class UserManager(object):
         sort_field        Optional string. Valid values can be username (the default) or created.
         ----------------  --------------------------------------------------------
         sort_order        Optional string. Valid values are asc (the default) or desc.
+        ----------------  --------------------------------------------------------
+        as_dict           Optional Boolean. Returns the raw response for each user as a dictionary
+        ----------------  --------------------------------------------------------
+        exclude           Optional Boolean. If `True`, the system accounts will be excluded from the query.
         ================  ========================================================
 
-        :returns: List[User]
+        :returns: Tuple[User] | Tuple[dict[str,Any]]
         """
         results = []
+
         if query is None:
             query = "*"
+        if exclude:
+            query = f"-username:esri_livingatlas -username:esri_boundaries -username:esri_demographics -username:esri_nav ({query})"
+        count = self.advanced_search(query, return_count=True)
+
         url = f"{self._gis._portal.resturl}/portals/self/users/search"
+        num = 100
         params = {
-            "num": 100,
+            "num": num,
             "f": "json",
             "q": query,
             "start": 1,
             "sortField": sort_field or "",
             "sortOrder": sort_order or "",
         }
-        resp = self._gis._con.get(url, params)
-        results.extend(resp.get("results", []))
-        while resp.get("nextStart", -1) > 0:
-            params["start"] = resp["nextStart"]
+        if count <= num:
             resp = self._gis._con.get(url, params)
-            users = resp.get("results", [])
-            results.extend(users)
-            if len(users) == 0:
-                break
-        return tuple(
-            User(gis=self._gis, username=user["username"], userdict=user)
-            for user in results
-        )
+            results.extend(resp.get("results", []))
+            while resp.get("nextStart", -1) > 0:
+                params["start"] = resp["nextStart"]
+                resp = self._gis._con.get(url, params)
+                users = resp.get("results", [])
+                results.extend(users)
+                if len(users) == 0:
+                    break
+        else:  # use multiple threads to capture the data.
+            iterations = (count // num) + int((count % num > 0))
+            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                future_users = {}
+                for i in range(iterations):
+                    params["start"] = 1 + i * params["num"]
+
+                    future_users[
+                        executor.submit(
+                            self._gis._con.get, **{"path": url, "params": params}
+                        )
+                    ] = i
+                for future in concurrent.futures.as_completed(future_users):
+                    users = future.result().get("results", [])
+                    results.extend(users)
+
+        if as_dict:
+            return tuple(results)
+        else:
+
+            return tuple(
+                User(gis=self._gis, username=user["username"], userdict=user)
+                for user in results
+            )
 
     # ----------------------------------------------------------------------
     def search(
