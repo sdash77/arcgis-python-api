@@ -22,7 +22,7 @@ class WMSLayer(BaseOGC):
     ---------------     --------------------------------------------------------------------
     version             Optional String. The version number of the WMS service.  The default is `1.3.0`.
     ---------------     --------------------------------------------------------------------
-    gis                 Optional GIS. The GIS used to reference the service by. The arcgis.env.active_gis is used if not specified.
+    gis                 Optional :class:`~arcgis.gis.GIS`. The GIS used to reference the service by. The arcgis.env.active_gis is used if not specified.
     ---------------     --------------------------------------------------------------------
     copyright           Optional String. Describes limitations and usage of the data.
     ---------------     --------------------------------------------------------------------

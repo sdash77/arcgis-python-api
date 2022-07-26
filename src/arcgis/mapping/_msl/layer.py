@@ -2316,7 +2316,7 @@ class _MSILayerFactory(type):
     ------------------     --------------------------------------------------------------------
     url                    Required string, specify the url ending in /MapServer/<index>
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS object. If not specified, the active GIS connection is
+    gis                    Optional :class:`~arcgis.gis.GIS`  object. If not specified, the active GIS connection is
                            used.
     ==================     ====================================================================
 

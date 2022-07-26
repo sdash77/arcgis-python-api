@@ -481,7 +481,7 @@ class Object3DLayer(Layer):
     ------------------     --------------------------------------------------------------------
     url                    Required string, specify the url ending in /SceneServer/
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS object. If not specified, the active GIS connection is
+    gis                    Optional :class:`~arcgis.gis.GIS`  object. If not specified, the active GIS connection is
                            used.
     ==================     ====================================================================
 
@@ -592,7 +592,7 @@ class IntegratedMeshLayer(Layer):
     ------------------     --------------------------------------------------------------------
     url                    Required string, specify the url ending in /SceneServer/
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS object. If not specified, the active GIS connection is
+    gis                    Optional :class:`~arcgis.gis.GIS`  object. If not specified, the active GIS connection is
                            used.
     ==================     ====================================================================
 
@@ -703,7 +703,7 @@ class Point3DLayer(Layer):
     ------------------     --------------------------------------------------------------------
     url                    Required string, specify the url ending in /SceneServer/
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS object. If not specified, the active GIS connection is
+    gis                    Optional :class:`~arcgis.gis.GIS`  object. If not specified, the active GIS connection is
                            used.
     ==================     ====================================================================
 
@@ -815,7 +815,7 @@ class PointCloudLayer(Layer):
     ------------------     --------------------------------------------------------------------
     url                    Required string, specify the url ending in /SceneServer/
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS object. If not specified, the active GIS connection is
+    gis                    Optional :class:`~arcgis.gis.GIS`  object. If not specified, the active GIS connection is
                            used.
     ==================     ====================================================================
 
@@ -926,7 +926,7 @@ class BuildingLayer(Layer):
     ------------------     --------------------------------------------------------------------
     url                    Required string, specify the url ending in /SceneServer/
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS object. If not specified, the active GIS connection is
+    gis                    Optional :class:`~arcgis.gis.GIS`  object. If not specified, the active GIS connection is
                            used.
     ==================     ====================================================================
 
@@ -1033,7 +1033,7 @@ class _SceneLayerFactory(type):
     ------------------     --------------------------------------------------------------------
     url                    Required string, specify the url ending in /SceneServer/
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS object. If not specified, the active GIS connection is
+    gis                    Optional :class:`~arcgis.gis.GIS`  object. If not specified, the active GIS connection is
                            used.
     ==================     ====================================================================
 
@@ -1090,7 +1090,7 @@ class SceneLayer(Layer, metaclass=_SceneLayerFactory):
     ------------------     --------------------------------------------------------------------
     url                    Required string, specify the url ending in /SceneServer/
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS object. If not specified, the active GIS connection is
+    gis                    Optional :class:`~arcgis.gis.GIS`  object. If not specified, the active GIS connection is
                            used.
     ==================     ====================================================================
 
