@@ -3,7 +3,7 @@ from arcgis.gis import GIS
 
 
 class MarketPlaceManager:
-    """Provides the ability for Manager to list and unlist marketplace items"""
+    """Provides the ability for the manager to list and unlist marketplace items"""
 
     _gis: GIS = None
     _url: str = None
@@ -15,7 +15,7 @@ class MarketPlaceManager:
     # ----------------------------------------------------------------------
     def list(self, itemid: str) -> dict:
         """
-        The `list_item` operation lists the item in the marketplace.
+        This operation lists the item in the marketplace.
 
         This operation is only available to organizations that have permissions
         to list items in the marketplace. The permissions are returned with the
@@ -39,7 +39,7 @@ class MarketPlaceManager:
     # ----------------------------------------------------------------------
     def unlist(self, itemid: str) -> dict:
         """
-        The `unlist` operation unlists a previously listed item from the marketplace.
+        This operation unlists a previously listed item from the marketplace.
 
         Unlisting an item will reset its listed property to false.
 
@@ -71,16 +71,16 @@ class MarketPlaceManager:
         it then searches all public and private listings in your organization.
 
 
-        ======================      =======================================================
+        ======================      ====================================================================
         **Argument**                **Description**
-        ----------------------      -------------------------------------------------------
+        ----------------------      --------------------------------------------------------------------
         query                       Optional string. The query string to use to search.
-        ----------------------      -------------------------------------------------------
+        ----------------------      --------------------------------------------------------------------
         my_listings                 Optional boolean.  If True and you're logged in as
                                     a vendor org admin, it searches all public and private
                                     listings in your organization. Note that if my_listings=True,
                                     the query parameter is optional. Default is False.
-        ----------------------      -------------------------------------------------------
+        ----------------------      --------------------------------------------------------------------
         start                       Optional integer. The number of the first entry in the
                                     result set response. The index number is 1-based.
 
@@ -88,7 +88,7 @@ class MarketPlaceManager:
 
                                     The start parameter, along with the num parameter,
                                     can be used to paginate the search results.
-        ----------------------      -------------------------------------------------------
+        ----------------------      --------------------------------------------------------------------
         num                         Optional integer. The maximum number of results to be
                                     included in the result set response.
 
@@ -100,32 +100,32 @@ class MarketPlaceManager:
                                     Note that the actual number of returned results may be
                                     less than num. This happens when the number of results
                                     remaining after start is less than num.
-        ----------------------      -------------------------------------------------------
+        ----------------------      --------------------------------------------------------------------
         sort_field                  Optional string. The field to sort by. You can also sort
                                     by multiple fields (comma separated) for listings, sort
                                     field names are case-insensitive.
 
                                     Supported sort field names are:
                                     "title", "created", "listingpublisheddate", "type", "owner",
-                                    "avgrating", "numratings", "numcomments", and "numviews".
-        ----------------------      -------------------------------------------------------
+                                    "avgrating", "numratings", "numcomments", and "numviews"
+        ----------------------      --------------------------------------------------------------------
         sort_order                  Optional string. Describes whether the order returns
                                     in ascending(asc) or descending(desc) order. Default is asc.
-        ======================      =======================================================
+        ======================      ====================================================================
+
 
         :return:
             A dictionary with response syntax of:
-            {
-                "query": "<query string>",
-                "total": <total number of results>,
-                "start": <results in first set>,
-                "num": <number of results per page>,
-                "nextStart": <result number of next page>,
-                "listings": [
-                    {<listing1>},
-                    {<listing2>}
-                ]
-            }
+
+                | {
+                | "query": "<query string>",
+                | "total": <total number of results>,
+                | "start": <results in first set>,
+                | "num": <number of results per page>,
+                | "nextStart": <result number of next page>,
+                | "listings": [{<listing1>}, {<listing2>}]
+                | }
+
         """
         url = f"{self._url}/listings"
         params = {
@@ -158,24 +158,6 @@ class MarketPlaceManager:
         return self._gis._portal.con.get(url, params)
 
     # ----------------------------------------------------------------------
-    def listing(self, itemid: str) -> dict:
-        """
-        A listing in the marketplace. The listing and its corresponding item share the same ID.
-
-        =====================       ========================================
-        **Argument**                **Description**
-        ---------------------       ----------------------------------------
-        itemid                      Required String. The item id.
-        =====================       ========================================
-
-        :return:
-            A dictionary of the listed item with properties.
-        """
-        params = {"f": "json"}
-        url = f"{self._url}/listings/{itemid}"
-        return self._gis._portal.con.post(url, params)
-
-    # ----------------------------------------------------------------------
     def delete_provision(self, itemid: str) -> dict:
         """
         This operation deletes all provisions to this item for
@@ -195,11 +177,13 @@ class MarketPlaceManager:
 
         :return:
             A dictionary with syntax:
-            {
-                "success": <true | false>,
-                "itemId": "<itemId>",
-                "purchaserOrgId": "<purchaserOrgId>"
-            }
+
+                | {
+                | "success": <true | false>,
+                | "itemId": "<itemId>",
+                | "purchaserOrgId": "<purchaserOrgId>"
+                | }
+
         """
         params = {"f": "json"}
         url = f"{self._url}/listings/{itemid}/deleteProvision"
@@ -254,27 +238,29 @@ class MarketPlaceManager:
         It can only be invoked by org admins or members with request
         purchase information privilege.
 
-        ==========================      ==================================================================================
+        ==========================      ==================================================================================================================================================================
         **Argument**                    **Description**
-        --------------------------      ----------------------------------------------------------------------------------
+        --------------------------      ------------------------------------------------------------------------------------------------------------------------------------------------------------------
         itemid                          Required String. The item id.
-        --------------------------      ----------------------------------------------------------------------------------
+        --------------------------      ------------------------------------------------------------------------------------------------------------------------------------------------------------------
         purchaser_org_id                Required String. The org ID of the purchasing organization
-        --------------------------      ----------------------------------------------------------------------------------
+        --------------------------      ------------------------------------------------------------------------------------------------------------------------------------------------------------------
         purchaser_subscription_id       Optional String. The subscription(SMS) ID of the purchasing organization.
-        --------------------------      ----------------------------------------------------------------------------------
+        --------------------------      ------------------------------------------------------------------------------------------------------------------------------------------------------------------
         org_entitlements                Required Dictionary. A JSON object representing the set of entitlements available to the purchasing org.
 
                                         Example:
-                                        {
-                                            "maxUsers": 10,
-                                            "entitlements": {
-                                                "standard": {"num": 8},  //'standard' is an entitlement string that uniquely identifies entitlement, listingID is used typically for provider apps
-                                                "advanced": {"num": 2},
-                                                "spatialAnalyst": {"num": 2}
-                                        }
-                                        }
-        ==========================      ==================================================================================
+
+                                            | {
+                                            | "maxUsers": 10,
+                                            | "entitlements": {
+                                            | "standard": {"num": 8}, ('standard' is an entitlement string that uniquely identifies entitlement, listingID is used typically for provider apps)
+                                            | "advanced": {"num": 2},
+                                            | "spatialAnalyst": {"num": 2}
+                                            | }
+                                            | }
+
+        ==========================      ==================================================================================================================================================================
 
         :return: A dictionary of the provision item.
         """
@@ -296,19 +282,20 @@ class MarketPlaceManager:
         or is being tried by the purchasing org. A maximum of 25 users can
         be provisioned in one request.
 
-        =====================       ==================================================================================
+        =====================       ====================================================================================================================================================================================
         **Argument**                **Description**
-        ---------------------       ----------------------------------------------------------------------------------
+        ---------------------       ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         itemid                      Required String. The item id.
-        ---------------------       ----------------------------------------------------------------------------------
+        ---------------------       ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         user_entitlements           Required Dictionary. A JSON object representing the set of entitlements
                                     assigned to the specified set of users.
 
                                     Example:
-                                        {
-                                        "users": ["username1", "username2"],
-                                        "entitlements": ["standard", "networkAnalyst"] //"standard" is an entitlement string that uniquely identifies entitlement, listing itemId is used typically for provider apps
-                                        }
+
+                                        | {
+                                        | "users": ["username1", "username2"],
+                                        | "entitlements": ["standard", "networkAnalyst"] ("standard" is an entitlement string that uniquely identifies entitlement, listing itemId is used typically for provider apps)
+                                        | }
 
                                     Only members of the purchasing org can be specified in the request.
 
@@ -321,7 +308,7 @@ class MarketPlaceManager:
 
                                     The total number of currently provisioned users plus users specified in requests
                                     should be no larger than the maximum number of users allowed for the purchasing org.
-        =====================       ==================================================================================
+        =====================       ====================================================================================================================================================================================
 
         :return:
             A boolean indicating success (True) or failure (False).
@@ -337,17 +324,16 @@ class MarketPlaceManager:
         The purchases resource returns a list of purchases, trials, and
         interests expressed by this organization for items in the marketplace.
 
-        =====================       ==================================================================================
+        =====================       ====================================================================================
         **Argument**                **Description**
-        ---------------------       ----------------------------------------------------------------------------------
+        ---------------------       ------------------------------------------------------------------------------------
         status                      Optional String. Status of the listings to be returned. The default value is active.
 
                                     Accepted values are:
-
-                                    * active: Only listings that are currently active will be returned
-                                    * expired: Only listings that have already expired will be returned
-                                    * all: Both active and expired listings will be returned
-        =====================       ==================================================================================
+                                        * active: Only listings that are currently active will be returned
+                                        * expired: Only listings that have already expired will be returned
+                                        * all: Both active and expired listings will be returned
+        =====================       ====================================================================================
 
         :return: A dictionary depicting the purchases, trials, and interests.
         """
@@ -364,25 +350,27 @@ class MarketPlaceManager:
         end_date: str | None = None,
     ) -> dict:
         """
-        =====================       ==================================================================================
+        =====================       ====================================================================================
         **Argument**                **Description**
-        ---------------------       ----------------------------------------------------------------------------------
+        ---------------------       ------------------------------------------------------------------------------------
         itemid                      Required String. The item id.
-        ---------------------       ----------------------------------------------------------------------------------
-        purchase_org_id             Required String. The org ID of the purchaser organization. This parameter is required
-                                    only when the call is made by the vendor. It is ignored otherwise.
-        ---------------------       ----------------------------------------------------------------------------------
-        provisioned_itemid          Required String. The ID of the item to be provisioned if different from the one listed.
+        ---------------------       ------------------------------------------------------------------------------------
+        purchase_org_id             Required String. The org ID of the purchaser organization. This parameter is
+                                    required only when the call is made by the vendor. It is ignored otherwise.
+        ---------------------       ------------------------------------------------------------------------------------
+        provisioned_itemid          Required String. The ID of the item to be provisioned if different from the one
+                                    listed.
 
                                     Note that the listed item and the provisioned item must be related by the
-                                    "Listed2Provisioned" relationship otherwise it will result in an error.
+                                    `Listed2Provisioned` relationship otherwise it will result in an error.
 
-                                    This parameter is allowed only when the call is made by the vendor. It is ignored otherwise.
-        ---------------------       ----------------------------------------------------------------------------------
+                                    This parameter is allowed only when the call is made by the vendor.
+                                    It is ignored otherwise.
+        ---------------------       ------------------------------------------------------------------------------------
         end_date                    Required String. The end/expiry date of this purchase if any. If this parameter is
                                     not specified, it implies an unexpiring purchase. The end date specified
                                     should be in milliseconds from epoch.
-        =====================       ==================================================================================
+        =====================       ====================================================================================
 
         :return: A dictionary of the provision item.
         """
@@ -425,7 +413,7 @@ class MarketPlaceManager:
 
     # ----------------------------------------------------------------------
     def comments(self, itemid: str):
-        """ """
+        """ Lists all comments for the item """
         params = {"f": "json"}
         url = f"{self._url}/listings/{itemid}/comments"
         return self._gis._portal.con.post(url, params)
@@ -489,55 +477,53 @@ class MarketPlaceManager:
         interests expressed by customers for items listed by this organization
         in the marketplace. This operation allows filtering and sorting of provisions.
 
-        =====================       ==================================================================================
+        =====================       ====================================================================================
         **Argument**                **Description**
-        ---------------------       ----------------------------------------------------------------------------------
+        ---------------------       ------------------------------------------------------------------------------------
         itemid                      Optional String. The item id of the provision to be returned.
-        ---------------------       ----------------------------------------------------------------------------------
+        ---------------------       ------------------------------------------------------------------------------------
         orgname                     Optional String. Purchaser organization name of the provisions to be returned.
-        ---------------------       ----------------------------------------------------------------------------------
+        ---------------------       ------------------------------------------------------------------------------------
         status                      Optional String. Status of the listings to be returned. The default value is active.
 
                                     Accepted values are:
-
-                                    * active: Only listings that are currently active will be returned
-                                    * expired: Only listings that have already expired will be returned
-                                    * all: Both active and expired listings will be returned
-        ---------------------       ----------------------------------------------------------------------------------
+                                        * active: Only listings that are currently active will be returned
+                                        * expired: Only listings that have already expired will be returned
+                                        * all: Both active and expired listings will be returned
+        ---------------------       ------------------------------------------------------------------------------------
         type                        Optional String. Access type of the provisions to be returned:
-
-                                    * REQUEST: Only provisions that have been requested will be returned.
-                                    * TRIAL: Only trial provisions will be returned.
-                                    * PURCHASE: Only subscription provisions will be returned.
-                                    * REQUESTANDTRIAL: Both provisions that have been requested and trial provisions will be returned.
-                                    * REQUESTANDPURCHASE: Both provisions that have been requested and subscriptions will be returned.
-                                    * TRIALANDPURCHASE: Both trial provisions and subscriptions will be returned.
+                                        * REQUEST: Only provisions that have been requested will be returned.
+                                        * TRIAL: Only trial provisions will be returned.
+                                        * PURCHASE: Only subscription provisions will be returned.
+                                        * REQUESTANDTRIAL: Both provisions that have been requested and trial provisions will be returned.
+                                        * REQUESTANDPURCHASE: Both provisions that have been requested and subscriptions will be returned.
+                                        * TRIALANDPURCHASE: Both trial provisions and subscriptions will be returned.
 
                                     Values: "REQUEST" | "TRIAL" | "PURCHASE" | "REQUESTANDTRIAL" | "REQUESTANDPURCHASE" | "TRIALANDPURCHASE"
-        ---------------------       ----------------------------------------------------------------------------------
+        ---------------------       ------------------------------------------------------------------------------------
         modified                    Optional String. The last modified date of the provisions to be returned. The date
                                     specified should be in milliseconds from epoch.
-        ---------------------       ----------------------------------------------------------------------------------
+        ---------------------       ------------------------------------------------------------------------------------
         sort_field                  Optional String. The fields to sort provisions by. The allowed sort field names are
                                     orgname, created, endDate, and modified.
-        ---------------------       ----------------------------------------------------------------------------------
+        ---------------------       ------------------------------------------------------------------------------------
         sort_order                  Optional String. Describe whether the order returns in ascending (asc) or
                                     descending (desc) order. The default is asc.
-        ---------------------       ----------------------------------------------------------------------------------
+        ---------------------       ------------------------------------------------------------------------------------
         include_listing             Optional Boolean. If True, listing objects are included in the provision response.
                                     The default is True.
-        ---------------------       ----------------------------------------------------------------------------------
+        ---------------------       ------------------------------------------------------------------------------------
         num                         Optional Integer. The maximum number of provisions to be included in the result
                                     set response. The default value is 10, and the maximum allowed value is 100.
                                     The start parameter, along with the num parameter, can be used to paginate the
                                     query results. Note that the actual number of returned results may be less than num.
                                     This happens when the number of results remaining after start is less than num.
-        ---------------------       ----------------------------------------------------------------------------------
+        ---------------------       ------------------------------------------------------------------------------------
         start                       Optional Integer. The number of the first entry in the result set response. The
                                     index number is 1-based. The default value of start is 1. (i.e. the first search result).
                                     The start parameter, along with the num parameter, can be used to paginate the
                                     query results.
-        =====================       ==================================================================================
+        =====================       ====================================================================================
 
         :return: A dictionary.
         """
