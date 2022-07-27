@@ -2,14 +2,25 @@ DEFAULT_WEBSCENE_TEXT_PROPERTY = {
     "operationalLayers": [],
     "baseMap": {
         "id": "basemap",
-        "title": "Topographic",
+        "title": "Topographic Vector",
         "baseMapLayers": [
             {
-                "url": "https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer",
-                "id": "worldTopoBase",
+                "id": "world-hillshade-layer",
+                "url": "//services.arcgisonline.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer",
                 "layerType": "ArcGISTiledMapServiceLayer",
-                "title": "Topo",
-            }
+                "title": "World Hillshade",
+                "showLegend": False,
+                "visibility": True,
+                "opacity": 1,
+            },
+            {
+                "id": "topo-vector-base-layer",
+                "styleUrl": "//cdn.arcgis.com/sharing/rest/content/items/7dc6cea0b1764a1f9af2e679f642f0f5/resources/styles/root.json",
+                "layerType": "VectorTileLayer",
+                "title": "World Topo",
+                "visibility": True,
+                "opacity": 1,
+            },
         ],
         "elevationLayers": [
             {

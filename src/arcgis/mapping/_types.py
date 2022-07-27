@@ -7,7 +7,8 @@ from warnings import warn
 from contextlib import contextmanager
 from typing import Any, Optional, Union
 from arcgis.features.layer import FeatureLayer
-from arcgis.gis import Error
+from arcgis.gis import Error, Item
+from arcgis.geoprocessing import import_toolbox
 from arcgis.auth.tools import LazyLoader
 
 collections = LazyLoader("collections")
@@ -234,15 +235,24 @@ class WebMap(HasTraits, collections.OrderedDict):
             self._basemap = {
                 "baseMapLayers": [
                     {
-                        "id": "defaultBasemap",
+                        "id": "world-hillshade-layer",
+                        "url": "https://services.arcgisonline.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer",
                         "layerType": "ArcGISTiledMapServiceLayer",
-                        "url": "https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer",
+                        "title": "World Hillshade",
+                        "showLegend": False,
                         "visibility": True,
                         "opacity": 1,
-                        "title": "World Topographic Map",
-                    }
+                    },
+                    {
+                        "id": "topo-vector-base-layer",
+                        "styleUrl": "https://www.arcgis.com/sharing/rest/content/items/7dc6cea0b1764a1f9af2e679f642f0f5/resources/styles/root.json",
+                        "layerType": "VectorTileLayer",
+                        "title": "World Topo",
+                        "visibility": True,
+                        "opacity": 1,
+                    },
                 ],
-                "title": "Topographic",
+                "title": "Topographic Vector",
             }
             self._gallery_basemaps = {}
             self._webmapdict = {
@@ -367,8 +377,13 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         .. code-block:: python
 
+            # Create a WebMap from an existing WebMap Item.
             wm = WebMap(<webmap_item_id>)
-            layer = wm.layers[0] # A vector tile layer
+            # Get and add the layer to the map
+            vtl = gis.content.get("<vector tile layer id>")
+            wm.add_layer(vtl.layers[0])
+            # Move the layer to the basemap
+            layer = wm.layers[0]
             wm.move_to_basemap(layer)
             wm.update()
         """
@@ -381,10 +396,10 @@ class WebMap(HasTraits, collections.OrderedDict):
             "ArcGISVectorTileLayer",
         ]
         if layer in self.layers and layer["layerType"] in layer_types:
-            self._webmapdict["baseMap"]["baseMapLayers"].append(layer)
+            self._webmapdict["baseMap"]["baseMapLayers"].append(dict(layer))
             self._webmapdict["operationalLayers"].remove(layer)
             self.definition = _mixins.PropertyMap(self._webmapdict)
-            return self.definition
+            return self.basemap
         elif layer["layerType"] not in layer_types:
             raise Error(
                 "This layer type cannot be added as a basemap. See method description to know what layer types can be moved to basemap."
@@ -417,14 +432,24 @@ class WebMap(HasTraits, collections.OrderedDict):
             wm.update()
         """
         if layer in self.definition["baseMap"]["baseMapLayers"]:
+            self._webmapdict["operationalLayers"].append(_mixins.PropertyMap(layer))
             self._webmapdict["baseMap"]["baseMapLayers"].remove(layer)
-            self._webmapdict["operationalLayers"].append(layer)
             self.definition = _mixins.PropertyMap(self._webmapdict)
-            return self.definition
+            return self.basemap
         else:
             raise Error(
                 "Layer must be part of WebMap's BaseMap Layers in order to add it as an Operational Layer"
             )
+
+    def basemap_title(self, title: str):
+        """
+        Get/Set the BaseMap Title.
+        Required string title for the basemap that can be used in a table of contents.
+        If None is specified, it takes the title of the first `basemap` in the array.
+        """
+        self._webmapdict["baseMap"]["title"] = title
+        self.definition = _mixins.PropertyMap(self._webmapdict)
+        return self.basemap
 
     def add_layer(
         self,
@@ -1531,7 +1556,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             wm = WebMap(wm_item)
 
             print(wm.basemaps)
-            >> ['dark-gray', 'dark-gray-vector', 'gray', 'gray-vector', 'hybrid', 'national-geographic', 'oceans', 'osm', 'satellite', 'streets', 'streets-navigation-vector', 'streets-night-vector', 'streets-relief-vector', 'streets-vector', 'terrain', 'topo', 'topo-vector']
+            >> ['dark-gray-vector', 'gray-vector', 'hybrid', 'oceans', 'osm', 'satellite', 'streets-navigation-vector', 'streets-night-vector', 'streets-relief-vector', 'streets-vector', 'terrain', 'topo-vector']
             wm.basemap = 'dark-gray'
             print(wm.gallery_basemaps)
             >> ['custom_dark_gray_canvas', 'imagery', 'imagery_hybrid', 'light_gray_canvas', 'custom_basemap_vector_(proxy)', 'world_imagery_(proxy)', 'world_street_map_(proxy)']
@@ -1548,12 +1573,9 @@ class WebMap(HasTraits, collections.OrderedDict):
             wm.basemap = wm2
 
         """
-        if self._basemap:
-            return _mixins.PropertyMap(self._basemap)
-        else:
-            if "baseMap" in self._webmapdict.keys():
-                self._basemap = self._webmapdict["baseMap"]
-            return _mixins.PropertyMap(self._basemap)
+        if "baseMap" in self._webmapdict.keys():
+            self._basemap = self._webmapdict["baseMap"]
+        return _mixins.PropertyMap(self._basemap)
 
     def _determine_layer_type(self, item):
         # this function determines the basemap layer type for the Web Map Specification
@@ -1675,22 +1697,17 @@ class WebMap(HasTraits, collections.OrderedDict):
         :attr:`~arcgis.mapping.WebMap.basemap` for the ``WebMap``.
         """
         basemaps = [
-            "dark-gray",
             "dark-gray-vector",
-            "gray",
             "gray-vector",
             "hybrid",
-            "national-geographic",
             "oceans",
             "osm",
             "satellite",
-            "streets",
             "streets-navigation-vector",
             "streets-night-vector",
             "streets-relief-vector",
             "streets-vector",
             "terrain",
-            "topo",
             "topo-vector",
         ]
         return basemaps
@@ -4007,32 +4024,61 @@ class WebScene(collections.OrderedDict):
 ###########################################################################
 class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
     """
-    The ``VectorTileLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise hosted vector tile layers.
+    The ``EnterpriseVectorTileLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise hosted vector tile layers.
+    A Hosted Vector Tile Service is published through a Feature Layer and these methods can only be
+    applied to such Vector Tile Services.
     A :class:`~arcgis.mapping.VectorTileLayer` offers access to layer content.
 
-    .. note:: Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/VectorTileServer/
+    .. note:: Url must be admin url such as: https://services.myserver.com/arcgis/server/admin/services/serviceName.VectorTileServer/
     """
+
+    _gptbx = None
 
     def __init__(self, url, gis=None, vect_tile_lyr=None):
         if url.split("/")[-1].isdigit():
             url = url.replace(f"/{url.split('/')[-1]}", "")
-        if gis._is_agol and gis.version <= [8, 4]:
+        if gis.version <= [8, 4]:
             raise Warning("Manager not available. Update version of Enterprise")
         super(EnterpriseVectorTileLayerManager, self).__init__(url, gis)
         self._vtl = vect_tile_lyr
+        self._is_hosted = self.properties["portalProperties"]["isHosted"]
 
     # ----------------------------------------------------------------------
     def edit(self, service_dictionairy):
         """
-        To edit a service, you need to submit the complete JSON
-        representation of the service, which includes the updates to the
-        service properties. Editing a service causes the service to be
-        restarted with updated properties.
+        This operation edits the properties of a service. To edit a service,
+        you need to submit the complete JSON representation of the service,
+        which includes the updates to the service properties.
+        Editing a service can cause the service to be restarted with updated properties.
+
+        The JSON representation of a service contains the following four sections:
+
+        * Service description properties—Common properties that are shared by all services. These properties typically identify a specific service.
+        * Service framework properties—Properties targeted toward the framework that hosts the GIS service. They define the life cycle and load balancing of the service.
+        * Service type properties—Properties targeted toward the core service type as seen by the server administrator. Since these properties are associated with a server object, they vary across the service types.
+        * Extension properties—Represent the extensions that are enabled on the service.
+
+        .. note::
+            The JSON is submitted to the operation URL as a value of the
+            parameter service. You can leave out the serviceName and type parameters
+            in the JSON representation. Any other properties that are left out are not persisted by the server.
 
         ===================     ====================================================================
         **Argument**            **Description**
         -------------------     --------------------------------------------------------------------
-        service_dictionairy     Required dict. The service JSON as a dictionary.
+        service_dictionairy     Required dict. The JSON representation of the service and the
+                                properties that have been updated or added.
+
+                                Examples:
+                                    {
+                                        "serviceName": "RI_Fed2019_WM",
+                                        "type": "VectorTileServer",
+                                        "description": "",
+                                        "capabilities": "TilesOnly,Tilemap",
+                                        "extensions": [],
+                                        "frameworkProperties": {},
+                                        "datasets": []
+                                        }
         ===================     ====================================================================
 
 
@@ -4043,44 +4089,104 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
 
     # ----------------------------------------------------------------------
     def start(self):
-        """starts the specific service"""
+        """This operation starts a service and loads the service's configuration."""
         vtl_service = _services.Service(self.url, self._gis)
         return vtl_service.start()
 
     # ----------------------------------------------------------------------
     def stop(self):
-        """stops the specific service"""
+        """
+        This operation stops all instances of a service. Once a service is
+        stopped, it cannot process any incoming requests. Performing this
+        operation will stop the respective servers, terminating all pods
+        that run this service.
+        """
         vtl_service = _services.Service(self.url, self._gis)
         return vtl_service.stop()
 
     # ----------------------------------------------------------------------
     def change_provider(self, provider: str):
         """
-        Allows for the switching of the service provide and how it is hosted on the ArcGIS Server instance.
+        The changeProvider operation updates an individual service to use
+        either a dedicated or a shared instance type. When a qualified service
+        is published, the service is automatically set to use shared instances.
 
-        Values:
+        When using this operation, services may populate other provider types
+        as values for the provider parameter, such as ArcObjects and SDS.
+        While these are valid provider types, this operation does not support
+        changing the provider of such services to either ArcObjects11 or DMaps.
+        Services with ArcObjects or SDS as their provider cannot change their instance type.
 
-           + 'ArcObjects' means the service is running under the ArcMap runtime i.e. published from ArcMap
-           + `ArcObjects`: means the service is running under the ArcGIS Pro runtime i.e. published from ArcGIS Pro
-           + `DMaps`: means the service is running in the shared instance pool (and thus running under the ArcGIS Pro provider runtime)
+        ======================      =======================================================
+        **Argument**                **Description**
+        ----------------------      -------------------------------------------------------
+        provider                    Optional String. Specifies the service instance as either
+                                    a shared ("DMaps") or dedicated ("ArcObjects11") instance
+                                    type. These values are case sensitive.
+        ======================      =======================================================
 
         :return: Boolean
 
         """
-        vtl_service = _services.Service(self.url, self._gis)
-        return vtl_service.change_provider(provider)
+        if provider in ["ArcObjects11", "DMaps"]:
+            vtl_service = _services.Service(self.url, self._gis)
+            return vtl_service.change_provider(provider)
+        return False
 
     # ----------------------------------------------------------------------
     def delete(self):
-        """deletes a service from arcgis server"""
+        """
+        This operation deletes an individual service, stopping the service
+        and removing all associated resources and configurations.
+        """
         vtl_service = _services.Service(self.url, self._gis)
         return vtl_service.delete()
+
+    # ----------------------------------------------------------------------
+    @property
+    def _tbx(self):
+        """gets the toolbox"""
+        if self._gptbx is None:
+            self._gptbx = import_toolbox(
+                url_or_item=self._gis.hosting_servers[0].url
+                + "/System/CachingControllers/GPServer",
+                gis=self._gis,
+            )
+            self._gptbx._is_fa = True
+        return self._gptbx
+
+    # ----------------------------------------------------------------------
+    def rebuild_cache(self, min_scale=None, max_scale=None):
+        """
+        The rebuild_cache operation update the scene layer cache to reflect
+        any changes made to the feature layer used to publish this scene layer.
+        The results of the operation is the url to the scene service once it is
+        done rebuilding.
+
+        ======================      =======================================================
+        **Argument**                **Description**
+        ----------------------      -------------------------------------------------------
+        min_scale                   Optional Float. Represents the minimum scale of the tiles.
+                                    If nothing is provided, default value is used.
+        ----------------------      -------------------------------------------------------
+        max_scale                   Optional Float. Represents the maximum scale of the tiles.
+                                    If nothing is provided, default value is used.
+        ======================      =======================================================
+        """
+        return self._tbx.manage_vector_tile_cache(
+            service_name=self.properties.serviceName,
+            service_folder="Hosted",
+            min_scale=min_scale,
+            max_scale=max_scale,
+        )
 
 
 ###########################################################################
 class VectorTileLayerManager(arcgis.gis._GISResource):
     """
-    The ``VectorTileLayerManager`` class allows administration (if access permits) of ArcGIS Online hosted vector tile layers.
+    The ``VectorTileLayerManager`` class allows administration (if access permits) of ArcGIS Online Hosted Vector Tile Layers.
+    A Hosted Vector Tile Service is published through a Feature Layer and these methods can only be
+    applied to such Vector Tile Services.
     A :class:`~arcgis.mapping.VectorTileLayer` offers access to layer content.
 
     .. note::
@@ -4090,159 +4196,143 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
     def __init__(self, url, gis=None, vect_tile_lyr=None):
         if url.split("/")[-1].isdigit():
             url = url.replace(f"/{url.split('/')[-1]}", "")
-        if gis._is_agol and gis.version <= [8, 4]:
-            raise Warning("Manager not available. Update version of Enterprise")
         super(VectorTileLayerManager, self).__init__(url, gis)
         self._vtl = vect_tile_lyr
+        self._source_type = (
+            self.properties["sourceType"]
+            if "sourceType" in self.properties
+            else self.properties["sourceServiceType"]
+        )
 
     # ----------------------------------------------------------------------
-    def refresh(self):
+    def edit_tile_service(
+        self,
+        source_item_id: str | None = None,
+        export_tiles_allowed: bool | None = None,
+        min_scale: float | None = None,
+        max_scale: float | None = None,
+        max_export_tile_count: int | None = None,
+        layers: list[dict] | None = None,
+        cache_max_age: int | None = None,
+        max_zoom: int | None = None,
+    ) -> dict:
         """
-        The refresh operation clears and refreshes the service cache.
-        """
-        if self._gis._is_agol:
-            url = self._url + "/refresh"
-            params = {"f": "json"}
-            res = self._con.post(path=url, params=params)
-            return res
-        else:
-            raise Exception("Refresh method is not available for Enterprise Service.")
+        The edit operation enables editing many parameters in the service definition as well as
+        the source_item_id which can be found by looking at the Vector Tile Layer's related items.
 
-    # ----------------------------------------------------------------------
-    def rebuild_cache(self):
-        """
-        The rebuild_cache operation update the vector tile layer cache to reflect
-        any changes made to the feature layer used to publish this vector tile layer.
-        The results of the operation is a response indicating success, which
-        redirects you to the Job Statistics page, or failure.
-        """
-        if self._gis._is_agol:
-            url = self._url + "/rebuildCache"
-            params = {"f": "json"}
-            return self._con.get(url, params)
-        else:
-            raise Exception(
-                "Rebuild cache method is not available for Enterprise Service."
-            )
-
-    # ----------------------------------------------------------------------
-    def swap(self, target_service_name):
-        """
-        The swap operation replaces the current service cache with an existing one.
-
-        .. note::
-            The ``swap`` operation is for ArcGIS Online only.
-
-        ====================        ====================================================
+        ======================      =======================================================
         **Argument**                **Description**
-        --------------------        ----------------------------------------------------
-        target_service_name         Required string. Name of service you want to swap with.
-        ====================        ====================================================
+        ----------------------      -------------------------------------------------------
+        source_item_id              Optional String. The Source Item ID is the GeoWarehouse
+                                    Item ID of the tile service.
+        ----------------------      -------------------------------------------------------
+        export_tiles_allowed        Optional boolean. ``exports_tiles_allowed`` sets
+                                    the value to let users export tiles
+        ----------------------      -------------------------------------------------------
+        min_scale                   Optional float. Sets the services minimum scale for
+                                    caching. At the moment this parameter can only be set if
+                                    the Vector Tile Layer was published through a service directory.
+        ----------------------      -------------------------------------------------------
+        max_scale                   Optional float. Sets the services maximum scale for
+                                    caching. At the moment this parameter can only be set if
+                                    the Vector Tile Layer was published through a service directory.
+        ----------------------      -------------------------------------------------------
+        max_export_tile_count       Optional int. ``max_export_tile_count`` sets the
+                                    maximum amount of tiles to be exported from a single
+                                    call.
+        ----------------------      -------------------------------------------------------
+        layers                      Optional list of dictionaries. Each dict representing a layer.
 
-        :returns: dictionary indicating success or error
+                                    Syntax Example:
+                                        layers = [
+                                            {
+                                                "name": "Layer Name",
+                                                "id": 1159321,
+                                                "layerId": 0,
+                                                "tableName": "tableName",
+                                                "type": "Feature Layer",
+                                                "xssTrustedFields": ""
+                                            }
+                                        ]
+        ----------------------      -------------------------------------------------------
+        cache_max_age               Optional int. The maximum cache age. At the moment this
+                                    parameter can only be set if the Vector Tile Layer was
+                                    published through a feature service.
+        ----------------------      -------------------------------------------------------
+        max_zoom                    Optional int. The maximum zoom level. At the moment this
+                                    parameter can only be set if the Vector Tile Layer was
+                                    published through a feature service.
+        ======================      =======================================================
 
+        .. code-block:: python
+
+            # USAGE EXAMPLE
+
+            >>> from arcgis.mapping import VectorTileLayer
+            >>> from arcgis.gis import GIS
+
+            # connect to your GIS and get the tile layer item
+            >>> gis = GIS(url, username, password)
+
+            >>> vector_layer_item = gis.content.get('abcd_item-id')
+            >>> source_item_id = vector_tile_item.related_items(rel_type="Service2Data", direction="forward")[0]["id"]
+            >>> vector_tile_layer = VectorTileLayer.fromitem(vector_layer_item)
+            >>> vtl_manager = vector_tile_layer.manager
+            >>> vtl_manager.edit_tile_service(
+                                            min_scale = 50,
+                                            max_scale = 100,
+                                            source_item_id = source_item_id,
+                                            export_tiles_allowed = True,
+                                            max_Export_Tile_Count = 10000
+                                            )
         """
-        if self._gis._is_agol:
-            url = self._url + "/swap"
-            params = {"f": "json", "targetServiceName": target_service_name}
-            return self._con.post(url, params)
-        else:
-            raise Exception("Swap method is not available for Enterprise Service.")
+        # Parameters depend on how the vector tile layer was published.
+        feature_service_pub = True if self._source_type is "FeatureServer" else False
+
+        params = {
+            "f": "json",
+            "serviceDefinition": {},
+        }
+        if max_export_tile_count:
+            params["serviceDefinition"]["maxExportTilesCount"] = max_export_tile_count
+        if export_tiles_allowed and export_tiles_allowed in [True, False]:
+            params["serviceDefinition"]["exportTilesAllowed"] = export_tiles_allowed
+        if source_item_id:
+            params["sourceItemId"] = source_item_id
+        if layers:
+            params["serviceDefinition"]["layerProperties"] = {"layers": layers}
+
+        # These parameters depend on publish source.
+        if min_scale and feature_service_pub is False:
+            params["serviceDefinition"]["minScale"] = min_scale
+        if max_scale and feature_service_pub is False:
+            params["serviceDefinition"]["maxScale"] = max_scale
+        if cache_max_age and feature_service_pub is True:
+            params["serviceDefinition"]["cacheMaxAge"] = cache_max_age
+        if max_zoom and feature_service_pub is False:
+            params["serviceDefinition"]["maxZoom"] = max_zoom
+
+        # endpoint and post call
+        url = self._url + "/edit"
+        return self._con.post(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def status(self):
-        """
-        The status operation returns whether a service is started (available) or stopped.
-        """
-        return self.properties.status
-
-    # ----------------------------------------------------------------------
-    def jobs(self):
-        """
-        The tile service job summary (jobs) resource represents a
-        summary of all jobs associated with a vector tile service.
-        Each job contains a jobid that corresponds to the specific
-        jobid run and redirects you to the Job Statistics page.
-
-        """
-        if self._gis._is_agol:
-            url = self._url + "/jobs"
-            params = {"f": "json"}
-            return self._con.get(url, params)
-        else:
-            raise Exception("Jobs method is not available for Enterprise Service.")
-
-    # ----------------------------------------------------------------------
-    def job_statistics(self, job_id):
-        """
-        The tile service job summary (jobs) resource represents a
-        summary of all jobs associated with a vector tile service.
-        Each job contains a jobid that corresponds to the specific
-        jobid run and redirects you to the Job Statistics page.
-
-        """
-        if self._gis._is_agol:
-            url = self._url + "/jobs/{job_id}".format(job_id=job_id)
-            params = {"f": "json"}
-            return self._con.post(url, params)
-        else:
-            raise Exception(
-                "Job statistics method is not available for Enterprise Service."
-            )
-
-    # ----------------------------------------------------------------------
-    def delete_job(self, job_id):
-        """
-        This operation deletes the specified asynchronous job being run by
-        the geoprocessing service. If the current status of the job is
-        SUBMITTED or EXECUTING, it will cancel the job. Regardless of status,
-        it will remove all information about the job from the system. To cancel a
-        job in progress without removing information, use the Cancel Job operation.
-        """
-        if self._gis._is_agol:
-            url = self._url + "jobs/{job_id}/delete".format(job_id=job_id)
-            params = {"f": "json"}
-            return self._con.post(url, params)
-        else:
-            raise Exception(
-                "Delete job method is not available for Enterprise Service."
-            )
-
-    # ----------------------------------------------------------------------
-    def cancel_job(self, job_id):
-        """
-        The cancel operation supports cancelling a job while update
-        tiles is running from a hosted feature service. The result of this
-        operation is a response indicating success or failure with error
-        code and description.
-        """
-        if self._gis._is_agol:
-            url = self._url + "jobs/{job_id}/cancel".format(job_id=job_id)
-            params = {"f": "json"}
-            return self._con.post(url, params)
-        else:
-            raise Exception("Refresh method is not available for Enterprise Service.")
-
-    # ----------------------------------------------------------------------
-    def update_tiles(self, levels=None, extent=None):
+    def update_tiles(self, merge_bundle: bool = False) -> dict:
         """
         The update_tiles operation supports updating the cooking extent and
-        cache levels in a hosted vector tile service. The results of the
-        operation is a response indicating success, which redirects you
+        cache levels in a Hosted Vector Tile Service. The results of the
+        operation is a response indicating success and a url
         to the Job Statistics page, or failure.
 
-        .. note::
-            The ``update_tiles`` operation is for ArcGIS Online only.
+        It is recommended to use the `rebuild_cache` method when your layer has been
+        published through a Feature Layer since edits require regeneration of the tiles.
 
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
-        levels              Optional String / List of integers, The level of details
-                            to update. Example: "1,2,10,20" or [1,2,10,20]
-        ---------------     ----------------------------------------------------
-        extent              Optional String / Dict. The area to update as Xmin, YMin, XMax, YMax
-                            example: "-100,-50,200,500" or
-                            {'xmin':100, 'ymin':200, 'xmax':105, 'ymax':205}
+        merge_bundle        Optional bool. Default is False. This parameter will
+                            only be set if the Vector Tile Layer has been published
+                            through a service directory.
         ===============     ====================================================
 
         :returns:
@@ -4261,39 +4351,105 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
             >>> vector_layer_item = gis.content.get('abcd_item-id')
             >>> vector_tile_layer = VectorTileLayer.fromitem(vector_layer_item)
             >>> vtl_manager = vector_tile_layer.manager
-            >>> update_tiles = vtl_manager.update_tiles(levels = "11-20",
-                                                        extent = {"xmin":6224324.092137296,
-                                                                    "ymin":487347.5253569535,
-                                                                    "xmax":11473407.698535524,
-                                                                    "ymax":4239488.369818687,
-                                                                    "spatialReference":{"wkid":102100}
-                                                                    }
-                                                        )
+            >>> update_tiles = vtl_manager.update_tiles()
             >>> type(update_tiles)
             <Dictionary>
         """
-        if self._gis._portal.is_arcgisonline:
+        # Parameters depend on how the vector tile layer was published.
+        feature_service_pub = True if self._source_type is "FeatureServer" else False
+
+        params = {"f": "json"}
+        if feature_service_pub:
+            url = "%s/updateTiles" % self._url
+        else:
             url = "%s/update" % self._url
-            params = {"f": "json"}
-            if levels:
-                if isinstance(levels, list):
-                    levels = ",".join(str(e) for e in levels)
-                params["levels"] = levels
-            if extent:
-                if isinstance(extent, dict):
-                    extent2 = "{},{},{},{}".format(
-                        extent["xmin"],
-                        extent["ymin"],
-                        extent["xmax"],
-                        extent["ymax"],
-                    )
-                    extent = extent2
-                params["extent"] = extent
-            return self._con.post(url, params)
-        return None
+            params["mergeBundles"] = merge_bundle
+        return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def rerun_job(self, code, job_id):
+    def refresh(self):
+        """
+        The refresh operation clears and refreshes the service cache.
+        """
+        url = self._url + "/refresh"
+        params = {"f": "json"}
+        return self._con.post(path=url, params=params)
+
+    # ----------------------------------------------------------------------
+    def rebuild_cache(self):
+        """
+        The rebuild_cache operation update the vector tile layer cache to reflect
+        any changes made to the feature layer used to publish this vector tile layer.
+        The results of the operation is a response indicating success, which
+        redirects you to the Job Statistics page, or failure.
+        """
+        url = self._url + "/rebuildCache"
+        params = {"f": "json"}
+        return self._con.get(url, params)
+
+    # ----------------------------------------------------------------------
+    def status(self) -> dict:
+        """
+        The status operation returns a dictionary indicating
+        whether a service is started (available) or stopped.
+        """
+        url = self._url + "/status"
+        params = {"f": "json"}
+        return self._con.get(url, params)
+
+    # ----------------------------------------------------------------------
+    def jobs(self) -> dict:
+        """
+        The tile service job summary (jobs) resource represents a
+        summary of all jobs associated with a vector tile service.
+        Each job contains a jobid that corresponds to the specific
+        jobid run and redirects you to the Job Statistics page.
+
+        """
+        url = self._url + "/jobs"
+        params = {"f": "json"}
+        return self._con.get(url, params)
+
+    # ----------------------------------------------------------------------
+    def job_statistics(self, job_id: str) -> dict:
+        """
+        The tile service job summary (jobs) resource represents a
+        summary of all jobs associated with a vector tile service.
+        Each job contains a jobid that corresponds to the specific
+        jobid run and redirects you to the Job Statistics page.
+
+        """
+        url = self._url + "/jobs/{job_id}".format(job_id=job_id)
+        params = {"f": "json"}
+        return self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def delete_job(self, job_id: str) -> dict:
+        """
+        This operation deletes the specified asynchronous job being run by
+        the geoprocessing service. If the current status of the job is
+        SUBMITTED or EXECUTING, it will cancel the job. Regardless of status,
+        it will remove all information about the job from the system. To cancel a
+        job in progress without removing information, use the Cancel Job operation.
+        """
+        url = self._url + "jobs/{job_id}/delete".format(job_id=job_id)
+        params = {"f": "json"}
+        return self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def cancel_job(self, job_id: str) -> dict:
+        """
+        The cancel operation supports cancelling a job while update
+        tiles is running from a hosted feature service. The result of this
+        operation is a response indicating success or failure with error
+        code and description.
+        """
+        url = self._url + "jobs/{job_id}/cancel".format(job_id=job_id)
+        params = {"f": "json"}
+        return self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def rerun_job(self, code, job_id: str) -> dict:
         """
         The ``rerun_job`` operation supports re-running a canceled job from a
         hosted map service. The result of this operation is a response
@@ -4312,135 +4468,41 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         :returns:
            A boolean or dictionary
         """
-        if self._gis._is_agol:
-            url = self._url + "/jobs/%s/rerun" % job_id
-            params = {"f": "json", "rerun": code}
+        url = self._url + "/jobs/%s/rerun" % job_id
+        params = {"f": "json", "rerun": code}
+        return self._con.post(url, params)
+
+    ######################### These Methods Only Apply to VTL Service from a Service Directory #################################
+    def swap(self, target_service_name):
+        """
+        The swap operation replaces the current service cache with an existing one.
+
+        .. note::
+            The ``swap`` operation is for ArcGIS Online only and can only be used for a Vector
+            Tile Layer published from a service directory.
+
+        ====================        ====================================================
+        **Argument**                **Description**
+        --------------------        ----------------------------------------------------
+        target_service_name         Required string. Name of service you want to swap with.
+        ====================        ====================================================
+
+        :return: Dictionary indicating success or error
+        """
+        if self._source_type is not "FeatureServer":
+            url = self._url + "/swap"
+            params = {"f": "json", "targetServiceName": target_service_name}
             return self._con.post(url, params)
-        else:
-            raise Exception("Refresh method is not available for Enterprise Service.")
+        return None
 
     # ----------------------------------------------------------------------
-    def edit_tile_service(
-        self,
-        source_item_id=None,
-        export_tiles_allowed=None,
-        min_scale=None,
-        max_scale=None,
-        max_export_tile_count=None,
-        service_name=None,
-    ):
-        """
-        The edit operation enables editing the service exportTilesAllowed,
-        export_tile_count, max_scale, and min_scale properties. Allowed for
-        Enterprise and ArcGIS Online
-
-        ======================     =======================================================
-        **Argument**               **Description**
-        ----------------------     -------------------------------------------------------
-        source_item_id             Required String. The Source Item ID is the GeoWarehouse
-                                   Item ID of the tile service
-        ----------------------     -------------------------------------------------------
-        export_tiles_allowed       Optional boolean. ``exports_tiles_allowed`` sets
-                                   the value to let users export tiles
-        ----------------------     -------------------------------------------------------
-        min_scale                  Optional float. Sets the services minimum scale for
-                                   caching.
-        ----------------------     -------------------------------------------------------
-        max_scale                  Optional float. Sets the services maximum scale for
-                                   caching.
-        ----------------------     -------------------------------------------------------
-        max_export_tile_count      Optional int. ``max_export_tile_count`` sets the
-                                   maximum amount of tiles to be exported from a single
-                                   call.
-        ----------------------     -------------------------------------------------------
-        service_name               Optional String. Name of the service to edit. This only
-                                   only applies for enterprise.
-        ======================     =======================================================
-
-        .. code-block:: python
-
-            # USAGE EXAMPLE
-
-            >>> from arcgis.mapping import VectorTileLayer
-            >>> from arcgis.gis import GIS
-
-            # connect to your GIS and get the tile layer item
-            >>> gis = GIS(url, username, password)
-
-            >>> vector_layer_item = gis.content.get('abcd_item-id')
-            >>> vector_tile_layer = VectorTileLayer.fromitem(vector_layer_item)
-            >>> vtl_manager = vector_tile_layer.manager
-            >>> vtl_manager.edit_tile_service(service_name = "vector_layer_name",
-                                                        min_scale = 50,
-                                                        max_scale = 100,
-                                                        source_item_id = "geowarehouse_item_id",
-                                                        export_tiles_allowed = True,
-                                                        max_Export_Tile_Count = 10000
-                                                        )
-        """
-        params = {
-            "f": "json",
-        }
-        # request sent to AGO Org
-        if self._gis._is_agol:
-            params = {
-                "minScale": 0.0,
-                "maxScale": 0.0,
-                "exportTilesAllowed": False,
-                "maxExportTilesCount": 100000,
-                "f": "json",
-            }
-
-            if min_scale:
-                params["minScale"] = float(min_scale)
-            else:
-                params.pop("minScale", None)
-            if max_scale:
-                params["maxScale"] = float(max_scale)
-            else:
-                params.pop("maxScale", None)
-            if export_tiles_allowed:
-
-                params["exportTilesAllowed"] = export_tiles_allowed
-            else:
-                params["exportTilesAllowed"] = self.properties.exportTilesAllowed
-
-            params["maxExportTilesCount"] = (
-                max_export_tile_count
-                if max_export_tile_count
-                else self.properties.maxExportTilesCount
-            )
-            if source_item_id:  # only online
-                params["sourceItemId"] = source_item_id
-        elif self._gis._is_agol == False:
-            params["runAsync"] = True
-            params["services"] = {
-                "type": "VectorTileServer",
-                "capabilities": "TilesOnly,Tilemap",
-                "serviceName": self.properties.name,
-            }
-            params["services"]["properties"] = {
-                "exportTilesAllowed": export_tiles_allowed
-            }
-            params["services"]["serviceName"] = self.properties.name
-        url = self._url + "/edit"
-        return self._con.post(path=url, params=params)
-
-    # ----------------------------------------------------------------------
-    def delete_tiles(self, levels, extent=None):
+    def delete_tiles(self):
         """
         The ``delete_tiles`` method deletes tiles from the current cache.
 
-        ===============     ====================================================
-        **Argument**        **Description**
-        ---------------     ----------------------------------------------------
-        extent              Optional dictionary,  If specified, the tiles within
-                            this extent will be deleted or will be deleted based
-                            on the service's full extent.
-        ---------------     ----------------------------------------------------
-        levels              Required string, The level to delete.
-                            Example, 0-5,10,11-20 or 1,2,3 or 0-5
-        ===============     ====================================================
+        .. note::
+            The ``delete_tiles`` operation is for ArcGIS Online only and can only
+            be used for a Vector Tile Layer published from a service directory.
 
         :return:
            A dictionary
@@ -4458,53 +4520,77 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
             >>> vector_layer_item = gis.content.get('abcd_item-id')
             >>> vector_tile_layer = VectorTileLayer.fromitem(vector_layer_item)
             >>> vtl_manager = vector_tile_layer.manager
-            >>> deleted_tiles = vtl_manager.delete_tiles(levels = "11-20",
-                                                  extent = {"xmin":6224324.092137296,
-                                                            "ymin":487347.5253569535,
-                                                            "xmax":11473407.698535524,
-                                                            "ymax":4239488.369818687,
-                                                            "spatialReference":{"wkid":102100}
-                                                            }
-                                                  )
+            >>> deleted_tiles = vtl_manager.delete_tiles()
             >>> type(deleted_tiles)
         """
-        if self._gis._is_agol:
+        if self._source_type is not "FeatureServer":
             params = {
                 "f": "json",
-                "levels": levels,
             }
-            if extent:
-                params["extent"] = extent
-            url = self._url + "/deleteTiles"
+            url = self._url + "/delete"
             return self._con.post(url, params)
-        else:
-            raise Exception("Refresh method is not available for Enterprise Service.")
+        return None
 
 
 ###########################################################################
 class VectorTileLayer(arcgis.gis.Layer):
+    """
+    A Vector Tile Layer is a type of data layer used to access and display
+    tiled data and its corresponding styles. This is stored as an item in ArcGIS
+    and is used to access a vector tile service. Layer data include its
+    name, description, and any overriding style definition.
+    """
+
     def __init__(self, url, gis=None):
         super(VectorTileLayer, self).__init__(url, gis)
 
+    # ----------------------------------------------------------------------
     @classmethod
-    def fromitem(cls, item):
+    def fromitem(cls, item) -> VectorTileLayer:
         if not item.type == "Vector Tile Service":
             raise TypeError(
-                "item must be a type of Vector Tile Service, not " + item.type
+                "Item must be a type of Vector Tile Service, not " + item.type
             )
 
         return cls(item.url, item._gis)
 
     # ----------------------------------------------------------------------
     @property
-    def styles(self):
+    def styles(self) -> dict:
+        """
+        The styles property returns styles for vector tiles in Mapbox GL
+        Style specification version 8. The response for this styles resource
+        includes the sprite and glyphs properties, with a relative path
+        to the Vector Tile Sprite and Vector Tile Font resources.
+        It also includes the version property,
+        which represents the version of the style specification.
+        """
         url = "{url}/resources/styles".format(url=self._url)
         params = {"f": "json"}
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
     @property
-    def manager(self):
+    def tile_map(self) -> dict:
+        """
+        The tile_map property describes a quadtree of tiles and can be used to
+        avoid requesting tiles that don't exist in the server. Each node
+        of the tree has an associated tile. The root node (lod 0) covers
+        the entire extent of the data. Children are identified by their position
+        with NW, NE, SW, and SE. Tiles are identified by lod/h/v, where h and v
+        are indexes on a 2^lod by 2^lod grid . These values are derived from the
+        position in the tree. The tree has a variable depth. A node doesn't have
+        children if the complexity of the data in the associated tile is below
+        a threshold. This threshold is based on a combination of number of
+        features, attributes, and vertices.
+
+        """
+        url = "{url}/tilemap".format(url=self._url)
+        return self._con.get(path=url, params={})
+
+    # ----------------------------------------------------------------------
+    @property
+    def manager(self) -> VectorTileLayerManager:
         """
         The ``manager`` property returns an instance of :class:`~arcgis.mapping.VectorTileLayerManager` class or
         :class:`~arcgis.mapping.EnterpriseVectorTileLayerManager` class
@@ -4528,12 +4614,24 @@ class VectorTileLayer(arcgis.gis.Layer):
         return self._admin
 
     # ----------------------------------------------------------------------
+    @property
+    def info(self) -> list:
+        """
+        The ``info`` property retrieves the relative paths to a list of resource files.
+
+        :return:
+           A list of relative paths
+        """
+        url = "{url}/resources/info".format(url=self._url)
+        params = {"f": "json"}
+        res = self._con.get(path=url, params=params)
+        return res["resourceInfo"]
+
+    # ----------------------------------------------------------------------
     def tile_fonts(self, fontstack: str, stack_range: str):
         """
          The ``tile_fonts`` method retrieves glyphs in
          `protocol buffer format. <https://developers.google.com/protocol-buffers/>`_
-
-
 
         ============================    ===================================================================================================================
         **Argument**                    **Description**
@@ -4588,14 +4686,16 @@ class VectorTileLayer(arcgis.gis.Layer):
         return self._con.get(path=url, params=params, try_json=False, force_bytes=True)
 
     # ----------------------------------------------------------------------
-    def tile_sprite(self, out_format: str = "sprite.json"):
+    def tile_sprite(self, out_format: str = "sprite.json") -> dict:
         """
-        The ``tile_sprite`` resource retrieves sprite images and metadata
+        The ``tile_sprite`` resource retrieves sprite images and metadata.
 
         ============================    ================================================
         **Argument**                    **Description**
         ----------------------------    ------------------------------------------------
-        out_format                      Optional string. Default is "sprite.json"
+        out_format                      Optional string. Default is "sprite.json".
+
+                                        Values: "sprite.json" | "sprite.png" | "sprite@2x.png"
         ============================    ================================================
 
         :return:
@@ -4605,26 +4705,13 @@ class VectorTileLayer(arcgis.gis.Layer):
         return self._con.get(path=url, params={})
 
     # ----------------------------------------------------------------------
-    @property
-    def info(self):
-        """
-        The ``info`` property retrieves the relative paths to a list of resource files.
-
-        :return:
-           A List of relative paths
-        """
-        url = "{url}/resources/info".format(url=self._url)
-        params = {"f": "json"}
-        return self._con.get(path=url, params=params)
-
-    # ----------------------------------------------------------------------
     def export_tiles(
         self,
-        levels: Optional[str] = None,
-        export_extent: Optional[dict[str, Any]] = None,
-        polygon: Optional[Union[dict[str, Any], _geometry.Polygon]] = None,
-        max_export_tile_count: int = 10000,
-    ):
+        levels: str | None = None,
+        export_extent: dict[str, Any] | None = None,
+        polygon: dict[str, Any] | _geometry.Polygon | None = None,
+        create_item: bool = False,
+    ) -> str | Item:
         """
         Export vector tile layer
 
@@ -4646,7 +4733,7 @@ class VectorTileLayer(arcgis.gis.Layer):
                                         //Range values
                                         >>> levels=1-4, 7-9
         ---------------------       -------------------------------------------------------
-        export_extent               Dictionary of the extent (bounding box) of the vector
+        export_extent               Optional dictionary of the extent (bounding box) of the vector
                                     tile package to be exported.
                                     The extent should be within the specified spatial reference.
                                     The default value is the full extent of the tiled map service.
@@ -4661,7 +4748,8 @@ class VectorTileLayer(arcgis.gis.Layer):
                                                              "spatialReference": {"wkid": 4326}
                                                             }
         ---------------------       -------------------------------------------------------
-        polygon                     Introduced at 10.7. A JSON representation of a polygon,
+        polygon                     Optional dictionary.
+                                    Introduced at 10.7. A JSON representation of a polygon,
                                     containing an array of rings and a spatialReference.
 
                                     .. code-block:: python
@@ -4679,12 +4767,9 @@ class VectorTileLayer(arcgis.gis.Layer):
                                                    "spatialReference": {"wkid": 54004}
                                                   }
         ---------------------       -------------------------------------------------------
-        max_export_tile_count       Optional float. ``max_export_tile_count`` sets the
-                                    maximum amount of tiles to be exported from a single
-                                    call.
-
-                                    .. note::
-                                        The default value is 100000.
+        create_item                 Optional boolean. Indicated whether an item will be created
+                                    from the export (True) or a path to a downloaded file (False).
+                                    Default is False. ArcGIS Online Only.
         =====================       =======================================================
 
         :returns:
@@ -4699,7 +4784,6 @@ class VectorTileLayer(arcgis.gis.Layer):
         params = {
             "f": "json",
             "exportBy": "levelId",
-            "maxExportTileCount": max_export_tile_count,
             "levels": levels,
         }
         if export_extent:
@@ -4707,10 +4791,14 @@ class VectorTileLayer(arcgis.gis.Layer):
         # parameter introduced at 10.7
         if polygon and self.gis.version >= [7, 1]:
             params["polygon"] = polygon
-
+        if create_item is True:
+            params["createItem"] = "on"
         url = "{url}/exportTiles".format(url=self._url)
+
+        # a job is returned from the get
         exportJob = self._con.get(path=url, params=params)
 
+        # get the job information
         path = "%s/jobs/%s" % (url, exportJob["jobId"])
 
         resp_params = {"f": "json"}
@@ -4718,8 +4806,10 @@ class VectorTileLayer(arcgis.gis.Layer):
 
         if "status" in job_response or "jobStatus" in job_response:
             status = job_response.get("status") or job_response.get("jobStatus")
+            i = 0
             while not status == "esriJobSucceeded":
-                time.sleep(5)
+                i = i + 1
+                time.sleep(i)
 
                 job_response = self._con.post(path, params)
                 status = job_response.get("status") or job_response.get("jobStatus")
@@ -4764,6 +4854,7 @@ class VectorTileLayer(arcgis.gis.Layer):
         else:
             raise Exception(job_response)
 
+    # ----------------------------------------------------------------------
     def _str_replace(self, mystring, rd):
         """Replaces a value based on a key/value pair where the
         key is the text to replace and the value is the new value.
@@ -4786,7 +4877,7 @@ class VectorTileLayer(arcgis.gis.Layer):
 ###########################################################################
 class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
     """
-    The ``EnterpriseMapImageLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise hosted map image layers.
+    The ``EnterpriseMapImageLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise Map Image Layers and Tile Layers.
     A :class:`~arcgis.mapping.MapImageLayer` offers access to layer content.
 
     .. note:: Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/MapServer/
@@ -4857,8 +4948,17 @@ class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
 ###########################################################################
 class MapImageLayerManager(arcgis.gis._GISResource):
     """
-    The ``MapImageLayerManager`` class allows administration (if access permits) of ArcGIS Online hosted map image layers.
-    A :class:`~arcgis.mapping.MapImageLayer` offers access to map and layer content.
+    The ``MapImageLayerManager`` class allows administration (if access permits) of ArcGIS Online Hosted Tile Layers
+    or Cached Map Services.
+    A :class:`~arcgis.mapping.MapImageLayer` offers access to the Map Server endpoints
+    that allow you to edit the tile service, update tiles, refresh, and more.
+
+    To use this manager off of the MapImageLayer Class, pass in a url ending with /MapServer
+    when instantiating that class.
+
+    .. note::
+        Map Image Layers are created from Enterprise Services and their manager can
+        be accessed through the EnterpriseMapImageLayerManager.
     """
 
     def __init__(self, url, gis=None, map_img_lyr=None):
@@ -4868,13 +4968,13 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         self._ms = map_img_lyr
 
     # ----------------------------------------------------------------------
-    def refresh(self, service_definition: bool = True):
+    def refresh(self):
         """
         The ``refresh`` operation refreshes a service, which clears the web
         server cache for the service.
         """
         url = self._url + "/refresh"
-        params = {"f": "json", "serviceDefinition": service_definition}
+        params = {"f": "json"}
 
         res = self._con.post(url, params)
 
@@ -4883,27 +4983,6 @@ class MapImageLayerManager(arcgis.gis._GISResource):
             self._ms._refresh()
 
         return res
-
-    # ----------------------------------------------------------------------
-    def swap(self, target_service_name):
-        """
-        The swap operation replaces the current service cache with an existing one.
-
-        .. note::
-            The ``swap`` operation is for ArcGIS Online only.
-
-        ====================        ====================================================
-        **Argument**                **Description**
-        --------------------        ----------------------------------------------------
-        target_service_name         Required string. Name of service you want to swap with.
-        ====================        ====================================================
-
-        :returns: dictionary indicating success or error
-
-        """
-        url = self._url + "/swap"
-        params = {"f": "json", "targetServiceName": target_service_name}
-        return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
     def cancel_job(self, job_id):
@@ -4946,6 +5025,13 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         """
         The ``import_tiles`` method imports tiles from an :class:`~arcgis.gis.Item` object.
 
+        Before executing this operation, you will need to make certain the following prerequisites are met:
+
+        - Upload the TPK you wish to merge with the existing service, take note of its item ID.
+        - Make certain that the uploaded TPK item's tiling scheme matches with the service you wish to import into.
+        - The source service LOD's should include all the LOD's that are part of the imported TPK item. For example, if the source service has tiles from levels 0 through 10, you can import tiles only within these levels and not above it.
+
+
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
@@ -4971,17 +5057,12 @@ class MapImageLayerManager(arcgis.gis._GISResource):
                             merge=true. It controls whether the new tiles will
                             replace the existing ones when merging bundles.
         ===============     ====================================================
-
         :return:
             A dictionary
-
         .. code-block:: python
-
             # USAGE EXAMPLE
-
             >>> from arcgis.mapping import MapImageLayer
             >>> from arcgis.gis import GIS
-
             # connect to your GIS and get the web map item
             >>> gis = GIS(url, username, password)
             >>> map_image_layer = MapImageLayer("<url>", gis)
@@ -4999,7 +5080,6 @@ class MapImageLayerManager(arcgis.gis._GISResource):
                                                           )
             >>> type(imported_tiles)
             <Dictionary>
-
         """
         params = {
             "f": "json",
@@ -5024,6 +5104,8 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         self,
         levels: Optional[Union[str, list[int]]] = None,
         extent: Optional[Union[str, dict[str, int]]] = None,
+        merge: bool = False,
+        replace: bool = False,
     ):
         """
         The ``update_tiles`` method starts tile generation for ArcGIS Online. The levels of detail
@@ -5042,6 +5124,17 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         extent              Optional String / Dict. The area to update as Xmin, YMin, XMax, YMax
                             example: "-100,-50,200,500" or
                             {'xmin':100, 'ymin':200, 'xmax':105, 'ymax':205}
+        ---------------     ----------------------------------------------------
+        merge               Optional Boolean. Default is false and applicable to
+                            compact cache storage format. It controls whether
+                            the bundle files from the TPK file are merged with
+                            the one in the existing cached service. Otherwise,
+                            the bundle files are overwritten.
+        ---------------     ----------------------------------------------------
+        replace             Optional Boolean. Default is false, applicable to
+                            compact cache storage format and used when
+                            merge=true. It controls whether the new tiles will
+                            replace the existing ones when merging bundles.
         ===============     ====================================================
 
         :return:
@@ -5072,7 +5165,11 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         """
         if self._gis._portal.is_arcgisonline:
             url = "%s/updateTiles" % self._url
-            params = {"f": "json"}
+            params = {
+                "f": "json",
+                "mergeBundle": merge,
+                "replaceTiles": replace,
+            }
             if levels:
                 if isinstance(levels, list):
                     levels = ",".join(str(e) for e in levels)

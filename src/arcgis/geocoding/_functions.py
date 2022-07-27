@@ -457,11 +457,14 @@ class Geocoder(_GISResource):
                 matches = [None] * len(addresses)
                 locations = resp["locations"]
                 for idx, location in enumerate(locations):
-                    geom = copy.copy(location["location"])
-                    if "spatialReference" not in geom:
+                    geom = copy.copy(location.get("location", None))
+                    if geom and "spatialReference" not in geom:
                         geom["spatialReference"] = sr
                     att = location["attributes"]
-                    matches[idx] = {"geometry": Geometry(geom), "attributes": att}
+                    if geom:
+                        matches[idx] = {"geometry": Geometry(geom), "attributes": att}
+                    else:
+                        matches[idx] = {"geometry": None, "attributes": att}
                 return FeatureSet(features=matches, spatial_reference=sr)
             elif resp is not None and as_featureset == False:
                 matches = [None] * len(addresses)
@@ -1131,7 +1134,7 @@ def geocode_from_items(
                 }
             }
         else:
-            output_name = "Geocoded_Result_ %" % uid
+            output_name = "Geocoded_Result_ %s" % uid
             kwargs["output_name"] = {
                 "itemProperties": {
                     "title": "Geocoded Results %s" % output_name,
@@ -1497,7 +1500,7 @@ def batch_geocode(
     as_featureset: bool = False,
     match_out_of_range: bool = True,
     location_type: str = "street",
-    search_extent: Optional[Union[list[dict[str, Any], dict[str, Any]]]] = None,
+    search_extent: Optional[Union[list[dict[str, Any]], dict[str, Any]]] = None,
     lang_code: str = "EN",
     preferred_label_values: Optional[str] = None,
     out_fields: Optional[str] = None,
@@ -1643,7 +1646,7 @@ def suggest(
     distance: Optional[float] = None,
     category: Optional[str] = None,
     geocoder: Optional[Geocoder] = None,
-    search_extent: Optional[Union[list[dict[str, Any], dict[str, Any]]]] = None,
+    search_extent: Optional[Union[list[dict[str, Any]], dict[str, Any]]] = None,
     max_suggestions: int = 5,
     country_code: Optional[str] = None,
 ):

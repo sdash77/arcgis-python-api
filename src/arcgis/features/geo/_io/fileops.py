@@ -385,14 +385,18 @@ def from_table(filename, **kwargs):
     elif HASARCPY and filename.lower().endswith(".dbf"):
         import arcpy
 
-        scur = arcpy.da.SearchCursor(
+        with arcpy.da.SearchCursor(
             in_table=filename,
-            field_names=kwargs.pop("fields", None),
+            field_names=kwargs.pop("fields", "*"),
             where_clause=kwargs.pop("where", None),
-        )
-        array = scur._as_array()
-        del scur
-        return pd.DataFrame(data=array)
+        ) as scur:
+            array = [row for row in scur]
+            df = pd.DataFrame(array, columns=scur.fields)
+            try:
+                return df.convert_dtypes()
+            except:
+                return df
+        return None
     elif filename.lower().endswith(".dbf"):
         import shapefile
 
@@ -428,7 +432,13 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
     """
     out_location = os.path.dirname(location)
     fc_name = os.path.basename(location)
-    df = geo._data
+    df = geo._data.copy()
+    df[df.select_dtypes(np.number).columns.tolist()] = df[
+        df.select_dtypes(np.number).columns.tolist()
+    ].replace(pd.NA, 0)
+    df[df.select_dtypes(pd.StringDtype()).columns.tolist()] = df[
+        df.select_dtypes(pd.StringDtype()).columns.tolist()
+    ].replace(pd.NA, "")
     old_column, old_index = None, None
     if sanitize_columns:
         old_column = df.columns.tolist()
@@ -463,7 +473,11 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
         #
         oidfld = arcpy.da.Describe(fc)["OIDFieldName"]
         for col in columns[:]:
-            if col.lower() in ["fid", "oid", "objectid"]:
+            if (col.lower() == oidfld.lower()) or (
+                col.lower() in ["fid", "oid", "objectid"] and location.endswith(".dbf")
+            ):
+                pass
+            elif col.lower() in ["fid", "oid", "objectid"]:
                 dtypes.append((col, np.int32))
             elif df[col].dtype.name == "datetime64[ns]":
                 dtypes.append((col, "<M8[us]"))
@@ -480,8 +494,23 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
                         dtypes.append((col, type(df[col][0])))
                     except:
                         dtypes.append((col, "<U254"))
+            elif df[col].dtype.name == "string":
+                try:
+                    u = type(df[col][df[col].first_valid_index()])
+                except:
+                    u = pd.unique(df[col].apply(type)).tolist()[0]
+                if issubclass(u, str):
+                    mlen = df[col].str.len().max()
+                    if int(mlen) == 0:
+                        mlen = 1
+                    dtypes.append((col, "<U%s" % int(mlen)))
+                else:
+                    try:
+                        dtypes.append((col, type(df[col][0])))
+                    except:
+                        dtypes.append((col, "<U254"))
             elif df[col].dtype.name == "int64":
-                dtypes.append((col, np.float))
+                dtypes.append((col, np.float64))
             elif df[col].dtype.name == "bool":
                 dtypes.append((col, np.int32))
             else:
@@ -495,12 +524,12 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
         icols = [
             fld.name
             for fld in fields
-            if fld.type not in ["OID", "Geometry"] and fld.name in df.columns
+            if fld.type not in ["OID", "Geometry", "FID"] and fld.name in df.columns
         ]
         dfcols = [
             fld.name
             for fld in fields
-            if fld.type not in ["OID", "Geometry"] and fld.name in df.columns
+            if fld.type not in ["OID", "Geometry", "FID"] and fld.name in df.columns
         ]
         with arcpy.da.InsertCursor(fc, icols) as irows:
             for idx, row in df[dfcols].iterrows():
@@ -810,8 +839,9 @@ def to_featureclass(
 
     """
     out_location = os.path.dirname(location)
+
     fc_name = os.path.basename(location)
-    df = geo._data
+    df = geo._data.copy()
     old_idx = df.index
     df.reset_index(drop=True, inplace=True)
     if geo.name is None:
@@ -822,16 +852,28 @@ def to_featureclass(
         )
     # deep copy of original columns to reassign them in finally of arcpy statement
     original_columns = copy.deepcopy(df.columns.tolist())
+    geometry_name = geo.name or None
+    if geometry_name and geometry_name != "SHAPE":
+        new_columns = geo._data.columns.tolist()
+        new_columns[new_columns.index(geometry_name)] = "SHAPE"
+        df.columns = new_columns
+        df.spatial._name = "SHAPE"
     # sanitize
     if sanitize_columns:
         # logic
-        _sanitize_column_names(geo, inplace=True)
+        _sanitize_column_names(df.spatial, inplace=True)
 
     columns = df.columns.tolist()
     for col in columns[:]:
         if not isinstance(col, str):
             df.rename(columns={col: str(col)}, inplace=True)
             col = str(col)
+    df[df.select_dtypes(np.number).columns.tolist()] = df[
+        df.select_dtypes(np.number).columns.tolist()
+    ].replace(pd.NA, 0)
+    df[df.select_dtypes(pd.StringDtype()).columns.tolist()] = df[
+        df.select_dtypes(pd.StringDtype()).columns.tolist()
+    ].replace(pd.NA, "")
 
     if HASARCPY:
         try:
@@ -848,10 +890,10 @@ def to_featureclass(
                     ("overwrite set to False, Cannot " "overwrite the table. ")
                 )
 
-            notnull = geo._data[geo._name].notnull()
-            idx = geo._data[geo._name][notnull].first_valid_index()
-            sr = geo._data[geo._name][idx]["spatialReference"]
-            gt = geo._data[geo._name][idx].geometry_type.upper()
+            notnull = df[df.spatial.name].notnull()
+            idx = df[df.spatial.name][notnull].first_valid_index()
+            sr = df[df.spatial.name][idx]["spatialReference"]
+            gt = df[df.spatial.name][idx].geometry_type.upper()
             null_geom = {
                 "point": pd.io.json.dumps(
                     {"x": None, "y": None, "spatialReference": sr}
@@ -860,7 +902,7 @@ def to_featureclass(
                 "polygon": pd.io.json.dumps({"rings": [], "spatialReference": sr}),
                 "multipoint": pd.io.json.dumps({"points": [], "spatialReference": sr}),
             }
-            sr = geo._data[geo._name][idx].spatial_reference.as_arcpy
+            sr = df[df.spatial.name][idx].spatial_reference.as_arcpy
             null_geom = null_geom[gt.lower()]
 
             if has_m == True:
@@ -908,7 +950,7 @@ def to_featureclass(
                         except:
                             dtypes.append((col, "<U254"))
                 elif df[col].dtype.name == "int64":
-                    dtypes.append((col, np.float))
+                    dtypes.append((col, np.float64))
                 elif df[col].dtype.name == "bool":
                     dtypes.append((col, np.int32))
                 else:
@@ -965,7 +1007,7 @@ def to_featureclass(
                             f"Could not insert the row because of error message: {e}. Recheck your data."
                         )
 
-                q = df[geo._name].isna()
+                q = df[df.spatial.name].isna()
                 df.loc[q, "SHAPE"] = null_geom  # set null values to proper JSON
                 np.apply_along_axis(_insert_row, 1, df[dfcols].values)
 

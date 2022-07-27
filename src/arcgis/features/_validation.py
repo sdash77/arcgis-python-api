@@ -72,25 +72,20 @@ class ValidationManager(object):
         ---------------     --------------------------------------------------------------------
         error_features      Required List.  The error features to be updated.
 
-                            **Syntax**
+                            Syntax:
 
-                            ```
-                            [
-                                {
-                                  "errorType" : "object" | "point" | "line" |
-                                               "polygon",
-                                  "features" : [
-                                    {
-                                      "globalId" : <guid>,
-                                      "fields" : {
-                                        "name1" : <value1>,
-                                        "name2" : <value2>
-                                      }
-                                    }
-                                  ]
-                                }
-                            ]
-                            ```
+
+                                | error_features = [{
+                                |      "errorType" : "object" | "point" | "line" |
+                                |                   "polygon",
+                                |      "features" : [
+                                |        {
+                                |          "globalId" : <guid>,
+                                |          "fields" : {
+                                |            "name1" : <value1>,
+                                |            "name2" : <value2>
+                                |          }}]}]
+
         ---------------     --------------------------------------------------------------------
         return_edits        Optional Boolean. `return_edits` returns features edited due to
                             errors update. Results returned are organized in a layer by layer
@@ -157,9 +152,15 @@ class ValidationManager(object):
         --------------------     --------------------------------------------------------------------
         evaluation               Required List of Strings.  A list of evaluation types.
 
-                                 `Values: "validationRules" | "calculationRules" | "topologyRules"`
+                                 Values:
+
+                                    "validationRules" | "calculationRules" | "topologyRules"
+
+                                 Example:
+
+                                    evaluation=["calculationRules"]
         --------------------     --------------------------------------------------------------------
-        area                     Optional Envelope/Dict. Extent of the area to evaluate.
+        area                     Optional :class:`~arcgis.geometry.Envelope` /Dict. Extent of the area to evaluate.
         --------------------     --------------------------------------------------------------------
         changes_in_version       Optional Boolean. representing whether to perform the evaluation on
                                  the features that have changed in the version (default is false).
@@ -174,22 +175,20 @@ class ValidationManager(object):
 
                                  If the `evaluation_type` is **topology** this parameter is ignored.
 
-                                 **Syntax**
+                                 Syntax
 
-                                 ```
-                                 [
-                                    {
-                                      "id" : <layerId1>,
-                                      "globalIds" : [ <globalId> ],
-                                      "objectIds" : [ <objectId> ]
-                                    },
-                                    {
-                                      "id" : <layerId2>,
-                                      "globalIds" : [ <globalId> ].
-                                      "objectIds" : [ <objectId> ]
-                                    }
-                                 ]
-                                 ```
+
+                                     | [{
+                                     |     "id" : <layerId1>,
+                                     |     "globalIds" : [ <globalId> ],
+                                     |     "objectIds" : [ <objectId> ]
+                                     |   },
+                                     |   {
+                                     |     "id" : <layerId2>,
+                                     |     "globalIds" : [ <globalId> ].
+                                     |     "objectIds" : [ <objectId> ]
+                                     |   }]
+
 
         --------------------     --------------------------------------------------------------------
         return_edits             Optional Boolean. returns features edited due to feature evaluation.

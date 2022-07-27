@@ -11,6 +11,7 @@ package:
 requirements:
   build:
   - python
+  - pillow
   - cachetools
   - ujson >=3
   - setuptools
@@ -24,11 +25,11 @@ requirements:
   - matplotlib
   - keyring >=23.0.0
   - pyshp >=2
-  - requests >=1.27.1
+  - requests >=2.27.1
   - requests-toolbelt
   - requests-kerberos
   - requests-oauthlib
-  - requests_ntlm
+  - requests_ntlm2
   - requests-negotiate-sspi [win]
   - pywin32-security [win]
   - lerc
@@ -37,8 +38,10 @@ requirements:
   - lxml
   - certifi
   - dask
+  - geomet
   run:
   - python
+  - pillow
   - six
   - cachetools
   - notebook
@@ -51,11 +54,11 @@ requirements:
   - pyshp >=2
   - matplotlib
   - keyring >=23.0.0
-  - requests >=1.27.1
+  - requests >=2.27.1
   - requests-toolbelt
   - requests-kerberos
   - requests-oauthlib
-  - requests_ntlm
+  - requests_ntlm2
   - requests-negotiate-sspi [win]
   - pywin32-security [win]
   - lerc
@@ -65,6 +68,7 @@ requirements:
   - lxml
   - certifi
   - dask
+  - geomet
 source:
   path: ../../src
 test:

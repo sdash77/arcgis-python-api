@@ -63,6 +63,7 @@ if conda_install_mode:
     dependencies = []
 else:
     dependencies = [
+        "pillow",
         "urllib3",
         "cachetools",
         "six",
@@ -83,10 +84,10 @@ else:
         'pywin32 >=223;platform_system=="Windows"',
         "pyshp >=2",
         "geomet",
-        "requests >=1.27.1",
+        "requests >=2.27.1",
         "requests-oauthlib",
         "requests_toolbelt",
-        "requests_ntlm",
+        "requests-ntlm2",
         'requests-negotiate-sspi;platform_system=="Windows"',
         'requests-kerberos;platform_system=="Windows"',
         'winkerberos;platform_system=="Windows"',

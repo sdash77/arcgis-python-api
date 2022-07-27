@@ -6,9 +6,11 @@ import uuid
 import tempfile
 from urllib.parse import urlparse
 from typing import Optional, Union, Any
-
 import pandas as pd
 from arcgis.gis import GIS, Item
+from requests.utils import quote
+import xml.etree.ElementTree as ET
+from .exceptions import ServerError
 
 ########################################################################
 class SurveyManager:
@@ -164,10 +166,41 @@ class Survey:
         self._si = item
         self._gis = item._gis
         self._sm = sm
-        related = self._si.related_items("Survey2Service", direction="forward")
+        try:
+            self.layer_name = self._find_layer_name()
+        except:
+            self.layer_name = None
         self._baseurl = baseurl
+
+        sd = self._si.related_items("Survey2Data", direction="forward")
+        if len(sd) > 0:
+            for item in sd:
+                if "StakeholderView" in item.typeKeywords:
+                    self._stk = item
+                    _stk_layers = self._stk.layers + self._stk.tables
+                    _idx = 0
+                    if self.layer_name:
+                        for layer in _stk_layers:
+                            if layer.properties["name"] == self.layer_name:
+                                _idx = layer.properties["id"]
+                    self._stk_url = self._stk.url + f"/{str(_idx)}"
+
+        related = self._si.related_items("Survey2Service", direction="forward")
         if len(related) > 0:
             self._ssi = related[0]
+            self._ssi_layers = self._ssi.layers + self._ssi.tables
+            _idx = 0
+            if self.layer_name:
+                for layer in self._ssi_layers:
+                    if layer.properties["name"] == self.layer_name:
+                        _idx = layer.properties["id"]
+            self._ssi_url = self._ssi_layers[_idx]._url
+            try:
+                if self._ssi_layers[0].properties["isView"] == True:
+                    view_url = self._ssi_layers[_idx]._url[:-1]
+                    self.parent_fl_url = self._find_parent(view_url) + f"/{str(_idx)}"
+            except KeyError:
+                self.parent_fl_url = self._ssi_layers[_idx]._url
 
     # ----------------------------------------------------------------------
     @property
@@ -197,7 +230,7 @@ class Survey:
                           user can export the survey data to. The following formats are
                           acceptable: File Geodatabase, Shapefile, CSV, and DF.
         ----------------  ---------------------------------------------------------------
-        save_folder       Optional String. The full save path.  This is optional.
+        save_folder       Optional String. Specify the folder location where the output file should be stored.
         ================  ===============================================================
 
         :Returns: string or pd.DataFrame
@@ -232,6 +265,7 @@ class Survey:
         webmap_item: Optional[Item] = None,
         map_scale: Optional[float] = None,
         locale: str = "en",
+        save_folder: Optional[str] = tempfile.gettempdir(),
     ) -> str:
         """
         Creates a MS Word Report or PDF.  The `generate_report` method allows users to either save the
@@ -264,6 +298,9 @@ class Survey:
         ----------------  ---------------------------------------------------------------
         package_name      Optional String. Specify the file name (without extension)of the
                           packaged file when packageFiles is true, for example, <outputPackageName>.zip.
+        ----------------  ---------------------------------------------------------------
+        save_folder       Optional String. Specify the folder location where the output file should be stored.
+                          If `folder_id` is specified the save_folder will be ignored.
         ----------------  ---------------------------------------------------------------
         output_format     Optional string. Currently only docx and pdf are supported.
         ----------------  ---------------------------------------------------------------
@@ -301,6 +338,21 @@ class Survey:
         url = "https://{base}/api/featureReport/createReport/submitJob".format(
             base=self._baseurl
         )
+
+        try:
+            if (
+                self._si._gis.users.me.username == self._si.owner
+                and self._ssi_layers[0].properties["isView"] == True
+            ):
+                fl_url = self.parent_fl_url
+            elif self._si._gis.users.me.username != self._si.owner:
+                fl_url = self._stk_url
+        except KeyError:
+            if self._si._gis.users.me.username != self._si.owner:
+                fl_url = self._stk_url
+            else:
+                fl_url = self._ssi_url
+
         params = {
             "outputFormat": output_format,
             "queryParameters": where,
@@ -309,7 +361,7 @@ class Survey:
             "outputReportName": report_title,
             "outputPackageName": package_name,
             "surveyItemId": self._si.id,
-            "featureLayerUrl": self._ssi.layers[0]._url,
+            "featureLayerUrl": fl_url,
             "utcOffset": utc_offset,
             "uploadInfo": json.dumps(None),
             "f": "json",
@@ -336,7 +388,9 @@ class Survey:
             )
         # 1). Submit the request.
         submit = self._si._gis._con.post(url, params)
-        return self._check_status(res=submit, status_type="generate_report")
+        return self._check_status(
+            res=submit, status_type="generate_report", save_folder=save_folder
+        )
 
     # ----------------------------------------------------------------------
     @property
@@ -364,7 +418,12 @@ class Survey:
         )
 
     # ----------------------------------------------------------------------
-    def create_report_template(self, template_type: Optional[str] = None):
+    def create_report_template(
+        self,
+        template_type: Optional[str] = "individual",
+        template_name: Optional[str] = None,
+        save_folder: Optional[str] = tempfile.gettempdir(),
+    ):
         """
         The `create_report_template` creates a simple default template that
         can be downloaded locally, editted and uploaded back up as a report
@@ -376,30 +435,52 @@ class Survey:
         template_type     Optional String. Specify which sections to include in the template.
                           Acceptable types are `individual`, `summary`, and `summaryIndividual`.
                           Default is `individual`.
+        ----------------  ---------------------------------------------------------------
+        template_name     Optional String. Specify the name of the output template file without file extension.
+        ----------------  ---------------------------------------------------------------
+        save_folder       Optional String. Specify the folder location where the output file should be stored.
         ================  ===============================================================
 
         :returns: string
         """
+        if self._si._gis.users.me.username != self._si.owner:
+            raise TypeError("Stakeholders cannot create report templates")
+        try:
+            if self._ssi_layers[0].properties["isView"] == True:
+                fl_url = self.parent_fl_url
+        except KeyError:
+            fl_url = self._ssi_url
+
+        if template_name:
+            file_name = f"{template_name}.docx"
+        else:
+            if template_type == "individual":
+                type = "Individual"
+            elif template_type == "summary":
+                type = "Summary"
+            elif template_type == "summaryIndividual":
+                type = "SummaryIndividual"
+            file_name = f"{self._si.title}_sampleTemplate{type}.docx"
 
         url = "https://{base}/api/featureReport/createSampleTemplate".format(
             base=self._baseurl
         )
         gis = self._si._gis
         params = {
-            "featureLayerUrl": self._ssi.layers[0].url.replace("_fieldworker", ""),
+            "featureLayerUrl": fl_url,
             "surveyItemId": self._si.id,
             "portalUrl": gis._url,
+            "contentType": template_type,
             "username": gis.users.me.username,
             "f": "json",
         }
-        if template_type:
-            params["contentType"] = template_type
+
         res = gis._con.post(
             url,
             params,
             try_json=False,
-            out_folder=tempfile.gettempdir(),
-            file_name=f"template_{uuid.uuid4().hex[:5]}",
+            out_folder=save_folder,
+            file_name=file_name,
         )
         return res
 
@@ -419,6 +500,15 @@ class Survey:
         :returns: dictionary {Success or Failure}
         """
 
+        if self._si._gis.users.me.username != self._si.owner:
+            raise TypeError("Stakeholders cannot create report templates")
+
+        try:
+            if self._ssi_layers[0].properties["isView"] == True:
+                fl_url = self.parent_fl_url
+        except KeyError:
+            fl_url = self._ssi_url
+
         url = "https://{base}/api/featureReport/checkTemplateSyntax".format(
             base=self._baseurl
         )
@@ -427,7 +517,7 @@ class Survey:
         }
         gis = self._si._gis
         params = {
-            "featureLayerUrl": self._ssi.layers[0].url,
+            "featureLayerUrl": fl_url,
             "surveyItemId": self._si.id,
             "portalUrl": self._si._gis._url,
             "f": "json",
@@ -458,32 +548,13 @@ class Survey:
         :returns: item {Success) or string (Failure}
         """
 
-        url = "https://{base}/api/featureReport/checkTemplateSyntax".format(
-            base=self._baseurl
-        )
-        file = {
-            "templateFile": (os.path.basename(template_file), open(template_file, "rb"))
-        }
-        gis = self._si._gis
-        params = {
-            "featureLayerUrl": self._ssi.layers[0].url,
-            "surveyItemId": self._si.id,
-            "portalUrl": self._si._gis._url,
-            "f": "json",
-        }
-
-        check = gis._con.post(url, params, files=file)
-
-        def findTemplateName(template_file):
-            part = template_file.split("\\")
-            name = part[-1].split(".")[0]
-            return name
+        check = self.check_template_syntax(template_file)
 
         if check["success"] == True:
             if template_name:
                 file_name = template_name
             else:
-                file_name = findTemplateName(template_file)
+                file_name = os.path.splitext(os.path.basename(template_file))[0]
 
             properties = {
                 "title": file_name,
@@ -493,6 +564,7 @@ class Survey:
                 "snippet": "Report template",
             }
             survey_folder_id = self._si.ownerFolder
+            gis = self._si._gis
             user = gis.users.get(gis.properties.user.username)
             user_folders = user.folders
             survey_folder = next(
@@ -526,29 +598,11 @@ class Survey:
         :returns: item {Success) or string (Failure}
         """
 
-        url = "https://{base}/api/featureReport/checkTemplateSyntax".format(
-            base=self._baseurl
-        )
-        file = {
-            "templateFile": (os.path.basename(template_file), open(template_file, "rb"))
-        }
-        gis = self._si._gis
-        params = {
-            "featureLayerUrl": self._ssi.layers[0].url,
-            "surveyItemId": self._si.id,
-            "portalUrl": self._si._gis._url,
-            "f": "json",
-        }
-
-        check = gis._con.post(url, params, files=file)
-
-        def findTemplateName(template_file):
-            part = template_file.split("\\")
-            name = part[-1].split(".")[0]
-            return name
+        check = self.check_template_syntax(template_file)
 
         if check["success"] == True:
-            file_name = findTemplateName(template_file)
+            file_name = os.path.splitext(os.path.basename(template_file))[0]
+            gis = self._si._gis
             template_item = gis.content.search(
                 query="title:" + file_name, item_type="Microsoft Word"
             )
@@ -579,6 +633,19 @@ class Survey:
 
         :returns: dictionary {totalRecords, cost(in credits)}
         """
+        try:
+            if (
+                self._si._gis.users.me.username == self._si.owner
+                and self._ssi_layers[0].properties["isView"] == True
+            ):
+                fl_url = self.parent_fl_url
+            elif self._si._gis.users.me.username != self._si.owner:
+                fl_url = self._stk_url
+        except KeyError:
+            if self._si._gis.users.me.username != self._si.owner:
+                fl_url = self._stk_url
+            else:
+                fl_url = self._ssi_url
 
         gis = self._si._gis
         if isinstance(where, str):
@@ -588,7 +655,7 @@ class Survey:
             base=self._baseurl
         )
         params = {
-            "featureLayerUrl": self._ssi.layers[0].url,
+            "featureLayerUrl": fl_url,
             "queryParameters": where,
             "templateItemId": report_template.id,
             "surveyItemId": self._si.id,
@@ -612,6 +679,7 @@ class Survey:
         webmap_item: Optional[Item] = None,
         map_scale: Optional[float] = None,
         locale: str = "en",
+        save_folder: Optional[str] = tempfile.gettempdir(),
     ) -> str:
 
         """
@@ -648,6 +716,8 @@ class Survey:
                           + `nextPage` - Print multiple records in merge mode, the content of the next record starts on the next new page.
                           + `continuous` - Print multiple records in merge mode, the content of the next record starts on the same page of the previous record.
         ----------------  ---------------------------------------------------------------
+        save_folder       Optional String. Specify the folder location where the output file should be stored.
+        ----------------  ---------------------------------------------------------------
         survey_item       Optional Item. Survey `Item`, to make the operation survey awareness.
         ----------------  ---------------------------------------------------------------
         webmap_item       Optional Item. Specify the base map for printing task when printing
@@ -662,6 +732,19 @@ class Survey:
         :Returns: string
 
         """
+        try:
+            if (
+                self._si._gis.users.me.username == self._si.owner
+                and self._ssi_layers[0].properties["isView"] == True
+            ):
+                fl_url = self.parent_fl_url
+            elif self._si._gis.users.me.username != self._si.owner:
+                fl_url = self._stk_url
+        except KeyError:
+            if self._si._gis.users.me.username != self._si.owner:
+                fl_url = self._stk_url
+            else:
+                fl_url = self._ssi_url
 
         if isinstance(where, str):
             where = {"where": where}
@@ -669,12 +752,13 @@ class Survey:
         url = "https://{base}/api/featureReport/createSampleReport/submitJob".format(
             base=self._baseurl
         )
+
         params = {
             "queryParameters": where,
             "portalUrl": self._si._gis._url,
             "templateItemId": report_template.id,
             "surveyItemId": self._si.id,
-            "featureLayerUrl": self._ssi.layers[0].url,
+            "featureLayerUrl": fl_url,
             "utcOffset": utc_offset,
             "f": "json",
             "locale": locale,
@@ -694,16 +778,16 @@ class Survey:
 
         # 1). Submit the request.
         submit = self._si._gis._con.post(url, params)
-        return self._check_status(res=submit, status_type="generate_report")
+        return self._check_status(
+            res=submit, status_type="generate_report", save_folder=save_folder
+        )
 
     # ----------------------------------------------------------------------
 
-    def _check_status(self, res, status_type):
+    def _check_status(self, res, status_type, save_folder):
         """checks the status of a Survey123 operation"""
         jid = res["jobId"]
         gis = self._si._gis
-        temp_dir = tempfile.gettempdir()
-        file_path = temp_dir
         params = {
             "f": "json",
             "username": self._si._gis.users.me.username,
@@ -726,7 +810,7 @@ class Survey:
             ):
                 url = res["results"]["details"]["resultFile"]["url"]
                 file_name = os.path.basename(url)
-                return gis._con.get(url, file_name=file_name, out_folder=file_path)
+                return gis._con.get(url, file_name=file_name, out_folder=save_folder)
             return res
         elif status_type == "generate_report":
             urls = []
@@ -745,7 +829,7 @@ class Survey:
                             file_name=os.path.basename(urlparse(url).path),
                             add_token=False,
                             try_json=False,
-                            out_folder=temp_dir,
+                            out_folder=save_folder,
                         )
                         for url in urls
                     ] + [gis.content.get(i) for i in items]
@@ -764,7 +848,7 @@ class Survey:
 
                     files = [
                         self._si._gis._con.get(
-                            url, file_name=os.path.basename(url), out_folder=temp_dir
+                            url, file_name=os.path.basename(url), out_folder=save_folder
                         )
                         for url in urls
                     ] + [gis.content.get(i) for i in items]
@@ -772,4 +856,32 @@ class Survey:
                         return files[0]
                     else:
                         return files
-            return
+            elif (
+                res["jobStatus"] == "esriJobPartialSucceeded"
+                or res["jobStatus"] == "esriJobFailed"
+            ):
+                raise ServerError(res["messages"][0])
+            # return
+
+    # ----------------------------------------------------------------------
+    def _find_parent(self, view_url):
+        """Finds the parent feature layer for a feature layer view"""
+        url = view_url + "sources"
+        response = self._si._gis._con.get(url)
+        return response["services"][0]["url"]
+
+    # ----------------------------------------------------------------------
+    def _find_layer_name(self):
+        """Finds the name of the layer the survey is submitting to, used to find the appropriate layer index"""
+        name = self._si._gis._con.get(
+            f"{self._gis._url}/sharing/rest/content/items/{self._si.id}/info/forminfo.json"
+        )["name"]
+        title = quote(name, safe="()!-_.'~")
+        url = f"{self._gis._url}/sharing/rest/content/items/{self._si.id}/info/{title}.xml"
+        response = self._si._gis._con.get(url, out_folder=tempfile.gettempdir())
+        tree = ET.parse(response)
+        root = tree.getroot()
+        for elem in root[0][1].iter():
+            for key, value in zip(elem.attrib.keys(), elem.attrib.values()):
+                if key == "id":
+                    return value
