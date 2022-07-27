@@ -321,9 +321,12 @@ class AutoML(object):
             warnings.simplefilter("ignore", UserWarning)
             output_labels = self._predict(validation_data_batch)
         pd.options.mode.chained_assignment = None
-        df = self._data._dataframe.iloc[
-            sample_indexes
-        ]  # .loc[sample_batch]#.reset_index(drop=True).loc[sample_batch].reset_index(drop=True)
+        if self._data._is_classification:
+            df = self._data._dataframe.loc[sample_indexes]
+        else:
+            df = self._data._dataframe.iloc[
+                sample_indexes
+            ]  # .loc[sample_batch]#.reset_index(drop=True).loc[sample_batch].reset_index(drop=True)
 
         if self._data._dependent_variable:
             df[self._data._dependent_variable + "_results"] = output_labels
@@ -511,7 +514,9 @@ class AutoML(object):
     @classmethod
     def from_model(cls, emd_path):
         """
-        Creates a `MLModel` Object from an Esri Model Definition (EMD) file.
+        Creates an `AutoML Model` Object from an Esri Model Definition (EMD) file.
+        The model object created can only be used for inference on a new dataset
+        and cannot be retrained.
 
         =====================   ===========================================
         **Argument**            **Description**

@@ -17,5 +17,5 @@ __all__ = [
     "GPJob",
     "GPService",
     "GPTask",
-    "GPInfo"
+    "GPInfo",
 ]

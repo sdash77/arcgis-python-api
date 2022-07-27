@@ -413,7 +413,7 @@ class MarketPlaceManager:
 
     # ----------------------------------------------------------------------
     def comments(self, itemid: str):
-        """ Lists all comments for the item """
+        """Lists all comments for the item"""
         params = {"f": "json"}
         url = f"{self._url}/listings/{itemid}/comments"
         return self._gis._portal.con.post(url, params)

@@ -68,22 +68,22 @@ def solve_location_allocation(
                                             When defining the ``facilities``, you can set properties for each one, such as the facility name or type, by using attributes.
                                             ``Facilities`` can be specified with the following fields: Name-The name of the facility. The name is included in the name of
                                             output allocation lines if the facility is part of the solution.
-                                            
+
                                             * ``FacilityType`` - Specifies whether the facility is a candidate, required, or competitor facility. The field value is
                                               specified as one of the following integers (use the numeric code, not the name in parentheses):
-                                              
+
                                               * 0 (Candidate) - A facility that may be part of the solution.
                                               * 1 (Required) - A facility that must be part of the solution.
                                               * 2 (Competitor) - A rival facility that potentially removes demand from your ``facilities``. Competitor ``facilities`` are specific to the Maximize Market Share and Target Market Share problem types; they are ignored in other problem types. Weight-The relative weighting of the facility, which is used to rate the attractiveness, desirability, or bias of one facility compared to another. For example, a value of 2.0 could capture the preference of customers who prefer, at a ratio of 2 to 1, shopping in one facility over another facility. Factors that potentially affect facility weight include square footage, neighborhood, and age of the building. Weight values other than one are only honored by the maximize market share and target market share problem types; they are ignored in other problem types.
-                                                 
+
                                             * ``Capacity`` - The Capacity field is specific to the Maximize Capacitated Coverage problem type; the other problem types
                                               ignore this field.  Capacity specifies how much weighted demand the facility is capable of supplying. Excess demand won't
                                               be allocated to a facility even if that demand is within the facility's default measurement cutoff. Any value assigned to
                                               the Capacity field overrides the Default Capacity parameter (Default_Capacity in Python) for the given facility.
-                                             
+
                                             * ``CurbApproach`` - Specifies the direction a vehicle may arrive at or depart from the facility. The field value is
                                               specified as one of the following integers (use the numeric code, not the name in parentheses):
-                                              
+
                                               * 0 (Either side of vehicle)-The facility can be visited from either the right or left side of the vehicle.
                                               * 1 (Right side of vehicle)-Arrive at or depart the facility so that it is on the right side of the vehicle. This is typically used for vehicles such as buses that must arrive with the bus stop on the right-hand side so that passengers can disembark at the curb.
                                               * 2 (Left side of vehicle)-Arrive at or depart the facility so that it is on the left side of the vehicle. When the vehicle approaches and departs the facility, the curb must be on the left side of the vehicle. This is typically used for vehicles such as buses that must arrive with the bus stop on the left-hand side so that passengers can disembark at the curb.
@@ -112,10 +112,10 @@ def solve_location_allocation(
                                             beyond the travel distance indicated here. This field value overrides the value of the Default Measurement Cutoff parameter.
                                             The units for this attribute value are specified by the Measurement Units parameter. The attribute value is referenced during the
                                             analysis only when the measurement units are distance based. The default value is null, which means there isn't an override cutoff.
-                                                
+
                                             * ``CurbApproach`` - Specifies the direction a vehicle may arrive at or depart from the demand point.
                                               The field value is specified as one of the following integers (use the numeric code, not the name in parentheses):
-                                                
+
                                               * 0 (Either side of vehicle)-The demand point can be visited from either the right or left side of the vehicle.
                                               * 1 (Right side of vehicle)-Arrive at or depart the demand point so that it is on the right side of the vehicle. This is typically used for
                                                 vehicles such as buses that must arrive with the bus stop on the right-hand side so that passengers can disembark at the curb.
@@ -156,7 +156,7 @@ def solve_location_allocation(
                                               * A demand point that cannot reach any facilities, due to setting a cutoff distance or time, is not allocated.
                                               * A demand point that can only reach one facility has all its demand weight allocated to that facility.
                                               * A demand point that can reach two or more facilities has all its demand weight allocated to the nearest facility only.
-                                                
+
                                             * ``Maximize Coverage``: Facilities are located such that as much demand as possible is allocated to solution facilities
                                               within the impedance cutoff. Maximize Coverage is frequently used to locate fire stations, police stations, and ERS centers, because emergency services are often required to
                                               arrive at all demand points within a specified response time. Note that it is important for all organizations, and critical for emergency services, to have accurate and precise data so that
@@ -169,7 +169,7 @@ def solve_location_allocation(
                                               * A demand point that cannot reach any facilities due to cutoff distance or time is not allocated.
                                               * A demand point that can only reach one facility has all its demand weight allocated to that facility.
                                               * A demand point that can reach two or more facilities has all its demand weight allocated to the nearest facility only.
-                                              
+
                                             * ``Maximize Capacitated Coverage``: Facilities are located such that all or the greatest amount of demand can be served without exceeding the capacity of any facility. Maximize
                                               Capacitated Coverage behaves like  either the Minimize Impedance or Maximize Coverage problem type but with the added constraint of capacity. You can specify a capacity for an individual facility
                                               by assigning a numeric value to  its corresponding Capacity field on the input facilities. If the Capacity field value is null, the facility is assigned a capacity from the Default Capacity property.
@@ -193,7 +193,7 @@ def solve_location_allocation(
                                               * A demand point that cannot reach any facilities due to a cutoff distance or time is not allocated.
                                               * A demand point that can only  reach one facility has all its demand weight allocated to that facility.
                                               * A demand point that can reach two or more facilities has all its demand weight allocated to the nearest facility only.
-                                                
+
                                             * ``Maximize Attendance``: Facilities are chosen such that as much demand weight as possible is allocated to facilities while
                                               assuming the demand weight decreases in relation to the distance between the facility and the demand point. Specialty stores
                                               that have little or no competition benefit from this problem type, but it may also be beneficial to general retailers and restaurants that
@@ -205,7 +205,7 @@ def solve_location_allocation(
                                               * A demand point that cannot reach any facilities due to a cutoff distance or time is not allocated.
                                               * When a demand point can reach a facility, its demand weight is only partially allocated to the facility. The amount allocated decreases as a function of the maximum cutoff distance (or time) and the travel distance (or time) between the facility and the demand point.
                                               * The weight of a demand point that can reach more than one facility is proportionately allocated to the nearest facility only.
-                                                
+
                                             * ``Maximize Market Share``: A specific number of facilities are chosen such that the allocated demand is maximized in the presence
                                               of competitors. The goal is to capture as much of the total market share as possible with a given number of facilities,
                                               which you specify. The total market share is the sum of all demand weight for valid demand points. The market share problem
@@ -215,7 +215,7 @@ def solve_location_allocation(
                                               information that includes competitor data. Large discount stores typically use  Maximize Market Share to locate a finite set of new stores.
                                               The market share problem types use a Huff model, which is also known as a gravity model or spatial interaction.
                                               The following list describes how the Maximize Market Share problem handles demand:
-                                                
+
                                               * A demand point that cannot reach any facilities due to a cutoff distance or time is not allocated.
                                               * A demand point that can only reach one facility has all its demand weight allocated to that facility.
                                               * A demand point that can reach two or more facilities has all its demand weight allocated to them; furthermore, the weight is
@@ -223,7 +223,7 @@ def solve_location_allocation(
                                                 the distance between the facility and demand point. Given equal facility weights,
                                                 this means more demand weight is assigned to near facilities than far facilities.
                                               * The total market share, which can be used to calculate the captured market share, is the sum of the weight of all valid demand points.
-                                            
+
                                             * ``Target Market Share``: Target Market Share chooses the minimum number of facilities necessary to capture a specific percentage
                                               of the total market share in the presence of competitors. The total market share is the
                                               sum of all demand weight for valid demand points. You set the percent of the market share you want to reach and let the solver choose
@@ -236,7 +236,7 @@ def solve_location_allocation(
                                               of new competing facilities. The results often represent what stores would like to do if budgets weren't a concern. In other cases where budget is a concern, stores revert to the Maximize Market Share problem and
                                               simply capture as much of the market share as possible with a limited number of facilities.
                                               The following list describes how the target market share problem handles demand:
-                                                
+
                                               * The total market share, which is used in calculating the captured market share, is the sum of the weight of all valid demand points.
                                               * A demand point that cannot reach any facilities due to a cutoff distance or time is not allocated.
                                               * A demand point that can only reach one facility has all its demand weight allocated to that facility.
@@ -346,7 +346,7 @@ def solve_location_allocation(
                                             represents an intersection or dead end. To accommodate, the U-turn policy parameter is implicitly specified by how
                                             many edges, or streets, connect to the junction, which is known as junction valency. The acceptable values for this
                                             parameter are listed below; each is followed by a description of its meaning in terms of junction valency.
-                                            
+
                                             * ``Allowed``: U-turns are permitted at junctions with any number of connected edges, or streets. This is the default value.
                                             * ``Not Allowed``: U-turns are prohibited at all junctions, regardless of junction valency.
                                             * ``Allowed only at Dead Ends``: U-turns are prohibited at all junctions, except those that have only one adjacent edge (a dead end).
@@ -364,25 +364,25 @@ def solve_location_allocation(
                                             time delay spent at a railroad crossing. The tool imposes a limit of 250 points that can be added as barriers.
                                             When specifying the point barriers, you can set properties for each one, such as its name or barrier type,
                                             by using attributes. The point barriers can be specified with the following attributes:
-                                            
+
                                             * ``Name``: The name of the barrier.
-                                            
+
                                             * ``BarrierType``: Specifies whether the point barrier restricts travel completely or adds time or distance when it is crossed. The value for this attribute is specified as one of the following integers (use the numeric code, not the name in parentheses):
-                                                  
+
                                               * 0 (Restriction)-Prohibits travel through the barrier. The barrier
                                                 is referred to as a restriction point barrier since it acts as a
                                                 restriction.
-                                                
+
                                               * 2 (Added Cost)-Traveling through the barrier increases the travel
                                                 time or distance by the amount specified in the
                                                 Additional_Time or Additional_Distance field. This barrier type is
                                                 referred to as an added-cost point barrier.
-                                                
+
                                             * ``Additional_Time``: Indicates how much travel time is added when the
                                               barrier is traversed. This field is applicable only for added-cost
                                               barriers and only if the measurement units are time based. This field
                                               value must be greater than or equal to zero, and its units are the same as those specified in the Measurement Units parameter.
-                                              
+
                                             * ``Additional_Distance``: Indicates how much distance is added when the barrier is
                                               traversed. This field is applicable only for added-cost barriers
                                               and only if the measurement units are distance based. The field value
@@ -399,8 +399,8 @@ def solve_location_allocation(
                                             restrict using the Line Barriers parameter. While there is no limit on
                                             the number of lines you can specify as line barriers, the combined
                                             number of streets intersected by all the lines cannot exceed
-                                            500. When specifying the line barriers, you can set a name property for each one by using the following attribute: 
-                                            
+                                            500. When specifying the line barriers, you can set a name property for each one by using the following attribute:
+
                                             * Name: The name of the barrier.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     polygon_barriers                        Optional :class:`~arcgis.features.FeatureSet` . Specify polygons that either completely restrict travel or
@@ -413,20 +413,20 @@ def solve_location_allocation(
                                             polygons should not exceed 2,000.
                                             When specifying the polygon barriers, you can set properties for each one, such as its name or barrier type,
                                             by using attributes. The polygon barriers can be specified with the following attributes:
-                                            
+
                                             * ``Name``: The name of the barrier.
                                             * ``BarrierType``: Specifies whether the barrier restricts travel completely
                                               or scales the time or distance for traveling through it. The field
                                               value is specified as one of the following integers (use the numeric code, not the name in parentheses):
-                                              
+
                                               * 0 (Restriction) - Prohibits traveling through any part of the barrier. The barrier is referred to as a restriction polygon barrier since it prohibits traveling on streets intersected by the barrier. One use of this type of barrier is to model floods covering areas of the street that make traveling on those streets impossible.
                                               * 1 (Scaled Cost) - Scales the time or distance required to travel the underlying streets by a factor specified using the ScaledTimeFactor or ScaledDistanceFactor fields. If the streets are partially covered by the barrier, the travel time or distance is apportioned and then scaled. For example, a factor 0.25 would mean that travel on underlying streets is expected to be four times faster than normal. A factor of 3.0 would mean it is expected to take three times longer than normal to travel on underlying streets. This barrier type is referred to as a scaled-cost polygon barrier. It might be used to model storms that reduce travel speeds in specific regions.
-                                               
+
                                             * ``ScaledTimeFactor``: This is the factor by which the travel time of the streets
                                               intersected by the barrier is multiplied. This field is applicable
                                               only for scaled-cost barriers and only if the measurement units are time
                                               based. The field value must be greater than zero.
-                                              
+
                                             * ``ScaledDistanceFactor``: This is the factor by which the distance of the streets
                                               intersected by the barrier is multiplied. This attribute is
                                               applicable only for scaled-cost barriers and only if the measurement
@@ -434,8 +434,8 @@ def solve_location_allocation(
                                               zero.
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     use_hierarchy                           Optional boolean. Specify whether hierarchy should be used when finding the shortest path between the
-                                            facilities and demand points. 
-                                            
+                                            facilities and demand points.
+
                                             Checked (True):
                                             Use hierarchy when measuring between facilities and demand points. When
                                             hierarchy is used, the tool prefers higher-order streets (such as
@@ -445,7 +445,7 @@ def solve_location_allocation(
                                             true when finding routes to faraway locations, because drivers on long-distance trips tend to prefer traveling on freeways where stops, intersections, and turns can be avoided. Using hierarchy is computationally faster,
                                             especially for long-distance routes, since the tool can determine the
                                             best route from a relatively smaller subset of streets.
-                                            
+
                                             Unchecked (False):
                                             Do not use hierarchy when measuring between facilities and demand points. If
                                             hierarchy is not used, the tool considers all the streets and doesn't
@@ -669,7 +669,7 @@ def solve_location_allocation(
                                             prefer them.
                                             The value you provide for this parameter is ignored unless Travel Mode is set to Custom, which is the default value.
                                             If you specify the Attribute Parameter Values parameter from a feature class, the field names on the feature class must match the fields as described below:
-                                               
+
                                             * ``AttributeName``: Lists the name of the restriction.
                                             * ``ParameterName``: Lists the name of the parameter associated with the restriction. A restriction can have one or more ParameterName field
                                               values based on its intended use.
@@ -684,15 +684,15 @@ def solve_location_allocation(
                                               preferred. The Restriction Usage ParameterName can be assigned any of
                                               the following string values or their equivalent numeric values
                                               listed within the parentheses:
-                                              
+
                                               * ``PROHIBITED`` (-1) - Travel on the roads using the restriction is completely prohibited.
-                                              * ``AVOID_HIGH`` (5) - It is highly unlikely for the tool to include in the route the roads that are associated with the restriction. 
+                                              * ``AVOID_HIGH`` (5) - It is highly unlikely for the tool to include in the route the roads that are associated with the restriction.
                                               * ``AVOID_MEDIUM`` (2) - It is unlikely for the tool to include in the route the roads that are associated with the restriction.
                                               * ``AVOID_LOW`` (1.3) - It is somewhat unlikely for the tool to include in the route the roads that are associated with the restriction
-                                              * ``PREFER_LOW`` (0.8) - It is somewhat likely for the tool to include in the route the roads that are associated with the restriction. 
+                                              * ``PREFER_LOW`` (0.8) - It is somewhat likely for the tool to include in the route the roads that are associated with the restriction.
                                               * ``PREFER_MEDIUM`` (0.5) - It is likely for the tool to include in the route the roads that are associated with the restriction.
                                               * ``PREFER_HIGH`` (0.2) - It is highly likely for the tool to include in the route the roads that are associated with the restriction.
-                                                 
+
                                               In most cases, you can use the default value, PROHIBITED,
                                               for the Restriction Usage if the restriction is dependent on a
                                               vehicle-characteristic such as vehicle height. However, in some

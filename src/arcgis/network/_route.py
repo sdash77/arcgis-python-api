@@ -601,9 +601,9 @@ def find_routes(
                                             you can set properties for each one, such as its name or service time, by using
                                             attributes.
                                             The stops can be specified with the following attributes:
-                                            
+
                                             * ``Name``: The name of the stop. This name is used when generating driving directions. It is common to pass the name of a business, person, or street address at the stop. If a value is not specified, an automatically generated name such as Location 1 or Location 2 is assigned to each stop.
-                                              
+
                                             * ``TimeWindowStart``: The earliest time the stop can be visited. Specify this attribute if you want to limit when
                                               a route can arrive at a stop; for instance, you may want to make deliveries to a restaurant between
                                               busy lunch and dinner hours (for example, sometime between 2:00 and 4:30 p.m.) to facilitate the work
@@ -886,7 +886,7 @@ def find_routes(
                                             * ``BarrierType``: Specifies whether the point barrier restricts travel completely or adds time or distance when it is crossed. The value for this attribute is specified as one of the following integers (use the numeric code, not the name in parentheses):
                                               * 0 (Restriction) - Prohibits travel through the barrier. The barrier is referred to as a restriction point barrier since it acts as a restriction.
                                               * 2 (Added Cost) - Traveling through the barrier increases the travel time or distance by the amount specified in the Additional_Time or Additional_Distance field. This barrier type is referred to as an added-cost point barrier.
-                                              
+
                                             * ``Additional_Time``: Indicates how much travel time is added when the
                                               barrier is traversed. This field is applicable only for added-cost
                                               barriers and only if the measurement units are time based. This field
@@ -982,7 +982,7 @@ def find_routes(
                                             When specifying the polygon barriers, you can set properties for each one,
                                             such as its name or barrier type, by using attributes.
                                             The polygon barriers can be specified with the following attributes:
-                                            
+
                                             * ``Name``: The name of the barrier.
                                             * ``BarrierType``: Specifies whether the barrier restricts travel completely or scales the time or distance for traveling through it. The field value is specified as one of the following integers (use the numeric code, not the name in parentheses):
 
@@ -1003,7 +1003,7 @@ def find_routes(
                                                 barrier type is referred to as a scaled-cost polygon barrier. It
                                                 might be used to model storms that reduce travel speeds in specific
                                                 regions.
-                                                
+
                                             * ``ScaledTimeFactor``: This is the factor by which the travel time of the streets
                                               intersected by the barrier is multiplied. This field is applicable
                                               only for scaled-cost barriers and only if the measurement units are time
@@ -1283,7 +1283,7 @@ def find_routes(
                                               preferred. The Restriction Usage ``ParameterName`` can be assigned any of
                                               the following string values or their equivalent numeric values
                                               listed within the parentheses:
-                                              
+
                                               * ``PROHIBITED`` (-1) - Travel on the roads using the restriction is completely prohibited.
 
                                               * ``AVOID_HIGH`` (5) - It
@@ -1331,7 +1331,7 @@ def find_routes(
                                               the value for Restriction Usage. The higher the preference, the
                                               farther the tool will go out of its way to travel on the roads
                                               associated with the restriction.
-                                              
+
                                             ========================================  =========================  =======================
                                             **AttributeName**                             **ParameterName**      **ParameterValue**
                                             ----------------------------------------  -------------------------  -----------------------
@@ -1525,7 +1525,7 @@ def find_routes(
                                             Choice list:['NA Desktop', 'NA Navigation']
 
                                             ``NA Desktop``: Generates turn-by-turn directions suitable for printing.
-                                            
+
                                             ``NA Navigation``: Generates turn-by-turn directions designed for an in-vehicle navigation device.
 
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------

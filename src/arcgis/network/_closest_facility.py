@@ -1422,7 +1422,7 @@ def find_closest_facilities(
                                             using the following values:
 
                                             ``NA Desktop``: Generates turn-by-turn directions suitable for printing.
-                                            
+
                                             ``NA Navigation``: Generates turn-by-turn directions designed for an in-vehicle navigation device.
 
                                             Choice list: ['NA Desktop', 'NA Navigation']
