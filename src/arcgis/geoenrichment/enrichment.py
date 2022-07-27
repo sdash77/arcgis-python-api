@@ -1540,7 +1540,7 @@ def enrich(
     # pull out named area properties if present and set to use country instead of just BA global
     standard_geography_level = None
 
-    if isinstance(study_areas, list) and not isinstance(study_areas, pd.DataFrame):
+    if isinstance(study_areas, Iterable) and not isinstance(study_areas, pd.DataFrame):
         if isinstance(study_areas, dict):
             first_geo = list(study_areas.values())[0]
         elif isinstance(study_areas, list):
