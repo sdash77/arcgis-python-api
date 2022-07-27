@@ -211,7 +211,7 @@ class MapFeatureLayer(Layer):
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         item                                     Required :class:`~arcgis.gis.Item` object. The type of item should be
-                                                 a :class:`~arcgis.mapping.MapImageService` object.
+                                                 a :class:`~arcgis.mapping.MapServiceLayer` object.
         ------------------------------------     --------------------------------------------------------------------
         layer_id                                 Optional integer. The id of the layer in the Map Service's Layer.
                                                  The default is 0.

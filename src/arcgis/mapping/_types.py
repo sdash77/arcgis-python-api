@@ -183,7 +183,7 @@ class WebMap(HasTraits, collections.OrderedDict):
 
     def __init__(self, webmapitem=None):
         """
-        Constructs an empty WebMap object. If an web map Item is passed, constructs a WebMap object from item on
+        Constructs an empty WebMap object. If a web map Item is passed, constructs a WebMap object from item on
         ArcGIS Online or Enterprise.
         """
 
@@ -997,7 +997,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         layer                   Required :class:`~arcgis.features.FeatureLayer` or Feature Layer dictionary.
                                 The existing webmap layer with updated properties.
                                 In order to get a layer on the webmap, use the ``layers`` method and
-                                assign the output to a value. Make edits on the this value and pass
+                                assign the output to a value. Make edits on this value and pass
                                 it in as a dict to update the rendering on the map.
 
                                 .. warning::
@@ -1113,7 +1113,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         Saves the ``WebMap`` object as a new Web Map Item in your :class:`~arcgis.gis.GIS`.
 
         .. note::
-            If you started out with a fresh ``WebMap`` object, use this method to save it as a the web map
+            If you started out with a fresh ``WebMap`` object, use this method to save it as a web map
             :class:`~arcgis.gis.Item` in your
             GIS.
 
@@ -1142,7 +1142,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         =================  =====================================================================
         **Key**            **Value**
         -----------------  ---------------------------------------------------------------------
-        typeKeywords       Optional string. Provide a lists all sub-types, see URL 1 below for valid values.
+        typeKeywords       Optional string. Provide a lists all subtypes, see URL 1 below for valid values.
         -----------------  ---------------------------------------------------------------------
         description        Optional string. Description of the item.
         -----------------  ---------------------------------------------------------------------
@@ -2720,7 +2720,7 @@ class OfflineMapAreaManager(object):
                                Allowed Values:
 
                                    ``sync_features_and_attachments``  - bidirectional sync
-                                   ``sync_features_upload_attachments`` - bidirection sync for feaures but upload only for attachments
+                                   ``sync_features_upload_attachments`` - bidirectional sync for features but upload only for attachments
                                    ``upload_features_and_attachments`` - upload only for both features and attachments (initial replica is just a schema)
 
 
@@ -4062,7 +4062,7 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
         ===================     ====================================================================
         **Argument**            **Description**
         -------------------     --------------------------------------------------------------------
-        service_dictionairy     Required dict. The JSON representation of the service and the
+        service_dictionary      Required dict. The JSON representation of the service and the
                                 properties that have been updated or added.
 
                                 Example:
@@ -4635,7 +4635,7 @@ class VectorTileLayer(arcgis.gis.Layer):
         fontstack                       Required string.
 
                                         .. note::
-                                            The template url for this fonts resource is represented in the
+                                            The template url for this font resource is represented in the
                                             `Vector Tile Style <https://developers.arcgis.com/rest/services-reference/enterprise/vector-tile-style.htm>`_
                                             resource.
         ----------------------------    -------------------------------------------------------------------------------------------------------------------
@@ -5737,7 +5737,7 @@ class MapImageLayer(arcgis.gis.Layer):
                                - ``all``: All layers at the specified location.
         ------------------     --------------------------------------------------------------------
         tolerance              Optional integer. The distance in screen pixels from the specified
-                               geometry within which the identify should be performed. The value for
+                               geometry within which the ``identify`` operation should be performed. The value for
                                the tolerance is an integer.
         ------------------     --------------------------------------------------------------------
         image_display          Optional string. The screen image display parameters (width, height,
@@ -5784,7 +5784,7 @@ class MapImageLayer(arcgis.gis.Layer):
                                geodatabase version.
         ------------------     --------------------------------------------------------------------
         return_unformatted     Optional boolean. If true, the values in the result will not be
-                               formatted i.e. numbers will returned as is and dates will be
+                               formatted i.e. numbers will be returned as is and dates will be
                                returned as epoch values. The default is False.
         ------------------     --------------------------------------------------------------------
         return_field_name      Optional boolean. Default is False. If true, field names will be
@@ -6001,14 +6001,14 @@ class MapImageLayer(arcgis.gis.Layer):
                                geodatabase version.
         ------------------     --------------------------------------------------------------------
         return_unformatted     Optional boolean. If true, the values in the result will not be
-                               formatted i.e. numbers will returned as is and dates will be
+                               formatted i.e. numbers will be returned as is and dates will be
                                returned as epoch values.
         ------------------     --------------------------------------------------------------------
         return_field_name      Optional boolean. If true, field names will be returned instead of
                                field aliases.
         ------------------     --------------------------------------------------------------------
         transformations        Optional list. Use this parameter to apply one or more datum
-                               transformations to the map when sr is different than the map
+                               transformations to the map when sr is different from the map
                                service's spatial reference. It is an array of transformation
                                elements.
         ------------------     --------------------------------------------------------------------
@@ -6548,7 +6548,7 @@ class MapImageLayer(arcgis.gis.Layer):
         ------------------     --------------------------------------------------------------------
         export_by              Required string. The criteria that will be used to select the tile
                                service levels to export. The values can be Level IDs, cache scales.
-                               or the resolution.  The defaut is 'LevelID'.
+                               or the resolution.  The default is 'LevelID'.
                                Values:
                                     `LevelID | Resolution | Scale`
         ------------------     --------------------------------------------------------------------

@@ -392,7 +392,7 @@ def _color_info(
     field: str, values: list, steps: int = 6, colors: str = "Reds_r"
 ) -> dict:
     """
-    Creates the Color Infomration Visual Variable from a collection of information.
+    Creates the Color Information Visual Variable from a collection of information.
 
     """
     d = {"type": "colorInfo", "field": field, "stops": []}
@@ -417,7 +417,7 @@ def _color_info(
 
 # --------------------------------------------------------------------------
 def _trans_info(data, **kwargs):
-    """creates a transparancy information for visual variables"""
+    """creates a transparency information for visual variables"""
     ti = None
     if "trans_info_field" in kwargs:
         ti = {}
@@ -496,7 +496,7 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
         Each type of information is detailed in the tables below.
 
     ======================  =========================================================
-    **optional variables**  **description**
+    **Optional variables**  **Description**
     ----------------------  ---------------------------------------------------------
     trans_info_field        Attribute field used for setting the transparency of a
                             feature if no trans_value_exp is provided.
@@ -522,7 +522,7 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
     proportionally between the provided min and max sizes.
 
     ======================  =========================================================
-    **arguements**          **description**
+    **Arguments**           **Description**
     ----------------------  ---------------------------------------------------------
     si_field                Attribute field used for size rendering if no
                             si_expression is provided.
@@ -562,7 +562,7 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
     typically used to rotate symbols that indicate directionality.
 
     ======================  =========================================================
-    **arguements**          **description**
+    **Arguments**          **Description**
     ----------------------  ---------------------------------------------------------
     ri_field                Attribute field used for setting the rotation of a symbol
                             if no ``ri_expression`` is provided.

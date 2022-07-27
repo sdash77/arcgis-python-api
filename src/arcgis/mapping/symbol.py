@@ -437,7 +437,7 @@ def create_symbol(
     """
     The ``create_symbol`` method generates a Symbol from a given set of parameters.
 
-    ``creat_symbol`` creates either a ``Picture``, ``Text``, ``Cartographic``, or ``Simple Symbol``
+    ``create_symbol`` creates either a ``Picture``, ``Text``, ``Cartographic``, or ``Simple Symbol``
     based on a given set of parameters.
 
     .. note::

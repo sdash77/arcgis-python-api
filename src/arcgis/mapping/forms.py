@@ -278,7 +278,7 @@ class FormInfo:
         return "None"
 
     def exists(self):
-        """Returns whether or not the form exists for that particular layer."""
+        """Returns whether the form exists for that particular layer or not."""
         return len(self._form_elements) > 0
 
     def clear(self):
@@ -1509,7 +1509,7 @@ class FormGroupElement(FormElement):
                                form's feature layer
         ==================     ====================================================================
 
-        :return: The deleted element - :class:`~arcgis.mapping.forms.FormFieldElement` or or `False`
+        :return: The deleted element - :class:`~arcgis.mapping.forms.FormFieldElement` or `False`
         """
         if label:
             element = self.get(label=label)
