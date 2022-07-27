@@ -1540,8 +1540,11 @@ def enrich(
     # pull out named area properties if present and set to use country instead of just BA global
     standard_geography_level = None
 
-    if isinstance(study_areas, Iterable) and not isinstance(study_areas, pd.DataFrame):
-        first_geo = study_areas[0]
+    if isinstance(study_areas, list) and not isinstance(study_areas, pd.DataFrame):
+        if isinstance(study_areas, dict):
+            first_geo = list(study_areas.values())[0]
+        elif isinstance(study_areas, list):
+            first_geo = study_areas[0]
 
         if isinstance(first_geo, NamedArea):
             study_areas = [na._areaid for na in study_areas]
@@ -1569,7 +1572,7 @@ def enrich(
 
     # invoke enrich on the business analyst object
     enrich_res = enrich_src.enrich(
-        geographies=study_areas,
+        study_areas,
         enrich_variables=enrich_vars,
         proximity_type=proximity_type,
         proximity_value=proximity_value,
