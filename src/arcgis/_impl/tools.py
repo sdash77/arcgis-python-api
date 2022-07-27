@@ -4545,7 +4545,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                                                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+                                                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online.
 
                                                                                 .. code-block:: python
 
@@ -6114,7 +6114,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         * Where is the center?
         * Which feature is the most accessible from all other features?
         * How dispersed, compact, or integrated are the features?
-        * Are there directional trends?s
+        * Are there directional trends?
 
         ====================    =========================================================
         **Argument**            **Description**
@@ -6148,7 +6148,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online Only.
+                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online Only and Enterprise 11+.
 
                                     .. code-block:: python
 
@@ -6178,7 +6178,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         analysis_layer = self._feature_input(analysis_layer)
-        if self._gis._is_agol:
+
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -18104,6 +18105,7 @@ class _GeoanalyticsTools(_AsyncService):
         out_extent=None,
         datastore="GDB",
         context=None,
+        output_name=None,
     ):
         """
 
@@ -18180,7 +18182,7 @@ class _GeoanalyticsTools(_AsyncService):
             params["gax:env:datastore"] = datastore
         if context is not None:
             params["context"] = context
-
+        output_service = self._create_output_service(output_name, task)
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -18211,6 +18213,7 @@ class _GeoanalyticsTools(_AsyncService):
         out_extent=None,
         datastore="GDB",
         context=None,
+        output_name=None,
     ):
         """
 
@@ -18250,7 +18253,7 @@ class _GeoanalyticsTools(_AsyncService):
             params["gax:env:datastore"] = datastore
         if context is not None:
             params["context"] = context
-
+        output_service = self._create_output_service(output_name, task)
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -18281,6 +18284,7 @@ class _GeoanalyticsTools(_AsyncService):
         out_extent=None,
         datastore="GDB",
         context=None,
+        output_name=None,
     ):
         """
 
@@ -18319,6 +18323,7 @@ class _GeoanalyticsTools(_AsyncService):
             params["gax:env:datastore"] = datastore
         if context is not None:
             params["context"] = context
+        output_service = self._create_output_service(output_name, task)
 
         task_url, job_info, job_id = super()._analysis_job(task, params)
 

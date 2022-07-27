@@ -89,20 +89,23 @@ class Extension(object):
     # ----------------------------------------------------------------------
     @property
     def max_upload_file_size(self) -> Union[int, float]:
-        """sets/gets the maxUploadFileSize"""
+        """sets/gets the max upload file size"""
+
         return self._maxUploadFileSize
 
     # ----------------------------------------------------------------------
     @max_upload_file_size.setter
-    def max_upload_file_size(self, value: int):
-        """sets/gets the maxUploadFileSize"""
+    def max_upload_file_size(self, value):
+        """sets/gets the max upload file size"""
+
         if isinstance(value, int):
             self._maxUploadFileSize = value
 
     # ----------------------------------------------------------------------
     @property
     def allowed_upload_filetypes(self) -> str:
-        """gets/sets the allowedUploadFileTypes"""
+        """gets/sets the allowed upload file type"""
+
         return self._allowedUploadFileTypes
 
     # ----------------------------------------------------------------------

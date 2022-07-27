@@ -35,8 +35,6 @@ try:
 except:
     HAS_NTLM2 = False
 
-
-requests_ntlm = LazyLoader("requests_ntlm", strict=True)
 requests = LazyLoader("requests")
 
 
@@ -87,8 +85,16 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
                         ntlm_strict_mode=ntlm_strict_mode,
                     )
                 else:
-                    self.auth = requests_ntlm.HttpNtlmAuth(
-                        username, password, send_cbt=send_cbt
+                    # this logic should theoretically never be reached, just
+                    # a backup in case LazyLoader fails. sets
+                    # ntlm_compability to 2 for normal ntlm v1 compability
+                    import requests_ntlm2 as ntlm2
+
+                    self.auth = ntlm2.HttpNtlmAuth(
+                        username,
+                        password,
+                        send_cbt=send_cbt,
+                        ntlm_compatibility=2,
                     )
             else:
                 raise ValueError("")
@@ -112,6 +118,7 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
             r.text.lower().find("invalid token") > -1
             or r.text.lower().find("token required") > -1
             or r.text.lower().find("token not found") > -1
+            or r.status_code == 401
         ) or parsed.netloc in self._server_log:
             expiration = 16000
             if parsed.port:

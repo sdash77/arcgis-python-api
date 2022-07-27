@@ -2342,21 +2342,21 @@ class _MSILayerFactory(type):
                 url=url,
                 gis=gis,
                 container=container,
-                dynamic_layer=container,
+                dynamic_layer=dynamic_layer,
             )
         elif "type" in props and props.type.lower() == "raster layer":
             return MapRasterLayer(
                 url=url,
                 gis=gis,
                 container=container,
-                dynamic_layer=container,
+                dynamic_layer=dynamic_layer,
             )
         elif "type" in props and props.type.lower() == "feature layer":
             return MapFeatureLayer(
                 url=url,
                 gis=gis,
                 container=container,
-                dynamic_layer=container,
+                dynamic_layer=dynamic_layer,
             )
         return lyr
 
@@ -2395,5 +2395,5 @@ class MapServiceLayer(Layer, metaclass=_MSILayerFactory):
         Constructs a Map Services Layer given a URL and GIS
         """
         super(MapServiceLayer, self).__init__(
-            url=url, gis=gis, container=container, dynamic_layer=container
+            url=url, gis=gis, container=container, dynamic_layer=dynamic_layer
         )

@@ -32,6 +32,8 @@ from arcgis.learn import (
     MMDetection,
     AutoML,
     MLModel,
+    MaXDeepLab,
+    DETReg,
 )
 import json
 from arcgis.learn.text import EntityRecognizer, SequenceToSequence
@@ -998,6 +1000,62 @@ data = {
             },
             "model_args": {"batch_size": 1, "padding": 56},
         },
+    },
+        "maxdeeplab": {
+        "model_name": "maxdeeplab",
+        "datapath": "panoptic_rgb",
+        "datapath_ms": "panoptic_ms",
+        "model": MaXDeepLab,
+        "model_test": "maxdeeplab_test",
+        "prepare_data": {
+            "path": os.path.join(data_folder, "panoptic_rgb"),
+            "batch_size": 2,
+             "n_masks":38,
+             "resize_to":256
+        },
+        "prepare_data_ms": {
+            "path": os.path.join(data_folder_ms, "panoptic_ms"),
+            "batch_size": 2,
+             "n_masks":38,
+             "resize_to":256,
+            "imagery_type": "multispectral",
+        },
+        "should_test": True,
+        "test_feature_layer": False,
+        "regression_parameter": "panoptic_quality",
+        "regression_test_score": 0.25,
+        "regression_epochs": 15,
+        "inferencing_parameter": {
+            "model_type": "pass",
+        },
+        "inferencing_image_server": {"input_raster": "pass", "context": "pass"},
+    },
+    "detreg": {
+        "model_name": "detreg",
+        "datapath": "panoptic_rgb",
+        "datapath_ms": "panoptic_ms",
+        "model": DETReg,
+        "model_test": "detreg_test",
+        "prepare_data": {
+            "path": os.path.join(data_folder, "rgb_small"),
+            "batch_size": 2,
+             "chip_size":256
+        },
+        "prepare_data_ms": {
+            "path": os.path.join(data_folder_ms, "ms_small"),
+            "batch_size": 2,
+             "chip_size":256,
+            "imagery_type": "multispectral",
+        },
+        "should_test": True,
+        "test_feature_layer": False,
+        "regression_parameter": "average_precision_score",
+        "regression_test_score": 0.55,
+        "regression_epochs": 50,
+        "inferencing_parameter": {
+            "model_type": "pass",
+        },
+        "inferencing_image_server": {"input_raster": "pass", "context": "pass"},
     },
     "imagecaptioner": {
         "model_name": "imagecaptioner",

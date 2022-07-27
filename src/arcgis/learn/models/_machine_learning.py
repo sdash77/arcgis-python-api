@@ -224,9 +224,14 @@ class MLModel(object):
 
         output_labels = self._predict(validation_data_batch)
         pd.options.mode.chained_assignment = None
-        df = self._data._dataframe.iloc[
-            sample_indexes
-        ]  # .loc[sample_batch]#.reset_index(drop=True).loc[sample_batch].reset_index(drop=True)
+
+        # using loc instead of iloc to get data when dataframe doesnt have continuous indexes
+        if self._data._is_classification:
+            df = self._data._dataframe.loc[
+                sample_indexes
+            ]  # .loc[sample_batch]#.reset_index(drop=True).loc[sample_batch].reset_index(drop=True)
+        else:
+            df = self._data._dataframe.iloc[sample_indexes]
 
         if self._data._dependent_variable:
             df[self._data._dependent_variable + "_results"] = output_labels

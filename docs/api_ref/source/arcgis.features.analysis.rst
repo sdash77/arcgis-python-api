@@ -4,15 +4,21 @@ arcgis.features.analysis module
 =======================================
 **Feature Input**
 
- All standard spatial analysis tools accept features as input. Features can be specified in one of the following ways:
-    * Item (of type :class:`Feature Layer Collection<arcgis.features.FeatureLayerCollection>` or :class:`Feature Collection<arcgis.features.FeatureCollection>`) - only the first feature layer is used
-    * Instance of :class:`Feature Layer<arcgis.features.FeatureLayer>`, :class:`Feature Layer Collection<arcgis.features.FeatureLayerCollection>`, or :class:`Feature Collection<arcgis.features.FeatureCollection>`
-    * Feature Service URL as a string,
-    * Python dict in the format outlined in the REST API `featureCollection <https://developers.arcgis.com/rest/analysis/api-reference/feature-input.htm>`_
+All standard spatial analysis tools accept features as input. Features can be specified in one of the following ways:
 
- For point feature layers, the following inputs may additonally be used for convenience:
-    * (lat, long) pair for point feature layer
-    * dict with 'location' as key (eg result from geocoding)
+* Item (of type :class:`Feature Layer Collection<arcgis.features.FeatureLayerCollection>` or :class:`Feature Collection<arcgis.features.FeatureCollection>`) - only the first feature layer is used
+
+* Instance of :class:`Feature Layer<arcgis.features.FeatureLayer>`, :class:`Feature Layer Collection<arcgis.features.FeatureLayerCollection>`, or :class:`Feature Collection<arcgis.features.FeatureCollection>`
+
+* Feature Service URL as a string,
+
+* Python dict in the format outlined in the REST API `featureCollection <https://developers.arcgis.com/rest/analysis/api-reference/feature-input.htm>`_
+
+For point feature layers, the following inputs may additonally be used for convenience:
+
+* (lat, long) pair for point feature layer
+
+* dict with 'location' as key (eg result from geocoding)
 
 .. automodule:: arcgis.features.analysis
 
