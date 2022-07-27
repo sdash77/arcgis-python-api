@@ -1245,7 +1245,7 @@ def generate_dem(
                                 | {"method": "TRIANGULATION", 
                                 | "smoothingMethod": "GAUSS5x5", 
                                 | "applyToOrtho": True, 
-                                | "fillDEM": ``https://....``
+                                | "fillDEM": "``https://....``"
                                 | } 
  
                            Note:  
@@ -1444,7 +1444,7 @@ def generate_orthomosaic(
                                                |   "maxSliverSize": 20
                                                |   "colorCorrectionMethod": "DODGING",
                                                |   "dodgingSurface": "Single_Color",
-                                               |   "referenceImg": {"url": ``https://...`` "},
+                                               |   "referenceImg": {"url": "``https://...``"},
                                                |   "skipRows": 10,
                                                |   "skipCols": 10,
                                                |   "reCalculateSats": "OVERWRITE"
