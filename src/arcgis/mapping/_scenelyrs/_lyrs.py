@@ -382,8 +382,7 @@ class EnterpriseSceneLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def rebuild_cache(
         self,
-        layer: dict | None = None,
-        number_cache_service_instances: int = 2,
+        layer: list[int] | None = None,
         extent: dict | None = None,
         area_of_interest: dict | None = None,
     ):
@@ -396,10 +395,7 @@ class EnterpriseSceneLayerManager(_GISResource):
         ===============================     ====================================================================
         **Argument**                        **Description**
         -------------------------------     --------------------------------------------------------------------
-        layer                               Optional dict. The service JSON as a dictionary.
-        -------------------------------     --------------------------------------------------------------------
-        number_cache_service_instances      Optional int. The number of caching service instances to create. The
-                                            default is 2.
+        layer                               Optional list of integers. The list of layers to cook.
         -------------------------------     --------------------------------------------------------------------
         extent                              Optional dict. The updated extent to be used. If nothing is specified,
                                             the default extent is used.
@@ -442,14 +438,14 @@ class EnterpriseSceneLayerManager(_GISResource):
         """
         if layer is None:
             layer = {}
+        elif layer is not None:
+            layer = {layer}
         if extent is None:
             extent = "DEFAULT"
-        if number_cache_service_instances is None:
-            number_cache_service_instances = 2
         if area_of_interest is None:
             return self._tbx.manage_scene_cache(
                 service_url=self._sl.url,
-                num_of_caching_service_instances=number_cache_service_instances,
+                num_of_caching_service_instances=2,
                 layer=layer,
                 update_mode="RECREATE_ALL_NODES",
                 update_extent=extent,
@@ -457,7 +453,7 @@ class EnterpriseSceneLayerManager(_GISResource):
         else:
             return self._tbx.manage_scene_cache(
                 service_url=self._sl.url,
-                num_of_caching_service_instances=number_cache_service_instances,
+                num_of_caching_service_instances=2,
                 layer=layer,
                 update_mode="RECREATE_ALL_NODES",
                 update_extent=extent,
@@ -467,8 +463,7 @@ class EnterpriseSceneLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def update_cache(
         self,
-        layer: dict | None = None,
-        number_cache_service_instances: int = None,
+        layer: list[int] | None = None,
         extent: dict | None = None,
         area_of_interest: dict | None = None,
     ):
@@ -482,10 +477,7 @@ class EnterpriseSceneLayerManager(_GISResource):
         ===============================     ====================================================================
         **Argument**                        **Description**
         -------------------------------     --------------------------------------------------------------------
-        layer                               Optional dict. The service JSON as a dictionary.
-        -------------------------------     --------------------------------------------------------------------
-        number_cache_service_instances      Optional int. The number of caching service instances to create. The
-                                            default is 2.
+        layer                               Optional list of integers. The list of layers to cook.
         -------------------------------     --------------------------------------------------------------------
         extent                              Optional dict. The updated extent to be used. If nothing is specified,
                                             the default extent is used.
@@ -528,14 +520,14 @@ class EnterpriseSceneLayerManager(_GISResource):
         """
         if layer is None:
             layer = {}
+        elif layer is not None:
+            layer = {layer}
         if extent is None:
             extent = "DEFAULT"
-        if number_cache_service_instances is None:
-            number_cache_service_instances = 2
         if area_of_interest is None:
             return self._tbx.manage_scene_cache(
                 service_url=self._sl.url,
-                num_of_caching_service_instances=number_cache_service_instances,
+                num_of_caching_service_instances=2,
                 layer=layer,
                 update_mode="PARTIAL_UPDATE_NODES",
                 update_extent=extent,
@@ -543,7 +535,7 @@ class EnterpriseSceneLayerManager(_GISResource):
         else:
             return self._tbx.manage_scene_cache(
                 service_url=self._sl.url,
-                num_of_caching_service_instances=number_cache_service_instances,
+                num_of_caching_service_instances=2,
                 layer=layer,
                 update_mode="PARTIAL_UPDATE_NODES",
                 update_extent=extent,
@@ -553,10 +545,9 @@ class EnterpriseSceneLayerManager(_GISResource):
     # ----------------------------------------------------------------------
     def update_attribute(
         self,
-        layer=None,
-        number_cache_service_instances=None,
-        extent=None,
-        area_of_interest=None,
+        layer: list[int] | None = None,
+        extent: dict | None = None,
+        area_of_interest: dict | None = None,
     ):
         """
         Update atrribute is a "light rebuild" where attributes of
@@ -567,10 +558,7 @@ class EnterpriseSceneLayerManager(_GISResource):
         ===============================     ====================================================================
         **Argument**                        **Description**
         -------------------------------     --------------------------------------------------------------------
-        layer                               Optional dict. The service JSON as a dictionary.
-        -------------------------------     --------------------------------------------------------------------
-        number_cache_service_instances      Optional int. The number of caching service instances to create. The
-                                            default is 2.
+        layer                               Optional list of integers. The list of layers to cook.
         -------------------------------     --------------------------------------------------------------------
         extent                              Optional dict. The updated extent to be used. If nothing is specified,
                                             the default extent is used.
@@ -612,14 +600,14 @@ class EnterpriseSceneLayerManager(_GISResource):
         """
         if layer is None:
             layer = {}
+        elif layer is not None:
+            layer = {layer}
         if extent is None:
             extent = "DEFAULT"
-        if number_cache_service_instances is None:
-            number_cache_service_instances = 2
         if area_of_interest is None:
             return self._tbx.manage_scene_cache(
                 service_url=self._sl.url,
-                num_of_caching_service_instances=number_cache_service_instances,
+                num_of_caching_service_instances=2,
                 layer=layer,
                 update_mode="PARTIAL_UPDATE_ATTRIBUTES",
                 update_extent=extent,
@@ -627,7 +615,7 @@ class EnterpriseSceneLayerManager(_GISResource):
         else:
             return self._tbx.manage_scene_cache(
                 service_url=self._sl.url,
-                num_of_caching_service_instances=number_cache_service_instances,
+                num_of_caching_service_instances=2,
                 layer=layer,
                 update_mode="PARTIAL_UPDATE_ATTRIBUTES",
                 update_extent=extent,
