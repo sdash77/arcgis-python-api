@@ -1543,6 +1543,7 @@ def enrich(
     if isinstance(study_areas, Iterable) and not isinstance(study_areas, pd.DataFrame):
         if isinstance(study_areas, dict):
             first_geo = list(study_areas.values())[0]
+            study_areas = list(study_areas.values())
         elif isinstance(study_areas, list):
             first_geo = study_areas[0]
 
