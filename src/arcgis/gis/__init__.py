@@ -5136,6 +5136,60 @@ class ContentManager(object):
         return self._gis._con.get(curl, params, ignore_error_key=True)
 
     # ----------------------------------------------------------------------
+    def can_reassign(self, items: list[Item], user: User) -> list[dict[str, Any]]:
+        """
+        Checks if a `list[Item]` can be reassigned to a particular user.
+        The operation checks whether the items owned by one user can be successfully
+        reassigned to a specified user before performing the `reassign` operation.
+        Users assigned the default administrator role, or a custom role with
+        administrative privileges, can perform this operation. The item owner can
+        also use this operation; if the item owner that performs this operation
+        is not a default administrator, or assigned a custom role with
+        administrative privileges, they must have the portal:user:reassignItems
+        privilege assigned to them to transfer content to another user.
+
+        ======================     ====================================================================
+        **Argument**               **Description**
+        ----------------------     --------------------------------------------------------------------
+        items                      Required list[Item]. A list of Items. The maximum number of items
+                                   that can be transferred at one time is 100.
+        ----------------------     --------------------------------------------------------------------
+        user                       Required User. The user the items will be reassigned to. For a user
+                                   to be eligible to receive transferred content, they must meet the
+                                   following requirements:
+
+                                   - The user must be assigned the portal:user:receiveItems privilege to receive the transferred content.
+                                   - The user must have a user type that allows them to own content.
+                                   - If the items being transferred to the user are shared with a group, the user receiving the items must be a member of the group. If the group is a view-only group, the user receiving the items must be the group owner or a group manager.
+
+                                   If the above requirements are not met, an error response will be returned.
+        ======================     ====================================================================
+
+        :returns: `list[dict[str, Any]]`
+        """
+        if self._gis.version < [10, 1] and self._gis._portal.is_arcgisonline == False:
+            return []
+        urls = {}
+        params = {}
+        params["f"] = "json"
+        params["targetUsername"] = user.username
+        params["items"] = None
+        for item in items:
+            if item.owner in urls:
+                urls[item.owner]["itemids"].append(item.itemid)
+            else:
+                urls[item.owner] = {
+                    "itemids": [item.itemid],
+                    "url": f"{self._gis._portal.resturl}content/users/{item.owner}/canReassignItems",
+                }
+        results = []
+        for key, value in urls.items():
+            params["items"] = ",".join(value["itemids"])
+            results.append(self._gis._con.post(value["url"], params))
+            #
+        return results
+
+    # ---------------------------------------------------------------------
     def cost(
         self,
         tile_storage: Optional[float] = None,
