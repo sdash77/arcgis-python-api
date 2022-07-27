@@ -794,7 +794,10 @@ class FullyConnectedNetwork(ArcGISModel):
             min_size = rows
 
         sample_indexes = random.sample(self._data._validation_indexes, min_size)
-        rows_df = self._data._dataframe.iloc[sample_indexes]
+        if self._data._is_classification:
+            rows_df = self._data._dataframe.loc[sample_indexes]
+        else:
+            rows_df = self._data._dataframe.iloc[sample_indexes]
         predictions = self._df_predict(rows_df)
         pd.options.mode.chained_assignment = None
         rows_df["prediction_results"] = predictions
@@ -810,9 +813,15 @@ class FullyConnectedNetwork(ArcGISModel):
         if not HAS_NUMPY:
             raise Exception("This function requires numpy.")
 
-        validation_dataframe = self._data._dataframe.iloc[
-            self._data._validation_indexes
-        ].reset_index(drop=True)
+        # using loc instead of iloc to get data when dataframe doesnt have continuous indexes
+        if self._data._is_classification:
+            validation_dataframe = self._data._dataframe.loc[
+                self._data._validation_indexes
+            ].reset_index(drop=True)
+        else:
+            validation_dataframe = self._data._dataframe.iloc[
+                self._data._validation_indexes
+            ].reset_index(drop=True)
 
         predictions = np.array(self._df_predict(validation_dataframe))
         labels = validation_dataframe[self._data._dependent_variable]
