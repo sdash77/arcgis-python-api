@@ -565,7 +565,7 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
     **arguements**          **description**
     ----------------------  ---------------------------------------------------------
     ri_field                Attribute field used for setting the rotation of a symbol
-                            if no ri_expression is provided.
+                            if no ``ri_expression`` is provided.
     ----------------------  ---------------------------------------------------------
     ri_type                 Defines the origin and direction of rotation depending on
                             how the angle of rotation was measured. Possible values
@@ -580,7 +580,7 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
     ----------------------  ---------------------------------------------------------
     ri_expression           An Arcade expression evaluating to a number.
     ----------------------  ---------------------------------------------------------
-    ri_expression_title     The title identifying and describing the ri_expression
+    ri_expression_title     The title identifying and describing the ``ri_expression``
     ======================  =========================================================
 
 
@@ -656,15 +656,10 @@ def generate_renderer(
                             Allowed values:
 
                             + 's' - is a simple renderer that uses one symbol only.
-                            + 'u' - unique renderer symbolizes features based on one
-                                    or more matching string attributes.
-                            + 'u-a' - unique renderer symbolizes features based on
-                                      an arcade expression.
-                            + 'c' - A class breaks renderer symbolizes based on the
-                                    value of some numeric attribute.
-                            + 'h' - heatmap renders point data into a raster
-                                    visualization that emphasizes areas of higher
-                                    density or weighted values.
+                            + 'u' - unique renderer symbolizes features based on one or more matching string attributes.
+                            + 'u-a' - unique renderer symbolizes features based on an arcade expression.
+                            + 'c' - A class breaks renderer symbolizes based on the value of some numeric attribute.
+                            + 'h' - heatmap renders point data into a raster visualization that emphasizes areas of higher density or weighted values.
                             + 'd' - dot density renderer
 
     ----------------------  ---------------------------------------------------------
@@ -673,7 +668,7 @@ def generate_renderer(
                             unique renderer, a list can be given.
     ======================  =========================================================
 
-    ** Simple Renderer**
+    **Simple Renderer**
 
     A simple renderer is a renderer that uses one symbol only.
 
@@ -828,12 +823,13 @@ def generate_renderer(
                             using this variable.  The format of each unique value is
                             as follows:
 
-                            {
-                                "value" : <value>,
-                                "label" : <label value>,
-                                "description" : <optional text description>,
-                                "symbol" : {...symbol...}
-                            }
+
+                                | {
+                                |     "value" : <value>,
+                                |     "label" : <label value>,
+                                |     "description" : <optional text description>,
+                                |     "symbol" : {...symbol...}
+                                | }
 
     ======================  =========================================================
 
@@ -937,7 +933,6 @@ def generate_renderer(
                             label               Required String.  Descriptive name of the field.
                             ---------------     --------------------------------------------------------------------
                             color               Required List. A integer array consisting of R,G,B,A values
-                            ---------------     --------------------------------------------------------------------
                             ===============     ====================================================================
 
                             If the field name is not in the SeDF, then an error will be raised on renderering.
