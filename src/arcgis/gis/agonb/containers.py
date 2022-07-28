@@ -31,26 +31,26 @@ class Container:
     def properties(self):
         if self._properties is None:
             url = f"{self._url}"
-            params = {'f': "json"}
+            params = {"f": "json"}
             self._properties = self._gis._con.get(url, params)
         return self._properties
 
     def terminate(self) -> bool:
         """stops the current container"""
         url = f"{self._url}/terminateContainer"
-        params = {'f': "json"}
+        params = {"f": "json"}
         return self._gis._con.get(url, params)
 
     def notebooks(self) -> list[dict[T, V]]:
         """returns a list of notebooks running in the current container"""
         url = f"{self._url}/notebooks"
-        params = {'f': "json"}
+        params = {"f": "json"}
         return self._gis._con.get(url, params)
 
     def close(self, notebook_id: str) -> bool:
         """closes a notebook"""
         url = f"{self._url}/notebooks/{notebook_id}/closeNotebook"
-        params = {'f': "json"}
+        params = {"f": "json"}
         return self._gis._con.post(url, params)
 
 
@@ -73,7 +73,7 @@ class ContainerManagement:
     def lists(self) -> list[dict[T, V]]:
         """Returns a list of containers"""
         url = "{self._url}"
-        params = {'f': "json"}
+        params = {"f": "json"}
         return self._gis._con.get(url, params)
 
     def get(self, id: str) -> Container:

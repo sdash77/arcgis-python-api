@@ -31,7 +31,7 @@ class RuntimeManager:
 
         :returns: dict[T,V]
         """
-        params = {'f': "json"}
+        params = {"f": "json"}
         return self._gis._con.get(self._url, params)
 
     def list(self) -> list[dict[T, V]]:
@@ -40,8 +40,8 @@ class RuntimeManager:
 
         :returns: list[dict[T,V]]
         """
-        params = {'f': "json"}
-        return self._gis._con.get(self._url, params).get('runtimes', [])
+        params = {"f": "json"}
+        return self._gis._con.get(self._url, params).get("runtimes", [])
 
     def manifest(self, id: str) -> dict[T, V]:
         """
@@ -50,5 +50,5 @@ class RuntimeManager:
         :returns: dict[T,V]
         """
         url = f"{self._url}/{id}/manifest"
-        params = {'f': 'json'}
+        params = {"f": "json"}
         return self._gis._con.get(url, params)

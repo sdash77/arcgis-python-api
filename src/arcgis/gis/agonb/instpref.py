@@ -31,7 +31,7 @@ class InstancePreference:
         :returns: dict[T,V]
         """
         url = f"{self._url}/availableInstanceTypes"
-        params = {'f': 'json'}
+        params = {"f": "json"}
         return self._gis._con.get(url, params)
 
     def instances(self) -> dict[T, V]:
@@ -41,5 +41,5 @@ class InstancePreference:
         :return: dict[T,V]
         """
         url = f"{self._url}"
-        params = {'f': 'json'}
+        params = {"f": "json"}
         return self._gis._con.get(url, params)
