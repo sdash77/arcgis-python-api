@@ -13570,9 +13570,9 @@ class RasterCollection:
 
             def skewness(ras_list):
                 from arcgis.raster.functions import mean, std, med
-                cs_mean = mean(ras_list, process_as_multiband="MULTI_BAND")
-                cs_stddev  = std(ras_list, process_as_multiband="MULTI_BAND")
-                cs_median = med(ras_list, process_as_multiband="MULTI_BAND")
+                cs_mean = mean(ras_list, process_as_multiband=True)
+                cs_stddev  = std(ras_list, process_as_multiband=True)
+                cs_median = med(ras_list, process_as_multiband=True)
                 out_skewness = 3*(cs_mean - cs_median)/cs_stddev
                 return out_skewness
 
