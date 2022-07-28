@@ -1485,6 +1485,7 @@ def copy_raster(
                                            - "PercentMinMax; <MinPercent>; <MaxPercent>"
                                            - "StdDev; <NumberOfStandardDeviation>"
                                            Example: {"StretchType": "MinMax; <min>; <max>"}
+
                                          - Value for ValidRange dictionary can be as follows:
 
                                            - "<MaskMinValue>, <MaskMaxValue>"
@@ -7133,7 +7134,6 @@ def optimal_region_connections(
                                              be uniquely numbered. The cells that are not part of any region must
                                              be NoData. The raster type must be integer, and the values can be
                                              either positive or negative.
-                                             either positive or negative.
 
                                              If the region input is a feature dataset, it can be polygons,
                                              lines, or points. Polygon feature regions cannot be composed
@@ -8132,7 +8132,7 @@ def sample(
                                              Example:
                                                 "FID"
     ------------------------------------     --------------------------------------------------------------------
-    acquisition_definition                   | Optional dictionary. Specify the time, depth or other acquisition \
+    acquisition_definition                   Optional dictionary. Specify the time, depth or other acquisition \
                                              data associated with the location features.
                                              
                                              Only the following combinations are supported:
@@ -8161,6 +8161,7 @@ def sample(
     ------------------------------------     --------------------------------------------------------------------
     statistics_type                          Optional string.
                                              The type of statistic to be calculated.
+
                                              - MINIMUM - Finds the minimum within the specified range.
                                              - MAXIMUM - Finds the maximum within the specified range.
                                              - MEDIAN - Finds the median within the specified range.
@@ -9489,7 +9490,7 @@ def export_to_tile_package(
     ===============     ====================================================================
     **Argument**        **Description**
     ---------------     --------------------------------------------------------------------
-    input_data          Required Tiled :class:`~arcgis.raster.ImageryLayer` portal item to be exported as tile package.
+    input_data          Required Tiled ImageryLayer portal :class:`~arcgis.gis.Item` to be exported as tile package.
     ---------------     --------------------------------------------------------------------
     output_name         Optional string. Name of the Tile Package to be created.
                         If not provided, a Tile Package is created by the method and used as the output.
