@@ -34,13 +34,23 @@ class SingleFieldGeometry:
     ===============     ====================================================================
     **Argument**        **Description**
     ===============     ====================================================================
-    geometry_field      str. Geometry field name. Options: esriGeometryPoint, esriGeometryPolyline,
-                        esriGeometryPolygon, esriGeometryMulti.
+    geometry_field      String. Geometry field name.
+
+                        Options:
+
+                            esriGeometryPoint, esriGeometryPolyline, esriGeometryPolygon, esriGeometryMulti.
     ---------------     --------------------------------------------------------------------
-    geometry_type       str. Geometry type. Options: esriGeometryPoint, esriGeometryPolyline,
-                        esriGeometryPolygon, esriGeometryMulti.
+    geometry_type       String. Geometry type.
+
+                        Options:
+
+                            esriGeometryPoint, esriGeometryPolyline, esriGeometryPolygon, esriGeometryMulti.
     ---------------     --------------------------------------------------------------------
-    geometry_format     str. Geometry format. Options: coordinates, esrijson, geojson, or wkt.
+    geometry_format     String. Geometry format.
+
+                        Options:
+
+                            coordinates, esrijson, geojson, or wkt.
     ---------------     --------------------------------------------------------------------
     wkid                int. WKID of the geometry.
     ===============     ====================================================================
@@ -92,9 +102,9 @@ class XYZGeometry:
     =====================   ====================================================================
     **Argument**            **Description**
     ---------------------   --------------------------------------------------------------------
-    x_field                 str. Longitude field name.
+    x_field                 String. Longitude field name.
     ---------------------   --------------------------------------------------------------------
-    y_field                 str. Latitude field name.
+    y_field                 String. Latitude field name.
     ---------------------   --------------------------------------------------------------------
     wkid                    int. WKID of the geometry.
     =====================   ====================================================================
@@ -102,9 +112,9 @@ class XYZGeometry:
     =====================   ====================================================================
     **Optional Argument**   **Description**
     =====================   ====================================================================
-    z_field                 str. Z field name.
+    z_field                 String. Z field name.
     ---------------------   --------------------------------------------------------------------
-    z_unit                  str. Z units. Options: Kilometers, Meters, Centimeters, Millimeters, Fathoms,
+    z_unit                  String. Z units. Options: Kilometers, Meters, Centimeters, Millimeters, Fathoms,
                             Miles, NauticalMiles, Yards, Feet, Inches.
     =====================   ====================================================================
 
@@ -150,7 +160,7 @@ class _HasGeometry:
         ==============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        geometry            Union[XYZGeometry, SingleFieldGeometry].
+        geometry            Union[:class:`~arcgis.realtime.velocity.feeds.XYZGeometry`, :class:`~arcgis.realtime.velocity.feeds.SingleFieldGeometry`].
                             Geometry object used to configure the feed.
         ===============     ====================================================================
 

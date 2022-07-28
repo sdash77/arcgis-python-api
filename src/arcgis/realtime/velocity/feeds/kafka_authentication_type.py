@@ -29,9 +29,9 @@ class SASLPlain(_KafkaAuthenticationType):
     ==================     =============================================================================================
     **Argument**           **Description**
     ------------------     ---------------------------------------------------------------------------------------------
-    username               str. Username for basic authentication.
+    username               String. Username for basic authentication.
     ------------------     ---------------------------------------------------------------------------------------------
-    password               str. Password for basic authentication.
+    password               String. Password for basic authentication.
     ------------------     ---------------------------------------------------------------------------------------------
     use_ssl                bool. When disabled, ArcGIS Velocity will connect via PLAINTEXT. The default value is True.
     ==================     =============================================================================================
@@ -61,9 +61,9 @@ class SaslScramSha256(_KafkaAuthenticationType):
     ==================     =============================================================================================
     **Argument**           **Description**
     ------------------     ---------------------------------------------------------------------------------------------
-    username               str. Username for authentication.
+    username               String. Username for authentication.
     ------------------     ---------------------------------------------------------------------------------------------
-    password               str. Password for authentication.
+    password               String. Password for authentication.
     ------------------     ---------------------------------------------------------------------------------------------
     use_ssl                bool. When disabled, ArcGIS Velocity will connect via PLAINTEXT. The default value is True.
     ==================     =============================================================================================
@@ -93,9 +93,9 @@ class SaslScramSha512(_KafkaAuthenticationType):
     ==================     =============================================================================================
     **Argument**           **Description**
     ------------------     ---------------------------------------------------------------------------------------------
-    username               str. Username for authentication.
+    username               String. Username for authentication.
     ------------------     ---------------------------------------------------------------------------------------------
-    password               str. Password for authentication.
+    password               String. Password for authentication.
     ------------------     ---------------------------------------------------------------------------------------------
     use_ssl                bool. When disabled, ArcGIS Velocity will connect via PLAINTEXT. The default value is True.
     ==================     =============================================================================================
