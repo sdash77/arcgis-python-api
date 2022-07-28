@@ -1,14 +1,10 @@
-import os
 import sys
 
 sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
-from arcgis.features.layer import FeatureLayer
 from arcgis.gis import GIS
 import pandas as pd
 from arcgis.features import GeoAccessor, GeoSeriesAccessor
 import unittest
-import tempfile
-from arcgis._impl.common._isd import InsensitiveDict
 
 data = [
     {

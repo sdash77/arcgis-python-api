@@ -26,7 +26,6 @@ import logging
 from typing import Any, Optional, Union
 from urllib.error import HTTPError
 from arcgis.gis._impl import (
-    ItemTypeEnum,
     ItemProperties,
     MetadataFormatEnum,
     CreateServiceParameter,
@@ -7147,7 +7146,7 @@ class ContentManager(object):
                 )
 
                 zip_fgdb = zipws(path=fgdb, outfile=temp_zip, keep=True)
-                item = self.add(
+                fgdb_item = self.add(
                     item_properties={
                         "title": title,
                         "type": "File Geodatabase",
@@ -7161,14 +7160,14 @@ class ContentManager(object):
                 # Publish as new feature layer
                 publish_parameters = {
                     "hasStaticData": True,
-                    "name": os.path.splitext(item["name"])[0],
+                    "name": os.path.splitext(fgdb_item["name"])[0],
                     "maxRecordCount": 2000,
                     "layerInfo": {"capabilities": capabilities},
                 }
                 if target_sr is not None:
                     publish_parameters["targetSR"] = {"wkid": target_sr}
 
-                new_item = item.publish(
+                new_item = fgdb_item.publish(
                     publish_parameters=publish_parameters, item_id=item_id
                 )
 
@@ -7186,21 +7185,23 @@ class ContentManager(object):
 
                     fl_index = fs_dict["layer"]
 
-                    # Create the feature layer manager from the kwargs
+                    # Create the feature layer manager for the existing feature service
                     fs_item = self._gis.content.get(fs_id)
                     flc = FeatureLayerCollection.fromitem(fs_item)
                     flc_manager = flc.manager
 
-                    # Get properties from the newly created feature layer, assign correct id
+                    # Get properties from the newly created feature layer
                     new_fl = new_item.layers[0]
                     publish_parameters = new_fl.properties
 
                     # Overwrite or Append Steps
                     if overwrite:
+                        # update the name and id to represent correct values
                         publish_parameters["name"] = flc.manager.properties.layers[
                             fl_index
                         ]["name"]
                         publish_parameters["id"] = fl_index
+
                         # Perform edit on the flc
                         # Step 1: Preserve layer ids
                         revert = False
@@ -7231,11 +7232,24 @@ class ContentManager(object):
                             if layer["name"] == publish_parameters["name"]:
                                 fl_index = layer["id"]
 
+                    # Add new item dependency and append the features
+                    if (
+                        "filegdb"
+                        in fs_item.layers[fl_index].properties.supportedAppendFormats
+                    ):
+                        ItemDependency(fs_item).add("itemid", item.id)
+                        fs_item.layers[fl_index].append(
+                            item_id=fgdb_item.id, upload_format="filegdb"
+                        )
+                    else:
+                        # When filegdb not supported through append, use featureCollection
+                        features = new_item.layers[0].query().features
+                        fs_item.layers[fl_index].edit_features(adds=features)
+
+                    # Feature layer was added to existing feature service so can delete the item
                     new_item.delete()
-                    # Append the data. For overwrite and append this step is needed.
-                    fs_item.layers[fl_index].append(
-                        item_id=item.id, upload_format="filegdb"
-                    )
+
+                    # return the updated feature service
                     return self._gis.content.get(fs_id)
                 else:
                     return new_item
@@ -7273,16 +7287,17 @@ class ContentManager(object):
                     fs_id = fs_dict["featureServiceId"]
                     fl_index = fs_dict["layer"]
 
-                    # Create the feature layer manager from the kwargs
+                    # Create the feature layer manager for the existing feature service
                     fs_item = self._gis.content.get(fs_id)
                     flc = FeatureLayerCollection.fromitem(fs_item)
                     flc_manager = flc.manager
 
-                    # Analyze the shapefile item to get definition
+                    # Analyze the shapefile item to get definition for new feature layer
                     publish_parameters_orig = flc_manager.properties["layers"][fl_index]
                     publish_parameters = self._gis.content.analyze(
                         item=item, file_type="shapefile"
                     )["publishParameters"]["layers"][0]
+
                     # Update to get all correct parameters to add to definition
                     publish_parameters.update(publish_parameters_orig)
                     if overwrite:
@@ -7300,12 +7315,15 @@ class ContentManager(object):
                         if revert:
                             flc_manager.update_definition({"preserveLayerIds": False})
                     elif append:
+                        # add new layer definition to existing service
                         flc_manager.add_to_definition({"layers": [publish_parameters]})
+                        # find position at which it was added
                         for layer in flc_manager.properties.layers:
                             if layer["name"] == publish_parameters["name"]:
                                 fl_index = layer["id"]
 
-                    # Append the features
+                    # Add new dependency on the shapefile and append the features
+                    ItemDependency(fs_item).add("itemid", item.id)
                     fs_item.layers[fl_index].append(
                         item_id=item.id, upload_format="shapefile"
                     )
