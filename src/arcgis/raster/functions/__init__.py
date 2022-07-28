@@ -8452,8 +8452,7 @@ def spectral_conversion(
     affect the spectral values of the output. In the matrix, different weights
     can be assigned to all the input bands to calculate each of the output
     bands. The column/row size of the matrix equals to the band count of input
-    raster. For more information, see Spectral Conversion function
-    `Spectral Conversion function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/spectral-conversion-function.htm>`_
+    raster. For more information, see `Spectral Conversion function <http://desktop.arcgis.com/en/arcmap/latest/manage-data/raster-and-images/spectral-conversion-function.htm>`_
 
     The arguments for this function are as follows:
 
