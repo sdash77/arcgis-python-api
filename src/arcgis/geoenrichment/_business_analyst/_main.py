@@ -1911,6 +1911,15 @@ class BusinessAnalyst(object):
 
         # if a list of dictionaries, which are not geometries, or a list of strings is being passed in, just send
         elif (is_dict and not is_geom) or is_str:
+            if proximity_value is not None:
+                prx_src = self if country is None else country
+                geographies = add_proximity_to_enrich_feature_list(
+                    prx_src,
+                    geographies,
+                    proximity_type,
+                    proximity_metric,
+                    proximity_value,
+                )
             for idx in range(0, len(geographies), batch_size):
                 geo_btch = geographies[idx : idx + batch_size]
                 params["studyAreas"] = json.dumps(geo_btch) if is_dict else geo_btch
