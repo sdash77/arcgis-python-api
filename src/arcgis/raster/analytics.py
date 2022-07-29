@@ -7026,8 +7026,8 @@ def optimal_path_as_line(
                                              to determine the optimal path from the sources to the destinations.
 
                                              The distance accumulation raster is usually created with the
-                                             ``arcgis.raster.functions.gbl.distance_accumulation`` or
-                                             ``arcgis.raster.functions.gbl.distance_allocation functions``  Each cell
+                                             :meth:`~arcgis.raster.functions.gbl.distance_accumulation` or
+                                             :meth:`~arcgis.raster.functions.gbl.distance_allocation`. Each cell
                                              in the distance accumulation raster represents the minimum
                                              accumulative cost distance over a surface from each cell to a set of source cells.
     ------------------------------------     --------------------------------------------------------------------
@@ -8201,7 +8201,8 @@ def sample(
                                              Statistics will be calculated within this buffer area. 
     ------------------------------------     --------------------------------------------------------------------
     layout                                   Optional string. Specifies whether sampled values appear in rows or 
-                                             columns in the output table. 
+                                             columns in the output table.
+
                                              - ROW_WISE - Sampled values appear in separate rows in the output table. This is the default.
                                              - COLUMN_WISE - Sampled values appear in separate columns in the output table. This option is only valid when the input multidimensional raster contains one variable and one dimension, and each slice is a single-band raster.
     ------------------------------------     --------------------------------------------------------------------
