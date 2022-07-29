@@ -9978,9 +9978,12 @@ class User(dict):
         time.sleep(2)
         try:
             count = 0
+            item = None
             while count < 5:
-
-                item = Item(self._gis, res["itemId"])
+                try:
+                    item = Item(self._gis, res["itemId"])
+                except:
+                    ...
                 if item:
                     break
                 count += 1
