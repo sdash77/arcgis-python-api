@@ -14991,6 +14991,7 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
                 df.loc[i, "Raster"]._engine_obj._fn = rft
                 df.loc[i, "Raster"]._engine_obj._fnra = rft
                 df.loc[i, "Raster"]._engine_obj._do_not_hydrate = True
+                df.loc[i, "Raster"]._engine_obj._tiles_only = False
 
         return df
 
