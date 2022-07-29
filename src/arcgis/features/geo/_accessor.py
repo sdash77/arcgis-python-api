@@ -2484,7 +2484,11 @@ class GeoAccessor(object):
         sanitize_columns = kwargs.pop("sanitize_columns", True)
         origin_columns = self._data.columns.tolist()
         origin_index = copy.deepcopy(self._data.index)
-        location = os.path.abspath(location)
+        if location and not str(os.path.dirname(location)).lower() in [
+            "memory",
+            "in_memory",
+        ]:
+            location = os.path.abspath(path=location)
         table = run_and_hide(
             to_table,
             **{
