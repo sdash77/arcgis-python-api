@@ -373,3 +373,21 @@ def test_enrich_sedf_from_agol_layer_global_defaults(usa_agol):
         enrich_res = enrich(df, gis=usa_agol._gis)
         assert isinstance(enrich_res, pd.DataFrame)
         assert _is_geoenabled(enrich_res)
+
+@skip_if_no_agol
+def test_name_areas_as_inputs(use_agol):
+    from arcgis.geoenrichment import enrich
+    
+    with does_not_raise():
+        # One named area
+        usa = Country.get('US')
+        redlands = usa.subgeographies.states['California'].zip5['92373']
+        enriched = enrich([redlands])
+        assert isinstance(enriched, pd.DataFrame)
+        assert _is_geoenabled(enriched)
+
+        # A dictionary of named areas
+        ca_counties = usa.subgeographies.states['California'].counties
+        counties_df = enrich(study_areas=ca_counties)
+        assert isinstance(counties_df, pd.DataFrame)
+        assert _is_geoenabled(counties_df)
