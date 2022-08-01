@@ -53,11 +53,11 @@ class RSS(_FeedTemplate, _HasTime, _HasGeometry):
     geometry                    [:class:`~arcgis.realtime.velocity.feeds.XYZGeometry`, :class:`~arcgis.realtime.velocity.feeds.SingleFieldGeometry`]. An instance of geometry configuration
                                 that will be used to create geometry objects from the incoming data.
     ---------------------       ----------------------------------------------------------------------------------------
-    time                        Union[:class:`~arcgis.realtime.velocity.feeds.TimeInstant`, :class:`~arcgis.realtime.velocity.feeds.TimeInterval`]. An instance of time configuration that
+    time                        [:class:`~arcgis.realtime.velocity.feeds.TimeInstant`, :class:`~arcgis.realtime.velocity.feeds.TimeInterval`]. An instance of time configuration that
                                 will be used to create time information from the incoming data.
     ---------------------       ----------------------------------------------------------------------------------------
     run_interval                :class:`~arcgis.realtime.velocity.feeds.RunInterval`. An instance of the scheduler configuration. The default is:
-                                RunInterval(cron_expression="0 * * ? * * *", timezone="America/Los_Angeles")
+                                RunInterval(cron_expression=``0 * * ? * * *``, timezone="America/Los_Angeles")
     =====================       ========================================================================================
 
     :return: A data class with RSS feed configuration.
