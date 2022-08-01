@@ -182,9 +182,8 @@ class GIS(object):
 
                         ex: 127.0.0.1
     ----------------    ---------------------------------------------------------------
-    use_gen_token       Optional Boolean. The default is `False`. For older
-                        Enterprises, the BUILT-IN users can specify using the
-                        generateToken end point for creating the token.
+    use_gen_token       Optional Boolean. The default is `False`. Uses generateToken
+                        login over OAuth2 login.
     ----------------    ---------------------------------------------------------------
     proxy_port          Optional integer. The proxy host port.  The default is 80.
     ----------------    ---------------------------------------------------------------
@@ -13680,8 +13679,7 @@ class Item(dict):
 
         if self.type == "Vector Tile Service":
             params["name"] = self.title.replace(" ", "_")
-        if self.type == "Map Service":
-            params["name"] = self.title.replace(" ", "_")
+
         if isinstance(date_range, (tuple, list)) and len(date_range) == 2:
             params["period"] = "1d"
             params["startTime"] = int(date_range[0].timestamp() * 1000)

@@ -847,7 +847,7 @@ class FormInfo:
 
     def _hydrate_element_expressions(self, element):
         """For each element's visibility and required expression, check if it exists in the expression info list. If it's a :class:`~arcgis.mapping.forms.FormExpressionInfo` object,
-        add it to the list. If it's not, remove the expression as it does not point to anything and we can't form a :class:`~arcgis.mapping.forms.FormExpressionInfo` """
+        add it to the list. If it's not, remove the expression as it does not point to anything and we can't form a :class:`~arcgis.mapping.forms.FormExpressionInfo`"""
         if element.visibility_expression:
             if isinstance(element.visibility_expression, FormExpressionInfo):
                 if (
