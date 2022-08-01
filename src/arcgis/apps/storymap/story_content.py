@@ -3,6 +3,8 @@ from enum import Enum
 from typing import Optional, Union
 import uuid
 
+from numpy import isin
+
 from arcgis.auth.tools import LazyLoader
 
 arcgis = LazyLoader("arcgis")
@@ -2495,7 +2497,6 @@ class Sidecar(object):
         return sidecar_tree
 
     # ----------------------------------------------------------------------
-    # Can we create an alias name called: change_media
     def edit(
         self,
         content: Union[Image, Video, Map, Embed],
@@ -2588,6 +2589,95 @@ class Sidecar(object):
         return self._story._assign_node_class(node_id)
 
     # ----------------------------------------------------------------------
+    def add_slide(
+        self,
+        contents: list,
+        media: Image | Video | Map | Embed,
+        slide_number: int = None,
+    ):
+        """
+        Add a slide to the sidecar. You are able to specify the position of the slide, the
+        content of the narrative panel and the media of the slide.
+
+        =======================     ====================================================================
+        **Argument**                **Description**
+        -----------------------     --------------------------------------------------------------------
+        contents                    Optional list of story content item(s). The instances of story content that
+                                    will be added to the narrative panel such as Text, Image, Embed, etc.
+        -----------------------     --------------------------------------------------------------------
+        media                       Optional item that is a story content item.
+                                    Item type for the media node can be: Image, Video, Map, Embed, or Swipe.
+        -----------------------     --------------------------------------------------------------------
+        slide_number                Optional Integer. The position at which the new slide will be.
+                                    If none is provided then it will be added as the last slide.
+
+                                    First slide is 1.
+        =======================     ====================================================================
+
+        .. code-block:: python
+            # Get sidecar from story and see the properties
+            sc = story.get(<sidecar_node_id>)
+            sc.properties
+            >> returns a dictionary structure of the sidecar
+
+            # create the content we will add to narrative_panel_nodes parameter
+            im = Image(<img_url_or_path>)
+            txt = Text("Hello World")
+            embed = Embed(<url>)
+            narrative_nodes = [im, txt, embed]
+
+            mmap = Map(<item_id webmap>)
+
+            # Add new slide with the content:
+            sc.add_slide(narrative_nodes, mmap, 4)
+            >> New slide added with the content at position 4
+        """
+        # Loop to:
+        # 1. Add the content to the story if not already added
+        # 2. Add the node ids to list to pass as children later
+        np_children = []
+        for content in contents:
+            np_children.append(content.node)
+            if content.node not in self._story._properties["nodes"]:
+                self._add_item_story(content)
+        if media.node not in self._story._properties["nodes"]:
+            self._add_item_story(media)
+
+        # Create narrative panel node
+        np_node = "n-" + uuid.uuid4().hex[0:6]
+        np_def = {
+            "type": "immersive-narrative-panel",
+            "data": {"position": "start", "size": "medium", "panelStyle": "themed"},
+            "children": np_children,
+        }
+        self._story._properties["nodes"][np_node] = np_def
+
+        # Create slide node and add the other nodes to it
+        slide_node = "n-" + uuid.uuid4().hex[0:6]
+        slide_def = {
+            "type": "immersive-side",
+            "data": {"transition": "fade"},
+            "children": [
+                np_node,  # First listed node is the Narrative Panel
+                media.node,  # Can be Any supported Slide Media node of type of IMAGE, VIDEO, MAP, EMBED or SWIPE
+            ],
+        }
+        self._story._properties["nodes"][slide_node] = slide_def
+
+        # Add slide node to sidecar node children at position indicated or last.
+        if slide_number is None:
+            # If no slide number then insert slide last
+            slide_number = len(self._slides) + 1
+        else:
+            # Correct for the indexing (user puts position 1, index is 0)
+            slide_number = slide_number - 1
+        self._story._properties["nodes"][self.node]["children"].insert(
+            slide_number, slide_node
+        )
+        # Update slide definition for the class to relect new list
+        self._slides = self._story._properties["nodes"][self.node]["children"]
+
+    # ----------------------------------------------------------------------
     def remove_slide(self, slide: str):
         """
         Remove a slide from the sidecar.
@@ -2603,6 +2693,7 @@ class Sidecar(object):
         self._slides.remove(slide)
         self._story._delete(slide)
         self._remove_associated(slide)
+        self._slides = self._story._properties["nodes"][self.node]["children"]
 
     # ----------------------------------------------------------------------
     def delete(self):
@@ -2642,15 +2733,19 @@ class Sidecar(object):
     # ----------------------------------------------------------------------
     def _add_item_story(self, content):
         if isinstance(content, Image):
-            content._add_image(story=self._story)
+            content._add_image(display="wide", story=self._story)
         elif isinstance(content, Video):
-            content._add_video(story=self._story)
+            content._add_video(display="wide", story=self._story)
         elif isinstance(content, Embed):
-            content._add_link(story=self._story)
+            content._add_link(display="wide", story=self._story)
         elif isinstance(content, Map):
-            content._add_map(story=self._story)
+            content._add_map(display="wide", story=self._story)
         elif isinstance(content, Text):
-            content._add_text(story=self._story)
+            content._add_text(display="wide", story=self._story)
+        elif isinstance(content, Button):
+            content._add_button(display="wide", story=self._story)
+        elif isinstance(content, Audio):
+            content._add_audio(display="wide", story=self._story)
 
 
 ###############################################################################################################

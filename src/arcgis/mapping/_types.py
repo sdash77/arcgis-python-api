@@ -6205,7 +6205,7 @@ class MapImageLayer(arcgis.gis.Layer):
         ------------------     --------------------------------------------------------------------
         image_format           Optional string. The format of the exported image.
                                The default format is .png.
-                               Values: 
+                               Values:
                                     png | png8 | png24 | jpg | pdf | bmp | gif | svg | svgz | emf | ps | png32
         ------------------     --------------------------------------------------------------------
         layer_defs             Optional dict. Allows you to filter the features of individual
@@ -6589,9 +6589,9 @@ class MapImageLayer(arcgis.gis.Layer):
         area_of_interest       Optional dictionary, Polygon. The area_of_interest polygon allows
                                exporting tiles within the specified polygon areas. This parameter
                                supersedes the exportExtent parameter.
-                               
+
                                Example:
-                               
+
                                    | { "features": [{"geometry":{"rings":[[[-100,35],
                                    |   [-100,45],[-90,45],[-90,35],[-100,35]]],
                                    |   "spatialReference":{"wkid":4326}}}]}
