@@ -6,7 +6,7 @@ from arcgis.apps.hub.sites import SiteManager, Site, PageManager
 from datetime import datetime
 from collections import OrderedDict
 import json
-
+from functools import wraps
 
 def _lazy_property(fn):
     """Decorator that makes a property lazy-evaluated."""
@@ -14,6 +14,7 @@ def _lazy_property(fn):
     attr_name = "_lazy_" + fn.__name__
 
     @property
+    @wraps(fn)
     def _lazy_property(self):
         if not hasattr(self, attr_name):
             setattr(self, attr_name, fn(self))
