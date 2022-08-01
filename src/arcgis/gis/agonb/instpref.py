@@ -1,3 +1,4 @@
+from __future__ import annotations
 from arcgis.gis import GIS
 from typing import TypeVar
 
@@ -24,6 +25,7 @@ class InstancePreference:
         self._url = url
         self._gis = gis
 
+    @property
     def available(self) -> dict[T, V]:
         """
         Returns Information on the available notebook instances.
@@ -34,6 +36,7 @@ class InstancePreference:
         params = {"f": "json"}
         return self._gis._con.get(url, params)
 
+    @property
     def instances(self) -> dict[T, V]:
         """
         Returns a dictionary containing the available instance types for the system

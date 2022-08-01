@@ -128,15 +128,6 @@ class SnapshotManager(object):
         self._gis = gis
 
     # ----------------------------------------------------------------------
-    @property
-    def properties(self) -> PropertyMap:
-        """returns the properties of the endpoint"""
-        if self._properties is None:
-            res = self._gis._con.get(self._url, {"f": "json"})
-            self._properties = PropertyMap(res)
-        return self._properties
-
-    # ----------------------------------------------------------------------
     def _convert(self, item, snapshot, title):
         """
         Converts a Snapshot to a new notebook.

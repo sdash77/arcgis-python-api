@@ -1,90 +1,13 @@
 from __future__ import annotations
-
-
-__all__ = ["NotebookManager", "Notebook"]
-
-K = TypeVar("K")
-V = TypeVar("V")
-
-
 from typing import TypeVar
 from arcgis.gis import GIS, Item
 from arcgis._impl.common._mixins import PropertyMap
 import concurrent.futures
 
-###########################################################################
-class Notebook:
-    """
-    This represents an individual notebook resource in the notebook server.
-    """
+__all__ = ["NotebookManager"]
 
-    _url = None
-    _item_id = None
-    _properties = None
-    _gis = None
-    # ----------------------------------------------------------------------
-    def __init__(
-        self,
-        url: str,
-        item_id: str,
-        properties: dict[K, V] | None = None,
-        gis: GIS | None = None,
-    ):
-        self._url = url + "/%s" % item_id
-        self._item_id = item_id
-        if properties:
-            self._properties = properties
-        if gis is None:
-            from arcgis.env import active_gis
-
-            gis = active_gis
-        self._gis = gis
-
-    # ----------------------------------------------------------------------
-    def _init(self):
-        """loads the properties"""
-        try:
-            params = {"f": "json"}
-            res = self._gis._con.get(self._url, params)
-            self._properties = PropertyMap(res)
-        except:
-            self._properties = PropertyMap({})
-
-    # ----------------------------------------------------------------------
-    def __str__(self):
-        return "< Notebook @ {url} >".format(url=self._url)
-
-    # ----------------------------------------------------------------------
-    def __repr__(self):
-        return "< Notebook @ {url} >".format(url=self._url)
-
-    # ----------------------------------------------------------------------
-    @property
-    def properties(self):
-        """returns the properties of the resource"""
-        if self._properties is None:
-            self._init()
-        return self._properties
-
-    # ----------------------------------------------------------------------
-    def close(self):
-        """
-        This operation stops a running notebook. You can use it to free up
-        space in your notebook container. Idle notebooks are automatically
-        cleaned up according to the duration defined by the
-        idleNotebookThreshold property. The default value for that property
-        is 24 hours.
-
-        :return: Boolean
-
-        """
-        params = {"f": "json"}
-        url = self._url + "/closeNotebook"
-        res = self._gis._con.post(url, params)
-        if "status" in res:
-            return res["status"] == "success"
-        return res
-
+K = TypeVar("K")
+V = TypeVar("V")
 
 ########################################################################
 class NotebookManager(object):
@@ -127,27 +50,6 @@ class NotebookManager(object):
     # ----------------------------------------------------------------------
     def __repr__(self):
         return "< NotebookManager @ {url} >".format(url=self._url)
-
-    # ----------------------------------------------------------------------
-    @property
-    def properties(self):
-        """returns the properties of the resource"""
-        if self._properties is None:
-            self._init()
-        return self._properties
-
-    # ----------------------------------------------------------------------
-    def list(self):
-        """
-        Returns a list of notebook instances on the Notebook Server
-
-        :return: List of :class:`~arcgis.gis.nb.Notebook` objects
-
-        """
-        return [
-            Notebook(url=self._url, item_id=nbs["id"], properties=nbs)
-            for nbs in self.properties.notebooks
-        ]
 
     # ----------------------------------------------------------------------
     @staticmethod

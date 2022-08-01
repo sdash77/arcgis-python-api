@@ -1,3 +1,4 @@
+from __future__ import annotations
 from arcgis.gis import GIS
 from typing import TypeVar
 

@@ -1,7 +1,11 @@
+from __future__ import annotations
 from arcgis.gis import GIS
-from typing import TypeVar
+from typing import Any, TypeVar
 
-T = TypeVar("T")
+__all__ = ["Container", "ContainerManager"]
+
+
+K = TypeVar("K")
 V = TypeVar("V")
 
 
@@ -37,11 +41,14 @@ class Container:
 
     def terminate(self) -> bool:
         """stops the current container"""
+        "/admin/system/containers/{id}/terminateContainer"
+
         url = f"{self._url}/terminateContainer"
         params = {"f": "json"}
-        return self._gis._con.get(url, params)
+        return self._gis._con.post(url, params)
 
-    def notebooks(self) -> list[dict[T, V]]:
+    @property
+    def notebooks(self) -> list[dict[str, Any]]:
         """returns a list of notebooks running in the current container"""
         url = f"{self._url}/notebooks"
         params = {"f": "json"}
@@ -54,12 +61,12 @@ class Container:
         return self._gis._con.post(url, params)
 
 
-class ContainerManagement:
+class ContainerManager:
     """
     ================  ===============================================================================
     **Argument**      **Description**
     ----------------  -------------------------------------------------------------------------------
-    url               Required String. The base url for the ContainerManagement endpoints.
+    url               Required String. The base url for the ContainerManager endpoints.
     ----------------  -------------------------------------------------------------------------------
     gis               Required GIS. The ArcGIS Online connection object.
     ================  ===============================================================================
@@ -70,9 +77,9 @@ class ContainerManagement:
         self._url = url
         self._gis = gis
 
-    def lists(self) -> list[dict[T, V]]:
+    def list(self) -> list[dict[str, Any]]:
         """Returns a list of containers"""
-        url = "{self._url}"
+        url = f"{self._url}"
         params = {"f": "json"}
         return self._gis._con.get(url, params)
 
@@ -80,13 +87,13 @@ class ContainerManagement:
         """Gets an instance of a container"""
         return Container(url=f"{self._url}/{id}", gis=self._gis)
 
-    def start(self, runtime: str, instance_type: str) -> bool:
+    def start(self, runtime: str, instance_type: str) -> dict[K, V]:
         """starts a container"""
-        url = "{self._url}/startContainer"
+        url = f"{self._url}/startContainer"
         params = {
             "f": "json",
             "notebookRuntimeId": runtime,
             "instanceTypeName": instance_type,
         }
         res = self._gis._con.post(url, params)
-        return res.get("success", False)
+        return res
