@@ -41,8 +41,6 @@ class Container:
 
     def terminate(self) -> bool:
         """stops the current container"""
-        "/admin/system/containers/{id}/terminateContainer"
-
         url = f"{self._url}/terminateContainer"
         params = {"f": "json"}
         return self._gis._con.post(url, params)
