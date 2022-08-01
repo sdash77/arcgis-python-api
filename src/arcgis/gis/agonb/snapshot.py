@@ -261,7 +261,7 @@ class SnapshotManager(object):
                 and res["status"] == "success"
                 and len(res["snapshots"]) > 0
             ):
-                snaptuple = namedtuple("SnapshotInfo", res["snapshots"][0])
+
                 return [
                     SnapShot(item=item, sm=self, properties=snap)
                     for snap in res["snapshots"]
