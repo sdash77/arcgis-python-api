@@ -1011,7 +1011,7 @@ class GIS(object):
             raise Exception("Please access your ArcGIS Online sites through your Hub.")
 
     @_lazy_property
-    def notebook_server(self) -> "list[NotebookServer]":
+    def notebook_server(self) -> "list[NotebookServer]" | "list[AGOLNotebookManager]":
         """
         The ``notebook_server`` property provides access to the :class:`~arcgis.gis.nb.NotebookServer` registered
         with the organization or enterprise.
@@ -1021,10 +1021,10 @@ class GIS(object):
             urls = self._registered_servers()
             url = urls.get("urls", {}).get("notebooks", {}).get("https", None)
             if url:
-                from arcgis.gis.nb import NotebookServer
+                from arcgis.gis.agonb import AGOLNotebookManager
 
                 url = f"https://{url[0]}/admin"
-                return [NotebookServer(url=url, gis=self)]
+                return [AGOLNotebookManager(url=url, gis=self)]
         else:
             try:
                 from arcgis.gis.nb import NotebookServer
