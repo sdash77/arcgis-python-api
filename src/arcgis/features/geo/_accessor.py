@@ -2484,7 +2484,11 @@ class GeoAccessor(object):
         sanitize_columns = kwargs.pop("sanitize_columns", True)
         origin_columns = self._data.columns.tolist()
         origin_index = copy.deepcopy(self._data.index)
-        location = os.path.abspath(location)
+        if location and not str(os.path.dirname(location)).lower() in [
+            "memory",
+            "in_memory",
+        ]:
+            location = os.path.abspath(path=location)
         table = run_and_hide(
             to_table,
             **{
@@ -3119,6 +3123,7 @@ class GeoAccessor(object):
             _dtype(str): "esriFieldTypeString",
             pd.StringDtype(): "esriFieldTypeString",
             "<M8[us]": "esriFieldTypeDate",
+            np.dtype("<M8[ns]"): "esriFieldTypeDate",
             datetime: "esriFieldTypeDate",
             np.datetime64: "esriFieldTypeDate",
             _dtype(np.datetime64): "esriFieldTypeDate",
@@ -3140,11 +3145,19 @@ class GeoAccessor(object):
                     "alias": col,
                 }
             if column["type"] == "esriFieldTypeString":
-                column["length"] = self._data[col].str.len().max()
+                try:
+                    column["length"] = int(self._data[col].str.len().max())
+                except:
+                    column["length"] = 256
             if _look_up[dtype] != "esriFieldTypeGeometry":
                 fields.append(column)
 
         fs["fields"] = fields
+        df = df.copy()
+        string_column = df.select_dtypes(pd.StringDtype()).columns.tolist()
+        number_columns = df.select_dtypes(np.number).columns.tolist()
+        df[string_column] = df[string_column].replace(pd.NA, "")
+        df[number_columns] = df[number_columns].replace(pd.NA, 0)
         for row in df.to_dict("records"):
             geom = {}
             if self.name in row:
@@ -3268,7 +3281,7 @@ class GeoAccessor(object):
         """
         from arcgis.features import FeatureSet
 
-        return FeatureSet.from_dataframe(self._data)
+        return FeatureSet.from_dict(self.__feature_set__)
 
     # ----------------------------------------------------------------------
     def to_feature_collection(

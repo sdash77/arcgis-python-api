@@ -90,9 +90,3 @@ Timeline
    :undoc-members:
    :show-inheritance:
 
-arcgis.apps.storymap.storymap module
-------------------------------------
-.. automodule:: arcgis.apps.storymap.storymap
-   :members:
-   :undoc-members:
-   :show-inheritance:

@@ -45,7 +45,7 @@ class ServerManager(object):
     @property
     def properties(self):
         """
-        The `ServerManager` properties
+        The :class:`~arcgis.gis.server.ServerManager` properties
 
         :return: Dict
         """

@@ -4545,7 +4545,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                                                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+                                                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online.
 
                                                                                 .. code-block:: python
 
@@ -6114,7 +6114,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         * Where is the center?
         * Which feature is the most accessible from all other features?
         * How dispersed, compact, or integrated are the features?
-        * Are there directional trends?s
+        * Are there directional trends?
 
         ====================    =========================================================
         **Argument**            **Description**
@@ -6148,7 +6148,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online Only.
+                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online Only and Enterprise 11+.
 
                                     .. code-block:: python
 
@@ -6178,7 +6178,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         analysis_layer = self._feature_input(analysis_layer)
-        if self._gis._is_agol:
+
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -12484,6 +12485,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         process_as_multidimensional=False,
         percentile_value=90,
         percentile_interpolation_type="AUTO_DETECT",
+        circular_calculation=False,
+        circular_wrap_value=360,
         **kwargs,
     ):
         """
@@ -12612,7 +12615,9 @@ class _RasterAnalysisTools(BaseAnalytics):
                 gis=gis,
                 future=True,
             )
-        elif (current_version is not None) and current_version >= 10.9:
+        elif (current_version is not None) and (
+            current_version >= 10.9 and current_version < 11
+        ):
             gpjob = self._tbx.summarize_raster_within(
                 input_zone_layer=input_zone_layer,
                 zone_field=zone_field,
@@ -12624,6 +12629,23 @@ class _RasterAnalysisTools(BaseAnalytics):
                 process_as_multidimensional=process_as_multidimensional,
                 percentile_value=percentile_value,
                 percentile_interpolation_type=percentile_interpolation_type,
+                gis=gis,
+                future=True,
+            )
+        elif (current_version is not None) and current_version >= 11:
+            gpjob = self._tbx.summarize_raster_within(
+                input_zone_layer=input_zone_layer,
+                zone_field=zone_field,
+                input_raster_layerto_summarize=input_raster_layer_to_summarize,
+                output_name=output_raster,
+                statistic_type=statistic_type,
+                ignore_missing_values=ignore_missing_values,
+                context=context,
+                process_as_multidimensional=process_as_multidimensional,
+                percentile_value=percentile_value,
+                percentile_interpolation_type=percentile_interpolation_type,
+                circular_calculation=circular_calculation,
+                circular_wrap_value=circular_wrap_value,
                 gis=gis,
                 future=True,
             )
@@ -16098,6 +16120,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_name=None,
         context=None,
         future=False,
+        circular_calculation=False,
+        circular_wrap_value=360,
         **kwargs,
     ):
         """
@@ -16316,20 +16340,44 @@ class _RasterAnalysisTools(BaseAnalytics):
         else:
             output_name = json.dumps({"serviceProperties": {"name": output_name}})
 
-        gpjob = self._tbx.zonal_statistics_as_table(
-            input_zone_raster_or_features=input_zone_raster_or_features,
-            input_value_raster=input_value_raster,
-            zone_field=zone_field,
-            ignore_nodata=ignore_nodata,
-            statistic_type=statistic_type,
-            percentile_values=percentile_values,
-            process_as_multidimensional=process_as_multidimensional,
-            percentile_interpolation_type=percentile_interpolation_type,
-            output_table_name=output_name,
-            context=context,
-            gis=self._gis,
-            future=True,
-        )
+        current_version = None
+        if "currentVersion" in self._gis._tools.rasteranalysis.properties.keys():
+            current_version = self._gis._tools.rasteranalysis.properties[
+                "currentVersion"
+            ]
+
+        if (current_version is not None) and current_version < 11:
+            gpjob = self._tbx.zonal_statistics_as_table(
+                input_zone_raster_or_features=input_zone_raster_or_features,
+                input_value_raster=input_value_raster,
+                zone_field=zone_field,
+                ignore_nodata=ignore_nodata,
+                statistic_type=statistic_type,
+                percentile_values=percentile_values,
+                process_as_multidimensional=process_as_multidimensional,
+                percentile_interpolation_type=percentile_interpolation_type,
+                output_table_name=output_name,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
+        elif (current_version is not None) and current_version >= 11:
+            gpjob = self._tbx.zonal_statistics_as_table(
+                input_zone_raster_or_features=input_zone_raster_or_features,
+                input_value_raster=input_value_raster,
+                zone_field=zone_field,
+                ignore_nodata=ignore_nodata,
+                statistic_type=statistic_type,
+                percentile_values=percentile_values,
+                process_as_multidimensional=process_as_multidimensional,
+                percentile_interpolation_type=percentile_interpolation_type,
+                output_table_name=output_name,
+                context=context,
+                gis=self._gis,
+                future=True,
+                circular_calculation=circular_calculation,
+                circular_wrap_value=circular_wrap_value,
+            )
 
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -18057,6 +18105,7 @@ class _GeoanalyticsTools(_AsyncService):
         out_extent=None,
         datastore="GDB",
         context=None,
+        output_name=None,
     ):
         """
 
@@ -18133,7 +18182,7 @@ class _GeoanalyticsTools(_AsyncService):
             params["gax:env:datastore"] = datastore
         if context is not None:
             params["context"] = context
-
+        output_service = self._create_output_service(output_name, task)
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -18164,6 +18213,7 @@ class _GeoanalyticsTools(_AsyncService):
         out_extent=None,
         datastore="GDB",
         context=None,
+        output_name=None,
     ):
         """
 
@@ -18203,7 +18253,7 @@ class _GeoanalyticsTools(_AsyncService):
             params["gax:env:datastore"] = datastore
         if context is not None:
             params["context"] = context
-
+        output_service = self._create_output_service(output_name, task)
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -18234,6 +18284,7 @@ class _GeoanalyticsTools(_AsyncService):
         out_extent=None,
         datastore="GDB",
         context=None,
+        output_name=None,
     ):
         """
 
@@ -18272,6 +18323,7 @@ class _GeoanalyticsTools(_AsyncService):
             params["gax:env:datastore"] = datastore
         if context is not None:
             params["context"] = context
+        output_service = self._create_output_service(output_name, task)
 
         task_url, job_info, job_id = super()._analysis_job(task, params)
 

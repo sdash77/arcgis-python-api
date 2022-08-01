@@ -25,7 +25,7 @@ class GeoJSONLayer(BaseOGC):
     ===============     ====================================================================
     **Argument**        **Description**
     ---------------     --------------------------------------------------------------------
-    url                 Optional string. The web location of the GeoJSON file.
+    url                 Optional String. The web location of the GeoJSON file.
     ---------------     --------------------------------------------------------------------
     data                Optional String or Dict. A path to a GeoJSON file, the GeoJSON data as a string, or the GeoJSON data as a dictionary.
     ---------------     --------------------------------------------------------------------
@@ -136,7 +136,7 @@ class GeoJSONLayer(BaseOGC):
         :return: String
         """
 
-        if validate_url(value=data):
+        if validate_url(data):
             self._url = data
         elif _is_file(data):
             with open(data, "r") as r:

@@ -247,9 +247,9 @@ yet.
    * Italics
      * dostring:    \`Italics\` 
      * api ref output:    *Italics*
-   * Box with red lettering
-     * docstring:    The \`\`as\_dict\`\` property
-     * api ref output:    ![red_string output](./source/_static/images/api_ref_style_guide/red_string.png)
+   * Highlighted string with a box
+     * docstring:    The \`\`GIS\`\` class
+       * api ref output:    ![highlighted_string output](./source/_static/images/api_ref_style_guide/highlighted_string.png)
 2. **Notes**
    * Use the note directive to start the docstring:
      * .. note::

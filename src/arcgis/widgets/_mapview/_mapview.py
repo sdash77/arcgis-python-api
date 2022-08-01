@@ -491,8 +491,10 @@ class MapView(widgets.DOMWidget):
     def basemap(self, value):
         if value in self.basemaps:
             self._basemap = value
+            self.webmap.basemap = value
         elif value in self.gallery_basemaps:
             self._basemap = value
+            self.webmap.basemap = value
         else:
             try:
                 self.webmap.basemap = value
@@ -1645,7 +1647,7 @@ class MapView(widgets.DOMWidget):
                 output_layers.append(layer)
         elif isinstance(arg, FeatureSet):
             fc = FeatureCollection.from_featureset(arg)
-            for layer in fc:
+            for layer in fc["layers"]:
                 output_layers.append(layer)
         elif isinstance(arg, dict):
             output_layers.append(arg)
@@ -1805,7 +1807,7 @@ class MapView(widgets.DOMWidget):
            USAGE EXAMPLE: Save map widget as a new web map item in GIS
            map1 = gis.map("Italy")
            map1.add_layer(Italy_streets_item)
-           map1.basemap = 'dark-gray'
+           map1.basemap = 'dark-gray-vector'
            italy_streets_map = map1.save({'title':'Italy streets',
                                         'snippet':'Arterial road network of Italy',
                                         'tags':'streets, network, roads'})
@@ -2414,7 +2416,7 @@ class MapView(widgets.DOMWidget):
         """
         In a JupyterLab environment, calling ``toggle_window_view`` will separate
         the drawn map widget to a new window next to the open notebook,
-        allowing you to move the widget it, split it, put it in a new tab, etc.
+        allowing you to move the widget to it, split it, put it in a new tab, etc.
         If the widget is already separated in a new window, calling this
         function will restore the widget to the notebook where it originated
         from.

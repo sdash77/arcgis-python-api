@@ -652,14 +652,16 @@ def cost_allocation(
 
 
 def zonal_statistics(
-    in_zone_data: Raster,
+    in_zone_data: Union[Raster, ImageryLayer],
     zone_field: Union[str, int],
-    in_value_raster: Raster,
+    in_value_raster: Union[Raster, ImageryLayer],
     ignore_nodata: bool = True,
     statistics_type: str = "MEAN",
-    process_as_multidimensional: Optional[bool] = None,
+    process_as_multidimensional: bool = False,
     percentile_value: float = 90,
     percentile_interpolation_type: str = "AUTO_DETECT",
+    circular_calculation: bool = False,
+    circular_wrap_value: float = 360,
 ):
 
     """
@@ -740,7 +742,6 @@ def zonal_statistics(
     -----------------------------    -----------------------------------------------------------------------------------------------------------
     percentile_interpolation_type    Optional string. Specifies the method of interpolation to be used when the
                                      specified percentile value lies between two input cell values.
-
                                      - AUTO_DETECT - If the input value raster has integer pixel type, the NEAREST method is used.
                                        If the input value raster has floating point pixel type, then the LINEAR method is used. This is the default.
 
@@ -751,6 +752,20 @@ def zonal_statistics(
                                        pixel type is floating point.
 
                                      Parameter available in ArcGIS Image Server 10.9 and higher.
+    -----------------------------    -----------------------------------------------------------------------------------------------------------
+    circular_calculation             Optional bool. Denotes whether the statistics calculations will be arithmetic or circular.
+
+                                     - False - Calculates arithmetic statistics. This is the default.
+                                     - True - Calculates circular statistics that are appropriate for cyclic quantities, such as compass direction in degrees, daytimes, and fractional parts of real numbers.
+
+                                     Parameter available in ArcGIS Image Server 11 and higher.
+    -----------------------------    -----------------------------------------------------------------------------------------------------------
+    circular_wrap_value              Optional float. The possible highest value (upper bound) in the cyclic data.
+                                     It is a positive number, and the default is 360. This value also represents the same quantity
+                                     as the possible lowest value (lower bound).
+                                     This parameter is honored only if the circular_calculation parameter is set to True.
+
+                                     | Parameter available in ArcGIS Image Server 11 and higher.
     =============================    ===========================================================================================================
 
 
@@ -829,6 +844,22 @@ def zonal_statistics(
         template_dict["rasterFunctionArguments"][
             "percentile_interpolation_type"
         ] = percentile_interpolation_type
+
+    if circular_calculation is not None:
+        if isinstance(circular_calculation, bool):
+            if circular_calculation == True:
+                template_dict["rasterFunctionArguments"][
+                    "circular_calculation"
+                ] = "CIRCULAR"
+            else:
+                template_dict["rasterFunctionArguments"][
+                    "circular_calculation"
+                ] = "ARITHMETIC"
+
+    if circular_wrap_value is not None:
+        template_dict["rasterFunctionArguments"][
+            "circular_wrap_value"
+        ] = circular_wrap_value
 
     function_chain_ra = copy.deepcopy(template_dict)
     function_chain_ra["rasterFunctionArguments"]["in_zone_data"] = raster_ra1
