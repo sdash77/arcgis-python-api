@@ -160,7 +160,7 @@ class _HasGeometry:
         ==============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        geometry            Union[:class:`~arcgis.realtime.velocity.feeds.XYZGeometry`, :class:`~arcgis.realtime.velocity.feeds.SingleFieldGeometry`].
+        geometry            [:class:`~arcgis.realtime.velocity.feeds.XYZGeometry`, :class:`~arcgis.realtime.velocity.feeds.SingleFieldGeometry`].
                             Geometry object used to configure the feed.
         ===============     ====================================================================
 

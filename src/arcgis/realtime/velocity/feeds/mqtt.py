@@ -53,7 +53,7 @@ class MQTT(_FeedTemplate, _HasTime, _HasGeometry):
     ---------------------       ----------------------------------------------------------------------------------------
     client_id                   String. Client ID ArcGIS Velocity will use to connect to the MQTT broker.
     ---------------------       ----------------------------------------------------------------------------------------
-    data_format                 Union[:class:`~arcgis.realtime.velocity.input.EsriJsonFormat`, :class:`~arcgis.realtime.velocity.input.GeoJsonFormat`, :class:`~arcgis.realtime.velocity.input.DelimitedFormat`, :class:`~arcgis.realtime.velocity.input.JsonFormat`, :class:`~arcgis.realtime.velocity.input.XMLFormat`].
+    data_format                 [:class:`~arcgis.realtime.velocity.input.EsriJsonFormat`, :class:`~arcgis.realtime.velocity.input.GeoJsonFormat`, :class:`~arcgis.realtime.velocity.input.DelimitedFormat`, :class:`~arcgis.realtime.velocity.input.JsonFormat`, :class:`~arcgis.realtime.velocity.input.XMLFormat`].
                                 An instance that contains the data format configuration for this feed. Configure only
                                 allowed formats. If this is not set right during initialization, a format will be
                                 auto-detected and set from a sample of the incoming data. This sample will be fetched
@@ -62,10 +62,10 @@ class MQTT(_FeedTemplate, _HasTime, _HasGeometry):
     track_id_field              String. name of the field from the incoming data that should be set as
                                 track ID.
     ---------------------       ----------------------------------------------------------------------------------------
-    geometry                    Union[:class:`~arcgis.realtime.velocity.feeds.XYZGeometry`, :class:`~arcgis.realtime.velocity.feeds.SingleFieldGeometry`]. An instance of geometry configuration
+    geometry                    [:class:`~arcgis.realtime.velocity.feeds.XYZGeometry`, :class:`~arcgis.realtime.velocity.feeds.SingleFieldGeometry`]. An instance of geometry configuration
                                 that will be used to create geometry objects from the incoming data.
     ---------------------       ----------------------------------------------------------------------------------------
-    time                        Union[:class:`~arcgis.realtime.velocity.feeds.TimeInstant`, :class:`~arcgis.realtime.velocity.feeds.TimeInterval`]. An instance of time configuration that
+    time                        [:class:`~arcgis.realtime.velocity.feeds.TimeInstant`, :class:`~arcgis.realtime.velocity.feeds.TimeInterval`]. An instance of time configuration that
                                 will be used to create time information from the incoming data.
     =====================       ========================================================================================
 

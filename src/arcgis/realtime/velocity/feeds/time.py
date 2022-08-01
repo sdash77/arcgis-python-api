@@ -91,7 +91,7 @@ class _HasTime:
         ==============          ====================================================================
         **Argument**            **Description**
         ---------------         --------------------------------------------------------------------
-        time                    Union[:class:`~arcgis.realtime.velocity.feeds.TimeInstant`, :class:`~arcgis.realtime.velocity.feeds.TimeInterval`].
+        time                    [:class:`~arcgis.realtime.velocity.feeds.TimeInstant`, :class:`~arcgis.realtime.velocity.feeds.TimeInterval`].
                                 Time object used to configure the feed.
         ===============         ====================================================================
 

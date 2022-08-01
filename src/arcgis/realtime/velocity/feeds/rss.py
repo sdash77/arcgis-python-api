@@ -31,7 +31,7 @@ class RSS(_FeedTemplate, _HasTime, _HasGeometry):
     ------------------          ----------------------------------------------------------------------------------------
     rss_url                     String. Address of the HTTP endpoint providing data.
     ------------------          ----------------------------------------------------------------------------------------
-    http_auth_type              Union[:class:`~arcgis.realtime.velocity.NoAuth`, :class:`~arcgis.realtime.velocity.BasicAuth`, :class:`~arcgis.realtime.velocity.CertificateAuth`]. An instance that contains
+    http_auth_type              [:class:`~arcgis.realtime.velocity.NoAuth`, :class:`~arcgis.realtime.velocity.BasicAuth`, :class:`~arcgis.realtime.velocity.CertificateAuth`]. An instance that contains
                                 the authentication information for the feed instance.
     ------------------          ----------------------------------------------------------------------------------------
     http_headers                Dict[str, str]. A Name-Value dictionary that contains HTTP headers
@@ -41,7 +41,7 @@ class RSS(_FeedTemplate, _HasTime, _HasGeometry):
     =====================       ========================================================================================
     **Optional Argument**       **Description**
     =====================       ========================================================================================
-    data_format                 Union[:class:`~arcgis.realtime.velocity.input.RssFormat`, :class:`~arcgis.realtime.velocity.input.GeoRssFormat`]. An instance that contains the data format
+    data_format                 [:class:`~arcgis.realtime.velocity.input.RssFormat`, :class:`~arcgis.realtime.velocity.input.GeoRssFormat`]. An instance that contains the data format
                                 configuration for this feed. Configure only allowed formats.
                                 If this is not set right during initialization, a format will be
                                 auto-detected and set from a sample of the incoming data. This sample
@@ -50,7 +50,7 @@ class RSS(_FeedTemplate, _HasTime, _HasGeometry):
     track_id_field              String. Name of the field from the incoming data that should be set as
                                 track ID.
     ---------------------       ----------------------------------------------------------------------------------------
-    geometry                    Union[:class:`~arcgis.realtime.velocity.feeds.XYZGeometry`, :class:`~arcgis.realtime.velocity.feeds.SingleFieldGeometry`]. An instance of geometry configuration
+    geometry                    [:class:`~arcgis.realtime.velocity.feeds.XYZGeometry`, :class:`~arcgis.realtime.velocity.feeds.SingleFieldGeometry`]. An instance of geometry configuration
                                 that will be used to create geometry objects from the incoming data.
     ---------------------       ----------------------------------------------------------------------------------------
     time                        Union[:class:`~arcgis.realtime.velocity.feeds.TimeInstant`, :class:`~arcgis.realtime.velocity.feeds.TimeInterval`]. An instance of time configuration that

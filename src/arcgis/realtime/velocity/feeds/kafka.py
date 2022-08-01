@@ -48,7 +48,7 @@ class Kafka(_FeedTemplate, _HasTime, _HasGeometry):
     ------------------      --------------------------------------------------------------------------------------------
     topics                  String. Topic to which the output will send messages.
     ------------------      --------------------------------------------------------------------------------------------
-    authentication          Union[:class:`~arcgis.realtime.velocity.feeds.NoAuth`, :class:`~arcgis.realtime.velocity.feeds.SASLPlain` ,  :class:`~arcgis.realtime.velocity.feeds.SaslScramSha512` :class:`~arcgis.realtime.velocity.feeds.SaslScramSha256`]. Kafka authentication type.
+    authentication          [:class:`~arcgis.realtime.velocity.feeds.NoAuth`, :class:`~arcgis.realtime.velocity.feeds.SASLPlain` ,  :class:`~arcgis.realtime.velocity.feeds.SaslScramSha512` :class:`~arcgis.realtime.velocity.feeds.SaslScramSha256`]. Kafka authentication type.
     ==================      ============================================================================================
 
     =====================   ============================================================================================
@@ -57,7 +57,7 @@ class Kafka(_FeedTemplate, _HasTime, _HasGeometry):
     consumer_group_id       String. A unique string that identifies the consumer group this feed
                             belongs to as a consumer.
     ---------------------   --------------------------------------------------------------------------------------------
-    data_format             Union[:class:`~arcgis.realtime.velocity.input.EsriJsonFormat`, :class:`~arcgis.realtime.velocity.input.GeoJsonFormat`, :class:`~arcgis.realtime.velocity.input.DelimitedFormat`, :class:`~arcgis.realtime.velocity.input.JsonFormat`, :class:`~arcgis.realtime.velocity.input.XMLFormat`].
+    data_format             [:class:`~arcgis.realtime.velocity.input.EsriJsonFormat`, :class:`~arcgis.realtime.velocity.input.GeoJsonFormat`, :class:`~arcgis.realtime.velocity.input.DelimitedFormat`, :class:`~arcgis.realtime.velocity.input.JsonFormat`, :class:`~arcgis.realtime.velocity.input.XMLFormat`].
                             An instance that contains the data format
                             configuration for this feed. Configure only allowed formats.
                             If this is not set right during initialization, a format will be
@@ -67,10 +67,10 @@ class Kafka(_FeedTemplate, _HasTime, _HasGeometry):
     track_id_field          String. name of the field from the incoming data that should be set as
                             track ID.
     ---------------------   --------------------------------------------------------------------------------------------
-    geometry                Union[:class:`~arcgis.realtime.velocity.feeds.XYZGeometry`, :class:`~arcgis.realtime.velocity.feeds.SingleFieldGeometry`]. An instance of geometry configuration
+    geometry                [:class:`~arcgis.realtime.velocity.feeds.XYZGeometry`, :class:`~arcgis.realtime.velocity.feeds.SingleFieldGeometry`]. An instance of geometry configuration
                             that will be used to create geometry objects from the incoming data.
     ---------------------   --------------------------------------------------------------------------------------------
-    time                    Union[:class:`~arcgis.realtime.velocity.feeds.TimeInstant`, :class:`~arcgis.realtime.velocity.feeds.TimeInterval`]. An instance of time configuration that
+    time                    [:class:`~arcgis.realtime.velocity.feeds.TimeInstant`, :class:`~arcgis.realtime.velocity.feeds.TimeInterval`]. An instance of time configuration that
                             will be used to create time information from the incoming data.
     =====================   ============================================================================================
 

@@ -72,7 +72,7 @@ class StreamLayer(_FeedTemplate, _HasTime):
     track_id_field                  String. Name of the field from the incoming data that should be set as
                                     track ID.
     --------------------------      ----------------------------------------------------------------------------------
-    time                            Union[:class:`~arcgis.realtime.velocity.feeds.TimeInstant`, :class:`~arcgis.realtime.velocity.feeds.TimeInterval`]. An instance of time configuration that
+    time                            [:class:`~arcgis.realtime.velocity.feeds.TimeInstant`, :class:`~arcgis.realtime.velocity.feeds.TimeInterval`]. An instance of time configuration that
                                     will be used to create time information from the incoming data.
     ==========================      ==================================================================================
 
