@@ -182,9 +182,8 @@ class GIS(object):
 
                         ex: 127.0.0.1
     ----------------    ---------------------------------------------------------------
-    use_gen_token       Optional Boolean. The default is `False`. For older
-                        Enterprises, the BUILT-IN users can specify using the
-                        generateToken end point for creating the token.
+    use_gen_token       Optional Boolean. The default is `False`. Uses generateToken
+                        login over OAuth2 login.
     ----------------    ---------------------------------------------------------------
     proxy_port          Optional integer. The proxy host port.  The default is 80.
     ----------------    ---------------------------------------------------------------
@@ -1012,7 +1011,7 @@ class GIS(object):
             raise Exception("Please access your ArcGIS Online sites through your Hub.")
 
     @_lazy_property
-    def notebook_server(self) -> "list[NotebookServer]":
+    def notebook_server(self) -> "list[NotebookServer]" | "list[AGOLNotebookManager]":
         """
         The ``notebook_server`` property provides access to the :class:`~arcgis.gis.nb.NotebookServer` registered
         with the organization or enterprise.
@@ -1022,10 +1021,10 @@ class GIS(object):
             urls = self._registered_servers()
             url = urls.get("urls", {}).get("notebooks", {}).get("https", None)
             if url:
-                from arcgis.gis.nb import NotebookServer
+                from arcgis.gis.agonb import AGOLNotebookManager
 
                 url = f"https://{url[0]}/admin"
-                return [NotebookServer(url=url, gis=self)]
+                return [AGOLNotebookManager(url=url, gis=self)]
         else:
             try:
                 from arcgis.gis.nb import NotebookServer
@@ -13680,8 +13679,7 @@ class Item(dict):
 
         if self.type == "Vector Tile Service":
             params["name"] = self.title.replace(" ", "_")
-        if self.type == "Map Service":
-            params["name"] = self.title.replace(" ", "_")
+
         if isinstance(date_range, (tuple, list)) and len(date_range) == 2:
             params["period"] = "1d"
             params["startTime"] = int(date_range[0].timestamp() * 1000)
@@ -15551,7 +15549,7 @@ class Item(dict):
                               )
 
         """
-        if self.type.lower() in ["application", "api key"]:
+        if self.type.lower() in ["api key"]:
             return None
         if redirect_uris is None:
             redirect_uris = []
