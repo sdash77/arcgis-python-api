@@ -247,7 +247,7 @@ class Image(object):
 
         :return: True if successful.
         """
-        return self._story._delete(self.node, self.resource_node)
+        return self._story._delete(self.node)
 
     # ----------------------------------------------------------------------
     def _add_image(self, caption=None, alt_text=None, display=None, story=None):
@@ -582,7 +582,7 @@ class Video(object):
 
         :return: True if successful
         """
-        return self._story._delete(self.node, self.resource_node)
+        return self._story._delete(self.node)
 
     # ----------------------------------------------------------------------
     def _add_video(
@@ -869,7 +869,7 @@ class Audio(object):
 
         :return: True if successful
         """
-        return self._story._delete(self.node, self.resource_node)
+        return self._story._delete(self.node)
 
     # ----------------------------------------------------------------------
     def _add_audio(
@@ -1576,7 +1576,7 @@ class Map(object):
         """
         Delete the node
         """
-        return self._story._delete(self.node, self.resource_node)
+        return self._story._delete(self.node)
 
     # ----------------------------------------------------------------------
     def _add_map(self, caption=None, alt_text=None, display=None, story=None):
@@ -2178,8 +2178,9 @@ class Gallery(object):
                 )
             if images is not None:
                 for image in images:
-                    if image.node not in self._story._properties["nodes"]:
-                        image._add_image(story=self._story)
+                    if image.node in self._story._properties["nodes"]:
+                        image.node = "n-" + uuid.uuid4().hex[0:6]
+                    image._add_image(story=self._story)
                     self._story._properties["nodes"][self.node]["children"].append(
                         image.node
                     )
@@ -2202,12 +2203,7 @@ class Gallery(object):
         if image in self.images:
             # Remove from the gallery list
             self._story._properties["nodes"][self.node]["children"].remove(image)
-            # Remove from the story
-            if "image" in self._story._properties["nodes"][image]["data"]:
-                resource_node = self._story._properties["nodes"][image]["data"]["image"]
-            else:
-                resource_node = None
-            self._story._delete(image, resource_node)
+            self._story._delete(image)
         return self.images
 
     # ----------------------------------------------------------------------
@@ -2376,14 +2372,9 @@ class Swipe(object):
             raise ValueError(
                 "Media type is established as image. Can only accept another image."
             )
-        if content.node not in self._story._properties["nodes"]:
-            # If user has created the content but not added to the story yet.
-            if isinstance(content, Image):
-                content._add_image(story=self._story)
-                self._media_type = "image"
-            elif isinstance(content, Map):
-                content._add_map(story=self._story)
-                self._media_type = "webmap"
+        # Add node to story.
+        self._add_item_story(content)
+
         if "data" not in self._story._properties["nodes"][self.node]:
             self._story._properties["nodes"][self.node]["data"] = {"contents": {}}
         # Add to content in position wanted
@@ -2404,6 +2395,17 @@ class Swipe(object):
         :return: True if successful.
         """
         return self._story._delete(self.node)
+
+    # ----------------------------------------------------------------------
+    def _add_item_story(self, content):
+        if content and content.node in self._story._properties["nodes"]:
+            content.node = "n-" + uuid.uuid4().hex[0:6]
+        if isinstance(content, Image):
+            content._add_image(story=self._story)
+            self._media_type = "image"
+        elif isinstance(content, Map):
+            content._add_map(story=self._story)
+            self._media_type = "webmap"
 
 
 ###############################################################################################################
@@ -2547,9 +2549,8 @@ class Sidecar(object):
         slide_node = list(slide.keys())[0]
         media_node = list(slide[slide_node]["media"].values())[0]
 
-        # Check to see if content has been added to node properties
-        if content.node not in self._story._properties["nodes"]:
-            self._add_item_story(content)
+        # Add to node properties
+        self._add_item_story(content)
 
         if media_node:
             self._story._delete(media_node)
@@ -2635,11 +2636,9 @@ class Sidecar(object):
         np_children = []
         for content in contents:
             np_children.append(content.node)
-            if content.node not in self._story._properties["nodes"]:
-                self._add_item_story(content)
+            self._add_item_story(content)
         if media:
-            if media.node not in self._story._properties["nodes"]:
-                self._add_item_story(media)
+            self._add_item_story(media)
 
         # For reference on some styles, grab first slide to go off of
         first_slide = self._story.properties["nodes"][self._slides[0]]
@@ -2723,24 +2722,12 @@ class Sidecar(object):
         # Remove media item and resource node if one exists
         if len(self._story._properties["nodes"][slide]["children"]) >= 1:
             media_item = self._story._properties["nodes"][slide]["children"][0]
-            if "image" in self._story._properties["nodes"][media_item]["data"]:
-                resource_node = self._story._properties["nodes"][media_item]["data"][
-                    "image"
-                ]
-            elif "video" in self._story._properties["nodes"][media_item]["data"]:
-                resource_node = self._story._properties["nodes"][media_item]["data"][
-                    "video"
-                ]
-            elif self._story._properties["nodes"][media_item]["type"] == "webmap":
-                resource_node = self._story._properties["nodes"][media_item]["data"][
-                    "map"
-                ]
-            else:
-                resource_node = None
-            self._story._delete(media_item, resource_node)
+            self._story._delete(media_item)
 
     # ----------------------------------------------------------------------
     def _add_item_story(self, content):
+        if content and content.node in self._story._properties["nodes"]:
+            content.node = "n-" + uuid.uuid4().hex[0:6]
         if isinstance(content, Image):
             content._add_image(display="wide", story=self._story)
         elif isinstance(content, Video):
@@ -2887,13 +2874,7 @@ class Timeline(object):
                 old_image_node = self._story._properties["nodes"][event][
                     "children"
                 ].pop(position)
-                if "image" in self._story._properties["nodes"][old_image_node]["data"]:
-                    resource_node = self._story._properties["nodes"][old_image_node][
-                        "data"
-                    ]["image"]
-                else:
-                    resource_node = None
-                self._story._delete(old_image_node, resource_node)
+                self._story._delete(old_image_node)
                 self._story._properties["nodes"][event]["children"].insert(
                     position, content.node
                 )
@@ -2931,14 +2912,7 @@ class Timeline(object):
         # Remove narrative panel and text associated
         children = self._story._properties["nodes"][event]["children"]
         for child in children:
-            if self._story._properties["nodes"][child]["type"] == "image":
-                if "image" in self._story._properties["nodes"][child]["data"]:
-                    resource_node = self._story._properties["nodes"][child]["data"][
-                        "image"
-                    ]
-            else:
-                resource_node = None
-            self._story._delete(child, resource_node)
+            self._story._delete(child)
         self._story._delete(event)
 
     # ----------------------------------------------------------------------
@@ -2974,6 +2948,8 @@ class Timeline(object):
 
     # ----------------------------------------------------------------------
     def _add_item_story(self, content):
+        if content.node in self.story._properties["nodes"]:
+            content.node = "n-" + uuid.uuid4().hex[0:6]
         if isinstance(content, Image):
             content._add_image(story=self._story)
         elif isinstance(content, Text):
