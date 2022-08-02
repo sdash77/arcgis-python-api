@@ -15549,7 +15549,7 @@ class Item(dict):
                               )
 
         """
-        if self.type.lower() in ["application", "api key"]:
+        if self.type.lower() in ["api key"]:
             return None
         if redirect_uris is None:
             redirect_uris = []
