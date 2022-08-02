@@ -4454,7 +4454,7 @@ def _calculate_travel_cost(
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="Please use :meth:`~arcgis.raster.analytics.optimal_region_connections` instead. ",
+    details="Please use arcgis.raster.analytics.optimal_region_connections instead. ",
 )
 def optimum_travel_cost_network(
     input_regions_raster,
@@ -4853,8 +4853,8 @@ def calculate_statistics(
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="Please use :meth:`~arcgis.raster.functions.gbl.distance_accumulation` "
-            "followed by :meth:`~arcgis.raster.analytics.optimal_path_as_line`, instead.",
+    details="Please use arcgis.raster.functions.gbl.distance_accumulation "
+            "followed by arcgis.raster.analytics.optimal_path_as_line instead.",
 )
 def determine_travel_costpath_as_polyline(
     input_source_data,
@@ -6777,7 +6777,7 @@ def subset_multidimensional_raster(
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="Please use :meth:`~arcgis.raster.analytics.optimal_path_as_line` instead. ",
+    details="Please use arcgis.raster.analytics.optimal_path_as_line instead. ",
 )
 def costpath_as_polyline(
     input_destination_data,
