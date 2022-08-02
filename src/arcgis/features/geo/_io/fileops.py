@@ -839,6 +839,7 @@ def to_featureclass(
 
     """
     out_location = os.path.dirname(location)
+
     fc_name = os.path.basename(location)
     df = geo._data.copy()
     old_idx = df.index
@@ -851,10 +852,16 @@ def to_featureclass(
         )
     # deep copy of original columns to reassign them in finally of arcpy statement
     original_columns = copy.deepcopy(df.columns.tolist())
+    geometry_name = geo.name or None
+    if geometry_name and geometry_name != "SHAPE":
+        new_columns = geo._data.columns.tolist()
+        new_columns[new_columns.index(geometry_name)] = "SHAPE"
+        df.columns = new_columns
+        df.spatial._name = "SHAPE"
     # sanitize
     if sanitize_columns:
         # logic
-        _sanitize_column_names(geo, inplace=True)
+        _sanitize_column_names(df.spatial, inplace=True)
 
     columns = df.columns.tolist()
     for col in columns[:]:
@@ -883,10 +890,10 @@ def to_featureclass(
                     ("overwrite set to False, Cannot " "overwrite the table. ")
                 )
 
-            notnull = geo._data[geo._name].notnull()
-            idx = geo._data[geo._name][notnull].first_valid_index()
-            sr = geo._data[geo._name][idx]["spatialReference"]
-            gt = geo._data[geo._name][idx].geometry_type.upper()
+            notnull = df[df.spatial.name].notnull()
+            idx = df[df.spatial.name][notnull].first_valid_index()
+            sr = df[df.spatial.name][idx]["spatialReference"]
+            gt = df[df.spatial.name][idx].geometry_type.upper()
             null_geom = {
                 "point": pd.io.json.dumps(
                     {"x": None, "y": None, "spatialReference": sr}
@@ -895,7 +902,7 @@ def to_featureclass(
                 "polygon": pd.io.json.dumps({"rings": [], "spatialReference": sr}),
                 "multipoint": pd.io.json.dumps({"points": [], "spatialReference": sr}),
             }
-            sr = geo._data[geo._name][idx].spatial_reference.as_arcpy
+            sr = df[df.spatial.name][idx].spatial_reference.as_arcpy
             null_geom = null_geom[gt.lower()]
 
             if has_m == True:
@@ -1000,7 +1007,7 @@ def to_featureclass(
                             f"Could not insert the row because of error message: {e}. Recheck your data."
                         )
 
-                q = df[geo._name].isna()
+                q = df[df.spatial.name].isna()
                 df.loc[q, "SHAPE"] = null_geom  # set null values to proper JSON
                 np.apply_along_axis(_insert_row, 1, df[dfcols].values)
 

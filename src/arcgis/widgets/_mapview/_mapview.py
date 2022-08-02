@@ -491,8 +491,10 @@ class MapView(widgets.DOMWidget):
     def basemap(self, value):
         if value in self.basemaps:
             self._basemap = value
+            self.webmap.basemap = value
         elif value in self.gallery_basemaps:
             self._basemap = value
+            self.webmap.basemap = value
         else:
             try:
                 self.webmap.basemap = value
@@ -1645,7 +1647,7 @@ class MapView(widgets.DOMWidget):
                 output_layers.append(layer)
         elif isinstance(arg, FeatureSet):
             fc = FeatureCollection.from_featureset(arg)
-            for layer in fc:
+            for layer in fc["layers"]:
                 output_layers.append(layer)
         elif isinstance(arg, dict):
             output_layers.append(arg)
@@ -1805,7 +1807,7 @@ class MapView(widgets.DOMWidget):
            USAGE EXAMPLE: Save map widget as a new web map item in GIS
            map1 = gis.map("Italy")
            map1.add_layer(Italy_streets_item)
-           map1.basemap = 'dark-gray'
+           map1.basemap = 'dark-gray-vector'
            italy_streets_map = map1.save({'title':'Italy streets',
                                         'snippet':'Arterial road network of Italy',
                                         'tags':'streets, network, roads'})

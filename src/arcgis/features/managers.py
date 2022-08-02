@@ -36,7 +36,7 @@ class AttachmentManager(object):
     =====================   ===========================================
     **Inputs**              **Description**
     ---------------------   -------------------------------------------
-    layer                   Required Feature Layer. The Feature Layer
+    layer                   Required :class:`~arcgis.features.FeatureLayer` . The Feature Layer
                             that supports attachments.
     ---------------------   -------------------------------------------
     version                 Required Version or string. The `Version` class where
@@ -79,35 +79,47 @@ class AttachmentManager(object):
 
 
         =========================   ===============================================================
-        **Arguement**               **Description**
+        **Argument**                **Description**
         -------------------------   ---------------------------------------------------------------
-        where                       required string.  The definition expression to be applied to
+        where                       Required string.  The definition expression to be applied to
                                     the related layer/table. From the list of records that are
                                     related to the specified object Ids, only those records that
                                     conform to this expression will be returned.
 
-                                    Example: where="STATE_NAME = 'Alaska'".
+                                    Example:
+
+                                        where="STATE_NAME = 'Alaska'".
+
                                     The query results will return all attachments in Alaska.
         -------------------------   ---------------------------------------------------------------
-        object_ids                  optional list/string. The object IDs of this layer/table to be
+        object_ids                  Optional list/string. The object IDs of this layer/table to be
                                     queried.
 
-                                    Syntax: objectIds=<objectId1>,<objectId2>
+                                    Syntax:
 
-                                    Example: objectIds=2. The query results will return attachments
-                                    only for the specified object id.
+                                        object_ids = <object_id1>, <object_id2>
+
+                                    Example:
+
+                                        object_ids = 2
+
+                                    The query results will return attachments only for the specified object id.
         -------------------------   ---------------------------------------------------------------
-        global_ids                   optional list/string. The global IDs of this layer/table to be
+        global_ids                  Optional list/string. The global IDs of this layer/table to be
                                     queried.
 
-                                    Syntax: globalIds=<globalIds1>,<globalIds2>
+                                    Syntax:
 
-                                    Example: globalIds=6s430c5a-kb75-4d52-a0db-b30bg060f0b9,35f0d027-8fc0-4905-a2f6-373c9600d017
+                                        global_ids = <globalIds1>,<globalIds2>
+
+                                    Example:
+
+                                        global_ids = 6s430c5a-kb75-4d52-a0db-b30bg060f0b9, 35f0d027-8fc0-4905-a2f6-373c9600d017
 
                                     The query results will return attachments only for specified
                                     global id.
         -------------------------   ---------------------------------------------------------------
-        attachment_types            optional list/string. The file format that is supported by
+        attachment_types            Optional list/string. The file format that is supported by
                                     query attachment.
 
                                     Supported attachment types:
@@ -118,27 +130,34 @@ class AttachmentManager(object):
                                     pptx, txt, zip, 7z, gz, gtar, tar, tgz, vrml, gml, json, xml,
                                     mdb, geodatabase
 
-                                    Example: attachment_types='image/jpeg'
+                                    Example:
+
+                                        attachment_types='image/jpeg'
         -------------------------   ---------------------------------------------------------------
-        size                        optional tuple/list. The file size of the attachment is
+        size                        Optional tuple/list. The file size of the attachment is
                                     specified in bytes. You can enter a file size range
                                     (1000,15000) to query for attachments with the specified range.
 
-                                    Example: size=1000,15000.
+                                    Example:
+
+                                        size= (1000,15000)
+
                                     The query results will return all attachments within the
                                     specified file size range (1000 - 15000) bytes.
         -------------------------   ---------------------------------------------------------------
-        keywords                    optional string.  When attachments are uploaded, keywords can
+        keywords                    Optional string.  When attachments are uploaded, keywords can
                                     be assigned to the uploaded file.  By passing a keyword value,
                                     the values will be searched.
 
-                                    Example: keywords='airplanes'
+                                    Example:
+
+                                        keywords='airplanes'
         -------------------------   ---------------------------------------------------------------
-        show_images                 optional bool. The default is False, when the value is True,
+        show_images                 Optional bool. The default is False, when the value is True,
                                     the results will be displayed as a HTML table. If the as_df is
                                     set to False, this parameter will be ignored.
         -------------------------   ---------------------------------------------------------------
-        as_df                       optional bool. Default is False, if True, the results will be
+        as_df                       Optional bool. Default is False, if True, the results will be
                                     a Pandas' DataFrame.  If False, the values will be a list of
                                     dictionary values.
         -------------------------   ---------------------------------------------------------------
@@ -171,7 +190,7 @@ class AttachmentManager(object):
                                     records that are beyond `maxRecordCount` property.
         =========================   ===============================================================
 
-        :return: A Pandas DataFrame or Dict of the attachements of the :class:`~arcgis.features.FeatureLayer`
+        :return: A Pandas DataFrame or Dict of the attachments of the :class:`~arcgis.features.FeatureLayer`
 
         """
         import copy
@@ -436,14 +455,17 @@ class AttachmentManager(object):
         save_path: Optional[str] = None,
     ):
         """
-        Downloads attachment and returns it's path on disk.
+        Downloads attachment and returns its path on disk.
 
         The download tool works as follows:
 
-            * If nothing is given, all attachments will be downloaded
-               - example: download()
-            * If a single oid and attachment_id are given, the single file will download
-            * If a list of oid values are given, all the attachments for those object ids will be saved locally.
+        * If nothing is given, all attachments will be downloaded
+
+          Example: download()
+
+        * If a single oid and attachment_id are given, the single file will download
+
+        * If a list of oid values are given, all the attachments for those object ids will be saved locally.
 
         =========================   ===============================================================
         **Arguement**               **Description**
@@ -561,7 +583,7 @@ class AttachmentManager(object):
         ===============     ====================================================================
 
         :return:
-            A JSON Repsonse stating 'success' or 'error'
+            A JSON Response stating 'success' or 'error'
 
         """
         return self._layer._add_attachment(
@@ -580,7 +602,7 @@ class AttachmentManager(object):
         rollback_on_failure: bool = True,
     ) -> bool:
         """
-        Removes an attachment from a :class:`~arcgis.gis.FeatureLayer`. Deleting an attachment is a feature update;
+        Removes an attachment from a :class:`~arcgis.features.FeatureLayer` . Deleting an attachment is a feature update;
         it requires the Update capability. The deleteAttachments operation is performed on a
         feature service feature resource. This operation is available only if the layer has advertised that it has attachments.
         A layer has attachments if its hasAttachments property is true.
@@ -591,7 +613,10 @@ class AttachmentManager(object):
         oid                     Required string of the object ID
         -------------------     --------------------------------------------------------------------
         attachment_id           Required string. Ids of attachment to delete.
-                                `Syntax: attachment_id = "<attachmentId1>, <attachmentId2>"
+
+                                Syntax:
+
+                                    attachment_id = "<attachmentId1>, <attachmentId2>"
         -------------------     --------------------------------------------------------------------
         return_moment           Optional boolean. Specify whether the response will report the time
                                 attachments were deleted. If True, the server will report the time
@@ -651,7 +676,7 @@ class AttachmentManager(object):
 ###########################################################################
 class SyncManager(object):
     """
-    Manager class for manipulating replicas for syncing disconnected editing of :class:`~arcgis.features.FeatureLayer`s.
+    Manager class for manipulating replicas for syncing disconnected editing of :class:`~arcgis.features.FeatureLayer` .
     This class is not created by users directly.
     An instance of this class, called 'replicas', is available as a property of the :class:`~arcgis.features.FeatureLayerCollection` object,
     if the layer is sync enabled / supports disconnected editing.
@@ -670,9 +695,13 @@ class SyncManager(object):
     def unregister(self, replica_id: str):
         """
         unregisters a replica from a feature layer collection
-        Inputs:
-          replica_id - The replicaID returned by the feature service
-                       when the replica was created.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        replica_id          The replicaID returned by the feature service when the replica was created.
+        ===============     ====================================================================
+
         """
         return self._fs._unregister_replica(replica_id)
 
@@ -682,7 +711,7 @@ class SyncManager(object):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        replica_id          Required string. replicaId returned by the feature service when
+        replica_id          Required string. replica_id returned by the feature service when
                             the replica was created.
         ===============     ====================================================================
 
@@ -716,10 +745,10 @@ class SyncManager(object):
     ):
         """
         The create operation is performed on a :class:`~arcgis.features.FeatureLayerCollection` resource.
-        This operationcreates the replica between the feature dataset and a client based on a client-supplied
+        This operation creates the replica between the feature dataset and a client based on a client-supplied
         replica definition. It requires the Sync capability. See Sync overview for more
         information on sync. The response for create includes replicaID, replica generation
-        number, and data similar to the response from the :meth:`arcgis.features.FeatureLayerCollection.query`
+        number, and data similar to the response from the :meth:`~arcgis.features.FeatureLayerCollection.query`
         operation. The create operation returns a response of type esriReplicaResponseTypeData,
         as the response has data for the layers in the replica. If the operation is called to
         register existing data by using replicaOptions, the response type will be
@@ -739,14 +768,16 @@ class SyncManager(object):
                                             what is replicated. This parameter allows you to set properties on a
                                             per layer or per table basis. Only the properties for the layers and
                                             tables that you want changed from the default are required.
+
                                             Example:
-                                            layer_queries = {"0":{"queryOption": "useFilter", "useGeometry": true,
-                                            "where": "requires_inspection = Yes"}}
+
+                                                | layer_queries = {"0":{"queryOption": "useFilter", "useGeometry": true,
+                                                | "where": "requires_inspection = Yes"}}
         -----------------------------       --------------------------------------------------------------------
-        geometry_filter                     Optional {} object. spatial filter from arcgis.geometry.filters module
+        geometry_filter                     Optional dictionary. Spatial filter from :mod:`~arcgis.geometry.filters` module
                                             to filter results by a spatial relationship with another geometry.
         -----------------------------       --------------------------------------------------------------------
-        replica_sr                          Optional WKID or a spatial reference JSON object. the spatial
+        replica_sr                          Optional WKID or a spatial reference JSON object. The spatial
                                             reference of the replica geometry.
         -----------------------------       --------------------------------------------------------------------
         transport_type                      The transport_type represents the response format. If the
@@ -757,7 +788,10 @@ class SyncManager(object):
                                             transport_type is esriTransportTypeUrl. If dataFormat is sqlite, the
                                             transportFormat will always be esriTransportTypeUrl regardless of how
                                             the parameter is set.
-                                            Values: esriTransportTypeUrl | esriTransportTypeEmbedded.
+
+                                            Values:
+
+                                                esriTransportTypeUrl | esriTransportTypeEmbedded.
         -----------------------------       --------------------------------------------------------------------
         return_attachments                  If True, attachments are added to the replica and returned in the
                                             response. Otherwise, attachments are not included. The default is
@@ -778,7 +812,10 @@ class SyncManager(object):
         attachments_sync_direction          Client can specify the attachmentsSyncDirection when creating a
                                             replica. AttachmentsSyncDirection is currently a createReplica property
                                             and cannot be overridden during sync.
-                                            Values: none, upload, bidirectional
+
+                                            Values:
+
+                                                none, upload, bidirectional
         -----------------------------       --------------------------------------------------------------------
         sync_model                          This parameter is used to indicate that the replica is being created
                                             for per-layer sync or per-replica sync. To determine which model types
@@ -789,10 +826,10 @@ class SyncManager(object):
                                             applies to all layers in the replica. If the syncModel is perLayer, the
                                             syncDirection is defined on a layer-by-layer basis.
 
-                                            If syncModel is perReplica, the response will have replicaServerGen.
-                                            A perReplica syncModel requires the replicaServerGen on sync. The
+                                            If sync_model is perReplica, the response will have replicaServerGen.
+                                            A perReplica sync_model requires the replicaServerGen on sync. The
                                             replicaServerGen tells the server the point in time from which to send
-                                            back changes. If syncModel is perLayer, the response will include an
+                                            back changes. If sync_model is perLayer, the response will include an
                                             array of server generation numbers for the layers in layerServerGens. A
                                             perLayer sync model requires the layerServerGens on sync. The
                                             layerServerGens tell the server the point in time from which to send
@@ -800,13 +837,22 @@ class SyncManager(object):
                                             the data without creating a replica. Query the supportsSyncModelNone
                                             property of the feature service to see if this model type is supported.
 
-                                            See the RollbackOnFailure and Sync Models topic for more details.
-                                            Values: perReplica | perLayer | none
-                                            Example: syncModel=perLayer
+                                            See the `RollbackOnFailure and Sync Models <https://developers.arcgis.com/rest/services-reference/enterprise/rollbackonfailure-and-sync-models.htm>`_ topic for more details.
+
+                                            Values:
+
+                                                perReplica | perLayer | none
+
+                                            Example:
+
+                                                sync_model = perLayer
         -----------------------------       --------------------------------------------------------------------
         data_format                         The format of the replica geodatabase returned in the response. The
                                             default is json.
-                                            Values: filegdb, json, sqlite, shapefile
+
+                                            Values:
+
+                                                filegdb, json, sqlite, shapefile
         -----------------------------       --------------------------------------------------------------------
         replica_options                     This parameter instructs the create operation to create a new replica
                                             based on an existing replica definition (refReplicaId). It can be used
@@ -819,26 +865,32 @@ class SyncManager(object):
         -----------------------------       --------------------------------------------------------------------
         out_path                            out_path - folder path to save the file.
         -----------------------------       --------------------------------------------------------------------
-        syncDirection                       Defaults to bidirectional when the targetType is client and download
-                                            when the targetType is server. If set, only bidirectional is supported
-                                            when targetType is client. If set, only upload or download are
-                                            supported when targetType is server.
-                                            Values: download | upload | bidirectional
-                                            Example: syncDirection=download
+        sync_direction                      Defaults to bidirectional when the targetType is client and download
+                                            when the target_type is server. If set, only bidirectional is supported
+                                            when target_type is client. If set, only upload or download are
+                                            supported when target_type is server.
+
+                                            Values:
+
+                                                download | upload | bidirectional
+
+                                            Example:
+
+                                                sync_direction=download
         -----------------------------       --------------------------------------------------------------------
-        targetType                          Can be set to either server or client. If not set, the default is
+        target_type                         Can be set to either server or client. If not set, the default is
                                             client. This option was added at 10.5.1.
         -----------------------------       --------------------------------------------------------------------
         transformations                     Optional List. Introduced at 10.8. This parameter applies a datum
                                             transformation on each layer when the spatial reference used in
-                                            geometry is different than the layer's spatial reference.
+                                            geometry is different from the layer's spatial reference.
         -----------------------------       --------------------------------------------------------------------
-        time_reference_unknown_client       Setting timeReferenceUnknownClient as true indicates that the client is
+        time_reference_unknown_client       Setting time_reference_unknown_client as true indicates that the client is
                                             capable of working with data values that are not in UTC. If its not set
                                             to true, and the service layer's datesInUnknownTimeZone property is true,
                                             then an error is returned. The default is false
 
-                                            Its possible to define a service's time zone of date fields as unknown.
+                                            It's possible to define a service's time zone of date fields as unknown.
                                             Setting the time zone as unknown means that date values will be returned
                                             as-is from the database, rather than as date values in UTC. Non-hosted feature
                                             services can be set to use an unknown time zone using ArcGIS Server Manager.
@@ -957,7 +1009,9 @@ class SyncManager(object):
         ------------------     --------------------------------------------------------------------
         period_unit            Optional String.  The units of the retention period.
 
-                               Values: `days`, `seconds`, `minutes`, or `hours`
+                               Values:
+
+                                    `days`, `seconds`, `minutes`, or `hours`
 
         ------------------     --------------------------------------------------------------------
         min_server_gen         Optional String.  In addition to the retention period, the change
@@ -975,7 +1029,7 @@ class SyncManager(object):
 
 
         :return:
-            Boolean or If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
+            Boolean or If ``future = True``, then the result is a `Future <https://docs.python.org/3/library/concurrent.futures.html>`_ object. Call ``result()`` to get the response.
 
         """
         return self._fs._cleanup_change_tracking(
@@ -1006,7 +1060,7 @@ class SyncManager(object):
     ):
         """
         synchronizes replica with feature layer collection
-        https://developers.arcgis.com/rest/services-reference/synchronize-replica.htm
+        See `Synchronize Replica <https://developers.arcgis.com/rest/services-reference/synchronize-replica.htm>`_
         """
         # TODO:
         return self._fs._synchronize_replica(
@@ -1045,7 +1099,7 @@ class SyncManager(object):
         ---------------     --------------------------------------------------------------------
         item                Required Item to replicate
         ---------------     --------------------------------------------------------------------
-        destination_gis     Required GIS object
+        destination_gis     Required :class:`~arcgis.gis.GIS` object
         ---------------     --------------------------------------------------------------------
         layers              Optional list. Layers to replicate in the item
         ---------------     --------------------------------------------------------------------
@@ -1245,7 +1299,7 @@ class WebHook(object):
         """
         Returns the WebHook's properties
 
-        :return: :class:`~arcgis._impl.common.PropertyMap`
+        :return: PropertyMap
         """
         if self._properties is None:
             self._properties = PropertyMap(
@@ -1285,20 +1339,20 @@ class WebHook(object):
         active                                   Optional bool. Enable or disable call backs when the webhook is triggered.
         -------------------------------------    ---------------------------------------------------------------------------
         schedule_info                            Optional Dict. Allows the trigger to be used as a given schedule.
+
                                                  Example:
 
-                                                 ```
-                                                 {
-                                                    "name" : "Every-5seconds",
-                                                    "startAt" : 1478280677536,
-                                                    "state" : "enabled",
 
-                                                    "recurrenceInfo" : {
-                                                      "frequency" : "second",
-                                                      "interval" : 5
-                                                    }
-                                                 }
-                                                 ```
+                                                     | {
+                                                     |    "name" : "Every-5seconds",
+                                                     |    "startAt" : 1478280677536,
+                                                     |    "state" : "enabled",
+                                                     |    "recurrenceInfo" : {
+                                                     |     "frequency" : "second",
+                                                     |     "interval" : 5
+                                                     |   }
+                                                     | }
+
         -------------------------------------    ---------------------------------------------------------------------------
         payload_format                           Optional String. The payload can be sent in pretty format or standard.
                                                  The default is `json`.
@@ -1308,7 +1362,7 @@ class WebHook(object):
         A list of allowed web hook triggers is shown below.
 
         =====================================    ===========================================================================
-        **Name**                                 **Trigged When**
+        **Name**                                 **Triggered When**
         -------------------------------------    ---------------------------------------------------------------------------
         `*`                                      Wildcard event. Any time any event is triggered.
         -------------------------------------    ---------------------------------------------------------------------------
@@ -1403,7 +1457,7 @@ class WebHookServiceManager(object):
     def properties(self) -> PropertyMap:
         """
         Gets the properties for the WebHook Service Manager and returns
-        a :class:`~arcgis._impl.common.PropertyMap` object
+        a PropertyMap object
         """
         return PropertyMap(self._gis._con.post(self._url, {"f": "json"}))
 
@@ -1413,7 +1467,8 @@ class WebHookServiceManager(object):
         """
         Get a list of web hooks on the :class:`~arcgis.features.FeatureLayerCollection`
 
-        :return: tuple[WebHook]
+        :return: tuple[:class:`~arcgis.features.managers.WebHook`]
+
         """
         resp = self._gis._con.post(self._url, {"f": "json"})
         ret = [
@@ -1455,18 +1510,18 @@ class WebHookServiceManager(object):
         active                                   Optional bool. Enable or disable call backs when the webhook is triggered.
         -------------------------------------    ---------------------------------------------------------------------------
         schedule_info                            Optional Dict. Allows the trigger to be used as a given schedule.
+
                                                  Example:
 
-                                                 {
-                                                    "name" : "Every-5seconds",
-                                                    "startAt" : 1478280677536,
-                                                    "state" : "enabled",
-
-                                                    "recurrenceInfo" : {
-                                                      "frequency" : "second",
-                                                      "interval" : 5
-                                                    }
-                                                 }
+                                                     | {
+                                                     |   "name" : "Every-5seconds",
+                                                     |   "startAt" : 1478280677536,
+                                                     |   "state" : "enabled"
+                                                     |   "recurrenceInfo" : {
+                                                     |     "frequency" : "second",
+                                                     |     "interval" : 5
+                                                     |   }
+                                                     | }
 
         -------------------------------------    ---------------------------------------------------------------------------
         payload_format                           Optional String. The payload can be sent in pretty format or standard.
@@ -1477,7 +1532,7 @@ class WebHookServiceManager(object):
         A list of allowed web hook triggers is shown below.
 
         =====================================    ===========================================================================
-        **Name**                                 **Trigged When**
+        **Name**                                 **Triggered When**
         -------------------------------------    ---------------------------------------------------------------------------
         `*`                                      Wildcard event. Any time any event is triggered.
         -------------------------------------    ---------------------------------------------------------------------------
@@ -1502,7 +1557,8 @@ class WebHookServiceManager(object):
         `FeatureServiceDefinitionChanged`        Any time a feature service is changed
         =====================================    ===========================================================================
 
-        :return: A :class:`~arcgis.features.WebHook` object
+        :return:
+            A :class:`~arcgis.features.managers.WebHook` object
 
         """
         url = f"{self._url}/create"
@@ -1587,9 +1643,9 @@ class FeatureLayerCollectionManager(_GISResource):
     @property
     def layers(self) -> list:
         """
-        Returns a list of FeatureLayerManagers to work with FeatureLayers
+        Returns a list of :class:`~arcgis.features.managers.FeatureLayerManager` to work with FeatureLayers
 
-        :returns: List[FeatureLayerManagers]
+        :returns: List[:class:`~arcgis.features.managers.FeatureLayerManager`]
         """
         self._layers = []
         if "layers" in self.properties:
@@ -1609,9 +1665,9 @@ class FeatureLayerCollectionManager(_GISResource):
     @property
     def tables(self) -> list:
         """
-        Returns a list of FeatureLayerManagers to work with tables
+        Returns a list of :class:`~arcgis.features.managers.FeatureLayerManager` to work with tables
 
-        :returns: List[FeatureLayerManagers]
+        :returns: List[:class:`~arcgis.features.managers.FeatureLayerManager`]
         """
         self._tables = []
         if "tables" in self.properties:
@@ -1635,7 +1691,10 @@ class FeatureLayerCollectionManager(_GISResource):
 
     @property
     def webhook_manager(self) -> WebHookServiceManager:
-        """ """
+        """
+        :return:
+            :class:`~arcgis.features.managers.WebHookServiceManager`
+        """
         if self._gis.version >= [8, 2] and self._gis._portal.is_arcgisonline:
             if self._wh is None:
                 self._wh = WebHookServiceManager(
@@ -1700,8 +1759,8 @@ class FeatureLayerCollectionManager(_GISResource):
         allow_schema_changes: bool = True,
         updateable: bool = True,
         capabilities: str = "Query",
-        view_layers: Optional[list[int]] = None,
-        view_tables: Optional[list[int]] = None,
+        view_layers: Optional[list[features.FeatureLayer]] = None,
+        view_tables: Optional[list[features.Table]] = None,
         *,
         description: Optional[str] = None,
         tags: Optional[str] = None,
@@ -1723,7 +1782,7 @@ class FeatureLayerCollectionManager(_GISResource):
         For example, you can allow members of your organization to edit the hosted feature layer but share a read-only
         feature layer view with the public.
 
-        To learn more about views visit: https://doc.arcgis.com/en/arcgis-online/share-maps/create-hosted-views.htm
+        To learn more about views see `Create hosted feature layer views <https://doc.arcgis.com/en/arcgis-online/share-maps/create-hosted-views.htm>`_
 
         ====================     ====================================================================
         **Argument**             **Description**
@@ -1740,12 +1799,17 @@ class FeatureLayerCollectionManager(_GISResource):
         updateable               Optional bool. Default is True. Determines if view can update values
         --------------------     --------------------------------------------------------------------
         capabilities             Optional string. Specify capabilities as a comma separated string.
-                                 For example "Query, Update, Delete". Default is 'Query'.
+
+                                 Example:
+
+                                    "Query, Update, Delete"
+
+                                 Default is 'Query'.
         --------------------     --------------------------------------------------------------------
-        view_layers              Optional list. Specify list of layers present in the FeatureLayerCollection
+        view_layers              Optional list. Specify list of layers present in the :class:`~arcgis.features.FeatureLayerCollection`
                                  that you want in the view.
         --------------------     --------------------------------------------------------------------
-        view_tables              Optional list. Specify list of tables present in the FeatureLayerCollection
+        view_tables              Optional list. Specify list of tables present in the :class:`~arcgis.features.FeatureLayerCollection`
                                  that you want in the view.
         --------------------     --------------------------------------------------------------------
         description              Optional String. A user-friendly description for the published dataset.
@@ -1761,7 +1825,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
         .. code-block:: python  (optional)
 
-           USAGE EXAMPLE: Create a veiw from a hosted feature layer
+           USAGE EXAMPLE: Create a view from a hosted feature layer
 
            crime_fl_item = gis.content.search("2012 crime")[0]
            crime_flc = FeatureLayerCollection.fromitem(crime_fl_item)
@@ -2126,7 +2190,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
         :return:
            JSON message as dictionary when `future=False` else If ``future = True``,
-           then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
+           then the result is a `Future <https://docs.python.org/3/library/concurrent.futures.html>`_ object. Call ``result()`` to get the response.
 
         """
 
@@ -2174,7 +2238,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
         :return:
            JSON message as dictionary when `future=False`
-           when `future=True`, ```concurrent.futures.Future``` is returned.
+           when `future=True`, `Future <https://docs.python.org/3/library/concurrent.futures.html>`_ object is returned. Call ``result()`` to get the response.
 
         """
         definition = None
@@ -2260,7 +2324,7 @@ class FeatureLayerCollectionManager(_GISResource):
         definition property from a hosted feature layer collection service. The result of
         this operation is a response indicating success or failure with
         error code and description.
-        See https://developers.arcgis.com/rest/services-reference/delete-from-definition-feature-service-.htm # noqa
+        See `Delete From Definition (Feature Service) <https://developers.arcgis.com/rest/services-reference/delete-from-definition-feature-service-.htm>`_
         for additional information on this function.
 
         ===============     ====================================================================
@@ -2278,7 +2342,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
         :return:
            JSON message as dictionary when `future=False` else If ``future = True``,
-           then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
+           then the result is a `Future <https://docs.python.org/3/library/concurrent.futures.html>`_ object. Call ``result()`` to get the response.
 
         """
         params = {
@@ -2306,12 +2370,14 @@ class FeatureLayerCollectionManager(_GISResource):
         Overwrite all the features and layers in a hosted feature layer collection service. This operation removes
         all features but retains the properties (such as metadata, itemID) and capabilities configured on the service.
         There are some limits to using this operation:
-            1. Only hosted feature layer collection services can be overwritten
-            2. The original data used to publish this layer should be available on the portal
-            3. The data file used to overwrite should be of the same format and filename as the original that was used to
-            publish the layer
-            4. The schema (column names, column data types) of the data_file should be the same as original. You can have
-            additional or fewer rows (features).
+
+        1. Only hosted feature layer collection services can be overwritten
+
+        2. The original data used to publish this layer should be available on the portal
+
+        3. The data file used to overwrite should be of the same format and filename as the original that was used to publish the layer
+
+        4. The schema (column names, column data types) of the data_file should be the same as original. You can have additional or fewer rows (features).
 
         In addition to overwriting the features, this operation also updates the data of the item used to published this
         layer.
@@ -2612,13 +2678,13 @@ class FeatureLayerManager(_GISResource):
     @classmethod
     def fromitem(cls, item: Item, layer_id: int = 0):
         """
-        Creates a FeatureLayerManager object from a GIS Item.
+        Creates a :class:`~arcgis.features.managers.FeatureLayerManager` object from a GIS Item.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         item                Required of type :class:`~arcgis.features.FeatureService` that represents
-                            a :class:`~arcgis.features.FeatureLayerCollection`.
+                            a :class:`~arcgis.features.FeatureLayerCollection` .
         ---------------     --------------------------------------------------------------------
         layer_id            Required int. Id of the layer in the
                             :class:`~arcgis.features.FeatureLayerCollection`
@@ -2668,7 +2734,7 @@ class FeatureLayerManager(_GISResource):
 
         :return:
            JSON message as dictionary indicating 'success' or 'error'. If ``future = True``,
-           then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
+           then the result is a `Future <https://docs.python.org/3/library/concurrent.futures.html>`_ object. Call ``result()`` to get the response.
         """
 
         if isinstance(json_dict, PropertyMap):
@@ -2716,7 +2782,7 @@ class FeatureLayerManager(_GISResource):
 
         :return:
            JSON Message as dictionary indicating 'success' or 'error'. If ``future = True``,
-           then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
+           then the result is a `Future <https://docs.python.org/3/library/concurrent.futures.html>`_ object. Call ``result()`` to get the response.
         """
 
         if isinstance(json_dict, PropertyMap):
@@ -2749,7 +2815,7 @@ class FeatureLayerManager(_GISResource):
         definition property from a hosted feature layer. The result of
         this operation is a response indicating success or failure with
         error code and description.
-        See: https://developers.arcgis.com/rest/services-reference/delete-from-definition-feature-service-.htm # noqa
+        See: `Delete From Definition (Feature Service) <https://developers.arcgis.com/rest/services-reference/delete-from-definition-feature-service-.htm>`_
         for additional information on this function.
 
         ===============     ====================================================================
@@ -2768,7 +2834,7 @@ class FeatureLayerManager(_GISResource):
 
         :return:
            JSON Message as dictionary indicating 'success' or 'error'. If ``future = True``,
-           then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
+           then the result is a `Future <https://docs.python.org/3/library/concurrent.futures.html>`_ object. Call ``result()`` to get the response.
 
         """
 
@@ -2812,13 +2878,13 @@ class FeatureLayerManager(_GISResource):
             The `truncate` method is restricted to
             :class:`layers <arcgis.features.FeatureLayer>` that:
 
-              - do not serve as the origin in a relationship with other
-                layers
-              - do not reference the same underlying database tables that are
-                referenced by other layers (for example, if the layer was
-                published from a layer with a definition query and a
-                separate layer has also been published from that source)
-              - do not have `sync` enabled
+            - do not serve as the origin in a relationship with other
+              layers
+            - do not reference the same underlying database tables that are
+              referenced by other layers (for example, if the layer was
+              published from a layer with a definition query and a
+              separate layer has also been published from that source)
+            - do not have `sync` enabled
 
         ===============     ====================================================================
         **Argument**        **Description**

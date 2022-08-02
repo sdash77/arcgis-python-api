@@ -82,21 +82,33 @@ class GPInfo:
 
     @property
     def item_info(self) -> dict:
-        """ """
+        """
+
+        :return: the service's item information
+
+        """
         url = f"{self._url}/iteminfo"
         params = {"f": "json"}
         return self._gis._con.get(url, params)
 
     @property
     def metadata(self) -> str:
-        """returns the service's metadata"""
+        """
+
+        :return: the service's metadata
+
+        """
         url = f"{self._url}/metadata"
 
         return self._gis._con.get(url, {}, try_json=False)
 
     @property
     def thumbnail(self) -> str:
-        """returns the service's thumbnail"""
+        """
+
+        :return: the service's thumbnail
+
+        """
         url = f"{self._url}/thumbnail"
         return self._gis._con.get(url, {}, try_json=False)
 
@@ -210,7 +222,7 @@ class GPTask:
         """
         Returns the Service's Properties
 
-        :return: dict
+        :return: Dictionary
         """
         if self._properties is None:
             params = {"f": "json"}
@@ -226,7 +238,7 @@ class GPTask:
         """
         Returns the URL to the documentation for the GP Task.
 
-        :return: str
+        :return: string
         """
         return self.properties.get("helpUrl", "")
 
@@ -236,7 +248,8 @@ class GPTask:
         Gets a parameter's default value.
 
 
-        :returns: object
+        :return: object
+
         """
         name = _camelCase_to_underscore(name=name)
         for param in self.properties["parameters"]:
@@ -251,7 +264,7 @@ class GPTask:
         """
         Name of the geoprocessing tasks
 
-        :returns: str
+        :return: string
 
         """
         return _camelCase_to_underscore(self.properties["name"])
@@ -263,7 +276,8 @@ class GPTask:
         """
         Returns a Map of Parameters with Choice Lists.
 
-        :return: dict
+        :return: Dictionary
+
         """
         if self._choice_list is None:
             self._choice_list = {}
@@ -315,7 +329,7 @@ class GPService:
         """
         Returns the Service's Properties
 
-        :return: dict
+        :return: Dictionary
         """
         if self._properties is None:
 
@@ -328,7 +342,7 @@ class GPService:
     # ----------------------------------------------------------------------
     @property
     def tasks(self) -> list:
-        """returns the GP Tasks"""
+        """returns the :class:`GP Tasks <arcgis.geoprocessing.GPTask>`"""
         if self._tasks is None:
             self._tasks = [
                 GPTask(
@@ -351,6 +365,10 @@ class GPService:
     # ----------------------------------------------------------------------
     @property
     def info(self) -> GPInfo:
+        """
+        :return:
+            :class:`~arcgis.geoprocessing.GPInfo`
+        """
         if self._info is None:
             url = f"{self._url}/info"
             self._info = GPInfo(url, self._gis)

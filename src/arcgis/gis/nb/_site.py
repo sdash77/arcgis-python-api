@@ -5,7 +5,9 @@ from arcgis._impl.common._mixins import PropertyMap
 
 class SiteManager(object):
     """
-    Provides the ability to update and restore notebook sites.
+    Provides the ability to update and restore notebook sites. An object of this
+    class can be created using :attr:`~arcgis.gis.nb.NotebookServer.site` property of the
+    :class:`~arcgis.gis.nb.NotebookServer` class
 
     """
 
@@ -77,7 +79,7 @@ class SiteManager(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        location               Require String. The folder to save the site to.
+        location               Required String. The folder to save the site to.
         ==================     ====================================================================
 
         :return: string
@@ -107,7 +109,7 @@ class SiteManager(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        location               Require String. Path to the backup site file.
+        location               Required String. Path to the backup site file.
         ==================     ====================================================================
 
         :return: Boolean

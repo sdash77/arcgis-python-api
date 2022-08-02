@@ -2,7 +2,7 @@
 Connection Object that uses Python Requests
 
 Requires: requests, requests_toolbelt,
-Possible optional might be required: requests_ntlm, requests_kerberos, requests-oauthlib
+Possible optional might be required: requests_ntlm2, requests_kerberos, requests-oauthlib
 
 """
 from arcgis.auth.tools import LazyLoader
@@ -1144,13 +1144,13 @@ class Connection(object):
             )
         except requests.exceptions.HTTPError as errh:
             raise requests.exceptions.HTTPError("Http Error: %s" % errh)
-        except requests.exceptions.RequestException as errRE:
-            raise requests.exceptions.RequestException(
-                "A general expection was raised: %s" % errRE
-            )
         except requests.exceptions.MissingSchema as errMS:
             raise requests.exceptions.MissingSchema(
                 "URL scheme must be provided: %s" % errMS
+            )
+        except requests.exceptions.RequestException as errRE:
+            raise requests.exceptions.RequestException(
+                "A general expection was raised: %s" % errRE
             )
         except Exception as e:
             raise Exception("A general error occurred: %s" % e)
@@ -1389,13 +1389,13 @@ class Connection(object):
             )
         except requests.exceptions.HTTPError as errh:
             raise requests.exceptions.HTTPError("Http Error: %s" % errh)
-        except requests.exceptions.RequestException as errRE:
-            raise requests.exceptions.RequestException(
-                "A general expection was raised: %s" % errRE
-            )
         except requests.exceptions.MissingSchema as errMS:
             raise requests.exceptions.MissingSchema(
                 "URL scheme must be provided: %s" % errMS
+            )
+        except requests.exceptions.RequestException as errRE:
+            raise requests.exceptions.RequestException(
+                "A general expection was raised: %s" % errRE
             )
         except Exception as e:
             raise Exception("A general error occurred: %s" % e)

@@ -80,7 +80,7 @@ class SceneLayerManager(_GISResource):
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
-        job_id              Required String. The ``job id`` to cancel.
+        job_id              Required String. The job id to cancel.
         ===============     ====================================================
 
         """
@@ -304,7 +304,7 @@ class SceneLayerManager(_GISResource):
         ---------------------       ------------------------------------------------------
         export_tiles_allowed        Required boolean. ``exports_tiles_allowed`` sets the value to let users export tiles
         ---------------------       ------------------------------------------------------
-        max_export_tile_count       Optional float. ``max_export_tile_count``sets the maximum amount of tiles to be exported from a single call.
+        max_export_tile_count       Optional float. ``max_export_tile_count`` sets the maximum amount of tiles to be exported from a single call.
 
                                     .. note::
                                         The default value is 100000.
@@ -402,7 +402,7 @@ class EnterpriseSceneLayerManager(_GISResource):
     The ``EnterpriseSceneLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise hosted scene layers.
     A :class:`~arcgis.mapping.SceneLayer` offers access to layer content.
 
-    .. note:: Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/SceneServer/
+    .. note:: Url must be admin url such as: ``https://services.myserver.com/arcgis/rest/admin/services/serviceName/SceneServer/``
     """
 
     def __init__(self, url, gis=None, scene_lyr=None):
@@ -450,9 +450,9 @@ class EnterpriseSceneLayerManager(_GISResource):
 
         Values:
 
-           + 'ArcObjects' means the service is running under the ArcMap runtime i.e. published from ArcMap
-           + 'ArcObjects11': means the service is running under the ArcGIS Pro runtime i.e. published from ArcGIS Pro
-           + 'DMaps': means the service is running in the shared instance pool (and thus running under the ArcGIS Pro provider runtime)
+        + 'ArcObjects' means the service is running under the ArcMap runtime i.e. published from ArcMap
+        + 'ArcObjects11': means the service is running under the ArcGIS Pro runtime i.e. published from ArcGIS Pro
+        + 'DMaps': means the service is running in the shared instance pool (and thus running under the ArcGIS Pro provider runtime)
 
         :return: Boolean
 
@@ -481,7 +481,7 @@ class Object3DLayer(Layer):
     ------------------     --------------------------------------------------------------------
     url                    Required string, specify the url ending in /SceneServer/
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS object. If not specified, the active GIS connection is
+    gis                    Optional :class:`~arcgis.gis.GIS`  object. If not specified, the active GIS connection is
                            used.
     ==================     ====================================================================
 
@@ -538,12 +538,12 @@ class Object3DLayer(Layer):
     # ----------------------------------------------------------------------
     @property
     def manager(self):
+        """
+        The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
+        or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
+        which provides methods and properties for administering this service.
+        """
         if self._admin is None:
-            """
-            The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
-            or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
-            which provides methods and properties for administering this service.
-            """
             if self._gis._portal.is_arcgisonline:
                 rd = {"/rest/services/": "/rest/admin/services/"}
                 adminURL = self._str_replace(self._url, rd)
@@ -592,7 +592,7 @@ class IntegratedMeshLayer(Layer):
     ------------------     --------------------------------------------------------------------
     url                    Required string, specify the url ending in /SceneServer/
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS object. If not specified, the active GIS connection is
+    gis                    Optional :class:`~arcgis.gis.GIS`  object. If not specified, the active GIS connection is
                            used.
     ==================     ====================================================================
 
@@ -649,12 +649,12 @@ class IntegratedMeshLayer(Layer):
     # ----------------------------------------------------------------------
     @property
     def manager(self):
+        """
+        The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
+        or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
+        which provides methods and properties for administering this service.
+        """
         if self._admin is None:
-            """
-            The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
-            or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
-            which provides methods and properties for administering this service.
-            """
             if self._gis._portal.is_arcgisonline:
                 rd = {"/rest/services/": "/rest/admin/services/"}
                 adminURL = self._str_replace(self._url, rd)
@@ -703,7 +703,7 @@ class Point3DLayer(Layer):
     ------------------     --------------------------------------------------------------------
     url                    Required string, specify the url ending in /SceneServer/
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS object. If not specified, the active GIS connection is
+    gis                    Optional :class:`~arcgis.gis.GIS`  object. If not specified, the active GIS connection is
                            used.
     ==================     ====================================================================
 
@@ -761,12 +761,12 @@ class Point3DLayer(Layer):
     # ----------------------------------------------------------------------
     @property
     def manager(self):
+        """
+        The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
+        or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
+        which provides methods and properties for administering this service.
+        """
         if self._admin is None:
-            """
-            The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
-            or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
-            which provides methods and properties for administering this service.
-            """
             if self._gis._portal.is_arcgisonline:
                 rd = {"/rest/services/": "/rest/admin/services/"}
                 adminURL = self._str_replace(self._url, rd)
@@ -815,7 +815,7 @@ class PointCloudLayer(Layer):
     ------------------     --------------------------------------------------------------------
     url                    Required string, specify the url ending in /SceneServer/
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS object. If not specified, the active GIS connection is
+    gis                    Optional :class:`~arcgis.gis.GIS`  object. If not specified, the active GIS connection is
                            used.
     ==================     ====================================================================
 
@@ -872,12 +872,12 @@ class PointCloudLayer(Layer):
     # ----------------------------------------------------------------------
     @property
     def manager(self):
+        """
+        The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
+        or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
+        which provides methods and properties for administering this service.
+        """
         if self._admin is None:
-            """
-            The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
-            or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
-            which provides methods and properties for administering this service.
-            """
             if self._gis._portal.is_arcgisonline:
                 rd = {"/rest/services/": "/rest/admin/services/"}
                 adminURL = self._str_replace(self._url, rd)
@@ -926,7 +926,7 @@ class BuildingLayer(Layer):
     ------------------     --------------------------------------------------------------------
     url                    Required string, specify the url ending in /SceneServer/
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS object. If not specified, the active GIS connection is
+    gis                    Optional :class:`~arcgis.gis.GIS`  object. If not specified, the active GIS connection is
                            used.
     ==================     ====================================================================
 
@@ -983,12 +983,12 @@ class BuildingLayer(Layer):
     # ----------------------------------------------------------------------
     @property
     def manager(self):
+        """
+        The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
+        or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
+        which provides methods and properties for administering this service.
+        """
         if self._admin is None:
-            """
-            The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
-            or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
-            which provides methods and properties for administering this service.
-            """
             if self._gis._portal.is_arcgisonline:
                 rd = {"/rest/services/": "/rest/admin/services/"}
                 adminURL = self._str_replace(self._url, rd)
@@ -1008,7 +1008,7 @@ class BuildingLayer(Layer):
         """Replaces a value based on a key/value pair where the
         key is the text to replace and the value is the new value.
 
-        The find/replace is case insensitive.
+        The find/replace is case-insensitive.
 
         """
         import re
@@ -1033,7 +1033,7 @@ class _SceneLayerFactory(type):
     ------------------     --------------------------------------------------------------------
     url                    Required string, specify the url ending in /SceneServer/
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS object. If not specified, the active GIS connection is
+    gis                    Optional :class:`~arcgis.gis.GIS`  object. If not specified, the active GIS connection is
                            used.
     ==================     ====================================================================
 
@@ -1090,7 +1090,7 @@ class SceneLayer(Layer, metaclass=_SceneLayerFactory):
     ------------------     --------------------------------------------------------------------
     url                    Required string, specify the url ending in /SceneServer/
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS object. If not specified, the active GIS connection is
+    gis                    Optional :class:`~arcgis.gis.GIS`  object. If not specified, the active GIS connection is
                            used.
     ==================     ====================================================================
 
