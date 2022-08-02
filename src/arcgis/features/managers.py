@@ -1751,6 +1751,7 @@ class FeatureLayerCollectionManager(_GISResource):
         return res
 
     # ----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def create_view(
         self,
         name: str,
@@ -1759,14 +1760,15 @@ class FeatureLayerCollectionManager(_GISResource):
         allow_schema_changes: bool = True,
         updateable: bool = True,
         capabilities: str = "Query",
-        view_layers: Optional[list[features.FeatureLayer]] = None,
-        view_tables: Optional[list[features.Table]] = None,
+        view_layers: Optional[list[int]] = None,
+        view_tables: Optional[list[int]] = None,
         *,
         description: Optional[str] = None,
         tags: Optional[str] = None,
         snippet: Optional[str] = None,
         overwrite: Optional[bool] = None,
         set_item_id: Optional[str] = None,
+        preserve_layer_ids: bool = False,
     ):
         """
         Creates a view of an existing feature service. You can create a view, if you need a different view of the data
@@ -1782,7 +1784,7 @@ class FeatureLayerCollectionManager(_GISResource):
         For example, you can allow members of your organization to edit the hosted feature layer but share a read-only
         feature layer view with the public.
 
-        To learn more about views see `Create hosted feature layer views <https://doc.arcgis.com/en/arcgis-online/share-maps/create-hosted-views.htm>`_
+        To learn more about views visit: https://doc.arcgis.com/en/arcgis-online/share-maps/create-hosted-views.htm
 
         ====================     ====================================================================
         **Argument**             **Description**
@@ -1799,17 +1801,12 @@ class FeatureLayerCollectionManager(_GISResource):
         updateable               Optional bool. Default is True. Determines if view can update values
         --------------------     --------------------------------------------------------------------
         capabilities             Optional string. Specify capabilities as a comma separated string.
-
-                                 Example:
-
-                                    "Query, Update, Delete"
-
-                                 Default is 'Query'.
+                                 For example "Query, Update, Delete". Default is 'Query'.
         --------------------     --------------------------------------------------------------------
-        view_layers              Optional list. Specify list of layers present in the :class:`~arcgis.features.FeatureLayerCollection`
+        view_layers              Optional list. Specify list of layers present in the FeatureLayerCollection
                                  that you want in the view.
         --------------------     --------------------------------------------------------------------
-        view_tables              Optional list. Specify list of tables present in the :class:`~arcgis.features.FeatureLayerCollection`
+        view_tables              Optional list. Specify list of tables present in the FeatureLayerCollection
                                  that you want in the view.
         --------------------     --------------------------------------------------------------------
         description              Optional String. A user-friendly description for the published dataset.
@@ -1821,11 +1818,13 @@ class FeatureLayerCollectionManager(_GISResource):
         overwrite                Optional Boolean.  If true, the view is overwritten, False is the default.
         --------------------     --------------------------------------------------------------------
         set_item_id              Optional String. If set, the ItemId is defined by the user, not the system.
+        --------------------     --------------------------------------------------------------------
+        preserve_layer_ids       Optional Boolean. Preserves the layer's `id` on it's definition when `True`.  The default is `False`.
         ====================     ====================================================================
 
         .. code-block:: python  (optional)
 
-           USAGE EXAMPLE: Create a view from a hosted feature layer
+           USAGE EXAMPLE: Create a veiw from a hosted feature layer
 
            crime_fl_item = gis.content.search("2012 crime")[0]
            crime_flc = FeatureLayerCollection.fromitem(crime_fl_item)
@@ -1890,6 +1889,7 @@ class FeatureLayerCollectionManager(_GISResource):
                     "spatialReference": spatial_reference,
                     "initialExtent": extent or fs.properties["initialExtent"],
                     "capabilities": capabilities or fs.properties["capabilties"],
+                    "preserveLayerIds": preserve_layer_ids,
                 }
             ),
             "outputType": "featureService",
@@ -1969,23 +1969,34 @@ class FeatureLayerCollectionManager(_GISResource):
                         lyr_id = lyr.manager.properties.serviceItemId
                         data_path = "content/items/" + lyr_id + "/data"
                         data = item._portal.con.get(path=data_path)
-                        add_def["layers"].append(
-                            {
-                                "adminLayerInfo": {
-                                    "popupInfo": data["layers"][0]["popupInfo"]
-                                    if "layers" in data
-                                    else None,
-                                    "viewLayerDefinition": {
-                                        "sourceServiceName": os.path.basename(
-                                            os.path.dirname(fs.url)
-                                        ),
-                                        "sourceLayerId": lyr.manager.properties["id"],
-                                        "sourceLayerFields": "*",
-                                    },
-                                },
-                                "name": lyr.manager.properties["name"],
-                            }
-                        )
+                        def_lyr = dict(lyr.properties)
+                        def_lyr["adminLayerInfo"] = {
+                            "popupInfo": data["layers"][0]["popupInfo"]
+                            if "layers" in data
+                            else None,
+                            "viewLayerDefinition": {
+                                "sourceServiceName": os.path.basename(
+                                    os.path.dirname(fs.url)
+                                ),
+                                "sourceLayerId": lyr.manager.properties["id"],
+                                "sourceLayerFields": "*",
+                            },
+                        }
+                        for k in {
+                            "indexes",
+                            "relationships",
+                            "geometryProperties",
+                            "hasGeometryProperties",
+                            "serviceItemId",
+                            "supportsMultiScaleGeometry",
+                            "fields",
+                            "isView",
+                        }:
+                            if k in def_lyr:
+                                del def_lyr[k]
+                        if self._gis._con.token:
+                            def_lyr["url"] = lyr.url + f"?token={self._gis._con.token}"
+                        add_def["layers"].append(def_lyr)
                 else:
                     import logging
 
@@ -2021,22 +2032,34 @@ class FeatureLayerCollectionManager(_GISResource):
             if view_tables:
                 if isinstance(view_tables, list):
                     for tbl in view_tables:
-                        add_def["tables"].append(
-                            {
-                                "adminLayerInfo": {
-                                    "viewLayerDefinition": {
-                                        "sourceServiceName": os.path.basename(
-                                            os.path.dirname(fs.url)
-                                        ),
-                                        "sourceLayerId": tbl.manager.properties["id"],
-                                        "sourceLayerFields": "*",
-                                    }
-                                },
-                                "id": tbl.manager.properties["id"],
-                                "name": tbl.manager.properties["name"],
-                                "type": "Table",
-                            }
-                        )
+                        tbl_def = {
+                            "adminLayerInfo": {
+                                "viewLayerDefinition": {
+                                    "sourceServiceName": os.path.basename(
+                                        os.path.dirname(fs.url)
+                                    ),
+                                    "sourceLayerId": tbl.manager.properties["id"],
+                                    "sourceLayerFields": "*",
+                                }
+                            },
+                            "id": tbl.manager.properties["id"],
+                            "name": tbl.manager.properties["name"],
+                            "type": "Table",
+                        }
+                        tbl_def.update(dict(tbl.properties))
+                        for k in {
+                            "isView",
+                            "sourceSchemaChangesAllowed",
+                            "fields",
+                            "serviceItemId",
+                            "relationships",
+                            "indexes",
+                            "isUpdatableView",
+                            "viewSourceHasAttachments",
+                        }:
+                            if k in tbl_def:
+                                del tbl_def[k]
+                        add_def["tables"].append(tbl_def)
                 else:
                     import logging
 
