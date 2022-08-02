@@ -1729,6 +1729,23 @@ def calculate_travel_cost(
                                         Possible values: FROM_SOURCE, TO_SOURCE
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     allocation_field                    Optional. A field on `in_source_data` layer that holds the values that define each source.
+
+    -------------------------------     -------------------------------------------------------------------------------------------------------------------
+    generate_out_allocation_raster      Optional Boolean, determines whether out_allocation_raster should be generated or not.
+                                        Set this parameter to True, in order to generate the out_allocation_raster.
+                                        If set to true, the output will be a named tuple with name values being
+                                        output_distance_service and output_allocation_service.
+
+                                        Example
+
+                                            | out_layer = calculate_travel_cost(in_source_data, generate_out_allocation_raster=False)
+                                            | out_var = out_layer.save()
+
+                                        then,
+
+                                            | out_var.output_distance_service -> gives you the output distance imagery layer item
+
+                                            | out_var.output_allocation_service -> gives you the output allocation raster imagery layer item
     -------------------------------     -------------------------------------------------------------------------------------------------------------------
     generate_out_backlink_raster        Optional Boolean, determines whether out_backlink_raster should be generated or not.
                                         Set this parameter to True, in order to generate the out_backlink_raster.
@@ -1745,22 +1762,6 @@ def calculate_travel_cost(
                                             | out_var.output_distance_service -> gives you the output distance imagery layer item
 
                                             | out_var.output_backlink_service -> gives you the output backlink raster imagery layer item
-    -------------------------------     -------------------------------------------------------------------------------------------------------------------
-    generate_out_allocation_raster      Optional Boolean, determines whether out_allocation_raster should be generated or not.
-                                        Set this parameter to True, in order to generate the out_backlink_raster.
-                                        If set to true, the output will be a named tuple with name values being
-                                        output_distance_service and output_allocation_service.
-
-                                        Example
-
-                                            | out_layer = calculate_travel_cost(in_source_data, generate_out_allocation_raster=False)
-                                            | out_var = out_layer.save()
-
-                                        then,
-
-                                            | out_var.output_distance_service -> gives you the output distance imagery layer item
-
-                                            | out_var.output_allocation_service -> gives you the output allocation raster imagery layer item
     ===============================     ===================================================================================================================
 
     :return: output raster with function applied
