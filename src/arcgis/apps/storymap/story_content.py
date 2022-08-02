@@ -2,9 +2,6 @@ from __future__ import annotations
 from enum import Enum
 from typing import Optional, Union
 import uuid
-
-from numpy import isin
-
 from arcgis.auth.tools import LazyLoader
 
 arcgis = LazyLoader("arcgis")
