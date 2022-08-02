@@ -1768,7 +1768,7 @@ class Text(object):
         self,
         text: Optional[str] = None,
         style: TextStyles = TextStyles.PARAGRAPH,
-        color: str = "000",
+        color: str = None,
         **kwargs,
     ):
         # Can be created from scratch or already exist in story
@@ -2592,7 +2592,7 @@ class Sidecar(object):
     def add_slide(
         self,
         contents: list,
-        media: Image | Video | Map | Embed,
+        media: Image | Video | Map | Embed | None = None,
         slide_number: int = None,
     ):
         """
@@ -2640,14 +2640,19 @@ class Sidecar(object):
             np_children.append(content.node)
             if content.node not in self._story._properties["nodes"]:
                 self._add_item_story(content)
-        if media.node not in self._story._properties["nodes"]:
-            self._add_item_story(media)
+        if media:
+            if media.node not in self._story._properties["nodes"]:
+                self._add_item_story(media)
+
+        # For reference on some styles, grab first slide to go off of
+        first_slide = self._story.properties["nodes"][self._slides[0]]
+        first_np = self._story.properties["nodes"][first_slide["children"][0]]
 
         # Create narrative panel node
         np_node = "n-" + uuid.uuid4().hex[0:6]
         np_def = {
             "type": "immersive-narrative-panel",
-            "data": {"position": "start", "size": "medium", "panelStyle": "themed"},
+            "data": first_np["data"],  # keep same settings as other slide
             "children": np_children,
         }
         self._story._properties["nodes"][np_node] = np_def
@@ -2655,13 +2660,15 @@ class Sidecar(object):
         # Create slide node and add the other nodes to it
         slide_node = "n-" + uuid.uuid4().hex[0:6]
         slide_def = {
-            "type": "immersive-side",
+            "type": "immersive-slide",
             "data": {"transition": "fade"},
-            "children": [
-                np_node,  # First listed node is the Narrative Panel
-                media.node,  # Can be Any supported Slide Media node of type of IMAGE, VIDEO, MAP, EMBED or SWIPE
-            ],
+            "children": [np_node],  # First listed node is the Narrative Panel
         }
+        # If no media given then put a background color instead
+        if media:
+            slide_def["children"].append(media.node)
+        else:
+            slide_def["data"]["backgroundColor"] = "#FFFFFF"
         self._story._properties["nodes"][slide_node] = slide_def
 
         # Add slide node to sidecar node children at position indicated or last.
@@ -2676,6 +2683,7 @@ class Sidecar(object):
         )
         # Update slide definition for the class to relect new list
         self._slides = self._story._properties["nodes"][self.node]["children"]
+        return {"New Slide": slide_node}
 
     # ----------------------------------------------------------------------
     def remove_slide(self, slide: str):
@@ -2689,11 +2697,11 @@ class Sidecar(object):
         ===============     ====================================================================
         """
         # Remove slide and all associated children.
-        self._story._properties["nodes"][self.node]["children"].remove(slide)
-        self._slides.remove(slide)
-        self._story._delete(slide)
         self._remove_associated(slide)
+        self._story._properties["nodes"][self.node]["children"].remove(slide)
+        self._story._delete(slide)
         self._slides = self._story._properties["nodes"][self.node]["children"]
+        return True
 
     # ----------------------------------------------------------------------
     def delete(self):
@@ -2706,14 +2714,18 @@ class Sidecar(object):
 
     # ----------------------------------------------------------------------
     def _remove_associated(self, slide):
-        # Remove narrative panel and text associated
+        # Get narrative panel, always first child of the slide
         narrative_panel = self._story._properties["nodes"][slide]["children"][0]
-        self._story._delete(narrative_panel["children"][0])
+        # Delete the children of the narrative panel
+        children = self._story._properties["nodes"][narrative_panel]["children"]
+        for child in children:
+            self._story._delete(child)
+        # Delete the narrative panel itself
         self._story._delete(narrative_panel)
 
         # Remove media item and resource node if one exists
-        if len(self._story._properties["nodes"][slide]["children"]) > 1:
-            media_item = self._story._properties["nodes"][slide]["children"][1]
+        if len(self._story._properties["nodes"][slide]["children"]) >= 1:
+            media_item = self._story._properties["nodes"][slide]["children"][0]
             if "image" in self._story._properties["nodes"][media_item]["data"]:
                 resource_node = self._story._properties["nodes"][media_item]["data"][
                     "image"
@@ -2737,13 +2749,13 @@ class Sidecar(object):
         elif isinstance(content, Video):
             content._add_video(display="wide", story=self._story)
         elif isinstance(content, Embed):
-            content._add_link(display="wide", story=self._story)
+            content._add_link(display="card", story=self._story)
         elif isinstance(content, Map):
             content._add_map(display="wide", story=self._story)
         elif isinstance(content, Text):
-            content._add_text(display="wide", story=self._story)
+            content._add_text(story=self._story)
         elif isinstance(content, Button):
-            content._add_button(display="wide", story=self._story)
+            content._add_button(story=self._story)
         elif isinstance(content, Audio):
             content._add_audio(display="wide", story=self._story)
 
