@@ -2602,7 +2602,7 @@ class Sidecar(object):
         =======================     ====================================================================
         **Argument**                **Description**
         -----------------------     --------------------------------------------------------------------
-        contents                    Optional list of story content item(s). The instances of story content that
+        contents                    Required list of story content item(s). The instances of story content that
                                     will be added to the narrative panel such as Text, Image, Embed, etc.
         -----------------------     --------------------------------------------------------------------
         media                       Optional item that is a story content item.
