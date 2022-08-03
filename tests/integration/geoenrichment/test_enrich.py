@@ -373,3 +373,14 @@ def test_enrich_sedf_from_agol_layer_global_defaults(usa_agol):
         enrich_res = enrich(df, gis=usa_agol._gis)
         assert isinstance(enrich_res, pd.DataFrame)
         assert _is_geoenabled(enrich_res)
+
+@skip_if_no_agol
+def test_enrich_buffer_study_areas(usa_agol):
+    from arcgis.geoenrichment import enrich, BufferStudyArea
+
+    with does_not_raise():
+        buffered = BufferStudyArea(area='380 New York St Redlands CA 92373',
+                           radii=[3], units='Miles', overlap=False)
+        buffer_df = enrich(study_areas=[buffered])
+        assert isinstance(buffer_df, pd.DataFrame)
+        assert _is_geoenabled(buffer_df)

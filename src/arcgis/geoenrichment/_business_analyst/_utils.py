@@ -724,6 +724,8 @@ def add_proximity_to_enrich_feature(
                 break
 
     # if just doing a buffer, set the correct area type and set variable for travel mode type
+    if travel_mode is None:
+        travel_mode = "straight_line"
     if travel_mode == "straight_line":
         feature["areaType"] = (
             "RingBuffer" if proximity_area_overlap else "RingBufferBands"
