@@ -2495,6 +2495,7 @@ class Sidecar(object):
         return sidecar_tree
 
     # ----------------------------------------------------------------------
+    # Can we create an alias name called: change_media
     def edit(
         self,
         content: Union[Image, Video, Map, Embed],
@@ -2617,7 +2618,6 @@ class Sidecar(object):
         # Remove narrative panel and text associated
         narrative_panel = self._story._properties["nodes"][slide]["children"][0]
         self._story._delete(narrative_panel["children"][0])
-        # Delete the narrative panel itself
         self._story._delete(narrative_panel)
 
         # Remove media item and resource node if one exists
