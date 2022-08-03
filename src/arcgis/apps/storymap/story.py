@@ -836,7 +836,7 @@ class StoryMap(object):
 
         """
         if content and content.node in self._properties["nodes"]:
-            content.node = "n-" + uuid.uuid4().hex[0:6]
+            raise Exception("This node already exists. Please try updating instead.")
 
         # Node id included in all content except separator so create node id for that
         node_id = content.node if content is not None else "n-" + uuid.uuid4().hex[0:6]
@@ -1176,7 +1176,7 @@ class StoryMap(object):
         return clone_story.save()
 
     # ----------------------------------------------------------------------
-    def _delete(self, node_id):
+    def _delete(self, node_id, resource_id=None):
         # Check if node is in story
         if node_id not in self._properties["nodes"]:
             return False
@@ -1202,6 +1202,11 @@ class StoryMap(object):
                     if child == node_id:
                         self._properties["nodes"][node]["children"].remove(node_id)
 
+        # Remove from resources dictionary
+        # Note: not all keys are in resources
+        resource = self._properties["resources"].pop(resource_id, None)
+        if resource is not None and "resourceId" in resource["data"]:
+            self._remove_resource(resource["data"]["resourceId"])
         return True
 
     # ----------------------------------------------------------------------
