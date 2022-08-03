@@ -1788,7 +1788,7 @@ data = [
 profiles = ["your_online_profile", "your_enterprise_profile"]
 
 
-class TestSeDFOverwrite(unittest.TestCase):
+class TestSeDFAppend(unittest.TestCase):
     """tests the insert_layer on the SeDF when creating a feature layer"""
 
     def test_insert_layer(self):

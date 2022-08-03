@@ -7237,7 +7237,7 @@ class ContentManager(object):
                         "filegdb"
                         in fs_item.layers[fl_index].properties.supportedAppendFormats
                     ):
-                        ItemDependency(fs_item).add("itemid", item.id)
+                        ItemDependency(fs_item).add("itemid", fgdb_item.id)
                         fs_item.layers[fl_index].append(
                             item_id=fgdb_item.id, upload_format="filegdb"
                         )
