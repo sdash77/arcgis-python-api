@@ -128,7 +128,7 @@ def viewshed(
     The ``viewshed`` method is used to identify visible areas based on observer locations you provide as well as ArcGIS Online Elevation data.
 
     ===============================    =========================================================
-    **Parameter**                      **Description**
+    **Argument**                       **Description**
     -------------------------------    ---------------------------------------------------------
     input_points                       Required FeatureSet. The point features to use as the observer locations. See :ref:`Feature Input<FeatureInput>`.
     -------------------------------    ---------------------------------------------------------
@@ -242,7 +242,7 @@ def summarize_elevation(
     for the elevation, slope, and aspect of the features.
 
     =========================    =========================================================
-    **Parameter**                **Description**
+    **Argument**                 **Description**
     -------------------------    ---------------------------------------------------------
     input_features               Reqauired FeatureSet. Input features to summarize the elevation for. The features can be point, line, or area. See :ref:`Feature Input<FeatureInput>`.
     -------------------------    ---------------------------------------------------------

@@ -2986,7 +2986,12 @@ class FeatureLayer(Layer):
             params["datumTransformation"] = datum_transformation
         if session_id and isinstance(session_id, str):
             params["sessionID"] = session_id
-        if "deletes" not in params and "updates" not in params and "adds" not in params:
+        if (
+            "deletes" not in params
+            and "updates" not in params
+            and "adds" not in params
+            and "attachments" not in params
+        ):
             print("Parameters not valid for edit_features")
             return None
         try:

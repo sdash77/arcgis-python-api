@@ -1307,7 +1307,7 @@ def _create_report_gis(
                 area_dict = {
                     "sourceCountry": first_area["sourceCountry"],
                     "layer": first_area["layer"],
-                    "ids": [ids.join(",")],
+                    "ids": [",".join(ids)],
                 }
             else:
                 raise ValueError("Lists members must be NamedArea instances")

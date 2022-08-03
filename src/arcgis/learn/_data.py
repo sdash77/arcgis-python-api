@@ -979,6 +979,7 @@ def prepare_tabulardata(
     batch_size=64,
     index_field=None,
     working_dir=None,
+    **kwargs,
 ):
     """
     Prepares a tabular data object from input_features and optionally rasters.
@@ -1090,6 +1091,21 @@ def prepare_tabulardata(
                             a prefix for saving trained models and checkpoints.
     =====================   ===========================================
 
+    **Keyword Arguments**
+
+    =====================   ===========================================
+    **Argument**            **Description**
+    ---------------------   -------------------------------------------
+    stratify                Optional boolean.
+                            If True, prepare_tabulardata
+                            will try to maintain the class proportion in
+                            train and validation data according to the
+                            val_split_pct.
+                            Default value is False.
+
+                            Note: Applies to classification problems.
+    =====================   ===========================================
+
     :return: `TabularData` object
 
     """
@@ -1105,6 +1121,10 @@ def prepare_tabulardata(
 
     if hasattr(arcgis, "env") and force_cpu == 1:
         arcgis.env._processorType = "CPU"
+
+    stratify = False
+    if kwargs.get("stratify") == True:
+        stratify = True
 
     HAS_COLUMN_TRANSFORMS = False
 
@@ -1151,6 +1171,7 @@ def prepare_tabulardata(
         procs=preprocessors,
         val_split_pct=val_split_pct,
         seed=seed,
+        stratify=stratify,
         batch_size=batch_size,
         index_field=index_field,
         column_transforms_mapping=column_transforms_mapping,
@@ -1325,7 +1346,7 @@ def prepare_data(
                             when specifying `classes_of_interest`.
                             Applicable only for dataset_type='PointCloud'.
     ---------------------   -------------------------------------------
-    stratify                Optional boolean.
+    stratify                Optional boolean, default False.
                             If True, prepare_data
                             will try to maintain the class proportion in
                             train and validation data according to the

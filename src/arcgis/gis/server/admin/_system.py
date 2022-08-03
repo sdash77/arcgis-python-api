@@ -64,6 +64,10 @@ class SystemManager(BaseServer):
     def server_properties(self) -> "ServerProperties":
         """
         Gets the server properties for the site as an object.
+
+        :return:
+            :class:`~arcgis.gis.server.ServerProperties` object
+
         """
         return ServerProperties(
             url=self._url + "/properties", connection=self._con, initialize=True
@@ -74,6 +78,7 @@ class SystemManager(BaseServer):
     def _directories(self) -> list:
         """
         Gets the server directory object as a list.
+
         """
         directs = []
         url = self._url + "/directories"
@@ -94,7 +99,7 @@ class SystemManager(BaseServer):
     def directories(self) -> "DirectoryManager":
         """
         :return:
-            The server directory object in a list.
+            The :class:`~arcgis.gis.server.ServerDirectory` object in a list.
         """
         return DirectoryManager(system=self)
 
@@ -110,7 +115,8 @@ class SystemManager(BaseServer):
         ==================     ====================================================================
 
         :return:
-            The ArcGIS Server directory as an object.
+            The ArcGIS Server directory as an object or None.
+
 
         """
         url = self._url + "/directories"
@@ -206,6 +212,9 @@ class SystemManager(BaseServer):
     def jobs(self) -> "Jobs":
         """
         Gets the Jobs object.
+
+        :return:
+            :class:`~arcgis.gis.server.Jobs` object
         """
         url = self._url + "/jobs"
         return Jobs(url=url, connection=self._con, initialize=True)
@@ -340,6 +349,10 @@ class SystemManager(BaseServer):
     def configuration_store(self) -> "ConfigurationStore":
         """
         Gets the ConfigurationStore object for this site.
+
+        :return:
+            :class:`~arcgis.gis.server.ConfigurationStore`
+
         """
         url = self._url + "/configstore"
 
@@ -421,7 +434,8 @@ class SystemManager(BaseServer):
         :returns: dict
         """
         url = self._url + "/handlers/soap/soaphandlerconfig"
-        return self._con.get(path=url, postdata=params)
+        params = {"f": "json"}
+        return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
     @soap_config.setter
@@ -662,7 +676,7 @@ class PlatformServiceManager(BaseServer):
             for ps in self._json_dict["platformservices"]:
                 if ps["type"].lower() == service.lower():
                     return PlatformService(
-                        url="%s/%s" % (self._url, ps["id"]), gis=self._con
+                        url="%s/%s" % (self._url, ps["id"]), connection=self._con
                     )
         return None
 
@@ -1055,7 +1069,7 @@ class ServerProperties(BaseServer):
             gif, jpg, tiff, bmp.
 
       - WebContextURL -- Defines the web front end as seen by your users.
-        Example: http://mycompany.com/gis
+        Example: ``http://mycompany.com/gis``
 
     """
 
@@ -1233,7 +1247,7 @@ class DirectoryManager(object):
         """
         returns the current service directory properties for the server.
 
-        :return: dict
+        :return: Dict
         """
         return self._system._services_directory
 
@@ -1249,7 +1263,8 @@ class DirectoryManager(object):
         ==================     ====================================================================
 
         :return:
-            The directory object.
+            The ArcGIS Server :class:`~arcgis.gis.server.ServerDirectory` object
+
         """
         return self._system._get_directory(name=name)
 

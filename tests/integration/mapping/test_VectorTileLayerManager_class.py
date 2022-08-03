@@ -8,10 +8,17 @@ from arcgis.gis import GIS
 from arcgis.mapping._types import VectorTileLayer, VectorTileLayerManager
 
 # Initialize manager
-online_admin = GIS(profile="your_online_admin_profile", verify_cert=False)
-vector_tile_item = online_admin.content.get("68dcf1fc2cee4b0398e90c164613f98b")
-tile_layer = VectorTileLayer.fromitem(vector_tile_item)
-manager = tile_layer.manager
+online_admin = GIS(profile="your_online_profile", verify_cert=False)
+
+# Item published from Service Directory
+sd_vector_tile_item = online_admin.content.get("c98c939d961d463095199140dd30a75c")
+sd_tile_layer = VectorTileLayer.fromitem(sd_vector_tile_item)
+sd_vtl_manager = sd_tile_layer.manager
+
+# Item published from FeatureService
+fs_vector_tile_item = online_admin.content.get("90ff63ae7ecb4bfd9bc6aec2f88d5230")
+fs_tile_layer = VectorTileLayer.fromitem(fs_vector_tile_item)
+fs_vtl_manager = fs_tile_layer.manager
 
 
 class TestVectorTileLayerManager(unittest.TestCase):
@@ -19,39 +26,48 @@ class TestVectorTileLayerManager(unittest.TestCase):
         """
         Test refresh
         """
-        res = manager.refresh()
-        assert res
+        sd_res = sd_vtl_manager.refresh()
+        assert sd_res
+
+        fs_res = fs_vtl_manager.refresh()
+        assert fs_res
 
     @SkipTest
     def test_status(self):
-        status = manager.status()
-        assert status
+        sd_status = sd_vtl_manager.status()
+        assert sd_status
+
+        fs_status = fs_vtl_manager.status()
 
     def test_update_tiles(self):
         """
         Test update tiles
         """
-        update = manager.update_tiles(levels="0-4")
-        assert update
+        sd_update = sd_vtl_manager.update_tiles(merge_bundle=False)
+        assert sd_update
+
+        fs_update = fs_vtl_manager.update_tiles()
+        assert fs_update
 
     def test_jobs(self):
         """
         Test various job functions
         """
-        jobs = manager.jobs()
+        ###### Test for SD VTL #######
+        jobs = sd_vtl_manager.jobs()
         assert jobs
         assert isinstance(jobs, dict)
 
         # get the job id for a job
         job_id = jobs["jobs"][0]["id"]
         # get stats for a job
-        stats = manager.job_statistics(job_id=job_id)
+        stats = sd_vtl_manager.job_statistics(job_id=job_id)
         assert stats
         assert isinstance(stats, dict)
 
         # cancel a job
         try:
-            cancel = manager.cancel_job(job_id=job_id)
+            cancel = sd_vtl_manager.cancel_job(job_id=job_id)
             assert cancel
         except:
             print(
@@ -62,7 +78,41 @@ class TestVectorTileLayerManager(unittest.TestCase):
 
         # rerun job
         try:
-            re_run = manager.rerun_job(code="ALL", job_id=job_id)
+            re_run = sd_vtl_manager.rerun_job(code="ALL", job_id=job_id)
+            assert re_run
+        except:
+            print(
+                "Unable to rerun the job since the job {job_id} is in 'Done' state.".format(
+                    job_id=job_id
+                )
+            )
+
+        ############ Test for FS VTL ###############
+        jobs = fs_vtl_manager.jobs()
+        assert jobs
+        assert isinstance(jobs, dict)
+
+        # get the job id for a job
+        job_id = jobs["jobs"][0]["id"]
+        # get stats for a job
+        stats = fs_vtl_manager.job_statistics(job_id=job_id)
+        assert stats
+        assert isinstance(stats, dict)
+
+        # cancel a job
+        try:
+            cancel = fs_vtl_manager.cancel_job(job_id=job_id)
+            assert cancel
+        except:
+            print(
+                "Unable to cancel the job since the job {job_id} is in 'Done' state.".format(
+                    job_id=job_id
+                )
+            )
+
+        # rerun job
+        try:
+            re_run = fs_vtl_manager.rerun_job(code="ALL", job_id=job_id)
             assert re_run
         except:
             print(
@@ -75,17 +125,20 @@ class TestVectorTileLayerManager(unittest.TestCase):
         """
         Test edit tile service.
         """
-        source_item_id = vector_tile_item.related_items(
+        source_item_id = sd_vtl_manager.related_items(
             rel_type="Service2Data", direction="forward"
         )[0]["id"]
-        res = manager.edit_tile_service(
-            service_name="set2_vtpk_worldgreen2",
+        sd_res = sd_vtl_manager.edit_tile_service(
             source_item_id=source_item_id,
             export_tiles_allowed=True,
             max_export_tile_count=5000,
         )
-        assert res
-        assert res["status"] == "success"
+        assert sd_res
+        assert sd_res["status"] == "success"
+
+        fs_res = fs_vtl_manager.edit_tile_service(max_zoom=23)
+        assert fs_res
+        assert fs_res["status"] == "success"
 
 
 if __name__ == "__main__":
