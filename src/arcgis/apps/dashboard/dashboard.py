@@ -11,10 +11,10 @@ _created_dashboards = []
 @deprecated(deprecated_in="2.0.1", removed_in=None, current_version="2.0.1")
 class Dashboard(object):
     """
-    Creates a Dashboard Object.
+    Creates a :class:`~arcgis.apps.dashboard.Dashboard` Object.
 
     :return:
-        Dashboard object
+        :class:`~arcgis.apps.dashboard.Dashboard` object
     """
 
     def __init__(self):

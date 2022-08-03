@@ -12,7 +12,7 @@ class List(_BaseWidget):
     **Argument**                **Description**
     -------------------------   -------------------------------------------
     item                        Required Portal :class:`~arcgis.gis.Item` object. Item object can
-                                be a Feature Layer or a MapWidget.
+                                be a :class:`~arcgis.features.FeatureLayer`  or a MapWidget.
     -------------------------   -------------------------------------------
     name                        Optional string. Name of the List widget.
     -------------------------   -------------------------------------------

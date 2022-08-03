@@ -12,7 +12,7 @@ class Details(_BaseWidget):
     **Argument**                **Description**
     -------------------------   -------------------------------------------
     item                        Required Portal :class:`~arcgis.gis.Item` object. Item object should
-                                be a Feature Layer.
+                                be a :class:`~arcgis.features.FeatureLayer` .
     -------------------------   -------------------------------------------
     name                        Optional string. Name of the element.
     -------------------------   -------------------------------------------
