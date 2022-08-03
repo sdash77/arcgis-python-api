@@ -2192,7 +2192,7 @@ class Gallery(object):
     def delete_image(self, image: str):
         """
         The delete_image method is used to delete one image from the gallery. To see a list of images
-        used in the gallery, use the `gallery.images` property.
+        used in the gallery, use the :meth:`~arcgis.apps.storymap.story_content.Gallery.images` property.
 
         ==================      ====================================================================
         **Argument**            **Description**
