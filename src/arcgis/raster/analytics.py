@@ -47,9 +47,14 @@ def is_supported(gis: Optional[GIS] = None):
     """
     gis = _arcgis.env.active_gis if gis is None else gis
     if "rasterAnalytics" in gis.properties.helperServices:
-        return True
-    else:
-        return False
+        user = gis.users.me
+        if user is not None and "premium:publisher:rasteranalysis" in user.privileges:
+            if (
+                "portal:publisher:publishDynamicImagery" in user.privileges
+                or "portal:publisher:publishTiledImagery" in user.privileges
+            ):
+                return True
+    return False
 
 
 def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
@@ -4314,7 +4319,7 @@ def _calculate_travel_cost(
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="Please use arcgis.raster.analytics.optimal_region_connections() instead. ",
+    details="Please use :meth:`~arcgis.raster.analytics.optimal_region_connections` instead. ",
 )
 def optimum_travel_cost_network(
     input_regions_raster,
