@@ -2385,7 +2385,6 @@ class Swipe(object):
             elif isinstance(content, Map):
                 content._add_map(story=self._story)
                 self._media_type = "webmap"
-
         if "data" not in self._story._properties["nodes"][self.node]:
             self._story._properties["nodes"][self.node]["data"] = {"contents": {}}
         # Add to content in position wanted
