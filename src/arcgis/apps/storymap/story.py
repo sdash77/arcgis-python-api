@@ -1207,6 +1207,7 @@ class StoryMap(object):
         resource = self._properties["resources"].pop(resource_id, None)
         if resource is not None and "resourceId" in resource["data"]:
             self._remove_resource(resource["data"]["resourceId"])
+
         return True
 
     # ----------------------------------------------------------------------
