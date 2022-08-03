@@ -169,7 +169,7 @@ def _gbl_clone_layer_raster(layer, function_chain, function_chain_ra, **kwargs):
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="Please use :meth:`~arcgis.raster.functions.gbl.distance_accumulation` instead. ",
+    details="Please use arcgis.raster.functions.gbl.distance_accumulation instead. ",
 )
 def euclidean_distance(
     in_source_data,
@@ -269,7 +269,7 @@ def euclidean_distance(
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="Please use :meth:`~arcgis.raster.functions.gbl.distance_allocation` instead. ",
+    details="Please use arcgis.raster.functions.gbl.distance_allocation instead. ",
 )
 def euclidean_allocation(
     in_source_data,
@@ -394,7 +394,7 @@ def euclidean_allocation(
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="Please use :meth:`~arcgis.raster.functions.gbl.distance_accumulation` instead. ",
+    details="Please use arcgis.raster.functions.gbl.distance_accumulation instead. ",
 )
 def cost_distance(
     in_source_data,
@@ -531,7 +531,7 @@ def cost_distance(
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="Please use :meth:`~arcgis.raster.functions.gbl.distance_allocation` instead. ",
+    details="Please use arcgis.raster.functions.gbl.distance_allocation instead. ",
 )
 def cost_allocation(
     in_source_data,
@@ -906,8 +906,8 @@ def zonal_statistics(
 
 @deprecated(
     deprecated_in="1.9.0",
-    details="Please use :meth:`~arcgis.raster.functions.gbl.distance_accumulation`"
-    " and :meth:`~arcgis.raster.functions.gbl.optimal_path_as_raster` instead. ",
+    details="Please use arcgis.raster.functions.gbl.distance_accumulation"
+    " and arcgis.raster.functions.gbl.optimal_path_as_raster instead. ",
 )
 def least_cost_path(
     in_source_data,
@@ -1667,8 +1667,8 @@ def watershed(
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="Please use :meth:`~arcgis.raster.functions.gbl.distance_accumulation`"
-    " (or :meth:`~arcgis.raster.functions.gbl.distance_allocation` for allocation output), instead. ",
+    details="Please use arcgis.raster.functions.gbl.distance_accumulation"
+    " (or arcgis.raster.functions.gbl.distance_allocation for allocation output), instead. ",
 )
 def calculate_travel_cost(
     in_source_data,
@@ -2062,7 +2062,7 @@ def kernel_density(
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="Please use :meth:`~arcgis.raster.functions.gbl.optimal_path_as_raster` instead.",
+    details="Please use arcgis.raster.functions.gbl.optimal_path_as_raster instead.",
 )
 def cost_path(
     in_destination_data,
@@ -2162,7 +2162,7 @@ def cost_path(
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="Please use :meth:`~arcgis.raster.functions.gbl.distance_accumulation`"
+    details="Please use arcgis.raster.functions.gbl.distance_accumulation"
     " with value specified for output_source_direction_raster_name, instead.",
 )
 def euclidean_direction(
@@ -2261,7 +2261,7 @@ def euclidean_direction(
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="Please use :meth:`~arcgis.raster.functions.gbl.distance_accumulation`"
+    details="Please use arcgis.raster.functions.gbl.distance_accumulation"
     " with value specified for output_back_direction_raster_name, instead.",
 )
 def cost_backlink(
@@ -2561,7 +2561,7 @@ def corridor(in_distance_raster1: Raster, in_distance_raster2: Raster):
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="Please use :meth:`~arcgis.raster.functions.gbl.distance_accumulation` instead. ",
+    details="Please use arcgis.raster.functions.gbl.distance_accumulation instead. ",
 )
 def path_distance(
     in_source_data,
@@ -2771,7 +2771,7 @@ def path_distance(
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="Please use :meth:`~arcgis.raster.functions.gbl.distance_allocation` instead.",
+    details="Please use arcgis.raster.functions.gbl.distance_allocation instead.",
 )
 def path_distance_allocation(
     in_source_data,
@@ -2995,7 +2995,7 @@ def path_distance_allocation(
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="Please use :meth:`~arcgis.raster.functions.gbl.distance_accumulation`"
+    details="Please use arcgis.raster.functions.gbl.distance_accumulation"
     " with value specified for output_back_direction_raster_name, instead.",
 )
 def path_distance_back_link(
@@ -3211,8 +3211,8 @@ def path_distance_back_link(
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="Please use :meth:`~arcgis.raster.functions.gbl.distance_accumulation`"
-    " (or :meth:`~arcgis.raster.functions.gbl.distance_allocation` for allocation output) instead.",
+    details="Please use arcgis.raster.functions.gbl.distance_accumulation"
+    " (or arcgis.raster.functions.gbl.distance_allocation for allocation output) instead.",
 )
 def calculate_distance(
     in_source_data,
@@ -3408,7 +3408,7 @@ def calculate_distance(
 
 @deprecated(
     deprecated_in="1.8.1",
-    details="Please use :meth:`~arcgis.raster.functions.gbl.distance_accumulation` "
+    details="Please use arcgis.raster.functions.gbl.distance_accumulation "
             "with value specified for output_back_direction_raster_name, instead.",
 )
 def euclidean_back_direction(
