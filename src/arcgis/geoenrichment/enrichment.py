@@ -1529,7 +1529,7 @@ def enrich(
     Refer to https://developers.arcgis.com/rest/geoenrichment/api-reference/street-address-locations.htm for
     the format of intersection_geographies parameter.
 
-    :return: Spatial DataFrame or Panda's DataFrame with the requested variables for the study areas.
+    :return: Spatially Enabled DataFrame or Panda's DataFrame with the requested variables for the study areas.
     """
     # handle the caveat of using a GIS('Pro') input
     gis = _check_gis_source(gis)
