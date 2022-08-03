@@ -227,7 +227,6 @@ class NotebookManager(object):
                 if "status" in resp and resp["status"] == "success":
                     job_id = resp["jobId"]
                     status = nbs.system.job_details(job_id)
-                    i = 0
                     while status["status"].lower() != "completed":
                         time.sleep(0.3)
                         if status["status"].lower() == "failed":
