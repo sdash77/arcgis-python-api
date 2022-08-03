@@ -2635,8 +2635,8 @@ class Sidecar(object):
         # 2. Add the node ids to list to pass as children later
         np_children = []
         for content in contents:
-            np_children.append(content.node)
             self._add_item_story(content)
+            np_children.append(content.node)
         if media:
             self._add_item_story(media)
 
