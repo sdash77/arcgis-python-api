@@ -1551,6 +1551,10 @@ def enrich(
             study_areas = [na._areaid for na in study_areas]
             standard_geography_level = first_geo._currlvl
             enrich_src = first_geo._country
+        elif isinstance(first_geo, BufferStudyArea):
+            study_areas = [bsa.area for bsa in study_areas]
+            proximity_metric = first_geo.units
+            proximity_value = first_geo.radii
 
     # check if data collections used as input parameter against available data collections
     if data_collections is not None:
