@@ -20,11 +20,15 @@ class SceneLayerManager(_GISResource):
         super(SceneLayerManager, self).__init__(url, gis)
         self._sl = scene_lyr
         # Scene Layers published from Scene Layer Package are read only.
-        self._source_type = (
-            "Feature Service"
-            if "updateEnabled" in self.properties.layers[0]
-            else "Scene Layer Package"
-        )
+        if "layers" in self.properties:
+            self._source_type = (
+                "Feature Service"
+                if "updateEnabled" in self.properties.layers[0]
+                else "Scene Layer Package"
+            )
+        else:
+            # No layers are present so we will not have cache
+            self._source_type = "Scene Layer Package"
 
     # ----------------------------------------------------------------------
     def refresh(self):
