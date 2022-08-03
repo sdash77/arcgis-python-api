@@ -2,7 +2,6 @@ from __future__ import annotations
 from enum import Enum
 from typing import Optional, Union
 import uuid
-
 from arcgis.auth.tools import LazyLoader
 
 arcgis = LazyLoader("arcgis")
@@ -248,7 +247,7 @@ class Image(object):
 
         :return: True if successful.
         """
-        return self._story._delete(self.node, self.resource_node)
+        return self._story._delete(self.node)
 
     # ----------------------------------------------------------------------
     def _add_image(self, caption=None, alt_text=None, display=None, story=None):
@@ -583,7 +582,7 @@ class Video(object):
 
         :return: True if successful
         """
-        return self._story._delete(self.node, self.resource_node)
+        return self._story._delete(self.node)
 
     # ----------------------------------------------------------------------
     def _add_video(
@@ -870,7 +869,7 @@ class Audio(object):
 
         :return: True if successful
         """
-        return self._story._delete(self.node, self.resource_node)
+        return self._story._delete(self.node)
 
     # ----------------------------------------------------------------------
     def _add_audio(
@@ -1577,7 +1576,7 @@ class Map(object):
         """
         Delete the node
         """
-        return self._story._delete(self.node, self.resource_node)
+        return self._story._delete(self.node)
 
     # ----------------------------------------------------------------------
     def _add_map(self, caption=None, alt_text=None, display=None, story=None):
@@ -1766,7 +1765,7 @@ class Text(object):
         self,
         text: Optional[str] = None,
         style: TextStyles = TextStyles.PARAGRAPH,
-        color: str = "000",
+        color: str = None,
         **kwargs,
     ):
         # Can be created from scratch or already exist in story
@@ -2179,8 +2178,9 @@ class Gallery(object):
                 )
             if images is not None:
                 for image in images:
-                    if image.node not in self._story._properties["nodes"]:
-                        image._add_image(story=self._story)
+                    if image.node in self._story._properties["nodes"]:
+                        image.node = "n-" + uuid.uuid4().hex[0:6]
+                    image._add_image(story=self._story)
                     self._story._properties["nodes"][self.node]["children"].append(
                         image.node
                     )
@@ -2203,12 +2203,7 @@ class Gallery(object):
         if image in self.images:
             # Remove from the gallery list
             self._story._properties["nodes"][self.node]["children"].remove(image)
-            # Remove from the story
-            if "image" in self._story._properties["nodes"][image]["data"]:
-                resource_node = self._story._properties["nodes"][image]["data"]["image"]
-            else:
-                resource_node = None
-            self._story._delete(image, resource_node)
+            self._story._delete(image)
         return self.images
 
     # ----------------------------------------------------------------------
@@ -2377,14 +2372,9 @@ class Swipe(object):
             raise ValueError(
                 "Media type is established as image. Can only accept another image."
             )
-        if content.node not in self._story._properties["nodes"]:
-            # If user has created the content but not added to the story yet.
-            if isinstance(content, Image):
-                content._add_image(story=self._story)
-                self._media_type = "image"
-            elif isinstance(content, Map):
-                content._add_map(story=self._story)
-                self._media_type = "webmap"
+        # Add node to story.
+        self._add_item_story(content)
+
         if "data" not in self._story._properties["nodes"][self.node]:
             self._story._properties["nodes"][self.node]["data"] = {"contents": {}}
         # Add to content in position wanted
@@ -2405,6 +2395,17 @@ class Swipe(object):
         :return: True if successful.
         """
         return self._story._delete(self.node)
+
+    # ----------------------------------------------------------------------
+    def _add_item_story(self, content):
+        if content and content.node in self._story._properties["nodes"]:
+            content.node = "n-" + uuid.uuid4().hex[0:6]
+        if isinstance(content, Image):
+            content._add_image(story=self._story)
+            self._media_type = "image"
+        elif isinstance(content, Map):
+            content._add_map(story=self._story)
+            self._media_type = "webmap"
 
 
 ###############################################################################################################
@@ -2495,7 +2496,6 @@ class Sidecar(object):
         return sidecar_tree
 
     # ----------------------------------------------------------------------
-    # Can we create an alias name called: change_media
     def edit(
         self,
         content: Union[Image, Video, Map, Embed],
@@ -2549,9 +2549,8 @@ class Sidecar(object):
         slide_node = list(slide.keys())[0]
         media_node = list(slide[slide_node]["media"].values())[0]
 
-        # Check to see if content has been added to node properties
-        if content.node not in self._story._properties["nodes"]:
-            self._add_item_story(content)
+        # Add to node properties
+        self._add_item_story(content)
 
         if media_node:
             self._story._delete(media_node)
@@ -2588,6 +2587,101 @@ class Sidecar(object):
         return self._story._assign_node_class(node_id)
 
     # ----------------------------------------------------------------------
+    def add_slide(
+        self,
+        contents: list,
+        media: Image | Video | Map | Embed | None = None,
+        slide_number: int = None,
+    ):
+        """
+        Add a slide to the sidecar. You are able to specify the position of the slide, the
+        content of the narrative panel and the media of the slide.
+
+        =======================     ====================================================================
+        **Argument**                **Description**
+        -----------------------     --------------------------------------------------------------------
+        contents                    Required list of story content item(s). The instances of story content that
+                                    will be added to the narrative panel such as Text, Image, Embed, etc.
+        -----------------------     --------------------------------------------------------------------
+        media                       Optional item that is a story content item.
+                                    Item type for the media node can be: Image, Video, Map, Embed, or Swipe.
+        -----------------------     --------------------------------------------------------------------
+        slide_number                Optional Integer. The position at which the new slide will be.
+                                    If none is provided then it will be added as the last slide.
+
+                                    First slide is 1.
+        =======================     ====================================================================
+
+        .. code-block:: python
+            # Get sidecar from story and see the properties
+            sc = story.get(<sidecar_node_id>)
+            sc.properties
+            >> returns a dictionary structure of the sidecar
+
+            # create the content we will add to narrative_panel_nodes parameter
+            im = Image(<img_url_or_path>)
+            txt = Text("Hello World")
+            embed = Embed(<url>)
+            narrative_nodes = [im, txt, embed]
+
+            mmap = Map(<item_id webmap>)
+
+            # Add new slide with the content:
+            sc.add_slide(narrative_nodes, mmap, 4)
+            >> New slide added with the content at position 4
+        """
+        # Loop to:
+        # 1. Add the content to the story if not already added
+        # 2. Add the node ids to list to pass as children later
+        np_children = []
+        for content in contents:
+            np_children.append(content.node)
+            self._add_item_story(content)
+        if media:
+            self._add_item_story(media)
+
+        # For reference on some styles, grab first slide to go off of
+        first_slide = self._story.properties["nodes"][self._slides[0]]
+        first_np = self._story.properties["nodes"][first_slide["children"][0]]
+
+        # Create narrative panel node
+        np_node = "n-" + uuid.uuid4().hex[0:6]
+        np_def = {
+            "type": "immersive-narrative-panel",
+            "data": first_np["data"],  # keep same settings as other slide
+            "children": np_children,
+        }
+        self._story._properties["nodes"][np_node] = np_def
+
+        # Create slide node and add the other nodes to it
+        slide_node = "n-" + uuid.uuid4().hex[0:6]
+        slide_def = {
+            "type": "immersive-slide",
+            "data": {"transition": "fade"},
+            "children": [np_node],  # First listed node is the Narrative Panel
+        }
+        # If no media given then put a background color instead
+        if media:
+            slide_def["children"].append(media.node)
+        else:
+            slide_def["data"]["backgroundColor"] = "#FFFFFF"
+        self._story._properties["nodes"][slide_node] = slide_def
+
+        # Add slide node to sidecar node children at position indicated or last.
+        if slide_number is None:
+            # If no slide number then insert slide last
+            slide_number = len(self._slides) + 1
+        else:
+            # Correct for the indexing (user puts position 1, index is 0)
+            slide_number = slide_number - 1
+        self._story._properties["nodes"][self.node]["children"].insert(
+            slide_number, slide_node
+        )
+        # Update slide definition for the class to relect new list
+        self._slides = self._story._properties["nodes"][self.node]["children"]
+        return {"New Slide": slide_node}
+
+    # ----------------------------------------------------------------------
     def remove_slide(self, slide: str):
         """
         Remove a slide from the sidecar.
@@ -2599,10 +2693,11 @@ class Sidecar(object):
         ===============     ====================================================================
         """
         # Remove slide and all associated children.
-        self._story._properties["nodes"][self.node]["children"].remove(slide)
-        self._slides.remove(slide)
-        self._story._delete(slide)
         self._remove_associated(slide)
+        self._story._properties["nodes"][self.node]["children"].remove(slide)
+        self._story._delete(slide)
+        self._slides = self._story._properties["nodes"][self.node]["children"]
+        return True
 
     # ----------------------------------------------------------------------
     def delete(self):
@@ -2615,42 +2710,38 @@ class Sidecar(object):
 
     # ----------------------------------------------------------------------
     def _remove_associated(self, slide):
-        # Remove narrative panel and text associated
+        # Get narrative panel, always first child of the slide
         narrative_panel = self._story._properties["nodes"][slide]["children"][0]
-        self._story._delete(narrative_panel["children"][0])
+        # Delete the children of the narrative panel
+        children = self._story._properties["nodes"][narrative_panel]["children"]
+        for child in children:
+            self._story._delete(child)
+        # Delete the narrative panel itself
         self._story._delete(narrative_panel)
 
         # Remove media item and resource node if one exists
-        if len(self._story._properties["nodes"][slide]["children"]) > 1:
-            media_item = self._story._properties["nodes"][slide]["children"][1]
-            if "image" in self._story._properties["nodes"][media_item]["data"]:
-                resource_node = self._story._properties["nodes"][media_item]["data"][
-                    "image"
-                ]
-            elif "video" in self._story._properties["nodes"][media_item]["data"]:
-                resource_node = self._story._properties["nodes"][media_item]["data"][
-                    "video"
-                ]
-            elif self._story._properties["nodes"][media_item]["type"] == "webmap":
-                resource_node = self._story._properties["nodes"][media_item]["data"][
-                    "map"
-                ]
-            else:
-                resource_node = None
-            self._story._delete(media_item, resource_node)
+        if len(self._story._properties["nodes"][slide]["children"]) >= 1:
+            media_item = self._story._properties["nodes"][slide]["children"][0]
+            self._story._delete(media_item)
 
     # ----------------------------------------------------------------------
     def _add_item_story(self, content):
+        if content and content.node in self._story._properties["nodes"]:
+            content.node = "n-" + uuid.uuid4().hex[0:6]
         if isinstance(content, Image):
-            content._add_image(story=self._story)
+            content._add_image(display="wide", story=self._story)
         elif isinstance(content, Video):
-            content._add_video(story=self._story)
+            content._add_video(display="wide", story=self._story)
         elif isinstance(content, Embed):
-            content._add_link(story=self._story)
+            content._add_link(display="card", story=self._story)
         elif isinstance(content, Map):
-            content._add_map(story=self._story)
+            content._add_map(display="wide", story=self._story)
         elif isinstance(content, Text):
             content._add_text(story=self._story)
+        elif isinstance(content, Button):
+            content._add_button(story=self._story)
+        elif isinstance(content, Audio):
+            content._add_audio(display="wide", story=self._story)
 
 
 ###############################################################################################################
@@ -2783,13 +2874,7 @@ class Timeline(object):
                 old_image_node = self._story._properties["nodes"][event][
                     "children"
                 ].pop(position)
-                if "image" in self._story._properties["nodes"][old_image_node]["data"]:
-                    resource_node = self._story._properties["nodes"][old_image_node][
-                        "data"
-                    ]["image"]
-                else:
-                    resource_node = None
-                self._story._delete(old_image_node, resource_node)
+                self._story._delete(old_image_node)
                 self._story._properties["nodes"][event]["children"].insert(
                     position, content.node
                 )
@@ -2827,14 +2912,7 @@ class Timeline(object):
         # Remove narrative panel and text associated
         children = self._story._properties["nodes"][event]["children"]
         for child in children:
-            if self._story._properties["nodes"][child]["type"] == "image":
-                if "image" in self._story._properties["nodes"][child]["data"]:
-                    resource_node = self._story._properties["nodes"][child]["data"][
-                        "image"
-                    ]
-            else:
-                resource_node = None
-            self._story._delete(child, resource_node)
+            self._story._delete(child)
         self._story._delete(event)
 
     # ----------------------------------------------------------------------
@@ -2870,6 +2948,8 @@ class Timeline(object):
 
     # ----------------------------------------------------------------------
     def _add_item_story(self, content):
+        if content.node in self.story._properties["nodes"]:
+            content.node = "n-" + uuid.uuid4().hex[0:6]
         if isinstance(content, Image):
             content._add_image(story=self._story)
         elif isinstance(content, Text):

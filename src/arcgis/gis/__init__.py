@@ -182,9 +182,8 @@ class GIS(object):
 
                         ex: 127.0.0.1
     ----------------    ---------------------------------------------------------------
-    use_gen_token       Optional Boolean. The default is `False`. For older
-                        Enterprises, the BUILT-IN users can specify using the
-                        generateToken end point for creating the token.
+    use_gen_token       Optional Boolean. The default is `False`. Uses generateToken
+                        login over OAuth2 login.
     ----------------    ---------------------------------------------------------------
     proxy_port          Optional integer. The proxy host port.  The default is 80.
     ----------------    ---------------------------------------------------------------
@@ -1012,7 +1011,7 @@ class GIS(object):
             raise Exception("Please access your ArcGIS Online sites through your Hub.")
 
     @_lazy_property
-    def notebook_server(self) -> "list[NotebookServer]":
+    def notebook_server(self) -> "list[NotebookServer]" | "list[AGOLNotebookManager]":
         """
         The ``notebook_server`` property provides access to the :class:`~arcgis.gis.nb.NotebookServer` registered
         with the organization or enterprise.
@@ -1022,10 +1021,10 @@ class GIS(object):
             urls = self._registered_servers()
             url = urls.get("urls", {}).get("notebooks", {}).get("https", None)
             if url:
-                from arcgis.gis.nb import NotebookServer
+                from arcgis.gis.agonb import AGOLNotebookManager
 
                 url = f"https://{url[0]}/admin"
-                return [NotebookServer(url=url, gis=self)]
+                return [AGOLNotebookManager(url=url, gis=self)]
         else:
             try:
                 from arcgis.gis.nb import NotebookServer
@@ -5136,6 +5135,60 @@ class ContentManager(object):
         return self._gis._con.get(curl, params, ignore_error_key=True)
 
     # ----------------------------------------------------------------------
+    def can_reassign(self, items: list[Item], user: User) -> list[dict[str, Any]]:
+        """
+        Checks if a `list[Item]` can be reassigned to a particular user.
+        The operation checks whether the items owned by one user can be successfully
+        reassigned to a specified user before performing the `reassign` operation.
+        Users assigned the default administrator role, or a custom role with
+        administrative privileges, can perform this operation. The item owner can
+        also use this operation; if the item owner that performs this operation
+        is not a default administrator, or assigned a custom role with
+        administrative privileges, they must have the portal:user:reassignItems
+        privilege assigned to them to transfer content to another user.
+
+        ======================     ====================================================================
+        **Argument**               **Description**
+        ----------------------     --------------------------------------------------------------------
+        items                      Required list[Item]. A list of Items. The maximum number of items
+                                   that can be transferred at one time is 100.
+        ----------------------     --------------------------------------------------------------------
+        user                       Required User. The user the items will be reassigned to. For a user
+                                   to be eligible to receive transferred content, they must meet the
+                                   following requirements:
+
+                                   - The user must be assigned the portal:user:receiveItems privilege to receive the transferred content.
+                                   - The user must have a user type that allows them to own content.
+                                   - If the items being transferred to the user are shared with a group, the user receiving the items must be a member of the group. If the group is a view-only group, the user receiving the items must be the group owner or a group manager.
+
+                                   If the above requirements are not met, an error response will be returned.
+        ======================     ====================================================================
+
+        :returns: `list[dict[str, Any]]`
+        """
+        if self._gis.version < [10, 1] and self._gis._portal.is_arcgisonline == False:
+            return []
+        urls = {}
+        params = {}
+        params["f"] = "json"
+        params["targetUsername"] = user.username
+        params["items"] = None
+        for item in items:
+            if item.owner in urls:
+                urls[item.owner]["itemids"].append(item.itemid)
+            else:
+                urls[item.owner] = {
+                    "itemids": [item.itemid],
+                    "url": f"{self._gis._portal.resturl}content/users/{item.owner}/canReassignItems",
+                }
+        results = []
+        for key, value in urls.items():
+            params["items"] = ",".join(value["itemids"])
+            results.append(self._gis._con.post(value["url"], params))
+            #
+        return results
+
+    # ---------------------------------------------------------------------
     def cost(
         self,
         tile_storage: Optional[float] = None,
@@ -9924,9 +9977,12 @@ class User(dict):
         time.sleep(2)
         try:
             count = 0
+            item = None
             while count < 5:
-
-                item = Item(self._gis, res["itemId"])
+                try:
+                    item = Item(self._gis, res["itemId"])
+                except:
+                    ...
                 if item:
                     break
                 count += 1
@@ -13623,8 +13679,7 @@ class Item(dict):
 
         if self.type == "Vector Tile Service":
             params["name"] = self.title.replace(" ", "_")
-        if self.type == "Map Service":
-            params["name"] = self.title.replace(" ", "_")
+
         if isinstance(date_range, (tuple, list)) and len(date_range) == 2:
             params["period"] = "1d"
             params["startTime"] = int(date_range[0].timestamp() * 1000)
@@ -15494,7 +15549,7 @@ class Item(dict):
                               )
 
         """
-        if self.type.lower() in ["application", "api key"]:
+        if self.type.lower() in ["api key"]:
             return None
         if redirect_uris is None:
             redirect_uris = []
