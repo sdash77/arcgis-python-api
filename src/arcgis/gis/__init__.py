@@ -15814,6 +15814,7 @@ class ViewManager:
         """Gets the View Definition Parmaeters for a Given Item"""
         if "View Service" in item.typeKeywords:
             from arcgis.gis._impl._dataclasses import ViewLayerDefParameter
+
             services = item.layers + item.tables
             return [ViewLayerDefParameter.fromlayer(lyr) for lyr in services]
         return []

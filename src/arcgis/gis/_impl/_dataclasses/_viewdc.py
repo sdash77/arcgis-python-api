@@ -99,8 +99,8 @@ class ViewLayerDefParameter:
         else:
             sf = None
         fields = [
-            {'name': fld['name'], 'visible': fld.get('visible', True)}
-            for fld in props['fields']
+            {"name": fld["name"], "visible": fld.get("visible", True)}
+            for fld in props["fields"]
         ]
         return ViewLayerDefParameter(
             layer=fl,
