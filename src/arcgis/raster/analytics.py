@@ -3281,6 +3281,7 @@ def train_classifier(
 ## Create image collection
 ###################################################################################################
 
+
 def create_image_collection(
     image_collection: Item,
     input_rasters: list,
@@ -4854,7 +4855,7 @@ def calculate_statistics(
 @deprecated(
     deprecated_in="1.8.1",
     details="Please use arcgis.raster.functions.gbl.distance_accumulation "
-            "followed by arcgis.raster.analytics.optimal_path_as_line instead.",
+    "followed by arcgis.raster.analytics.optimal_path_as_line instead.",
 )
 def determine_travel_costpath_as_polyline(
     input_source_data,
@@ -6726,7 +6727,7 @@ def subset_multidimensional_raster(
 
                                              Example:
 
-   						                        | {'username': 'user1',
+                                                                        | {'username': 'user1',
                                                 | 'id': '6a3b77c187514ef7873ba73338cf1af8',
                                                 | 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
@@ -7084,7 +7085,7 @@ def optimal_path_as_line(
 
                                              Example:
 
-   						                        | {'username': 'user1',
+                                                                        | {'username': 'user1',
                                                 | 'id': '6a3b77c187514ef7873ba73338cf1af8',
                                                 | 'title': 'trial'}
     ====================================     ====================================================================
@@ -7258,7 +7259,7 @@ def optimal_region_connections(
 
                                              Example:
 
-   						                        | {'username': 'user1',
+                                                                        | {'username': 'user1',
                                                 | 'id': '6a3b77c187514ef7873ba73338cf1af8',
                                                 | 'title': 'trial'}
     ====================================     ====================================================================
@@ -7535,7 +7536,7 @@ def analyze_changes_using_ccdc(
 
                                              Example:
 
-   						                        | {'username': 'user1',
+                                                                        | {'username': 'user1',
                                                 | 'id': '6a3b77c187514ef7873ba73338cf1af8',
                                                 | 'title': 'trial'}
     ------------------------------------     --------------------------------------------------------------------
@@ -9165,7 +9166,7 @@ def compute_change_raster(
 
                                              Example:
 
-   						                        | {'username': 'user1',
+                                                                        | {'username': 'user1',
                                                 | 'id': '6a3b77c187514ef7873ba73338cf1af8',
                                                 | 'title': 'trial'}
     ====================================     ====================================================================
@@ -9292,7 +9293,7 @@ def summarize_categorical_raster(
 
                                              Example:
 
-   						                        | {'username': 'user1',
+                                                                        | {'username': 'user1',
                                                 | 'id': '6a3b77c187514ef7873ba73338cf1af8',
                                                 | 'title': 'trial'}
     ====================================     ====================================================================

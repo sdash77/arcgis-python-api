@@ -281,6 +281,7 @@ class Country(object):
         name: str,
         gis: Optional[GIS] = None,
         year: Optional[Union[str, int]] = None,
+        dataset: Optional[str] = None,
     ):
         """
         Get a reference to a particular country, given its name, or its
@@ -310,12 +311,21 @@ class Country(object):
                           (year) of data to use. This option is only available
                           when using a `'local'` GIS source, and will be
                           ignored if used with a Web GIS source.
+        ----------------  --------------------------------------------------------
+        dataset           Optional string. The dataset that should be used for the
+                          Country. The list of available datasets can be found when
+                          in the `datasets` property or as a column in the result
+                          of the `get_countries()` method.
+                          If None is provided then the country's default dataset is used.
         ================  ========================================================
 
         :return:
             :class:`~arcgis.geoenrichment.Country` instance for the requested country.
         """
-        return cls(name, gis, year)
+        cntry = cls(name, gis, year)
+        if dataset:
+            cntry.dataset = dataset
+        return cntry
 
     # noinspection PyMissingConstructor
     def __init__(
@@ -444,6 +454,14 @@ class Country(object):
         dset = [d for d in self._geog_levels if d["datasetID"] == self._dataset_id][0]
         lvls = dset["levels"]
         return lvls
+
+    @property
+    def datasets(self):
+        """
+        Returns the list of available datasets for the Country. The dataset
+        currently used can be seen and changed with the `hierarchy` property.
+        """
+        return self._ba_cntry.properties.datasets
 
     @property
     def dataset(self):
