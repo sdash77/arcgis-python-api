@@ -31,6 +31,9 @@ from arcgis.gis._impl import (
     MetadataFormatEnum,
     CreateServiceParameter,
     ServiceTypeEnum,
+    ViewLayerDefParameter,
+    SpatialRelationship,
+    SpatialFilter,
 )
 import concurrent.futures
 
@@ -5935,7 +5938,7 @@ class ContentManager(object):
 
     # ----------------------------------------------------------------------
     def create_empty_service(
-        self, parameters: CreateServiceParameter, *, owner: User = None
+        self, parameters: CreateServiceParameter, *, owner: User | None = None
     ) -> Item:
         """
         Creates a blank or view based service.
@@ -13588,6 +13591,20 @@ class Item(dict):
         return res
 
     # ----------------------------------------------------------------------
+    @property
+    def view_manager(self) -> ViewManager | None:
+        """
+        If the `Item` is a `Feature Service` and a `Hosted Service`, the `Item`
+        can have views.  This Manager allows users to work with `Feature Service`
+        to create **views**
+
+        :returns: ViewManager
+        """
+        if self.type == "Feature Service" and "Hosted Service" in self.typeKeywords:
+            return ViewManager(item=self)
+        return None
+
+    # ----------------------------------------------------------------------
     @cached(cache=TTLCache(maxsize=255, ttl=60))
     def usage(self, date_range: str = "7D", as_df: bool = True):
         """
@@ -15728,6 +15745,104 @@ class Item(dict):
         elif return_type == "PRIVATE_ONLY":
             return private_url or public_url
         return url
+
+
+########################################################################
+class ViewManager:
+    """The View Manager"""
+
+    _item = None
+    _gis = None
+
+    def __init__(self, item: Item):
+        self._item = item
+        self._gis = item._gis
+
+    # ----------------------------------------------------------------------
+    def list(self) -> list[Item]:
+        """
+        Returns all views for a given item
+
+        :returns: list[Item]
+        """
+        return [
+            i
+            for i in self._item.related_items("Service2Data", "reverse")
+            if "View Service" in i.typeKeywords
+        ]
+
+    # ----------------------------------------------------------------------
+    def create(
+        self,
+        name: str,
+        spatial_reference: dict[str, Any] | None = None,
+        extent: dict[str, int | float] | None = None,
+        allow_schema_changes: bool = True,
+        updateable: bool = True,
+        capabilities: str = "Query",
+        view_layers: list[int] | None = None,
+        view_tables: list[int] | None = None,
+        *,
+        description: str | None = None,
+        tags: str | None = None,
+        snippet: str | None = None,
+        overwrite: bool | None = None,
+        set_item_id: str | None = None,
+        preserve_layer_ids: bool = False,
+    ) -> Item:
+        flc = arcgis.features.FeatureLayerCollection.fromitem(self._item)
+        mgr = flc.manager
+        return mgr.create_view(
+            name=name,
+            spatial_reference=spatial_reference,
+            extent=extent,
+            allow_schema_changes=allow_schema_changes,
+            updateable=updateable,
+            capabilities=capabilities,
+            view_layers=view_layers,
+            view_tables=view_tables,
+            description=description,
+            tags=tags,
+            snippet=snippet,
+            overwrite=overwrite,
+            set_item_id=set_item_id,
+            preserve_layer_ids=preserve_layer_ids,
+        )
+
+    # ----------------------------------------------------------------------
+    def get_definitions(self, item: Item) -> list[ViewLayerDefParameter]:
+        """Gets the View Definition Parmaeters for a Given Item"""
+        if "View Service" in item.typeKeywords:
+            from arcgis.gis._impl._dataclasses import ViewLayerDefParameter
+            services = item.layers + item.tables
+            return [ViewLayerDefParameter.fromlayer(lyr) for lyr in services]
+        return []
+
+    # ----------------------------------------------------------------------
+    def update(self, layer_def: list[ViewLayerDefParameter] | None = None) -> bool:
+        """
+        Updates a set of layers with new queries, geometries, and column visibilities.
+
+        :returns: boolean
+        """
+        results = []
+        assert isinstance(layer_def, (list, tuple))
+        for lyrdef in layer_def:
+            assert isinstance(lyrdef, ViewLayerDefParameter)
+            layer = layer_def.layer
+            assert isinstance(layer, arcgis.features.FeatureLayer)
+            if "isView" in lyrdef.layer.properties and lyrdef.layer.properties.isView:
+                results.append(
+                    {
+                        layer._url: layer.container.manager.update_definition(
+                            lyrdef.as_json()
+                        )
+                    }
+                )
+            else:
+                raise ValueError("The layer is not a view.")
+            del lyrdef
+        return results
 
 
 ########################################################################
