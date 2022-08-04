@@ -1698,9 +1698,9 @@ class ItemInformationManager(BaseServer):
 
         Resources
 
-         - **clientName** - Machine where ArcGIS Pro or ArcGIS Desktop was used to publish the service.
-         - **onPremisePath** - Path, relative to the 'clientName' machine, where the source resource (.mxd, .3dd, .tbx files, geodatabases, and so on) originated.
-         - **serverPath** - Path to the document after publishing completes.
+        - **clientName** - Machine where ArcGIS Pro or ArcGIS Desktop was used to publish the service.
+        - **onPremisePath** - Path, relative to the 'clientName' machine, where the source resource (.mxd, .3dd, .tbx files, geodatabases, and so on) originated.
+        - **serverPath** - Path to the document after publishing completes.
 
         :return: Dict
 
