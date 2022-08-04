@@ -10,6 +10,8 @@ import unicodedata
 import yaml
 from arcgis.gis import GIS
 from arcgis.gis._impl._con._cert import pfx_to_pem
+from itertools import repeat
+import concurrent.futures
 
 # global verbose
 verbose = False
@@ -116,9 +118,10 @@ def check(data_path: str) -> bool:
         return False
 
 
-def input_csv_handler(path: str) -> list[dict] | list:
+def input_csv_handler(path: str) -> list[list[dict]] | list:
     """
-    The `driver_csv_handler` function parses the Driver CSV and returns a list[dict] containing all the information in the CSV.
+    The `input_csv_handler` function parses the Driver CSV and returns a list[list[dict]] containing all the information in the CSV
+    grouped by item_id.
     """
     if not check(path):
         print("Unsuccessful, please chek logs")
@@ -154,6 +157,7 @@ def input_csv_handler(path: str) -> list[dict] | list:
             cli_logger.error(str(e))
         return output
     else:
+        output2 = {}
         for idx in range(len(output)):
             for key in output[idx]:
                 if isinstance(output[idx][key], str) and output[idx][key] == "":
@@ -172,8 +176,21 @@ def input_csv_handler(path: str) -> list[dict] | list:
                             == "none"
                         ):
                             output[idx]["item_properties"][key] = None
+            item_id = output[idx]["item_id"]
+            if item_id != "" or item_id != None:
+                if item_id in output2:
+                    output2[item_id].append(output[idx])
+                else:
+                    output2[item_id] = []
+                    output2[item_id].append(output[idx])
+            else:
+                if "NoneType" in output2:
+                    output2["NoneType"].append(output[idx])
+                else:
+                    output2["NoneType"] = []
+                    output2["NoneType"].append(output[idx])
         cli_logger.info("Driver csv parsed successfully")
-        return output
+        return list(output2.values())
 
 
 def built_in(
@@ -560,6 +577,7 @@ if __name__ == "__main__":
         print("Login Unsuccessful, please check logs.")
         sys.exit()
 
-    execute(gis, res)
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        executor.map(execute,repeat(gis),res)
     cli_logger.info("CLI tool exited")
     sys.exit()
