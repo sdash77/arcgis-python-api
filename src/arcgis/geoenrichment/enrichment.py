@@ -1526,8 +1526,8 @@ def enrich(
                                   ``kilometers``.
     =========================     ====================================================================
 
-    Refer to https://developers.arcgis.com/rest/geoenrichment/api-reference/street-address-locations.htm for
-    the format of intersection_geographies parameter.
+    See `intersecting_geographies <https://developers.arcgis.com/rest/geoenrichment/api-reference/enrich.htm#ESRI_SECTION2_6A987CF67F914FA39B61BE14BE115F27>`_
+
 
     :return: Spatial DataFrame or Panda's DataFrame with the requested variables for the study areas.
     """
