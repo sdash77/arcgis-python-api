@@ -74,7 +74,7 @@ class TraceNetworkManager(object):
         locations: list[dict],
         trace_type: str,
         moment: str | None = None,
-        configuration: dict | TraceConfiguration| None = None,
+        configuration: dict | TraceConfiguration | None = None,
         result_types: list[dict] | None = None,
         run_async: bool = False,
     ) -> dict:

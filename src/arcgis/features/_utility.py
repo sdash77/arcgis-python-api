@@ -1150,7 +1150,7 @@ class TraceConfigurationsManager(object):
         creators: list[str] | None = None,
         tags: list[str] | None = None,
         names: list[str] | None = None,
-        as_trace_configuration_class: bool = False
+        as_trace_configuration_class: bool = False,
     ) -> dict:
         """
         The query operation returns all properties from one or more
@@ -1171,7 +1171,7 @@ class TraceConfigurationsManager(object):
         names                               Optional list of strings. The names of the
                                             named trace configurations to be queried.
         ----------------------------        -------------------------------------------
-        as_trace_configuration_class        Optional boolean. If True the list for 
+        as_trace_configuration_class        Optional boolean. If True the list for
                                             "traceCongifurations" in return will be a list
                                             of TraceConfiguration class instances. If False,
                                             the list will be a list of dictionaries of trace
