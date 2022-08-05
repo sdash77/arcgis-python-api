@@ -1129,16 +1129,19 @@ class TraceConfigurationsManager(object):
         return self._con.post(self._url, {"f": "json"})
 
     # ----------------------------------------------------------------------
-    def get(self, global_id: str) -> dict:
+    def get(self, global_id: str, as_dict=False) -> dict | TraceConfiguration:
         """
         Get a specific trace configuration by passing its global id.
 
-        :return: A dictionary depicting the trace configuration if found, else None.
+        :return: An instance of Trace Configuration class depicting the trace configuration if found, else None.
         """
-        configs = self.query()
-        for config in configs["traceConfigurations"]:
+        trace_configs = self.query()
+        for config in trace_configs["traceConfigurations"]:
             if config["globalId"] == global_id:
-                return config
+                if as_dict:
+                    return config["traceConfiguration"]
+                else:
+                    return TraceConfiguration(config["traceConfiguration"])
 
     # ----------------------------------------------------------------------
     def query(
@@ -1147,26 +1150,33 @@ class TraceConfigurationsManager(object):
         creators: list[str] | None = None,
         tags: list[str] | None = None,
         names: list[str] | None = None,
+        as_trace_configuration_class: bool = False
     ) -> dict:
         """
         The query operation returns all properties from one or more
         named trace configurations in a utility network.
 
-        ========================    ===========================================
-        **Argument**                **Description**
-        ------------------------    -------------------------------------------
-        global_ids                  Optional list of strings. Specify the global
-                                    IDs of the named trace configs to be queried.
-        ------------------------    -------------------------------------------
-        creators                    Optional list of strings. The creators of
-                                    the named trace configurations to be queried.
-        ------------------------    -------------------------------------------
-        tags                        Optional list of strings. The user tags of
-                                    the named trace configurations to be queried.
-        ------------------------    -------------------------------------------
-        names                       Optional list of strings. The names of the
-                                    named trace configurations to be queried.
-        ========================    ===========================================
+        ============================        ===========================================
+        **Argument**                        **Description**
+        ----------------------------        -------------------------------------------
+        global_ids                          Optional list of strings. Specify the global
+                                            IDs of the named trace configs to be queried.
+        ----------------------------        -------------------------------------------
+        creators                            Optional list of strings. The creators of
+                                            the named trace configurations to be queried.
+        ----------------------------        -------------------------------------------
+        tags                                Optional list of strings. The user tags of
+                                            the named trace configurations to be queried.
+        ----------------------------        -------------------------------------------
+        names                               Optional list of strings. The names of the
+                                            named trace configurations to be queried.
+        ----------------------------        -------------------------------------------
+        as_trace_configuration_class        Optional boolean. If True the list for 
+                                            "traceCongifurations" in return will be a list
+                                            of TraceConfiguration class instances. If False,
+                                            the list will be a list of dictionaries of trace
+                                            configuration instances. The default is False.
+        ============================        ===========================================
 
         :return:
             A dictionary with two keys: {"traceConfigurations": list, "success": bool}
@@ -1180,7 +1190,14 @@ class TraceConfigurationsManager(object):
                 "tags": tags,
                 "names": names,
             }
-            return self._con.post(url, params)
+            res = self._con.post(url, params)
+            if as_trace_configuration_class:
+                trace_configs = []
+                for trace in res["traceConfigurations"]:
+                    trace = TraceConfiguration.from_config(trace)
+                    trace_configs.append(trace)
+                res["traceConfigurations"] = trace_configs
+            return res
 
     # ----------------------------------------------------------------------
     def delete(self, global_ids: list[str]) -> dict:
@@ -1286,7 +1303,7 @@ class TraceConfigurationsManager(object):
         name: str | None = None,
         description: str | None = None,
         trace_type: str = "connected",
-        trace_config: dict | None = None,
+        trace_config: dict | TraceConfiguration | None = None,
         result_types: list[dict] | None = None,
         tags: list[str] | None = None,
     ) -> dict:
@@ -1320,7 +1337,8 @@ class TraceConfigurationsManager(object):
 
                                             "connected" | "subnetwork" | "upstream" | "subnetworkController" | "downstream" | "loops" | "shortenPath" | "isolation"
         ----------------------      -----------------------------------------------
-        trace_config                Optional Dictionary. Specify the collection of
+        trace_config                Optional Dictionary or instance of TraceConfiguration
+                                    class. Specify the collection of
                                     altered trace configuration properties.
 
                                     See: `Properties <https://developers.arcgis.com/rest/services-reference/enterprise/trace-utility-network-server-.htm#GUID-F0C932FD-B403-4223-9B00-E44D156C7DF9/>`_
@@ -1348,6 +1366,8 @@ class TraceConfigurationsManager(object):
 
         if self._gis.version >= [9, 2]:
             url = "%s/alter" % self._url
+            if isinstance(trace_config, TraceConfiguration):
+                trace_config = trace_config.to_dict()
             params = {
                 "f": "json",
                 "globalId": global_id,

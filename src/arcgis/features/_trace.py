@@ -3,6 +3,7 @@ from typing import Any
 from arcgis import env
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.features._utility import TraceConfigurationsManager
+from arcgis.features._trace_configuration import TraceConfiguration
 from arcgis.auth.tools import LazyLoader
 
 geometry = LazyLoader("arcgis.geometry")
@@ -73,7 +74,7 @@ class TraceNetworkManager(object):
         locations: list[dict],
         trace_type: str,
         moment: str | None = None,
-        configuration: dict | None = None,
+        configuration: dict | TraceConfiguration| None = None,
         result_types: list[dict] | None = None,
         run_async: bool = False,
     ) -> dict:
@@ -127,7 +128,8 @@ class TraceNetworkManager(object):
 
                                 Example: moment = <Epoch time in milliseconds>
         --------------------    --------------------------------------------------
-        configuration           Optional dictionary. Specifies the collection of
+        configuration           Optional dictionary or instance of TraceConfiguration
+                                class. Specifies the collection of
                                 trace configuration properties. Depending on the
                                 `trace_type`, some properties are required.
 
@@ -157,7 +159,8 @@ class TraceNetworkManager(object):
         a Dictionary of the Trace Results is returned.
         """
         url = "%s/trace" % self._url
-
+        if isinstance(configuration, TraceConfiguration):
+            configuration = configuration.to_dict()
         params = {
             "f": "json",
             "traceType": trace_type,
