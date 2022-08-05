@@ -1,7 +1,9 @@
 from __future__ import annotations
+from dataclasses import dataclass
 from typing import Any, Optional, Union
 from arcgis import env
 from arcgis._impl.common._mixins import PropertyMap
+from arcgis.features._trace_configuration import TraceConfiguration
 from arcgis._impl.common._deprecate import deprecated
 
 ########################################################################
@@ -73,7 +75,7 @@ class UtilityNetworkManager(object):
         locations: list[dict],
         trace_type: str,
         moment: int | None = None,
-        configuration: dict | None = None,
+        configuration: dict | TraceConfiguration | None = None,
         result_type: str | None = None,
         result_types: list[dict] | None = None,
     ) -> dict:
@@ -134,7 +136,8 @@ class UtilityNetworkManager(object):
 
                                 Example: moment = <Epoch time in milliseconds>
         --------------------    --------------------------------------------------
-        configuration           Optional dictionary. Specifies the collection of
+        configuration           Optional dictionary or TraceConfiguration object.
+                                Specifies the collection of
                                 trace configuration properties. Depending on the
                                 `trace_type`, some properties are required.
 
@@ -173,7 +176,8 @@ class UtilityNetworkManager(object):
 
         """
         url = "%s/trace" % self._url
-
+        if isinstance(configuration, TraceConfiguration):
+            configuration = configuration.to_dict()
         params = {
             "f": "json",
             "gdbVersion": self._version_name,
@@ -1200,7 +1204,7 @@ class TraceConfigurationsManager(object):
         self,
         name: str,
         trace_type: str,
-        trace_config: dict,
+        trace_config: dict | TraceConfiguration,
         description: str | None = None,
         result_types: list[dict] | None = None,
         tags: list[str] | None = None,
@@ -1230,7 +1234,8 @@ class TraceConfigurationsManager(object):
 
                                         "connected" | "subnetwork" | "upstream" | "subnetworkController" | "downstream" | "loops" | "shortenPath" | "isolation"
         ----------------------      -----------------------------------------------
-        trace_config                Required Dictionary. Specify the collection of
+        trace_config                Required Dictionary or TraceConfiguration object.
+                                    Specify the collection of
                                     altered trace configuration properties.
 
                                     See: `Properties <https://developers.arcgis.com/rest/services-reference/enterprise/trace-utility-network-server-.htm#GUID-F0C932FD-B403-4223-9B00-E44D156C7DF9/>`_
@@ -1258,6 +1263,8 @@ class TraceConfigurationsManager(object):
 
         :return: A dictionary with key "success" indicating True or False.
         """
+        if isinstance(trace_config, TraceConfiguration):
+            trace_config = trace_config.to_dict()
         if self._gis.version >= [9, 2]:
             url = "%s/create" % self._url
             params = {
