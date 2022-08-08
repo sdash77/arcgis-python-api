@@ -15790,6 +15790,71 @@ class ViewManager:
         set_item_id: str | None = None,
         preserve_layer_ids: bool = False,
     ) -> Item:
+        """
+        Creates a view of an existing feature service Item. You can create a view, if you need a different view of the data
+        represented by a hosted feature layer, for example, you want to apply different editor settings, apply different
+        styles or filters, define which features or fields are available, or share the data to different groups than
+        the hosted feature layer  create a hosted feature layer view of that hosted feature layer.
+
+        When you create a feature layer view, a new hosted feature layer item is added to Content. This new layer is a
+        view of the data in the hosted feature layer, which means updates made to the data appear in the hosted feature
+        layer and all of its hosted feature layer views. However, since the view is a separate layer, you can change
+        properties and settings on this item separately from the hosted feature layer from which it is created.
+
+        For example, you can allow members of your organization to edit the hosted feature layer but share a read-only
+        feature layer view with the public.
+
+        To learn more about views visit: https://doc.arcgis.com/en/arcgis-online/share-maps/create-hosted-views.htm
+
+        ====================     ====================================================================
+        **Argument**             **Description**
+        --------------------     --------------------------------------------------------------------
+        name                     Required string. Name of the new view item
+        --------------------     --------------------------------------------------------------------
+        spatial_reference        Optional dict. Specify the spatial reference of the view
+        --------------------     --------------------------------------------------------------------
+        extent                   Optional dict. Specify the extent of the view
+        --------------------     --------------------------------------------------------------------
+        allow_schema_changes     Optional bool. Default is True. Determines if a view can alter a
+                                 service's schema.
+        --------------------     --------------------------------------------------------------------
+        updateable               Optional bool. Default is True. Determines if view can update values
+        --------------------     --------------------------------------------------------------------
+        capabilities             Optional string. Specify capabilities as a comma separated string.
+                                 For example "Query, Update, Delete". Default is 'Query'.
+        --------------------     --------------------------------------------------------------------
+        view_layers              Optional list. Specify list of layers present in the FeatureLayerCollection
+                                 that you want in the view.
+        --------------------     --------------------------------------------------------------------
+        view_tables              Optional list. Specify list of tables present in the FeatureLayerCollection
+                                 that you want in the view.
+        --------------------     --------------------------------------------------------------------
+        description              Optional String. A user-friendly description for the published dataset.
+        --------------------     --------------------------------------------------------------------
+        tags                     Optional String. The comma separated string of descriptive words.
+        --------------------     --------------------------------------------------------------------
+        snippet                  Optional String. A short description of the view item.
+        --------------------     --------------------------------------------------------------------
+        overwrite                Optional Boolean.  If true, the view is overwritten, False is the default.
+        --------------------     --------------------------------------------------------------------
+        set_item_id              Optional String. If set, the ItemId is defined by the user, not the system.
+        --------------------     --------------------------------------------------------------------
+        preserve_layer_ids       Optional Boolean. Preserves the layer's `id` on it's definition when `True`.  The default is `False`.
+        ====================     ====================================================================
+
+        .. code-block:: python  (optional)
+
+           USAGE EXAMPLE: Create a veiw from a hosted feature layer
+
+           crime_fl_item = gis.content.search("2012 crime")[0]
+           view = crime_fl_item.view_manager.create(name=uuid.uuid4().hex[:9], # create random name
+                                                    updateable=True,
+                                                    allow_schema_changes=False,
+                                                    capabilities="Query,Update,Delete")
+
+        :return:
+            Returns the newly created :class:`~arcgis.gis.Item` for the view.
+        """
         flc = arcgis.features.FeatureLayerCollection.fromitem(self._item)
         mgr = flc.manager
         return mgr.create_view(
