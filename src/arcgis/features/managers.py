@@ -31,16 +31,16 @@ class WebHookEvents(Enum):
     """
 
     ALL = "*"
-    FEATURESCREATED = 'FeaturesCreated'
-    FEATURESUPDATED = 'FeaturesUpdated'
-    FEATURESDELETED = 'FeaturesDeleted'
-    FEATURESEDITED = 'FeaturesEdited'
-    ATTACHMENTSCREATED = 'AttachmentsCreated'
-    ATTACHMENTSUPDATED = 'AttachmentsUpdated'
-    ATTACHMENTSDELETED = 'AttachmentsDeleted'
-    LAYERSCHEMACHANGED = 'LayerSchemaChanged'
-    LAYERDEFINITIONCHANGED = 'LayerDefinitionChanged'
-    FEATURESERVICEDEFINITIONCHANGED = 'FeatureServiceDefinitionChanged'
+    FEATURESCREATED = "FeaturesCreated"
+    FEATURESUPDATED = "FeaturesUpdated"
+    FEATURESDELETED = "FeaturesDeleted"
+    FEATURESEDITED = "FeaturesEdited"
+    ATTACHMENTSCREATED = "AttachmentsCreated"
+    ATTACHMENTSUPDATED = "AttachmentsUpdated"
+    ATTACHMENTSDELETED = "AttachmentsDeleted"
+    LAYERSCHEMACHANGED = "LayerSchemaChanged"
+    LAYERDEFINITIONCHANGED = "LayerDefinitionChanged"
+    FEATURESERVICEDEFINITIONCHANGED = "FeatureServiceDefinitionChanged"
 
 
 ###########################################################################
@@ -1663,7 +1663,7 @@ class WebHookServiceManager(object):
             "payloadFormat": payload_format,
         }
         if content_type:
-            params['contentType'] = content_type
+            params["contentType"] = content_type
         resp = self._gis._con.post(url, params)
         if not "url" in resp:
             hook_url = self._url + f"/{resp['globalId']}"

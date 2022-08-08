@@ -3409,7 +3409,7 @@ def calculate_distance(
 @deprecated(
     deprecated_in="1.8.1",
     details="Please use arcgis.raster.functions.gbl.distance_accumulation "
-            "with value specified for output_back_direction_raster_name, instead.",
+    "with value specified for output_back_direction_raster_name, instead.",
 )
 def euclidean_back_direction(
     in_source_data,
