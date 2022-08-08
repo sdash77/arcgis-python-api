@@ -41,6 +41,7 @@ from .utility import (
     _input_rft,
     _find_object_ref,
     _python_variable_name,
+    _set_multidimensional_rules,
 )
 from arcgis.features.layer import FeatureLayer as _FeatureLayer
 from .._RasterInfo import RasterInfo
@@ -414,36 +415,6 @@ def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
         newlyr._engine_obj._extent_set = layer._extent_set
 
     return newlyr
-
-
-def _set_multidimensional_rules(function_chain=None, function_chain_ra=None):
-    match_variables = _arcgis.env.match_variables
-    union_dimension = _arcgis.env.union_dimension
-
-    if (match_variables is not None) and isinstance(match_variables, bool):
-        if (
-            function_chain is not None
-        ) and "MatchVariable" not in function_chain.keys():
-            function_chain["rasterFunctionArguments"]["MatchVariable"] = match_variables
-        if (
-            function_chain_ra is not None
-        ) and "MatchVariable" not in function_chain_ra.keys():
-            function_chain_ra["rasterFunctionArguments"][
-                "MatchVariable"
-            ] = match_variables
-    if (union_dimension is not None) and isinstance(union_dimension, bool):
-        if (
-            function_chain is not None
-        ) and "UnionDimension" not in function_chain.keys():
-            function_chain["rasterFunctionArguments"][
-                "UnionDimension"
-            ] = union_dimension
-        if (
-            function_chain_ra is not None
-        ) and "UnionDimension" not in function_chain.keys():
-            function_chain_ra["rasterFunctionArguments"][
-                "UnionDimension"
-            ] = union_dimension
 
 
 def arg_statistics(

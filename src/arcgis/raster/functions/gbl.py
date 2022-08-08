@@ -18,12 +18,18 @@ from arcgis.features import FeatureLayer
 from arcgis.gis import Item
 import copy
 import numbers
+import numbers
+import logging
+
+_LOGGER = logging.getLogger(__name__)
+
 from arcgis.raster.functions.utility import (
     _raster_input,
     _get_raster,
     _replace_raster_url,
     _get_raster_url,
     _get_raster_ra,
+    _set_multidimensional_rules,
 )
 from arcgis.geoprocessing._support import _layer_input, _feature_input
 import string as _string
@@ -64,6 +70,9 @@ def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
 
 
 def _gbl_clone_layer(layer, function_chain, function_chain_ra, **kwargs):
+
+    _set_multidimensional_rules(function_chain)
+
     if isinstance(layer, Raster) or isinstance(layer, RasterCollection):
         return _gbl_clone_layer_raster(
             layer, function_chain, function_chain_ra, **kwargs
@@ -71,26 +80,54 @@ def _gbl_clone_layer(layer, function_chain, function_chain_ra, **kwargs):
     if isinstance(layer, Item):
         layer = layer.layers[0]
 
-    newlyr = ImageryLayer(layer._url, layer._gis)
+    if layer._datastore_raster:
+        if isinstance(layer._uri, dict) or isinstance(layer._uri, bytes):
+            newlyr = ImageryLayer(function_chain_ra, layer._gis)
+        else:
+            newlyr = ImageryLayer(layer._uri, layer._gis)
 
-    newlyr._lazy_properties = layer.properties
-    newlyr._hydrated = True
-    newlyr._lazy_token = layer._token
+    else:
+        allow_raster_function = True
+        allow_analysis = True
+        info = layer._get_service_info()
+        if "allowRasterFunction" in info.keys():
+            allow_raster_function = info["allowRasterFunction"]
+        if not allow_raster_function:
+            if "allowAnalysis" in info.keys():
+                allow_analysis = info["allowAnalysis"]
+            if not allow_analysis:
+                raise RuntimeError("Input image service doesnt allow analysis.")
+        if layer.tiles_only or (not allow_raster_function and allow_analysis):
+            newlyr = ImageryLayer(function_chain_ra, layer._gis)
+        else:
+            newlyr = ImageryLayer(layer._url, layer._gis)
+            newlyr._tiles_only = layer._tiles_only
 
-    # if layer._fn is not None: # chain the functions
-    #     old_chain = layer._fn
-    #     newlyr._fn = function_chain
-    #     newlyr._fn['rasterFunctionArguments']['Raster'] = old_chain
-    # else:
-    newlyr._fn = function_chain_ra
+    newlyr._fn = function_chain
     newlyr._fnra = function_chain_ra
+    if layer._datastore_raster:
+        if not isinstance(layer._uri, dict) and not isinstance(layer._uri, bytes):
+            newlyr._fn = function_chain_ra
+
+    if layer.tiles_only:
+        newlyr._fn = function_chain_ra
 
     newlyr._where_clause = layer._where_clause
     newlyr._spatial_filter = layer._spatial_filter
     newlyr._temporal_filter = layer._temporal_filter
     newlyr._mosaic_rule = layer._mosaic_rule
     newlyr._filtered = layer._filtered
-    newlyr._extent = layer._extent
+    newlyr._uses_gbl_function = True
+    newlyr._raster_info = layer._raster_info
+
+    if hasattr(layer, "_lazy_token"):
+        newlyr._lazy_token = layer._lazy_token
+    else:
+        newlyr._lazy_token = layer._token
+
+    if layer._extent_set:
+        newlyr._extent = layer._extent
+        newlyr._extent_set = layer._extent_set
 
     newlyr._uses_gbl_function = True
     for key in kwargs:
@@ -120,37 +157,90 @@ def _feature_gbl_clone_layer(layer, function_chain, function_chain_ra, **kwargs)
 def _gbl_clone_layer_raster(layer, function_chain, function_chain_ra, **kwargs):
 
     if layer._datastore_raster:
-        newlyr = Raster(
-            layer._uri,
-            is_multidimensional=layer._is_multidimensional,
-            engine=layer._engine,
-            gis=layer._gis,
-        )
-    else:
-        newlyr = Raster(
-            layer._url,
-            is_multidimensional=layer._is_multidimensional,
-            engine=layer._engine,
-            gis=layer._gis,
-        )
-
-    if layer._engine == _ArcpyRaster:
-        try:
-            import arcpy, json
-
-            arcpylyr = arcpy.ia.Apply(layer._uri, json.dumps(function_chain_ra))
+        if isinstance(layer._uri, dict) or isinstance(layer._uri, bytes):
             newlyr = Raster(
-                str(arcpylyr),
+                function_chain_ra,
                 is_multidimensional=layer._is_multidimensional,
                 engine=layer._engine,
                 gis=layer._gis,
             )
+        else:
+            newlyr = Raster(
+                layer._uri,
+                is_multidimensional=layer._is_multidimensional,
+                engine=layer._engine,
+                gis=layer._gis,
+            )
+    else:
+        allow_raster_function = True
+        allow_analysis = True
+        info = layer._get_service_info()
+        if "allowRasterFunction" in info.keys():
+            allow_raster_function = info["allowRasterFunction"]
+        if not allow_raster_function:
+            if "allowAnalysis" in info.keys():
+                allow_analysis = info["allowAnalysis"]
+            if not allow_analysis:
+                raise RuntimeError("Input image service doesnt allow analysis.")
+        if (layer._engine != _ArcpyRaster) and (
+            layer.tiles_only or (not allow_raster_function and allow_analysis)
+        ):
+            newlyr = Raster(
+                function_chain_ra,
+                is_multidimensional=layer._is_multidimensional,
+                engine=layer._engine,
+                gis=layer._gis,
+            )
+        else:
+            newlyr = Raster(
+                layer._url,
+                is_multidimensional=layer._is_multidimensional,
+                engine=layer._engine,
+                gis=layer._gis,
+            )
+            newlyr._engine_obj._tiles_only = layer._tiles_only
+
+    if layer._engine == _ArcpyRaster:
+        allow_analysis = True  # check only allow  analysis if engine is arcpy as there is no export image case
+        info = None
+        try:
+            info = layer._get_service_info()
         except:
             pass
+        if info is not None and isinstance(info, dict):
+            if "allowAnalysis" in info.keys():
+                allow_analysis = info["allowAnalysis"]
+            if not allow_analysis:
+                raise RuntimeError("Input image service doesnt allow analysis.")
+        try:
+            import arcpy, json
+
+            try:
+                arcpy.CheckOutExtension("Spatial")
+            except:
+                pass
+
+            arcpylyr = arcpy.ia.Apply(layer._uri, json.dumps(function_chain_ra))
+            newlyr = Raster(
+                arcpylyr,
+                is_multidimensional=layer._is_multidimensional,
+                engine=layer._engine,
+                gis=layer._gis,
+            )
+        except Exception as err:
+            _LOGGER.warning(err)
 
     # newlyr.properties = layer.properties
     newlyr._engine_obj._fn = function_chain
     newlyr._engine_obj._fnra = function_chain_ra
+
+    if (hasattr(layer, "_datastore_raster")) and layer._datastore_raster:
+        if not isinstance(layer._uri, dict) and not isinstance(layer._uri, bytes):
+            newlyr._engine_obj._fn = copy.deepcopy(function_chain_ra)
+
+    if layer._engine != _ArcpyRaster and layer.tiles_only:
+        newlyr._engine_obj._fn = function_chain_ra
+
     newlyr._engine_obj._where_clause = layer._where_clause
     newlyr._engine_obj._spatial_filter = layer._spatial_filter
     newlyr._engine_obj._temporal_filter = layer._temporal_filter
@@ -158,11 +248,19 @@ def _gbl_clone_layer_raster(layer, function_chain, function_chain_ra, **kwargs):
     newlyr._engine_obj._filtered = layer._filtered
     newlyr._engine_obj._uses_gbl_function = layer._uses_gbl_function
     newlyr._engine_obj._do_not_hydrate = layer._do_not_hydrate
-
+    # newlyr._engine_obj.extent = layer.extent
     if hasattr(layer, "_lazy_token"):
         newlyr._engine_obj._lazy_token = layer._lazy_token
     else:
-        newlyr._lazy_token = layer._token
+        if layer._engine != _ArcpyRaster:
+            newlyr._lazy_token = layer._token
+
+    if layer._extent_set:
+        newlyr._engine_obj._extent = layer._extent
+        newlyr._engine_obj._extent_set = layer._extent_set
+
+    for key in kwargs:
+        newlyr._engine_obj._other_outputs.update({key: kwargs[key]})
 
     return newlyr
 
@@ -3409,7 +3507,7 @@ def calculate_distance(
 @deprecated(
     deprecated_in="1.8.1",
     details="Please use arcgis.raster.functions.gbl.distance_accumulation "
-            "with value specified for output_back_direction_raster_name, instead.",
+    "with value specified for output_back_direction_raster_name, instead.",
 )
 def euclidean_back_direction(
     in_source_data,
