@@ -18,7 +18,6 @@ from arcgis.features import FeatureLayer
 from arcgis.gis import Item
 import copy
 import numbers
-import numbers
 import logging
 
 _LOGGER = logging.getLogger(__name__)
@@ -222,7 +221,7 @@ def _gbl_clone_layer_raster(layer, function_chain, function_chain_ra, **kwargs):
 
             arcpylyr = arcpy.ia.Apply(layer._uri, json.dumps(function_chain_ra))
             newlyr = Raster(
-                arcpylyr,
+                str(arcpylyr),
                 is_multidimensional=layer._is_multidimensional,
                 engine=layer._engine,
                 gis=layer._gis,
