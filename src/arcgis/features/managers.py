@@ -1467,7 +1467,8 @@ class WebHook(object):
             change_types = ",".join(ctypes)
         elif isinstance(change_types, WebHookEvents):
             change_types = change_types.value
-
+        elif change_types is None:
+            change_types = ",".join(self.properties['changeTypes'])
         params = {
             "f": "json",
             "name": name,
