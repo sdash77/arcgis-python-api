@@ -281,7 +281,6 @@ class Country(object):
         name: str,
         gis: Optional[GIS] = None,
         year: Optional[Union[str, int]] = None,
-        dataset: Optional[str] = None,
     ):
         """
         Get a reference to a particular country, given its name, or its
@@ -311,21 +310,12 @@ class Country(object):
                           (year) of data to use. This option is only available
                           when using a `'local'` GIS source, and will be
                           ignored if used with a Web GIS source.
-        ----------------  --------------------------------------------------------
-        dataset           Optional string. The dataset that should be used for the
-                          Country. The list of available datasets can be found when
-                          in the `datasets` property or as a column in the result
-                          of the `get_countries()` method.
-                          If None is provided then the country's default dataset is used.
         ================  ========================================================
 
         :return:
             :class:`~arcgis.geoenrichment.Country` instance for the requested country.
         """
-        cntry = cls(name, gis, year)
-        if dataset:
-            cntry.dataset = dataset
-        return cntry
+        return cls(name, gis, year)
 
     # noinspection PyMissingConstructor
     def __init__(
@@ -456,14 +446,6 @@ class Country(object):
         return lvls
 
     @property
-    def datasets(self):
-        """
-        Returns the list of available datasets for the Country. The dataset
-        currently used can be seen and changed with the `hierarchy` property.
-        """
-        return self._ba_cntry.properties.datasets
-
-    @property
     def dataset(self):
         """
         Returns the currently used dataset for this country.json.
@@ -558,6 +540,18 @@ class Country(object):
         )
         dc_df = dc_df[["analysisVariable", "alias"]].copy()
         return dc_df
+
+    @property
+    def hierarchies(self):
+        """
+        Return the available hierarchies and information for them as a dataframe.
+        """
+        return self._ba_cntry._ba._get_hierarchies_df(self._ba_cntry.iso3)
+
+    @property
+    def hierarchy(self):
+        """Get/Set the current hierarchy used. This will affect the enrichment variables"""
+        return self.hierarchies[self.hierarchies["alias"] == self.properties.hierarchy]
 
     @property
     def enrich_variables(self):
