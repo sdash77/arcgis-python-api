@@ -51,6 +51,27 @@ class TraceConfiguration:
     ----------------------------------------        ----------------------------------------------------------
     propagators                                     Required list of dictionaries. This is an array of objects.
                                                     The default is null.
+
+                                                    Syntax:
+
+                                                        [
+                                                            {
+                                                            "networkAttributeName" : "<string>",
+                                                            "substitutionAttributeName": "<string>",
+                                                            "propagatorfunctionType" : "bitwiseAnd" | "min", | "max"
+                                                            "operator : "equal" | "notEqual"
+                                                                        | "greaterThan"
+                                                                        | "greaterThanEqual"
+                                                                        | "lessThan"
+                                                                        | "lessThanEqual"
+                                                                        | "includesTheValues”
+                                                                        | "doesNotIncludeTheValues"
+                                                                        | "includesAny"
+                                                                        | "doesNotIncludeAny",
+                                                            "value" : string (numeric),
+                                                            "propagatedAttributeName": "<string>"
+                                                            }
+                                                        ]
     ----------------------------------------        ----------------------------------------------------------
     target_tier_name                                Optional string. Specifies the name of the tier where an
                                                     upstream or downstream trace ends.
@@ -79,9 +100,51 @@ class TraceConfiguration:
                                                     If is_specific_value is true, the network attribute is
                                                     compared to a specific value; otherwise, the network
                                                     attribute is compared to another network attribute.
+
+                                                    Syntax:
+
+                                                        [
+                                                            {
+                                                                "name" : <string>,
+                                                                "operator" : "equal" | "notEqual"
+                                                                        | "greaterThan"
+                                                                        | "greaterThanEqual"
+                                                                        | "lessThan"
+                                                                        | "lessThanEqual"
+                                                                        | "includesTheValues"
+                                                                        | "doesNotIncludeTheValues"
+                                                                        | "includesAny"
+                                                                        | "doesNotIncludeAny",
+                                                                "value" : <string>,
+                                                                "combineUsingOr" : <true | false>,
+                                                                "isSpecificValue" : <true | false>
+                                                            }
+                                                        ]
     ----------------------------------------        ----------------------------------------------------------
     function_barriers                               Optional list of dictionaries. Each dictionary represents
                                                     a function barrier.
+
+                                                    Syntax:
+
+                                                        [
+                                                            {
+                                                                "functionType" : "add" | "subtract" |
+                                                                            "average" | "count" |
+                                                                            "min" | "max",
+                                                                "networkAttributeName" : <string>,
+                                                                "operator" : "equal" | "notEqual"
+                                                                        | "greaterThan"
+                                                                        | "greaterThanEqual"
+                                                                        | "lessThan"
+                                                                        | "lessThanEqual"
+                                                                        | "includesTheValues"
+                                                                        | "doesNotIncludeTheValues"
+                                                                        | "includesAny"
+                                                                        | "doesNotIncludeAny",
+                                                                "value" : <string>,
+                                                                "useLocalValues":true | false
+                                                            }
+                                                        ]
     ----------------------------------------        ----------------------------------------------------------
     filter_barriers                                 Optional list of dictionaries. Each dictionary represents
                                                     network attribute or category conditions that serve as
@@ -89,9 +152,50 @@ class TraceConfiguration:
                                                     true, the network attribute is compared to a specific value;
                                                     otherwise, the network attribute is compared to
                                                     another network attribute.
+
+                                                    Syntax:
+
+                                                        [
+                                                            {
+                                                                "name" : <string>,
+                                                                "operator" : "equal" | "notEqual"
+                                                                        | "greaterThan"
+                                                                        | "greaterThanEqual"
+                                                                        | "lessThan"
+                                                                        | "lessThanEqual"
+                                                                        | "includesTheValues"
+                                                                        | "doesNotIncludeTheValues"
+                                                                        | "includesAny"
+                                                                        | "doesNotIncludeAny",
+                                                                "value" : string (numeric),
+                                                                "combineUsingOr" : <true | false>,
+                                                                "isSpecificValue" : <true | false>
+                                                            }
+                                                        ]
     ----------------------------------------        ----------------------------------------------------------
     filter_function_barriers                        Optional list of dictionaries. Each dictionary represents
                                                     a filter function barrier.
+
+                                                    Syntax:
+
+                                                        [
+                                                            {
+                                                                "functionType" : "add" | "subtract" |
+                                                                            "average" | "count" |
+                                                                            "min" | "max",
+                                                                "networkAttributeName" : <string>,
+                                                                "operator" : "equal" | "notEqual"
+                                                                        | "greaterThan"
+                                                                        | "greaterThanEqual"
+                                                                        | "lessThan"
+                                                                        | "lessThanEqual"
+                                                                        | "includesTheValues"
+                                                                        | "doesNotIncludeTheValues"
+                                                                        | "includesAny"
+                                                                        | "doesNotIncludeAny",
+                                                                "value" : string (numeric)
+                                                            }
+                                                        ]
     ----------------------------------------        ----------------------------------------------------------
     functions                                       Optional list of dictionaries. Each dictionary represents
                                                     a function. Each function can have an optional list of
