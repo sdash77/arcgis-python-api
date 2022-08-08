@@ -102,7 +102,7 @@ def _gbl_clone_layer(layer, function_chain, function_chain_ra, **kwargs):
             newlyr = ImageryLayer(layer._url, layer._gis)
             newlyr._tiles_only = layer._tiles_only
 
-    newlyr._fn = function_chain
+    newlyr._fn = function_chain_ra
     newlyr._fnra = function_chain_ra
     if layer._datastore_raster:
         if not isinstance(layer._uri, dict) and not isinstance(layer._uri, bytes):
