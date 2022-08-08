@@ -9,11 +9,14 @@ import time
 import logging
 import tempfile
 import collections
+from enum import Enum
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import GIS, _GISResource, Item
 import concurrent.futures as _cf
 from typing import Optional, Any, Union
 from arcgis.auth.tools import LazyLoader
+from dataclasses import dataclass
+import datetime as _dt
 
 features = LazyLoader("arcgis.features")
 _version = LazyLoader("arcgis.features._version")
@@ -21,6 +24,64 @@ _version = LazyLoader("arcgis.features._version")
 _log = logging.getLogger()
 
 # pylint: disable=protected-access
+###########################################################################
+class WebHookEvents(Enum):
+    """
+    Provides the allowed webhook enumerations for the captured events.
+    """
+
+    ALL = "*"
+    FEATURESCREATED = 'FeaturesCreated'
+    FEATURESUPDATED = 'FeaturesUpdated'
+    FEATURESDELETED = 'FeaturesDeleted'
+    FEATURESEDITED = 'FeaturesEdited'
+    ATTACHMENTSCREATED = 'AttachmentsCreated'
+    ATTACHMENTSUPDATED = 'AttachmentsUpdated'
+    ATTACHMENTSDELETED = 'AttachmentsDeleted'
+    LAYERSCHEMACHANGED = 'LayerSchemaChanged'
+    LAYERDEFINITIONCHANGED = 'LayerDefinitionChanged'
+    FEATURESERVICEDEFINITIONCHANGED = 'FeatureServiceDefinitionChanged'
+
+
+###########################################################################
+@dataclass
+class WebHookScheduleInfo:
+    """
+    This dataclass provides information on how to schedule a webhook.
+
+
+    =====================================    ===========================================================================
+    **Argument**                             **Description**
+    -------------------------------------    ---------------------------------------------------------------------------
+    name                                     Required string.  The name of the scheduling task.
+    -------------------------------------    ---------------------------------------------------------------------------
+    start_at                                 Required datetime.datetime. The start date.
+    -------------------------------------    ---------------------------------------------------------------------------
+    state                                    Optional String. The state of the task, this can be `enabled` or `disabled`.
+    -------------------------------------    ---------------------------------------------------------------------------
+    frequency                                Optional String. The default is `minute`. The time interval to run each task.
+                                             The allows values are: second, minute, hour, day, week, month, year.
+    -------------------------------------    ---------------------------------------------------------------------------
+    interval                                 Optional Integer. The value for with the frequency describes.
+    =====================================    ===========================================================================
+
+
+    """
+
+    name: str
+    start_at: _dt.datetime
+    state: str = "enabled"
+    frequency: str = "minute"
+    interval: int = 5
+
+    def as_dict(self) -> dict[str, Any]:
+        """returns the dataclass as a dictionary"""
+        return {
+            "name": self.name,
+            "startAt": int(self.start_at.timestamp() * 1000),
+            "recurrenceInfo": {"frequency": self.frequency, "interval": self.interval},
+        }
+
 
 ###########################################################################
 class AttachmentManager(object):
@@ -60,16 +121,16 @@ class AttachmentManager(object):
     def search(
         self,
         where: str = "1=1",
-        object_ids: Optional[str] = None,
-        global_ids: Optional[str] = None,
-        attachment_types: Optional[str] = None,
-        size: Optional[Union[tuple[int], list[int]]] = None,
-        keywords: Optional[str] = None,
+        object_ids: str | None = None,
+        global_ids: str | None = None,
+        attachment_types: str | None = None,
+        size: tuple[int] | list[int] | None = None,
+        keywords: str | None = None,
         show_images: bool = False,
         as_df: bool = False,
         return_metadata: bool = False,
         return_url: bool = False,
-        max_records: Optional[int] = None,
+        max_records: int | None = None,
         offset: int = 0,
     ):
         """
@@ -450,9 +511,9 @@ class AttachmentManager(object):
 
     def download(
         self,
-        oid: Optional[str] = None,
-        attachment_id: Optional[str] = None,
-        save_path: Optional[str] = None,
+        oid: str | None = None,
+        attachment_id: str | None = None,
+        save_path: str | None = None,
     ):
         """
         Downloads attachment and returns its path on disk.
@@ -553,7 +614,7 @@ class AttachmentManager(object):
         self,
         oid: str,
         file_path: str,
-        keywords: Optional[str] = None,
+        keywords: str | None = None,
         return_moment: bool = False,
     ) -> bool:
         """
@@ -725,9 +786,9 @@ class SyncManager(object):
         self,
         replica_name: str,
         layers: list[int],
-        layer_queries: Optional[dict[str, Any]] = None,
-        geometry_filter: Optional[dict[str, str]] = None,
-        replica_sr: Optional[Union[dict[str, Any], int]] = None,
+        layer_queries: dict[str, Any] | None = None,
+        geometry_filter: dict[str, str] | None = None,
+        replica_sr: dict[str, Any] | int | None = None,
         transport_type: str = "esriTransportTypeUrl",
         return_attachments: bool = False,
         return_attachments_databy_url: bool = False,
@@ -735,13 +796,13 @@ class SyncManager(object):
         attachments_sync_direction: str = "none",
         sync_model: str = "none",
         data_format: str = "json",
-        replica_options: Optional[dict[str, Any]] = None,
+        replica_options: dict[str, Any] | None = None,
         wait: bool = False,
-        out_path: Optional[str] = None,
-        sync_direction: Optional[str] = None,
+        out_path: str | None = None,
+        sync_direction: str | None = None,
         target_type: str = "client",
-        transformations: Optional[list[str]] = None,
-        time_reference_unknown_client: Optional[bool] = None,
+        transformations: list[str] | None = None,
+        time_reference_unknown_client: bool | None = None,
     ):
         """
         The create operation is performed on a :class:`~arcgis.features.FeatureLayerCollection` resource.
@@ -981,8 +1042,8 @@ class SyncManager(object):
         layers: list[int],
         retention_period: int,
         period_unit: str = "days",
-        min_server_gen: Optional[str] = None,
-        replica_id: Optional[str] = None,
+        min_server_gen: str | None = None,
+        replica_id: str | None = None,
         future: bool = False,
     ):
         """
@@ -1046,15 +1107,15 @@ class SyncManager(object):
         self,
         replica_id: str,
         transport_type: str = "esriTransportTypeUrl",
-        replica_server_gen: Optional[int] = None,
+        replica_server_gen: int | None = None,
         return_ids_for_adds: bool = False,
-        edits: Optional[list[dict[str, Any]]] = None,
+        edits: list[dict[str, Any]] | None = None,
         return_attachment_databy_url: bool = False,
         asynchronous: bool = False,
         sync_direction: str = "snapshot",
         sync_layers: str = "perReplica",
-        edits_upload_id: Optional[dict] = None,
-        edits_upload_format: Optional[str] = None,
+        edits_upload_id: dict | None = None,
+        edits_upload_format: str | None = None,
         data_format: str = "json",
         rollback_on_failure: bool = True,
     ):
@@ -1086,8 +1147,8 @@ class SyncManager(object):
         replica_name: str,
         item: Item,
         destination_gis: GIS,
-        layers: Optional[list[int]] = None,
-        extent: Optional[dict[str, Any]] = None,
+        layers: list[int] | None = None,
+        extent: dict[str, Any] | None = None,
     ):
         """
         Creates a replicated service from a parent to another GIS.
@@ -1310,13 +1371,13 @@ class WebHook(object):
     # ----------------------------------------------------------------------
     def edit(
         self,
-        name: Optional[str] = None,
-        change_types: Optional[str] = None,
-        hook_url: Optional[str] = None,
-        signature_key: Optional[str] = None,
-        active: Optional[bool] = None,
-        schedule_info: Optional[dict[str, Any]] = None,
-        payload_format: Optional[str] = None,
+        name: str | None = None,
+        change_types: WebHookEvents | str | None = None,
+        hook_url: str | None = None,
+        signature_key: str | None = None,
+        active: bool | None = None,
+        schedule_info: WebHookScheduleInfo | dict[str, Any] | None = None,
+        payload_format: str | None = None,
     ) -> dict:
         """
         Updates the existing WebHook's Properties.
@@ -1328,7 +1389,7 @@ class WebHook(object):
         -------------------------------------    ---------------------------------------------------------------------------
         hook_url                                 Optional String.  The URL to which the payloads will be delivered.
         -------------------------------------    ---------------------------------------------------------------------------
-        change_types                             Optional String.  The default is "*", which means all events.  This is a
+        change_types                             Optional WebHookEvents or String.  The default is "*", which means all events.  This is a
                                                  comma separated list of values that will fire off the web hook.  The list
                                                  each supported type is below.
         -------------------------------------    ---------------------------------------------------------------------------
@@ -1338,9 +1399,9 @@ class WebHook(object):
         -------------------------------------    ---------------------------------------------------------------------------
         active                                   Optional bool. Enable or disable call backs when the webhook is triggered.
         -------------------------------------    ---------------------------------------------------------------------------
-        schedule_info                            Optional Dict. Allows the trigger to be used as a given schedule.
+        schedule_info                            Optional WebHookScheduleInfo or Dict. Allows the trigger to be used as a given schedule.
 
-                                                 Example:
+                                                 Example Dictionary:
 
 
                                                      | {
@@ -1393,8 +1454,20 @@ class WebHook(object):
         """
         props = dict(self.properties)
         url = f"{self._url}/edit"
+        if isinstance(schedule_info, WebHookScheduleInfo):
+            schedule_info = schedule_info.as_dict()
         if isinstance(change_types, list):
-            change_types = ",".join(change_types)
+            ctypes = []
+            for ct in change_types:
+                if isinstance(ct, WebHookEvents):
+                    ctypes.append(ct.value)
+                else:
+                    ctypes.append(ct)
+
+            change_types = ",".join(ctypes)
+        elif isinstance(change_types, WebHookEvents):
+            change_types = change_types.value
+
         params = {
             "f": "json",
             "name": name,
@@ -1481,11 +1554,12 @@ class WebHookServiceManager(object):
         self,
         name: str,
         hook_url: str,
-        change_types: str = "*",
-        signature_key: Optional[str] = None,
+        change_types: WebHookEvents | str = WebHookEvents.ALL,
+        signature_key: str | None = None,
         active: bool = False,
-        schedule_info: Optional[dict[str, Any]] = None,
+        schedule_info: dict[str, Any] | WebHookScheduleInfo | None = None,
         payload_format: str = "json",
+        content_type: str | None = None,
     ) -> WebHook:
         """
 
@@ -1499,7 +1573,7 @@ class WebHookServiceManager(object):
         -------------------------------------    ---------------------------------------------------------------------------
         hook_url                                 Required String.  The URL to which the payloads will be delivered.
         -------------------------------------    ---------------------------------------------------------------------------
-        change_types                             Optional String.  The default is "*", which means all events.  This is a
+        change_types                             Optional WebHookEvents or String.  The default is "WebHookEvents.ALL", which means all events.  This is a
                                                  comma separated list of values that will fire off the web hook.  The list
                                                  each supported type is below.
         -------------------------------------    ---------------------------------------------------------------------------
@@ -1509,9 +1583,9 @@ class WebHookServiceManager(object):
         -------------------------------------    ---------------------------------------------------------------------------
         active                                   Optional bool. Enable or disable call backs when the webhook is triggered.
         -------------------------------------    ---------------------------------------------------------------------------
-        schedule_info                            Optional Dict. Allows the trigger to be used as a given schedule.
+        schedule_info                            Optional Dict or `WebHookScheduleInfo`. Allows the trigger to be used as a given schedule.
 
-                                                 Example:
+                                                 Example Dictionary:
 
                                                      | {
                                                      |   "name" : "Every-5seconds",
@@ -1526,6 +1600,10 @@ class WebHookServiceManager(object):
         -------------------------------------    ---------------------------------------------------------------------------
         payload_format                           Optional String. The payload can be sent in pretty format or standard.
                                                  The default is `json`.
+        -------------------------------------    ---------------------------------------------------------------------------
+        content_type                             Optional String. The Content Type is used to indicate the media type of the
+                                                 resource. The media type is a string sent along with the file indicating
+                                                 the format of the file.
         =====================================    ===========================================================================
 
 
@@ -1563,7 +1641,17 @@ class WebHookServiceManager(object):
         """
         url = f"{self._url}/create"
         if isinstance(change_types, list):
-            change_types = ",".join(change_types)
+            ctnew = []
+            for ct in change_types:
+                if isinstance(ct, str):
+                    ctnew.append(ct)
+                elif isinstance(ct, WebHookEvents):
+                    ctnew.append(ct.value)
+            change_types = ",".join(ctnew)
+        elif isinstance(change_types, WebHookEvents):
+            change_types = change_types.value
+        if isinstance(schedule_info, WebHookScheduleInfo):
+            schedule_info = schedule_info.as_dict()
         params = {
             "f": "json",
             "name": name,
@@ -1574,6 +1662,8 @@ class WebHookServiceManager(object):
             "scheduleInfo": schedule_info,
             "payloadFormat": payload_format,
         }
+        if content_type:
+            params['contentType'] = content_type
         resp = self._gis._con.post(url, params)
         if not "url" in resp:
             hook_url = self._url + f"/{resp['globalId']}"
@@ -1755,19 +1845,19 @@ class FeatureLayerCollectionManager(_GISResource):
     def create_view(
         self,
         name: str,
-        spatial_reference: Optional[dict[str, Any]] = None,
-        extent: Optional[dict[str, int]] = None,
+        spatial_reference: dict[str, Any] | None = None,
+        extent: dict[str, int] | None = None,
         allow_schema_changes: bool = True,
         updateable: bool = True,
         capabilities: str = "Query",
-        view_layers: Optional[list[int]] = None,
-        view_tables: Optional[list[int]] = None,
+        view_layers: list[int] | None = None,
+        view_tables: list[int] | None = None,
         *,
-        description: Optional[str] = None,
-        tags: Optional[str] = None,
-        snippet: Optional[str] = None,
-        overwrite: Optional[bool] = None,
-        set_item_id: Optional[str] = None,
+        description: str | None = None,
+        tags: str | None = None,
+        snippet: str | None = None,
+        overwrite: bool | None = None,
+        set_item_id: str | None = None,
         preserve_layer_ids: bool = False,
     ):
         """

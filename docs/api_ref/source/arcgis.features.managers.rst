@@ -77,3 +77,17 @@ WebHook
     :inherited-members:
     :members:
     :undoc-members:
+
+WebHookEvents
+--------------
+.. autoclass:: arcgis.features.managers.WebHookEvents
+    :inherited-members:
+    :members:
+    :undoc-members:
+
+WebHookScheduleInfo
+-------------------
+.. autoclass:: arcgis.features.managers.WebHookScheduleInfo
+    :inherited-members:
+    :members:
+    :undoc-members:
