@@ -61,7 +61,7 @@ def _input_string_params(spec, name_type, name_param, num_spaces=20):
 ###########################################################################
 def _build_lambda(self, input_strings, param_inputs):
     """builds the lambda"""
-    if input_strings.startswith(','):
+    if input_strings.startswith(","):
         input_strings = input_strings[1:]
 
     return eval(
