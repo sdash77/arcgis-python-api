@@ -786,6 +786,7 @@ class BusinessAnalyst(object):
                 "iso3",
                 "data_source_id",
                 "country_id",
+                "hierarchies",
             ],
         )
 
@@ -797,7 +798,15 @@ class BusinessAnalyst(object):
 
         # organize the columns
         cntry_df = cntry_df[
-            ["iso2", "iso3", "name", "vintage", "country_id", "data_source_id"]
+            [
+                "iso2",
+                "iso3",
+                "name",
+                "vintage",
+                "country_id",
+                "data_source_id",
+                "hierarchies",
+            ]
         ]
 
         return cntry_df
@@ -839,6 +848,7 @@ class BusinessAnalyst(object):
                 "abbr3": "iso3",
                 "altName": "alt_name",
                 "defaultDatasetID": "default_dataset",
+                "hierarchies": "hierarchy",
             },
             inplace=True,
             axis=1,
@@ -851,10 +861,75 @@ class BusinessAnalyst(object):
             "datasets",
             "default_dataset",
             "continent",
+            "hierarchy",
         ]
         cntry_df = cntry_df[keep_cols]
 
+        # clean up column for hierarchies to only keep alias if simple
+        alias_names = []
+        for i, v in cntry_df["hierarchy"].items():
+            alias_names.append(v[0]["ID"])
+        cntry_df["hierarchy"] = alias_names
+
         return cntry_df
+
+    def _get_hierarchies_df(self, country_string: str):
+        """Internal helper method to get the dataframe of hierarchies for each country"""
+        # make sure countries are available
+        ge_err_msg = (
+            "The provided GIS instance does not appear to have geoenrichment enabled and configured, "
+            "so no countries are available."
+        )
+        assert "geoenrichment" in self.source.properties.helperServices, ge_err_msg
+        assert isinstance(
+            self.source.properties.helperServices.geoenrichment["url"], str
+        ), ge_err_msg
+
+        # extract out the geoenrichment url
+        ge_url = self.source.properties.helperServices.geoenrichment["url"]
+        if self.source._is_hosted_nb_home:
+            res = self.source._private_service_url(ge_url)
+            ge_url = (
+                res["privateServiceUrl"]
+                if "privateServiceUrl" in res
+                else res["serviceUrl"]
+            )
+
+        # get a list of countries available on the Web GIS for enrichment
+        url = f"{ge_url}/Geoenrichment/Countries"
+        cntry_res = self.source._con.post(url, {"f": "json"})
+        cntry_dict = cntry_res["countries"]
+
+        # convert the dictionary to a dataframe
+        cntry_df = pd.DataFrame(cntry_dict)
+
+        # clean up some column names for consistency
+        cntry_df.rename(
+            {
+                "abbr3": "iso3",
+            },
+            inplace=True,
+            axis=1,
+        )
+        keep_cols = ["iso3", "hierarchies"]
+        cntry_df = cntry_df[keep_cols]
+
+        # Get dataframe for specific country we are working with
+        cntry_interest_df = cntry_df[cntry_df["iso3"] == country_string]
+        # Get only the hierarchy column value and create own dataframe from it
+        hierarchy_df = pd.DataFrame(cntry_interest_df.iloc[0]["hierarchies"])
+
+        keep_cols = [
+            "ID",
+            "alias",
+            "shortDescription",
+            "datasets",
+            "levelsInfo",
+            "variablesInfo",
+            "hasInterestingFactsStatistics",
+        ]
+        hierarchy_df = hierarchy_df[keep_cols]
+        return hierarchy_df
 
     def _standardize_country_str(self, country_string: str) -> str:
         """Internal helper method to standardize the input for iso3 identifier strings to ISO3."""
@@ -1830,7 +1905,10 @@ class BusinessAnalyst(object):
 
         # if working with a specific country, add this to the payload
         if country is not None:
-            params["useData"] = json.dumps({"sourceCountry": country.properties.iso3})
+            hierarchy = kwargs.pop("hierarchy", country.properties.hierarchy)
+            params["useData"] = json.dumps(
+                {"sourceCountry": country.properties.iso3, "hierarchy": hierarchy}
+            )
 
         # get the maximum batch size to ensure is not less than best practices set above
         svc_lmt_url = f'{self.source.properties.helperServices("geoenrichment").url}/Geoenrichment/ServiceLimits'
