@@ -3560,7 +3560,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             input_layers=input_layers_param,
             extent=extent,
             clip=clip,
-            data_format=data_format,
+            data_format=data_format.upper(),
             output_name=output_name,
             context=context,
             gis=self._gis,
