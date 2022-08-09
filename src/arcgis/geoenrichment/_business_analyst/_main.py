@@ -868,7 +868,10 @@ class BusinessAnalyst(object):
         # clean up column for hierarchies to only keep alias if simple
         alias_names = []
         for i, v in cntry_df["hierarchy"].items():
-            alias_names.append(v[0]["ID"])
+            cntry_hier = []
+            for hier in v:
+                cntry_hier.append(hier["ID"])
+            alias_names.append(cntry_hier)
         cntry_df["hierarchy"] = alias_names
 
         return cntry_df
@@ -1905,7 +1908,7 @@ class BusinessAnalyst(object):
 
         # if working with a specific country, add this to the payload
         if country is not None:
-            hierarchy = kwargs.pop("hierarchy", country.properties.hierarchy)
+            hierarchy = kwargs.pop("hierarchy", country.properties.hierarchy[0])
             params["useData"] = json.dumps(
                 {"sourceCountry": country.properties.iso3, "hierarchy": hierarchy}
             )
