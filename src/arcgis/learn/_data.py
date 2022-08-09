@@ -748,13 +748,11 @@ def prepare_textdata(
                             "classification", "sequence_translation" or "entity_recognition".
     ---------------------   -------------------------------------------
     text_columns            Optional string.
-                            This parameter is mandatory when task is "classification"
-                             or "sequence_translation".
+                            This parameter is mandatory when task is "classification" or "sequence_translation".
                             The column that will contain the input text.
     ---------------------   -------------------------------------------
     label_columns           Optional list.
-                            This parameter is mandatory when task is "classification"
-                             or "sequence_translation".
+                            This parameter is mandatory when task is "classification" or "sequence_translation".
                             The list of columns denoting the class
                             label/translated text to predict. Provide
                             a list of columns in case of multi-label
@@ -816,13 +814,13 @@ def prepare_textdata(
     class_mapping           Optional dictionary. Mapping from id to
                             its string label.
                             For dataset_type=IOB, BILUO or ner_json:
-                                Provide address field as class mapping
-                                in below format:
-                                class_mapping={'address_tag':'address_field'}.
-                                Field defined as 'address_tag' will be treated
-                                as a location. In cases where trained model extracts
-                                multiple locations from a single document, that
-                                document will be replicated for each location.
+                            Provide address field as class mapping
+                            in below format:
+                            class_mapping={'address_tag':'address_field'}.
+                            Field defined as 'address_tag' will be treated
+                            as a location. In cases where trained model extracts
+                            multiple locations from a single document, that
+                            document will be replicated for each location.
     =====================   ===========================================
 
     **Keyword Arguments**
@@ -836,7 +834,9 @@ def prepare_textdata(
                             train and validation data according to the
                             val_split_pct.
                             The default value is True.
-                            Note: Applies only to single-label text classification.
+
+                            .. note::
+                                Applies only to single-label text classification.
     ---------------------   -------------------------------------------
     encoding                Optional string.
                             Applicable only when task is entity_recognition:
@@ -844,7 +844,7 @@ def prepare_textdata(
                             Default is 'UTF-8'
     =====================   ===========================================
 
-    :returns: `TextData` object
+    :return:  `TextData` object
 
     """
     # allowed_tasks = ["classification", "summarization", "translation",
@@ -987,7 +987,7 @@ def prepare_tabulardata(
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    input_features          Optional Feature Layer Object or spatially enabled dataframe.
+    input_features          Optional :class:`~arcgis.features.FeatureLayer` Object or spatially enabled dataframe.
                             This contains features denoting the value of the dependent variable.
                             Leave empty for using rasters with MLModel.
     ---------------------   -------------------------------------------
@@ -999,29 +999,40 @@ def prepare_tabulardata(
                             By default the field type is continuous.
                             To override field type to categorical, pass
                             a 2-sized tuple in the list containing:
-                                1. field to be taken as input from the input_features.
-                                2. True/False denoting Categorical/Continuous variable.
+
+                            1. field to be taken as input from the input_features.
+                            2. True/False denoting Categorical/Continuous variable.
+
                             For example:
+
                                 ["Field_1", ("Field_2", True)]
+
                             Here Field_1 is treated as continuous and
                             Field_2 as categorical.
     ---------------------   -------------------------------------------
     explanatory_rasters     Optional list containing Raster objects.
                             By default the rasters are continuous.
                             To mark a raster categorical, pass a 2-sized tuple containing:
-                                1. Raster object.
-                                2. True/False denoting Categorical/Continuous variable.
+
+                            1. Raster object.
+                            2. True/False denoting Categorical/Continuous variable.
+
                             For example:
+
                                 [raster_1, (raster_2, True)]
                             Here raster_1 is treated as continuous and
                             raster_2 as categorical.
                             To select only specific bands of raster, pass 2/3 sized tuple
                             containing:
-                                1. Raster object.
-                                2. True/False denoting Categorical/Continuous variable.
-                                3. Tuple holding the indexes of the bands to be used.
+
+                            1. Raster object.
+                            2. True/False denoting Categorical/Continuous variable.
+                            3. Tuple holding the indexes of the bands to be used.
+
                             For example:
+
                                 [raster_1, (raster_2, True,(0,)),(raster_3, (0,1,2))]
+
                             Here bands with indexes 0 will be chosen from raster_2
                             and it will be treated as categorical variable, bands with
                             indexes 0,1,2 will be chosen from raster_3 and they will be
@@ -1046,7 +1057,7 @@ def prepare_tabulardata(
                             and the geometry type is Point. Not applicable when explanatory_rasters
                             are provided. Not applicable for MLModel.
     ---------------------   -------------------------------------------
-    distance_features       Optional list of Feature Layer objects.
+    distance_features       Optional list of :class:`~arcgis.features.FeatureLayer` objects.
                             Distance is calculated from features in these layers
                             to features in input_features.
                             Nearest distance to each feature is added in the prepared
@@ -1058,14 +1069,19 @@ def prepare_tabulardata(
                             are applied by default and hence users need not
                             pass any additional transforms/preprocessors.
                             For MLModel which uses Scikit-learn transforms:
+
                             1. Supply a column transformer object.
+
                             2. Supply a list of tuple,
+
                             For example:
-                            [('Col_1', 'Col_2', Transform1()), ('Col_3', Transform2())]
+
+                                [('Col_1', 'Col_2', Transform1()), ('Col_3', Transform2())]
+
                             Categorical data is by default encoded.
                             If nothing is specified, default transforms are applied
                             to fill missing values and normalize categorical data.
-                            For Raster use raster.name for the the first band,
+                            For Raster use raster.name for the first band,
                             raster.name_1 for 2nd band, raster.name_2 for 3rd
                             and so on.
     ---------------------   -------------------------------------------
@@ -1103,7 +1119,8 @@ def prepare_tabulardata(
                             val_split_pct.
                             Default value is False.
 
-                            Note: Applies to classification problems.
+                            .. note::
+                                Applies to classification problems.
     =====================   ===========================================
 
     :return: `TabularData` object
@@ -1213,6 +1230,7 @@ def prepare_data(
     samples in the supported dataset formats. This data object consists of
     training and validation data sets with the specified transformations,
     chip size, batch size, split percentage, etc.
+
     -For object detection, use Pascal_VOC_rectangles or KITTI_rectangles format.
     -For feature categorization use Labelled Tiles or Imagenet format.
     -For pixel classification, use Classified Tiles format.
@@ -1248,7 +1266,7 @@ def prepare_data(
                             to `False` no transformation will take place and
                             `chip_size` parameter will also not take effect.
                             If the dataset_type is 'PointCloud', use
-                            `Transform3d` class from `arcgis.learn`.
+                            :class:`~arcgis.learn.Transform3d`.
     ---------------------   -------------------------------------------
     collate_fn              Optional function. Passed to PyTorch to collate data
                             into batches(usually default works).
@@ -1256,7 +1274,7 @@ def prepare_data(
     seed                    Optional integer. Random seed for reproducible
                             train-validation split.
     ---------------------   -------------------------------------------
-    dataset_type            Optional string. `prepare_data` function will infer
+    dataset_type            Optional string. :meth:`~arcgis.learn.prepare_data`  function will infer
                             the `dataset_type` on its own if it contains a
                             map.txt file. If the path does not contain the
                             map.txt file pass one of 'PASCAL_VOC_rectangles',
@@ -1292,7 +1310,7 @@ def prepare_data(
                             Required for MaXDeepLab panoptic segmentation model.
                             It represents the max number of class labels and
                             instances any image can contain. To compute the exact
-                            value for your dataset, use the 'compute_n_masks()'
+                            value for your dataset, use the :meth:`~arcgis.learn.MaXDeepLab.compute_n_masks`
                             method available with MaXDeepLab model.
     ---------------------   -------------------------------------------
     downsample_factor       Optional float. Factor to downsample the images
@@ -1354,8 +1372,9 @@ def prepare_data(
                             Default value feature classification is True.
                             Default value pixel classification is False.
 
-                            Note: Applies to single label feature classification,
-                            object detection and pixel classification.
+                            .. note::
+                                Applies to single label feature classification,
+                                object detection and pixel classification.
     =====================   ===========================================
 
     :return: data object

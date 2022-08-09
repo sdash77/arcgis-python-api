@@ -53,7 +53,7 @@ class EntityRecognizer:
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    data                    Optional data object returned from `prepare_data` function.
+    data                    Optional data object returned from :meth:`~arcgis.learn.prepare_data` function.
                             data object can be `None`, in case where someone wants to use a
                             Hugging Face Transformer model fine-tuned on entity-recognition
                             task. In this case the model should be used directly for inference.
@@ -66,8 +66,7 @@ class EntityRecognizer:
                             transformer model name to be used to train the
                             entity recognizer model. Default set to `spacy`.
 
-                            Entity recognition via `spaCy` is based on
-                            <https://spacy.io/api/entityrecognizer>
+                            Entity recognition via `spaCy` is based on <https://spacy.io/api/entityrecognizer>
 
                             To learn more about the available transformer models or
                             choose models that are suitable for your dataset,
@@ -107,7 +106,7 @@ class EntityRecognizer:
                             (DLPK) or Esri Model Definition(EMD) file.
     =====================   ===========================================
 
-    :return: ``EntityRecognizer`` Object
+    :return: :class:`~arcgis.learn.text.EntityRecognizer` Object
     """
 
     supported_backbones = ["spacy"] + _TransformerEntityRecognizer.supported_backbones
@@ -254,18 +253,23 @@ class EntityRecognizer:
                                 to be used for training the model. If ``lr=None``,
                                 an optimal learning rate is automatically deduced
                                 for training the model.
-                                **Note - Passing slice of floats as `lr` value
-                                is not supported for models with `spaCy` backbone.
+
+                                .. note::
+                                    Passing slice of floats as `lr` value is not supported for models with `spaCy` backbone.
         ---------------------   -------------------------------------------
         one_cycle               Optional boolean. Parameter to select 1cycle
                                 learning rate schedule. If set to `False` no
                                 learning rate schedule is used.
-                                **Note - Not applicable for models with spaCy backbone
+
+                                .. note::
+                                        Not applicable for models with spaCy backbone
         ---------------------   -------------------------------------------
         early_stopping          Optional boolean. Parameter to add early stopping.
                                 If set to 'True' training will stop if parameter
                                 `monitor` value stops improving for 5 epochs.
-                                **Note - Not applicable for models with spaCy backbone
+
+                                .. note::
+                                    Not applicable for models with spaCy backbone
         ---------------------   -------------------------------------------
         checkpoint              Optional boolean or string.
                                 Parameter to save checkpoint during training.
@@ -275,7 +279,9 @@ class EntityRecognizer:
                                 are saved. If set to False, checkpointing will
                                 be off. Setting this parameter loads the best
                                 model at the end of training.
-                                **Note - Not applicable for models with spaCy backbone
+
+                                .. note::
+                                    Not applicable for models with spaCy backbone
         ---------------------   -------------------------------------------
         tensorboard             Optional boolean. Parameter to write the training log.
                                 If set to 'True' the log will be saved at
@@ -283,7 +289,9 @@ class EntityRecognizer:
                                 tensorboard. Required tensorboardx version=2.1
 
                                 The default value is 'False'.
-                                **Note - Not applicable for Text Models
+
+                                .. note::
+                                    Not applicable for Text Models
         ---------------------   -------------------------------------------
         monitor                 Optional string. Parameter specifies
                                 which metric to monitor while checkpointing
@@ -291,7 +299,9 @@ class EntityRecognizer:
                                 should be one of the metric that is displayed in
                                 the training table. Use `{model_name}.available_metrics`
                                 to list the available metrics to set here.
-                                **Note - Not applicable for models with spaCy backbone
+
+                                .. note::
+                                        Not applicable for models with spaCy backbone
         =====================   ===========================================
         """
 
@@ -322,7 +332,7 @@ class EntityRecognizer:
         publish                 Optional boolean. Publishes the DLPK as an item.
                                 Default is set to False.
         ---------------------   -------------------------------------------
-        gis                     Optional GIS Object. Used for publishing the item.
+        gis                     Optional :class:`~arcgis.gis.GIS`  Object. Used for publishing the item.
                                 If not specified then active gis user is taken.
         ---------------------   -------------------------------------------
         compute_metrics         Optional boolean. Used for computing model
@@ -387,7 +397,7 @@ class EntityRecognizer:
                                 are - `debug`, `info`, `warning`, `error` and `critical`.
         =====================   ===========================================
 
-        :return: `EntityRecognizer` Object
+        :return: :class:`~arcgis.learn.text.EntityRecognizer` Object
         """
 
         if "spacy" in backbone:
@@ -441,12 +451,12 @@ class EntityRecognizer:
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required DatabunchNER object or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
 
         =====================   ===========================================
 
-        :return: `EntityRecognizer` Object
+        :return: :class:`~arcgis.learn.text.EntityRecognizer` Object
         """
 
         data_obj = None
@@ -490,7 +500,7 @@ class EntityRecognizer:
         """
         Extracts the entities from [documents in the mentioned path or text_list].
 
-        Field defined as 'address_tag' in `prepare_data()` function's class mapping
+        Field defined as 'address_tag' in :meth:`~arcgis.learn.prepare_data`  function's class mapping
         attribute will be treated as a location. In cases where trained model extracts
         multiple locations from a single document, that document will be replicated
         for each location in the resulting dataframe.
@@ -576,7 +586,7 @@ class EntityRecognizer:
                                 will plot the figure and return nothing.
         =====================   ===========================================
 
-        :return: matplotlib.figure.Figure
+        :return: `matplotlib.figure.Figure <https://matplotlib.org/stable/api/figure_api.html#matplotlib.figure.Figure>`_
         """
 
         return self._model.plot_losses(show=show)

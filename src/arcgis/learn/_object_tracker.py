@@ -11,7 +11,7 @@ except ImportError:
 
 class ObjectTracker:
     """
-    Creates ObjectTracker Object.
+    Creates :class:`~arcgis.learn.ObjectTracker` Object.
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -26,74 +26,74 @@ class ObjectTracker:
                             keys as parameter names and values as
                             parameter values.
 
-                            "enable_post_processing" refers to
-                            the flag which enables/disables post_processing
-                            of tracks internal to ObjectTracker module.
-                            For DeepSort, it's recommended to keep this
-                            flag as False. Default - True
+                            * "``enable_post_processing``" - refers to
+                              the flag which enables/disables post_processing
+                              of tracks internal to ObjectTracker module.
+                              For DeepSort, it's recommended to keep this
+                              flag as False. Default - True
 
-                            "detection_interval" refers to
-                            the interval in frames at which the detector
-                            is invoked. It should be >= 1
+                            * "``detection_interval``" - refers to
+                              the interval in frames at which the detector
+                              is invoked. It should be >= 1
 
-                            "detection_threshold" refers to
-                            the lower threshold for selecting the
-                            detections.
+                            * "``detection_threshold``" - refers to
+                              the lower threshold for selecting the
+                              detections.
 
-                            "detect_track_failure" refers to
-                            the flag which enables/disables the logic
-                            to detect whether the object appearance
-                            has changed detection.
+                            * "``detect_track_failure``" - refers to
+                              the flag which enables/disables the logic
+                              to detect whether the object appearance
+                              has changed detection.
 
-                            "recover_track" refers to the flag which
-                            enables/disables track recovery post failure.
+                            * "``recover_track``" - refers to the flag which
+                              enables/disables track recovery post failure.
 
-                            "stab_period" refers to the number of frames
-                            after which post processing starts.
+                            * "``stab_period``" - refers to the number of frames
+                              after which post processing starts.
 
-                            "detect_fail_interval" refers to the number
-                            of frames after which to detect track failure.
+                            * "``detect_fail_interval``" - refers to the number
+                              of frames after which to detect track failure.
 
-                            "min_obj_size" refers to the size in pixels
-                            below which tracking is assumed to have
-                            failed.
+                            * "``min_obj_size``" - refers to the size in pixels
+                              below which tracking is assumed to have
+                              failed.
 
-                            "template_history" refers to the number of
-                            frames before the current frame at which
-                            template image is fetched.
+                            * "``template_history``" - refers to the number of
+                              frames before the current frame at which
+                              template image is fetched.
 
-                            "status_history" refers to the
-                            number of frames over which status of the
-                            track is used to detect track failure.
+                            * "``status_history``" - refers to the
+                              number of frames over which status of the
+                              track is used to detect track failure.
 
-                            "status_fail_threshold" refers to the
-                            threshold for the ratio between number
-                            of frames for which object is searched
-                            for and the total number of frames which
-                            needs to be crossed for track failure
-                            detection.
+                            * "``status_fail_threshold``" - refers to the
+                              threshold for the ratio between number
+                              of frames for which object is searched
+                              for and the total number of frames which
+                              needs to be crossed for track failure
+                              detection.
 
-                            "search_period" refers to the
-                            number of frames for which object is
-                            searched for before declaring object is
-                            lost.
+                            * "``search_period``" - refers to the
+                              number of frames for which object is
+                              searched for before declaring object is
+                              lost.
 
-                            "knn_distance_ratio" refers to the
-                            threshold for ratio of the distances between
-                            template descriptor and the two best matched
-                            detection descriptor, used for filtering
-                            best matches.
+                            * "``knn_distance_ratio``" - refers to the
+                              threshold for ratio of the distances between
+                              template descriptor and the two best matched
+                              detection descriptor, used for filtering
+                              best matches.
 
-                            "recover_conf_threshold" refers
-                            to the minimum confidence value over which
-                            recovery logic is enabled.
+                            * "``recover_conf_threshold``" -  refers
+                              to the minimum confidence value over which
+                              recovery logic is enabled.
 
-                            "recover_iou_threshold" refers to the minimum
-                            overlap between template and detection for
-                            successful recovery.
+                            * ``recover_iou_threshold`` - refers to the minimum
+                              overlap between template and detection for
+                              successful recovery.
     =====================   ===========================================
 
-    :return: `ObjectTracker` Object
+    :return: :class:`~arcgis.learn.ObjectTracker` Object
     """
 
     def __init__(

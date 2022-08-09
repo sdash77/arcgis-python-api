@@ -687,7 +687,7 @@ def show_point_cloud_batch(self, rows=2, figsize=(6, 12), color_mapping=None, **
     ---------------------   -------------------------------------------
     rows                    Optional rows. Number of rows to show. Default
                             value is 2 and maximum value is the `batch_size`
-                            passed in `prepare_data`.
+                            passed in :meth:`~arcgis.learn.prepare_data` .
     ---------------------   -------------------------------------------
     color_mapping           Optional dictionary. Mapping from class value
                             to RGB values. Default value example:
@@ -708,7 +708,7 @@ def show_point_cloud_batch(self, rows=2, figsize=(6, 12), color_mapping=None, **
                             parameter to be [1, 2]. List of all classes
                             can be accessed from `data.classes` attribute
                             where `data` is the `Databunch` object returned
-                            by `prepare_data` function.
+                            by :meth:`~arcgis.learn.prepare_data`  function.
     ---------------------   -------------------------------------------
     width                   Optional integer. Width of the plot. Default
                             value is 750.
@@ -859,7 +859,7 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
     ---------------------   -------------------------------------------
     rows                    Optional rows. Number of rows to show. Default
                             value is 2 and maximum value is the `batch_size`
-                            passed in `prepare_data`.
+                            passed in :meth:`~arcgis.learn.prepare_data` .
     ---------------------   -------------------------------------------
     color_mapping           Optional dictionary. Mapping from class value
                             to RGB values. Default value example:
@@ -880,7 +880,7 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
                             parameter to be [1, 2]. List of all classes
                             can be accessed from `data.classes` attribute
                             where `data` is the `Databunch` object returned
-                            by `prepare_data` function.
+                            by :meth:`~arcgis.learn.prepare_data`  function.
     ---------------------   -------------------------------------------
     width                   Optional integer. Width of the plot. Default
                             value is 750.
@@ -2865,7 +2865,7 @@ def augment(points, xforms, range=None):
 class Transform3d(object):
 
     """
-    Creates a 3D transformation that can be used in `prepare_data`
+    Creates a 3D transformation that can be used in :meth:`~arcgis.learn.prepare_data`
     to apply data augmentation to blocks, with a 50 % probability.
     Applicable only for dataset_type=’PointCloud’.
 
@@ -2894,7 +2894,7 @@ class Transform3d(object):
                             Default: 0.0.
     =====================   ===========================================
 
-    :return: `Transform3d` object
+    :return: :class:`~arcgis.learn.Transform3d` object
     """
 
     def __init__(

@@ -34,7 +34,7 @@ class Track:
     mask                    Required numpy array. Mask for the tack
     =====================   ===========================================
 
-    :return: `Track` Object
+    :return: :class:`~arcgis.learn.Track` Object
     """
 
     def __init__(self, id, label, bbox, mask):

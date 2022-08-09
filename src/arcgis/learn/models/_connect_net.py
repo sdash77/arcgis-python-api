@@ -11,7 +11,7 @@ class ConnectNet(MultiTaskRoadExtractor):
     **Argument**            **Description**
     ---------------------   -----------------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            ``prepare_data`` function.
+                            :meth:`~arcgis.learn.prepare_data`  function.
     ---------------------   -----------------------------------------------------
     backbone                Optional String. Backbone CNN model to be used for
                             creating the base. If hourglass is chosen as
@@ -56,7 +56,7 @@ class ConnectNet(MultiTaskRoadExtractor):
                                     Default: 8
     =============================   =============================================
 
-    :return: `ConnectNet` Object
+    :return: :class:`~arcgis.learn.ConnectNet` Object
     """
 
     pass
