@@ -3547,7 +3547,6 @@ class _FeatureAnalysisTools(BaseAnalytics):
             params["outputName"] = {"itemProperties": output_name}
             output_name = params["outputName"]
         else:
-            # output_name = {"itemProperties":{"title":"Thisisfine","description":"File generated from running the Extract Data solution.","tags":"Analysis Result, Extract Data","snippet":"Analysis File item generated from Extract Data","folderId":""}}
             params["outputName"] = {
                 "serviceProperties": {"name": output_name},
                 "itemProperties": {
