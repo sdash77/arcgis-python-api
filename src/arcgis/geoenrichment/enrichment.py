@@ -542,6 +542,18 @@ class Country(object):
         return dc_df
 
     @property
+    def hierarchies(self):
+        """
+        Return the available hierarchies and information for them as a dataframe.
+        """
+        return self._ba_cntry._ba._get_hierarchies_df(self._ba_cntry.iso3)
+
+    @property
+    def hierarchy(self):
+        """Get/Set the current hierarchy used. This will affect the enrichment variables"""
+        return self.hierarchies[self.hierarchies["alias"] == self.properties.hierarchy]
+
+    @property
     def enrich_variables(self):
         """
         Pandas Dataframe of available geoenrichment variables.
