@@ -652,7 +652,7 @@ def export_training_data(
                                              - ``RCNN_Masks``: This option will output image chips that have a mask on the areas where the sample exists.
                                                The model generates bounding boxes and segmentation masks for each instance of an object in the image.
                                                This format can be used with MaskRCNN model.
- 
+
                                              - ``Labeled_Tiles``: This option will label each output tile with a specific class.
                                                This format is used for image classification.
                                                This format can be used with FeatureClassifier model.
@@ -715,8 +715,8 @@ def export_training_data(
                                              Setting context parameter will override the values set using arcgis.env
                                              variable for this particular function.(cellSize, extent)
 
-                                             Example: 
-                                              
+                                             Example:
+
                                                 {"exportAllTiles" : False, "startIndex": 0 }
     ------------------------------------     --------------------------------------------------------------------
     input_mask_polygons                      Optional :class:`~arcgis.features.FeatureLayer`. The feature layer that delineates the area where
@@ -1742,11 +1742,11 @@ def export_point_dataset(
     """
     Exports the las files into h5 blocks.
 
-    .. note:: 
+    .. note::
       This function has been deprecated starting from `ArcGIS API for
       Python` version 1.9.0. Export data using `Prepare Point Cloud Training Data` tool available
       in 3D Analyst Extension from ArcGIS Pro 2.8 onwards.
-      
+
 
     ==================     =======================================================================================================
     **Argument**           **Description**
@@ -1786,8 +1786,8 @@ def export_point_dataset(
                            The default behavior has changed from v1.8.0.
                            Default: [].
     ==================     =======================================================================================================
-    
-    
+
+
     """
 
     from ._utils.pointcloud_data import prepare_las_data
