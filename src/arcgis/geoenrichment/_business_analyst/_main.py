@@ -347,7 +347,7 @@ class Country(AOI):
         # set the iso3 property based on the iso3
         self.iso3 = self._ba._standardize_country_str(iso3)
 
-        # use the iso3 to filter the available countries to a dataframe of just the country requested
+        # use the iso3 to filter the available countries to a dataframe of just the country requested.
         sel_df = self._ba.countries[self._ba.countries["iso3"] == self.iso3]
 
         # if the data source is local, but no year was provided, get the year
