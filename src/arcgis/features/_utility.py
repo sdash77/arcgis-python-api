@@ -45,8 +45,12 @@ class UtilityNetworkManager(object):
         self._url = url
         if version:
             self._version = version
-            self._version_guid = version._guid
             self._version_name = version.properties.versionName
+            if self._version_name in ["SDE.DEFAULT", "DBO.DEFAULT"]:
+                # fix due to locking issue
+                self._version_guid = None
+            else:
+                self._version_guid = version._guid
         else:
             self._version = None
             self._version_guid = None
