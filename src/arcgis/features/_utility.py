@@ -1129,21 +1129,6 @@ class TraceConfigurationsManager(object):
         return self._con.post(self._url, {"f": "json"})
 
     # ----------------------------------------------------------------------
-    def get(self, global_id: str, as_dict=False) -> dict | TraceConfiguration:
-        """
-        Get a specific trace configuration by passing its global id.
-
-        :return: An instance of Trace Configuration class depicting the trace configuration if found, else None.
-        """
-        trace_configs = self.query()
-        for config in trace_configs["traceConfigurations"]:
-            if config["globalId"] == global_id:
-                if as_dict:
-                    return config["traceConfiguration"]
-                else:
-                    return TraceConfiguration(config["traceConfiguration"])
-
-    # ----------------------------------------------------------------------
     def query(
         self,
         global_ids: list[str] | None = None,
