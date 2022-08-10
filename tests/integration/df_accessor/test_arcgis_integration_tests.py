@@ -161,7 +161,6 @@ class TestArcGISIntegrationTests(unittest.TestCase):
         assert hasattr(df, "spatial")
         assert hasattr(df.SHAPE, "geom")
 
-    @unittest.skip
     def test_gp(self):
         from arcgis.features import FeatureSet
 
