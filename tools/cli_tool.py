@@ -13,8 +13,9 @@ from arcgis.gis._impl._con._cert import pfx_to_pem
 from itertools import repeat
 import concurrent.futures
 
-# global verbose
+# global variables
 verbose = False
+delete_list = []
 
 # For custom log_file path,refer to the line below
 log_file_path = "<Enter Desired Log File Path and Comment the Line Below>"
@@ -177,6 +178,10 @@ def input_csv_handler(path: str) -> list[list[dict]] | list:
                         ):
                             output[idx]["item_properties"][key] = None
             item_id = output[idx]["item_id"]
+            operation = output[idx]["operation"]
+            if operation == "delete":
+                delete_list.append(output[idx])
+                continue
             if item_id != "" or item_id != None:
                 if item_id in output2:
                     output2[item_id].append(output[idx])
@@ -361,7 +366,7 @@ def execute(gis: GIS | None, list_of_items: list[dict] | list):
         elif operation == "delete":
             item_id = row.get("item_id", None)
             if item_id == None:
-                print(
+                content_logger.error(
                     "Unable to delete item at line #{} in the csv, item_id missing".format(
                         str(idx + 1)
                     )
@@ -371,7 +376,7 @@ def execute(gis: GIS | None, list_of_items: list[dict] | list):
         elif operation == "publish":
             item_id = row.get("item_id", None)
             if item_id == None:
-                print(
+                content_logger.error(
                     "Unable to publish item at line #{} in the csv, item_id missing".format(
                         str(idx + 1)
                     )
@@ -576,8 +581,10 @@ if __name__ == "__main__":
     if not auth_status:
         print("Login Unsuccessful, please check logs.")
         sys.exit()
-
+    if len(delete_list) > 0:
+        with concurrent.futures.ThreadPoolExecutor() as executor:
+            executor.map(execute, repeat(gis), list(map(lambda el: [el], delete_list)))
     with concurrent.futures.ThreadPoolExecutor() as executor:
-        executor.map(execute,repeat(gis),res)
+        executor.map(execute, repeat(gis), res)
     cli_logger.info("CLI tool exited")
     sys.exit()
