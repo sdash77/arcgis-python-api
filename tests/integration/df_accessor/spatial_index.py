@@ -7,6 +7,8 @@ import os
 import sys
 
 # sys.path.append(r"D:\SVN\git_hub\ArcGIS\geo_public")
+import unittest
+
 import pandas as pd
 import datetime
 from arcgis.geometry import Geometry
@@ -66,12 +68,32 @@ geoms = [
     ),
 ]
 
-# --------------------------------------------------------------------------
-def test_build_sindex_rtree():
-    """builds r-tree spatial index in-memory"""
-    try:
+
+class TestSpatialIndex(unittest.TestCase):
+
+    def test_build_sindex_rtree(self):
+        """builds r-tree spatial index in-memory"""
+        try:
+            import datetime
+            from rtree.index import Index as RIndex
+
+            g = [
+                Geometry({"x": -118.15, "y": 33.80, "spatialReference": {"wkid": 4326}})
+            ] * len(geoms)
+            data = [[1, datetime.datetime.now(), True, "BLAHBLAH"]] * len(geoms)
+            df = pd.DataFrame(data=data, columns=["Alpha", "Beta", "Gamma", "Delta"])
+            df.spatial.set_geometry(g)
+            si = df.spatial.sindex("rtree")
+            assert isinstance(si, SpatialIndex)
+            assert si._filename is None
+            assert si._stype == "rtree"
+            assert isinstance(si._index, RIndex)
+        except:
+            pass
+
+    def test_build_sindex_quadtree(self):
+        """builds quad-tree spatial index in-memory"""
         import datetime
-        from rtree.index import Index as RIndex
 
         g = [
             Geometry({"x": -118.15, "y": 33.80, "spatialReference": {"wkid": 4326}})
@@ -79,126 +101,101 @@ def test_build_sindex_rtree():
         data = [[1, datetime.datetime.now(), True, "BLAHBLAH"]] * len(geoms)
         df = pd.DataFrame(data=data, columns=["Alpha", "Beta", "Gamma", "Delta"])
         df.spatial.set_geometry(g)
-        si = df.spatial.sindex("rtree")
+        si = df.spatial.sindex("quadtree", bbox=df.spatial.full_extent)
         assert isinstance(si, SpatialIndex)
         assert si._filename is None
-        assert si._stype == "rtree"
-        assert isinstance(si._index, RIndex)
-    except:
-        pass
+        assert si._stype == "quadtree"
+        assert isinstance(si._index, QIndex)
 
+    def test_build_sindex_rt_filename(self):
+        """builds r-tree spatial index to a file"""
+        try:
+            import datetime
+            from rtree.index import Index as RIndex
 
-# --------------------------------------------------------------------------
-def test_build_sindex_quadtree():
-    """builds quad-tree spatial index in-memory"""
-    import datetime
+            for f in [RTREE_FILENAME + ".dat", RTREE_FILENAME + ".idx"]:
+                if os.path.isfile(f):
+                    os.remove(f)
+            g = [
+                Geometry({"x": -118.15, "y": 33.80, "spatialReference": {"wkid": 4326}})
+            ] * len(geoms)
+            data = [[1, datetime.datetime.now(), True, "BLAHBLAH"]] * len(geoms)
+            df = pd.DataFrame(data=data, columns=["Alpha", "Beta", "Gamma", "Delta"])
+            df.spatial.set_geometry(g)
+            si = df.spatial.sindex("rtree", filename=RTREE_FILENAME)
+            assert isinstance(si, SpatialIndex)
+            assert os.path.isfile(RTREE_FILENAME + ".idx")
+            assert os.path.isfile(RTREE_FILENAME + ".dat")
+            assert si._stype == "rtree"
+            assert isinstance(si._index, RIndex)
+            del si._index
+            os.remove(RTREE_FILENAME + ".idx")
+            os.remove(RTREE_FILENAME + ".dat")
+        except ImportError:
+            pass
 
-    g = [
-        Geometry({"x": -118.15, "y": 33.80, "spatialReference": {"wkid": 4326}})
-    ] * len(geoms)
-    data = [[1, datetime.datetime.now(), True, "BLAHBLAH"]] * len(geoms)
-    df = pd.DataFrame(data=data, columns=["Alpha", "Beta", "Gamma", "Delta"])
-    df.spatial.set_geometry(g)
-    si = df.spatial.sindex("quadtree", bbox=df.spatial.full_extent)
-    assert isinstance(si, SpatialIndex)
-    assert si._filename is None
-    assert si._stype == "quadtree"
-    assert isinstance(si._index, QIndex)
+    def test_build_sindex_rt_load_fn(self):
+        """tests loading an existing R-Tree index from file"""
+        try:
+            import datetime
 
+            EXISTING_FILENAME = "sindex.index"
+            g = [
+                Geometry({"x": -118.15, "y": 33.80, "spatialReference": {"wkid": 4326}})
+            ] * len(geoms)
+            data = [[1, datetime.datetime.now(), True, "BLAHBLAH"]] * len(geoms)
+            df = pd.DataFrame(data=data, columns=["Alpha", "Beta", "Gamma", "Delta"])
+            df.spatial.set_geometry(g)
+            si = df.spatial.sindex("rtree", filename=EXISTING_FILENAME)
+        except Exception as e:
+            print("no rtree installed.")
 
-# --------------------------------------------------------------------------
-def test_build_sindex_rt_filename():
-    """builds r-tree spatial index to a file"""
-    try:
-        import datetime
-        from rtree.index import Index as RIndex
+    def test_intersect_rtree(self):
+        """ """
+        try:
 
-        for f in [RTREE_FILENAME + ".dat", RTREE_FILENAME + ".idx"]:
-            if os.path.isfile(f):
-                os.remove(f)
-        g = [
-            Geometry({"x": -118.15, "y": 33.80, "spatialReference": {"wkid": 4326}})
-        ] * len(geoms)
-        data = [[1, datetime.datetime.now(), True, "BLAHBLAH"]] * len(geoms)
-        df = pd.DataFrame(data=data, columns=["Alpha", "Beta", "Gamma", "Delta"])
-        df.spatial.set_geometry(g)
-        si = df.spatial.sindex("rtree", filename=RTREE_FILENAME)
-        assert isinstance(si, SpatialIndex)
-        assert os.path.isfile(RTREE_FILENAME + ".idx")
-        assert os.path.isfile(RTREE_FILENAME + ".dat")
-        assert si._stype == "rtree"
-        assert isinstance(si._index, RIndex)
-        del si._index
-        os.remove(RTREE_FILENAME + ".idx")
-        os.remove(RTREE_FILENAME + ".dat")
-    except ImportError:
-        pass
+            import datetime
+            from arcgis.features.geo._index._impl import SpatialIndex
 
+            si = SpatialIndex("rtree")
+            si.insert(0, [-179, -89, 179, 89])
+            r = si.intersect([-180, -90, 180, 90])
+            assert r == [0]
+        except:
+            print("no rtree installed.")
 
-# --------------------------------------------------------------------------
-def test_build_sindex_rt_load_fn():
-    """tests loading an existing R-Tree index from file"""
-    try:
-        import datetime
+    def test_intersect_quadtree(self):
+        """ """
+        try:
+            from arcgis.features.geo._index._impl import SpatialIndex
 
-        EXISTING_FILENAME = "sindex.index"
-        g = [
-            Geometry({"x": -118.15, "y": 33.80, "spatialReference": {"wkid": 4326}})
-        ] * len(geoms)
-        data = [[1, datetime.datetime.now(), True, "BLAHBLAH"]] * len(geoms)
-        df = pd.DataFrame(data=data, columns=["Alpha", "Beta", "Gamma", "Delta"])
-        df.spatial.set_geometry(g)
-        si = df.spatial.sindex("rtree", filename=EXISTING_FILENAME)
-    except Exception as e:
-        print("no rtree installed.")
-
-
-# --------------------------------------------------------------------------
-def test_intersect_rtree():
-    """ """
-    try:
-
-        import datetime
-        from arcgis.features.geo._index._impl import SpatialIndex
-
-        si = SpatialIndex("rtree")
-        si.insert(0, [-179, -89, 179, 89])
-        r = si.intersect([-180, -90, 180, 90])
-        assert r == [0]
-    except:
-        print("no rtree installed.")
-
-
-# --------------------------------------------------------------------------
-def test_intersect_quadtree():
-    """ """
-    try:
-        from arcgis.features.geo._index._impl import SpatialIndex
-
-        si = SpatialIndex("quadtree", [-179, -89, 179, 89])
-        si.insert(0, [-179, -89, 179, 89])
-        r = si.intersect([-180, -90, 180, 90])
-        assert r == [0]
-    except Exception as e:
-        print("no rtree installed.")
+            si = SpatialIndex("quadtree", [-179, -89, 179, 89])
+            si.insert(0, [-179, -89, 179, 89])
+            r = si.intersect([-180, -90, 180, 90])
+            assert r == [0]
+        except Exception as e:
+            print("no rtree installed.")
 
 
 if __name__ == "__main__":
+
+    test_inst = TestSpatialIndex()
+
     print(
         "####  Begin  ##################################################################"
     )
     print("Running Spatial Index Tests")
-    test_build_sindex_rtree()
+    test_inst.test_build_sindex_rtree()
     print("######################################################################")
-    test_build_sindex_quadtree()
+    test_inst.test_build_sindex_quadtree()
     print("######################################################################")
-    test_build_sindex_rt_filename()
+    test_inst.test_build_sindex_rt_filename()
     print("######################################################################")
-    test_build_sindex_rt_load_fn()
+    test_inst.test_build_sindex_rt_load_fn()
     print("######################################################################")
-    test_intersect_quadtree()
+    test_inst.test_intersect_quadtree()
     print("######################################################################")
-    test_intersect_rtree()
+    test_inst.test_intersect_rtree()
     print(
         "####  Finished ##################################################################"
     )

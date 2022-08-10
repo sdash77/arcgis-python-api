@@ -89,3 +89,8 @@ class TestFeatureLayerCalculate(unittest.TestCase):
                 assert pitem.delete()
                 assert add_item.delete()
                 del gis
+
+
+if __name__ == "__main__":
+
+    unittest.main()
