@@ -1197,7 +1197,7 @@ class MapView(widgets.DOMWidget):
             tokens = [
                 auth.token
                 for auth in self.gis._con._session.auth.authentication_modes
-                if hasattr(auth, 'token')
+                if hasattr(auth, "token")
             ]
             if len(tokens) > 0:
 
