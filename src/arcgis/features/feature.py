@@ -221,8 +221,8 @@ class Feature(object):
                                 Values: 'Polyline' | 'Polygon' | 'Point'
                                 
                                 .. note::
-                                    Setting this value will override the geometry dictionary if it
-                                    present.
+                                    Setting this value will override the current geometry dictionary
+                                    if already present.
                                 
         ==================      ====================================================================
 
