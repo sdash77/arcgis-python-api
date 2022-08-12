@@ -2318,6 +2318,17 @@ class FeatureLayerCollectionManager(_GISResource):
         return res
 
     # ----------------------------------------------------------------------
+    def show_labels(self, visible: bool = True, label_info: dict[str, Any] = {}):
+        drawing_info = self.properties["drawingInfo"]
+        new_drawing = drawing_info
+        new_drawing["labelsVisible"] = visible
+
+        if label_info:
+            new_drawing["labelingInfo"] = label_info
+
+        self.update_definition(json_dict=new_drawing)
+
+    # ----------------------------------------------------------------------
     def delete_from_definition(self, json_dict: dict[str, Any], future: bool = False):
         """
         The delete_from_definition operation supports deleting a
