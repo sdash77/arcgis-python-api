@@ -116,7 +116,13 @@ class Feature(object):
             'Original Name'
             >>> feat.set_value(field_name = "NAME", value = "New Name")
             True
+            
+        .. note::
+            To save edits from the above snippet, use :meth:`~arcgis.features.FeatureLayer.edit_features`
+            with `feat_set` in a list as the `updates` argument.
         """
+        
+        
         if field_name in self.fields:
             if value is not None:
                 self._dict["attributes"][field_name] = value
@@ -269,6 +275,14 @@ class Feature(object):
         :return:
             A dictionary of feature attribute values with field names as the key
 
+        .. code-block:: python
+        
+            #Example to set attribute values
+            
+            >>> feat_set = feature_layer.query(where="1=1")
+            >>> feat_list = feat_set.features
+            >>> feat = feat_list[0]
+            >>> feat.attributes = {"field1 : "value", field2 : "value"}
         """
 
         if self._attributes is None and "attributes" in self._dict:
@@ -340,7 +354,7 @@ class Feature(object):
         Creates a Feature object from a dictionary.
 
         :return:
-            A class:`~arcgis.features.feature.Feature`
+            A :class:`~arcgis.features.Feature`
         """
         geom = feature["geometry"] if "geometry" in feature else None
         if geom and sr and isinstance(geom, dict) and not "spatialReference" in geom:

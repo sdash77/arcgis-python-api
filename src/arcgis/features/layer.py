@@ -2169,18 +2169,30 @@ class FeatureLayer(Layer):
         :return: Dictionary of the query results
 
         .. code-block:: python
-            # The query results will return the related records for each objectIds
-            # where TOWNSHIP is the outField and orderByField:
+            
+            # Usage Example:
+            
+            # Query returning the related records for a feature with objectid value of 2,
+            # returning the values in the 6 attribute fields defined in the `field_string`
+            # variable:
 
-            FeatureLayer.query_related_records(object_ids="7028,7029",
-                                               relationship_id="1",
-                                               out_fields="TOWNSHIP",
-                                               definition_expression="1=1",
-                                               order_by_fields="TOWNSHIP",
-                                               return_count_only=False,
-                                               return_geometry=False)
-
-
+            >>> field_string = "objectid,attribute,system_name,subsystem_name,class_name,water_regime_name"
+            >>> rel_records = feat_lyr.query_related_records(object_ids = "2",
+                                                             relationship_id = 0,
+                                                             out_fields = field_string,
+                                                             return_geometry=True)
+            
+            >>> list(rel_records.keys())
+            ['fields', 'relatedRecordGroups']
+            
+            >>> rel_records["relatedRecordGroups"]
+            [{'objectId': 2,
+              'relatedRecords': [{'attributes': {'objectid': 686,
+                 'attribute': 'L1UBHh',
+                 'system_name': 'Lacustrine',
+                 'subsystem_name': 'Limnetic',
+                 'class_name': 'Unconsolidated Bottom',
+                 'water_regime_name': 'Permanently Flooded'}}]}]
         """
         params = {
             "f": "json",
