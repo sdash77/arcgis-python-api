@@ -13643,21 +13643,25 @@ class Item(dict):
         date_range          Optional string.  The default is 7d.  This is the period to query
                             usage for a given item.
 
-                            =======  =========================
-                            24H      Past 24 hours
-                            -------  -------------------------
-                            7D       Past 7 days (default)
-                            -------  -------------------------
-                            14D      Past 14 days
-                            -------  -------------------------
-                            30D      Past 30 days
-                            -------  -------------------------
-                            60D      Past 60 days
-                            -------  -------------------------
-                            6M       Past 6 months
-                            -------  -------------------------
-                            1Y       Past 12 months
-                            =======  =========================
+                            =============           =========================
+                            24H                     Past 24 hours
+                            -------------           -------------------------
+                            7D                      Past 7 days (default)
+                            -------------           -------------------------
+                            14D                     Past 14 days
+                            -------------           -------------------------
+                            30D                     Past 30 days
+                            -------------           -------------------------
+                            60D                     Past 60 days
+                            -------------           -------------------------
+                            6M                      Past 6 months
+                            -------------           -------------------------
+                            1Y                      Past 12 months
+                            -------------           -------------------------
+                            (date1,date2)           Tuple of 2 datetime
+                                                    objects defining custom
+                                                    date range
+                            =============           =========================
         ---------------     --------------------------------------------------------------------
         as_df               Optional boolean.  Returns a Pandas DataFrame when True, returns data
                             as a dictionary when False
@@ -13665,6 +13669,46 @@ class Item(dict):
 
         :return: Pandas `DataFrame <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html>`_ or Dictionary
 
+        .. code-block:: python
+        
+            # Usage Example #1: Standard date_range
+            
+            >>> flyr_item = gis.content.get("8961540a52da402876e0168fa29bb82d")
+            >>> result = flyr_item.usage(date_range = "7D")
+                Date  Usage
+            0 2022-08-05      0
+            1 2022-08-06      0
+            2 2022-08-07      0
+            3 2022-08-08      0
+            4 2022-08-09      0
+            5 2022-08-10      0
+            6 2022-08-11      0
+            7 2022-08-12      8
+            
+            # Usage Example #2: Custom date_range
+            
+            >>> import datetime as dt
+            
+            >>> flyr_item = gis.content.get("8961540a52da402876e0168fa29bb82d")
+            >>> date_1 = dt.datetime(2022,7,31)
+            >>> date_2 = dt.datetime.now(2022,8,12)
+                # Early value, later value
+            >>> result = flyr_item.usage(date_range (date_1, date_2))
+            >>> result
+                     Date  Usage
+            0  2022-07-31      0
+            1  2022-08-01      0
+            2  2022-08-02      0
+            3  2022-08-03      0
+            4  2022-08-04      0
+            5  2022-08-05      0
+            6  2022-08-06      0
+            7  2022-08-07      0
+            8  2022-08-08      0
+            9  2022-08-09      0
+            10 2022-08-10      0
+            11 2022-08-11      0
+            12 2022-08-12     10           
         """
         if not self._portal.is_arcgisonline:
             raise ValueError("Usage() only supported for ArcGIS Online items.")
@@ -13840,7 +13884,6 @@ class Item(dict):
             return res
         except:
             return None
-
     # ----------------------------------------------------------------------
     def get_data(self, try_json: bool = True):
         """
