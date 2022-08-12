@@ -13963,7 +13963,7 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
             geometry_filter = self._spatial_filter
         # newcollection = self._clone_raster_collection()
         if where_clause is not None:
-            where_clause = self._where_clause + " AND (" + where_clause + ")"
+            where_clause = where_clause + " AND (" + self._where_clause + ")"
         else:
             where_clause = self._where_clause
 
