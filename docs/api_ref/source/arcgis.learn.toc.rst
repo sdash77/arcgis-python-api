@@ -238,6 +238,13 @@ PointCNN
     :inherited-members:
     :undoc-members:
 
+RandLANet
+^^^^^^^^
+.. autoclass:: arcgis.learn.RandLANet
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 Object Tracking Models
 ------------------------
 SiamMask

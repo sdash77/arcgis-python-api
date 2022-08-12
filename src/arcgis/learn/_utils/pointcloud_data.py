@@ -2728,24 +2728,27 @@ def compute_precision_recall(self):
     all_y = []
     all_pred = []
     for x_in, y_in in iter(valid_dl):
-        x_in, point_nums = x_in  ## (batch, total_points, num_features), (batch,)
-        batch, _, num_features = x_in.shape
-        indices = torch.tensor(
-            get_indices(batch, self.sample_point_num, point_nums.long())
-        ).to(x_in.device)
-        indices = indices.view(-1, 2).long()
-        x_in = (
-            x_in[indices[:, 0], indices[:, 1]]
-            .view(batch, self.sample_point_num, num_features)
-            .contiguous()
-        )  ## batch, self.sample_point_num, num_features
-        y_in = (
-            y_in[indices[:, 0], indices[:, 1]]
-            .view(batch, self.sample_point_num)
-            .contiguous()
-            .cpu()
-            .numpy()
-        )  ## batch, self.sample_point_num
+        if not getattr(self, "_is_RandLANet", False):
+            x_in, point_nums = x_in  ## (batch, total_points, num_features), (batch,)
+            batch, _, num_features = x_in.shape
+            indices = torch.tensor(
+                get_indices(batch, self.sample_point_num, point_nums.long())
+            ).to(x_in.device)
+            indices = indices.view(-1, 2).long()
+            x_in = (
+                x_in[indices[:, 0], indices[:, 1]]
+                .view(batch, self.sample_point_num, num_features)
+                .contiguous()
+            )  ## batch, self.sample_point_num, num_features
+            y_in = (
+                y_in[indices[:, 0], indices[:, 1]]
+                .view(batch, self.sample_point_num)
+                .contiguous()
+                .cpu()
+                .numpy()
+            )  ## batch, self.sample_point_num
+        else:
+            y_in = y_in.cpu().numpy()
         with torch.no_grad():
             preds = model(x_in).detach().cpu().numpy()
         predicted_labels = preds.argmax(axis=-1)
