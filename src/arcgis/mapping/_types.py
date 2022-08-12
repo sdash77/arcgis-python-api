@@ -768,8 +768,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                     if hasattr(layer.layer, "layers"):
                         if hasattr(layer.layer.layers[0], "layerDefinition"):
                             if hasattr(
-                                layer.layer.layers[0].layerDefinition,
-                                "serviceItemId",
+                                layer.layer.layers[0].layerDefinition, "serviceItemId",
                             ):
                                 new_layer[
                                     "type"
@@ -985,6 +984,40 @@ class WebMap(HasTraits, collections.OrderedDict):
         # endregion
         return new_layer
 
+    def update_drawing_info(
+        self,
+        layer: Union[dict, FeatureLayer],
+        label_info: dict = None,
+        renderer: dict = None,
+        scale_symbols: bool = None,
+        transparency: int = None,
+        show_labels: bool = None,
+    ):
+
+        if "layerDefinition" not in layer:
+            layer["layerDefinition"] = {"drawingInfo": {}}
+        if show_labels is not None:
+            layer["showLabels"] = show_labels
+        if label_info is not None:
+            layer["layerDefinition"]["drawingInfo"]["labelingInfo"] = [label_info]
+        if renderer is not None:
+            layer["layerDefinition"]["drawingInfo"]["renderer"] = renderer
+        if scale_symbols is not None:
+            layer["layerDefinition"]["drawingInfo"]["scaleSymbols"] = scale_symbols
+        if transparency is not None:
+            layer["layerDefinition"]["drawingInfo"]["transparency"] = transparency
+
+        copy_dict = dict(layer)
+        self.update_layer(copy_dict)
+        self.update()
+
+        """elif definition_location.lower() == "source":
+            import io
+            layer_url = layer["url"]
+            source_id = layer["itemId"]
+            source_item = self._gis.content.get(source_id)
+            source_data = source_item.get_data()"""
+
     def update_layer(self, layer: Union[dict, FeatureLayer]):
         """
         To update the layer dictionary for a layer in the map. For example, to update the renderer dictionary for a layer
@@ -1023,12 +1056,24 @@ class WebMap(HasTraits, collections.OrderedDict):
             # Need to remove to re-create the layer view correctly
             layer = self._create_layer_definition(layer, None)
         # Find the layer to update based on the id of the layer passed in.
-        lyr_dict = self.get_layer(layer["itemId"])
-        # Get the index so we update the observable list at the correct position.
-        lyr_idx = self._webmapdict["operationalLayers"].index(lyr_dict)
+        lyr_dict = self.get_layer(layer_id=layer["id"])
 
-        # Update the observable list, this triggers webmap to render new layer.
-        self._webmapdict["operationalLayers"][lyr_idx] = layer
+        # Get the index so we update the observable list at the correct position.
+        # Once we have the index, update the observable list.
+        try:
+            lyr_idx = self._webmapdict["operationalLayers"].index(lyr_dict)
+            self._webmapdict["operationalLayers"][lyr_idx] = layer
+
+        # In case the layer is within a group layer
+        except ValueError:
+            for item in self._webmapdict["operationalLayers"]:
+                if (item["layerType"] == "GroupLayer") and (lyr_dict in item["layers"]):
+                    grp_idx = self._webmapdict["operationalLayers"].index(item)
+                    lyr_idx = item["layers"].index(lyr_dict)
+                    self._webmapdict["operationalLayers"][grp_idx]["layers"][
+                        lyr_idx
+                    ] = layer
+                    break
 
         # Update the layers property
         if "operationalLayers" in self._webmapdict:
@@ -1342,9 +1387,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             if "type" in item_properties:
                 item_properties.pop("type")  # type should not be changed.
             return self.item.update(
-                item_properties=item_properties,
-                thumbnail=thumbnail,
-                metadata=metadata,
+                item_properties=item_properties, thumbnail=thumbnail, metadata=metadata,
             )
         else:
             raise RuntimeError(
@@ -1377,12 +1420,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                 if "ArcGISFeatureLayer" in layer.layerType:
                     if any(
                         capability in layer_object.properties.capabilities
-                        for capability in [
-                            "Create",
-                            "Update",
-                            "Delete",
-                            "Editing",
-                        ]
+                        for capability in ["Create", "Update", "Delete", "Editing",]
                     ):
                         return True
             except Exception:
@@ -1794,7 +1832,8 @@ class WebMap(HasTraits, collections.OrderedDict):
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         item_id                Optional string. Pass the item_id for the operational layer you are trying
-                               to reference in the ``WebMap``.
+                               to reference in the ``WebMap``. Note: Not recommended if using multiple
+                               layers from the same original item.
         ------------------     --------------------------------------------------------------------
         title                  Optional string. Pass the title for the operational layer you are trying
                                to reference in the ``WebMap``.
@@ -1809,12 +1848,21 @@ class WebMap(HasTraits, collections.OrderedDict):
             raise ValueError("Please pass at least one parameter into the function")
         if self.layers:
             for layer in self.layers:
+                # some layers may be group layers, so explore their layer array
+                if layer["layerType"] == "GroupLayer":
+                    for sublayer in layer["layers"]:
+                        if (
+                            (title == sublayer["title"])
+                            or (layer_id == sublayer["id"])
+                            or (item_id == sublayer["itemId"])
+                        ):
+                            return sublayer
                 # item id is optional in the webmap spec, so we need to try/except
                 try:
                     if (
                         (title == layer["title"])
                         or (layer_id == layer["id"])
-                        or (item_id == layer["itemId"])
+                        or (item_id == sublayer["itemId"])
                     ):
                         return layer
                 except Exception:
@@ -2294,10 +2342,7 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         if self.events.enable:
             data["events"].append(
-                {
-                    "type": self.events.type,
-                    "actions": self.events.synced_widgets,
-                }
+                {"type": self.events.type, "actions": self.events.synced_widgets,}
             )
 
         return data
@@ -3612,8 +3657,7 @@ class OfflineMapAreaManager(object):
                 # LOD that is closest to min scale. Do similar for max_scale.
 
                 sorted_lods = sorted(
-                    layer0_obj.properties.tileInfo.lods,
-                    key=lambda x: x["scale"],
+                    layer0_obj.properties.tileInfo.lods, key=lambda x: x["scale"],
                 )
                 keys = [l["scale"] for l in sorted_lods]
 
@@ -5173,10 +5217,7 @@ class MapImageLayerManager(arcgis.gis._GISResource):
             if extent:
                 if isinstance(extent, dict):
                     extent2 = "{},{},{},{}".format(
-                        extent["xmin"],
-                        extent["ymin"],
-                        extent["xmax"],
-                        extent["ymax"],
+                        extent["xmin"], extent["ymin"], extent["xmax"], extent["ymax"],
                     )
                     extent = extent2
                 params["extent"] = extent
@@ -6097,10 +6138,7 @@ class MapImageLayer(arcgis.gis.Layer):
         if len(kwargs) > 0:
             for k, v in kwargs.items():
                 params[k] = v
-        res = self._con.post(
-            path=url,
-            postdata=params,
-        )
+        res = self._con.post(path=url, postdata=params,)
         return res
 
     # ----------------------------------------------------------------------
@@ -6148,11 +6186,7 @@ class MapImageLayer(arcgis.gis.Layer):
             "layers": layers,
             "layerOptions": options,
         }
-        return self._con.get(
-            kmlURL,
-            params,
-            out_folder=save_location,
-        )
+        return self._con.get(kmlURL, params, out_folder=save_location,)
 
     # ----------------------------------------------------------------------
     def export_map(
@@ -6773,9 +6807,5 @@ class Events(object):
                     action_type = "filter"
                     widget_id = str(widgets._id) + "#main"
                     self._actions.append(
-                        {
-                            "type": action_type,
-                            "by": "geometry",
-                            "targetId": widget_id,
-                        }
+                        {"type": action_type, "by": "geometry", "targetId": widget_id,}
                     )
