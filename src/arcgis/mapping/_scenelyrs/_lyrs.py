@@ -229,7 +229,7 @@ class SceneLayerManager(_GISResource):
         return None
 
     # ----------------------------------------------------------------------
-    def rebuild_cache(self, layers: str):
+    def rebuild_cache(self, layers: int | list[int]):
         """
         The rebuild_cache operation update the scene layer cache to reflect
         any changes made to the feature layer used to publish this scene layer.
@@ -239,10 +239,10 @@ class SceneLayerManager(_GISResource):
         =====================       ====================================================
         **Argument**                **Description**
         ---------------------       ----------------------------------------------------
-        layers                      Required String. Comma seperated values indicating
+        layers                      Required int or list of int. Comma seperated values indicating
                                     the id of the layers to rebuild in the cache.
 
-                                    Ex: "0,1,2"
+                                    Ex: [0,1,2]
         =====================       ====================================================
         """
         if self._source_type is "Feature Service":
@@ -252,7 +252,7 @@ class SceneLayerManager(_GISResource):
         return None
 
     # ----------------------------------------------------------------------
-    def update_cache(self, layers: str):
+    def update_cache(self, layers: int | list[int]):
         """
         Update Cache is a "light rebuild" where attributes and geometries of
         the layers selected are updated and can be used for change tracking on
@@ -263,10 +263,10 @@ class SceneLayerManager(_GISResource):
         =====================       ====================================================
         **Argument**                **Description**
         ---------------------       ----------------------------------------------------
-        layers                      Required String. Comma seperated values indicating
+        layers                      Required int or list of int. Comma seperated values indicating
                                     the id of the layers to update in the cache.
 
-                                    Ex: "0,1,2"
+                                    Ex: [0,1,2]
         =====================       ====================================================
         """
         if self._source_type is "Feature Service":
@@ -276,7 +276,7 @@ class SceneLayerManager(_GISResource):
         return None
 
     # ----------------------------------------------------------------------
-    def update_attribute(self, layers: str):
+    def update_attribute(self, layers: int | list[int]):
         """
         Update atrribute is a "light rebuild" where attributes of
         the layers selected are updated and can be used for change tracking.
@@ -286,10 +286,10 @@ class SceneLayerManager(_GISResource):
         =====================       ====================================================
         **Argument**                **Description**
         ---------------------       ----------------------------------------------------
-        layers                      Required String. Comma seperated values indicating
+        layers                      Required int or list of int. Comma seperated values indicating
                                     the id of the layers to update in the cache.
 
-                                    Ex: "0,1,2"
+                                    Ex: [0,1,2]
         =====================       ====================================================
         """
         if self._source_type is "Feature Service":
