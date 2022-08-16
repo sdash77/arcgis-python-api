@@ -10023,7 +10023,7 @@ class User(dict):
         return None
 
     # ----------------------------------------------------------------------
-    def generate_direct_access_url(self, store_type: str) -> str:
+    def generate_direct_access_url(self, store_type: str, expiration: int | None = None, subfolder: str | None = None) -> dict | None:
         """
         The ``generate_direct_access_url`` method creates a direct access URL that is ideal
         for uploading large files to datafile share, notebook workspaces or raster stores.
@@ -10036,9 +10036,13 @@ class User(dict):
         ---------------------  ---------------------------------------------------------
         store_type             Optional String. The type of upload URL to generate.
                                Types: `big_data_file`, 'notebook', or 'raster`.
+        ---------------------  ---------------------------------------------------------
+        expiration             Optional Int. The expiration of the link in minutes.  The default is 1440.
+        ---------------------  ---------------------------------------------------------
+        subfolder              Optional String. The folder to upload to. The default is `None`. 
         =====================  =========================================================
 
-        :return: A string representing a direct access URL
+        :return: A dictionary containing the direct access URL
 
         .. code-block:: python
 
@@ -10056,8 +10060,11 @@ class User(dict):
             "raster": "rasterStore",
         }
         url = f"{self._gis._portal.resturl}content/users/{self.username}/generateDirectAccessUrl"
-        params = {"f": "json", "expiration": 1440, "storeType": _lu[store_type.lower()]}
-        return self._portal.con.get(url, params)
+        params = {"f": "json", "expiration": expiration or 1440, "storeType": _lu[store_type.lower()]}
+        if subfolder:
+            params['subPath'] = subfolder
+        
+        return self._portal.con.post(url, params)
 
     # ----------------------------------------------------------------------
     @property
