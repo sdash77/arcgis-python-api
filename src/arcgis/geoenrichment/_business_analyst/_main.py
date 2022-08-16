@@ -682,7 +682,7 @@ class BusinessAnalyst(object):
     .. warning::
 
         GeoEnrichment (adding demographic enrich_variables) using ArcGIS Online *does* cost credits.
-        Country (``BusinessAnalyst.countries``) and variable (``Country.enrich_variables``)
+        Country (``BusinessAnalyst.countries``) and variable (:func:`~arcgis.geoenrichment.Country.enrich_variables`)
         introspection does *not* cost any credits.
 
     =============================       ====================================================================
