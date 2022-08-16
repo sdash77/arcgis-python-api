@@ -214,15 +214,15 @@ class MMSegmentation(ModelExtension):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            ``prepare_data`` function.
+                            :meth:`~arcgis.learn.prepare_data`  function.
     ---------------------   -------------------------------------------
     model                   Required model name or path to the configuration file
-                            from ``MMSegmentation`` repository. The list of the
+                            from :class:`~arcgis.learn.MMSegmentation` repository. The list of the
                             supported models can be queried using
-                            ``MMSegmentation.supported_models``.
+                            :attr:`~arcgis.learn.MMSegmentation.supported_models`
     ---------------------   -------------------------------------------
     model_weight            Optional path of the model weight from
-                            ``MMSegmentation`` repository.
+                            :class:`~arcgis.learn.MMSegmentation` repository.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -240,7 +240,7 @@ class MMSegmentation(ModelExtension):
                             Default: []
     =====================   ===========================================
 
-    :return: ``MMSegmentation`` Object
+    :return: :class:`~arcgis.learn.MMSegmentation` Object
     """
 
     def __init__(self, data, model, model_weight=False, pretrained_path=None, **kwargs):
@@ -372,7 +372,7 @@ class MMSegmentation(ModelExtension):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a ``MMSegmentation`` object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.MMSegmentation` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -381,12 +381,12 @@ class MMSegmentation(ModelExtension):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from ``prepare_data`` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data`  function or None for
                                 inferencing.
 
         =====================   ===========================================
 
-        :return: `MMSegmentation` Object
+        :return: :class:`~arcgis.learn.MMSegmentation` Object
         """
         emd_path = _get_emd_path(emd_path)
 

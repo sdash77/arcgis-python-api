@@ -44,7 +44,7 @@ class ImageryModel(ArcGISModel):
                                 Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required ImageryDataObject. Returned data
-                                object from `prepare_data` function.
+                                object from :meth:`~arcgis.learn.prepare_data`  function.
         =====================   ===========================================
         """
         is_mm = False
@@ -129,13 +129,16 @@ class ImageryModel(ArcGISModel):
                                 tensorboard. Required tensorboardx version=2.1
 
                                 The default value is 'False'.
-                                **Note - Not applicable for Text Models
+
+                                .. note::
+
+                                    Not applicable for Text Models
         ---------------------   -------------------------------------------
         monitor                 Optional string. Parameter specifies
                                 which metric to monitor while checkpointing
                                 and early stopping. Defaults to 'valid_loss'. Value
                                 should be one of the metric that is displayed in
-                                the training table. Use `{model_name}.available_metrics`
+                                the training table. Use ``{model_name}.available_metrics``
                                 to list the available metrics to set here.
         =====================   ===========================================
         """
@@ -195,10 +198,10 @@ class ImageryModel(ArcGISModel):
                                 Only models saved with the default framework
                                 (PyTorch) can be loaded using `from_model`.
                                 ``tflite`` framework (experimental support) is
-                                supported by ``SingleShotDetector``,
-                                ``FeatureClassifier`` and ``RetinaNet``.
+                                supported by :class:`~arcgis.learn.SingleShotDetector`,
+                                :class:`~arcgis.learn.FeatureClassifier` and  :class:`~arcgis.learn.RetinaNet` .
                                 ``torchscript`` format is supported by
-                                ``SiamMask``.
+                                :class:`~arcgis.learn.SiamMask` .
                                 For usage of SiamMask model in ArcGIS Pro 2.8,
                                 load the ``PyTorch`` framework saved model
                                 and export it with ``torchscript`` framework
@@ -208,12 +211,12 @@ class ImageryModel(ArcGISModel):
                                 model files additionally generated inside
                                 'torch_scripts' folder.
                                 If framework is ``TF-ONNX`` (Only supported for
-                                ``SingleShotDetector``), ``batch_size`` can
+                                :class:`~arcgis.learn.SingleShotDetector`), ``batch_size`` can
                                 be passed as an optional keyword argument.
         ---------------------   -------------------------------------------
         publish                 Optional boolean. Publishes the DLPK as an item.
         ---------------------   -------------------------------------------
-        gis                     Optional GIS Object. Used for publishing the item.
+        gis                     Optional :class:`~arcgis.gis.GIS`  Object. Used for publishing the item.
                                 If not specified then active gis user is taken.
         ---------------------   -------------------------------------------
         compute_metrics         Optional boolean. Used for computing model
@@ -267,7 +270,7 @@ class ImageryModel(ArcGISModel):
         """
         List of available metrics that are displayed in the training
         table. Set `monitor` value to be one of these while calling
-        the `fit` method.
+        the :class:`~arcgis.learn.ImageryModel.fit` method.
         """
         try:
             return getattr(self, "imagery_model").available_metrics
@@ -371,23 +374,25 @@ class AutoDL:
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required ImageryDataObject. Returned data object from
-                            `prepare_data` function.
+                            :meth:`~arcgis.learn.prepare_data`  function.
     ---------------------   -------------------------------------------
     total_time_limit        Optional Int. The total time limit in hours for
                             AutoDL training.
                             Default is 5 Hr.
     ---------------------   -------------------------------------------
-    mode                    Optional Str.
+    mode                    Optional String.
                             Can be "basic" or "advanced".
 
-                            basic : To to be used when the user wants to train all selected networks.
-                            advanced : To be used when the user wants to tune hyper parameters of two
+                            * basic : To be used when the user wants to train all selected networks.
+
+                            * advanced : To be used when the user wants to tune hyper parameters of two
                             best performing models from basic mode.
     ---------------------   -------------------------------------------
     network                 Optional List of str.
                             The list of models that will be used in the training.
                             For eg:
                             Supported Object Detection models:
+
                             ["SingleShotDetector", "RetinaNet", "FasterRCNN", "YOLOv3", "MMDetection"]
                             Supported Pixel Classification models:
                             ["DeepLab", "UnetClassifier", "PSPNetClassifier", "MMSegmentation"]
@@ -398,7 +403,8 @@ class AutoDL:
 
     =====================   ===========================================
 
-    :return: `AutoDL` Object
+    :return:
+        :class:`~arcgis.learn.AutoDL` Object
     """
 
     def __init__(
@@ -1045,7 +1051,7 @@ class AutoDL:
                                 are displayed.
         =====================   ===========================================
 
-        :returns dataframe
+        :return: dataframe
         """
         print(
             "show_results will only show the output from the best performing model: "

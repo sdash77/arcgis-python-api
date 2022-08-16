@@ -69,13 +69,13 @@ except:
 
 class TextClassifier(ArcGISModel):
     """
-    Creates a TextClassifier Object.
+    Creates a :class:`~arcgis.learn.text.TextClassifier` Object.
     Based on the Hugging Face transformers library
 
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    data                    Optional data object returned from `prepare_textdata` function.
+    data                    Optional data object returned from :class:`~arcgis.learn.prepare_textdata` function.
                             data object can be `None`, in case where someone wants to use a
                             Hugging Face Transformer model fine-tuned on classification task.
                             In this case the model should be used directly for inference.
@@ -124,7 +124,7 @@ class TextClassifier(ArcGISModel):
                             (DLPK) or Esri Model Definition(EMD) file.
     =====================   ===========================================
 
-    :return: `TextClassifier` Object
+    :return: :class:`~arcgis.learn.text.TextClassifier` Object
     """
 
     # supported transformer backbones
@@ -317,7 +317,7 @@ class TextClassifier(ArcGISModel):
 
         =====================   ===========================================
 
-        :return: `TextClassifier` Object
+        :return: :class:`~arcgis.learn.text.TextClassifier` Object
         """
         if not HAS_FASTAI:
             from .._data import _raise_fastai_import_error
@@ -348,11 +348,11 @@ class TextClassifier(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_textdata` function or None for
+                                object from :class:`~arcgis.learn.prepare_textdata` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `TextClassifier` model Object
+        :return: :class:`~arcgis.learn.text.TextClassifier` model Object
         """
         if not HAS_FASTAI:
             from .._data import _raise_fastai_import_error
@@ -431,7 +431,7 @@ class TextClassifier(ArcGISModel):
         name_or_path            Required string. Folder path to save the model.
         ---------------------   -------------------------------------------
         framework               Optional string. Defines the framework of the
-                                model. (Only supported by ``SingleShotDetector``, currently.)
+                                model. (Only supported by :class:`~arcgis.learn.SingleShotDetector`, currently.)
                                 If framework used is ``TF-ONNX``, ``batch_size`` can be
                                 passed as an optional keyword argument.
 
@@ -439,7 +439,7 @@ class TextClassifier(ArcGISModel):
         ---------------------   -------------------------------------------
         publish                 Optional boolean. Publishes the DLPK as an item.
         ---------------------   -------------------------------------------
-        gis                     Optional GIS Object. Used for publishing the item.
+        gis                     Optional :class:`~arcgis.gis.GIS`  Object. Used for publishing the item.
                                 If not specified then active gis user is taken.
         ---------------------   -------------------------------------------
         compute_metrics         Optional boolean. Used for computing model
@@ -535,8 +535,9 @@ class TextClassifier(ArcGISModel):
     def accuracy(self):
         """
         Calculates the following  metric:
-            * accuracy:   the number of correctly predicted labels in the validation set
-                          divided by the total number of items in the validation set
+
+        * accuracy:   the number of correctly predicted labels in the validation set divided by the total number of items in the validation set
+
         :return: a floating point number depicting the accuracy of the classification model.
         """
         try:
@@ -629,12 +630,9 @@ class TextClassifier(ArcGISModel):
                                 of 0.25 is set.
         =====================   ===========================================
 
-        :return: * In case of single label classification problem, a tuple containing
-                  the text, its predicted class label and the confidence score.
+        :return: * In case of single label classification problem, a tuple containing the text, its predicted class label and the confidence score.
 
-                  * In case of multi label classification problem, a tuple containing
-                  the text, its predicted class labels, a list containing 1's for the
-                  predicted labels, 0's otherwise and list containing a score for each label
+                 * In case of multi label classification problem, a tuple containing the text, its predicted class labels, a list containing 1's for the predicted labels, 0's otherwise and list containing a score for each label
         """
         if self.is_multilabel_problem is False and thresh is not None:
             self.logger.error(

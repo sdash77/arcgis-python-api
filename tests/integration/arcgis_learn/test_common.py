@@ -13,8 +13,9 @@ from parameterized import parameterized
 from fastai.vision.learner import ClassificationInterpretation
 import random
 import string
+import glob
 from sys import platform
-from arcgis.learn import classify_pixels, detect_objects, classify_objects
+from arcgis.learn import classify_pixels, detect_objects, classify_objects, ImageryModel
 
 import_exception = None
 
@@ -37,6 +38,7 @@ module_skip = False
 parameter = []
 parameter_fl = []
 parameter_df = []
+parameter_autodl = []
 parameter_text = []
 authorization_data = {}
 check_ms = False
@@ -57,6 +59,7 @@ else:
         setuposenviron,
         data_folder_ms,
         data_inference_only,
+        data_autodl
     )
     from arcgis.learn import prepare_data, prepare_tabulardata, prepare_textdata
     from datetime import datetime
@@ -257,6 +260,49 @@ def CommonTestUsingDF(
         os.path.join(data_folder_path, data_path, f"{model_test}/{model_test}.emd")
     )
 
+def CommonTestAutoDL(
+    model_name,
+    datapath,
+    datapath_ms,
+    model,
+    model_test,
+    prepare_data_rgb,
+    prepare_data_ms,
+    network,
+    time,
+):
+    data = prepare_data(**prepare_data_rgb)
+    model_object = model(data, total_time_limit=1)
+    model_object.fit()
+    best_model_path = os.path.join(data_folder, datapath, 'models', '*AutoDL_'+model_object.best_model+'*', '*emd')
+    emd_path = glob.glob(best_model_path)[0]
+    img_model = ImageryModel()
+    img_model.load(emd_path, data)
+    img_model.fit()
+    fine_tuned_model = os.path.join(data_folder, datapath, 'models', 'fine_tuned_model')
+    img_model.save(fine_tuned_model)
+
+def CommonTestAutoDLMS(
+    model_name,
+    datapath,
+    datapath_ms,
+    model,
+    model_test,
+    prepare_data_rgb,
+    prepare_data_ms,
+    network,
+    time,
+):
+    data = prepare_data(**prepare_data_ms)
+    model_object = model(data, total_time_limit=1)
+    model_object.fit()
+    best_model_path = os.path.join(data_folder_ms, datapath_ms, 'models', '*AutoDL_'+model_object.best_model+'*', '*emd')
+    emd_path = glob.glob(best_model_path)[0]
+    img_model = ImageryModel()
+    img_model.load(emd_path, data)
+    img_model.fit()
+    fine_tuned_model = os.path.join(data_folder_ms, datapath_ms, 'models', 'fine_tuned_model')
+    img_model.save(fine_tuned_model)
 
 def CommonTestUsingFL(
     query,
@@ -813,6 +859,24 @@ def update_parameter_df():
             )
     return parameter_df
 
+def update_parameter_autodl():
+    parameter_autodl=[]
+    for key, val in data_autodl.items():
+        parameter_autodl.append(
+            [
+                key,
+                val["datapath"],
+                val["datapath_ms"],
+                val["model"],
+                val["model_test"],
+                val["prepare_data"],
+                val["prepare_data_ms"],
+                val["network"],
+                val["time"],
+            ]
+        )
+    return parameter_autodl
+
 
 def text_models():
     for key, val in data_inference_only.items():
@@ -922,20 +986,21 @@ class TestTraining(unittest.TestCase):
         data_folder_path,
         num_epochs,
     ):
-        commonTestCases(
-            model,
-            model_test,
-            datapath,
-            preparedata,
-            regression_parameter,
-            regression_test_score,
-            inferencing_parameter,
-            model_name,
-            inferencing_image_server,
-            ms_flag,
-            data_folder_path,
-            num_epochs,
-        )
+        if os.environ["run_weekly"] != "1":
+            commonTestCases(
+                model,
+                model_test,
+                datapath,
+                preparedata,
+                regression_parameter,
+                regression_test_score,
+                inferencing_parameter,
+                model_name,
+                inferencing_image_server,
+                ms_flag,
+                data_folder_path,
+                num_epochs,
+            )
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     @parameterized.expand(update_parameter_ms, skip_on_empty=True)
@@ -955,20 +1020,21 @@ class TestTraining(unittest.TestCase):
         data_folder_path,
         num_epochs,
     ):
-        commonTestCases(
-            model,
-            model_test,
-            datapath,
-            preparedata,
-            regression_parameter,
-            regression_test_score,
-            inferencing_parameter,
-            model_name,
-            inferencing_image_server,
-            ms_flag,
-            data_folder_path,
-            num_epochs,
-        )
+        if os.environ["run_weekly"] != "1":
+            commonTestCases(
+                model,
+                model_test,
+                datapath,
+                preparedata,
+                regression_parameter,
+                regression_test_score,
+                inferencing_parameter,
+                model_name,
+                inferencing_image_server,
+                ms_flag,
+                data_folder_path,
+                num_epochs,
+            )
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     @parameterized.expand(update_parameter_fl, skip_on_empty=True)
@@ -986,18 +1052,19 @@ class TestTraining(unittest.TestCase):
         model_test,
         data_folder_path,
     ):
-        CommonTestUsingFL(
-            query,
-            model_type,
-            prepare_tabular_data,
-            regression_parameter,
-            regression_test_score,
-            inferencing_parameter,
-            model_name,
-            data_path,
-            model_test,
-            data_folder_path,
-        )
+        if os.environ["run_weekly"] != "1":
+            CommonTestUsingFL(
+                query,
+                model_type,
+                prepare_tabular_data,
+                regression_parameter,
+                regression_test_score,
+                inferencing_parameter,
+                model_name,
+                data_path,
+                model_test,
+                data_folder_path,
+            )
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
     @parameterized.expand(text_models, skip_on_empty=True)
@@ -1018,17 +1085,78 @@ class TestTraining(unittest.TestCase):
         model_test,
         data_folder_path,
     ):
-        CommonTestUsingDF(
-            query,
-            model_type,
-            prepare_tabular_data,
-            regression_parameter,
-            regression_test_score,
-            model_name,
-            data_path,
-            model_test,
-            data_folder_path,
-        )
+        if os.environ["run_weekly"] != "1":
+            CommonTestUsingDF(
+                query,
+                model_type,
+                prepare_tabular_data,
+                regression_parameter,
+                regression_test_score,
+                model_name,
+                data_path,
+                model_test,
+                data_folder_path,
+            )
+        else:
+            pass
+
+    @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
+    @parameterized.expand(update_parameter_autodl, skip_on_empty=True)
+    def test_autodl(
+        self,
+        model_name,
+        datapath,
+        datapath_ms,
+        model,
+        model_test,
+        prepare_data,
+        prepare_data_ms,
+        network,
+        time
+    ):
+        if os.environ["run_weekly"] == "1":
+            CommonTestAutoDL(
+                model_name,
+                datapath,
+                datapath_ms,
+                model,
+                model_test,
+                prepare_data,
+                prepare_data_ms,
+                network,
+                time
+            )
+        else:
+            pass
+
+    @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
+    @parameterized.expand(update_parameter_autodl, skip_on_empty=True)
+    def test_autodl_ms(
+        self,
+        model_name,
+        datapath,
+        datapath_ms,
+        model,
+        model_test,
+        prepare_data,
+        prepare_data_ms,
+        network,
+        time
+    ):
+        if os.environ["run_weekly"] == "1":
+            CommonTestAutoDLMS(
+                model_name,
+                datapath,
+                datapath_ms,
+                model,
+                model_test,
+                prepare_data,
+                prepare_data_ms,
+                network,
+                time
+            )
+        else:
+            pass
 
     @classmethod
     def tearDownClass(cls):

@@ -154,6 +154,49 @@ PortalDataStore
     :undoc-members:
     :show-inheritance:
 
+Dataclasses and Enumerations
+---------------------------
+
+.. autoclass:: arcgis.gis._impl._dataclasses.ItemTypeEnum
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+.. autoclass:: arcgis.gis._impl._dataclasses.ItemProperties
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+.. autoclass:: arcgis.gis._impl._dataclasses.CreateServiceParameters
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+.. autoclass:: arcgis.gis._impl._dataclasses.MetadataFormatEnum
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+.. autoclass:: arcgis.gis._impl._dataclasses.ServiceTypeEnum
+    :members:
+    :undoc-members:
+    :show-inheritance:
+	
+.. autoclass:: arcgis.gis._impl._dataclasses.ViewLayerDefParameter
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+.. autoclass:: arcgis.gis._impl._dataclasses.SpatialFilter
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+.. autoclass:: arcgis.gis._impl._dataclasses.SpatialRelationship
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Submodules
 --------------
 .. toctree::

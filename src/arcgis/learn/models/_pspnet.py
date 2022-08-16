@@ -49,7 +49,7 @@ class PSPNetClassifier(ArcGISModel):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function.
+                            :meth:`~arcgis.learn.prepare_data` function.
     ---------------------   -------------------------------------------
     backbone                Optional string. Backbone convolutional neural network
                             model used for feature extraction, which
@@ -100,15 +100,19 @@ class PSPNetClassifier(ArcGISModel):
                             If > 0 , model will use a combination of default or
                             focal(if focal=True) loss with the specified fraction
                             of dice loss.
-                            E.g.
-                            for dice = 0.3, loss = (1-0.3)*default loss + 0.3*dice
+
+                            Example:
+
+                                for dice = 0.3, loss = (1-0.3)*default loss + 0.3*dice
+
                             Default: 0
     ---------------------   -------------------------------------------
     dice_loss_average       Optional str.
-                            micro: Micro dice coefficient will be used for loss
-                            calculation.
-                            macro: Macro dice coefficient will be used for loss
-                            calculation.
+
+                            * "``micro``": Micro dice coefficient will be used for loss calculation.
+
+                            * "``macro``": Macro dice coefficient will be used for loss calculation.
+
                             A macro-average will compute the metric independently
                             for each class and then take the average (hence treating
                             all classes equally), whereas a micro-average will
@@ -124,11 +128,11 @@ class PSPNetClassifier(ArcGISModel):
                             Default: []
     ---------------------   -------------------------------------------
     keep_dilation           Optional boolean. When PointRend architecture is used,
-                            keep_dilation=True can potentially improves accuracy
+                            keep_dilation=True can potentially improve accuracy
                             at the cost of memory consumption. Default: False
     =====================   ===========================================
 
-    :return: `PSPNetClassifier` Object
+    :return: :class:`~arcgis.learn.PSPNetClassifier` Object
     """
 
     def __init__(
@@ -355,11 +359,11 @@ class PSPNetClassifier(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `PSPNetClassifier` Object
+        :return: :class:`~arcgis.learn.PSPNetClassifier` Object
         """
         emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:

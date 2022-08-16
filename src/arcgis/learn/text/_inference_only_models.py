@@ -89,7 +89,7 @@ class InferenceOnlyModel:
     @classmethod
     def from_model(cls, emd_path, **kwargs):
         """
-        Creates an SequenceToSequence model object from an
+        Creates an :class:`~arcgis.learn.text.SequenceToSequence` model object from an
         Esri Model Definition (EMD) file.
 
         =====================   ===========================================
@@ -100,7 +100,7 @@ class InferenceOnlyModel:
                                 with saved model files.
         =====================   ===========================================
 
-        :return: SequenceToSequence Object
+        :return: :class:`~arcgis.learn.text.SequenceToSequence` Object
         """
         emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:

@@ -55,7 +55,7 @@ class UnetClassifier(ArcGISModel):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function.
+                            :meth:`~arcgis.learn.prepare_data` function.
     ---------------------   -------------------------------------------
     backbone                Optional string. Backbone convolutional neural network
                             model used for feature extraction, which
@@ -116,7 +116,7 @@ class UnetClassifier(ArcGISModel):
                             Default: []
     =====================   ===========================================
 
-    :return: `UnetClassifier` Object
+    :return: :class:`~arcgis.learn.UnetClassifier` Object
     """
 
     def __init__(
@@ -371,11 +371,11 @@ class UnetClassifier(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `UnetClassifier` Object
+        :return: :class:`~arcgis.learn.UnetClassifier` Object
         """
         return cls.from_emd(data, emd_path)
 
@@ -388,14 +388,14 @@ class UnetClassifier(ArcGISModel):
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Esri Model Definition
                                 file.
         =====================   ===========================================
 
-        :return: `UnetClassifier` Object
+        :return: :class:`~arcgis.learn.UnetClassifier` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)

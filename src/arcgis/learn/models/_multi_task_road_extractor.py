@@ -83,7 +83,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
     **Argument**            **Description**
     ---------------------   -----------------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            ``prepare_data`` function.
+                            :meth:`~arcgis.learn.prepare_data`  function.
     ---------------------   -----------------------------------------------------
     backbone                Optional String. Backbone convolutional neural network
                             model used for feature extraction. If hourglass is chosen as
@@ -125,7 +125,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
                                     Default: 8
     =============================   =============================================
 
-    :return: `MultiTaskRoadExtractor` Object
+    :return: :class:`~arcgis.learn.MultiTaskRoadExtractor` Object
     """
 
     def __init__(
@@ -663,11 +663,11 @@ class MultiTaskRoadExtractor(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `Multi-Task Road Extractor` Object
+        :return: :class:`~arcgis.learn.MultiTaskRoadExtractor` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)

@@ -557,7 +557,7 @@ class _GeoEnrichment(object):
                                       SpatailDataFrame or Pandas' DataFrame.
         =========================     ====================================================================
 
-        :return: Spatial DataFrame, Panda's DataFrame, or a dictionary (on error)
+        :return: Spatially Enabled DataFrame, Panda's DataFrame, or a dictionary (on error)
         """
         if _is_geoenabled(study_areas):
             study_areas = [{"FeatureSet": study_areas.spatial.__feature_set__}]

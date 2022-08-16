@@ -623,7 +623,12 @@ _log = _logging.getLogger(__name__)
     else:
         listed_params = PropertyMap(listed_params)
 
-    return _import_code(r"%s" % src_code, "name", verbose, choice_list=listed_params)
+    if isinstance(url_or_item, Item):
+        name = f"GPService @ {url_or_item.url}"
+        return _import_code(r"%s" % src_code, name, verbose, choice_list=listed_params)
+    else:
+        name = f"GPService @ {url_or_item}"
+        return _import_code(r"%s" % src_code, name, verbose, choice_list=listed_params)
     # print(src_code)
 
 

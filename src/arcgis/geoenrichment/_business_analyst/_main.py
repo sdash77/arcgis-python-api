@@ -347,7 +347,7 @@ class Country(AOI):
         # set the iso3 property based on the iso3
         self.iso3 = self._ba._standardize_country_str(iso3)
 
-        # use the iso3 to filter the available countries to a dataframe of just the country requested
+        # use the iso3 to filter the available countries to a dataframe of just the country requested.
         sel_df = self._ba.countries[self._ba.countries["iso3"] == self.iso3]
 
         # if the data source is local, but no year was provided, get the year
@@ -1358,6 +1358,8 @@ class BusinessAnalyst(object):
         Returns:
             Pandas Data Frame
         """
+        from arcgis.geoenrichment.enrichment import NamedArea
+
         # pull out country specific parameters from the kwargs
         country, kwargs = extract_from_kwargs("country", kwargs)
         standard_geography_level, kwargs = extract_from_kwargs(
@@ -1377,11 +1379,15 @@ class BusinessAnalyst(object):
                 geographies = Geometry(geographies)
             elif is_dict_featureset(geographies):
                 geographies = FeatureSet(geographies)
+            # dict of named areas
+            elif isinstance(list(geographies.values())[0], NamedArea):
+                named_areas = list(geographies.values())
+                geographies = [named_area.geometry for named_area in named_areas]
 
-        # if a list of geometries is passed in dict form, convert to Geometry objects
         if isinstance(geographies, Iterable) and not isinstance(
             geographies, pd.DataFrame
         ):
+            # if a list of geometries is passed in dict form, convert to Geometry objects
             if isinstance(geographies[0], dict):
                 if is_dict_geometry(geographies[0]):
                     geographies = [Geometry(g_dict) for g_dict in geographies]
@@ -1911,6 +1917,15 @@ class BusinessAnalyst(object):
 
         # if a list of dictionaries, which are not geometries, or a list of strings is being passed in, just send
         elif (is_dict and not is_geom) or is_str:
+            if proximity_value is not None:
+                prx_src = self if country is None else country
+                geographies = add_proximity_to_enrich_feature_list(
+                    prx_src,
+                    geographies,
+                    proximity_type,
+                    proximity_metric,
+                    proximity_value,
+                )
             for idx in range(0, len(geographies), batch_size):
                 geo_btch = geographies[idx : idx + batch_size]
                 params["studyAreas"] = json.dumps(geo_btch) if is_dict else geo_btch

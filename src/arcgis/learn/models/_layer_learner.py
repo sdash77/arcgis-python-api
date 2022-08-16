@@ -77,14 +77,14 @@ def _get_learner_object(data, layers, emb_szs, ps, emb_drop, pretrained_path):
 
 class FullyConnectedNetwork(ArcGISModel):
     """
-    Creates a FullyConnectedNetwork Object.
+    Creates a :class:`~arcgis.learn.FullyConnectedNetwork` Object.
     Based on the Fast.ai's Tabular Learner
 
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required TabularDataObject. Returned data object from
-                            `prepare_tabulardata` function.
+                            :class:`~arcgis.learn.prepare_tabulardata` function.
     ---------------------   -------------------------------------------
     layers                  Optional list, specifying the number of nodes in each layer.
                             Default: [500, 100] is used.
@@ -95,7 +95,7 @@ class FullyConnectedNetwork(ArcGISModel):
                             If not specified, then calculated using fastai.
     =====================   ===========================================
 
-    :return: `FullyConnectedNetwork` Object
+    :return: :class:`~arcgis.learn.FullyConnectedNetwork` Object
     """
 
     def __init__(self, data, layers=None, emb_szs=None, **kwargs):
@@ -134,7 +134,7 @@ class FullyConnectedNetwork(ArcGISModel):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a FullyConnectedNetwork Object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.FullyConnectedNetwork` Object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -143,11 +143,11 @@ class FullyConnectedNetwork(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_tabulardata` function or None for
+                                object from :class:`~arcgis.learn.prepare_tabulardata` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `FullyConnectedNetwork` Object
+        :return: :class:`~arcgis.learn.FullyConnectedNetwork` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -198,7 +198,7 @@ class FullyConnectedNetwork(ArcGISModel):
         name_or_path            Required string. Folder path to save the model.
         ---------------------   -------------------------------------------
         framework               Optional string. Defines the framework of the
-                                model. (Only supported by ``SingleShotDetector``, currently.)
+                                model. (Only supported by :class:`~arcgis.learn.SingleShotDetector`, currently.)
                                 If framework used is ``TF-ONNX``, ``batch_size`` can be
                                 passed as an optional keyword argument.
 
@@ -206,7 +206,7 @@ class FullyConnectedNetwork(ArcGISModel):
         ---------------------   -------------------------------------------
         publish                 Optional boolean. Publishes the DLPK as an item.
         ---------------------   -------------------------------------------
-        gis                     Optional GIS Object. Used for publishing the item.
+        gis                     Optional :class:`~arcgis.gis.GIS`  Object. Used for publishing the item.
                                 If not specified then active gis user is taken.
         ---------------------   -------------------------------------------
         save_optimizer          Optional boolean. Used for saving the model-optimizer
@@ -250,8 +250,7 @@ class FullyConnectedNetwork(ArcGISModel):
     @property
     def feature_importances_(self):
         """
-        :Returns the global feature importance summary
-        plot from SHAP.Feature is temporarily disabled.
+        :return: the global feature importance summary plot from SHAP.Feature is temporarily disabled.
         """
         warnings.warn(
             "Feature importance for Fully Connected Network is currently disabled due to package incompatibility and is under review"
@@ -339,7 +338,7 @@ class FullyConnectedNetwork(ArcGISModel):
         =================================   =========================================================================
         **Argument**                        **Description**
         ---------------------------------   -------------------------------------------------------------------------
-        input_features                      Optional Feature Layer or spatially enabled dataframe.
+        input_features                      Optional :class:`~arcgis.features.FeatureLayer` or spatially enabled dataframe.
                                             Required if prediction_type='features'.
                                             Contains features with location and
                                             some or all fields required to infer the dependent variable value.
@@ -350,18 +349,18 @@ class FullyConnectedNetwork(ArcGISModel):
         ---------------------------------   -------------------------------------------------------------------------
         datefield                           Optional string. Field name from feature layer
                                             that contains the date, time for the input features.
-                                            Same as `prepare_tabulardata()`.
+                                            Same as :meth:`~arcgis.learn.prepare_tabulardata` .
         ---------------------------------   -------------------------------------------------------------------------
-        distance_features                   Optional List of Feature Layer objects.
+        distance_features                   Optional List of :class:`~arcgis.features.FeatureLayer` objects.
                                             These layers are used for calculation of field "NEAR_DIST_1",
                                             "NEAR_DIST_2" etc in the output dataframe.
                                             These fields contain the nearest feature distance
                                             from the input_features.
-                                            Same as `prepare_tabulardata()`.
+                                            Same as :meth:`~arcgis.learn.prepare_tabulardata` .
         ---------------------------------   -------------------------------------------------------------------------
         output_layer_name                   Optional string. Used for publishing the output layer.
         ---------------------------------   -------------------------------------------------------------------------
-        gis                                 Optional GIS Object. Used for publishing the item.
+        gis                                 Optional :class:`~arcgis.gis.GIS`  Object. Used for publishing the item.
                                             If not specified then active gis user is taken.
         ---------------------------------   -------------------------------------------------------------------------
         prediction_type                     Optional String.
@@ -379,10 +378,11 @@ class FullyConnectedNetwork(ArcGISModel):
                                             Specify mapping of field names from prediction set
                                             to training set.
                                             For example:
-                                                {
-                                                    "Field_Name_1": "Field_1",
-                                                    "Field_Name_2": "Field_2"
-                                                }
+
+                                                | {
+                                                |    "Field_Name_1": "Field_1",
+                                                |    "Field_Name_2": "Field_2"
+                                                | }
         ---------------------------------   -------------------------------------------------------------------------
         explain                             Optional Bool.
                                             Setting this parameter to true generates prediction explaination plot.
@@ -396,7 +396,7 @@ class FullyConnectedNetwork(ArcGISModel):
                                             random index of the dataframe.
         =================================   =========================================================================
 
-        :returns Feature Layer if prediction_type='features', dataframe for prediction_type='dataframe' else creates an output raster.
+        :return: Feature Layer if prediction_type='features', dataframe for prediction_type='dataframe' else creates an output raster.
 
         """
 
@@ -806,7 +806,7 @@ class FullyConnectedNetwork(ArcGISModel):
 
     def score(self):
         """
-        :returns R2 score for regression model and Accuracy for classification model.
+        :return: R2 score for regression model and Accuracy for classification model.
         """
 
         self._check_requisites()
