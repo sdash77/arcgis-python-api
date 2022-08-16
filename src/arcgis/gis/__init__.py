@@ -10023,7 +10023,12 @@ class User(dict):
         return None
 
     # ----------------------------------------------------------------------
-    def generate_direct_access_url(self, store_type: str, expiration: int | None = None, subfolder: str | None = None) -> dict | None:
+    def generate_direct_access_url(
+        self,
+        store_type: str,
+        expiration: int | None = None,
+        subfolder: str | None = None,
+    ) -> dict | None:
         """
         The ``generate_direct_access_url`` method creates a direct access URL that is ideal
         for uploading large files to datafile share, notebook workspaces or raster stores.
@@ -10039,7 +10044,7 @@ class User(dict):
         ---------------------  ---------------------------------------------------------
         expiration             Optional Int. The expiration of the link in minutes.  The default is 1440.
         ---------------------  ---------------------------------------------------------
-        subfolder              Optional String. The folder to upload to. The default is `None`. 
+        subfolder              Optional String. The folder to upload to. The default is `None`.
         =====================  =========================================================
 
         :return: A dictionary containing the direct access URL
@@ -10060,10 +10065,14 @@ class User(dict):
             "raster": "rasterStore",
         }
         url = f"{self._gis._portal.resturl}content/users/{self.username}/generateDirectAccessUrl"
-        params = {"f": "json", "expiration": expiration or 1440, "storeType": _lu[store_type.lower()]}
+        params = {
+            "f": "json",
+            "expiration": expiration or 1440,
+            "storeType": _lu[store_type.lower()],
+        }
         if subfolder:
-            params['subPath'] = subfolder
-        
+            params["subPath"] = subfolder
+
         return self._portal.con.post(url, params)
 
     # ----------------------------------------------------------------------
@@ -13677,9 +13686,9 @@ class Item(dict):
         :return: Pandas `DataFrame <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html>`_ or Dictionary
 
         .. code-block:: python
-        
+
             # Usage Example #1: Standard date_range
-            
+
             >>> flyr_item = gis.content.get("8961540a52da402876e0168fa29bb82d")
             >>> result = flyr_item.usage(date_range = "7D")
                 Date  Usage
@@ -13691,11 +13700,11 @@ class Item(dict):
             5 2022-08-10      0
             6 2022-08-11      0
             7 2022-08-12      8
-            
+
             # Usage Example #2: Custom date_range
-            
+
             >>> import datetime as dt
-            
+
             >>> flyr_item = gis.content.get("8961540a52da402876e0168fa29bb82d")
             >>> date_1 = dt.datetime(2022,7,31)
             >>> date_2 = dt.datetime.now(2022,8,12)
@@ -13715,7 +13724,7 @@ class Item(dict):
             9  2022-08-09      0
             10 2022-08-10      0
             11 2022-08-11      0
-            12 2022-08-12     10           
+            12 2022-08-12     10
         """
         if not self._portal.is_arcgisonline:
             raise ValueError("Usage() only supported for ArcGIS Online items.")
@@ -13891,6 +13900,7 @@ class Item(dict):
             return res
         except:
             return None
+
     # ----------------------------------------------------------------------
     def get_data(self, try_json: bool = True):
         """
