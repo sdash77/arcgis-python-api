@@ -665,7 +665,7 @@ def merge_emd_and_stats(data_folders):
                 (eas["BandStatsState"][i]["M1"] * eas["BandStatsState"][i]["Num"])
                 + (_eas["BandStatsState"][i]["M1"] * _eas["BandStatsState"][i]["Num"])
             ) / (
-                eas["BandStatsState"][i]["Num"] + _eas["BandStatsState"][i]["Num"]
+                eas["BandStatsState"][i]["Num"] + _eas["BandStatsState"][i]["Num"] + 1e-05
             )  # Mean
             eas["BandStatsState"][i]["M2"] = (
                 eas["BandStatsState"][i]["M2"] + _eas["BandStatsState"][i]["M2"]
@@ -707,7 +707,7 @@ def merge_emd_and_stats(data_folders):
         emd["AllTilesStats"][i]["Max"] = eas["BandStatsState"][i]["Max"]
         emd["AllTilesStats"][i]["Mean"] = eas["BandStatsState"][i]["M1"]
         emd["AllTilesStats"][i]["StdDev"] = (
-            eas["BandStatsState"][i]["M2"] / eas["BandStatsState"][i]["Num"]
+            eas["BandStatsState"][i]["M2"] / (eas["BandStatsState"][i]["Num"]+1e-05)
         ) ** 0.5
     emd["Classes"] = [_class_hash[x] for x in sorted(_class_hash)]
     path = Path(data_folders[emd_keys[0]])  # First folder that has esri files
@@ -1478,7 +1478,7 @@ def prepare_data(
             dataset_type = "WNet_cGAN"
         elif not has_esri_files:
             raise Exception(
-                "Could not infer dataset type. Please specify a supported dataset type or ensure that the path contains valid esri files"
+                "Could not infer dataset type. Please specify a supported dataset type or ensure that the path contains valid exported training data from ArcGIS."
             )
 
     # Pix2Pix data is exported as Export_Tiles with 'images' and 'images2' folders
