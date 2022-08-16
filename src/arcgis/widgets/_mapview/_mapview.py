@@ -1193,7 +1193,9 @@ class MapView(widgets.DOMWidget):
         if self.gis._portal.con.token:
             self._portal_token = str(self.gis._portal.con.token)
             self._auth_mode = "tokenBased"
-        elif isinstance(self.gis._con._session.auth, (_MultiAuth, SupportMultiAuth)):
+        elif isinstance(
+            self.gis._con._session.auth, (_MultiAuth, SupportMultiAuth)
+        ) and hasattr(self.gis._con._session.auth, "authentication_modes"):
             tokens = [
                 auth.token
                 for auth in self.gis._con._session.auth.authentication_modes
