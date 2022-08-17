@@ -8,6 +8,7 @@ from collections import OrderedDict
 import json
 from functools import wraps
 
+
 def _lazy_property(fn):
     """Decorator that makes a property lazy-evaluated."""
     # http://stevenloria.com/lazy-evaluated-properties-in-python/
