@@ -61,7 +61,7 @@ class Scales(Enum):
 ###############################################################################################################
 class Image(object):
     """
-    Class representing an ``image`` from a url or file.
+    Class representing an `image` from a url or file.
 
     .. warning::
         Image must be smaller than 10 MB to avoid having issues when saving or publishing.
@@ -228,7 +228,7 @@ class Image(object):
         """
         Get/Set display for image.
 
-        ``Values: "small" | "wide" | "full" | "float"``
+        Values: `small` | `wide` | `full` | `float`
         """
         if self._check_node() is True:
             return self._story._properties["nodes"][self.node]["config"]["size"]
@@ -389,7 +389,7 @@ class Image(object):
 ###############################################################################################################
 class Video(object):
     """
-    Class representing a ``video`` from a url or file
+    Class representing a `video` from a url or file
 
     ==================      ====================================================================
     **Argument**            **Description**
@@ -556,7 +556,7 @@ class Video(object):
         """
         Get/Set display for the video.
 
-        ``Values: "small" | "wide" | "full" | "float"``
+        Values: `small` | `wide` | `full` | `float`
 
         .. note::
             Cannot change display when video is created from a url
@@ -697,7 +697,7 @@ class Video(object):
 ###############################################################################################################
 class Audio(object):
     """
-    This class represents content that is of type ``audio``. It can be created from
+    This class represents content that is of type `audio`. It can be created from
     a file path and added to the story.
 
     ==================      ====================================================================
@@ -850,7 +850,7 @@ class Audio(object):
         """
         Get/Set display for audio.
 
-            ``Values: "small" | "wide" | "float"``
+        Values: `small` | `wide` | float`
         """
         if self._check_node() is True:
             return self._story._properties["nodes"][self.node]["config"]["size"]
@@ -932,7 +932,7 @@ class Audio(object):
 ###############################################################################################################
 class Embed(object):
     """
-    Class representing a ``webpage`` or ``embedded audio``.
+    Class representing a `webpage` or `embedded audio`.
     Embed will show as a card in the story.
 
     ==================      ====================================================================
@@ -1063,7 +1063,7 @@ class Embed(object):
         """
         Get/Set display for embed.
 
-        ``Values: "card" | "inline"``
+        Values: `card` | `inline`
         """
         if self._check_node() is True:
             return self._story._properties["nodes"][self.node]["data"]["display"]
@@ -1128,7 +1128,7 @@ class Embed(object):
 ###############################################################################################################
 class Map(object):
     """
-    Class representing a ``webmap`` or ``webscene`` for the story
+    Class representing a `webmap` or `webscene` for the story
 
     =================       ====================================================================
     **Argument**            **Description**
@@ -1355,11 +1355,11 @@ class Map(object):
                             accordingly.
 
                             Example:
-                            {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
-                            'xmin': -609354.6306080809,
-                            'ymin': 2885721.2797636474,
-                            'xmax': 6068184.160383142,
-                            'ymax': 6642754.094035632}
+                                | {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                                | 'xmin': -609354.6306080809,
+                                | 'ymin': 2885721.2797636474,
+                                | 'xmax': 6068184.160383142,
+                                | 'ymax': 6642754.094035632}
         ------------------  ----------------------------------------
         scale               Optional Scales Value. Define the scale of the map.
                             If none specified, current scale is kept.
@@ -1540,7 +1540,7 @@ class Map(object):
         """
         Get/Set the display type of the map.
 
-        ``Values: "standard" | "wide" | "full" | "float right" |"float left"``
+        Values: `standard` | `wide` | `full` | `float right` | `float left`
         """
         if self._check_node() is True:
             if "config" in self._story._properties["nodes"][self.node]:
@@ -1683,7 +1683,7 @@ class Map(object):
 ###############################################################################################################
 class Text(object):
     """
-    Class representing a ``text`` and a style of text.
+    Class representing a `text` and a style of text.
 
     ==================      ====================================================================
     **Argument**            **Description**
@@ -1707,8 +1707,8 @@ class Text(object):
     style                   Optional TextStyles type. There are 7 different styles of text that can be
                             added to a story.
 
-                            ``Values: PARAGRAPH | LARGEPARAGRAPH | NUMBERLIST | BULLETLIST |
-                            HEADING | SUBHEADING | QUOTE``
+                            Values: PARAGRAPH | LARGEPARAGRAPH | NUMBERLIST | BULLETLIST |
+                            HEADING | SUBHEADING | QUOTE
     ------------------      --------------------------------------------------------------------
     custom_color            Optional String. The hex color value without the #.
                             Only available when type is either 'paragraph', 'bullet-list', or
@@ -1729,14 +1729,14 @@ class Text(object):
                             and a class attribute to indicate color formatting:
                             class=sm-text-color-{values} attribute in the <strong> | <em> | <a> | <span> tags
 
-                            ``Values: themeColor1 | themeColor2 | themeColor3 | customTextColors``
+                            Values: `themeColor1` | `themeColor2` | `themeColor3` | `customTextColors`
     -------------------     --------------------------------------------------------------------
     large-paragraph         String can contain the following tags for text formatting:
                             <strong>, <em>, <a href="{link}" rel="noopener noreferer" target="_blank"
                             and a class attribute to indicate color formatting:
                             class=sm-text-color-{values} attribute in the <strong> | <em> | <a> | <span> tags
 
-                            ``Values: themeColor1 | themeColor2 | themeColor3 | customTextColors``
+                            Values: `themeColor1` | `themeColor2` | `themeColor3` | `customTextColors`
     -------------------     --------------------------------------------------------------------
     heading                 String can only contain <em> tag
     -------------------     --------------------------------------------------------------------
@@ -1747,14 +1747,14 @@ class Text(object):
                             and a class attribute to indicate color formatting:
                             class=sm-text-color-{values} attribute in the <strong> | <em> | <a> | <span> tags
 
-                            ``Values: themeColor1 | themeColor2 | themeColor3 | customTextColors``
+                            Values: `themeColor1` | `themeColor2` | `themeColor3` | `customTextColors`
     -------------------     --------------------------------------------------------------------
     numbered-list           String can contain the following tags for text formatting:
                             <strong>, <em>, <a href="{link}" rel="noopener noreferer" target="_blank"
                             and a class attribute to indicate color formatting:
                             class=sm-text-color-{values} attribute in the <strong> | <em> | <a> | <span> tags
 
-                            ``Values: themeColor1 | themeColor2 | themeColor3 | customTextColors``
+                            Values: `themeColor1` | `themeColor2` | `themeColor3` | `customTextColors`
     -------------------     --------------------------------------------------------------------
     quote                   String can only contain <strong> and <em> tags
     ===================     ====================================================================
@@ -1878,7 +1878,7 @@ class Text(object):
 ###############################################################################################################
 class Button(object):
     """
-    Class representing a ``button``.
+    Class representing a `button`.
 
     ==================      ====================================================================
     **Argument**            **Description**
@@ -2007,7 +2007,7 @@ class Button(object):
 ###############################################################################################################
 class Gallery(object):
     """
-    Class representing an ``image gallery``
+    Class representing an `image gallery`
 
     To begin with a new gallery, simply call the class. Once added to the story,
     you can add up to 12 images.
@@ -2072,8 +2072,10 @@ class Gallery(object):
         node_list               List of node ids for the images in the gallery. Nodes must already be
                                 in the gallery and this list will adjust the order of the images.
 
-                                To add new images to the gallery use: Gallery.add_images(images)
-                                To delete an image from a gallery use: Gallery.delete_image(node_id)
+                                To add new images to the gallery use:
+                                    Gallery.add_images(images)
+                                To delete an image from a gallery use:
+                                    Gallery.delete_image(node_id)
         ==================      ====================================================================
 
         :return:
@@ -2150,7 +2152,7 @@ class Gallery(object):
         """
         Get/Set the display type of the Gallery.
 
-        ``Values: "jigsaw" | "square-dynamic"``
+        Values: `jigsaw` | `square-dynamic`
         """
         if self._check_node() is True:
             return self._story._properties["nodes"][self.node]["config"]["size"]
@@ -2190,7 +2192,7 @@ class Gallery(object):
     def delete_image(self, image: str):
         """
         The delete_image method is used to delete one image from the gallery. To see a list of images
-        used in the gallery, use the `gallery.images` property.
+        used in the gallery, use the :meth:`~arcgis.apps.storymap.story_content.Gallery.images` property.
 
         ==================      ====================================================================
         **Argument**            **Description**
@@ -2241,7 +2243,7 @@ class Swipe(object):
     ---------------     --------------------------------------------------------------------
     node                Required String. The node id for the swipe type.
     ---------------     --------------------------------------------------------------------
-    story               Required StoryMap that the swipe belongs to.
+    story               Required :class:`~arcgis.apps.storymap.story.StoryMap` that the swipe belongs to.
     ===============     ====================================================================
 
     .. code-block:: python
@@ -2355,7 +2357,7 @@ class Swipe(object):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        content             Required story content of type: Image or Map. Must be the same media
+        content             Required story content of type: :class:`~arcgis.apps.storymap.story_content.Image` or :class:`~arcgis.apps.storymap.story_content.Map` . Must be the same media
                             on both panels.
         ---------------     --------------------------------------------------------------------
         position            Optional String. Either "right" or "left". Default is "right" so content
@@ -2422,7 +2424,7 @@ class Sidecar(object):
     ---------------     --------------------------------------------------------------------
     node_id             Required String. The node id for the sidecar type.
     ---------------     --------------------------------------------------------------------
-    story               Required StoryMap that the sidecar belongs to.
+    story               Required :class:`~arcgis.apps.storymap.story.StoryMap` that the sidecar belongs to.
     ===============     ====================================================================
 
     .. code-block:: python
@@ -2517,7 +2519,9 @@ class Sidecar(object):
         **Argument**            **Description**
         ------------------      -----------------------------------------------------------------------
         content                 Required item that is a story content item.
-                                Item type for the media node can be: Image, Video, Map, Embed, or Swipe.
+                                Item type for the media node can be: :class:`~arcgis.apps.storymap.story_content.Image`,
+                                :class:`~arcgis.apps.storymap.story_content.Video`, :class:`~arcgis.apps.storymap.story_content.Map`
+                                :class:`~arcgis.apps.storymap.story_content.Embed`, :class:`~arcgis.apps.storymap.story_content.Swipe`
         ------------------      -----------------------------------------------------------------------
         slide_number            Required Integer. The slide that will be edited. First slide is 1.
         ==================      =======================================================================
@@ -2747,7 +2751,7 @@ class Sidecar(object):
 ###############################################################################################################
 class Timeline(object):
     """
-    Create an Timeline object from a pre-existing ``timeline`` node.
+    Create a Timeline object from a pre-existing `timeline` node.
 
     A timeline is composed of events.
     Events are composed of maximum three nodes: an image, a sub-heading text, and a paragraph text.
@@ -2757,7 +2761,7 @@ class Timeline(object):
     ---------------     --------------------------------------------------------------------
     node_id             Required String. The node id for the timeline type.
     ---------------     --------------------------------------------------------------------
-    story               Required StoryMap that the timeline belongs to.
+    story               Required :class:`~arcgis.apps.storymap.story.StoryMap` that the timeline belongs to.
     ===============     ====================================================================
 
     .. code-block:: python
@@ -2814,7 +2818,7 @@ class Timeline(object):
         """
         Get/Set the style of the timeline
 
-        ``Values: "waterfall" | "single-slide" | "condensed"``
+        Values: `waterfall` | `single-slide` | `condensed`
         """
         return self._story._properties["nodes"][self.node]["data"]["type"]
 
@@ -2837,7 +2841,7 @@ class Timeline(object):
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         content             Required content to replace current content.
-                            Item type can be Image or Text.
+                            Item type can be :class:`~arcgis.apps.storymap.story_content.Image` or :class:`~arcgis.apps.storymap.story_content.Text` .
 
                             Text can only be of style TextStyles.SUBHEADING or TextStyles.PARAGRAPH
         ---------------     --------------------------------------------------------------------
