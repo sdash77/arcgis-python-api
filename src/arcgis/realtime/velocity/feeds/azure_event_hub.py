@@ -28,38 +28,38 @@ class AzureEventHub(_FeedTemplate, _HasTime, _HasGeometry):
     ========================        ====================================================================
     **Argument**                    **Description**
     ------------------------        --------------------------------------------------------------------
-    label                           str. Unique label for this feed instance.
+    label                           String. Unique label for this feed instance.
     ------------------------        --------------------------------------------------------------------
-    description                     str. Feed description.
+    description                     String. Feed description.
     ------------------------        --------------------------------------------------------------------
-    shared_access_key_name          str. Shared access key name for Azure Event Hub credentials.
+    shared_access_key_name          String. Shared access key name for Azure Event Hub credentials.
     ------------------------        --------------------------------------------------------------------
-    shared_access_key               str. Shared access key name for Azure Event Hub credentials.
+    shared_access_key               String. Shared access key name for Azure Event Hub credentials.
     ------------------------        --------------------------------------------------------------------
-    event_hub_endpoint              str. Endpoint of the Azure Event Hub.
+    event_hub_endpoint              String. Endpoint of the Azure Event Hub.
     ------------------------        --------------------------------------------------------------------
-    event_hub_entity_path           str. Entity path of the Azure Event Hub.
+    event_hub_entity_path           String. Entity path of the Azure Event Hub.
     ========================        ====================================================================
 
     ========================        =============================================================================
     **Optional Argument**           **Description**
     ========================        =============================================================================
-    consumer_group                  str. Consumer group for the Azure Event Hub.
+    consumer_group                  String. Consumer group for the Azure Event Hub.
     ------------------------        -----------------------------------------------------------------------------
-    data_format                     Union[DelimitedFormat, EsriJsonFormat, GeoJsonFormat, JsonFormat, XMLFormat].
+    data_format                     [:class:`~arcgis.realtime.velocity.input.EsriJsonFormat`, :class:`~arcgis.realtime.velocity.input.GeoJsonFormat`, :class:`~arcgis.realtime.velocity.input.DelimitedFormat`, :class:`~arcgis.realtime.velocity.input.JsonFormat`, :class:`~arcgis.realtime.velocity.input.XMLFormat`].
                                     An instance that contains the data format
                                     configuration for this feed. Configure only allowed formats.
                                     If this is not set right during initialization, a format will be
                                     auto-detected and set from a sample of the incoming data. This sample
                                     will be fetched from the configuration provided so far in the init.
     ------------------------        -----------------------------------------------------------------------------
-    track_id_field                  str. Name of the field from the incoming data that should be set as
+    track_id_field                  String. Name of the field from the incoming data that should be set as
                                     track ID.
     ------------------------        -----------------------------------------------------------------------------
-    geometry                        Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry configuration
+    geometry                        [:class:`~arcgis.realtime.velocity.feeds.XYZGeometry`, :class:`~arcgis.realtime.velocity.feeds.SingleFieldGeometry`]. An instance of geometry configuration
                                     that will be used to create geometry objects from the incoming data.
     ------------------------        -----------------------------------------------------------------------------
-    time                            Union[TimeInstant, TimeInterval]. An instance of time configuration that
+    time                            [:class:`~arcgis.realtime.velocity.feeds.TimeInstant`, :class:`~arcgis.realtime.velocity.feeds.TimeInterval`]. An instance of time configuration that
                                     will be used to create time information from the incoming data.
     ========================        =============================================================================
 

@@ -26,7 +26,6 @@ import logging
 from typing import Any, Optional, Union
 from urllib.error import HTTPError
 from arcgis.gis._impl import (
-    ItemTypeEnum,
     ItemProperties,
     MetadataFormatEnum,
     CreateServiceParameter,
@@ -7109,6 +7108,19 @@ class ContentManager(object):
                                modified in order to allow for successful publishing.
         ---------------------  --------------------------------------------------------------------------
         service_name           Optional String. The name for the service that will be added to the Item.
+        ---------------------  --------------------------------------------------------------------------
+        overwrite              Optional boolean. If True, the specified feature layer for the specified
+                               feature service will be overwritten.
+        ---------------------  --------------------------------------------------------------------------
+        append                 Optional boolean. If True, the SeDF will be appended to the specified
+                               feature service.
+        ---------------------  --------------------------------------------------------------------------
+        service                Dictionary that is required if `overwrite = True` or `append = True`.
+                               Dictionary with two keys: "FeatureServiceId" and "layers".
+                               "featureServiceId" value is a string of the feature service id that the layer
+                               belongs to.
+                               "layer" value is an integer depicting the index value of the layer to
+                               overwrite. For append, None can be passed as value.
         =====================  ==========================================================================
 
 
@@ -7124,7 +7136,11 @@ class ContentManager(object):
             warnings.warn(
                 "`item_id` is not allowed at this version of Portal, please use Enterprise 10.8.1+"
             )
-        from arcgis.features import FeatureCollection, FeatureSet
+        from arcgis.features import (
+            FeatureCollection,
+            FeatureSet,
+            FeatureLayerCollection,
+        )
 
         from arcgis._impl.common._utils import zipws
 
@@ -7186,7 +7202,7 @@ class ContentManager(object):
                 )
 
                 zip_fgdb = zipws(path=fgdb, outfile=temp_zip, keep=True)
-                item = self.add(
+                fgdb_item = self.add(
                     item_properties={
                         "title": title,
                         "type": "File Geodatabase",
@@ -7196,17 +7212,103 @@ class ContentManager(object):
                     folder=folder,
                 )
                 shutil.rmtree(temp_dir, ignore_errors=True)
+
+                # Publish as new feature layer
                 publish_parameters = {
                     "hasStaticData": True,
-                    "name": os.path.splitext(item["name"])[0],
+                    "name": os.path.splitext(fgdb_item["name"])[0],
                     "maxRecordCount": 2000,
                     "layerInfo": {"capabilities": capabilities},
                 }
                 if target_sr is not None:
                     publish_parameters["targetSR"] = {"wkid": target_sr}
-                return item.publish(
+
+                new_item = fgdb_item.publish(
                     publish_parameters=publish_parameters, item_id=item_id
                 )
+
+                # If overwrite or append specified, perform overwrite or append
+                overwrite = kwargs.pop("overwrite", False)
+                append = kwargs.pop("append", False)
+                if overwrite or append:
+                    # Get user defined parameters
+                    fs_dict = kwargs.pop("service", None)
+                    if fs_dict is None:
+                        raise ValueError(
+                            "If overwite or append is True, then the feature service id needs to be specified in the `service` parameter."
+                        )
+                    fs_id = fs_dict["featureServiceId"]
+
+                    fl_index = fs_dict["layer"]
+
+                    # Create the feature layer manager for the existing feature service
+                    fs_item = self._gis.content.get(fs_id)
+                    flc = FeatureLayerCollection.fromitem(fs_item)
+                    flc_manager = flc.manager
+
+                    # Get properties from the newly created feature layer
+                    new_fl = new_item.layers[0]
+                    publish_parameters = new_fl.properties
+
+                    # Overwrite or Append Steps
+                    if overwrite:
+                        # update the name and id to represent correct values
+                        publish_parameters["name"] = flc.manager.properties.layers[
+                            fl_index
+                        ]["name"]
+                        publish_parameters["id"] = fl_index
+
+                        # Perform edit on the flc
+                        # Step 1: Preserve layer ids
+                        revert = False
+                        if (
+                            "preserveLayerIds" not in flc_manager.properties
+                            or flc_manager.properties["preserveLayerIds"] is not True
+                        ):
+                            flc_manager.update_definition({"preserveLayerIds": True})
+                            revert = True
+                        # Step 2: Delete layer from definition
+                        flc_manager.delete_from_definition(
+                            {"layers": [{"id": fl_index}]}
+                        )
+                        # Step 3: Add new layer to definition
+                        flc_manager.add_to_definition(
+                            {"layers": [dict(publish_parameters)]}
+                        )
+                        # Step 4: Cleanup
+                        if revert:
+                            flc_manager.update_definition({"preserveLayerIds": False})
+                    elif append:
+                        # Add new layer to definition
+                        flc_manager.add_to_definition(
+                            {"layers": [dict(publish_parameters)]}
+                        )
+                        # Find the index at which the layer was added
+                        for layer in flc_manager.properties.layers:
+                            if layer["name"] == publish_parameters["name"]:
+                                fl_index = layer["id"]
+
+                    # Add new item dependency and append the features
+                    if (
+                        "filegdb"
+                        in fs_item.layers[fl_index].properties.supportedAppendFormats
+                    ):
+                        ItemDependency(fs_item).add("itemid", fgdb_item.id)
+                        fs_item.layers[fl_index].append(
+                            item_id=fgdb_item.id, upload_format="filegdb"
+                        )
+                    else:
+                        # When filegdb not supported through append, use featureCollection
+                        features = new_item.layers[0].query().features
+                        fs_item.layers[fl_index].edit_features(adds=features)
+
+                    # Feature layer was added to existing feature service so can delete the item
+                    new_item.delete()
+
+                    # return the updated feature service
+                    return self._gis.content.get(fs_id)
+                else:
+                    return new_item
             elif has_pyshp:
                 import random
                 import string
@@ -7227,6 +7329,63 @@ class ContentManager(object):
                     folder=folder,
                 )
                 shutil.rmtree(temp_dir, ignore_errors=True)
+
+                # If overwrite or append specified, perform overwrite or append
+                overwrite = kwargs.pop("overwrite", False)
+                append = kwargs.pop("append", False)
+                if overwrite or append:
+                    # Get user defined parameters
+                    fs_dict = kwargs.pop("service", None)
+                    if fs_dict is None:
+                        raise ValueError(
+                            "If overwite is True, then the feature service id and layer index need to be specified in the `service` parameter."
+                        )
+                    fs_id = fs_dict["featureServiceId"]
+                    fl_index = fs_dict["layer"]
+
+                    # Create the feature layer manager for the existing feature service
+                    fs_item = self._gis.content.get(fs_id)
+                    flc = FeatureLayerCollection.fromitem(fs_item)
+                    flc_manager = flc.manager
+
+                    # Analyze the shapefile item to get definition for new feature layer
+                    publish_parameters_orig = flc_manager.properties["layers"][fl_index]
+                    publish_parameters = self._gis.content.analyze(
+                        item=item, file_type="shapefile"
+                    )["publishParameters"]["layers"][0]
+
+                    # Update to get all correct parameters to add to definition
+                    publish_parameters.update(publish_parameters_orig)
+                    if overwrite:
+                        publish_parameters["id"] = fl_index
+
+                        # Perform edit on the feature layer collection using the manager
+                        revert = False
+                        if flc_manager.properties["preserveLayerIds"] is not True:
+                            flc_manager.update_definition({"preserveLayerIds": True})
+                            revert = True
+                        flc_manager.delete_from_definition(
+                            {"layers": [{"id": fl_index}]}
+                        )
+                        flc_manager.add_to_definition({"layers": [publish_parameters]})
+                        if revert:
+                            flc_manager.update_definition({"preserveLayerIds": False})
+                    elif append:
+                        # add new layer definition to existing service
+                        flc_manager.add_to_definition({"layers": [publish_parameters]})
+                        # find position at which it was added
+                        for layer in flc_manager.properties.layers:
+                            if layer["name"] == publish_parameters["name"]:
+                                fl_index = layer["id"]
+
+                    # Add new dependency on the shapefile and append the features
+                    ItemDependency(fs_item).add("itemid", item.id)
+                    fs_item.layers[fl_index].append(
+                        item_id=item.id, upload_format="shapefile"
+                    )
+
+                    return self._gis.content.get(fs_id)
+                # Publish as new Feature Layer
                 publish_parameters = {
                     "hasStaticData": True,
                     "name": os.path.splitext(item["name"])[0],
@@ -10023,7 +10182,12 @@ class User(dict):
         return None
 
     # ----------------------------------------------------------------------
-    def generate_direct_access_url(self, store_type: str) -> str:
+    def generate_direct_access_url(
+        self,
+        store_type: str,
+        expiration: int | None = None,
+        subfolder: str | None = None,
+    ) -> dict | None:
         """
         The ``generate_direct_access_url`` method creates a direct access URL that is ideal
         for uploading large files to datafile share, notebook workspaces or raster stores.
@@ -10036,9 +10200,13 @@ class User(dict):
         ---------------------  ---------------------------------------------------------
         store_type             Optional String. The type of upload URL to generate.
                                Types: `big_data_file`, 'notebook', or 'raster`.
+        ---------------------  ---------------------------------------------------------
+        expiration             Optional Int. The expiration of the link in minutes.  The default is 1440.
+        ---------------------  ---------------------------------------------------------
+        subfolder              Optional String. The folder to upload to. The default is `None`.
         =====================  =========================================================
 
-        :return: A string representing a direct access URL
+        :return: A dictionary containing the direct access URL
 
         .. code-block:: python
 
@@ -10056,8 +10224,15 @@ class User(dict):
             "raster": "rasterStore",
         }
         url = f"{self._gis._portal.resturl}content/users/{self.username}/generateDirectAccessUrl"
-        params = {"f": "json", "expiration": 1440, "storeType": _lu[store_type.lower()]}
-        return self._portal.con.get(url, params)
+        params = {
+            "f": "json",
+            "expiration": expiration or 1440,
+            "storeType": _lu[store_type.lower()],
+        }
+        if subfolder:
+            params["subPath"] = subfolder
+
+        return self._portal.con.post(url, params)
 
     # ----------------------------------------------------------------------
     @property
@@ -13643,21 +13818,25 @@ class Item(dict):
         date_range          Optional string.  The default is 7d.  This is the period to query
                             usage for a given item.
 
-                            =======  =========================
-                            24H      Past 24 hours
-                            -------  -------------------------
-                            7D       Past 7 days (default)
-                            -------  -------------------------
-                            14D      Past 14 days
-                            -------  -------------------------
-                            30D      Past 30 days
-                            -------  -------------------------
-                            60D      Past 60 days
-                            -------  -------------------------
-                            6M       Past 6 months
-                            -------  -------------------------
-                            1Y       Past 12 months
-                            =======  =========================
+                            =============           =========================
+                            24H                     Past 24 hours
+                            -------------           -------------------------
+                            7D                      Past 7 days (default)
+                            -------------           -------------------------
+                            14D                     Past 14 days
+                            -------------           -------------------------
+                            30D                     Past 30 days
+                            -------------           -------------------------
+                            60D                     Past 60 days
+                            -------------           -------------------------
+                            6M                      Past 6 months
+                            -------------           -------------------------
+                            1Y                      Past 12 months
+                            -------------           -------------------------
+                            (date1,date2)           Tuple of 2 datetime
+                                                    objects defining custom
+                                                    date range
+                            =============           =========================
         ---------------     --------------------------------------------------------------------
         as_df               Optional boolean.  Returns a Pandas DataFrame when True, returns data
                             as a dictionary when False
@@ -13665,6 +13844,46 @@ class Item(dict):
 
         :return: Pandas `DataFrame <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html>`_ or Dictionary
 
+        .. code-block:: python
+
+            # Usage Example #1: Standard date_range
+
+            >>> flyr_item = gis.content.get("8961540a52da402876e0168fa29bb82d")
+            >>> result = flyr_item.usage(date_range = "7D")
+                Date  Usage
+            0 2022-08-05      0
+            1 2022-08-06      0
+            2 2022-08-07      0
+            3 2022-08-08      0
+            4 2022-08-09      0
+            5 2022-08-10      0
+            6 2022-08-11      0
+            7 2022-08-12      8
+
+            # Usage Example #2: Custom date_range
+
+            >>> import datetime as dt
+
+            >>> flyr_item = gis.content.get("8961540a52da402876e0168fa29bb82d")
+            >>> date_1 = dt.datetime(2022,7,31)
+            >>> date_2 = dt.datetime.now(2022,8,12)
+                # Early value, later value
+            >>> result = flyr_item.usage(date_range (date_1, date_2))
+            >>> result
+                     Date  Usage
+            0  2022-07-31      0
+            1  2022-08-01      0
+            2  2022-08-02      0
+            3  2022-08-03      0
+            4  2022-08-04      0
+            5  2022-08-05      0
+            6  2022-08-06      0
+            7  2022-08-07      0
+            8  2022-08-08      0
+            9  2022-08-09      0
+            10 2022-08-10      0
+            11 2022-08-11      0
+            12 2022-08-12     10
         """
         if not self._portal.is_arcgisonline:
             raise ValueError("Usage() only supported for ArcGIS Online items.")

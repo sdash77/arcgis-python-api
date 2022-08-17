@@ -553,11 +553,11 @@ class _GeoEnrichment(object):
                                       for_storage parameter to true.
         -------------------------     --------------------------------------------------------------------
         as_featureset                 Optional boolean.  The default is False. If True, the result will be
-                                      a liar of arcgis.features.FeatureSet object instead of a
+                                      a liar of :class:`~arcgis.features.FeatureSet` object instead of a
                                       SpatailDataFrame or Pandas' DataFrame.
         =========================     ====================================================================
 
-        :return: Spatial DataFrame, Panda's DataFrame, or a dictionary (on error)
+        :return: Spatially Enabled DataFrame, Panda's DataFrame, or a dictionary (on error)
         """
         if _is_geoenabled(study_areas):
             study_areas = [{"FeatureSet": study_areas.spatial.__feature_set__}]
@@ -759,7 +759,7 @@ class _GeoEnrichment(object):
                                    response.
         ----------------------     --------------------------------------------------------------------
         as_featureset              Optional boolean. If False (default) the return type is a Spatail
-                                   DataFrame, else it is a FeatureSet
+                                   DataFrame, else it is a :class:`~arcgis.features.FeatureSet`
         ======================     ====================================================================
 
         returns: DataFrame (Spatial or Pandas) or dictionary on error.
@@ -1177,7 +1177,7 @@ class _GeoEnrichment(object):
                                    that are returned from the geoquery.
         ----------------------     --------------------------------------------------------------------
         as_featureset              Optional boolean. If False (default) the return type is a Spatail
-                                   DataFrame, else it is a FeatureSet
+                                   DataFrame, else it is a :class:`~arcgis.features.FeatureSet`
         ======================     ====================================================================
 
         :return: Spatial or Pandas Dataframe on success, dictionary on failure.

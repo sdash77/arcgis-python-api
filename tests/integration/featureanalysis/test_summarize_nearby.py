@@ -1,26 +1,21 @@
 import sys
 
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
+# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import datetime
 import unittest
 import pandas as pd
 from arcgis.gis import GIS, Item
 from arcgis.features import FeatureLayer
 from arcgis.features.summarize_data import summarize_nearby
-from arcgis.gis import ProfileManager
+from config_tests import setup_profiles, stage_data
 
-profile_list = ProfileManager().list()
-
-if not "ent11" in profile_list:
-    GIS(
-        url="https://gpportal.esri.com/portal/",
-        username="admin",
-        password="esri.agp",
-        profile="ent11",
-    )  # create enterprise 11 connection
-
-
-profiles = ["your_online_profile", "ent11"]
+test_items = [
+    "435fcf6cff1f4f34989e151c1f25d64a",  # Esri Offices
+    "c7665d3c8e6f48a79f07b79677996bed",  # Esri HQ
+]
+profiles = ["online_test", "ent_test", "kube_test"]
+setup_profiles(profiles[0], profiles[1], profiles[2])
+stage_data(test_items)
 
 
 class TestSummarizeNearby(unittest.TestCase):
@@ -32,10 +27,10 @@ class TestSummarizeNearby(unittest.TestCase):
             print("User: ", gis.users.me.username)
             if gis._is_agol:
                 hq_item = gis.content.get("c7665d3c8e6f48a79f07b79677996bed")
-                office_item = gis.content.get("b96b5740372b4b838d621716264bb21d")
+                office_item = gis.content.get("435fcf6cff1f4f34989e151c1f25d64a")
             else:
-                hq_item = gis.content.get("a02718d5e01b44439721be7c5d6cf2b2")
-                office_item = gis.content.get("999b3776bdae41acb787ae0ce2dfce0e")
+                hq_item = gis.content.get("c7665d3c8e6f48a79f07b79677996bed")
+                office_item = gis.content.get("435fcf6cff1f4f34989e151c1f25d64a")
             assert isinstance(hq_item, Item)
             assert isinstance(office_item, Item)
             hq_lyr = hq_item.layers[0]
