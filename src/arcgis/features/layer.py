@@ -713,22 +713,21 @@ class FeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def query_date_bins(
         self,
-        bin_field: str,
+        bin_field: str | datetime,
         bin_specs: dict,
         out_statistics: list[dict[str, Any]],
         time_filter: Optional[TimeFilter] = None,
-        geometry_filter: Optional[GeometryFilter] = None,
+        geometry_filter: Optional[GeometryFilter | dict] = None,
         bin_order: Optional[str] = None,
         where: Optional[str] = None,
         return_centroid: Optional[bool] = False,
-        in_sr: Optional[Union[dict[str, Any], int]] = None,
-        out_sr: Optional[Union[dict[str, Any], int]] = None,
+        in_sr: Optional[dict[str, Any] | int] = None,
+        out_sr: Optional[dict[str, Any] | int] = None,
         spatial_rel: Optional[str] = None,
-        quantization_param: Optional[dict[str, Any]] = None,
+        quantization_params: Optional[dict[str, Any]] = None,
         result_offset: Optional[int] = None,
         result_record_count: Optional[int] = None,
         return_exceeded_limit_features: Optional[bool] = None,
-        result_format: Optional[str] = None,
     ):
         """
         The ``query_date_bins`` operation is performed on a :class:`~arcgis.features.FeatureLayer`.
@@ -860,7 +859,7 @@ class FeatureLayer(Layer):
                                            ``esriSpatialRelIndexIntersects``, ``esriSpatialRelOverlaps``,
                                            ``esriSpatialRelTouches``, and ``esriSpatialRelWithin``.
         ------------------------------     --------------------------------------------------------------------
-        quantization_param                 Optional Dict. Used to project the geometry onto a virtual grid,
+        quantization_params                 Optional Dict. Used to project the geometry onto a virtual grid,
                                            likely representing pixels on the screen. 
                             
                                            .. code-block:: python
@@ -930,9 +929,6 @@ class FeatureLayer(Layer):
                                            allows a client to find the resolution in which the transfer limit
                                            is no longer exceeded withou making multiple calls. The default
                                            value is ``False``.
-        ------------------------------     --------------------------------------------------------------------
-        result_format                      Optional String. The default format is ``html``. Other options are
-                                           ``json``, ``pjson``, and ``pbf``.
         ==============================     ====================================================================
 
         :return:
@@ -1004,7 +1000,10 @@ class FeatureLayer(Layer):
         params = {
             "binField": bin_field,
             "bin": bin_specs,
+            "f": "json",
         }
+
+        layer_props = dict(self.properties)
 
         if time_filter is None and self.time_filter:
             params["time"] = self.time_filter
@@ -1044,16 +1043,29 @@ class FeatureLayer(Layer):
             params["outSR"] = out_sr
         if spatial_rel:
             params["spatialRel"] = spatial_rel
-        if quantization_param:
-            params["quantizationParameters"] = quantization_param
+        if quantization_params:
+            if layer_props["supportsCoordinatesQuantization"]:
+                params["quantizationParameters"] = quantization_params
+            else:
+                print(
+                    "Coordinate quantization is not enabled for this layer. Ignoring quantization_params..."
+                )
         if result_offset:
-            params["resultOffset"] = result_offset
+            if layer_props["advancedQueryCapabilities"]["supportsPagination"]:
+                params["resultOffset"] = result_offset
+            else:
+                print(
+                    "Query pagination is not enabled for this layer. Ignoring result_offset..."
+                )
         if result_record_count:
-            params["resultRecordCount"] = result_record_count
+            if layer_props["advancedQueryCapabilities"]["supportsPagination"]:
+                params["resultRecordCount"] = result_record_count
+            else:
+                print(
+                    "Query pagination is not enabled for this layer. Ignoring result_record_count..."
+                )
         if return_exceeded_limit_features:
             params["returnExceededLimitedFeatures"] = return_exceeded_limit_features
-        if result_format:
-            params["f"] = result_format
 
         result = self._con.post(qdb_url, params)
         return result
