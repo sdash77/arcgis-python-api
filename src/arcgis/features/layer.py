@@ -788,11 +788,41 @@ class FeatureLayer(Layer):
                                            the bin starts. For this reason, some calendar-specific units are
                                            only supported as calendar bins.
 
-                                           See syntax details at the bottom for each form.
+                                           .. code-block:: python
+
+                                                # Calendar bin
+                                    
+                                                >>> bin_specs= {"calendarBin": 
+                                                                  {"unit": "year",
+                                                                    "timezone": "US/Arizona",
+                                                                    "offset": {
+                                                                        "number": 5,
+                                                                        "unit": "hour"}
+                                                                  }
+                                                               }
+                                    
+                                                # Fixed bin
+                                    
+                                                >>> bin_specs= {"fixedBin": 
+                                                                 {
+                                                                  "number": 12,
+                                                                  "unit": "hour",
+                                                                  "offset": {
+                                                                    "number": 5,
+                                                                    "unit": "hour"}
+                                                                 }
+                                                               }                                            
         ------------------------------     --------------------------------------------------------------------
         out_statistics                     Required List of Dicts. The definitions for one or more field-based
-                                           statistics to be calculated. See syntax details at the bottom for
-                                           keys and values.
+                                           statistics to be calculated:
+                                            
+                                           .. code-block:: python
+                                           
+                                               {
+                                                "statisticType": "<count | sum | min | max | avg | stddev | var>",
+                                                "onStatisticField": "Field1",
+                                                "outStatisticFieldName": "Out_Field_Name1"
+                                               }                                                                       
         ------------------------------     --------------------------------------------------------------------
         time_filter                        Optional list. The format is of [<startTime>, <endTime>] using
                                            datetime.date, datetime.datetime or timestamp in milliseconds.
@@ -829,11 +859,49 @@ class FeatureLayer(Layer):
                                            ``esriSpatialRelIndexIntersects``, ``esriSpatialRelOverlaps``,
                                            ``esriSpatialRelTouches``, and ``esriSpatialRelWithin``.
         ------------------------------     --------------------------------------------------------------------
-        quantization_params                Optional Dict. Used to project the geometry onto a virtual grid,
-                                           likely representing pixels on the screen. See syntax details at the
-                                           bottom for examples.
+        quantization_params                 Optional Dict. Used to project the geometry onto a virtual grid,
+                                           likely representing pixels on the screen. 
+                            
+                                           .. code-block:: python
 
-                                           Note:
+                                                # upperLeft origin position
+                                    
+                                                {"mode": "view",
+                                                 "originPosition": "upperLeft",
+                                                 "tolerance": 1.0583354500042335,
+                                                 "extent": {
+                                                     "type": "extent",
+                                                     "xmin": -18341377.47954369,
+                                                     "ymin": 2979920.6113554947,
+                                                     "xmax": -7546517.393554582,
+                                                     "ymax": 11203512.89298139,
+                                                     "spatialReference": {
+                                                         "wkid": 102100,
+                                                         "latestWkid": 3857}
+                                                     }
+                                                 }
+                                    
+                                                # lowerLeft origin position
+                                    
+                                                {"mode": "view",
+                                                 "originPosition": "lowerLeft",
+                                                 "tolerance": 1.0583354500042335,
+                                                 "extent": {
+                                                    "type": "extent",
+                                                    "xmin": -18341377.47954369,
+                                                    "ymin": 2979920.6113554947,
+                                                    "xmax": -7546517.393554582,
+                                                    "ymax": 11203512.89298139,
+                                                    "spatialReference": {
+                                                        "wkid": 102100,
+                                                        "latestWkid": 3857}
+                                                    }
+                                                }
+                                                    
+                                           See `Quantization parameters JSON properties <https://developers.arcgis.com/rest/services-reference/enterprise/query-date-bins-fsl.htm>`_
+                                           for details on format of this parameter.
+                                           
+                                           .. note::
                                                 This parameter only applies if the layer's
                                                 ``supportsCoordinateQuantization`` property is ``true``.
         ------------------------------     --------------------------------------------------------------------
@@ -863,148 +931,68 @@ class FeatureLayer(Layer):
                                            value is ``False``.
         ==============================     ====================================================================
 
-        **Syntax Examples**
-
-        ``bin_specs``:
-
-        .. code-block:: python
-
-            # Calendar bin
-
-            >>> {
-                "calendarBin": {
-                    "unit": "year",
-                    "timezone": "US/Arizona",
-                    "offset": {
-                        "number": 5,
-                        "unit": "hour"
-                    }
-                }
-            }
-
-            # Fixed bin
-
-            >>> {
-                "fixedBin": {
-                    "number": 12,
-                    "unit": "hour",
-                    "offset": {
-                        "number": 5,
-                        "unit": "hour"
-                    }
-                }
-            }
-
-        ``out_statistics``:
-
-        .. code-block:: python
-
-            >>> outStatistics=
-                [
-                    {
-                        "statisticType": "<count | sum | min | max | avg | stddev | var>",
-                        "onStatisticField": "Field1",
-                        "outStatisticFieldName": "Out_Field_Name1"
-                    },
-                    {
-                    "statisticType": "<count | sum | min | max | avg | stddev | var>",
-                    "onStatisticField": "Field2",
-                    "outStatisticFieldName": "Out_Field_Name2"
-                    }
-                ]
-
-        ``quantization_params``:
-
-        .. code-block:: python
-
-            # upperLeft origin position
-
-            >>> {
-                "mode": "view",
-                "originPosition": "upperLeft",
-                "tolerance": 1.0583354500042335,
-                "extent": {
-                    "type": "extent",
-                    "xmin": -18341377.47954369,
-                    "ymin": 2979920.6113554947,
-                    "xmax": -7546517.393554582,
-                    "ymax": 11203512.89298139,
-                    "spatialReference": {
-                        "wkid": 102100,
-                        "latestWkid": 3857
-                    }
-                }
-            }
-
-            # lowerLeft origin position
-
-            >>> {
-                "mode": "view",
-                "originPosition": "lowerLeft",
-                "tolerance": 1.0583354500042335,
-                "extent": {
-                    "type": "extent",
-                    "xmin": -18341377.47954369,
-                    "ymin": 2979920.6113554947,
-                    "xmax": -7546517.393554582,
-                    "ymax": 11203512.89298139,
-                    "spatialReference": {
-                        "wkid": 102100,
-                        "latestWkid": 3857
-                    }
-                }
-            }
-
         :return:
             A Dict containing the resulting features and fields.
 
-        **JSON Response Example**
-
         .. code-block:: python
-
-            >>> {
+        
+            # Usage Example
+            
+            >>> flyr_item = gis.content.search("*", "Feature Layer")[0]
+            >>> flyr = flyr_item.layers[0]
+            
+            >>> qy_result = flyr.query_date_bins(bin_field="boundary",
+                                                 bin_specs={"calendarBin":
+                                                              {"unit":"day",
+                                                               "timezone": "America/Los_Angeles",
+                                                               "offset": {"number": 8,
+                                                                          "unit": "hour"}
+                                                              }
+                                                            },
+                                                 out_statistics=[{"statisticType": "count",
+                                                                  "onStatisticField": "objectid",
+                                                                  "outStatisticFieldName": "item_sold_count"},
+                                                                 {"statisticType": "avg",
+                                                                 "onStatisticField": "price",
+                                                                 "outStatisticFieldName": "avg_daily_revenue "}],
+                                                 time=[1609516800000, 1612195199999])
+            >>> qy_result
+               {
                 "features": [
-                    {
-                        "centroid": {
-                            "x": -84.02204922365141,
-                            "y": 35.93228062956047
-                        },
-                        "attributes": {
-                            "boundary": 189345600000,
-                            "temperature_avg": 59.82,
-                            "results_count": 60964
-                        }
-                    },
-                    {
-                        "centroid": {
-                            "x": -84.32106073325814,
-                            "y": 35.930795102124708
-                        },
-                        "attributes": {
-                            "boundary": 220968000000,
-                            "temperature_avg": 59.77,
-                            "results_count": 67719
-                        }
-                    },
-                "fields": [
-                    {
-                        "name": "boundary",
-                        "type": "esriFieldTypeDate"
-                    },
-                    {
-                        "name": "results _count",
-                        "alias": "results _count",
-                        "type": "esriFieldTypeInteger"
-                    },
-                    {
-                        "name": "temperature_avg",
-                        "alias": "temperature_avg",
-                        "type": "esriFieldTypeDouble"
+                  {
+                    "attributes": {
+                      "boundary": 1609516800000,
+                      "avg_daily_revenue": 300.40,
+                      "item_sold_count": 79
                     }
+                  },
+                  {
+                    "attributes": {
+                      "boundary": 1612108800000,
+                      "avg_daily_revenue": null,
+                      "item_sold_count": 0
+                    }
+                  }
                 ],
-                "exceededTransferLimit": false,
-                "geometryType": "esriGeometryPoint"
-            }
+                "fields": [
+                  {
+                    "name": "boundary",
+                    "type": "esriFieldTypeDate"
+                  },
+                  {
+                    "name": "item_sold_count",
+                    "alias": "item_sold_count",
+                    "type": "esriFieldTypeInteger"
+                  },
+                  {
+                    "name": "avg_daily_revenue",
+                    "alias": "avg_daily_revenue",
+                    "type": "esriFieldTypeDouble"
+                  }
+                ],
+                "exceededTransferLimit": false
+              }
+
 
         """
 
@@ -1613,19 +1601,18 @@ class FeatureLayer(Layer):
                                             ]
 
 
-                                            Example:
-                                            [{
-                                                  "analyticType": "FIRST_VALUE",
-                                                  "onAnalyticField": "POP1990",
-                                                  "analyticParameters": {
-                                                      "orderBy": "POP1990",
-                                                      "partitionBy": "state_name"
-                                                  },
-                                                  "outAnalyticFieldName": "FirstValue"
-                                                }
-                                            ]
-
-
+                                            .. code-block:: python
+                                            
+                                                #Usage Example:
+                                                
+                                                >>> out_analytics = 
+                                                        [{"analyticType": "FIRST_VALUE",
+                                                          "onAnalyticField": "POP1990",
+                                                          "analyticParameters": {
+                                                                                 "orderBy": "POP1990",
+                                                                                 "partitionBy": "state_name"
+                                                                                },
+                                                          "outAnalyticFieldName": "FirstValue"}]
         -------------------------------     --------------------------------------------------------------------
         where                               Optional string. The default is 1=1. The selection sql statement.
         -------------------------------     --------------------------------------------------------------------
