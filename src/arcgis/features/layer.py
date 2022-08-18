@@ -727,7 +727,7 @@ class FeatureLayer(Layer):
         quantization_params: Optional[dict[str, Any]] = None,
         result_offset: Optional[int] = None,
         result_record_count: Optional[int] = None,
-        return_exceeded_limit_features: Optional[bool] = None,
+        return_exceeded_limit_features: Optional[bool] = False,
     ):
         """
         The ``query_date_bins`` operation is performed on a :class:`~arcgis.features.FeatureLayer`.
@@ -791,8 +791,8 @@ class FeatureLayer(Layer):
                                            .. code-block:: python
 
                                                 # Calendar bin
-                                    
-                                                >>> bin_specs= {"calendarBin": 
+
+                                                >>> bin_specs= {"calendarBin":
                                                                   {"unit": "year",
                                                                     "timezone": "US/Arizona",
                                                                     "offset": {
@@ -800,10 +800,10 @@ class FeatureLayer(Layer):
                                                                         "unit": "hour"}
                                                                   }
                                                                }
-                                    
+
                                                 # Fixed bin
-                                    
-                                                >>> bin_specs= {"fixedBin": 
+
+                                                >>> bin_specs= {"fixedBin":
                                                                  {
                                                                   "number": 12,
                                                                   "unit": "hour",
@@ -811,18 +811,18 @@ class FeatureLayer(Layer):
                                                                     "number": 5,
                                                                     "unit": "hour"}
                                                                  }
-                                                               }                                            
+                                                               }
         ------------------------------     --------------------------------------------------------------------
         out_statistics                     Required List of Dicts. The definitions for one or more field-based
                                            statistics to be calculated:
-                                            
+
                                            .. code-block:: python
-                                           
+
                                                {
                                                 "statisticType": "<count | sum | min | max | avg | stddev | var>",
                                                 "onStatisticField": "Field1",
                                                 "outStatisticFieldName": "Out_Field_Name1"
-                                               }                                                                       
+                                               }
         ------------------------------     --------------------------------------------------------------------
         time_filter                        Optional list. The format is of [<startTime>, <endTime>] using
                                            datetime.date, datetime.datetime or timestamp in milliseconds.
@@ -859,13 +859,13 @@ class FeatureLayer(Layer):
                                            ``esriSpatialRelIndexIntersects``, ``esriSpatialRelOverlaps``,
                                            ``esriSpatialRelTouches``, and ``esriSpatialRelWithin``.
         ------------------------------     --------------------------------------------------------------------
-        quantization_params                 Optional Dict. Used to project the geometry onto a virtual grid,
-                                           likely representing pixels on the screen. 
-                            
+        quantization_params                Optional Dict. Used to project the geometry onto a virtual grid,
+                                           likely representing pixels on the screen.
+
                                            .. code-block:: python
 
                                                 # upperLeft origin position
-                                    
+
                                                 {"mode": "view",
                                                  "originPosition": "upperLeft",
                                                  "tolerance": 1.0583354500042335,
@@ -880,9 +880,9 @@ class FeatureLayer(Layer):
                                                          "latestWkid": 3857}
                                                      }
                                                  }
-                                    
+
                                                 # lowerLeft origin position
-                                    
+
                                                 {"mode": "view",
                                                  "originPosition": "lowerLeft",
                                                  "tolerance": 1.0583354500042335,
@@ -897,10 +897,10 @@ class FeatureLayer(Layer):
                                                         "latestWkid": 3857}
                                                     }
                                                 }
-                                                    
+
                                            See `Quantization parameters JSON properties <https://developers.arcgis.com/rest/services-reference/enterprise/query-date-bins-fsl.htm>`_
                                            for details on format of this parameter.
-                                           
+
                                            .. note::
                                                 This parameter only applies if the layer's
                                                 ``supportsCoordinateQuantization`` property is ``true``.
@@ -935,12 +935,12 @@ class FeatureLayer(Layer):
             A Dict containing the resulting features and fields.
 
         .. code-block:: python
-        
+
             # Usage Example
-            
+
             >>> flyr_item = gis.content.search("*", "Feature Layer")[0]
             >>> flyr = flyr_item.layers[0]
-            
+
             >>> qy_result = flyr.query_date_bins(bin_field="boundary",
                                                  bin_specs={"calendarBin":
                                                               {"unit":"day",
@@ -1042,7 +1042,12 @@ class FeatureLayer(Layer):
         if out_sr:
             params["outSR"] = out_sr
         if spatial_rel:
-            params["spatialRel"] = spatial_rel
+            if spatial_rel in layer_props["supportedSpatialRelationships"]:
+                params["spatialRel"] = spatial_rel
+            else:
+                print(
+                    "Designated spatial_rel not supported. Defaulting to esriSpacialRelIntersects..."
+                )
         if quantization_params:
             if layer_props["supportsCoordinatesQuantization"]:
                 params["quantizationParameters"] = quantization_params
@@ -1602,10 +1607,10 @@ class FeatureLayer(Layer):
 
 
                                             .. code-block:: python
-                                            
+
                                                 #Usage Example:
-                                                
-                                                >>> out_analytics = 
+
+                                                >>> out_analytics =
                                                         [{"analyticType": "FIRST_VALUE",
                                                           "onAnalyticField": "POP1990",
                                                           "analyticParameters": {
