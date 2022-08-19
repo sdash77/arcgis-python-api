@@ -682,7 +682,7 @@ class BusinessAnalyst(object):
     .. warning::
 
         GeoEnrichment (adding demographic enrich_variables) using ArcGIS Online *does* cost credits.
-        Country (``BusinessAnalyst.countries``) and variable (``Country.enrich_variables``)
+        Country (``BusinessAnalyst.countries``) and variable (:func:`~arcgis.geoenrichment.Country.enrich_variables`)
         introspection does *not* cost any credits.
 
     =============================       ====================================================================
@@ -1436,6 +1436,8 @@ class BusinessAnalyst(object):
         Returns:
             Pandas Data Frame
         """
+        from arcgis.geoenrichment.enrichment import NamedArea
+
         # pull out country specific parameters from the kwargs
         country, kwargs = extract_from_kwargs("country", kwargs)
         standard_geography_level, kwargs = extract_from_kwargs(
@@ -1455,11 +1457,15 @@ class BusinessAnalyst(object):
                 geographies = Geometry(geographies)
             elif is_dict_featureset(geographies):
                 geographies = FeatureSet(geographies)
+            # dict of named areas
+            elif isinstance(list(geographies.values())[0], NamedArea):
+                named_areas = list(geographies.values())
+                geographies = [named_area.geometry for named_area in named_areas]
 
-        # if a list of geometries is passed in dict form, convert to Geometry objects
         if isinstance(geographies, Iterable) and not isinstance(
             geographies, pd.DataFrame
         ):
+            # if a list of geometries is passed in dict form, convert to Geometry objects
             if isinstance(geographies[0], dict):
                 if is_dict_geometry(geographies[0]):
                     geographies = [Geometry(g_dict) for g_dict in geographies]

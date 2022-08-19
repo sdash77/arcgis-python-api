@@ -51,6 +51,7 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
         MaXDeepLab,
         WNet_cGAN,
         DETReg,
+        RandLANet,
     )
 
     from ._object_tracker import ObjectTracker
