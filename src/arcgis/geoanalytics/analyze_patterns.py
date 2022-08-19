@@ -241,13 +241,15 @@ def forest(
     =========================================================================   ===========================================================================
 
     :return: 
-       If ``return_tuple`` is set to 'True', a named tuple with the following keys:
-
-         * ``output_trained`` : :class:`~arcgis.features.FeatureLayer`
+       
+       * If ``return_tuple`` is set to 'True', a tuple of results with the following keys:
+        
+         * ``output`` : :class:`~arcgis.features.FeatureLayer`
          * ``output_predicted`` : :class:`~arcgis.features.FeatureLayer`
-         * ``variable_of_importance`` : :class:`~arcgis.features.Table`
+         * ``coefficient_table`` : :class:`~arcgis.features.Table`
          * ``process_info`` : list
-       else, a :class:`~arcgis.features.FeatureLayer`.
+
+       * otherwise, a :class:`~arcgis.features.FeatureLayer`
 
     .. code-block:: python
 
@@ -726,13 +728,15 @@ def glr(
     ==========================   ===============================================================
 
     :return: 
-       If ``return_tuple`` is set to 'True', a tuple of results with the following keys:
-        * ``output`` : :class:`~arcgis.features.FeatureLayer`
-        * ``output_predicted`` : :class:`~arcgis.features.FeatureLayer`
-        * ``coefficient_table`` : :class:`~arcgis.features.Table`
-        * ``process_info" : list
+       
+       * If ``return_tuple`` is set to 'True', a tuple of results with the following keys:
+        
+         * ``output`` : :class:`~arcgis.features.FeatureLayer`
+         * ``output_predicted`` : :class:`~arcgis.features.FeatureLayer`
+         * ``coefficient_table`` : :class:`~arcgis.features.Table`
+         * ``process_info`` : list
 
-        otherwise, a :class:`~arcgis.features.FeatureLayer` of the results.
+       * otherwise, a :class:`~arcgis.features.FeatureLayer`
 
     .. code-block:: python
 
