@@ -163,7 +163,7 @@ def _geometry_to_geojson(geom):
 
 
 # --------------------------------------------------------------------------
-def _from_xy(df, x_column, y_column, z_column=None, m_column=None, sr=None):
+def _from_xy(df, x_column, y_column, sr=None, z_column=None, m_column=None):
     """
     Takes an X/Y Column and Creates a Point Geometry from it. Can handle Z
     and M Columns as well.
