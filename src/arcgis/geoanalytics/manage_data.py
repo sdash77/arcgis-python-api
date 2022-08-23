@@ -120,33 +120,36 @@ def run_python_script(
 
                       For a collection of example scripts, see `Examples: Scripting custom analysis with the Run Python Script task <https://developers.arcgis.com/rest/services-reference/run-python-script-examples.htm>`_.
     ----------------  ---------------------------------------------------------------
-    layers            Optional list. A list of Feature layers to operate on. See :ref:`Feature Input<gaxFeatureInput>`.
+    layers            Optional list. A list of :class:`Feature Layers <arcgis.features.FeatureLayer>`
+                      to operate on. See :ref:`Feature Input<gaxFeatureInput>`.
     ----------------  ---------------------------------------------------------------
-    gis               optional GIS. The GIS object where the analysis will take place.
+    gis               optional :class:`~arcgis.gis.GIS` on which the analysis will take place.
     ----------------  ---------------------------------------------------------------
     context           Optional dict. This parameter is not used by the ``run_python_script`` tool.
 
-                      To control the output data store, use the "dataStore" option when writing DataFrames.
-
-                      To set the processing or output spatial reference, use the project tool in the geoanalytics package.
-
-                      To filter a layer when converting it to a DataFrame, use the "where" or "fields" option when loading the layer's URL.
-
-                      To limit the extent of a layer when converting it to a DataFrame, use the "extent" option when loading the layer's URL.
+                        * To control the output data store, use the "dataStore" option when writing DataFrames.
+                        * To set the processing or output spatial reference, use the project tool in the geoanalytics package.
+                        * To filter a layer when converting it to a DataFrame, use the "where" or "fields" option when loading the layer's URL.
+                        * To limit the extent of a layer when converting it to a DataFrame, use the "extent" option when loading the layer's URL.
     ----------------  ---------------------------------------------------------------
-    future            Optional boolean. If True, a future object will be returned and the process
-                      will not wait for the task to complete. The default is False, which means wait for results.
+    future            Optional boolean. If ``True``, a future object will be returned and the process
+                      will not wait for the task to complete. The default is ``False``, which means wait for results.
     ----------------  ---------------------------------------------------------------
     parameters        Optional dict. A global level variable that will be loaded into the given code.
                       The variable name is called **user_variables**.
 
-                      ```
-                      parameters= {"param1": "example", "param2": 1, "val1": 2.0, "more_params": [False, True, None], "status": 4.0}
-                      ```
-
+                      .. code-block:: python
+                          
+                          >>> parameters = {"param1": "example", 
+                                            "param2": 1, 
+                                            "val1": 2.0, 
+                                            "more_params": [False, True, None], 
+                                            "status": 4.0}
+                                            
                       Only built-in types are supported.
     ----------------  ---------------------------------------------------------------
-    param_as_input    Optional Boolean. If True, the user_variable will be added if a method past. If False, the variable will not be given into the method.
+    param_as_input    Optional Boolean. If ``True,`` the user_variable will be added 
+                      if a method past. If ``False``, the variable will not be given into the method.
     ================  ===============================================================
 
     :return: Dictionary of messages from the code provided.
@@ -277,51 +280,57 @@ def dissolve_boundaries(
     summary_fields    Optional list of dicts. A list of field names and statistical summary types you want to calculate.
                       Note that the count is always returned. By default, all statistics are returned.
 
-                      Syntax: [{"statisticType" : "<stat>", "onStatisticField" : "<field name>"}]
+                      Syntax: ``[{"statisticType" : "<stat>", "onStatisticField" : "<field name>"}]``
 
-                      fieldName is the name of the fields in the input point layer.
+                        * `onStatisticField` is the name of the field in the input point layer to calculate the statistic.
+                        * `statisticType` is one of the following for numeric fields:
 
-                      statisticType is one of the following for numeric fields:
+                          * ``Count`` - Totals the number of values of all the points in each polygon.
+                          * ``Sum`` - Adds the total value of all the points in each polygon.
+                          * ``Mean`` - Calculates the average of all the points in each polygon.
+                          * ``Min`` - Finds the smallest value of all the points in each polygon.
+                          * ``Max`` - Finds the largest value of all the points in each polygon.
+                          * ``Range`` - Finds the difference between the Min and Max values.
+                          * ``Stddev`` - Finds the standard deviation of all the points in each polygon.
+                          * ``Var`` - Finds the variance of all the points in each polygon.
+                        
+                        * `statisticType` is one of the following for string fields:
 
-                        * ``Count`` - Totals the number of values of all the points in each polygon.
-                        * ``Sum`` - Adds the total value of all the points in each polygon.
-                        * ``Mean`` - Calculates the average of all the points in each polygon.
-                        * ``Min`` - Finds the smallest value of all the points in each polygon.
-                        * ``Max`` - Finds the largest value of all the points in each polygon.
-                        * ``Range`` - Finds the difference between the Min and Max values.
-                        * ``Stddev`` - Finds the standard deviation of all the points in each polygon.
-                        * ``Var`` - Finds the variance of all the points in each polygon.
-                        statisticType is one of the following for string fields:
+                          * ``Count`` - Totals the number of strings for all the points in each polygon.
+                          * ``Any`` - Returns a sample string of a point in each polygon.
 
-                        * ``Count`` - Totals the number of strings for all the points in each polygon.
-                        * ``Any`` - Returns a sample string of a point in each polygon.
-
-                      Example: summary_fields = [{"statisticType" : "Sum", "onStatisticField" : "quadrat_area_km2"}, {"statisticType" : "Mean", "onStatisticField" : "soil_depth_cm"}, {"statisticType" : "Any", "onStatisticField" : "quadrat_desc"}]
+                      .. code-block:: python
+                      
+                          # Example
+                          >>> summary_fields = [{"statisticType" : "Sum", "onStatisticField" : "quadrat_area_km2"}, 
+                                                {"statisticType" : "Mean", "onStatisticField" : "soil_depth_cm"}, 
+                                                {"statisticType" : "Any", "onStatisticField" : "quadrat_desc"}]
     ----------------  ---------------------------------------------------------------
-    multipart         Optional boolean. If 'True', the output service can contain
-                      multipart features. If 'False', the output service
+    multipart         Optional boolean. If ``True``, the output service can contain
+                      multipart features. If ``False``, the output service
                       will only contain single-part features, and individual features
                       will be created for each part.
 
-                      The default value is 'False'.
+                      The default value is ``False``.
     ----------------  ---------------------------------------------------------------
     output_name       Optional string. The task will create a feature service of the results. You define the name of the service.
     ----------------  ---------------------------------------------------------------
-    gis               Optional GIS. The GIS object where the analysis will take place.
+    gis               Optional :class:`~arcgis.gis.GIS` on which the analysis will take place.
     ----------------  ---------------------------------------------------------------
     context           Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are five settings:
 
-                      #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
-                      #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
-                      #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                      #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
-                      #. Default aggregation styles (``defaultAggregationStyles``) - If set to true, results will have square, hexagon, and triangle aggregation styles enabled on results map services.
+                        * ``extent`` - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                        * ``processSR`` - The features will be projected into this coordinate system for analysis.
+                        * ``outSR`` - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                        * ``dataStore`` - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+                        * ``defaultAggregationStyles`` - If set to true, results will have square, hexagon, and triangle aggregation styles enabled on results map services.
     ----------------  ---------------------------------------------------------------
-    future            Optional boolean. If True, a future object will be returned and the process
-                      will not wait for the task to complete. The default is False, which means wait for results.
+    future            Optional boolean. If ``True``, a future object will be returned and the process
+                      will not wait for the task to complete. The default is ``False``, which means wait for results.
     ================  ===============================================================
 
-    :return: result_layer : Output Features as :class:`~arcgis.features.FeatureLayerCollection`.
+    :return: 
+        :class:`~arcgis.features.FeatureLayerCollection`.
 
     .. code-block:: python
 
@@ -493,27 +502,39 @@ def merge_layers(
                               features copied from the merge_layer. Type casting is supported (for example,
                               double to integer, integer to string) except for string to numeric.
 
-                      Example: [{"mergeLayerField": "Mean_Sales","mergeType": "Match","mergeValue": "Average_Sales"},{"mergeLayerField": "Bonus","mergeType": "Remove",},{"mergeLayerField": "Field4","mergeType": "Rename","mergeValue": "Errors"}]
+                      .. code-block:: python
+                      
+                          # Example:
+                          >>> merge_attributes = [{"mergeLayerField": "Mean_Sales",
+                                                   "mergeType": "Match",
+                                                   "mergeValue": "Average_Sales"},
+                                                  {"mergeLayerField": "Bonus",
+                                                   "mergeType": "Remove",},
+                                                  {"mergeLayerField": "Field4",
+                                                   "mergeType": "Rename",
+                                                   "mergeValue": "Errors"}]
     ----------------  ---------------------------------------------------------------
     output_name       Optional string. The task will create a feature service of the results. You define the name of the service.
     ----------------  ---------------------------------------------------------------
-    gis               Optional GIS. The GIS object where the analysis will take place.
+    gis               Optional :class:`~arcgis.gis.GIS` on which the analysis will take place.
     ----------------  ---------------------------------------------------------------
     context           Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are five settings:
 
-                      #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
-                      #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
-                      #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                      #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
-                      #. Default aggregation styles (``defaultAggregationStyles``) - If set to 'True', results will have square, hexagon, and triangle aggregation styles enabled on results map services.
+                        * ``extent`` - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                        * ``processSR`` - The features will be projected into this coordinate system for analysis.
+                        * ``outSR`` - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                        * ``dataStore`` - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+                        * ``defaultAggregationStyles`` - If set to ``True``, results will have square, 
+                          hexagon, and triangle aggregation styles enabled on results map services.
     ----------------  ---------------------------------------------------------------
-    future            Optional boolean. If 'True', a GPJob is returned instead of
+    future            Optional boolean. If ``True``, a GPJob is returned instead of
                       results. The GPJob can be queried on the status of the execution.
 
-                      The default value is 'False'.
+                      The default value is ``False``.
     ================  ===============================================================
 
-    :return: result_layer : Output Features as :class:`~arcgis.features.FeatureLayer`.
+    :return: 
+        :class:`~arcgis.features.FeatureLayer`.
 
     .. code-block:: python
 
@@ -638,20 +659,20 @@ def clip_layer(
     context             Optional strin. The context parameter contains additional
                         settings that affect task execution. For this task, there are four settings:
 
-                        #. Extent (``extent``) - A bounding box that defines the analysis area.
-                           Only those features that intersect the bounding box will be analyzed.
-                        #. Processing spatial reference (``processSR``) - The features will be
-                           projected into this coordinate system for analysis.
-                        #. Output spatial reference (``outSR``) - The features will be projected
-                           into this coordinate system after the analysis to be saved.
-                           The output spatial reference for the spatiotemporal big data store is always WGS84.
-                        #. Data store (``dataStore``) - Results will be saved to the specified data store.
-                           For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+                          * ``extent`` - A bounding box that defines the analysis area.
+                            Only those features that intersect the bounding box will be analyzed.
+                          * ``processSR`` - The features will be
+                            projected into this coordinate system for analysis.
+                          * ``outSR`` - The features will be projected in this coordinate
+                            system after the analysis to be saved. The output spatial reference 
+                            for the spatiotemporal big data store is always WGS84.
+                          * ``dataStore`` - Results will be saved to the specified data store.
+                            For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     ----------------    ---------------------------------------------------------------
-    gis                 Optional GIS. The GIS object where the analysis will take place.
+    gis                 Optional :class:`~arcgis.gis.GIS` on which the analysis will take place.
     ----------------    ---------------------------------------------------------------
-    future              Optional boolean. If True, a future object will be returned and the process
-                        will not wait for the task to complete. The default is False, which means wait for results.
+    future              Optional boolean. If ``True``, a future object will be returned and the process
+                        will not wait for the task to complete. The default is ``False``, which means wait for results.
     ================    ===============================================================
 
     :return: :class:`~arcgis.features.FeatureLayerCollection`
@@ -819,31 +840,34 @@ def overlay_data(
     include_overlaps        Optional boolean. Determines whether input features in the same dataset contain
                             overlapping features. The default is `True`. Change this parameter to `False`
                             if you don't want self-intersecting features for the input layer or the
-                            overlay layer. Setting this to `False` will also improve performance. For 10.6
-                            and 10.6.1, this parameter is only used when `overlayType` is `Intersect`.
-                            The parameter is not used for 10.7 or later and will always be `True`.
+                            overlay layer. Setting this to `False` will also improve performance. 
+                            
+                              * For 10.6 and 10.6.1, this parameter is only used when `overlay_type``
+                                is ``intersect``
+                              * For 10.7 or later, the parameter is always `True`.
 
 
-                            The default value is 'True'.
+                            The default value is ``True``.
     ----------------------  -------------------------------------------------------------------------------
     output_name             Optional string. The task will create a feature service of the results. You define the name of the service.
     ----------------------  -------------------------------------------------------------------------------
-    gis                     Optional GIS. The GIS object where the analysis will take place.
+    gis                     Optional :class:`~arcgis.gis.GIS` on which the analysis will take place.
     ----------------------  -------------------------------------------------------------------------------
     context                 Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
 
-                            #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
-                            #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
-                            #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                            #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+                              * ``extent`` - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                              * ``processSR`` - The features will be projected into this coordinate system for analysis.
+                              * ``outSR`` - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                              * ``dataStore`` - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     ----------------------  -------------------------------------------------------------------------------
-    future                  Optional boolean. If 'True', a GPJob is returned instead of
+    future                  Optional boolean. If ``True``, a GPJob is returned instead of
                             results. The GPJob can be queried on the status of the execution.
 
-                            The default value is 'False'.
+                            The default value is ``False``.
     ======================  ===============================================================================
 
-    :return: result_layer : Output Features as :class:`~arcgis.features.FeatureLayer`.
+    :return: 
+       :class:`~arcgis.features.FeatureLayer`.
 
     .. code-block:: python
 
@@ -953,70 +977,69 @@ def append_data(
     ================  ===============================================================
     **Argument**      **Description**
     ----------------  ---------------------------------------------------------------
-    input_layer       Required FeatureLayer , The table, point, line or
-                      polygon features.
+    input_layer       Required :class:`~arcgis.features.FeatureLayer`. The table, point, 
+                      line or polygon features.
     ----------------  ---------------------------------------------------------------
-    append_layer      Required FeatureLayer. The table, point, line, or polygon
-                      features to be appended to the input_layer. To append geometry,
-                      the append_layer must have the same geometry type as the
-                      input_layer. If the geometry types are not the same, the
-                      append_layer geometry will be removed and all other matching
-                      fields will be appended. The geometry of the input_layer will
-                      always be maintained.
+    append_layer      Required :class:`~arcgis.features.FeatureLayer`. The table, point, 
+                      line, or polygon features to be appended to the ``input_layer``. To
+                      append geometry, the ``append_layer`` must have the same geometry 
+                      type as the ``input_layer``. If the geometry types are not the same, 
+                      the ``append_layer`` geometry will be removed and all other matching
+                      fields will be appended. The geometry of the ``input_layer`` will
+                      always be maintained.                      
     ----------------  ---------------------------------------------------------------
     field_mapping     Defines how the fields in append_layer are appended to the
                       input_layer.
 
                       The following are set by default:
 
-                        - All append_layer fields that match input_layer schema
-                        will be appended.
-                        - Fields that exist in the input_layer and not in the
-                        append_layer will be appended with null values.
-                        - Fields that exist in the append_layer and not in the
-                        input_layer will not be appended.
+                        - All ``append_layer`` fields that match ``input_layer`` schema
+                          will be appended
+                        - Fields that exist in the ``input_layer`` and not in the
+                          ``append_layer`` will be appended with null values
+                        - Fields that exist in the ``append_layer`` and not in the
+                          ``input_layer`` will not be appended
 
-                      Optionally choose how input_layer fields will be appended
+                      Optionally, choose how ``input_layer`` fields will be appended
                       from the following:
 
-                        - AppendField - Matches the input_layer field with an
-                        append_layer field of a different name. Field types must
-                        match.
-                        - Expression - Calculates values for the resulting field.
-                        Values are calculated using Arcade expressions. To assign
-                        null values, use 'null'.
+                        - ``AppendField`` - Matches the ``input_layer`` field with an
+                          ``append_layer`` field of a different name. Field types must
+                          match.
+                        - ``Expression`` - Calculates values for the resulting field.
+                          Values are calculated using Arcade expressions. To assign
+                          null values, use ``null``.
 
-                      The following example appends Average_Sales to Mean_Sales,
+                      The following code snippet appends `Average_Sales` to `Mean_Sales`,
                       calculates an expression of WeeklyRate multiplied by 1.5 to
-                      append the values for Bonus, and sets a value of null for
-                      appended features in Errors.
+                      append the values for Bonus, and sets a value of ``null`` 
+                      for appended features in Errors.
 
                       .. code-block:: python
 
-                        #Usage Example:
+                          #Usage Example:
 
-                        >>> from arcgis.geoanalytics.manage_data import append_data
+                          >>> from arcgis.geoanalytics.manage_data import append_data
 
-                        >>> resp = append_data(input_layer=flyr_base,
-                                               append_layer=flyr_append,
-                                               field_mapping= [
-                                                {"inputLayerField": "Mean_Sales",
-                                                 "mappingType": "AppendField",
-                                                 "mappingValue": "Average_Sales"},
-                                                {"inputLayerField": "Bonus",
-                                                 "mappingType": "Expression",
-                                                 "mappingValue": "$feature['WeeklyRate'] * 1.5"},
-                                                {"inputLayerField": "Errors",
-                                                 "mappingType": "Expression",
-                                                 "mappingValue": "null"}
-                                               ]
-                                              )
+                          >>> resp = append_data(input_layer=flyr_base,
+                                                 append_layer=flyr_append,
+                                                 field_mapping= [
+                                                  {"inputLayerField": "Mean_Sales",
+                                                   "mappingType": "AppendField",
+                                                   "mappingValue": "Average_Sales"},
+                                                  {"inputLayerField": "Bonus",
+                                                   "mappingType": "Expression",
+                                                   "mappingValue": "$feature['WeeklyRate'] * 1.5"},
+                                                  {"inputLayerField": "Errors",
+                                                   "mappingType": "Expression",
+                                                   "mappingValue": "null"}
+                                                  ])
     ----------------  ---------------------------------------------------------------
-    gis               Optional GIS, the GIS on which this tool runs. If not
+    gis               Optional :class:`~arcgis.gis.GIS` on which this tool runs. If not
                       specified, the active GIS is used.
     ----------------  ---------------------------------------------------------------
-    future            Optional boolean. If True, a future object will be returned and the process
-                      will not wait for the task to complete. The default is False, which means wait for results.
+    future            Optional boolean. If ``True``, a future object will be returned and the process
+                      will not wait for the task to complete. The default is ``False``, which means wait for results.
     ================  ===============================================================
 
     :return: True or an error
@@ -1090,11 +1113,20 @@ def calculate_fields(
     -------------------------------------------------   ---------------------------------------------------------------
     data_type                                           Required string. The type for the new field.
 
-                                                        Choice list: ['Date', 'Double', 'Integer', 'String'`].
+                                                        Choice list:
+                                                        
+                                                          * ``Date``
+                                                          * ``Double``
+                                                          * ``Integer``
+                                                          * ``String``
     -------------------------------------------------   ---------------------------------------------------------------
     expression                                          Required string. An Arcade expression used to calculate the new
-                                                        field values. You can use any of the Date, Logical,
-                                                        Mathematical or Text function available with Arcade.
+                                                        field values. You can use any of the `Date`, `Logical`,
+                                                        `Mathematical`, or `Text` functions available with Arcade. 
+                                                        
+                                                        See
+                                                        Arcade `Function Reference <https://developers.arcgis.com/arcade/function-reference/>`_
+                                                        for details.
     -------------------------------------------------   ---------------------------------------------------------------
     track_aware                                         Optional boolean. Boolean value denoting if the expression is
                                                         track aware.
@@ -1111,11 +1143,22 @@ def calculate_fields(
 
                                                         The time boundary parameters are only applicable if the analysis is ``track_aware``.
                                                         The ``time_boundary_split`` parameter defines the scale of the time boundary.
-                                                        In the case above, this would be 1. See the portal documentation for this tool to learn more.
+                                                        In the case above, this would be 1. 
+                                                        
+                                                        See the portal documentation for this tool to learn more.
     -------------------------------------------------   ---------------------------------------------------------------
     time_split_unit                                     Optional string.  The unit to detect an incident is `time_boundary_split` is used.
 
-                                                        Choice list: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds'].
+                                                        Choice list: 
+                                                        
+                                                          * ``Years``
+                                                          * ``Months``
+                                                          * ``Weeks``
+                                                          * ``Days``
+                                                          * ``Hours``
+                                                          * ``Minutes``
+                                                          * ``Seconds``
+                                                          * ``Milliseconds``
     -------------------------------------------------   ---------------------------------------------------------------
     time_reference                                      Optional datetime.datetime. The starting date/time where analysis will
                                                         begin from.
@@ -1123,18 +1166,18 @@ def calculate_fields(
     output_name                                         Optional string, The task will create a feature service of the
                                                         results. You define the name of the service.
     -------------------------------------------------   ---------------------------------------------------------------
-    gis                                                 Optional GIS, the GIS on which this tool runs. If not
+    gis                                                 Optional :class:`~arcgis.gis.GIS` on which this tool runs. If not
                                                         specified, the active GIS is used.
     -------------------------------------------------   ---------------------------------------------------------------
     context                                             Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
 
-                                                        #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
-                                                        #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
-                                                        #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                                        #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+                                                          * ``extent`` - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                          * ``processSR`` - The features will be projected into this coordinate system for analysis.
+                                                          * ``outSR`` - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                                          * ``dataStore`` - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     -------------------------------------------------   ---------------------------------------------------------------
-    future                                              Optional boolean. If True, a future object will be returned and the process
-                                                        will not wait for the task to complete. The default is False, which means wait for results.
+    future                                              Optional boolean. If ``True``, a future object will be returned and the process
+                                                        will not wait for the task to complete. The default is ``False``, which means wait for results.
     =================================================   ===============================================================
 
 
@@ -1261,14 +1304,15 @@ def copy_to_data_store(
     --------------------------   ---------------------------------------------------------------
     context                      Optional string. The context parameter contains additional settings that affect task execution. For this task, there are five settings:
 
-                                 #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
-                                 #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
-                                 #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                 #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
-                                 #. Default aggregation styles (``defaultAggregationStyles``) - If set to 'True', results will have square, hexagon, and triangle aggregation styles enabled on results map services.
+                                   * ``extent`` - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                   * ``processSR`` - The features will be projected into this coordinate system for analysis.
+                                   * ``outSR`` - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                   * ``dataStore`` - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+                                   * ``defaultAggregationStyles`` - If set to ``True``, results will have square, 
+                                     hexagon, and triangle aggregation styles enabled on results map services.
     --------------------------   ---------------------------------------------------------------
-     future                      Optional boolean. If True, a future object will be returned and the process
-                                 will not wait for the task to complete. The default is False, which means wait for results.
+     future                      Optional boolean. If ``True``, a future object will be returned and the process
+                                 will not wait for the task to complete. The default is ``False``, which means wait for results.
     ==========================   ===============================================================
 
     :return: result_layer : Output Features as :class:`~arcgis.features.FeatureLayer`.
