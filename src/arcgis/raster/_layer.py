@@ -1023,7 +1023,7 @@ class ImageryLayer(Layer):
         self._extent = value
 
     # ----------------------------------------------------------------------
-    def attribute_table(self, rendering_rule: Optional[str] = None):
+    def attribute_table(self, rendering_rule: Optional[str] = None, as_df: bool = False, as_html = False):
         """
         The ``attribute_table`` method returns categorical mapping of pixel
         values (for example, a ``class``, ``group``, ``category``, or ``membership``).
@@ -1063,7 +1063,17 @@ class ImageryLayer(Layer):
                     del params["renderingRule"]
                     params["Raster"] = self._uri
 
-            return self._con.post(path=url, postdata=params, timeout=None)
+            rat = self._con.post(path=url, postdata=params, timeout=None)
+
+            if as_df:
+                import pandas as pd
+                df1 = pd.DataFrame(rat['features'])
+                attributes_list = df1['attributes'].tolist()
+                rat_df = pd.DataFrame(attributes_list)
+                return rat_df
+            else:
+                return rat
+
         return None
 
     # ----------------------------------------------------------------------
@@ -3510,7 +3520,9 @@ class ImageryLayer(Layer):
                     + "</td></tr>"
                 )
             legend_table += "</table>"
-            return legend_table
+
+            from IPython.display import HTML
+            return HTML(legend_table)
         else:
             return legend
 
