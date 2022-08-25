@@ -1023,7 +1023,9 @@ class ImageryLayer(Layer):
         self._extent = value
 
     # ----------------------------------------------------------------------
-    def attribute_table(self, rendering_rule: Optional[str] = None, as_df: bool = False, as_html = False):
+    def attribute_table(
+        self, rendering_rule: Optional[str] = None, as_df: bool = False
+    ):
         """
         The ``attribute_table`` method returns categorical mapping of pixel
         values (for example, a ``class``, ``group``, ``category``, or ``membership``).
@@ -1067,8 +1069,9 @@ class ImageryLayer(Layer):
 
             if as_df:
                 import pandas as pd
-                df1 = pd.DataFrame(rat['features'])
-                attributes_list = df1['attributes'].tolist()
+
+                df1 = pd.DataFrame(rat["features"])
+                attributes_list = df1["attributes"].tolist()
                 rat_df = pd.DataFrame(attributes_list)
                 return rat_df
             else:
@@ -3522,6 +3525,7 @@ class ImageryLayer(Layer):
             legend_table += "</table>"
 
             from IPython.display import HTML
+
             return HTML(legend_table)
         else:
             return legend
