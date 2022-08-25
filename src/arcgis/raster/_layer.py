@@ -1070,10 +1070,16 @@ class ImageryLayer(Layer):
             if as_df:
                 import pandas as pd
 
-                df1 = pd.DataFrame(rat["features"])
-                attributes_list = df1["attributes"].tolist()
-                rat_df = pd.DataFrame(attributes_list)
-                return rat_df
+                if "features" in rat:
+                    df1 = pd.DataFrame(rat["features"])
+                    if 'attributes' in df1.columns:
+                        attributes_list = df1["attributes"].tolist()
+                        rat_df = pd.DataFrame(attributes_list)
+                        return rat_df
+                    else:
+                        return None
+                else:
+                    return None
             else:
                 return rat
 
