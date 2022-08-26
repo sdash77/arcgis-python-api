@@ -6705,6 +6705,49 @@ class ImageryLayer(Layer):
             subplot_properties=subplot_properties,
         )
 
+    def spectral_profile(
+        self,
+        points: list[Point] = [],
+        show_values: bool = False,
+        plot_properties: dict[str, Any] = {},
+    ):
+
+        """
+        Spectral profile charts allow you to select areas of interest or ground features on the image and review the spectral information of all bands in a chart format. 
+
+        The x-axis of the spectral profile displays the band names
+
+        The y-axis of the spectral profile displays the spectral values.
+
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        points                                   Required list of :class:`~arcgis.geometry.Point` objects.
+        ------------------------------------     --------------------------------------------------------------------
+        show_values                              Optional bool. Default False.
+                                                 Set this parameter to True to display the values at each point in the line graph.
+       ------------------------------------     --------------------------------------------------------------------
+        plot_properties                          Optional dict. This parameter can be used to set the figure
+                                                 properties. These are the matplotlib.pyplot.figure() parameters and values
+                                                 specified in dict format.
+
+                                                 eg: {"figsize":(15,15)}
+        ====================================     ====================================================================
+
+        :return:
+            None
+
+        """
+        from arcgis.raster._charts import spectral_profile
+
+        return spectral_profile(
+            self,
+            points=points,
+            show_values=show_values,
+            plot_properties=plot_properties,
+        )
+
     def _repr_jpeg_(self):
         if self._uses_gbl_function:
             return self._repr_svg_()
