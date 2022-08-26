@@ -1275,6 +1275,7 @@ class TabularDataObject(object):
         index_data = None
         data_source = None
         import arcpy
+        import spatial_reference_helper
         import pandas as pd
 
         # if ((distance_feature) and (data_source)):F
@@ -1294,7 +1295,14 @@ class TabularDataObject(object):
                 fields = [["NEAR_DIST", field_2]]
                 arcpy.Near_analysis(data_source, distance_layer, field_names=fields)
                 count = count + 1
-            sdf = pd.DataFrame.spatial.from_featureclass(data_source, sr="4326")
+
+            data_source_desc = arcpy.Describe(data_source)
+            transformation = spatial_reference_helper.get_datum_transformation(
+                data_source_desc.spatialReference, 
+                arcpy.SpatialReference(4326), 
+                data_source_desc.extent
+            )
+            sdf = pd.DataFrame.spatial.from_featureclass(data_source, sr="4326", datum_transformation=transformation)
         else:
             sdf = pd.DataFrame()
             data_type = arcpy.Describe(input_features).dataType
