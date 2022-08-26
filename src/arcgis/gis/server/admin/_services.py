@@ -1712,6 +1712,21 @@ class ItemInformationManager(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
+    def manifest_xml(self) -> dict:
+        """
+        The service manifest resource documents the data and other resources
+        that define the service origins and power the service. This resource
+        will tell you underlying databases and their location along with
+        other supplementary files that make up the service.
+
+        """
+        url = "{base}/manifest/manifest.xml".format(base=self._url)
+        params = {"f": "json"}
+
+        return self._con.get(url, params)
+
+    # ----------------------------------------------------------------------
+    @property
     def properties(self) -> dict:
         """
         Gets/Sets the Item Information for a serivce.
