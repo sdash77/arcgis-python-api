@@ -10,6 +10,133 @@ _log = _logging.getLogger(__name__)
 _use_async = False
 
 
+def _convert_colorbrewer(cb_list: list, alpha: float = 1):
+    """
+    Helper to convert JS array derived from custom colorbrewer palette
+    into format used by the renderers. See https://colorbrewer2.org/.
+    Accepts HEX or RGB versions.
+
+    Example:
+    >>> palette_hex = ['#fee6ce','#fdae6b','#e6550d']
+    >>> _convert_colorbrewer(palette_hex)
+    [[254, 230, 206, 255], [253, 174, 107, 255], [230, 85, 13, 255]]
+
+    >>> palette_rgb = ['rgb(254,230,206)','rgb(253,174,107)','rgb(230,85,13)']
+    >>> _convert_colorbrewer(palette_rgb)
+    [[254, 230, 206, 255], [253, 174, 107, 255], [230, 85, 13, 255]]
+
+    """
+
+    new_list = []
+
+    # hex format
+    if "#" in cb_list[0]:
+        for color in cb_list:
+            color = color.strip("#")
+            length = len(color)
+            new_color = [
+                int(color[i : i + length // 3], 16)
+                for i in range(0, length, length // 3)
+            ]
+            new_color.append(alpha * 255)
+            new_list.append(new_color)
+
+    # rgb format
+    else:
+        for color in cb_list:
+            color = color[4:-1]
+            tokens = color.split(",")
+            new_color = [int(token) for token in tokens]
+            new_color.append(alpha * 255)
+            new_list.append(new_color)
+
+    return new_list
+
+
+def _format_colors(colors, alpha):
+    """
+    Helper to format any form of color input into something usable by the
+    renderers. Strings will be tokenized into colormap names or converted
+    to RGB numbers if they are HEX format. Exported colorbrewer lists will
+    be converted to RGB lists, RGB lists will be left untouched. Palettable
+    palettes will have their .colors attribute converted from tuples to lists.
+    Anything else will default to "jet" colormap.
+
+    Example:
+    >>> hex_string = '#fee6ce, #fdae6b, #e6550d'
+    >>> _format_colors(hex_string, 1)
+    [[254, 230, 206, 255], [253, 174, 107, 255], [230, 85, 13, 255]]
+
+    >>> cmap_string = "Spectral, jet, autumn"
+    >>> _format_colors(cmap_string, 1)
+    ['Spectral', 'jet', 'autumn']
+
+    >>> import palettable.wesanderson as wa
+    >>> wes_test = wa.Aquatic1_5
+    >>> _format_colors(wes_test, 1)
+    [[52, 36, 25, 255],
+    [28, 64, 39, 255],
+    [241, 201, 14, 255],
+    [102, 88, 153, 255],
+    [184, 147, 130, 255]]
+
+    >>> premade_list = [[254, 230, 206, 255], [253, 174, 107, 255], [230, 85, 13, 255]]
+    >>> _format_colors(premade_list, 1)
+    [[254, 230, 206, 255], [253, 174, 107, 255], [230, 85, 13, 255]]
+
+    """
+    if colors is None:
+        fmt_colors = "jet"
+    if isinstance(colors, list):
+
+        # single RGB + Alpha set
+        if len(colors) == 4 and all([isinstance(i, int) for i in colors]):
+            fmt_colors = [colors]
+
+        # exported colorbrewer JSON array or list of colormaps
+        elif all([isinstance(i, str) for i in colors]):
+            if all(["#" in i for i in colors]) or all(["rgb(" in i for i in colors]):
+                fmt_colors = _convert_colorbrewer(colors, alpha)
+            else:
+                fmt_colors = colors
+
+        # list of RGB + Alpha set (already valid)
+        elif all(
+            [
+                isinstance(color, list)
+                and len(color) == 4
+                and all([isinstance(i, int) for i in color])
+                for color in colors
+            ]
+        ):
+            fmt_colors = colors
+
+        # doesn't fit any formats, default it
+        else:
+            fmt_colors = "jet"
+
+    # palettable palette object
+    elif hasattr(colors, "colors"):
+        colors.colors
+        fmt_colors = []
+        for color in colors.colors:
+            val_list = [val for val in color]
+            val_list.append(alpha * 255)
+            fmt_colors.append(val_list)
+
+    # any form of string
+    elif isinstance(colors, str):
+        fmt_colors = colors.replace(" ", "")
+        fmt_colors = fmt_colors.split(",")
+        if all(["#" in i for i in fmt_colors]):
+            fmt_colors = _convert_colorbrewer(fmt_colors, alpha)
+
+    # default
+    else:
+        fmt_colors = ["jet"]
+    return fmt_colors
+
+
 def _get_list_value(index, array):
     """
     helper operation to loop a list of values regardless of the index value

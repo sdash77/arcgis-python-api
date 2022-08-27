@@ -5,9 +5,9 @@ from __future__ import annotations
 from typing import Optional, Union
 
 from arcgis._impl.common._utils import chunks
-from arcgis.mapping._utils import _get_list_value
+from arcgis.mapping._utils import _get_list_value, _format_colors
 from arcgis.mapping.symbol import create_symbol, _cmap2rgb
-
+import numpy as np
 
 __all__ = ["generate_renderer"]
 
@@ -959,20 +959,11 @@ def generate_renderer(
     """
     import numpy as np
 
-    if colors is None:
-        colors = "jet"
-    if isinstance(colors, str):
-        colors = colors.split(",")
-    elif (
-        isinstance(colors, list)
-        and len(colors) == 4
-        and all([isinstance(i, int) for i in colors])
-    ):
-        colors = [colors]
     if "alpha" in symbol_args:
         alpha = symbol_args["alpha"]
     else:
         alpha = 1
+    colors = _format_colors(colors, alpha)
 
     renderer = None
     vv = []
