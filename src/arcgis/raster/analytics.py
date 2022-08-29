@@ -2722,7 +2722,7 @@ def classify(
     --------------------------------     --------------------------------------------------------------------
     input_raster                         Required ImageryLayer object.
     --------------------------------     --------------------------------------------------------------------
-    input_classifier_definition          Required dict.
+    input_classifier_definition          Required dict or ECD Portal item.
 
                                          The classifier definition dictionary generated from the train_classifier function.
 
@@ -6212,7 +6212,7 @@ def linear_spectral_unmixing(
     input_raster                             Required ImageryLayer object. The input raster.
                                              Portal Item can be passed.
     ------------------------------------     --------------------------------------------------------------------
-    input_spectral_profile                   Required Dict or String. The class spectral profile information.
+    input_spectral_profile                   Required Dict, String or ECD Portal item. The class spectral profile information.
     ------------------------------------     --------------------------------------------------------------------
     value_option                             Optional List of string(s). Specifies the options to define the output pixel values.
 

@@ -10005,6 +10005,10 @@ class _RasterAnalysisTools(BaseAnalytics):
             output_name=output_name, task=task, output_properties=kwargs
         )
 
+        if input_classifier_definition is not None:
+            if isinstance(input_classifier_definition, Item):
+                input_classifier_definition = {"itemId": input_classifier_definition.itemid}
+
         gpjob = self._tbx.classify(
             input_raster=input_raster,
             input_classifier_definition=input_classifier_definition,
@@ -13972,6 +13976,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         if input_spectral_profile is not None:
             if isinstance(input_spectral_profile, str):
                 input_spectral_profile = {"uri": input_spectral_profile}
+            elif isinstance(input_spectral_profile, Item):
+                input_spectral_profile = {"itemId": input_spectral_profile.itemid}
 
         gpjob = self._tbx.linear_spectral_unmixing(
             input_raster=input_raster,
