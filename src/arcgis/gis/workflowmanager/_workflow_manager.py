@@ -325,9 +325,6 @@ class JobManager:
                 base=self._url, token=self._gis._con.token
             )
             return Job.manage_jobs(self._gis, url, job_ids, "Reopen")
-            url = "{base}/jobs/manage?token={token}".format(
-                base=self._url, token=self._gis._con.token
-            )
         except:
             self._handle_error(sys.exc_info())
 
@@ -383,7 +380,8 @@ class JobManager:
         -------------------         --------------------------------------------------------------------
         parent                      Optional string Parent Job
         -------------------         --------------------------------------------------------------------
-        location                    Optional Geometry. Define an area of location for your job.
+        location                    Optional Geometry or Workflow Manager :class:`~arcgis.gis.workflowmanager.JobLocation`
+                                    Define an area of location for your job.
         -------------------         --------------------------------------------------------------------
         extended_properties         Optional Dict. Define additional properties on a job template
                                     specific to your business needs.
@@ -396,7 +394,7 @@ class JobManager:
         ===================         ====================================================================
 
         :return:
-            Workflow Manager :class:`~arcgis.gis.workflowmanager.Job`
+            List of newly create job ids
 
         """
         job_object = {
@@ -494,7 +492,7 @@ class JobManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def get(self, id: str, get_ext_props: bool = True):
+    def get(self, id: str, get_ext_props: bool = True, get_holds: bool = True):
         """
         Returns an active job with the given ID
 
@@ -504,6 +502,8 @@ class JobManager:
         id                  Required string. Job ID
         ---------------     --------------------------------------------------------------------
         get_ext_props       Optional Boolean. If set to true will show the jobs extended properties.
+        ---------------     --------------------------------------------------------------------
+        get_holds           Optional Boolean. If set to true will show the jobs holds.
         ===============     ====================================================================
 
         :return:
@@ -664,8 +664,8 @@ class JobManager:
         ---------------     --------------------------------------------------------------------
         job_id              Required string. ID for the job to update
         ---------------     --------------------------------------------------------------------
-        geometry            Required ArcGIS.Geometry.Geometry that describes a Job's Location.
-                            Must be a Polygon, Polyline, or Multipoint geometry type
+        geometry            Required ArcGIS.Geometry.Geometry or Workflow Manager :class:`~arcgis.gis.workflowmanager.JobLocation`
+                            that describes a Job's Location. Must be a Polygon, Polyline, or Multipoint geometry type
         ===============     ====================================================================
 
         :return:
@@ -679,28 +679,32 @@ class JobManager:
                 item=self._item,
                 token=self._gis._con.token,
             )
-            location = {"geometryType": geometry.type}
-            if geometry.type == "Polygon":
-                location["geometry"] = json.dumps(
-                    {
-                        "rings": geometry.rings,
-                        "spatialReference": geometry.spatial_reference,
-                    }
-                )
-            elif geometry.type == "Polyline":
-                location["geometry"] = json.dumps(
-                    {
-                        "paths": geometry.paths,
-                        "spatialReference": geometry.spatial_reference,
-                    }
-                )
-            elif geometry.type == "Multipoint":
-                location["geometry"] = json.dumps(
-                    {
-                        "points": geometry.points,
-                        "spatialReference": geometry.spatial_reference,
-                    }
-                )
+            if type(geometry) is dict:
+                location = geometry
+            else:
+                location = {"geometryType": geometry.type}
+                if geometry.type == "Polygon":
+                    location["geometry"] = json.dumps(
+                        {
+                            "rings": geometry.rings,
+                            "spatialReference": geometry.spatial_reference,
+                        }
+                    )
+                elif geometry.type == "Polyline":
+                    location["geometry"] = json.dumps(
+                        {
+                            "paths": geometry.paths,
+                            "spatialReference": geometry.spatial_reference,
+                        }
+                    )
+                elif geometry.type == "Multipoint":
+                    location["geometry"] = json.dumps(
+                        {
+                            "points": geometry.points,
+                            "spatialReference": geometry.spatial_reference,
+                        }
+                    )
+
 
             return_obj = json.loads(
                 self._gis._con.put(
@@ -879,6 +883,110 @@ class WorkflowManager:
         }
         res = self._gis._con.post(url, params=params, json_encode=False, post_json=True)
         return res.get("result", None)
+
+    def evaluate_web_request(
+        self,
+        request_type: str,
+        base_url: str,
+        query_params=None,
+        path_params=None,
+        headers=None,
+        body=None,
+        authorization=None,
+        attachment: Optional[str] = None,
+        output_values=None,
+        job_id: Optional[str] = None
+    ):
+        """
+        Evaluates the response from the HTTP request configured in the Send Web Request step.
+        The evaluator can be used to ensure correct responses as well as proper step configuration
+        before running the step in a job. Properties used will vary depending on the API. A valid
+        jobId is required to evaluate Arcade expressions. The adminBasic or adminAdvanced privilege is required.
+
+        ======================  ===============================================================
+        **Argument**            **Description**
+        ----------------------  ---------------------------------------------------------------
+        request_type            Required String. Can be set to GET, POST, PUT, DELETE, HEAD, PATCH, OPTIONS
+        ----------------------  ---------------------------------------------------------------
+        base_url                Required String. The URL of the REST endpoint to send request to
+        ----------------------  ---------------------------------------------------------------
+        query_params            Optional List of objects. Add a Key & Value for each query parameter
+        ----------------------  ---------------------------------------------------------------
+        path_params             Optional List of objects. Add a Key & Value for each query parameter
+        ----------------------  ---------------------------------------------------------------
+        headers                 Optional List of objects. Add a Key & Value for each header
+        ----------------------  ---------------------------------------------------------------
+        body                    Optional object. Can be set to Form Data, URL Encoded, or Raw.
+                                If Form Data or URL Encoded, add a Key and Value for each entry.
+                                If Raw, add content and contentType, either JSON or String
+        ----------------------  ---------------------------------------------------------------
+        authorization           Optional object. Optional. Can be set to No Auth, API Key, Bearer Token,
+                                Basic Auth, or Digest Auth. If API Key, add a Key and Value for each entry
+                                and specify whether to add them to Headers or Query Parameters. If Bearer Token,
+                                add a token. If Basic Auth or Digest Auth, add a username and password
+        ----------------------  ---------------------------------------------------------------
+        attachment              Optional object. Requires the Workflow Manager Advanced license.
+                                Enter a custom folder name or custom attachment name in object.
+        ----------------------  ---------------------------------------------------------------
+        output_values           Optional List of objects. Requires the Workflow Manager Advanced license.
+                                Add a Key and Value. The Value will be the JSON Path for the desired output value.
+        ----------------------  ---------------------------------------------------------------
+        job_id                  Optional String. A valid JobId is required if using this property.
+                                Required to evaluate Arcade expressions.
+        ======================  ===============================================================
+
+        :return: Success Object.
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE: Evaluating a web request
+
+            # set defining parameters for web request
+            query_parameters = [
+                    {"key": "foo", "value": "bar", "isEnabled": True},
+                    {"key": "spam", "value": "eggs", "isEnabled": True}
+                ]
+            output_vals = [
+                    {"key": "foo", "value": "$.args.foo", "isEnabled": True},
+                    {"key": "spam", "value": "$.args.spam", "isEnabled": True}
+                ]
+
+            result1 = self.connection.workflow_manager.evaluate_web_request(
+                    request_type="GET",
+                    base_url="https://postman-echo.com/get",
+                    query_params=query_parameters,
+                    output_values=output_vals
+                )
+
+
+        """
+
+        request = {"requestType": request_type, "baseUrl": base_url}
+
+        if headers is not None:
+            request['headers'] = headers
+        if path_params is not None:
+            request['pathParams'] = path_params
+        if query_params is not None:
+            request['queryParams'] = query_params
+        if body is not None:
+            request['body'] = body
+        if authorization is not None:
+            request['authorization'] = authorization
+        if attachment is not None:
+            request['attachment'] = attachment
+        if output_values is not None:
+            request['outputValues'] = output_values
+        if job_id is not None:
+            request['job_id'] = job_id
+
+        url = f"{self._url}/evaluateWebRequest?token={self._gis._con.token}"
+        params = {"webRequest": request}
+        return_obj = self._gis._con.post(url, params=params, json_encode=False, post_json=True)
+
+        if "error" in return_obj:
+            self._gis._con._handle_json_error(return_obj["error"], 0)
+        return return_obj
 
     @property
     def wm_roles(self):
@@ -1778,6 +1886,43 @@ class WorkflowManager:
         except:
             self._handle_error(sys.exc_info())
 
+    def create_jobs_from_survey_response(self, job_template_id):
+        """
+        Creates a new Workflow Manager job from a submission of a survey in Survey123 using webhooks.
+        The survey must be hosted on the same ArcGIS Enterprise machine as Workflow Manager Server.
+        This functionality requires the user also have permissions to submit the survey in Survey123.
+        This requires the ArcGIS Workflow Manager Server Advanced role. The jobCreate privilege is required.
+        The survey body should be called using Survey123 webhooks. The survey must include the following options:
+
+        TriggerEvents:
+            - New Record Submitted
+        Event Data:
+            - Survey Info
+            - Submitted Record
+            - Portal Info
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        job_template_id     Required string. The Job template id of the jobs to create.
+        ===============     ====================================================================
+
+        :return:
+            success object
+        """
+        try:
+            url = "{base}/webhooks/createJobFromSurveyResponse/{jobTemplateId}?token={token}".format(
+                base=self._url, jobTemplateId=job_template_id, token=self._gis._con.token
+            )
+            return_obj = self._gis._con.post(url, json_encode=False, post_json=True)
+
+            if "error" in return_obj:
+                self._gis._con._handle_json_error(return_obj["error"], 0)
+            return return_obj
+
+        except:
+            self._handle_error(sys.exc_info())
+
 
 class LookUpTable(object):
     """
@@ -2186,6 +2331,8 @@ class Job(object):
             self.job_template_id
         ) = (
             self.extended_properties
+        ) = (
+            self.holds
         ) = (
             self.diagram_name
         ) = (
@@ -2972,6 +3119,49 @@ class JobTemplate(object):
         elif "success" in return_obj:
             return return_obj["success"]
         return return_obj
+
+    def execute_webhook_creation(self, automation_id, action_object={}):
+        """
+        Executes a webhook to create a new job. This requires the ArcGIS Workflow Manager Server Advanced role.
+        The jobCreate privilege and access to the workflow item are required. If the primary credentials fail,
+        use the fallback credentials.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        automation_id       Required string. Automation Creation Id
+        ---------------     --------------------------------------------------------------------
+        action_object       Optional string. The JSON object that defines the webhook request body.
+        ===============     ====================================================================
+
+        :return:
+            List of job Ids created
+
+        """
+        try:
+            url = "{base}/automatedCreation/{automationId}/executeWebhook".format(
+                base=self._url,
+                templateId=self.job_template_id,
+                automationId=automation_id,
+                token=self._gis._con.token
+            )
+
+            return_obj = json.loads(
+                self._gis._con.post(
+                    url,
+                    action_object,
+                    add_token=False,
+                    post_json=True,
+                    try_json=False,
+                    json_encode=False,
+                )
+            )
+
+            if "error" in return_obj:
+                self._gis._con._handle_json_error(return_obj["error"], 0)
+            return return_obj['jobIds']
+        except:
+            self._handle_error(sys.exc_info())
 
 
 class Group(object):
