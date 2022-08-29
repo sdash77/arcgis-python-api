@@ -513,7 +513,12 @@ class JobManager:
         try:
             url = f"{self._url}/jobs/{id}"
             job_dict = self._gis._con.get(
-                url, {"token": self._gis._con.token, "extProps": get_ext_props}
+                url,
+                {
+                    "token": self._gis._con.token,
+                    "extProps": get_ext_props,
+                    "holds": get_holds,
+                },
             )
             return Job(job_dict, self._gis, self._url)
         except:
@@ -705,7 +710,6 @@ class JobManager:
                         }
                     )
 
-
             return_obj = json.loads(
                 self._gis._con.put(
                     url,
@@ -895,7 +899,7 @@ class WorkflowManager:
         authorization=None,
         attachment: Optional[str] = None,
         output_values=None,
-        job_id: Optional[str] = None
+        job_id: Optional[str] = None,
     ):
         """
         Evaluates the response from the HTTP request configured in the Send Web Request step.
@@ -964,25 +968,27 @@ class WorkflowManager:
         request = {"requestType": request_type, "baseUrl": base_url}
 
         if headers is not None:
-            request['headers'] = headers
+            request["headers"] = headers
         if path_params is not None:
-            request['pathParams'] = path_params
+            request["pathParams"] = path_params
         if query_params is not None:
-            request['queryParams'] = query_params
+            request["queryParams"] = query_params
         if body is not None:
-            request['body'] = body
+            request["body"] = body
         if authorization is not None:
-            request['authorization'] = authorization
+            request["authorization"] = authorization
         if attachment is not None:
-            request['attachment'] = attachment
+            request["attachment"] = attachment
         if output_values is not None:
-            request['outputValues'] = output_values
+            request["outputValues"] = output_values
         if job_id is not None:
-            request['job_id'] = job_id
+            request["job_id"] = job_id
 
         url = f"{self._url}/evaluateWebRequest?token={self._gis._con.token}"
         params = {"webRequest": request}
-        return_obj = self._gis._con.post(url, params=params, json_encode=False, post_json=True)
+        return_obj = self._gis._con.post(
+            url, params=params, json_encode=False, post_json=True
+        )
 
         if "error" in return_obj:
             self._gis._con._handle_json_error(return_obj["error"], 0)
@@ -1912,7 +1918,9 @@ class WorkflowManager:
         """
         try:
             url = "{base}/webhooks/createJobFromSurveyResponse/{jobTemplateId}?token={token}".format(
-                base=self._url, jobTemplateId=job_template_id, token=self._gis._con.token
+                base=self._url,
+                jobTemplateId=job_template_id,
+                token=self._gis._con.token,
             )
             return_obj = self._gis._con.post(url, json_encode=False, post_json=True)
 
@@ -3143,7 +3151,7 @@ class JobTemplate(object):
                 base=self._url,
                 templateId=self.job_template_id,
                 automationId=automation_id,
-                token=self._gis._con.token
+                token=self._gis._con.token,
             )
 
             return_obj = json.loads(
@@ -3159,7 +3167,7 @@ class JobTemplate(object):
 
             if "error" in return_obj:
                 self._gis._con._handle_json_error(return_obj["error"], 0)
-            return return_obj['jobIds']
+            return return_obj["jobIds"]
         except:
             self._handle_error(sys.exc_info())
 
