@@ -37,13 +37,13 @@ class WNet_cGAN(ArcGISModel):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function.
+                            :meth:`~arcgis.learn.prepare_data` function.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
     =====================   ===========================================
 
-    :returns: `WNet_cGAN` Object
+    :return:  :class:`~arcgis.learn.WNet_cGAN` Object
     """
 
     def __init__(self, data, pretrained_path=None, *args, **kwargs):
@@ -77,7 +77,7 @@ class WNet_cGAN(ArcGISModel):
     def from_model(cls, emd_path, data=None):
 
         """
-        Creates a WNet_cGAN object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.WNet_cGAN` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -86,11 +86,11 @@ class WNet_cGAN(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :returns: `WNet_cGAN` Object
+        :return:  :class:`~arcgis.learn.WNet_cGAN` Object
         """
 
         if not HAS_FASTAI:

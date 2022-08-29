@@ -3547,7 +3547,17 @@ class _FeatureAnalysisTools(BaseAnalytics):
             params["outputName"] = {"itemProperties": output_name}
             output_name = params["outputName"]
         else:
-            params["outputName"] = {"serviceProperties": {"name": output_name}}
+            params["outputName"] = {
+                "serviceProperties": {"name": output_name},
+                "itemProperties": {
+                    "title": output_name,
+                    "description": "File generated from running the Extract Data solution.",
+                    "tags": "Analysis Result, Extract Data",
+                    "snippet": "Analysis File item generated from Extract Data",
+                    "folderId": "",
+                },
+            }
+
             output_name = params["outputName"]
         if context is not None:
             params["context"] = context
@@ -3560,7 +3570,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             input_layers=input_layers_param,
             extent=extent,
             clip=clip,
-            data_format=data_format,
+            data_format=data_format.upper(),
             output_name=output_name,
             context=context,
             gis=self._gis,

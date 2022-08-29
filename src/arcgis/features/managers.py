@@ -9,11 +9,14 @@ import time
 import logging
 import tempfile
 import collections
+from enum import Enum
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import GIS, _GISResource, Item
 import concurrent.futures as _cf
 from typing import Optional, Any, Union
 from arcgis.auth.tools import LazyLoader
+from dataclasses import dataclass
+import datetime as _dt
 
 features = LazyLoader("arcgis.features")
 _version = LazyLoader("arcgis.features._version")
@@ -21,6 +24,64 @@ _version = LazyLoader("arcgis.features._version")
 _log = logging.getLogger()
 
 # pylint: disable=protected-access
+###########################################################################
+class WebHookEvents(Enum):
+    """
+    Provides the allowed webhook enumerations for the captured events.
+    """
+
+    ALL = "*"
+    FEATURESCREATED = "FeaturesCreated"
+    FEATURESUPDATED = "FeaturesUpdated"
+    FEATURESDELETED = "FeaturesDeleted"
+    FEATURESEDITED = "FeaturesEdited"
+    ATTACHMENTSCREATED = "AttachmentsCreated"
+    ATTACHMENTSUPDATED = "AttachmentsUpdated"
+    ATTACHMENTSDELETED = "AttachmentsDeleted"
+    LAYERSCHEMACHANGED = "LayerSchemaChanged"
+    LAYERDEFINITIONCHANGED = "LayerDefinitionChanged"
+    FEATURESERVICEDEFINITIONCHANGED = "FeatureServiceDefinitionChanged"
+
+
+###########################################################################
+@dataclass
+class WebHookScheduleInfo:
+    """
+    This dataclass provides information on how to schedule a webhook.
+
+
+    =====================================    ===========================================================================
+    **Argument**                             **Description**
+    -------------------------------------    ---------------------------------------------------------------------------
+    name                                     Required string.  The name of the scheduling task.
+    -------------------------------------    ---------------------------------------------------------------------------
+    start_at                                 Required datetime.datetime. The start date.
+    -------------------------------------    ---------------------------------------------------------------------------
+    state                                    Optional String. The state of the task, this can be `enabled` or `disabled`.
+    -------------------------------------    ---------------------------------------------------------------------------
+    frequency                                Optional String. The default is `minute`. The time interval to run each task.
+                                             The allows values are: second, minute, hour, day, week, month, year.
+    -------------------------------------    ---------------------------------------------------------------------------
+    interval                                 Optional Integer. The value for with the frequency describes.
+    =====================================    ===========================================================================
+
+
+    """
+
+    name: str
+    start_at: _dt.datetime
+    state: str = "enabled"
+    frequency: str = "minute"
+    interval: int = 5
+
+    def as_dict(self) -> dict[str, Any]:
+        """returns the dataclass as a dictionary"""
+        return {
+            "name": self.name,
+            "startAt": int(self.start_at.timestamp() * 1000),
+            "recurrenceInfo": {"frequency": self.frequency, "interval": self.interval},
+        }
+
 
 ###########################################################################
 class AttachmentManager(object):
@@ -60,16 +121,16 @@ class AttachmentManager(object):
     def search(
         self,
         where: str = "1=1",
-        object_ids: Optional[str] = None,
-        global_ids: Optional[str] = None,
-        attachment_types: Optional[str] = None,
-        size: Optional[Union[tuple[int], list[int]]] = None,
-        keywords: Optional[str] = None,
+        object_ids: str | None = None,
+        global_ids: str | None = None,
+        attachment_types: str | None = None,
+        size: tuple[int] | list[int] | None = None,
+        keywords: str | None = None,
         show_images: bool = False,
         as_df: bool = False,
         return_metadata: bool = False,
         return_url: bool = False,
-        max_records: Optional[int] = None,
+        max_records: int | None = None,
         offset: int = 0,
     ):
         """
@@ -450,9 +511,9 @@ class AttachmentManager(object):
 
     def download(
         self,
-        oid: Optional[str] = None,
-        attachment_id: Optional[str] = None,
-        save_path: Optional[str] = None,
+        oid: str | None = None,
+        attachment_id: str | None = None,
+        save_path: str | None = None,
     ):
         """
         Downloads attachment and returns its path on disk.
@@ -553,7 +614,7 @@ class AttachmentManager(object):
         self,
         oid: str,
         file_path: str,
-        keywords: Optional[str] = None,
+        keywords: str | None = None,
         return_moment: bool = False,
     ) -> bool:
         """
@@ -725,9 +786,9 @@ class SyncManager(object):
         self,
         replica_name: str,
         layers: list[int],
-        layer_queries: Optional[dict[str, Any]] = None,
-        geometry_filter: Optional[dict[str, str]] = None,
-        replica_sr: Optional[Union[dict[str, Any], int]] = None,
+        layer_queries: dict[str, Any] | None = None,
+        geometry_filter: dict[str, str] | None = None,
+        replica_sr: dict[str, Any] | int | None = None,
         transport_type: str = "esriTransportTypeUrl",
         return_attachments: bool = False,
         return_attachments_databy_url: bool = False,
@@ -735,13 +796,13 @@ class SyncManager(object):
         attachments_sync_direction: str = "none",
         sync_model: str = "none",
         data_format: str = "json",
-        replica_options: Optional[dict[str, Any]] = None,
+        replica_options: dict[str, Any] | None = None,
         wait: bool = False,
-        out_path: Optional[str] = None,
-        sync_direction: Optional[str] = None,
+        out_path: str | None = None,
+        sync_direction: str | None = None,
         target_type: str = "client",
-        transformations: Optional[list[str]] = None,
-        time_reference_unknown_client: Optional[bool] = None,
+        transformations: list[str] | None = None,
+        time_reference_unknown_client: bool | None = None,
     ):
         """
         The create operation is performed on a :class:`~arcgis.features.FeatureLayerCollection` resource.
@@ -981,8 +1042,8 @@ class SyncManager(object):
         layers: list[int],
         retention_period: int,
         period_unit: str = "days",
-        min_server_gen: Optional[str] = None,
-        replica_id: Optional[str] = None,
+        min_server_gen: str | None = None,
+        replica_id: str | None = None,
         future: bool = False,
     ):
         """
@@ -1046,15 +1107,15 @@ class SyncManager(object):
         self,
         replica_id: str,
         transport_type: str = "esriTransportTypeUrl",
-        replica_server_gen: Optional[int] = None,
+        replica_server_gen: int | None = None,
         return_ids_for_adds: bool = False,
-        edits: Optional[list[dict[str, Any]]] = None,
+        edits: list[dict[str, Any]] | None = None,
         return_attachment_databy_url: bool = False,
         asynchronous: bool = False,
         sync_direction: str = "snapshot",
         sync_layers: str = "perReplica",
-        edits_upload_id: Optional[dict] = None,
-        edits_upload_format: Optional[str] = None,
+        edits_upload_id: dict | None = None,
+        edits_upload_format: str | None = None,
         data_format: str = "json",
         rollback_on_failure: bool = True,
     ):
@@ -1086,8 +1147,8 @@ class SyncManager(object):
         replica_name: str,
         item: Item,
         destination_gis: GIS,
-        layers: Optional[list[int]] = None,
-        extent: Optional[dict[str, Any]] = None,
+        layers: list[int] | None = None,
+        extent: dict[str, Any] | None = None,
     ):
         """
         Creates a replicated service from a parent to another GIS.
@@ -1310,13 +1371,13 @@ class WebHook(object):
     # ----------------------------------------------------------------------
     def edit(
         self,
-        name: Optional[str] = None,
-        change_types: Optional[str] = None,
-        hook_url: Optional[str] = None,
-        signature_key: Optional[str] = None,
-        active: Optional[bool] = None,
-        schedule_info: Optional[dict[str, Any]] = None,
-        payload_format: Optional[str] = None,
+        name: str | None = None,
+        change_types: WebHookEvents | str | None = None,
+        hook_url: str | None = None,
+        signature_key: str | None = None,
+        active: bool | None = None,
+        schedule_info: WebHookScheduleInfo | dict[str, Any] | None = None,
+        payload_format: str | None = None,
     ) -> dict:
         """
         Updates the existing WebHook's Properties.
@@ -1328,7 +1389,7 @@ class WebHook(object):
         -------------------------------------    ---------------------------------------------------------------------------
         hook_url                                 Optional String.  The URL to which the payloads will be delivered.
         -------------------------------------    ---------------------------------------------------------------------------
-        change_types                             Optional String.  The default is "*", which means all events.  This is a
+        change_types                             Optional WebHookEvents or String.  The default is "*", which means all events.  This is a
                                                  comma separated list of values that will fire off the web hook.  The list
                                                  each supported type is below.
         -------------------------------------    ---------------------------------------------------------------------------
@@ -1338,9 +1399,9 @@ class WebHook(object):
         -------------------------------------    ---------------------------------------------------------------------------
         active                                   Optional bool. Enable or disable call backs when the webhook is triggered.
         -------------------------------------    ---------------------------------------------------------------------------
-        schedule_info                            Optional Dict. Allows the trigger to be used as a given schedule.
+        schedule_info                            Optional WebHookScheduleInfo or Dict. Allows the trigger to be used as a given schedule.
 
-                                                 Example:
+                                                 Example Dictionary:
 
 
                                                      | {
@@ -1393,8 +1454,21 @@ class WebHook(object):
         """
         props = dict(self.properties)
         url = f"{self._url}/edit"
+        if isinstance(schedule_info, WebHookScheduleInfo):
+            schedule_info = schedule_info.as_dict()
         if isinstance(change_types, list):
-            change_types = ",".join(change_types)
+            ctypes = []
+            for ct in change_types:
+                if isinstance(ct, WebHookEvents):
+                    ctypes.append(ct.value)
+                else:
+                    ctypes.append(ct)
+
+            change_types = ",".join(ctypes)
+        elif isinstance(change_types, WebHookEvents):
+            change_types = change_types.value
+        elif change_types is None:
+            change_types = ",".join(self.properties["changeTypes"])
         params = {
             "f": "json",
             "name": name,
@@ -1481,11 +1555,12 @@ class WebHookServiceManager(object):
         self,
         name: str,
         hook_url: str,
-        change_types: str = "*",
-        signature_key: Optional[str] = None,
+        change_types: WebHookEvents | str = WebHookEvents.ALL,
+        signature_key: str | None = None,
         active: bool = False,
-        schedule_info: Optional[dict[str, Any]] = None,
+        schedule_info: dict[str, Any] | WebHookScheduleInfo | None = None,
         payload_format: str = "json",
+        content_type: str | None = None,
     ) -> WebHook:
         """
 
@@ -1499,7 +1574,7 @@ class WebHookServiceManager(object):
         -------------------------------------    ---------------------------------------------------------------------------
         hook_url                                 Required String.  The URL to which the payloads will be delivered.
         -------------------------------------    ---------------------------------------------------------------------------
-        change_types                             Optional String.  The default is "*", which means all events.  This is a
+        change_types                             Optional WebHookEvents or String.  The default is "WebHookEvents.ALL", which means all events.  This is a
                                                  comma separated list of values that will fire off the web hook.  The list
                                                  each supported type is below.
         -------------------------------------    ---------------------------------------------------------------------------
@@ -1509,9 +1584,9 @@ class WebHookServiceManager(object):
         -------------------------------------    ---------------------------------------------------------------------------
         active                                   Optional bool. Enable or disable call backs when the webhook is triggered.
         -------------------------------------    ---------------------------------------------------------------------------
-        schedule_info                            Optional Dict. Allows the trigger to be used as a given schedule.
+        schedule_info                            Optional Dict or `WebHookScheduleInfo`. Allows the trigger to be used as a given schedule.
 
-                                                 Example:
+                                                 Example Dictionary:
 
                                                      | {
                                                      |   "name" : "Every-5seconds",
@@ -1526,6 +1601,10 @@ class WebHookServiceManager(object):
         -------------------------------------    ---------------------------------------------------------------------------
         payload_format                           Optional String. The payload can be sent in pretty format or standard.
                                                  The default is `json`.
+        -------------------------------------    ---------------------------------------------------------------------------
+        content_type                             Optional String. The Content Type is used to indicate the media type of the
+                                                 resource. The media type is a string sent along with the file indicating
+                                                 the format of the file.
         =====================================    ===========================================================================
 
 
@@ -1563,7 +1642,17 @@ class WebHookServiceManager(object):
         """
         url = f"{self._url}/create"
         if isinstance(change_types, list):
-            change_types = ",".join(change_types)
+            ctnew = []
+            for ct in change_types:
+                if isinstance(ct, str):
+                    ctnew.append(ct)
+                elif isinstance(ct, WebHookEvents):
+                    ctnew.append(ct.value)
+            change_types = ",".join(ctnew)
+        elif isinstance(change_types, WebHookEvents):
+            change_types = change_types.value
+        if isinstance(schedule_info, WebHookScheduleInfo):
+            schedule_info = schedule_info.as_dict()
         params = {
             "f": "json",
             "name": name,
@@ -1574,6 +1663,8 @@ class WebHookServiceManager(object):
             "scheduleInfo": schedule_info,
             "payloadFormat": payload_format,
         }
+        if content_type:
+            params["contentType"] = content_type
         resp = self._gis._con.post(url, params)
         if not "url" in resp:
             hook_url = self._url + f"/{resp['globalId']}"
@@ -1751,22 +1842,24 @@ class FeatureLayerCollectionManager(_GISResource):
         return res
 
     # ----------------------------------------------------------------------
+    # ----------------------------------------------------------------------
     def create_view(
         self,
         name: str,
-        spatial_reference: Optional[dict[str, Any]] = None,
-        extent: Optional[dict[str, int]] = None,
+        spatial_reference: dict[str, Any] | None = None,
+        extent: dict[str, int] | None = None,
         allow_schema_changes: bool = True,
         updateable: bool = True,
         capabilities: str = "Query",
-        view_layers: Optional[list[features.FeatureLayer]] = None,
-        view_tables: Optional[list[features.Table]] = None,
+        view_layers: list[int] | None = None,
+        view_tables: list[int] | None = None,
         *,
-        description: Optional[str] = None,
-        tags: Optional[str] = None,
-        snippet: Optional[str] = None,
-        overwrite: Optional[bool] = None,
-        set_item_id: Optional[str] = None,
+        description: str | None = None,
+        tags: str | None = None,
+        snippet: str | None = None,
+        overwrite: bool | None = None,
+        set_item_id: str | None = None,
+        preserve_layer_ids: bool = False,
     ):
         """
         Creates a view of an existing feature service. You can create a view, if you need a different view of the data
@@ -1782,7 +1875,7 @@ class FeatureLayerCollectionManager(_GISResource):
         For example, you can allow members of your organization to edit the hosted feature layer but share a read-only
         feature layer view with the public.
 
-        To learn more about views see `Create hosted feature layer views <https://doc.arcgis.com/en/arcgis-online/share-maps/create-hosted-views.htm>`_
+        To learn more about views visit: https://doc.arcgis.com/en/arcgis-online/share-maps/create-hosted-views.htm
 
         ====================     ====================================================================
         **Argument**             **Description**
@@ -1799,17 +1892,12 @@ class FeatureLayerCollectionManager(_GISResource):
         updateable               Optional bool. Default is True. Determines if view can update values
         --------------------     --------------------------------------------------------------------
         capabilities             Optional string. Specify capabilities as a comma separated string.
-
-                                 Example:
-
-                                    "Query, Update, Delete"
-
-                                 Default is 'Query'.
+                                 For example "Query, Update, Delete". Default is 'Query'.
         --------------------     --------------------------------------------------------------------
-        view_layers              Optional list. Specify list of layers present in the :class:`~arcgis.features.FeatureLayerCollection`
+        view_layers              Optional list. Specify list of layers present in the FeatureLayerCollection
                                  that you want in the view.
         --------------------     --------------------------------------------------------------------
-        view_tables              Optional list. Specify list of tables present in the :class:`~arcgis.features.FeatureLayerCollection`
+        view_tables              Optional list. Specify list of tables present in the FeatureLayerCollection
                                  that you want in the view.
         --------------------     --------------------------------------------------------------------
         description              Optional String. A user-friendly description for the published dataset.
@@ -1821,11 +1909,13 @@ class FeatureLayerCollectionManager(_GISResource):
         overwrite                Optional Boolean.  If true, the view is overwritten, False is the default.
         --------------------     --------------------------------------------------------------------
         set_item_id              Optional String. If set, the ItemId is defined by the user, not the system.
+        --------------------     --------------------------------------------------------------------
+        preserve_layer_ids       Optional Boolean. Preserves the layer's `id` on it's definition when `True`.  The default is `False`.
         ====================     ====================================================================
 
         .. code-block:: python  (optional)
 
-           USAGE EXAMPLE: Create a view from a hosted feature layer
+           USAGE EXAMPLE: Create a veiw from a hosted feature layer
 
            crime_fl_item = gis.content.search("2012 crime")[0]
            crime_flc = FeatureLayerCollection.fromitem(crime_fl_item)
@@ -1890,6 +1980,7 @@ class FeatureLayerCollectionManager(_GISResource):
                     "spatialReference": spatial_reference,
                     "initialExtent": extent or fs.properties["initialExtent"],
                     "capabilities": capabilities or fs.properties["capabilties"],
+                    "preserveLayerIds": preserve_layer_ids,
                 }
             ),
             "outputType": "featureService",
@@ -1969,23 +2060,34 @@ class FeatureLayerCollectionManager(_GISResource):
                         lyr_id = lyr.manager.properties.serviceItemId
                         data_path = "content/items/" + lyr_id + "/data"
                         data = item._portal.con.get(path=data_path)
-                        add_def["layers"].append(
-                            {
-                                "adminLayerInfo": {
-                                    "popupInfo": data["layers"][0]["popupInfo"]
-                                    if "layers" in data
-                                    else None,
-                                    "viewLayerDefinition": {
-                                        "sourceServiceName": os.path.basename(
-                                            os.path.dirname(fs.url)
-                                        ),
-                                        "sourceLayerId": lyr.manager.properties["id"],
-                                        "sourceLayerFields": "*",
-                                    },
-                                },
-                                "name": lyr.manager.properties["name"],
-                            }
-                        )
+                        def_lyr = dict(lyr.properties)
+                        def_lyr["adminLayerInfo"] = {
+                            "popupInfo": data["layers"][0]["popupInfo"]
+                            if "layers" in data
+                            else None,
+                            "viewLayerDefinition": {
+                                "sourceServiceName": os.path.basename(
+                                    os.path.dirname(fs.url)
+                                ),
+                                "sourceLayerId": lyr.manager.properties["id"],
+                                "sourceLayerFields": "*",
+                            },
+                        }
+                        for k in {
+                            "indexes",
+                            "relationships",
+                            "geometryProperties",
+                            "hasGeometryProperties",
+                            "serviceItemId",
+                            "supportsMultiScaleGeometry",
+                            "fields",
+                            "isView",
+                        }:
+                            if k in def_lyr:
+                                del def_lyr[k]
+                        if self._gis._con.token:
+                            def_lyr["url"] = lyr.url + f"?token={self._gis._con.token}"
+                        add_def["layers"].append(def_lyr)
                 else:
                     import logging
 
@@ -2021,22 +2123,34 @@ class FeatureLayerCollectionManager(_GISResource):
             if view_tables:
                 if isinstance(view_tables, list):
                     for tbl in view_tables:
-                        add_def["tables"].append(
-                            {
-                                "adminLayerInfo": {
-                                    "viewLayerDefinition": {
-                                        "sourceServiceName": os.path.basename(
-                                            os.path.dirname(fs.url)
-                                        ),
-                                        "sourceLayerId": tbl.manager.properties["id"],
-                                        "sourceLayerFields": "*",
-                                    }
-                                },
-                                "id": tbl.manager.properties["id"],
-                                "name": tbl.manager.properties["name"],
-                                "type": "Table",
-                            }
-                        )
+                        tbl_def = {
+                            "adminLayerInfo": {
+                                "viewLayerDefinition": {
+                                    "sourceServiceName": os.path.basename(
+                                        os.path.dirname(fs.url)
+                                    ),
+                                    "sourceLayerId": tbl.manager.properties["id"],
+                                    "sourceLayerFields": "*",
+                                }
+                            },
+                            "id": tbl.manager.properties["id"],
+                            "name": tbl.manager.properties["name"],
+                            "type": "Table",
+                        }
+                        tbl_def.update(dict(tbl.properties))
+                        for k in {
+                            "isView",
+                            "sourceSchemaChangesAllowed",
+                            "fields",
+                            "serviceItemId",
+                            "relationships",
+                            "indexes",
+                            "isUpdatableView",
+                            "viewSourceHasAttachments",
+                        }:
+                            if k in tbl_def:
+                                del tbl_def[k]
+                        add_def["tables"].append(tbl_def)
                 else:
                     import logging
 

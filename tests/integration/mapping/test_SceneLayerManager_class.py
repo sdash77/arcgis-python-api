@@ -1,7 +1,7 @@
 import sys
 from unittest.case import SkipTest
 
-sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus_main\\src")
+sys.path.insert(0, r"C:\\ipython_workfolder\\geosaurus\\src")
 import unittest
 import os
 from arcgis.gis import GIS
@@ -9,12 +9,18 @@ from arcgis.mapping import SceneLayer
 
 # Initialize manager
 online_admin = GIS(
-    profile="your_dev_profile",
+    profile="your_online_profile",
     verify_cert=False,
 )
-scene_layer_item = online_admin.content.get("579cb30cfa234518906f34bc10577f3e")
-scene_layer = SceneLayer(scene_layer_item.sourceUrl, online_admin)
+# Scene Layer published from a Scene Layer Package
+scene_layer_item = online_admin.content.get("48a3165121584b49bff6cf5150c8cdc3")
+scene_layer = SceneLayer(scene_layer_item.url, online_admin)
 manager = scene_layer.manager
+
+# Scene Layer published through a Feature Service
+fs_scene_layer_item = online_admin.content.get("ab5eddcefd024664bfa30e10d6027081")
+fs_scene_layer = SceneLayer(fs_scene_layer_item.url, online_admin)
+fs_manager = fs_scene_layer.manager
 
 
 class TestSceneLayerManager(unittest.TestCase):
@@ -74,22 +80,25 @@ class TestSceneLayerManager(unittest.TestCase):
                 )
             )
 
-    def test_edit_tile_service(self):
+    def test_edit_item(self):
         """
-        Test edit tile service.
+        Test edit item.
         """
         source_item_id = scene_layer_item.related_items(
             rel_type="Service2Data", direction="forward"
         )[0]["id"]
-        res = manager.edit_tile_service(
-            service_name="Stockholm_SE_i3s",
-            source_item_id=source_item_id,
-            export_tiles_allowed=True,
-            max_export_tile_count=5000,
+        res = manager.edit_item(
+            item = source_item_id
         )
         assert res
         assert res["status"] == "success"
 
+    def test_rebuild_cache(self):
+        """
+        Test rebuild cache on a scene layer published from a feature service
+        """
+        res = fs_manager.rebuild_cache("0")
+        assert res
 
 if __name__ == "__main__":
     unittest.main()

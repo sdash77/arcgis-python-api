@@ -604,3 +604,35 @@ def _generate_layer_token(layer, url):
             return token
     else:
         return None
+
+
+def _set_multidimensional_rules(function_chain=None, function_chain_ra=None):
+    from ... import env
+
+    match_variables = env.match_variables
+    union_dimension = env.union_dimension
+
+    if (match_variables is not None) and isinstance(match_variables, bool):
+        if (
+            function_chain is not None
+        ) and "MatchVariable" not in function_chain.keys():
+            function_chain["rasterFunctionArguments"]["MatchVariable"] = match_variables
+        if (
+            function_chain_ra is not None
+        ) and "MatchVariable" not in function_chain_ra.keys():
+            function_chain_ra["rasterFunctionArguments"][
+                "MatchVariable"
+            ] = match_variables
+    if (union_dimension is not None) and isinstance(union_dimension, bool):
+        if (
+            function_chain is not None
+        ) and "UnionDimension" not in function_chain.keys():
+            function_chain["rasterFunctionArguments"][
+                "UnionDimension"
+            ] = union_dimension
+        if (
+            function_chain_ra is not None
+        ) and "UnionDimension" not in function_chain.keys():
+            function_chain_ra["rasterFunctionArguments"][
+                "UnionDimension"
+            ] = union_dimension

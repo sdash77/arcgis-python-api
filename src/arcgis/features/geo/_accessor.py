@@ -1,9 +1,11 @@
 """
 Holds Delegate and Accessor Logic
 """
+from __future__ import annotations
 import logging
 import pandas as pd
 from collections.abc import Iterable
+
 from ._internals import register_dataframe_accessor, register_series_accessor
 from ._array import GeoType
 from ._io.fileops import (
@@ -22,6 +24,8 @@ datetime = LazyLoader("datetime")
 np = LazyLoader("numpy")
 tempfile = LazyLoader("tempfile")
 warnings = LazyLoader("warnings")
+features = LazyLoader("arcgis.features")
+_gis = LazyLoader("arcgis.gis")
 _geometry = LazyLoader("arcgis.geometry")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
 _isd = LazyLoader("arcgis._impl.common._isd")
@@ -2403,6 +2407,75 @@ class GeoAccessor(object):
             return map_widget
 
     # ----------------------------------------------------------------------
+    def insert_layer(
+        self,
+        feature_service: _gis.Item | str,
+        gis=None,
+        sanitize_columns: bool = False,
+        service_name: str = None,
+    ):
+        """
+                This method creates a feature layer from the spatially enabled dataframe and adds (inserts)
+                it to an existing feature service.
+
+                ============================    ====================================================================
+                **Argument**                    **Description**
+        l        ---------------------------    --------------------------------------------------------------------
+                feature_service                 Required Item or Feature Service Id. Depicts the feature service to
+                                                which the layer will be added.
+                ----------------------------    --------------------------------------------------------------------
+                gis                             Optional GIS. The GIS connection object
+                ----------------------------    --------------------------------------------------------------------
+                sanitize_columns                Optional Boolean. If True, column names will be converted to string,
+                                                invalid characters removed and other checks will be performed. The
+                                                default is False.
+                ----------------------------    --------------------------------------------------------------------
+                service_name                    Optional String. The name for the service that will be added to the Item.
+                                                Name cannot be used already and cannot contain special characters, spaces,
+                                                or a numerical value as the first letter.
+                ============================    ====================================================================
+        """
+        from arcgis import env
+        import copy
+
+        if gis is None:
+            gis = env.active_gis
+            if gis is None:
+                raise ValueError("GIS object must be provided")
+        content = gis.content
+        origin_columns = self._data.columns.tolist()
+        origin_index = copy.deepcopy(self._data.index)
+        if isinstance(feature_service, _gis.Item):
+            fs_id = feature_service.id
+        else:
+            fs_id = feature_service
+
+        if service_name:
+            # sanitize name
+            service_name = service_name.replace(" ", "")
+            if service_name[0].isnumeric():
+                raise ValueError(
+                    "First character of service_name cannot be an integer."
+                )
+            if (
+                content.is_service_name_available(service_name, "featureService")
+                is False
+            ):
+                raise ValueError(
+                    "This service name is unavailable for Feature Service."
+                )
+        result = content.import_data(
+            self._data,
+            sanitize_columns=sanitize_columns,
+            service_name=service_name,
+            append=True,
+            service={"featureServiceId": fs_id, "layer": None},
+        )
+        self._data.columns = origin_columns
+        self._data.index = origin_index
+        return result
+
+    # ----------------------------------------------------------------------
     def to_featureclass(
         self, location, overwrite=True, has_z=None, has_m=None, sanitize_columns=True
     ):
@@ -2561,6 +2634,7 @@ class GeoAccessor(object):
         folder=None,
         sanitize_columns=False,
         service_name=None,
+        **kwargs,
     ):
         """
         The ``to_featurelayer`` method publishes a spatial dataframe to a new
@@ -2587,6 +2661,25 @@ class GeoAccessor(object):
         service_name                    Optional String. The name for the service that will be added to the Item.
                                         Name cannot be used already and cannot contain special characters, spaces,
                                         or a numerical value as the first letter.
+        ===========================     ====================================================================
+
+        When publishing a Spatial Dataframe, additional options can be given:
+
+        ===========================     ====================================================================
+        **Optional Arguments**          **Description**
+        ---------------------------     --------------------------------------------------------------------
+        overwrite                       Optional boolean. If True, the specified layer in the `service` parameter
+                                        will be overwritten.
+        ---------------------------     --------------------------------------------------------------------
+        service                         Dictionary that is required if `overwrite = True`. Dictionary with two
+                                        keys: "FeatureServiceId" and "layers".
+                                        "featureServiceId" value is a string of the feature service id that the layer
+                                        belongs to.
+                                        "layer" value is an integer depicting the index value of the layer to
+                                        overwrite.
+
+                                        Example:
+                                        {"featureServiceId" : "9311d21a9a2047d19c0faaebd6f2cca6", "layer": 0}
         ===========================     ====================================================================
 
         :return:
@@ -2619,6 +2712,7 @@ class GeoAccessor(object):
                 raise ValueError(
                     "This service name is unavailable for Feature Service."
                 )
+
         result = content.import_data(
             self._data,
             folder=folder,
@@ -2626,6 +2720,7 @@ class GeoAccessor(object):
             tags=tags,
             sanitize_columns=sanitize_columns,
             service_name=service_name,
+            **kwargs,
         )
         self._data.columns = origin_columns
         self._data.index = origin_index
@@ -2842,6 +2937,15 @@ class GeoAccessor(object):
         ---------------------------     --------------------------------------------------------------------
         spatial_filter                  A `Geometry` object that will filter the results.  This requires
                                         `arcpy` to work.
+        ---------------------------     --------------------------------------------------------------------
+        sr                              A Spatial reference to project (or tranform) output GeoDataFrame to.  
+                                        This requires `arcpy` to work.
+        ---------------------------     --------------------------------------------------------------------
+        datum_transformation            Used in combination with 'sr' parameter. if the spatial reference of 
+                                        output GeoDataFrame and input data do not share the same datum, 
+                                        an appropriate datum transformation should be specified.
+                                        To Learn more see [Geographic datum transformations](https://pro.arcgis.com/en/pro-app/help/mapping/properties/geographic-coordinate-system-transformation.htm)
+                                        This requires `arcpy` to work.
         ===========================     ====================================================================
 
         **Optional Parameters are not supported for URL based resources**

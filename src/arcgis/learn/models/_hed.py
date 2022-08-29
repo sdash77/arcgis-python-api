@@ -111,13 +111,13 @@ class CustomHED:
 class HEDEdgeDetector(ModelExtension):
     """
     Model architecture from https://arxiv.org/pdf/1504.06375.pdf.
-    Creates a ``Holistically-Nested Edge Detection`` model
+    Creates a :class:`~arcgis.learn.HEDEdgeDetector` model
 
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            ``prepare_data`` function.
+                            :meth:`~arcgis.learn.prepare_data`  function.
     ---------------------   -------------------------------------------
     backbone                Optional string. Backbone convolutional neural network
                             model used for feature extraction, which is `vgg19` by
@@ -129,7 +129,7 @@ class HEDEdgeDetector(ModelExtension):
                             saved.
     =====================   ===========================================
 
-    :return: ``Holistically-Nested Edge Detection`` Object
+    :return: :class:`~arcgis.learn.HEDEdgeDetector` Object
     """
 
     def __init__(self, data, backbone="vgg19", pretrained_path=None, **kwargs):
@@ -221,7 +221,7 @@ class HEDEdgeDetector(ModelExtension):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a ``Holistically-Nested Edge Detection`` object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.HEDEdgeDetector` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -230,12 +230,12 @@ class HEDEdgeDetector(ModelExtension):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from ``prepare_data`` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data`  function or None for
                                 inferencing.
 
         =====================   ===========================================
 
-        :return: `Holistically-Nested Edge Detection` Object
+        :return: :class:`~arcgis.learn.HEDEdgeDetector` Object
         """
         emd_path = _get_emd_path(emd_path)
 

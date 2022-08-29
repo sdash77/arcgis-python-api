@@ -29,16 +29,16 @@ class Header(object):
     -------------------------   -------------------------------------------
     background_image_size       Optional string. Select size of the image.
                                 Options:
-                                    fit-width
-                                    fit-height
-                                    fit-both
-                                    repeat
+                                    | fit-width
+                                    | fit-height
+                                    | fit-both
+                                    | repeat
     -------------------------   -------------------------------------------
     background_image_position   Optional string. Define the image position
                                 when using fit-width or fit-height.
                                 Allowed options:
-                                fit-height: left, center, right
-                                fit-width: top, middle, bottom
+                                 | fit-height: left, center, right
+                                 | fit-width: top, middle, bottom
     -------------------------   -------------------------------------------
     signout_link                Optional boolean. Parameter to save the best model
                                 during training. If set to `True` the best model
@@ -107,7 +107,9 @@ class Header(object):
     def size(self):
         """
         Return size of the header. small, medium or large
-        :return: string
+
+        :return:
+            String
         """
         return self._size
 
@@ -212,10 +214,13 @@ class Header(object):
     @property
     def background_image_placement(self):
         """
-        :return: Background image position.
-        If fit-height then left, right, center
-        If fit-width then top, bottom, middle
-        fit-both, repeat then None
+        :return:
+            Background image position.
+
+            | If fit-height then left, right, center
+            | If fit-width then top, bottom, middle
+            | fit-both, repeat then None
+
         """
         return self._background_image_placement
 

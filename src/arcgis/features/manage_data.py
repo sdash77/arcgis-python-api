@@ -368,6 +368,8 @@ def extract_data(
                                  data_format='ShapeFile',
                                  output_name='state highway extracted')
     """
+    if data_format is None:
+        data_format = "CSV"
     gis = _arcgis.env.active_gis if gis is None else gis
     kwargs = {
         "input_layers": input_layers,

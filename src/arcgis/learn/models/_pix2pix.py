@@ -39,7 +39,7 @@ class Pix2Pix(ArcGISModel):
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch with image chip sizes
                             in multiples of 256. Returned data object from
-                            `prepare_data` function.
+                            :meth:`~arcgis.learn.prepare_data` function.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -48,7 +48,7 @@ class Pix2Pix(ArcGISModel):
                             Default set to False.
     =====================   ===========================================
 
-    :return: `Pix2Pix` Object
+    :return: :class:`~arcgis.learn.Pix2Pix` Object
     """
 
     def __init__(
@@ -100,7 +100,7 @@ class Pix2Pix(ArcGISModel):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a Pix2Pix object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.Pix2Pix` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -109,11 +109,11 @@ class Pix2Pix(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `Pix2Pix` Object
+        :return: :class:`~arcgis.learn.Pix2Pix` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -213,6 +213,8 @@ class Pix2Pix(ArcGISModel):
         rows                    Optional int. Number of rows of results
                                 to be displayed.
         =====================   ===========================================
+
+
         **kwargs**
 
         =====================   ===========================================

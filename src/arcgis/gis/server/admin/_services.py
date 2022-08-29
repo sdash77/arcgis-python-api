@@ -1678,9 +1678,9 @@ class ItemInformationManager(BaseServer):
 
         Databases
 
-         - **byReference** - Indicates whether the service data is referenced from a registered folder or database (true) or it was copied to the server at the time the service was published (false).
-         - **onPremiseConnectionString** - Path to publisher data location.
-         - **onServerConnectionString** - Path to data location after publishing completes.
+        - **byReference** - Indicates whether the service data is referenced from a registered folder or database (true) or it was copied to the server at the time the service was published (false).
+        - **onPremiseConnectionString** - Path to publisher data location.
+        - **onServerConnectionString** - Path to data location after publishing completes.
 
 
         When both the server machine and the publisher's machine are using
@@ -1698,9 +1698,9 @@ class ItemInformationManager(BaseServer):
 
         Resources
 
-         - **clientName** - Machine where ArcGIS Pro or ArcGIS Desktop was used to publish the service.
-         - **onPremisePath** - Path, relative to the 'clientName' machine, where the source resource (.mxd, .3dd, .tbx files, geodatabases, and so on) originated.
-         - **serverPath** - Path to the document after publishing completes.
+        - **clientName** - Machine where ArcGIS Pro or ArcGIS Desktop was used to publish the service.
+        - **onPremisePath** - Path, relative to the 'clientName' machine, where the source resource (.mxd, .3dd, .tbx files, geodatabases, and so on) originated.
+        - **serverPath** - Path to the document after publishing completes.
 
         :return: Dict
 

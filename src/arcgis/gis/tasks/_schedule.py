@@ -485,7 +485,7 @@ class TaskManager(object):
         ------------------     --------------------------------------------------------------------
         start_date             Optional Datetime. The begin date for the task to run.
         ------------------     --------------------------------------------------------------------
-        start_date             Optional Datetime. The end date for the task to run.
+        end_date               Optional Datetime. The end date for the task to run.
         ------------------     --------------------------------------------------------------------
         title                  Optional String. The title of the scheduled task.
         ------------------     --------------------------------------------------------------------

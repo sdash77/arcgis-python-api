@@ -13,8 +13,9 @@ from parameterized import parameterized
 from fastai.vision.learner import ClassificationInterpretation
 import random
 import string
+import glob
 from sys import platform
-from arcgis.learn import classify_pixels, detect_objects, classify_objects
+from arcgis.learn import classify_pixels, detect_objects, classify_objects, ImageryModel
 
 import_exception = None
 
@@ -37,6 +38,7 @@ module_skip = False
 parameter = []
 parameter_fl = []
 parameter_df = []
+# parameter_autodl = []
 parameter_text = []
 authorization_data = {}
 check_ms = False
@@ -56,7 +58,7 @@ else:
         data_folder,
         setuposenviron,
         data_folder_ms,
-        data_inference_only,
+        data_inference_only
     )
     from arcgis.learn import prepare_data, prepare_tabulardata, prepare_textdata
     from datetime import datetime
@@ -257,6 +259,49 @@ def CommonTestUsingDF(
         os.path.join(data_folder_path, data_path, f"{model_test}/{model_test}.emd")
     )
 
+# def CommonTestAutoDL(
+#     model_name,
+#     datapath,
+#     datapath_ms,
+#     model,
+#     model_test,
+#     prepare_data_rgb,
+#     prepare_data_ms,
+#     network,
+#     time,
+# ):
+#     data = prepare_data(**prepare_data_rgb)
+#     model_object = model(data, total_time_limit=1)
+#     model_object.fit()
+#     best_model_path = os.path.join(data_folder, datapath, 'models', '*AutoDL_'+model_object.best_model+'*', '*emd')
+#     emd_path = glob.glob(best_model_path)[0]
+#     img_model = ImageryModel()
+#     img_model.load(emd_path, data)
+#     img_model.fit()
+#     fine_tuned_model = os.path.join(data_folder, datapath, 'models', 'fine_tuned_model')
+#     img_model.save(fine_tuned_model)
+
+# def CommonTestAutoDLMS(
+#     model_name,
+#     datapath,
+#     datapath_ms,
+#     model,
+#     model_test,
+#     prepare_data_rgb,
+#     prepare_data_ms,
+#     network,
+#     time,
+# ):
+#     data = prepare_data(**prepare_data_ms)
+#     model_object = model(data, total_time_limit=1)
+#     model_object.fit()
+#     best_model_path = os.path.join(data_folder_ms, datapath_ms, 'models', '*AutoDL_'+model_object.best_model+'*', '*emd')
+#     emd_path = glob.glob(best_model_path)[0]
+#     img_model = ImageryModel()
+#     img_model.load(emd_path, data)
+#     img_model.fit()
+#     fine_tuned_model = os.path.join(data_folder_ms, datapath_ms, 'models', 'fine_tuned_model')
+#     img_model.save(fine_tuned_model)
 
 def CommonTestUsingFL(
     query,
@@ -1019,16 +1064,17 @@ class TestTraining(unittest.TestCase):
         data_folder_path,
     ):
         CommonTestUsingDF(
-            query,
-            model_type,
-            prepare_tabular_data,
-            regression_parameter,
-            regression_test_score,
-            model_name,
-            data_path,
-            model_test,
-            data_folder_path,
-        )
+                query,
+                model_type,
+                prepare_tabular_data,
+                regression_parameter,
+                regression_test_score,
+                model_name,
+                data_path,
+                model_test,
+                data_folder_path,
+            )
+
 
     @classmethod
     def tearDownClass(cls):

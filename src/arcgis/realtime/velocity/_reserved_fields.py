@@ -78,7 +78,7 @@ class _ReservedFields:
         ==============     =====================================
         **Argument**       **Description**
         --------------     -------------------------------------
-        field_name         str. A field name to test
+        field_name         String. A field name to test
         ==============     =====================================
 
         :return: True if field_name is a reserved name
@@ -93,7 +93,7 @@ class _ReservedFields:
         ==============     =====================================
         **Argument**       **Description**
         --------------     -------------------------------------
-        field_name         str. A field name to test
+        field_name         String. A field name to test
         ==============     =====================================
 
         :return: True if field_name is not a reserved name

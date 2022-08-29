@@ -34,6 +34,7 @@ from arcgis.widgets._mapview._loading_icon_str import _loading_icon_str
 from arcgis.widgets._mapview._raster import LocalRasterOverlayManager
 from arcgis.widgets._mapview._raster._numpy_utils import *
 from arcgis import __version__ as py_api_version
+from arcgis.auth._auth._schain import _MultiAuth, SupportMultiAuth
 import arcgis.mapping
 import arcgis
 
@@ -1192,6 +1193,20 @@ class MapView(widgets.DOMWidget):
         if self.gis._portal.con.token:
             self._portal_token = str(self.gis._portal.con.token)
             self._auth_mode = "tokenBased"
+        elif isinstance(
+            self.gis._con._session.auth, (_MultiAuth, SupportMultiAuth)
+        ) and hasattr(self.gis._con._session.auth, "authentication_modes"):
+            tokens = [
+                auth.token
+                for auth in self.gis._con._session.auth.authentication_modes
+                if hasattr(auth, "token")
+            ]
+            if len(tokens) > 0:
+
+                self._portal_token = str(tokens[0])
+                self._auth_mode = "tokenBased"
+            else:
+                self._auth_mode = "anonymous"
         else:
             self._auth_mode = "anonymous"
 

@@ -7,8 +7,8 @@ from urllib.parse import urlparse
 import requests
 import json
 import os
-
 from arcgis.gis import Item
+from functools import wraps
 
 
 def _lazy_property(fn):
@@ -17,6 +17,7 @@ def _lazy_property(fn):
     attr_name = "_lazy_" + fn.__name__
 
     @property
+    @wraps(fn)
     def _lazy_property(self):
         if not hasattr(self, attr_name):
             setattr(self, attr_name, fn(self))
