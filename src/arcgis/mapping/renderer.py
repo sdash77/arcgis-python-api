@@ -664,8 +664,10 @@ def generate_renderer(
 
     ----------------------  ---------------------------------------------------------
     colors                  Optional string/list.  Color mapping.  For simple renderer,
-                            just provide a string.  For more robust renderers like
-                            unique renderer, a list can be given.
+                            just provide a string or single RGB + alpha color array.
+                            For a unique renderer, a list of color arrays or colormaps
+                            can be given. For heatmaps, list specific RGB colorstops,
+                            give the name of a colormap, or provide a list of colormaps.
     ======================  =========================================================
 
     **Simple Renderer**
@@ -764,6 +766,10 @@ def generate_renderer(
     ----------------------  ---------------------------------------------------------
     ratio                   A number between 0-1. Describes what portion along the
                             gradient the colorStop is added.
+    ----------------------  ---------------------------------------------------------
+    show_none               Boolean. Determines the alpha value of the base color for
+                            the heatmap. Setting this to ``True`` covers an entire map
+                            with the base color of the heatmap. Default is ``False``.
     ======================  =========================================================
 
     **Predominance/Unique Renderer**
@@ -1061,35 +1067,73 @@ def generate_renderer(
                 "sdf_or_series must be a Pandas' Series"
                 + " or Pandas DataFrame for this type of renderer"
             )
-        colorStops = []
+
         field = symbol_args.pop("field", None)
-        stops = symbol_args.pop("stops", 3)
-        ratio = symbol_args.pop("ratio", 0.01)
-        show_none = symbol_args.pop("show_none", False)
         maxPixelIntensity = symbol_args.pop("max_intensity", 10)
         minPixelIntensity = symbol_args.pop("min_intensity", 0)
-        r = 0
-        if stops < 3:
-            stops = 3
-        ratios = np.linspace(0, 1, num=stops)
-        for idx, cstep in enumerate(
-            np.linspace(0, 255, num=stops, dtype=np.int).tolist()
-        ):
-            if r == 0 and show_none == True:
-                calpha = alpha
-            elif r == 0 and show_none == False:
-                calpha = 0
-            else:
-                calpha = alpha
+        show_none = symbol_args.pop("show_none", False)
 
+        # check if user specified exact RGB colorstops in 'colors'
+        colorStops = []
+        if all([isinstance(i, list) for i in colors]) and len(colors) > 2:
+            if not show_none:
+                colors[0][-1] = 0
+            ratios = np.linspace(0, 1, len(colors)).tolist()
+            for idx in range(0, len(colors)):
+                colorStops.append(
+                    {
+                        "ratio": ratios[idx],
+                        "color": colors[idx],
+                    }
+                )
+
+        # check if user specified colormaps as colorstops in 'colors'
+        # uses base color from each map
+        elif all([isinstance(i, str) for i in colors]) and len(colors) > 2:
+            if show_none:
+                calpha = alpha
+            else:
+                calpha = 0
+            ratios = np.linspace(0, 1, len(colors)).tolist()
             colorStops.append(
                 {
-                    "ratio": ratios[idx],
-                    "color": _cmap2rgb(colors=colors[0], step=cstep, alpha=calpha),
+                    "ratio": ratios[0],
+                    "color": _cmap2rgb(colors=colors[0], step=0, alpha=calpha),
                 }
             )
-            r += ratio
-            del cstep
+            for idx in range(1, len(colors)):
+                colorStops.append(
+                    {
+                        "ratio": ratios[idx],
+                        "color": _cmap2rgb(colors=colors[idx], step=0, alpha=alpha),
+                    }
+                )
+
+        else:
+            stops = symbol_args.pop("stops", 3)
+            ratio = symbol_args.pop("ratio", 0.01)
+            r = 0
+            if stops < 3:
+                stops = 3
+            ratios = np.linspace(0, 1, num=stops)
+            for idx, cstep in enumerate(
+                np.linspace(0, 255, num=stops, dtype=np.int).tolist()
+            ):
+                if r == 0 and show_none == True:
+                    calpha = alpha
+                elif r == 0 and show_none == False:
+                    calpha = 0
+                else:
+                    calpha = alpha
+
+                colorStops.append(
+                    {
+                        "ratio": ratios[idx],
+                        "color": _cmap2rgb(colors=colors[0], step=cstep, alpha=calpha),
+                    }
+                )
+                r += ratio
+                del cstep
         renderer = {
             "type": "heatmap",
             "field": field,

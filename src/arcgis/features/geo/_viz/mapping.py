@@ -129,10 +129,11 @@ def plot(
     col                     Optional string/list. Field or fields used for heatmap,
                             class breaks, or unique renderers.
     ----------------------  ---------------------------------------------------------
-    colors                  Optional string. The color map to draw from in order to
-                            visualize the data.  The default cmap is 'jet'. To get a
-                            visual representation of the allowed color maps,use
-                            the **display_colormaps** method.
+    colors                  Optional string. The colormap, RGB array, or list of
+                            either that determines the symbol color(s) for the data.
+                            The default cmap is 'jet'. To get a visual representation
+                            of the allowed color maps, use the **display_colormaps**
+                            method.
     ----------------------  ---------------------------------------------------------
     alpha                   Optional float.  This is a value between 0 and 1 with 1
                             being the default value.  The alpha sets the transparancy
