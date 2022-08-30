@@ -12674,6 +12674,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         segment_attributes="COLOR;MEAN",
         dimension_value_field=None,
         future=False,
+        output_ecd_item_name=None,
         **kwargs,
     ):
         """
@@ -12708,7 +12709,18 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         if self._current_version is not None:
             current_version = self._current_version
-            if (current_version is not None) and current_version < 10.9:
+            if current_version is not None and current_version >= 11.1:
+                gpjob = self._tbx.train_classifier(
+                    input_raster=input_raster,
+                    input_training_sample_json=input_training_sample_json,
+                    classifier_parameters=classifier_parameters,
+                    segmented_raster=segmented_raster,
+                    segment_attributes=segment_attributes,
+                    output_ecd_item_name=output_ecd_item_name,
+                    gis=gis,
+                    future=True,
+                )
+            elif (current_version is not None) and current_version < 10.9:
                 gpjob = self._tbx.train_classifier(
                     input_raster=input_raster,
                     input_training_sample_json=input_training_sample_json,
@@ -16932,6 +16944,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_importance_table_name=None,
         context=None,
         future=False,
+        output_ecd_item_name=None,
         **kwargs,
     ):
         """
@@ -17082,24 +17095,58 @@ class _RasterAnalysisTools(BaseAnalytics):
                 {"serviceProperties": {"name": output_importance_table_name}}
             )
 
-        gpjob = self._tbx.train_random_trees_regression_model(
-            input_rasters=input_rasters,
-            input_target_data=input_target_data,
-            target_value_field=target_value_field,
-            target_dimension_field=target_dimension_field,
-            raster_dimension=raster_dimension,
-            output_importance_table_name=output_importance_table_name,
-            max_number_of_trees=max_number_of_trees,
-            max_tree_depth=max_tree_depth,
-            max_number_of_samples=max_number_of_samples,
-            average_points_per_cell=average_points_per_cell,
-            output_scatter_plots_name=output_scatter_plots_name,
-            output_sample_features_name=output_sample_features_name,
-            percent_samples_for_testing=percent_samples_for_testing,
-            context=context,
-            gis=self._gis,
-            future=True,
-        )
+        if output_ecd_item_name is not None:
+            if isinstance(output_ecd_item_name, Item):
+                output_ecd_item_name = {
+                    "name": output_ecd_item_name.name,
+                    "itemId": output_ecd_item_name.itemid
+                }
+            elif isinstance(output_ecd_item_name, str):
+                output_ecd_item_name = json.dumps(
+                    {"name": output_ecd_item_name}
+                )
+
+        if self._current_version is not None:
+            current_version = self._current_version
+            if (current_version is not None) and current_version >= 11.1:
+                gpjob = self._tbx.train_random_trees_regression_model(
+                    input_rasters=input_rasters,
+                    input_target_data=input_target_data,
+                    target_value_field=target_value_field,
+                    target_dimension_field=target_dimension_field,
+                    raster_dimension=raster_dimension,
+                    output_importance_table_name=output_importance_table_name,
+                    max_number_of_trees=max_number_of_trees,
+                    max_tree_depth=max_tree_depth,
+                    max_number_of_samples=max_number_of_samples,
+                    average_points_per_cell=average_points_per_cell,
+                    output_scatter_plots_name=output_scatter_plots_name,
+                    output_sample_features_name=output_sample_features_name,
+                    percent_samples_for_testing=percent_samples_for_testing,
+                    context=context,
+                    output_ecd_item_name=output_ecd_item_name,
+                    gis=self._gis,
+                    future=True,
+                )
+            else:
+                gpjob = self._tbx.train_random_trees_regression_model(
+                    input_rasters=input_rasters,
+                    input_target_data=input_target_data,
+                    target_value_field=target_value_field,
+                    target_dimension_field=target_dimension_field,
+                    raster_dimension=raster_dimension,
+                    output_importance_table_name=output_importance_table_name,
+                    max_number_of_trees=max_number_of_trees,
+                    max_tree_depth=max_tree_depth,
+                    max_number_of_samples=max_number_of_samples,
+                    average_points_per_cell=average_points_per_cell,
+                    output_scatter_plots_name=output_scatter_plots_name,
+                    output_sample_features_name=output_sample_features_name,
+                    percent_samples_for_testing=percent_samples_for_testing,
+                    context=context,
+                    gis=self._gis,
+                    future=True,
+                )
 
         gpjob._is_ra = (True,)
         gpjob._item_properties = True

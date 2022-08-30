@@ -3045,6 +3045,7 @@ def train_classifier(
     segmented_raster=None,
     segment_attributes="COLOR;MEAN",
     dimension_value_field=None,
+    output_ecd_item_name=None,
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
@@ -3151,6 +3152,7 @@ def train_classifier(
         segment_attributes=segment_attributes,
         dimension_value_field=dimension_value_field,
         future=future,
+        output_ecd_item_name=output_ecd_item_name,
         **kwargs,
     )
 
@@ -9006,6 +9008,7 @@ def train_random_trees_regression_model(
     percent_samples_for_testing=10,
     output_importance_table_name=None,
     context=None,
+    output_ecd_item_name=None,
     *,
     gis=None,
     future=False,
@@ -9161,6 +9164,7 @@ def train_random_trees_regression_model(
         output_importance_table_name=output_importance_table_name,
         context=context,
         future=future,
+        output_ecd_item_name=output_ecd_item_name,
         **kwargs,
     )
 
