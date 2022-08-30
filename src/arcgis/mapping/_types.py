@@ -1084,6 +1084,8 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         if "layerDefinition" not in layer:
             layer["layerDefinition"] = {"drawingInfo": {}}
+        if "drawingInfo" not in layer["layerDefinition"]:
+            layer["layerDefinition"]["drawingInfo"] = {}
         if show_labels is not None:
             layer["showLabels"] = show_labels
         if label_info is not None:
