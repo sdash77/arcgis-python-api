@@ -12707,6 +12707,17 @@ class _RasterAnalysisTools(BaseAnalytics):
         if segmented_raster is not None:
             segmented_raster = self._layer_input(segmented_raster)
 
+        if output_ecd_item_name is not None:
+            if isinstance(output_ecd_item_name, Item):
+                output_ecd_item_name = {
+                    "name": output_ecd_item_name.name,
+                    "itemId": output_ecd_item_name.itemid
+                }
+            elif isinstance(output_ecd_item_name, str):
+                output_ecd_item_name = json.dumps(
+                    {"name": output_ecd_item_name}
+                )
+
         if self._current_version is not None:
             current_version = self._current_version
             if current_version is not None and current_version >= 11.1:

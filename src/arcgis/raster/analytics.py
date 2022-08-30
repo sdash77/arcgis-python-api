@@ -3120,6 +3120,9 @@ def train_classifier(
 
                                          Parameter available in ArcGIS Image Server 10.9 and higher.
     --------------------------------     --------------------------------------------------------------------
+    output_ecd_item_name                 Optional String or Item. The output ECD Portal item to be created.
+                                         If an Item is provided, the given item will be overwritten with the ECD instead.
+    --------------------------------     --------------------------------------------------------------------
     gis                                  Keyword only parameter. Optional GIS object. If not specified, the currently active connection
                                          is used.
     --------------------------------     --------------------------------------------------------------------
@@ -9109,6 +9112,9 @@ def train_random_trees_regression_model(
                                                     processing instances:
 
                                                     {"parallelProcessingFactor": "60%"}
+    ------------------------------------     --------------------------------------------------------------------
+    output_ecd_item_name                     Optional String or Item. The output ECD Portal item to be created.
+                                             If an Item is provided, the given item will be overwritten with the ECD instead.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
