@@ -768,7 +768,8 @@ class WebMap(HasTraits, collections.OrderedDict):
                     if hasattr(layer.layer, "layers"):
                         if hasattr(layer.layer.layers[0], "layerDefinition"):
                             if hasattr(
-                                layer.layer.layers[0].layerDefinition, "serviceItemId",
+                                layer.layer.layers[0].layerDefinition,
+                                "serviceItemId",
                             ):
                                 new_layer[
                                     "type"
@@ -987,36 +988,112 @@ class WebMap(HasTraits, collections.OrderedDict):
     def update_drawing_info(
         self,
         layer: Union[dict, FeatureLayer],
-        label_info: dict = None,
+        label_info: list[dict] = None,
         renderer: dict = None,
-        scale_symbols: bool = None,
-        transparency: int = None,
         show_labels: bool = None,
+        **kwargs,
     ):
+        """
+        Method to update a WebMap layer's drawing info. Works for standalone layers and individual layers found
+        within group layers. Allows for a user to manually add their own renderers and label classes, and toggle whether
+        the labels are visible. Useful in tandem with the map widget, allowing for style changes without opening the
+        online map viewer. This function also takes any argument of ``WebMap.update()`` in ``**kwargs``.
+
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        layer                   Required :class:`~arcgis.features.FeatureLayer` or Feature Layer
+                                dictionary. The existing WebMap layer to be changed.
+
+                                .. note::
+                                    In order for this method to work, the layer must be set to
+                                    have its properties stored in the web map, not the source layer.
+                                    This is the default setting, and can be confirmed or changed in
+                                    the online Map Viewer. (Layer properties -> information)
+        ------------------      --------------------------------------------------------------------
+        label_info              Optional list of dictionaries. Each dictionary in the list
+                                corresponds to a label class. Determines labeling conventions of the
+                                passed layer.
+        ------------------      --------------------------------------------------------------------
+        renderer                Optional dictonary. Can be manually constructed or the output of
+                                ``generate_renderer()``. Determines the layer style of the passed
+                                layer.
+        ------------------      --------------------------------------------------------------------
+        show_labels             Optional boolean. Determines whether the layer labels are visible or
+                                not.
+        ==================      ====================================================================
+
+        *Hint:*
+
+        Accessing the layers of your Webmap allows you to view the current renderer and label info dictionaries,
+        allowing you to easily copy them and amend the desired details.
+
+        **Example**
+
+        .. code-block:: python
+
+            # Create Webmap from webmap item, choose a layer to edit
+            wm = WebMap(<wm_item_id>)
+            change_layer = wm.layers[0]
+
+            # Specify renderer dictionary and labeling info dictionary/dictionaries
+            rend = {
+                "type": "simple",
+                "symbol": {
+                    "type": "esriSLS",
+                    "color": [200, 50, 0, 250],
+                    "width": 1,
+                    "style": "esriSLSSolid"
+                }
+            }
+
+            label = [
+                {
+                    "labelExpression": "[llid]",
+                    "labelExpressionInfo": {"expression": "$feature[\"llid\"]"},
+                    "labelPlacement": "esriServerLinePlacementCenterAlong",
+                    "maxScale": 0,
+                    "minScale": 2311163,
+                    "repeatLabel": True,
+                    "symbol": {
+                        "type": "esriTS",
+                        "color": [0, 105, 0, 255],
+                        "font": {"family": "Arial", "size": 9.75},
+                        "horizontalAlignment": "center",
+                        "kerning": True,
+                        "haloColor": [211, 211, 211, 250],
+                        "haloSize": 1,
+                        "rotated": False,
+                        "text": "",
+                        "verticalAlignment": "baseline",
+                        "xoffset": 0,
+                        "yoffset": 0,
+                        "angle": 0
+                    }
+                }
+            ]
+
+            # Call the function. This automatically updates the Webmap info
+            wm.update_drawing_info(
+                change_layer,
+                label_info = label,
+                renderer = rend,
+                show_labels = True,
+            )
+        """
 
         if "layerDefinition" not in layer:
             layer["layerDefinition"] = {"drawingInfo": {}}
         if show_labels is not None:
             layer["showLabels"] = show_labels
         if label_info is not None:
-            layer["layerDefinition"]["drawingInfo"]["labelingInfo"] = [label_info]
+            layer["layerDefinition"]["drawingInfo"]["labelingInfo"] = label_info
         if renderer is not None:
             layer["layerDefinition"]["drawingInfo"]["renderer"] = renderer
-        if scale_symbols is not None:
-            layer["layerDefinition"]["drawingInfo"]["scaleSymbols"] = scale_symbols
-        if transparency is not None:
-            layer["layerDefinition"]["drawingInfo"]["transparency"] = transparency
 
         copy_dict = dict(layer)
         self.update_layer(copy_dict)
-        self.update()
-
-        """elif definition_location.lower() == "source":
-            import io
-            layer_url = layer["url"]
-            source_id = layer["itemId"]
-            source_item = self._gis.content.get(source_id)
-            source_data = source_item.get_data()"""
+        return self.update(**kwargs)
 
     def update_layer(self, layer: Union[dict, FeatureLayer]):
         """
@@ -1038,6 +1115,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         ==================      ====================================================================
 
         .. code-block:: python
+
             # Create Webmap from webmap item
             wm = WebMap(<wm_item_id>)
 
@@ -1387,7 +1465,9 @@ class WebMap(HasTraits, collections.OrderedDict):
             if "type" in item_properties:
                 item_properties.pop("type")  # type should not be changed.
             return self.item.update(
-                item_properties=item_properties, thumbnail=thumbnail, metadata=metadata,
+                item_properties=item_properties,
+                thumbnail=thumbnail,
+                metadata=metadata,
             )
         else:
             raise RuntimeError(
@@ -1420,7 +1500,12 @@ class WebMap(HasTraits, collections.OrderedDict):
                 if "ArcGISFeatureLayer" in layer.layerType:
                     if any(
                         capability in layer_object.properties.capabilities
-                        for capability in ["Create", "Update", "Delete", "Editing",]
+                        for capability in [
+                            "Create",
+                            "Update",
+                            "Delete",
+                            "Editing",
+                        ]
                     ):
                         return True
             except Exception:
@@ -2342,7 +2427,10 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         if self.events.enable:
             data["events"].append(
-                {"type": self.events.type, "actions": self.events.synced_widgets,}
+                {
+                    "type": self.events.type,
+                    "actions": self.events.synced_widgets,
+                }
             )
 
         return data
@@ -3657,7 +3745,8 @@ class OfflineMapAreaManager(object):
                 # LOD that is closest to min scale. Do similar for max_scale.
 
                 sorted_lods = sorted(
-                    layer0_obj.properties.tileInfo.lods, key=lambda x: x["scale"],
+                    layer0_obj.properties.tileInfo.lods,
+                    key=lambda x: x["scale"],
                 )
                 keys = [l["scale"] for l in sorted_lods]
 
@@ -5217,7 +5306,10 @@ class MapImageLayerManager(arcgis.gis._GISResource):
             if extent:
                 if isinstance(extent, dict):
                     extent2 = "{},{},{},{}".format(
-                        extent["xmin"], extent["ymin"], extent["xmax"], extent["ymax"],
+                        extent["xmin"],
+                        extent["ymin"],
+                        extent["xmax"],
+                        extent["ymax"],
                     )
                     extent = extent2
                 params["extent"] = extent
@@ -6138,7 +6230,10 @@ class MapImageLayer(arcgis.gis.Layer):
         if len(kwargs) > 0:
             for k, v in kwargs.items():
                 params[k] = v
-        res = self._con.post(path=url, postdata=params,)
+        res = self._con.post(
+            path=url,
+            postdata=params,
+        )
         return res
 
     # ----------------------------------------------------------------------
@@ -6186,7 +6281,11 @@ class MapImageLayer(arcgis.gis.Layer):
             "layers": layers,
             "layerOptions": options,
         }
-        return self._con.get(kmlURL, params, out_folder=save_location,)
+        return self._con.get(
+            kmlURL,
+            params,
+            out_folder=save_location,
+        )
 
     # ----------------------------------------------------------------------
     def export_map(
@@ -6807,5 +6906,9 @@ class Events(object):
                     action_type = "filter"
                     widget_id = str(widgets._id) + "#main"
                     self._actions.append(
-                        {"type": action_type, "by": "geometry", "targetId": widget_id,}
+                        {
+                            "type": action_type,
+                            "by": "geometry",
+                            "targetId": widget_id,
+                        }
                     )
