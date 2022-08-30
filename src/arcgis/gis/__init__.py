@@ -13556,9 +13556,6 @@ class Item(dict):
          culture            Optional string. Locale, country and language information.
          -----------------  ---------------------------------------------------------------------
          access             Optional string. Valid values are private, shared, org, or public.
-         -----------------  ---------------------------------------------------------------------
-         commentsEnabled    Optional boolean. Default is true, controls whether comments are allowed (true)
-                            or not allowed (false).
          =================  =====================================================================
 
 
