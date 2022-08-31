@@ -991,13 +991,12 @@ class WebMap(HasTraits, collections.OrderedDict):
         label_info: list[dict] = None,
         renderer: dict = None,
         show_labels: bool = None,
-        **kwargs,
     ):
         """
         Method to update a WebMap layer's drawing info. Works for standalone layers and individual layers found
         within group layers. Allows for a user to manually add their own renderers and label classes, and toggle whether
         the labels are visible. Useful in tandem with the map widget, allowing for style changes without opening the
-        online map viewer. This function also takes any argument of ``WebMap.update()`` in ``**kwargs``.
+        online map viewer.
 
         ==================      ====================================================================
         **Argument**            **Description**
@@ -1095,7 +1094,6 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         copy_dict = dict(layer)
         self.update_layer(copy_dict)
-        return self.update(**kwargs)
 
     def update_layer(self, layer: Union[dict, FeatureLayer]):
         """
