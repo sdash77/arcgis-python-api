@@ -2762,6 +2762,9 @@ def prepare_data(
     else:
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))
 
+    # case When imagery is RGB
+    symbology_rgb_bands = [0, 1, 2]
+
     no_information_bands = []
     if _is_multispectral:
         # Normalize multispectral imagery by calculating stats
@@ -3078,9 +3081,9 @@ def prepare_data(
     data.height_width = height_width
     data.downsample_factor = kwargs.get("downsample_factor")
     data.dataset_type = dataset_type
-
+    
     data._is_multispectral = _is_multispectral
-    if data._is_multispectral:
+    if data._is_multispectral or 1==1:
         data._bands = bands
         data._norm_pct = norm_pct
         data._rgb_bands = rgb_bands
@@ -3088,25 +3091,31 @@ def prepare_data(
 
         # Handle invalid color mapping
         data._multispectral_color_mapping = color_mapping
-        if any(-1 in x for x in data._multispectral_color_mapping.values()):
+        if data._multispectral_color_mapping is None and data.class_mapping is not None:
+            data._multispectral_color_mapping = {c:[-1, -1, -1] for c  in data.class_mapping}
+        if data._multispectral_color_mapping is not None and any(-1 in x for x in data._multispectral_color_mapping.values()):
             random_color_list = np.random.randint(
                 low=0, high=255, size=(len(data._multispectral_color_mapping), 3)
             ).tolist()
-            for i, c in enumerate(data._multispectral_color_mapping):
-                if -1 in data._multispectral_color_mapping[c]:
+            for i, (c, v) in enumerate(data._multispectral_color_mapping.items()):
+                if -1 in v:
                     data._multispectral_color_mapping[c] = random_color_list[i]
 
         # prepare color array
-        alpha = kwargs.get("alpha", 0.7)
-        color_array = torch.tensor(list(data.color_mapping.values())).float() / 255
-        alpha_tensor = torch.tensor([alpha] * len(color_array)).view(-1, 1).float()
-        color_array = torch.cat([color_array, alpha_tensor], dim=-1)
-        background_color = torch.tensor([[0, 0, 0, 0]]).float()
-        data._multispectral_color_array = torch.cat([background_color, color_array])
+        if data._multispectral_color_mapping is not None:
+            alpha = kwargs.get("alpha", 0.7)
+            color_array = torch.tensor(list(data._multispectral_color_mapping.values())).float() / 255
+            alpha_tensor = torch.tensor([alpha] * len(color_array)).view(-1, 1).float()
+            color_array = torch.cat([color_array, alpha_tensor], dim=-1)
+            background_color = torch.tensor([[0, 0, 0, 0]]).float()
+            data._multispectral_color_array = torch.cat([background_color, color_array])
 
         # Prepare unknown bands list if bands data is missing
         if data._bands is None:
-            n_bands = data.x[0].data.shape[0]
+            if type(data.x[0].data) in [list, tuple]:
+                n_bands = data.x[0].data[0].shape[0]
+            else:
+                n_bands = data.x[0].data.shape[0]
             if n_bands == 1:  # Handle Pancromatic case
                 data._bands = ["p"]
                 data._symbology_rgb_bands = [0]
