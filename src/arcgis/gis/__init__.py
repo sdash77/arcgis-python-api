@@ -4030,7 +4030,9 @@ class UserManager(object):
                                records are arranged after they have been sorted. The allowed
                                values are: asc for ascending and desc for descending.
         ------------------     --------------------------------------------------------------------
-        as_dict                Optional Boolean. If True, the response comes back as a dictionary.
+        as_dict                Required Boolean. If True, the results comes back as a dictionary.
+                               The result of the method will always be a dictionary but the
+                               `results` key in the dictionary will be changed if set to False.
         ==================     ====================================================================
 
         :return:
@@ -6286,7 +6288,9 @@ class ContentManager(object):
                             each `count_fields`. The default value is None, and maximum size
                             allowed is 200.
         ----------------    ---------------------------------------------------------------
-        as_dict             Required Boolean. If True, the response comes back as a dictionary.
+        as_dict             Required Boolean. If True, the results comes back as a dictionary.
+                            The result of the method will always be a dictionary but the
+                            `results` key in the dictionary will be changed if set to False.
         ================    ===============================================================
 
         :return:
@@ -8759,7 +8763,9 @@ class Group(dict):
                             records are arranged after they have been sorted. The allowed
                             values are: asc for ascending and desc for descending.
         ----------------    ---------------------------------------------------------------
-        as_dict             Required Boolean. If True, the response comes back as a dictionary.
+        as_dict             Required Boolean. If True, the results comes back as a dictionary.
+                            The result of the method will always be a dictionary but the
+                            `results` key in the dictionary will be changed if set to False.
         ================    ===============================================================
 
         :return: List of :class:`~arcgis.gis.Item` objects
