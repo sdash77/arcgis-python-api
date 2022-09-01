@@ -182,9 +182,12 @@ class PortalAdminManager(BasePortalAdmin):
 
         :returns: dict
         """
-        url = "%s/portaladmin/info" % self._gis._portal.url
-        params = {"f": "json"}
-        return self._gis._con.get(url, params)
+        if self._gis.version >= [10, 3]:
+
+            url = "%s/portaladmin/info" % self._gis._portal.url
+            params = {"f": "json"}
+            return self._gis._con.get(url, params)
+        return None
 
     # ----------------------------------------------------------------------
     @property
