@@ -641,7 +641,7 @@ class ArcGISModel(object):
                     next(params_iterator).requires_grad = True
                 self.learn.create_opt(slice(3e-3))
         if hasattr(self, "_show_results_multispectral"):
-            self.show_results = self._show_results_multispectral 
+            self.show_results = self._show_results_multispectral
 
     # function for checking if data exists for using class functions.
     def _check_requisites(self):

@@ -24,9 +24,8 @@ def show_batch_labeled_tiles(self, rows=3, **kwargs):  # parameters adjusted in 
     -------------------------------------------------------------------
 
     """
-    from .._utils.common import (
-        denorm_x
-    )
+    from .._utils.common import denorm_x
+
     nrows = rows
     ncols = kwargs.get("ncols", nrows)
     # start_index = kwargs.get('start_index', 0) # Does not work with dataloader
