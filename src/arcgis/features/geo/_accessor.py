@@ -2938,11 +2938,11 @@ class GeoAccessor(object):
         spatial_filter                  A `Geometry` object that will filter the results.  This requires
                                         `arcpy` to work.
         ---------------------------     --------------------------------------------------------------------
-        sr                              A Spatial reference to project (or tranform) output GeoDataFrame to.  
+        sr                              A Spatial reference to project (or tranform) output GeoDataFrame to.
                                         This requires `arcpy` to work.
         ---------------------------     --------------------------------------------------------------------
-        datum_transformation            Used in combination with 'sr' parameter. if the spatial reference of 
-                                        output GeoDataFrame and input data do not share the same datum, 
+        datum_transformation            Used in combination with 'sr' parameter. if the spatial reference of
+                                        output GeoDataFrame and input data do not share the same datum,
                                         an appropriate datum transformation should be specified.
                                         To Learn more see [Geographic datum transformations](https://pro.arcgis.com/en/pro-app/help/mapping/properties/geographic-coordinate-system-transformation.htm)
                                         This requires `arcpy` to work.

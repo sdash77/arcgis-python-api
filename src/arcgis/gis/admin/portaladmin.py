@@ -175,6 +175,17 @@ class PortalAdminManager(BasePortalAdmin):
             self._sp = SocialProviders(gis=self._gis)
         return self._sp
 
+    @property
+    def info(self) -> dict:
+        """
+        Returns the current version and build number of the Enterprise system
+
+        :returns: dict
+        """
+        url = "%s/portaladmin/info" % self._gis._portal.url
+        params = {"f": "json"}
+        return self._gis._con.get(url, params)
+
     # ----------------------------------------------------------------------
     @property
     def metadata(self):
