@@ -299,9 +299,7 @@ class JobManager:
 
         """
         try:
-            url = "{base}/jobs/manage".format(
-                base=self._url
-            )
+            url = "{base}/jobs/manage".format(base=self._url)
             return Job.manage_jobs(self._gis, url, job_ids, "Close")
         except:
             self._handle_error(sys.exc_info())
@@ -321,9 +319,7 @@ class JobManager:
 
         """
         try:
-            url = "{base}/jobs/manage".format(
-                base=self._url
-            )
+            url = "{base}/jobs/manage".format(base=self._url)
             return Job.manage_jobs(self._gis, url, job_ids, "Reopen")
         except:
             self._handle_error(sys.exc_info())
@@ -460,7 +456,7 @@ class JobManager:
                     base=self._url,
                     jobId=job_id,
                     attachmentId=attachment_id,
-                    item=self._item.id
+                    item=self._item.id,
                 ),
             )
             return res
@@ -484,7 +480,8 @@ class JobManager:
         try:
             return JobDiagram.get(
                 self._gis,
-                "{base}/jobs/{job}/diagram".format(base=self._url, job=id), {}
+                "{base}/jobs/{job}/diagram".format(base=self._url, job=id),
+                {},
             )
         except:
             self._handle_error(sys.exc_info())
@@ -507,9 +504,7 @@ class JobManager:
         """
         try:
             url = f"{self._url}/jobs/{id}"
-            job_dict = self._gis._con.get(
-                url, {"extProps": get_ext_props}
-            )
+            job_dict = self._gis._con.get(url, {"extProps": get_ext_props})
             return Job(job_dict, self._gis, self._url)
         except:
             self._handle_error(sys.exc_info())
@@ -559,9 +554,7 @@ class JobManager:
                 "sortFields": sort_by,
                 "fields": fields,
             }
-            url = "{base}/jobs/search".format(
-                base=self._url
-            )
+            url = "{base}/jobs/search".format(base=self._url)
             return Job.search(self._gis, url, search_object)
         except:
             self._handle_error(sys.exc_info())
@@ -611,9 +604,7 @@ class JobManager:
             current_job = self.get(job_id).__dict__
             for k in update_object.keys():
                 current_job[k] = update_object[k]
-            url = "{base}/jobs/{jobId}/update".format(
-                base=self._url, jobId=job_id
-            )
+            url = "{base}/jobs/{jobId}/update".format(base=self._url, jobId=job_id)
             new_job = Job(current_job, self._gis, url)
             # remove existing properties if not updating.
             if "extended_properties" not in update_object:
@@ -643,9 +634,7 @@ class JobManager:
 
         """
         try:
-            url = "{base}/jobs/manage".format(
-                base=self._url
-            )
+            url = "{base}/jobs/manage".format(base=self._url)
             return Job.manage_jobs(self._gis, url, job_ids, "Upgrade")
         except:
             self._handle_error(sys.exc_info())
@@ -669,9 +658,7 @@ class JobManager:
         """
         try:
             url = "{base}/jobs/{jobId}/location".format(
-                base=self._url,
-                jobId=job_id,
-                item=self._item
+                base=self._url, jobId=job_id, item=self._item
             )
             location = {"geometryType": geometry.type}
             if geometry.type == "Polygon":
@@ -734,9 +721,7 @@ class JobManager:
 
         """
         try:
-            url = "{base}/jobs/manage".format(
-                base=self._url
-            )
+            url = "{base}/jobs/manage".format(base=self._url)
             return Job.manage_jobs(self._gis, url, job_ids, "Delete")
         except:
             self._handle_error(sys.exc_info())
@@ -959,9 +944,9 @@ class WorkflowManager:
 
         """
         try:
-            return self._gis._con.get(
-                "{base}/settings".format(base=self._url)
-            )["settings"]
+            return self._gis._con.get("{base}/settings".format(base=self._url))[
+                "settings"
+            ]
         except:
             self._handle_error(sys.exc_info())
 
@@ -1067,9 +1052,7 @@ class WorkflowManager:
             success object
 
         """
-        url = "{base}/settings".format(
-            base=self._url
-        )
+        url = "{base}/settings".format(base=self._url)
         params = {"settings": props}
         return_obj = json.loads(
             self._gis._con.post(
@@ -1106,7 +1089,8 @@ class WorkflowManager:
                 self._gis,
                 "{base}/community/roles/{role}".format(
                     base=self._url, role=urllib.parse.quote(name), item=self._item.id
-                ), params={}
+                ),
+                params={},
             )
         except:
             self._handle_error(sys.exc_info())
@@ -1130,7 +1114,8 @@ class WorkflowManager:
                 self._gis,
                 "{base}/jobTemplates/{jobTemplate}".format(
                     base=self._url, jobTemplate=id
-                ), params={}
+                ),
+                params={},
             )
         except:
             self._handle_error(sys.exc_info())
@@ -1153,9 +1138,7 @@ class WorkflowManager:
             res = JobTemplate.delete(
                 self._gis,
                 "{base}/jobTemplates/{jobTemplate}".format(
-                    base=self._url,
-                    jobTemplate=id,
-                    item=self._item.id
+                    base=self._url, jobTemplate=id, item=self._item.id
                 ),
             )
             return res
@@ -1200,7 +1183,8 @@ class WorkflowManager:
                 self._gis,
                 "{base}/community/groups/{groupid}".format(
                     base=self._url, groupid=group_id, item=self._item.id
-                ), params={}
+                ),
+                params={},
             )
             arcgis_group = arcgis.gis.Group(self._gis, group_id)
             arcgis_group.roles = wmx_group.roles
@@ -1264,7 +1248,8 @@ class WorkflowManager:
         try:
             return JobDiagram.get(
                 self._gis,
-                "{base}/diagrams/{diagram}".format(base=self._url, diagram=id), params={}
+                "{base}/diagrams/{diagram}".format(base=self._url, diagram=id),
+                params={},
             )
         except:
             self._handle_error(sys.exc_info())
@@ -1290,7 +1275,8 @@ class WorkflowManager:
                 self._gis,
                 "{base}/diagrams/{diagram}/{diagramVersion}".format(
                     base=self._url, diagram=diagram_id, diagramVersion=version_id
-                ), params={}
+                ),
+                params={},
             )
         except:
             self._handle_error(sys.exc_info())
@@ -1314,9 +1300,7 @@ class WorkflowManager:
 
         """
         try:
-            url = "{base}/community/roles/{name}".format(
-                base=self._url, name=name
-            )
+            url = "{base}/community/roles/{name}".format(base=self._url, name=name)
             post_role = WMRole(
                 {"roleName": name, "description": description, "privileges": privileges}
             )
@@ -1405,9 +1389,7 @@ class WorkflowManager:
                 last_updated_date = datetime.datetime.now().strftime(
                     "%Y-%m-%dT%H:%M:%SZ"
                 )
-            url = "{base}/jobTemplates".format(
-                base=self._url
-            )
+            url = "{base}/jobTemplates".format(base=self._url)
 
             post_job_template = JobTemplate(
                 {
@@ -1455,7 +1437,7 @@ class WorkflowManager:
             url = "{base}/jobTemplates/{jobTemplate}".format(
                 base=self._url,
                 jobTemplate=template["job_template_id"],
-                item=self._item.id
+                item=self._item.id,
             )
             template_object = JobTemplate(template)
             res = template_object.put(self._gis, url)
@@ -1502,9 +1484,7 @@ class WorkflowManager:
 
         """
         try:
-            url = "{base}/diagrams".format(
-                base=self._url
-            )
+            url = "{base}/diagrams".format(base=self._url)
 
             post_diagram = JobDiagram(
                 {
@@ -1590,9 +1570,7 @@ class WorkflowManager:
 
         """
         try:
-            url = "{base}/diagrams/{diagramid}".format(
-                base=self._url, diagramid=id
-            )
+            url = "{base}/diagrams/{diagramid}".format(base=self._url, diagramid=id)
             return JobDiagram.delete(self._gis, url)
         except:
             self._handle_error(sys.exc_info())
@@ -1615,9 +1593,7 @@ class WorkflowManager:
         """
         try:
             url = "{base}/diagrams/{diagramid}/{diagramVersion}".format(
-                base=self._url,
-                diagramid=diagram_id,
-                diagramVersion=version_id
+                base=self._url, diagramid=diagram_id, diagramVersion=version_id
             )
             return JobDiagram.delete(self._gis, url)
         except:
@@ -1648,9 +1624,7 @@ class WorkflowManager:
 
         """
 
-        url = "{base}/tableDefinitions".format(
-            base=self._url
-        )
+        url = "{base}/tableDefinitions".format(base=self._url)
 
         return_obj = self._gis._con.get(url)
         if "error" in return_obj:
@@ -1679,7 +1653,8 @@ class WorkflowManager:
                 self._gis,
                 "{base}/lookups/{lookupType}".format(
                     base=self._url, lookupType=lookup_type
-                ), params={}
+                ),
+                params={},
             )
         except:
             self._handle_error(sys.exc_info())
@@ -1702,9 +1677,7 @@ class WorkflowManager:
             res = LookUpTable.delete(
                 self._gis,
                 "{base}/lookups/{lookupType}".format(
-                    base=self._url,
-                    lookupType=lookup_type,
-                    item=self._item.id
+                    base=self._url, lookupType=lookup_type, item=self._item.id
                 ),
             )
             return res
@@ -1931,9 +1904,7 @@ class SavedSearchesManager:
 
         """
         try:
-            url = "{base}/searches".format(
-                base=self._url, id=search_id
-            )
+            url = "{base}/searches".format(base=self._url, id=search_id)
             post_dict = {
                 "name": name,
                 "folder": folder,
@@ -1978,9 +1949,7 @@ class SavedSearchesManager:
             Boolean
         """
         try:
-            url = "{base}/searches/{searchid}".format(
-                base=self._url, searchid=id
-            )
+            url = "{base}/searches/{searchid}".format(base=self._url, searchid=id)
 
             return_obj = json.loads(
                 self._gis._con.delete(url, add_token=False, try_json=False)
@@ -2447,9 +2416,7 @@ class Job(object):
 
         """
 
-        url = "{base}/jobs/{jobId}/action".format(
-            base=self._url, jobId=self.job_id
-        )
+        url = "{base}/jobs/{jobId}/action".format(base=self._url, jobId=self.job_id)
         post_object = {"type": "SetCurrentStep", "stepIds": [step_id]}
         return_obj = json.loads(
             self._gis._con.post(
@@ -2497,9 +2464,7 @@ class Job(object):
 
         """
 
-        url = "{base}/jobs/{jobId}/history".format(
-            base=self._url, jobId=self.job_id
-        )
+        url = "{base}/jobs/{jobId}/history".format(base=self._url, jobId=self.job_id)
         return_obj = self._gis._con.get(url)
         if "success" in return_obj:
             return return_obj["success"]
@@ -2594,9 +2559,7 @@ class Job(object):
 
         """
 
-        url = "{base}/jobs/{jobId}/comments".format(
-            base=self._url, jobId=self.job_id
-        )
+        url = "{base}/jobs/{jobId}/comments".format(base=self._url, jobId=self.job_id)
         return_obj = self._gis._con.get(url)
         return return_obj["jobComments"]
 
@@ -2816,9 +2779,7 @@ class JobTemplate(object):
 
         """
 
-        url = "{base}/shareWith".format(
-            base=self._url, templateId=self.job_template_id
-        )
+        url = "{base}/shareWith".format(base=self._url, templateId=self.job_template_id)
         return_obj = self._gis._con.get(url)
 
         if "error" in return_obj:
@@ -2926,8 +2887,7 @@ class JobTemplate(object):
 
         props = {"adds": adds, "updates": updates, "deletes": deletes}
         url = "{base}/automatedCreation".format(
-            base=self._url,
-            jobTemplateId=self.job_template_id
+            base=self._url, jobTemplateId=self.job_template_id
         )
 
         return_obj = json.loads(
