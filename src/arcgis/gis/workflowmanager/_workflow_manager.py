@@ -95,8 +95,8 @@ class WorkflowManagerAdmin:
             string (item_id)
         """
 
-        url = "{base}/admin/createWorkflowItem?token={token}&name={name}".format(
-            base=self._url, token=self._gis._con.token, name=name
+        url = "{base}/admin/createWorkflowItem?name={name}".format(
+            base=self._url, name=name
         )
         params = {"name": name}
         return_obj = json.loads(
@@ -131,9 +131,7 @@ class WorkflowManagerAdmin:
 
         """
 
-        url = "{base}/admin/{id}/upgrade?token={token}".format(
-            base=self._url, id=item.id, token=self._gis._con.token
-        )
+        url = "{base}/admin/{id}/upgrade".format(base=self._url, id=item.id)
         return_obj = json.loads(
             self._gis._con.post(
                 url, try_json=False, add_token=False, json_encode=False, post_json=True
@@ -162,9 +160,7 @@ class WorkflowManagerAdmin:
 
         """
 
-        url = "{base}/admin/{id}?token={token}".format(
-            base=self._url, id=item.id, token=self._gis._con.token
-        )
+        url = "{base}/admin/{id}?".format(base=self._url, id=item.id)
 
         return_obj = json.loads(
             self._gis._con.delete(url, add_token=False, try_json=False)
@@ -190,9 +186,7 @@ class WorkflowManagerAdmin:
 
         """
 
-        url = "{base}/checkStatus?token={token}".format(
-            base=self._url, token=self._gis._con.token
-        )
+        url = "{base}/checkStatus".format(base=self._url)
 
         return_obj = self._gis._con.get(url)
         if "error" in return_obj:
@@ -1752,7 +1746,7 @@ class LookUpTable(object):
         gis = object.__getattribute__(self, "_gis")
         url = object.__getattribute__(self, "_url")
         id = object.__getattribute__(self, "job_template_id")
-        full_object = gis._con.get(url, {"token": gis._con.token})
+        full_object = gis._con.get(url, {})
         try:
             setattr(self, _camelCase_to_underscore(item), full_object[item])
             return full_object[item]
@@ -2223,9 +2217,7 @@ class Job(object):
         url = "{base}/jobs/{jobId}/attachments/{attachmentId}".format(
             base=self._url, jobId=self.job_id, attachmentId=attachment_id
         )
-        return_obj = self._gis._con.get(
-            url, {"token": self._gis._con.token}, try_json=False
-        )
+        return_obj = self._gis._con.get(url, {}, try_json=False)
         if "error" in return_obj:
             self._gis._con._handle_json_error(return_obj["error"], 0)
         elif "success" in return_obj:
@@ -2260,7 +2252,7 @@ class Job(object):
                 url,
                 params={"alias": alias, "folder": folder},
                 files={"attachment": attachment},
-                add_token=True,
+                add_token=False,
                 try_json=False,
                 json_encode=False,
             )
@@ -2654,7 +2646,7 @@ class JobTemplate(object):
         gis = object.__getattribute__(self, "_gis")
         url = object.__getattribute__(self, "_url")
         id = object.__getattribute__(self, "job_template_id")
-        full_object = gis._con.get(url, {"token": gis._con.token})
+        full_object = gis._con.get(url, {})
         try:
             setattr(self, _camelCase_to_underscore(item), full_object[item])
             return full_object[item]
@@ -2966,7 +2958,7 @@ class JobDiagram(object):
         gis = object.__getattribute__(self, "_gis")
         url = object.__getattribute__(self, "_url")
         id = object.__getattribute__(self, "diagram_id")
-        full_object = gis._con.get(url, {"token": gis._con.token})
+        full_object = gis._con.get(url, {})
         try:
             setattr(self, _camelCase_to_underscore(item), full_object[item])
             return full_object[item]
