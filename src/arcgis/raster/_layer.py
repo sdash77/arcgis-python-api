@@ -1075,6 +1075,9 @@ class ImageryLayer(Layer):
                     if 'attributes' in df1.columns:
                         attributes_list = df1["attributes"].tolist()
                         rat_df = pd.DataFrame(attributes_list)
+                        rat_df= rat_df.style.set_properties(**{'text-align': 'left'})
+                        rat_df = rat_df.set_table_styles(
+                        [dict(selector = 'th', props=[('text-align', 'left')])])
                         return rat_df
                     else:
                         return None
@@ -3524,7 +3527,7 @@ class ImageryLayer(Layer):
                 legend_table += (
                     "<tr><td>"
                     + imgtag
-                    + "</td><td>"
+                    + "</td><td style='text-align:left'>"
                     + legend_element["label"]
                     + "</td></tr>"
                 )
