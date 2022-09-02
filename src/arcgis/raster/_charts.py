@@ -774,7 +774,7 @@ def spectral_profile(
 ):
 
     """
-    Spectral profile charts allow you to select areas of interest or ground features on the image and review the spectral information of all bands in a chart format. 
+    Spectral profile charts allow you to select areas of interest or ground features on the image and review the spectral information of all bands in a chart format.
 
     The x-axis of the spectral profile displays the band names
 
@@ -806,7 +806,6 @@ def spectral_profile(
     if not isinstance(points, list):
         points = [points]
 
-
     num_lines = len(points)
     y = [[] for i in range(0, num_lines)]
     x = [[] for i in range(0, num_lines)]
@@ -825,19 +824,22 @@ def spectral_profile(
     for ele in band_properties:
         if "BandName" in ele.keys():
             band_names_list.append(ele["BandName"])
- 
+
     if len(band_names_list) == 0:
         if "bandNames" in raster.properties:
             band_names_list = raster.properties.bandNames
-    
+
     if len(band_names_list) == 0:
+
         def create_band_names(val):
-            val = "Band_"+str(val)
+            val = "Band_" + str(val)
             return val
 
         if "bandCount" in raster.properties:
             band_count = raster.properties.bandCount
-            band_names_list = list(map(create_band_names, range(1, len(band_count)+1)))
+            band_names_list = list(
+                map(create_band_names, range(1, len(band_count) + 1))
+            )
 
     for index, point in enumerate(points):
         res = raster.get_samples(
@@ -845,22 +847,21 @@ def spectral_profile(
             return_first_value_only=False,
             out_fields="*",
         )
-        values = res[0]['value']
-        vals = [int(s) for s in values.split(' ')]
+        values = res[0]["value"]
+        vals = [int(s) for s in values.split(" ")]
 
-
-        x = band_names_list    
+        x = band_names_list
         y = vals
-        if (len(x) != len(y)):
-            x = x[0:len(y)]
-
+        if len(x) != len(y):
+            x = x[0 : len(y)]
 
         t1.append(
             {
                 "y": y,
                 "x": x,
                 "point": index,
-            })
+            }
+        )
 
     if plot_properties is None:
         plot_properties = {}
@@ -880,9 +881,7 @@ def spectral_profile(
 
     color = iter(_cm.rainbow(_np.linspace(0, 1, len(t1))))
     for i in range(0, len(t1)):
-        label_string = (
-            "Location " + str(t1[i]["point"])
-        )
+        label_string = "Location " + str(t1[i]["point"])
         c = next(color)
         _plt.plot(t1[i]["x"], t1[i]["y"], c=c, label=label_string)
         _plt.scatter(t1[i]["x"], t1[i]["y"], c=[c])
