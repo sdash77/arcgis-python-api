@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Optional, Union
 
 from arcgis._impl.common._utils import chunks
-from arcgis.mapping._utils import _get_list_value, _format_colors
+from arcgis.mapping._utils import _get_list_value, _format_colors, _create_colormap
 from arcgis.mapping.symbol import create_symbol, _cmap2rgb
 import numpy as np
 
@@ -969,7 +969,6 @@ def generate_renderer(
         alpha = symbol_args["alpha"]
     else:
         alpha = 1
-    colors = _format_colors(colors, alpha)
 
     renderer = None
     vv = []
@@ -1062,6 +1061,7 @@ def generate_renderer(
         }
         return renderer
     elif render_type.lower() == "h":
+        colors = _format_colors(colors, alpha)
         if sdf_or_series is None and "field" in symbol_args:
             raise ValueError(
                 "sdf_or_series must be a Pandas' Series"
@@ -1144,6 +1144,8 @@ def generate_renderer(
         }
         return renderer
     elif render_type in ["u", "p"] and "field1" in symbol_args:
+        if not hasattr(colors, "mpl_colormap"):
+            colors = _format_colors(colors, alpha)
         if sdf_or_series is None:
             raise ValueError(
                 "sdf_or_series must be a Pandas' Series"
@@ -1224,7 +1226,18 @@ def generate_renderer(
                 if len(uvals) > 255:
                     uvals = uvals[:255]
             unique_values = []
+            
+            steps = np.linspace(0, 255, len(uvals), dtype=np.int)
+
             for idx, uval in enumerate(uvals):
+                if hasattr(colors, "mpl_colormap"):
+                    temp_map = colors.mpl_colormap
+                    color_tuple = temp_map(steps[idx], bytes=True)
+                    color = [int(i) for i in color_tuple]
+                elif isinstance(colors[0], str):
+                    color = _cmap2rgb(colors[0], steps[idx], alpha)
+                elif isinstance(colors[0], list):
+                    color = _get_list_value(idx, colors)
                 unique_values.append(
                     {
                         "value": uval,
@@ -1234,7 +1247,7 @@ def generate_renderer(
                             geometry_type=geometry_type.lower(),
                             symbol_type=st,
                             symbol_style=ss,
-                            colors=_get_list_value(idx, colors),
+                            colors=color,
                             **symbol_args,
                         ),
                     }
@@ -1303,12 +1316,22 @@ def generate_renderer(
         class_count = symbol_args.pop(
             "class_count", 3
         )  # number of classess for class break
-        if len(colors) > 1:
+
+        temp_map = None
+        if hasattr(colors, "mpl_colormap"):
+            temp_map = colors.mpl_colormap
+        else:
+            colors = _format_colors(colors, alpha)
+            if isinstance(colors[0], list) and len(colors) > 1:
+                temp_map = _create_colormap(colors)
+            # possible outcomes are colormap, single rbg array, str colormap name
+
+        """if len(colors) > 1:
             default_color = colors[1]
             color = colors[0]
         else:
             default_color = colors[0]
-            color = colors[0]
+            color = colors[0]"""
         try:
             if hasattr(sdf_or_series, "geometry_type"):
                 gt = sdf_or_series.geometry_type
@@ -1336,7 +1359,7 @@ def generate_renderer(
             "field": symbol_args.pop("field"),
             "defaultSymbol": symbol_args.pop(
                 "default_symbol",
-                create_symbol(geometry_type=gt, colors=default_color),
+                create_symbol(geometry_type=gt, colors=_format_colors(colors, alpha)[0]),
             ),
             "defaultLabel": symbol_args.pop("default_label", "Other"),
             "classificationMethod": symbol_args.pop("method", None),
@@ -1374,6 +1397,11 @@ def generate_renderer(
                 and hasattr(sdf_or_series.spatial, "geometry_type")
             ):
                 gt = sdf_or_series.spatial.geometry_type[0]
+            if temp_map:
+                color_tuple = temp_map(steps[idx], bytes=True)
+                color = [int(i) for i in color_tuple]
+            else:
+                color = colors[0]
             cbs.append(
                 {
                     "classMaxValue": pair[1] or pair[0],
