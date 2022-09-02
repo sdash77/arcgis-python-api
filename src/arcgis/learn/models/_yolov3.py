@@ -170,14 +170,14 @@ class YOLOv3(ArcGISModel):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function. YOLOv3 only supports image
+                            :meth:`~arcgis.learn.prepare_data` function. YOLOv3 only supports image
                             sizes in multiples of 32 (e.g. 256, 416, etc.)
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
     =====================   ===========================================
 
-    :return: `YOLOv3` Object
+    :return: :class:`~arcgis.learn.YOLOv3` Object
     """
 
     def __init__(self, data=None, pretrained_path=None, **kwargs):
@@ -482,7 +482,6 @@ class YOLOv3(ArcGISModel):
         ---------------------   -------------------------------------------
         batch_size              Optional int. Batch size to be used
                                 during tiled inferencing. Deafult value 1.
-        ---------------------   -------------------------------------------
         =====================   ===========================================
 
         :return: 'List' of xmin, ymin, width, height of predicted bounding boxes on the given image
@@ -974,11 +973,11 @@ class YOLOv3(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `YOLOv3` Object
+        :return: :class:`~arcgis.learn.YOLOv3` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)

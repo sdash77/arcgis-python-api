@@ -6,18 +6,18 @@ class LinearUnit(object):
     """
     A data object containing a linear distance, used as input to some Geoprocessing tools
 
-        ================  ========================================================
-        **Argument**      **Description**
-        ----------------  --------------------------------------------------------
-        distance          required number, the value of the linear distance.
+    ================  ========================================================
+    **Argument**      **Description**
+    ----------------  --------------------------------------------------------
+    distance          required number, the value of the linear distance.
 
-        ----------------  --------------------------------------------------------
-        units             required string,  unit type of the linear distance,
-                          such as "Meters", "Miles", "Kilometers", "Inches",
-                          "Points", "Feet", "Yards", "NauticalMiles",
-                          "Millimeters", "Centimeters", "DecimalDegrees",
-                          "Decimeters"
-        ================  ========================================================
+    ----------------  --------------------------------------------------------
+    units             required string,  unit type of the linear distance,
+                      such as "Meters", "Miles", "Kilometers", "Inches",
+                      "Points", "Feet", "Yards", "NauticalMiles",
+                      "Millimeters", "Centimeters", "DecimalDegrees",
+                      "Decimeters"
+    ================  ========================================================
     """
 
     def __init__(self, distance, units):
@@ -56,18 +56,18 @@ class DataFile(object):
     """
     A data object containing a data source, used as input/output by some Geoprocessing tools
 
-        ================  ========================================================
-        **Argument**      **Description**
-        ----------------  --------------------------------------------------------
-        url               optional string, URL to the location of the data file.
+    ================  ========================================================
+    **Argument**      **Description**
+    ----------------  --------------------------------------------------------
+    url               optional string, URL to the location of the data file.
 
-        ----------------  --------------------------------------------------------
-        item_id           optional string,  The id of the uploaded file returned
-                          as a result of the upload operation.
+    ----------------  --------------------------------------------------------
+    item_id           optional string,  The id of the uploaded file returned
+                      as a result of the upload operation.
 
-        ----------------  --------------------------------------------------------
-        portal_item       optional Item. A data type item used for GP tool.
-        ================  ========================================================
+    ----------------  --------------------------------------------------------
+    portal_item       optional :class:`~arcgis.gis.Item`. A data type item used for GP tool.
+    ================  ========================================================
     """
 
     def __init__(self, url=None, item_id=None, portal_item=None):
@@ -136,18 +136,18 @@ class RasterData(object):
     A data object containing a raster data source,
     used as input/output by some Geoprocessing tools
 
-        ================  ========================================================
-        **Argument**      **Description**
-        ----------------  --------------------------------------------------------
-        url               optional string, URL to the location of the raster data
-                          file.
-        ----------------  --------------------------------------------------------
-        item_id           optional string,  The id of the uploaded file returned
-                          as a result of the upload operation.
-        ----------------  --------------------------------------------------------
-        format            optional string, Specifies the format of the raster
-                          data, such as "jpg", "tif", etc.
-        ================  ========================================================
+    ================  ========================================================
+    **Argument**      **Description**
+    ----------------  --------------------------------------------------------
+    url               optional string, URL to the location of the raster data
+                      file.
+    ----------------  --------------------------------------------------------
+    item_id           optional string,  The id of the uploaded file returned
+                      as a result of the upload operation.
+    ----------------  --------------------------------------------------------
+    format            optional string, Specifies the format of the raster
+                      data, such as "jpg", "tif", etc.
+    ================  ========================================================
     """
 
     def __init__(self, url=None, format=None, item_id=None):

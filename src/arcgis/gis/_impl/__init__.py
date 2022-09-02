@@ -8,4 +8,7 @@ from ._dataclasses import (
     CreateServiceParameter,
     MetadataFormatEnum,
     ServiceTypeEnum,
+    SpatialFilter,
+    SpatialRelationship,
+    ViewLayerDefParameter,
 )

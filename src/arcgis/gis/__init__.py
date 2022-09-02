@@ -26,11 +26,13 @@ import logging
 from typing import Any, Optional, Union
 from urllib.error import HTTPError
 from arcgis.gis._impl import (
-    ItemTypeEnum,
     ItemProperties,
     MetadataFormatEnum,
     CreateServiceParameter,
     ServiceTypeEnum,
+    ViewLayerDefParameter,
+    SpatialRelationship,
+    SpatialFilter,
 )
 import concurrent.futures
 
@@ -182,9 +184,8 @@ class GIS(object):
 
                         ex: 127.0.0.1
     ----------------    ---------------------------------------------------------------
-    use_gen_token       Optional Boolean. The default is `False`. For older
-                        Enterprises, the BUILT-IN users can specify using the
-                        generateToken end point for creating the token.
+    use_gen_token       Optional Boolean. The default is `False`. Uses generateToken
+                        login over OAuth2 login.
     ----------------    ---------------------------------------------------------------
     proxy_port          Optional integer. The proxy host port.  The default is 80.
     ----------------    ---------------------------------------------------------------
@@ -1012,7 +1013,7 @@ class GIS(object):
             raise Exception("Please access your ArcGIS Online sites through your Hub.")
 
     @_lazy_property
-    def notebook_server(self) -> "list[NotebookServer]":
+    def notebook_server(self) -> "list[NotebookServer]" | "list[AGOLNotebookManager]":
         """
         The ``notebook_server`` property provides access to the :class:`~arcgis.gis.nb.NotebookServer` registered
         with the organization or enterprise.
@@ -1022,10 +1023,10 @@ class GIS(object):
             urls = self._registered_servers()
             url = urls.get("urls", {}).get("notebooks", {}).get("https", None)
             if url:
-                from arcgis.gis.nb import NotebookServer
+                from arcgis.gis.agonb import AGOLNotebookManager
 
                 url = f"https://{url[0]}/admin"
-                return [NotebookServer(url=url, gis=self)]
+                return [AGOLNotebookManager(url=url, gis=self)]
         else:
             try:
                 from arcgis.gis.nb import NotebookServer
@@ -2607,6 +2608,40 @@ class UserManager(object):
         return self.__str__()
 
     # ----------------------------------------------------------------------
+    def delete_users(self, users: list[User]) -> list[str]:
+        """
+        Allows the administrator to remove users from a portal. Before the
+        administrator can remove the user, all of the user's content and
+        groups must be reassigned or deleted.
+
+        ================  =========]======================================================================
+        **Keys**          **Description**
+        ----------------  -------------------------------------------------------------------------------
+        users             Required list[User]. A list of users to delete from the organization.
+        ================  ===============================================================================
+
+        :returns: list[str] containing the users who could not be removed.
+        """
+        from arcgis._impl.common._utils import chunks as _chunks
+
+        url = f"{self._gis._portal.resturl}portals/self/removeUsers"
+        results = []
+        with concurrent.futures.ThreadPoolExecutor(5) as executor:
+            jobs = []
+            for chunk in _chunks(users, n=100):
+                users_str = ",".join([u.username for u in chunk])
+                params = {"f": "json", "users": users_str}
+                future = executor.submit(
+                    self._gis._con.post, **{"path": url, "params": params}
+                )
+                jobs.append(future)
+            for future in concurrent.futures.as_completed(jobs):
+                users = future.result().get("notRemoved", [])
+                results.extend(users)
+
+        return results
+
+    # ----------------------------------------------------------------------
     @property
     def user_settings(self):
         """
@@ -3849,7 +3884,7 @@ class UserManager(object):
         return False
 
     # ----------------------------------------------------------------------
-    def assign_categories(self, users: List[User], categories: List[str]) -> list:
+    def assign_categories(self, users: list[User], categories: list[str]) -> list:
         """ """
         results = []
         for user in users:
@@ -4102,8 +4137,13 @@ class UserManager(object):
         return None
 
     def org_search(
-        self, query: str = None, sort_field: str = None, sort_order: str = None
-    ) -> tuple:
+        self,
+        query: str = None,
+        sort_field: str = None,
+        sort_order: str = None,
+        as_dict: bool = False,
+        exclude: bool = False,
+    ) -> tuple[User] | tuple[dict[str, Any]]:
         """
         The `org_search` method allows users to find users within the organization only.
         Users can search for details such as `provider`, `fullName` and other user properties
@@ -4119,35 +4159,66 @@ class UserManager(object):
         sort_field        Optional string. Valid values can be username (the default) or created.
         ----------------  --------------------------------------------------------
         sort_order        Optional string. Valid values are asc (the default) or desc.
+        ----------------  --------------------------------------------------------
+        as_dict           Optional Boolean. Returns the raw response for each user as a dictionary
+        ----------------  --------------------------------------------------------
+        exclude           Optional Boolean. If `True`, the system accounts will be excluded from the query.
         ================  ========================================================
 
-        :returns: List[User]
+        :returns: Tuple[User] | Tuple[dict[str,Any]]
         """
         results = []
+
         if query is None:
             query = "*"
+        if exclude:
+            query = f"-username:esri_livingatlas -username:esri_boundaries -username:esri_demographics -username:esri_nav ({query})"
+        count = self.advanced_search(query, return_count=True)
+
         url = f"{self._gis._portal.resturl}/portals/self/users/search"
+        num = 100
         params = {
-            "num": 100,
+            "num": num,
             "f": "json",
             "q": query,
             "start": 1,
             "sortField": sort_field or "",
             "sortOrder": sort_order or "",
         }
-        resp = self._gis._con.get(url, params)
-        results.extend(resp.get("results", []))
-        while resp.get("nextStart", -1) > 0:
-            params["start"] = resp["nextStart"]
+        if count <= num:
             resp = self._gis._con.get(url, params)
-            users = resp.get("results", [])
-            results.extend(users)
-            if len(users) == 0:
-                break
-        return tuple(
-            User(gis=self._gis, username=user["username"], userdict=user)
-            for user in results
-        )
+            results.extend(resp.get("results", []))
+            while resp.get("nextStart", -1) > 0:
+                params["start"] = resp["nextStart"]
+                resp = self._gis._con.get(url, params)
+                users = resp.get("results", [])
+                results.extend(users)
+                if len(users) == 0:
+                    break
+        else:  # use multiple threads to capture the data.
+            iterations = (count // num) + int((count % num > 0))
+            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                future_users = {}
+                for i in range(iterations):
+                    params["start"] = 1 + i * params["num"]
+
+                    future_users[
+                        executor.submit(
+                            self._gis._con.get, **{"path": url, "params": params}
+                        )
+                    ] = i
+                for future in concurrent.futures.as_completed(future_users):
+                    users = future.result().get("results", [])
+                    results.extend(users)
+
+        if as_dict:
+            return tuple(results)
+        else:
+
+            return tuple(
+                User(gis=self._gis, username=user["username"], userdict=user)
+                for user in results
+            )
 
     # ----------------------------------------------------------------------
     def search(
@@ -5066,6 +5137,60 @@ class ContentManager(object):
         return self._gis._con.get(curl, params, ignore_error_key=True)
 
     # ----------------------------------------------------------------------
+    def can_reassign(self, items: list[Item], user: User) -> list[dict[str, Any]]:
+        """
+        Checks if a `list[Item]` can be reassigned to a particular user.
+        The operation checks whether the items owned by one user can be successfully
+        reassigned to a specified user before performing the `reassign` operation.
+        Users assigned the default administrator role, or a custom role with
+        administrative privileges, can perform this operation. The item owner can
+        also use this operation; if the item owner that performs this operation
+        is not a default administrator, or assigned a custom role with
+        administrative privileges, they must have the portal:user:reassignItems
+        privilege assigned to them to transfer content to another user.
+
+        ======================     ====================================================================
+        **Argument**               **Description**
+        ----------------------     --------------------------------------------------------------------
+        items                      Required list[Item]. A list of Items. The maximum number of items
+                                   that can be transferred at one time is 100.
+        ----------------------     --------------------------------------------------------------------
+        user                       Required User. The user the items will be reassigned to. For a user
+                                   to be eligible to receive transferred content, they must meet the
+                                   following requirements:
+
+                                   - The user must be assigned the portal:user:receiveItems privilege to receive the transferred content.
+                                   - The user must have a user type that allows them to own content.
+                                   - If the items being transferred to the user are shared with a group, the user receiving the items must be a member of the group. If the group is a view-only group, the user receiving the items must be the group owner or a group manager.
+
+                                   If the above requirements are not met, an error response will be returned.
+        ======================     ====================================================================
+
+        :returns: `list[dict[str, Any]]`
+        """
+        if self._gis.version < [10, 1] and self._gis._portal.is_arcgisonline == False:
+            return []
+        urls = {}
+        params = {}
+        params["f"] = "json"
+        params["targetUsername"] = user.username
+        params["items"] = None
+        for item in items:
+            if item.owner in urls:
+                urls[item.owner]["itemids"].append(item.itemid)
+            else:
+                urls[item.owner] = {
+                    "itemids": [item.itemid],
+                    "url": f"{self._gis._portal.resturl}content/users/{item.owner}/canReassignItems",
+                }
+        results = []
+        for key, value in urls.items():
+            params["items"] = ",".join(value["itemids"])
+            results.append(self._gis._con.post(value["url"], params))
+            #
+        return results
+
+    # ---------------------------------------------------------------------
     def cost(
         self,
         tile_storage: Optional[float] = None,
@@ -5812,7 +5937,7 @@ class ContentManager(object):
 
     # ----------------------------------------------------------------------
     def create_empty_service(
-        self, parameters: CreateServiceParameter, *, owner: User = None
+        self, parameters: CreateServiceParameter, *, owner: User | None = None
     ) -> Item:
         """
         Creates a blank or view based service.
@@ -6983,6 +7108,19 @@ class ContentManager(object):
                                modified in order to allow for successful publishing.
         ---------------------  --------------------------------------------------------------------------
         service_name           Optional String. The name for the service that will be added to the Item.
+        ---------------------  --------------------------------------------------------------------------
+        overwrite              Optional boolean. If True, the specified feature layer for the specified
+                               feature service will be overwritten.
+        ---------------------  --------------------------------------------------------------------------
+        append                 Optional boolean. If True, the SeDF will be appended to the specified
+                               feature service.
+        ---------------------  --------------------------------------------------------------------------
+        service                Dictionary that is required if `overwrite = True` or `append = True`.
+                               Dictionary with two keys: "FeatureServiceId" and "layers".
+                               "featureServiceId" value is a string of the feature service id that the layer
+                               belongs to.
+                               "layer" value is an integer depicting the index value of the layer to
+                               overwrite. For append, None can be passed as value.
         =====================  ==========================================================================
 
 
@@ -6998,7 +7136,11 @@ class ContentManager(object):
             warnings.warn(
                 "`item_id` is not allowed at this version of Portal, please use Enterprise 10.8.1+"
             )
-        from arcgis.features import FeatureCollection, FeatureSet
+        from arcgis.features import (
+            FeatureCollection,
+            FeatureSet,
+            FeatureLayerCollection,
+        )
 
         from arcgis._impl.common._utils import zipws
 
@@ -7060,7 +7202,7 @@ class ContentManager(object):
                 )
 
                 zip_fgdb = zipws(path=fgdb, outfile=temp_zip, keep=True)
-                item = self.add(
+                fgdb_item = self.add(
                     item_properties={
                         "title": title,
                         "type": "File Geodatabase",
@@ -7070,17 +7212,103 @@ class ContentManager(object):
                     folder=folder,
                 )
                 shutil.rmtree(temp_dir, ignore_errors=True)
+
+                # Publish as new feature layer
                 publish_parameters = {
                     "hasStaticData": True,
-                    "name": os.path.splitext(item["name"])[0],
+                    "name": os.path.splitext(fgdb_item["name"])[0],
                     "maxRecordCount": 2000,
                     "layerInfo": {"capabilities": capabilities},
                 }
                 if target_sr is not None:
                     publish_parameters["targetSR"] = {"wkid": target_sr}
-                return item.publish(
+
+                new_item = fgdb_item.publish(
                     publish_parameters=publish_parameters, item_id=item_id
                 )
+
+                # If overwrite or append specified, perform overwrite or append
+                overwrite = kwargs.pop("overwrite", False)
+                append = kwargs.pop("append", False)
+                if overwrite or append:
+                    # Get user defined parameters
+                    fs_dict = kwargs.pop("service", None)
+                    if fs_dict is None:
+                        raise ValueError(
+                            "If overwite or append is True, then the feature service id needs to be specified in the `service` parameter."
+                        )
+                    fs_id = fs_dict["featureServiceId"]
+
+                    fl_index = fs_dict["layer"]
+
+                    # Create the feature layer manager for the existing feature service
+                    fs_item = self._gis.content.get(fs_id)
+                    flc = FeatureLayerCollection.fromitem(fs_item)
+                    flc_manager = flc.manager
+
+                    # Get properties from the newly created feature layer
+                    new_fl = new_item.layers[0]
+                    publish_parameters = new_fl.properties
+
+                    # Overwrite or Append Steps
+                    if overwrite:
+                        # update the name and id to represent correct values
+                        publish_parameters["name"] = flc.manager.properties.layers[
+                            fl_index
+                        ]["name"]
+                        publish_parameters["id"] = fl_index
+
+                        # Perform edit on the flc
+                        # Step 1: Preserve layer ids
+                        revert = False
+                        if (
+                            "preserveLayerIds" not in flc_manager.properties
+                            or flc_manager.properties["preserveLayerIds"] is not True
+                        ):
+                            flc_manager.update_definition({"preserveLayerIds": True})
+                            revert = True
+                        # Step 2: Delete layer from definition
+                        flc_manager.delete_from_definition(
+                            {"layers": [{"id": fl_index}]}
+                        )
+                        # Step 3: Add new layer to definition
+                        flc_manager.add_to_definition(
+                            {"layers": [dict(publish_parameters)]}
+                        )
+                        # Step 4: Cleanup
+                        if revert:
+                            flc_manager.update_definition({"preserveLayerIds": False})
+                    elif append:
+                        # Add new layer to definition
+                        flc_manager.add_to_definition(
+                            {"layers": [dict(publish_parameters)]}
+                        )
+                        # Find the index at which the layer was added
+                        for layer in flc_manager.properties.layers:
+                            if layer["name"] == publish_parameters["name"]:
+                                fl_index = layer["id"]
+
+                    # Add new item dependency and append the features
+                    if (
+                        "filegdb"
+                        in fs_item.layers[fl_index].properties.supportedAppendFormats
+                    ):
+                        ItemDependency(fs_item).add("itemid", fgdb_item.id)
+                        fs_item.layers[fl_index].append(
+                            item_id=fgdb_item.id, upload_format="filegdb"
+                        )
+                    else:
+                        # When filegdb not supported through append, use featureCollection
+                        features = new_item.layers[0].query().features
+                        fs_item.layers[fl_index].edit_features(adds=features)
+
+                    # Feature layer was added to existing feature service so can delete the item
+                    new_item.delete()
+
+                    # return the updated feature service
+                    return self._gis.content.get(fs_id)
+                else:
+                    return new_item
             elif has_pyshp:
                 import random
                 import string
@@ -7101,6 +7329,63 @@ class ContentManager(object):
                     folder=folder,
                 )
                 shutil.rmtree(temp_dir, ignore_errors=True)
+
+                # If overwrite or append specified, perform overwrite or append
+                overwrite = kwargs.pop("overwrite", False)
+                append = kwargs.pop("append", False)
+                if overwrite or append:
+                    # Get user defined parameters
+                    fs_dict = kwargs.pop("service", None)
+                    if fs_dict is None:
+                        raise ValueError(
+                            "If overwite is True, then the feature service id and layer index need to be specified in the `service` parameter."
+                        )
+                    fs_id = fs_dict["featureServiceId"]
+                    fl_index = fs_dict["layer"]
+
+                    # Create the feature layer manager for the existing feature service
+                    fs_item = self._gis.content.get(fs_id)
+                    flc = FeatureLayerCollection.fromitem(fs_item)
+                    flc_manager = flc.manager
+
+                    # Analyze the shapefile item to get definition for new feature layer
+                    publish_parameters_orig = flc_manager.properties["layers"][fl_index]
+                    publish_parameters = self._gis.content.analyze(
+                        item=item, file_type="shapefile"
+                    )["publishParameters"]["layers"][0]
+
+                    # Update to get all correct parameters to add to definition
+                    publish_parameters.update(publish_parameters_orig)
+                    if overwrite:
+                        publish_parameters["id"] = fl_index
+
+                        # Perform edit on the feature layer collection using the manager
+                        revert = False
+                        if flc_manager.properties["preserveLayerIds"] is not True:
+                            flc_manager.update_definition({"preserveLayerIds": True})
+                            revert = True
+                        flc_manager.delete_from_definition(
+                            {"layers": [{"id": fl_index}]}
+                        )
+                        flc_manager.add_to_definition({"layers": [publish_parameters]})
+                        if revert:
+                            flc_manager.update_definition({"preserveLayerIds": False})
+                    elif append:
+                        # add new layer definition to existing service
+                        flc_manager.add_to_definition({"layers": [publish_parameters]})
+                        # find position at which it was added
+                        for layer in flc_manager.properties.layers:
+                            if layer["name"] == publish_parameters["name"]:
+                                fl_index = layer["id"]
+
+                    # Add new dependency on the shapefile and append the features
+                    ItemDependency(fs_item).add("itemid", item.id)
+                    fs_item.layers[fl_index].append(
+                        item_id=item.id, upload_format="shapefile"
+                    )
+
+                    return self._gis.content.get(fs_id)
+                # Publish as new Feature Layer
                 publish_parameters = {
                     "hasStaticData": True,
                     "name": os.path.splitext(item["name"])[0],
@@ -9854,9 +10139,12 @@ class User(dict):
         time.sleep(2)
         try:
             count = 0
+            item = None
             while count < 5:
-
-                item = Item(self._gis, res["itemId"])
+                try:
+                    item = Item(self._gis, res["itemId"])
+                except:
+                    ...
                 if item:
                     break
                 count += 1
@@ -9894,7 +10182,12 @@ class User(dict):
         return None
 
     # ----------------------------------------------------------------------
-    def generate_direct_access_url(self, store_type: str) -> str:
+    def generate_direct_access_url(
+        self,
+        store_type: str,
+        expiration: int | None = None,
+        subfolder: str | None = None,
+    ) -> dict | None:
         """
         The ``generate_direct_access_url`` method creates a direct access URL that is ideal
         for uploading large files to datafile share, notebook workspaces or raster stores.
@@ -9907,9 +10200,13 @@ class User(dict):
         ---------------------  ---------------------------------------------------------
         store_type             Optional String. The type of upload URL to generate.
                                Types: `big_data_file`, 'notebook', or 'raster`.
+        ---------------------  ---------------------------------------------------------
+        expiration             Optional Int. The expiration of the link in minutes.  The default is 1440.
+        ---------------------  ---------------------------------------------------------
+        subfolder              Optional String. The folder to upload to. The default is `None`.
         =====================  =========================================================
 
-        :return: A string representing a direct access URL
+        :return: A dictionary containing the direct access URL
 
         .. code-block:: python
 
@@ -9927,8 +10224,15 @@ class User(dict):
             "raster": "rasterStore",
         }
         url = f"{self._gis._portal.resturl}content/users/{self.username}/generateDirectAccessUrl"
-        params = {"f": "json", "expiration": 1440, "storeType": _lu[store_type.lower()]}
-        return self._portal.con.get(url, params)
+        params = {
+            "f": "json",
+            "expiration": expiration or 1440,
+            "storeType": _lu[store_type.lower()],
+        }
+        if subfolder:
+            params["subPath"] = subfolder
+
+        return self._portal.con.post(url, params)
 
     # ----------------------------------------------------------------------
     @property
@@ -13462,6 +13766,20 @@ class Item(dict):
         return res
 
     # ----------------------------------------------------------------------
+    @property
+    def view_manager(self) -> ViewManager | None:
+        """
+        If the `Item` is a `Feature Service` and a `Hosted Service`, the `Item`
+        can have views.  This Manager allows users to work with `Feature Service`
+        to create **views**
+
+        :returns: ViewManager
+        """
+        if self.type == "Feature Service" and "Hosted Service" in self.typeKeywords:
+            return ViewManager(item=self)
+        return None
+
+    # ----------------------------------------------------------------------
     @cached(cache=TTLCache(maxsize=255, ttl=60))
     def usage(self, date_range: str = "7D", as_df: bool = True):
         """
@@ -13500,21 +13818,25 @@ class Item(dict):
         date_range          Optional string.  The default is 7d.  This is the period to query
                             usage for a given item.
 
-                            =======  =========================
-                            24H      Past 24 hours
-                            -------  -------------------------
-                            7D       Past 7 days (default)
-                            -------  -------------------------
-                            14D      Past 14 days
-                            -------  -------------------------
-                            30D      Past 30 days
-                            -------  -------------------------
-                            60D      Past 60 days
-                            -------  -------------------------
-                            6M       Past 6 months
-                            -------  -------------------------
-                            1Y       Past 12 months
-                            =======  =========================
+                            =============           =========================
+                            24H                     Past 24 hours
+                            -------------           -------------------------
+                            7D                      Past 7 days (default)
+                            -------------           -------------------------
+                            14D                     Past 14 days
+                            -------------           -------------------------
+                            30D                     Past 30 days
+                            -------------           -------------------------
+                            60D                     Past 60 days
+                            -------------           -------------------------
+                            6M                      Past 6 months
+                            -------------           -------------------------
+                            1Y                      Past 12 months
+                            -------------           -------------------------
+                            (date1,date2)           Tuple of 2 datetime
+                                                    objects defining custom
+                                                    date range
+                            =============           =========================
         ---------------     --------------------------------------------------------------------
         as_df               Optional boolean.  Returns a Pandas DataFrame when True, returns data
                             as a dictionary when False
@@ -13522,6 +13844,46 @@ class Item(dict):
 
         :return: Pandas `DataFrame <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html>`_ or Dictionary
 
+        .. code-block:: python
+
+            # Usage Example #1: Standard date_range
+
+            >>> flyr_item = gis.content.get("8961540a52da402876e0168fa29bb82d")
+            >>> result = flyr_item.usage(date_range = "7D")
+                Date  Usage
+            0 2022-08-05      0
+            1 2022-08-06      0
+            2 2022-08-07      0
+            3 2022-08-08      0
+            4 2022-08-09      0
+            5 2022-08-10      0
+            6 2022-08-11      0
+            7 2022-08-12      8
+
+            # Usage Example #2: Custom date_range
+
+            >>> import datetime as dt
+
+            >>> flyr_item = gis.content.get("8961540a52da402876e0168fa29bb82d")
+            >>> date_1 = dt.datetime(2022,7,31)
+            >>> date_2 = dt.datetime.now(2022,8,12)
+                # Early value, later value
+            >>> result = flyr_item.usage(date_range (date_1, date_2))
+            >>> result
+                     Date  Usage
+            0  2022-07-31      0
+            1  2022-08-01      0
+            2  2022-08-02      0
+            3  2022-08-03      0
+            4  2022-08-04      0
+            5  2022-08-05      0
+            6  2022-08-06      0
+            7  2022-08-07      0
+            8  2022-08-08      0
+            9  2022-08-09      0
+            10 2022-08-10      0
+            11 2022-08-11      0
+            12 2022-08-12     10
         """
         if not self._portal.is_arcgisonline:
             raise ValueError("Usage() only supported for ArcGIS Online items.")
@@ -13553,8 +13915,7 @@ class Item(dict):
 
         if self.type == "Vector Tile Service":
             params["name"] = self.title.replace(" ", "_")
-        if self.type == "Map Service":
-            params["name"] = self.title.replace(" ", "_")
+
         if isinstance(date_range, (tuple, list)) and len(date_range) == 2:
             params["period"] = "1d"
             params["startTime"] = int(date_range[0].timestamp() * 1000)
@@ -15424,7 +15785,7 @@ class Item(dict):
                               )
 
         """
-        if self.type.lower() in ["application", "api key"]:
+        if self.type.lower() in ["api key"]:
             return None
         if redirect_uris is None:
             redirect_uris = []
@@ -15603,6 +15964,170 @@ class Item(dict):
         elif return_type == "PRIVATE_ONLY":
             return private_url or public_url
         return url
+
+
+########################################################################
+class ViewManager:
+    """The View Manager"""
+
+    _item = None
+    _gis = None
+
+    def __init__(self, item: Item):
+        self._item = item
+        self._gis = item._gis
+
+    # ----------------------------------------------------------------------
+    def list(self) -> list[Item]:
+        """
+        Returns all views for a given item
+
+        :returns: list[Item]
+        """
+        return [
+            i
+            for i in self._item.related_items("Service2Data", "reverse")
+            if "View Service" in i.typeKeywords
+        ]
+
+    # ----------------------------------------------------------------------
+    def create(
+        self,
+        name: str,
+        spatial_reference: dict[str, Any] | None = None,
+        extent: dict[str, int | float] | None = None,
+        allow_schema_changes: bool = True,
+        updateable: bool = True,
+        capabilities: str = "Query",
+        view_layers: list[int] | None = None,
+        view_tables: list[int] | None = None,
+        *,
+        description: str | None = None,
+        tags: str | None = None,
+        snippet: str | None = None,
+        overwrite: bool | None = None,
+        set_item_id: str | None = None,
+        preserve_layer_ids: bool = False,
+    ) -> Item:
+        """
+        Creates a view of an existing feature service Item. You can create a view, if you need a different view of the data
+        represented by a hosted feature layer, for example, you want to apply different editor settings, apply different
+        styles or filters, define which features or fields are available, or share the data to different groups than
+        the hosted feature layer  create a hosted feature layer view of that hosted feature layer.
+
+        When you create a feature layer view, a new hosted feature layer item is added to Content. This new layer is a
+        view of the data in the hosted feature layer, which means updates made to the data appear in the hosted feature
+        layer and all of its hosted feature layer views. However, since the view is a separate layer, you can change
+        properties and settings on this item separately from the hosted feature layer from which it is created.
+
+        For example, you can allow members of your organization to edit the hosted feature layer but share a read-only
+        feature layer view with the public.
+
+        To learn more about views visit: https://doc.arcgis.com/en/arcgis-online/share-maps/create-hosted-views.htm
+
+        ====================     ====================================================================
+        **Argument**             **Description**
+        --------------------     --------------------------------------------------------------------
+        name                     Required string. Name of the new view item
+        --------------------     --------------------------------------------------------------------
+        spatial_reference        Optional dict. Specify the spatial reference of the view
+        --------------------     --------------------------------------------------------------------
+        extent                   Optional dict. Specify the extent of the view
+        --------------------     --------------------------------------------------------------------
+        allow_schema_changes     Optional bool. Default is True. Determines if a view can alter a
+                                 service's schema.
+        --------------------     --------------------------------------------------------------------
+        updateable               Optional bool. Default is True. Determines if view can update values
+        --------------------     --------------------------------------------------------------------
+        capabilities             Optional string. Specify capabilities as a comma separated string.
+                                 For example "Query, Update, Delete". Default is 'Query'.
+        --------------------     --------------------------------------------------------------------
+        view_layers              Optional list. Specify list of layers present in the FeatureLayerCollection
+                                 that you want in the view.
+        --------------------     --------------------------------------------------------------------
+        view_tables              Optional list. Specify list of tables present in the FeatureLayerCollection
+                                 that you want in the view.
+        --------------------     --------------------------------------------------------------------
+        description              Optional String. A user-friendly description for the published dataset.
+        --------------------     --------------------------------------------------------------------
+        tags                     Optional String. The comma separated string of descriptive words.
+        --------------------     --------------------------------------------------------------------
+        snippet                  Optional String. A short description of the view item.
+        --------------------     --------------------------------------------------------------------
+        overwrite                Optional Boolean.  If true, the view is overwritten, False is the default.
+        --------------------     --------------------------------------------------------------------
+        set_item_id              Optional String. If set, the ItemId is defined by the user, not the system.
+        --------------------     --------------------------------------------------------------------
+        preserve_layer_ids       Optional Boolean. Preserves the layer's `id` on it's definition when `True`.  The default is `False`.
+        ====================     ====================================================================
+
+        .. code-block:: python  (optional)
+
+           USAGE EXAMPLE: Create a veiw from a hosted feature layer
+
+           crime_fl_item = gis.content.search("2012 crime")[0]
+           view = crime_fl_item.view_manager.create(name=uuid.uuid4().hex[:9], # create random name
+                                                    updateable=True,
+                                                    allow_schema_changes=False,
+                                                    capabilities="Query,Update,Delete")
+
+        :return:
+            Returns the newly created :class:`~arcgis.gis.Item` for the view.
+        """
+        flc = arcgis.features.FeatureLayerCollection.fromitem(self._item)
+        mgr = flc.manager
+        return mgr.create_view(
+            name=name,
+            spatial_reference=spatial_reference,
+            extent=extent,
+            allow_schema_changes=allow_schema_changes,
+            updateable=updateable,
+            capabilities=capabilities,
+            view_layers=view_layers,
+            view_tables=view_tables,
+            description=description,
+            tags=tags,
+            snippet=snippet,
+            overwrite=overwrite,
+            set_item_id=set_item_id,
+            preserve_layer_ids=preserve_layer_ids,
+        )
+
+    # ----------------------------------------------------------------------
+    def get_definitions(self, item: Item) -> list[ViewLayerDefParameter]:
+        """Gets the View Definition Parmaeters for a Given Item"""
+        if "View Service" in item.typeKeywords:
+            from arcgis.gis._impl._dataclasses import ViewLayerDefParameter
+
+            services = item.layers + item.tables
+            return [ViewLayerDefParameter.fromlayer(lyr) for lyr in services]
+        return []
+
+    # ----------------------------------------------------------------------
+    def update(self, layer_def: list[ViewLayerDefParameter] | None = None) -> bool:
+        """
+        Updates a set of layers with new queries, geometries, and column visibilities.
+
+        :returns: boolean
+        """
+        results = []
+        assert isinstance(layer_def, (list, tuple))
+        for lyrdef in layer_def:
+            assert isinstance(lyrdef, ViewLayerDefParameter)
+            layer = layer_def.layer
+            assert isinstance(layer, arcgis.features.FeatureLayer)
+            if "isView" in lyrdef.layer.properties and lyrdef.layer.properties.isView:
+                results.append(
+                    {
+                        layer._url: layer.container.manager.update_definition(
+                            lyrdef.as_json()
+                        )
+                    }
+                )
+            else:
+                raise ValueError("The layer is not a view.")
+            del lyrdef
+        return results
 
 
 ########################################################################

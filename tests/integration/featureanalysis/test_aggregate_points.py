@@ -1,23 +1,15 @@
 import sys
 
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
+# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import datetime
 import unittest
 import pandas as pd
 from arcgis.gis import GIS, Item
 from arcgis.features import FeatureLayer
 from arcgis.features.analysis import aggregate_points
-from arcgis.gis import ProfileManager
+from config_tests import setup_profiles, stage_data
 
-profile_list = ProfileManager().list()
-
-if not "ent11" in profile_list:
-    GIS(
-        url="https://gpportal.esri.com/portal/",
-        username="admin",
-        password="esri.agp",
-        profile="ent11",
-    )  # create enterprise 11 connection
+# from arcgis.gis import ProfileManager
 
 data = [
     {
@@ -1801,8 +1793,10 @@ data = [
 # download shapefile and upload to respective portal if not already present
 polygon_data = "https://earthworks.stanford.edu/catalog/stanford-dc841dq9031"
 
-
-profiles = ["your_online_profile", "ent11"]  # enterprise must be 10.9.1+
+test_items = ["1ac6896bcafc4dccb29c70f45c442b00"]  # Polygon Zips
+profiles = ["online_test", "ent_test", "kube_test"]
+setup_profiles(profiles[0], profiles[1], profiles[2])
+stage_data(test_items)
 
 
 class TestAggregatePoints(unittest.TestCase):
@@ -1820,7 +1814,7 @@ class TestAggregatePoints(unittest.TestCase):
             if gis._is_agol:
                 polygon_item = gis.content.get("1ac6896bcafc4dccb29c70f45c442b00")
             else:
-                polygon_item = gis.content.get("070c78e3d52e4b97aa2d36a5fb9845fe")
+                polygon_item = gis.content.get("1ac6896bcafc4dccb29c70f45c442b00")
             assert isinstance(point_item, Item)
             assert isinstance(polygon_item, Item)
             point_layer = point_item.layers[0]

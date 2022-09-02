@@ -1,7 +1,9 @@
 from __future__ import annotations
+from dataclasses import dataclass
 from typing import Any, Optional, Union
 from arcgis import env
 from arcgis._impl.common._mixins import PropertyMap
+from arcgis.features._trace_configuration import TraceConfiguration
 from arcgis._impl.common._deprecate import deprecated
 
 ########################################################################
@@ -18,9 +20,9 @@ class UtilityNetworkManager(object):
     ---------------------   -------------------------------------------
     url                     Required String. The web endpoint to the utility service.
     ---------------------   -------------------------------------------
-    version                 Optional Version. The `Version` class where the branch version will take place.
+    version                 Optional :class:`~arcgis.features._version.Version`. The `Version` class where the branch version will take place.
     ---------------------   -------------------------------------------
-    gis                     Optional GIS. The `GIS` connection object.
+    gis                     Optional :class:`~arcgis.gis.GIS` . The `GIS` connection object.
     =====================   ===========================================
 
 
@@ -43,8 +45,12 @@ class UtilityNetworkManager(object):
         self._url = url
         if version:
             self._version = version
-            self._version_guid = version._guid
             self._version_name = version.properties.versionName
+            if self._version_name in ["SDE.DEFAULT", "DBO.DEFAULT"]:
+                # fix due to locking issue
+                self._version_guid = None
+            else:
+                self._version_guid = version._guid
         else:
             self._version = None
             self._version_guid = None
@@ -73,7 +79,7 @@ class UtilityNetworkManager(object):
         locations: list[dict],
         trace_type: str,
         moment: int | None = None,
-        configuration: dict | None = None,
+        configuration: dict | TraceConfiguration | None = None,
         result_type: str | None = None,
         result_types: list[dict] | None = None,
     ) -> dict:
@@ -106,6 +112,7 @@ class UtilityNetworkManager(object):
 
                                 The location is ignored by the trace if the following
                                 required properties are not defined:
+
                                 * `percentAlong` : required for edge features and objects.
                                 * `terminalID` : required for junction features and objects.
 
@@ -123,9 +130,9 @@ class UtilityNetworkManager(object):
                                 will be executed to analyze the network. Can be
                                 configured using the `configuration` parameter.
 
-                                `Values: 'connected' | 'subnetwork' | 'subnetworkController' |
-                                'upstream' | 'downstream' | 'loops' | 'shortestPath' |
-                                'isolation'`
+                                Values:
+
+                                    'connected' | 'subnetwork' | 'subnetworkController' | 'upstream' | 'downstream' | 'loops' | 'shortestPath' | 'isolation'
         --------------------    --------------------------------------------------
         moment                  Optional Integer. Specifies the session moment. This
                                 should only be specified if you do not want to use
@@ -133,7 +140,8 @@ class UtilityNetworkManager(object):
 
                                 Example: moment = <Epoch time in milliseconds>
         --------------------    --------------------------------------------------
-        configuration           Optional dictionary. Specifies the collection of
+        configuration           Optional dictionary or TraceConfiguration object.
+                                Specifies the collection of
                                 trace configuration properties. Depending on the
                                 `trace_type`, some properties are required.
 
@@ -157,20 +165,23 @@ class UtilityNetworkManager(object):
 
         :return:
             A dictionary with keys and value types of:
-            {
-                "traceResults": {
-                    "elements": list,
-                    "diagramName": str,
-                    "globalFunctionResults": list,
-                    "kFeaturesForKNNFound": bool,
-                    "startingPointsIgnored" bool,
-                    "warnings": list
-                }
-                "success": bool
-            }
+
+                | {
+                |    "traceResults": {
+                |        "elements": list,
+                |        "diagramName": str,
+                |        "globalFunctionResults": list,
+                |        "kFeaturesForKNNFound": bool,
+                |        "startingPointsIgnored" bool,
+                |        "warnings": list
+                |    }
+                |    "success": bool
+                | }
+
         """
         url = "%s/trace" % self._url
-
+        if isinstance(configuration, TraceConfiguration):
+            configuration = configuration.to_dict()
         params = {
             "f": "json",
             "gdbVersion": self._version_name,
@@ -197,15 +208,15 @@ class UtilityNetworkManager(object):
 
         When the topology is disabled, the following happens:
 
-             - All current rows in the topology tables are deleted.
-             - No dirty areas are generated from edits.
-             - Remaining error features still exist and can be cleaned up without the overhead of dirty areas.
+        - All current rows in the topology tables are deleted.
+        - No dirty areas are generated from edits.
+        - Remaining error features still exist and can be cleaned up without the overhead of dirty areas.
 
         To perform certain network configuration tasks, the network
         topology must be disabled.
 
-             - This operation must be executed by the portal utility network owner.
-             - The topology can be disabled in the default version or in a named version.
+        - This operation must be executed by the portal utility network owner.
+        - The topology can be disabled in the default version or in a named version.
 
         :return: Dictionary indicating 'success' or 'error'
 
@@ -388,7 +399,7 @@ class UtilityNetworkManager(object):
         ------------------------------------        --------------------------------------------------------------------
         trace_configuration                         Optional Dictionary. Specifies the collection of trace
                                                     configuration parameters.
-                                                    See: `Parameters <https://developers.arcgis.com/rest/services-reference/enterprise/trace-utility-network-server-.htm#GUID-F0C932FD-B403-4223-9B00-E44D156C7DF9/>`_
+                                                    See: `Trace <https://developers.arcgis.com/rest/services-reference/enterprise/trace-utility-network-server-.htm#GUID-F0C932FD-B403-4223-9B00-E44D156C7DF9/>`_
         ------------------------------------        --------------------------------------------------------------------
         export_acknowledgement                      Optional Boolean. Specify whether the export is acknowledged.
         ------------------------------------        --------------------------------------------------------------------
@@ -414,12 +425,14 @@ class UtilityNetworkManager(object):
 
         :return:
             A dictionary with keys and value types of:
-            {
-                "moment": int,
-                "url": str,
-                "subnetworkHasBeenDeleted": bool,
-                "success": bool
-            }
+
+                | {
+                |    "moment": int,
+                |    "url": str,
+                |    "subnetworkHasBeenDeleted": bool,
+                |    "success": bool
+                | }
+
         """
 
         url = "%s/exportSubnetwork" % self._url
@@ -460,16 +473,23 @@ class UtilityNetworkManager(object):
         moments_to_return                           Optional List of Strings. Represents the collection of validate moments to
                                                     return. Default is all.
 
-                                                    `Values: ["initialEnableTopology" | "fullValidateTopology" |
-                                                            "partialValidateTopology" | "enableTopology" | "disableTopology" |
-                                                            "definitionModification" | "updateIsConnected" | "indexUpdate" | "all" ]`
+                                                    Values:
+
+                                                            [ "initialEnableTopology" | "fullValidateTopology" | "partialValidateTopology" | "enableTopology" | "disableTopology" | "definitionModification" | "updateIsConnected" | "indexUpdate" | "all"]
+                                                    Example:
+
+                                                        moments_to_return=["enableTopology","initialEnableTopology"]
         ------------------------------------        --------------------------------------------------------------------
         moment                                      Optional Integer. Specify the session moment if you do not want to use
                                                     the current moment.
         ====================================        ====================================================================
 
         :return:
-            A dictionary with keys and value types of: {"networkMoments": list, "validateNetworkTopology": bool, "success": bool}
+            A dictionary with keys and value types of:
+
+                | {"networkMoments": list,
+                | "validateNetworkTopology": bool,
+                | "success": bool}
         """
         url = "%s/queryNetworkMoments" % self._url
         params = {
@@ -535,16 +555,16 @@ class UtilityNetworkManager(object):
         ====================================        ====================================================================
         **Argument**                                **Description**
         ------------------------------------        --------------------------------------------------------------------
-        attachment_associations                     Optional Boolean. Whether to return attachement associations.
+        attachment_associations                     Optional Boolean. Whether to return attachment associations.
         ------------------------------------        --------------------------------------------------------------------
         connectivity_associations                   Optional Boolean. Represents whether to return connectivity associations.
         ------------------------------------        --------------------------------------------------------------------
         containment_associations                    Optional Boolean. Whether to return containment associations.
         ------------------------------------        --------------------------------------------------------------------
-        count                                       **Required** Int. Represents the maximum number of geometries that
+        count                                       Required Int. Represents the maximum number of geometries that
                                                     can be synthesized and returned in the result.
         ------------------------------------        --------------------------------------------------------------------
-        extent                                      **Required** Dictionary. Represents the envelope of the area to
+        extent                                      Required Dictionary. Represents the envelope of the area to
                                                     synthesize association geometries.
 
                                                     .. code-block:: python
@@ -566,7 +586,11 @@ class UtilityNetworkManager(object):
         ====================================        ====================================================================
 
         :return:
-            A dictionary with keys and value types of: {"maxGeometryCountExceeded": bool, "associations": list, "success": bool}
+            A dictionary with keys and value types of:
+
+                | {"maxGeometryCountExceeded": bool,
+                | "associations": list,
+                | "success": bool}
         """
         url = "%s/synthesizeAssociationGeometries" % self._url
         params = {
@@ -775,7 +799,9 @@ class UtilityNetworkManager(object):
 
         Available starting at Enterprise 10.9.1
 
-        :return: A dictionary with two keys {"associations":list, "success": bool}
+        :return: A dictionary with two keys
+
+            {"associations":list, "success": bool}
         """
 
         if self._gis.version >= [9, 2]:
@@ -815,9 +841,9 @@ class UtilityNetworkManager(object):
         ------------------------------------        --------------------------------------------------------------------
         types                                       Optional List of String(s). Specify teh association types to be queried.
 
-                                                    `Values: "connectivity" | "attachment" | "contianment" |
-                                                    "junctionEdgeFromConnectivity" | "junctionMidspanConnectivity" |
-                                                    "junctionEdgeToConnectivity"`
+                                                    Values:
+
+                                                        "connectivity" | "attachment" | "contianment" | "junctionEdgeFromConnectivity" | "junctionMidspanConnectivity" | "junctionEdgeToConnectivity"
         ------------------------------------        --------------------------------------------------------------------
         return_deletes                              Optional Boolean. Specify whether to return logically deleted associations.
         ====================================        ====================================================================
@@ -853,25 +879,19 @@ class UtilityNetworkManager(object):
 
         The `type` parameter is used to provide the following predefined traversal types:
 
-        * dirtyAreaExpansion—Returns associations and objects that have been modified
-        and are marked as dirty. Completes a downward traversal, followed by an
-        ascending traversal, with an exit filter on the first spatial feature in each
-        direction.
-        * firstContainers—Completes an ascending traversal on containment associations,
-        with an exit filter on the first spatial feature.
-        * spatialParents—Completes an ascending traversal on all association types,
-        with an exit filter on the first spatial feature.
-        * topContainers—Completes an ascending traversal to return associations and
-        objects with no exit filter.
-        * errorsNotModified—Completes a downward traversal to return associations in error,
-        with an exit filter on the first spatial feature.
-        * modifiedObjects—Completes a downward traversal to return associations
-        that are dirty, with an exit filter on the first spatial feature.
+        * dirtyAreaExpansion—Returns associations and objects that have been modified and are marked as dirty. Completes a downward traversal, followed by an ascending traversal, with an exit filter on the first spatial feature in each direction.
 
-        To create a custom traversal the `direction`, `dirty_filter`,
-        `error_filter`, `stop_at_first_spatial`, and `max_depth` parameters can be used.
-        When a traversal type is specified using the type parameter other than the default
-        "unspecified", these parameters are ignored.
+        * firstContainers—Completes an ascending traversal on containment associations, with an exit filter on the first spatial feature.
+
+        * spatialParents—Completes an ascending traversal on all association types, with an exit filter on the first spatial feature.
+
+        * topContainers—Completes an ascending traversal to return associations and objects with no exit filter.
+
+        * errorsNotModified—Completes a downward traversal to return associations in error, with an exit filter on the first spatial feature.
+
+        * modifiedObjects—Completes a downward traversal to return associations that are dirty, with an exit filter on the first spatial feature.
+
+        To create a custom traversal the `direction`, `dirty_filter`, `error_filter`, `stop_at_first_spatial`, and `max_depth` parameters can be used. When a traversal type is specified using the type parameter other than the default `unspecified``, these parameters are ignored.
 
         Available starting at Enterprise 10.9.1
 
@@ -884,7 +904,7 @@ class UtilityNetworkManager(object):
         **Argument**                                **Description**
         ------------------------------------        --------------------------------------------------------------------
         elements                                    Required List of Dictionary. The feature or object elements for which
-                                                    the association is querried.
+                                                    the association is queried.
 
                                                     .. code-block:: python
                                                         [{
@@ -896,14 +916,17 @@ class UtilityNetworkManager(object):
         moment                                      Optional Epoch time in milliseconds. Specify if you do not want to
                                                     use the current moment.
         ------------------------------------        --------------------------------------------------------------------
-        type                                        Optional List of String(s). Specify teh association types to be queried.
+        type                                        Optional String. Specify teh association types to be queried.
 
-                                                    `Values: "unspecified" | "dirtyAreaExpansion" | "firstContainers" |
-                                                    "spatialParents" | "topContainers" | "errorsNotModified" | "modifiedObjects"`
+                                                    Values:
+
+                                                        "unspecified" | "dirtyAreaExpansion" | "firstContainers" | "spatialParents" | "topContainers" | "errorsNotModified" | "modifiedObjects"
         ------------------------------------        --------------------------------------------------------------------
         direction                                   Optional String. Specify the direction of the association traversal.
 
-                                                    `Values: "ascending" | "descending"`
+                                                    Values:
+
+                                                        "ascending" | "descending"
         ------------------------------------        --------------------------------------------------------------------
         dirty_filter                                Optional String. Specify whether to filter based on the dirty status
                                                     of the association.
@@ -912,12 +935,16 @@ class UtilityNetworkManager(object):
                                                         When `dirty_filter` and `error_filter` are specified together,
                                                         the filters are combined using the AND expression
 
-                                                    `Values: "none" | "dirty" | "notDirty"`
+                                                    Values:
+
+                                                        "none" | "dirty" | "notDirty"
         ------------------------------------        --------------------------------------------------------------------
         error_filter                                Optional String. Specify whether to filter associations based on the
                                                     error code.
 
-                                                    `Values: "none" | "inError" | "notInError"`
+                                                    Values:
+
+                                                       "none" | "inError" | "notInError"
         ------------------------------------        --------------------------------------------------------------------
         stop_at_first_spatial                       Optional Bool. Specify whether to stop the traversal of associations
                                                     from nonspatial objext to feature when a spatial feature is encountered.
@@ -1014,7 +1041,12 @@ class UtilityNetworkManager(object):
         ====================================        ====================================================================
 
         :return:
-            A dictionary with keys and value types of {"exceededTransferLimit": bool, "objects": list, "associations": list, "success": bool}
+            A dictionary with keys and value types of
+
+                | {"exceededTransferLimit": bool,
+                | "objects": list,
+                | "associations": list,
+                | "success": bool}
         """
 
         if self._gis.version >= [9, 2]:
@@ -1060,6 +1092,7 @@ class TraceConfigurationsManager(object):
     operations for a network service. It is returned as an array of named trace
     configurations with the creator, name, and global ID for each.
 
+
     The TraceConfigurationsManager allows methods to be done on a trace configuration.
     """
 
@@ -1100,44 +1133,39 @@ class TraceConfigurationsManager(object):
         return self._con.post(self._url, {"f": "json"})
 
     # ----------------------------------------------------------------------
-    def get(self, global_id: str) -> dict:
-        """
-        Get a specific trace configuration by passing its global id.
-
-        :return: A dictionary depicting the trace configuration if found, else None.
-        """
-        configs = self.query()
-        for config in configs["traceConfigurations"]:
-            if config["globalId"] == global_id:
-                return config
-
-    # ----------------------------------------------------------------------
     def query(
         self,
         global_ids: list[str] | None = None,
         creators: list[str] | None = None,
         tags: list[str] | None = None,
         names: list[str] | None = None,
+        as_trace_configuration_class: bool = False,
     ) -> dict:
         """
         The query operation returns all properties from one or more
         named trace configurations in a utility network.
 
-        ========================    ===========================================
-        **Argument**                **Description**
-        ------------------------    -------------------------------------------
-        global_ids                  Optional list of strings. Specify the global
-                                    IDs of the named trace configs to be queried.
-        ------------------------    -------------------------------------------
-        creators                    Optional list of strings. The creators of
-                                    the named trace configurations to be queried.
-        ------------------------    -------------------------------------------
-        tags                        Optional list of strings. The user tags of
-                                    the named trace configurations to be queried.
-        ------------------------    -------------------------------------------
-        names                       Optional list of strings. The names of the
-                                    named trace configurations to be queried.
-        ========================    ===========================================
+        ============================        ===========================================
+        **Argument**                        **Description**
+        ----------------------------        -------------------------------------------
+        global_ids                          Optional list of strings. Specify the global
+                                            IDs of the named trace configs to be queried.
+        ----------------------------        -------------------------------------------
+        creators                            Optional list of strings. The creators of
+                                            the named trace configurations to be queried.
+        ----------------------------        -------------------------------------------
+        tags                                Optional list of strings. The user tags of
+                                            the named trace configurations to be queried.
+        ----------------------------        -------------------------------------------
+        names                               Optional list of strings. The names of the
+                                            named trace configurations to be queried.
+        ----------------------------        -------------------------------------------
+        as_trace_configuration_class        Optional boolean. If True the list for
+                                            "traceCongifurations" in return will be a list
+                                            of TraceConfiguration class instances. If False,
+                                            the list will be a list of dictionaries of trace
+                                            configuration instances. The default is False.
+        ============================        ===========================================
 
         :return:
             A dictionary with two keys: {"traceConfigurations": list, "success": bool}
@@ -1151,7 +1179,14 @@ class TraceConfigurationsManager(object):
                 "tags": tags,
                 "names": names,
             }
-            return self._con.post(url, params)
+            res = self._con.post(url, params)
+            if as_trace_configuration_class:
+                trace_configs = []
+                for trace in res["traceConfigurations"]:
+                    trace = TraceConfiguration.from_config(trace)
+                    trace_configs.append(trace)
+                res["traceConfigurations"] = trace_configs
+            return res
 
     # ----------------------------------------------------------------------
     def delete(self, global_ids: list[str]) -> dict:
@@ -1175,7 +1210,7 @@ class TraceConfigurationsManager(object):
         self,
         name: str,
         trace_type: str,
-        trace_config: dict,
+        trace_config: dict | TraceConfiguration,
         description: str | None = None,
         result_types: list[dict] | None = None,
         tags: list[str] | None = None,
@@ -1201,11 +1236,12 @@ class TraceConfigurationsManager(object):
                                     will be used to analyze the network. Trace types
                                     can be configured using the `trace_config` parameter.
 
-                                    `Values: "connected" | "subnetwork" | "upstream" |
-                                    "subnetworkController" | "downstream" | "loops" |
-                                    "shortenPath" | "isolation"`
+                                    Values:
+
+                                        "connected" | "subnetwork" | "upstream" | "subnetworkController" | "downstream" | "loops" | "shortenPath" | "isolation"
         ----------------------      -----------------------------------------------
-        trace_config                Required Dictionary. Specify the collection of
+        trace_config                Required Dictionary or TraceConfiguration object.
+                                    Specify the collection of
                                     altered trace configuration properties.
 
                                     See: `Properties <https://developers.arcgis.com/rest/services-reference/enterprise/trace-utility-network-server-.htm#GUID-F0C932FD-B403-4223-9B00-E44D156C7DF9/>`_
@@ -1233,6 +1269,8 @@ class TraceConfigurationsManager(object):
 
         :return: A dictionary with key "success" indicating True or False.
         """
+        if isinstance(trace_config, TraceConfiguration):
+            trace_config = trace_config.to_dict()
         if self._gis.version >= [9, 2]:
             url = "%s/create" % self._url
             params = {
@@ -1254,7 +1292,7 @@ class TraceConfigurationsManager(object):
         name: str | None = None,
         description: str | None = None,
         trace_type: str = "connected",
-        trace_config: dict | None = None,
+        trace_config: dict | TraceConfiguration | None = None,
         result_types: list[dict] | None = None,
         tags: list[str] | None = None,
     ) -> dict:
@@ -1284,11 +1322,12 @@ class TraceConfigurationsManager(object):
                                     will be used to analyze the network. Trace types
                                     can be configured using the `trace_config` parameter.
 
-                                    `Values: "connected" | "subnetwork" | "upstream" |
-                                    "subnetworkController" | "downstream" | "loops" |
-                                    "shortenPath" | "isolation"`
+                                    Values:
+
+                                            "connected" | "subnetwork" | "upstream" | "subnetworkController" | "downstream" | "loops" | "shortenPath" | "isolation"
         ----------------------      -----------------------------------------------
-        trace_config                Optional Dictionary. Specify the collection of
+        trace_config                Optional Dictionary or instance of TraceConfiguration
+                                    class. Specify the collection of
                                     altered trace configuration properties.
 
                                     See: `Properties <https://developers.arcgis.com/rest/services-reference/enterprise/trace-utility-network-server-.htm#GUID-F0C932FD-B403-4223-9B00-E44D156C7DF9/>`_
@@ -1316,6 +1355,8 @@ class TraceConfigurationsManager(object):
 
         if self._gis.version >= [9, 2]:
             url = "%s/alter" % self._url
+            if isinstance(trace_config, TraceConfiguration):
+                trace_config = trace_config.to_dict()
             params = {
                 "f": "json",
                 "globalId": global_id,

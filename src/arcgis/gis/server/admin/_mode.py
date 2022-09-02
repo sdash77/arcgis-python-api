@@ -66,7 +66,7 @@ class Mode(BaseServer):
         ===============     ====================================================================
 
 
-        :return: boolean
+        :return: Boolean
 
         """
         params = {"siteMode": siteMode, "runAsync": runAsync, "f": "json"}
@@ -102,7 +102,7 @@ class Mode(BaseServer):
         ===============     ====================================================================
 
 
-        :return: boolean
+        :return: Boolean
 
         """
         params = {

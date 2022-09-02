@@ -2,7 +2,6 @@ from __future__ import annotations
 from enum import Enum
 from typing import Optional, Union
 import uuid
-
 from arcgis.auth.tools import LazyLoader
 
 arcgis = LazyLoader("arcgis")
@@ -62,7 +61,7 @@ class Scales(Enum):
 ###############################################################################################################
 class Image(object):
     """
-    Class representing an ``image`` from a url or file.
+    Class representing an `image` from a url or file.
 
     .. warning::
         Image must be smaller than 10 MB to avoid having issues when saving or publishing.
@@ -229,7 +228,7 @@ class Image(object):
         """
         Get/Set display for image.
 
-        ``Values: "small" | "wide" | "full" | "float"``
+        Values: `small` | `wide` | `full` | `float`
         """
         if self._check_node() is True:
             return self._story._properties["nodes"][self.node]["config"]["size"]
@@ -248,7 +247,7 @@ class Image(object):
 
         :return: True if successful.
         """
-        return self._story._delete(self.node, self.resource_node)
+        return self._story._delete(self.node)
 
     # ----------------------------------------------------------------------
     def _add_image(self, caption=None, alt_text=None, display=None, story=None):
@@ -390,7 +389,7 @@ class Image(object):
 ###############################################################################################################
 class Video(object):
     """
-    Class representing a ``video`` from a url or file
+    Class representing a `video` from a url or file
 
     ==================      ====================================================================
     **Argument**            **Description**
@@ -557,7 +556,7 @@ class Video(object):
         """
         Get/Set display for the video.
 
-        ``Values: "small" | "wide" | "full" | "float"``
+        Values: `small` | `wide` | `full` | `float`
 
         .. note::
             Cannot change display when video is created from a url
@@ -583,7 +582,7 @@ class Video(object):
 
         :return: True if successful
         """
-        return self._story._delete(self.node, self.resource_node)
+        return self._story._delete(self.node)
 
     # ----------------------------------------------------------------------
     def _add_video(
@@ -698,7 +697,7 @@ class Video(object):
 ###############################################################################################################
 class Audio(object):
     """
-    This class represents content that is of type ``audio``. It can be created from
+    This class represents content that is of type `audio`. It can be created from
     a file path and added to the story.
 
     ==================      ====================================================================
@@ -851,7 +850,7 @@ class Audio(object):
         """
         Get/Set display for audio.
 
-            ``Values: "small" | "wide" | "float"``
+        Values: `small` | `wide` | float`
         """
         if self._check_node() is True:
             return self._story._properties["nodes"][self.node]["config"]["size"]
@@ -870,7 +869,7 @@ class Audio(object):
 
         :return: True if successful
         """
-        return self._story._delete(self.node, self.resource_node)
+        return self._story._delete(self.node)
 
     # ----------------------------------------------------------------------
     def _add_audio(
@@ -933,7 +932,7 @@ class Audio(object):
 ###############################################################################################################
 class Embed(object):
     """
-    Class representing a ``webpage`` or ``embedded audio``.
+    Class representing a `webpage` or `embedded audio`.
     Embed will show as a card in the story.
 
     ==================      ====================================================================
@@ -1064,7 +1063,7 @@ class Embed(object):
         """
         Get/Set display for embed.
 
-        ``Values: "card" | "inline"``
+        Values: `card` | `inline`
         """
         if self._check_node() is True:
             return self._story._properties["nodes"][self.node]["data"]["display"]
@@ -1129,7 +1128,7 @@ class Embed(object):
 ###############################################################################################################
 class Map(object):
     """
-    Class representing a ``webmap`` or ``webscene`` for the story
+    Class representing a `webmap` or `webscene` for the story
 
     =================       ====================================================================
     **Argument**            **Description**
@@ -1356,11 +1355,11 @@ class Map(object):
                             accordingly.
 
                             Example:
-                            {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
-                            'xmin': -609354.6306080809,
-                            'ymin': 2885721.2797636474,
-                            'xmax': 6068184.160383142,
-                            'ymax': 6642754.094035632}
+                                | {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                                | 'xmin': -609354.6306080809,
+                                | 'ymin': 2885721.2797636474,
+                                | 'xmax': 6068184.160383142,
+                                | 'ymax': 6642754.094035632}
         ------------------  ----------------------------------------
         scale               Optional Scales Value. Define the scale of the map.
                             If none specified, current scale is kept.
@@ -1541,7 +1540,7 @@ class Map(object):
         """
         Get/Set the display type of the map.
 
-        ``Values: "standard" | "wide" | "full" | "float right" |"float left"``
+        Values: `standard` | `wide` | `full` | `float right` | `float left`
         """
         if self._check_node() is True:
             if "config" in self._story._properties["nodes"][self.node]:
@@ -1577,7 +1576,7 @@ class Map(object):
         """
         Delete the node
         """
-        return self._story._delete(self.node, self.resource_node)
+        return self._story._delete(self.node)
 
     # ----------------------------------------------------------------------
     def _add_map(self, caption=None, alt_text=None, display=None, story=None):
@@ -1684,7 +1683,7 @@ class Map(object):
 ###############################################################################################################
 class Text(object):
     """
-    Class representing a ``text`` and a style of text.
+    Class representing a `text` and a style of text.
 
     ==================      ====================================================================
     **Argument**            **Description**
@@ -1708,8 +1707,8 @@ class Text(object):
     style                   Optional TextStyles type. There are 7 different styles of text that can be
                             added to a story.
 
-                            ``Values: PARAGRAPH | LARGEPARAGRAPH | NUMBERLIST | BULLETLIST |
-                            HEADING | SUBHEADING | QUOTE``
+                            Values: PARAGRAPH | LARGEPARAGRAPH | NUMBERLIST | BULLETLIST |
+                            HEADING | SUBHEADING | QUOTE
     ------------------      --------------------------------------------------------------------
     custom_color            Optional String. The hex color value without the #.
                             Only available when type is either 'paragraph', 'bullet-list', or
@@ -1730,14 +1729,14 @@ class Text(object):
                             and a class attribute to indicate color formatting:
                             class=sm-text-color-{values} attribute in the <strong> | <em> | <a> | <span> tags
 
-                            ``Values: themeColor1 | themeColor2 | themeColor3 | customTextColors``
+                            Values: `themeColor1` | `themeColor2` | `themeColor3` | `customTextColors`
     -------------------     --------------------------------------------------------------------
     large-paragraph         String can contain the following tags for text formatting:
                             <strong>, <em>, <a href="{link}" rel="noopener noreferer" target="_blank"
                             and a class attribute to indicate color formatting:
                             class=sm-text-color-{values} attribute in the <strong> | <em> | <a> | <span> tags
 
-                            ``Values: themeColor1 | themeColor2 | themeColor3 | customTextColors``
+                            Values: `themeColor1` | `themeColor2` | `themeColor3` | `customTextColors`
     -------------------     --------------------------------------------------------------------
     heading                 String can only contain <em> tag
     -------------------     --------------------------------------------------------------------
@@ -1748,14 +1747,14 @@ class Text(object):
                             and a class attribute to indicate color formatting:
                             class=sm-text-color-{values} attribute in the <strong> | <em> | <a> | <span> tags
 
-                            ``Values: themeColor1 | themeColor2 | themeColor3 | customTextColors``
+                            Values: `themeColor1` | `themeColor2` | `themeColor3` | `customTextColors`
     -------------------     --------------------------------------------------------------------
     numbered-list           String can contain the following tags for text formatting:
                             <strong>, <em>, <a href="{link}" rel="noopener noreferer" target="_blank"
                             and a class attribute to indicate color formatting:
                             class=sm-text-color-{values} attribute in the <strong> | <em> | <a> | <span> tags
 
-                            ``Values: themeColor1 | themeColor2 | themeColor3 | customTextColors``
+                            Values: `themeColor1` | `themeColor2` | `themeColor3` | `customTextColors`
     -------------------     --------------------------------------------------------------------
     quote                   String can only contain <strong> and <em> tags
     ===================     ====================================================================
@@ -1766,7 +1765,7 @@ class Text(object):
         self,
         text: Optional[str] = None,
         style: TextStyles = TextStyles.PARAGRAPH,
-        color: str = "000",
+        color: str = None,
         **kwargs,
     ):
         # Can be created from scratch or already exist in story
@@ -1879,7 +1878,7 @@ class Text(object):
 ###############################################################################################################
 class Button(object):
     """
-    Class representing a ``button``.
+    Class representing a `button`.
 
     ==================      ====================================================================
     **Argument**            **Description**
@@ -2008,7 +2007,7 @@ class Button(object):
 ###############################################################################################################
 class Gallery(object):
     """
-    Class representing an ``image gallery``
+    Class representing an `image gallery`
 
     To begin with a new gallery, simply call the class. Once added to the story,
     you can add up to 12 images.
@@ -2073,8 +2072,10 @@ class Gallery(object):
         node_list               List of node ids for the images in the gallery. Nodes must already be
                                 in the gallery and this list will adjust the order of the images.
 
-                                To add new images to the gallery use: Gallery.add_images(images)
-                                To delete an image from a gallery use: Gallery.delete_image(node_id)
+                                To add new images to the gallery use:
+                                    Gallery.add_images(images)
+                                To delete an image from a gallery use:
+                                    Gallery.delete_image(node_id)
         ==================      ====================================================================
 
         :return:
@@ -2151,7 +2152,7 @@ class Gallery(object):
         """
         Get/Set the display type of the Gallery.
 
-        ``Values: "jigsaw" | "square-dynamic"``
+        Values: `jigsaw` | `square-dynamic`
         """
         if self._check_node() is True:
             return self._story._properties["nodes"][self.node]["config"]["size"]
@@ -2179,8 +2180,9 @@ class Gallery(object):
                 )
             if images is not None:
                 for image in images:
-                    if image.node not in self._story._properties["nodes"]:
-                        image._add_image(story=self._story)
+                    if image.node in self._story._properties["nodes"]:
+                        image.node = "n-" + uuid.uuid4().hex[0:6]
+                    image._add_image(story=self._story)
                     self._story._properties["nodes"][self.node]["children"].append(
                         image.node
                     )
@@ -2190,7 +2192,7 @@ class Gallery(object):
     def delete_image(self, image: str):
         """
         The delete_image method is used to delete one image from the gallery. To see a list of images
-        used in the gallery, use the `gallery.images` property.
+        used in the gallery, use the :meth:`~arcgis.apps.storymap.story_content.Gallery.images` property.
 
         ==================      ====================================================================
         **Argument**            **Description**
@@ -2203,12 +2205,7 @@ class Gallery(object):
         if image in self.images:
             # Remove from the gallery list
             self._story._properties["nodes"][self.node]["children"].remove(image)
-            # Remove from the story
-            if "image" in self._story._properties["nodes"][image]["data"]:
-                resource_node = self._story._properties["nodes"][image]["data"]["image"]
-            else:
-                resource_node = None
-            self._story._delete(image, resource_node)
+            self._story._delete(image)
         return self.images
 
     # ----------------------------------------------------------------------
@@ -2246,7 +2243,7 @@ class Swipe(object):
     ---------------     --------------------------------------------------------------------
     node                Required String. The node id for the swipe type.
     ---------------     --------------------------------------------------------------------
-    story               Required StoryMap that the swipe belongs to.
+    story               Required :class:`~arcgis.apps.storymap.story.StoryMap` that the swipe belongs to.
     ===============     ====================================================================
 
     .. code-block:: python
@@ -2360,7 +2357,7 @@ class Swipe(object):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        content             Required story content of type: Image or Map. Must be the same media
+        content             Required story content of type: :class:`~arcgis.apps.storymap.story_content.Image` or :class:`~arcgis.apps.storymap.story_content.Map` . Must be the same media
                             on both panels.
         ---------------     --------------------------------------------------------------------
         position            Optional String. Either "right" or "left". Default is "right" so content
@@ -2377,14 +2374,9 @@ class Swipe(object):
             raise ValueError(
                 "Media type is established as image. Can only accept another image."
             )
-        if content.node not in self._story._properties["nodes"]:
-            # If user has created the content but not added to the story yet.
-            if isinstance(content, Image):
-                content._add_image(story=self._story)
-                self._media_type = "image"
-            elif isinstance(content, Map):
-                content._add_map(story=self._story)
-                self._media_type = "webmap"
+        # Add node to story.
+        self._add_item_story(content)
+
         if "data" not in self._story._properties["nodes"][self.node]:
             self._story._properties["nodes"][self.node]["data"] = {"contents": {}}
         # Add to content in position wanted
@@ -2406,6 +2398,17 @@ class Swipe(object):
         """
         return self._story._delete(self.node)
 
+    # ----------------------------------------------------------------------
+    def _add_item_story(self, content):
+        if content and content.node in self._story._properties["nodes"]:
+            content.node = "n-" + uuid.uuid4().hex[0:6]
+        if isinstance(content, Image):
+            content._add_image(story=self._story)
+            self._media_type = "image"
+        elif isinstance(content, Map):
+            content._add_map(story=self._story)
+            self._media_type = "webmap"
+
 
 ###############################################################################################################
 class Sidecar(object):
@@ -2421,7 +2424,7 @@ class Sidecar(object):
     ---------------     --------------------------------------------------------------------
     node_id             Required String. The node id for the sidecar type.
     ---------------     --------------------------------------------------------------------
-    story               Required StoryMap that the sidecar belongs to.
+    story               Required :class:`~arcgis.apps.storymap.story.StoryMap` that the sidecar belongs to.
     ===============     ====================================================================
 
     .. code-block:: python
@@ -2495,7 +2498,6 @@ class Sidecar(object):
         return sidecar_tree
 
     # ----------------------------------------------------------------------
-    # Can we create an alias name called: change_media
     def edit(
         self,
         content: Union[Image, Video, Map, Embed],
@@ -2517,7 +2519,9 @@ class Sidecar(object):
         **Argument**            **Description**
         ------------------      -----------------------------------------------------------------------
         content                 Required item that is a story content item.
-                                Item type for the media node can be: Image, Video, Map, Embed, or Swipe.
+                                Item type for the media node can be: :class:`~arcgis.apps.storymap.story_content.Image`,
+                                :class:`~arcgis.apps.storymap.story_content.Video`, :class:`~arcgis.apps.storymap.story_content.Map`
+                                :class:`~arcgis.apps.storymap.story_content.Embed`, :class:`~arcgis.apps.storymap.story_content.Swipe`
         ------------------      -----------------------------------------------------------------------
         slide_number            Required Integer. The slide that will be edited. First slide is 1.
         ==================      =======================================================================
@@ -2549,9 +2553,8 @@ class Sidecar(object):
         slide_node = list(slide.keys())[0]
         media_node = list(slide[slide_node]["media"].values())[0]
 
-        # Check to see if content has been added to node properties
-        if content.node not in self._story._properties["nodes"]:
-            self._add_item_story(content)
+        # Add to node properties
+        self._add_item_story(content)
 
         if media_node:
             self._story._delete(media_node)
@@ -2588,6 +2591,101 @@ class Sidecar(object):
         return self._story._assign_node_class(node_id)
 
     # ----------------------------------------------------------------------
+    def add_slide(
+        self,
+        contents: list,
+        media: Image | Video | Map | Embed | None = None,
+        slide_number: int = None,
+    ):
+        """
+        Add a slide to the sidecar. You are able to specify the position of the slide, the
+        content of the narrative panel and the media of the slide.
+
+        =======================     ====================================================================
+        **Argument**                **Description**
+        -----------------------     --------------------------------------------------------------------
+        contents                    Required list of story content item(s). The instances of story content that
+                                    will be added to the narrative panel such as Text, Image, Embed, etc.
+        -----------------------     --------------------------------------------------------------------
+        media                       Optional item that is a story content item.
+                                    Item type for the media node can be: Image, Video, Map, Embed, or Swipe.
+        -----------------------     --------------------------------------------------------------------
+        slide_number                Optional Integer. The position at which the new slide will be.
+                                    If none is provided then it will be added as the last slide.
+
+                                    First slide is 1.
+        =======================     ====================================================================
+
+        .. code-block:: python
+            # Get sidecar from story and see the properties
+            sc = story.get(<sidecar_node_id>)
+            sc.properties
+            >> returns a dictionary structure of the sidecar
+
+            # create the content we will add to narrative_panel_nodes parameter
+            im = Image(<img_url_or_path>)
+            txt = Text("Hello World")
+            embed = Embed(<url>)
+            narrative_nodes = [im, txt, embed]
+
+            mmap = Map(<item_id webmap>)
+
+            # Add new slide with the content:
+            sc.add_slide(narrative_nodes, mmap, 4)
+            >> New slide added with the content at position 4
+        """
+        # Loop to:
+        # 1. Add the content to the story if not already added
+        # 2. Add the node ids to list to pass as children later
+        np_children = []
+        for content in contents:
+            self._add_item_story(content)
+            np_children.append(content.node)
+        if media:
+            self._add_item_story(media)
+
+        # For reference on some styles, grab first slide to go off of
+        first_slide = self._story.properties["nodes"][self._slides[0]]
+        first_np = self._story.properties["nodes"][first_slide["children"][0]]
+
+        # Create narrative panel node
+        np_node = "n-" + uuid.uuid4().hex[0:6]
+        np_def = {
+            "type": "immersive-narrative-panel",
+            "data": first_np["data"],  # keep same settings as other slide
+            "children": np_children,
+        }
+        self._story._properties["nodes"][np_node] = np_def
+
+        # Create slide node and add the other nodes to it
+        slide_node = "n-" + uuid.uuid4().hex[0:6]
+        slide_def = {
+            "type": "immersive-slide",
+            "data": {"transition": "fade"},
+            "children": [np_node],  # First listed node is the Narrative Panel
+        }
+        # If no media given then put a background color instead
+        if media:
+            slide_def["children"].append(media.node)
+        else:
+            slide_def["data"]["backgroundColor"] = "#FFFFFF"
+        self._story._properties["nodes"][slide_node] = slide_def
+
+        # Add slide node to sidecar node children at position indicated or last.
+        if slide_number is None:
+            # If no slide number then insert slide last
+            slide_number = len(self._slides) + 1
+        else:
+            # Correct for the indexing (user puts position 1, index is 0)
+            slide_number = slide_number - 1
+        self._story._properties["nodes"][self.node]["children"].insert(
+            slide_number, slide_node
+        )
+        # Update slide definition for the class to relect new list
+        self._slides = self._story._properties["nodes"][self.node]["children"]
+        return {"New Slide": slide_node}
+
+    # ----------------------------------------------------------------------
     def remove_slide(self, slide: str):
         """
         Remove a slide from the sidecar.
@@ -2599,10 +2697,11 @@ class Sidecar(object):
         ===============     ====================================================================
         """
         # Remove slide and all associated children.
-        self._story._properties["nodes"][self.node]["children"].remove(slide)
-        self._slides.remove(slide)
-        self._story._delete(slide)
         self._remove_associated(slide)
+        self._story._properties["nodes"][self.node]["children"].remove(slide)
+        self._story._delete(slide)
+        self._slides = self._story._properties["nodes"][self.node]["children"]
+        return True
 
     # ----------------------------------------------------------------------
     def delete(self):
@@ -2615,48 +2714,44 @@ class Sidecar(object):
 
     # ----------------------------------------------------------------------
     def _remove_associated(self, slide):
-        # Remove narrative panel and text associated
+        # Get narrative panel, always first child of the slide
         narrative_panel = self._story._properties["nodes"][slide]["children"][0]
-        self._story._delete(narrative_panel["children"][0])
+        # Delete the children of the narrative panel
+        children = self._story._properties["nodes"][narrative_panel]["children"]
+        for child in children:
+            self._story._delete(child)
+        # Delete the narrative panel itself
         self._story._delete(narrative_panel)
 
         # Remove media item and resource node if one exists
-        if len(self._story._properties["nodes"][slide]["children"]) > 1:
-            media_item = self._story._properties["nodes"][slide]["children"][1]
-            if "image" in self._story._properties["nodes"][media_item]["data"]:
-                resource_node = self._story._properties["nodes"][media_item]["data"][
-                    "image"
-                ]
-            elif "video" in self._story._properties["nodes"][media_item]["data"]:
-                resource_node = self._story._properties["nodes"][media_item]["data"][
-                    "video"
-                ]
-            elif self._story._properties["nodes"][media_item]["type"] == "webmap":
-                resource_node = self._story._properties["nodes"][media_item]["data"][
-                    "map"
-                ]
-            else:
-                resource_node = None
-            self._story._delete(media_item, resource_node)
+        if len(self._story._properties["nodes"][slide]["children"]) >= 1:
+            media_item = self._story._properties["nodes"][slide]["children"][0]
+            self._story._delete(media_item)
 
     # ----------------------------------------------------------------------
     def _add_item_story(self, content):
+        if content and content.node in self._story._properties["nodes"]:
+            content.node = "n-" + uuid.uuid4().hex[0:6]
         if isinstance(content, Image):
-            content._add_image(story=self._story)
+            content._add_image(display="wide", story=self._story)
         elif isinstance(content, Video):
-            content._add_video(story=self._story)
+            content._add_video(display="wide", story=self._story)
         elif isinstance(content, Embed):
-            content._add_link(story=self._story)
+            content._add_link(display="card", story=self._story)
         elif isinstance(content, Map):
-            content._add_map(story=self._story)
+            content._add_map(display="wide", story=self._story)
         elif isinstance(content, Text):
             content._add_text(story=self._story)
+        elif isinstance(content, Button):
+            content._add_button(story=self._story)
+        elif isinstance(content, Audio):
+            content._add_audio(display="wide", story=self._story)
 
 
 ###############################################################################################################
 class Timeline(object):
     """
-    Create an Timeline object from a pre-existing ``timeline`` node.
+    Create a Timeline object from a pre-existing `timeline` node.
 
     A timeline is composed of events.
     Events are composed of maximum three nodes: an image, a sub-heading text, and a paragraph text.
@@ -2666,7 +2761,7 @@ class Timeline(object):
     ---------------     --------------------------------------------------------------------
     node_id             Required String. The node id for the timeline type.
     ---------------     --------------------------------------------------------------------
-    story               Required StoryMap that the timeline belongs to.
+    story               Required :class:`~arcgis.apps.storymap.story.StoryMap` that the timeline belongs to.
     ===============     ====================================================================
 
     .. code-block:: python
@@ -2723,7 +2818,7 @@ class Timeline(object):
         """
         Get/Set the style of the timeline
 
-        ``Values: "waterfall" | "single-slide" | "condensed"``
+        Values: `waterfall` | `single-slide` | `condensed`
         """
         return self._story._properties["nodes"][self.node]["data"]["type"]
 
@@ -2746,7 +2841,7 @@ class Timeline(object):
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         content             Required content to replace current content.
-                            Item type can be Image or Text.
+                            Item type can be :class:`~arcgis.apps.storymap.story_content.Image` or :class:`~arcgis.apps.storymap.story_content.Text` .
 
                             Text can only be of style TextStyles.SUBHEADING or TextStyles.PARAGRAPH
         ---------------     --------------------------------------------------------------------
@@ -2783,13 +2878,7 @@ class Timeline(object):
                 old_image_node = self._story._properties["nodes"][event][
                     "children"
                 ].pop(position)
-                if "image" in self._story._properties["nodes"][old_image_node]["data"]:
-                    resource_node = self._story._properties["nodes"][old_image_node][
-                        "data"
-                    ]["image"]
-                else:
-                    resource_node = None
-                self._story._delete(old_image_node, resource_node)
+                self._story._delete(old_image_node)
                 self._story._properties["nodes"][event]["children"].insert(
                     position, content.node
                 )
@@ -2827,14 +2916,7 @@ class Timeline(object):
         # Remove narrative panel and text associated
         children = self._story._properties["nodes"][event]["children"]
         for child in children:
-            if self._story._properties["nodes"][child]["type"] == "image":
-                if "image" in self._story._properties["nodes"][child]["data"]:
-                    resource_node = self._story._properties["nodes"][child]["data"][
-                        "image"
-                    ]
-            else:
-                resource_node = None
-            self._story._delete(child, resource_node)
+            self._story._delete(child)
         self._story._delete(event)
 
     # ----------------------------------------------------------------------
@@ -2870,6 +2952,8 @@ class Timeline(object):
 
     # ----------------------------------------------------------------------
     def _add_item_story(self, content):
+        if content.node in self.story._properties["nodes"]:
+            content.node = "n-" + uuid.uuid4().hex[0:6]
         if isinstance(content, Image):
             content._add_image(story=self._story)
         elif isinstance(content, Text):

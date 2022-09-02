@@ -4,6 +4,7 @@ sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from arcgis.gis import GIS
 from arcgis.features._utility import UtilityNetworkManager
+from arcgis.features._trace_configuration import TraceConfiguration
 
 gis = GIS("https://utilitynetwork.esri.com/portal", "AChapkowski", "AChapkowski1")
 # Create Topographic Service
@@ -85,47 +86,52 @@ class TestUtilityNetworkManager(unittest.TestCase):
         assert trace_configs
         assert trace_configs["success"] is True
 
+        # Try out TraceConfiguration class
+        a_trace = trace_configs["traceConfigurations"][0]
+        trace_config = TraceConfiguration.from_config(a_trace["traceConfiguration"])
+        assert trace_config
+        assert isinstance(trace_config.to_dict(), dict)
+
+        new_config = TraceConfiguration(
+            include_containers=True,
+            include_content=False,
+            include_structures=False,
+            include_barriers=True,
+            validate_consistency=True,
+            validate_locatability=False,
+            include_isolated=False,
+            ignore_barriers_at_starting_points=False,
+            include_up_to_first_spatial_container=True,
+            allow_indeterminate_flow=True,
+            domain_network_name="",
+            tier_name="",
+            target_tier_name="",
+            subnetwork_name="",
+            shortest_path_network_attribute_name="",
+            filter_bitset_network_attribute_name="",
+            traversability_scope="junctionsAndEdges",
+            condition_barriers=[],
+            function_barriers=[],
+            filter_barriers=[],
+            filter_function_barriers=[],
+            filter_scope="junctionsAndEdges",
+            functions=[],
+            nearest_neighbor={
+                "count": -1,
+                "costNetworkAttributeName": "",
+                "nearestCategories": [],
+                "nearestAssets": [],
+            },
+            output_filters=[],
+            output_conditions=[],
+            propagators=[],
+        )
         # Create
         created = manager.create(
             name="Connected_IncludeContainers",
             description="Connected trace example with containers",
             trace_type="connected",
-            trace_config={
-                "includeContainers": True,
-                "includeContent": False,
-                "includeStructures": False,
-                "includeBarriers": True,
-                "validateConsistency": True,
-                "validateLocatability": False,
-                "includeIsolated": False,
-                "ignoreBarriersAtStartingPoints": False,
-                "includeUpToFirstSpatialContainer": True,
-                "allowIndeterminateFlow": True,
-                "domainNetworkName": "",
-                "tierName": "",
-                "targetTierName": "",
-                "subnetworkName": "",
-                "diagramTemplateName": "",
-                "shortestPathNetworkAttributeName": "",
-                "filterBitsetNetworkAttributeName": "",
-                "traversabilityScope": "junctionsAndEdges",
-                "conditionBarriers": [],
-                "functionBarriers": [],
-                "arcadeExpressionBarrier": "",
-                "filterBarriers": [],
-                "filterFunctionBarriers": [],
-                "filterScope": "junctionsAndEdges",
-                "functions": [],
-                "nearestNeighbor": {
-                    "count": -1,
-                    "costNetworkAttributeName": "",
-                    "nearestCategories": [],
-                    "nearestAssets": [],
-                },
-                "outputFilters": [],
-                "outputConditions": [],
-                "propagators": [],
-            },
+            trace_config=new_config,
             result_types=[
                 {
                     "type": "elements",
@@ -166,9 +172,7 @@ class TestUtilityNetworkManager(unittest.TestCase):
         )
 
         # Delete
-        assert manager.delete(
-            [updated_query["traceConfigurations"][0]["globalId"]]
-        )
+        assert manager.delete([updated_query["traceConfigurations"][0]["globalId"]])
         updated_query = manager.query()
         assert len(updated_query["traceConfigurations"]) == number_trace_configs
 
@@ -217,6 +221,28 @@ class TestUtilityNetworkManager(unittest.TestCase):
         """
         Test using trace method with the Utility Network Service
         """
+        trace_configs = TraceConfiguration(
+            domain_network_name="Electric",
+            tier_name="Electric Distribution",
+            condition_barriers=[
+                {
+                    "name": "E:Device Status",
+                    "type": "networkAttribute",
+                    "operator": "equal",
+                    "value": 1,
+                    "combineUsingOr": True,
+                    "isSpecificValue": True,
+                },
+                {
+                    "name": "Lifecycle Status",
+                    "type": "networkAttribute",
+                    "operator": "doesNotIncludeAny",
+                    "value": 24,
+                    "combineUsingOr": False,
+                    "isSpecificValue": True,
+                },
+            ],
+        )
         trace = utility_nm.trace(
             locations=[
                 {
@@ -226,28 +252,7 @@ class TestUtilityNetworkManager(unittest.TestCase):
                 }
             ],
             trace_type="subnetwork",
-            configuration={
-                "domainNetworkName": "Electric",
-                "tierName": "Electric Distribution",
-                "conditionBarriers": [
-                    {
-                        "name": "E:Device Status",
-                        "type": "networkAttribute",
-                        "operator": "equal",
-                        "value": 1,
-                        "combineUsingOr": True,
-                        "isSpecificValue": True,
-                    },
-                    {
-                        "name": "Lifecycle Status",
-                        "type": "networkAttribute",
-                        "operator": "doesNotIncludeAny",
-                        "value": 24,
-                        "combineUsingOr": False,
-                        "isSpecificValue": True,
-                    },
-                ],
-            },
+            configuration=trace_configs,
         )
         assert trace
         assert trace["success"] is True

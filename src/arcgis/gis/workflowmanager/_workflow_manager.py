@@ -186,7 +186,7 @@ class WorkflowManagerAdmin:
         Gets the current status of the Workflow Manager Server
 
         :return:
-            boolean
+            Boolean
 
         """
 
@@ -207,7 +207,7 @@ class WorkflowManagerAdmin:
         Checks the health of Workflow Manager Server and if the cluster is active (if applicable).
 
         :return:
-            boolean
+            Boolean
 
         """
 
@@ -609,7 +609,7 @@ class JobManager:
                     },
                 ]
 
-        >>> workflow_manager.jobs.update(job_id, vars(job))
+            >>> workflow_manager.jobs.update(job_id, vars(job))
 
         """
         try:
@@ -886,7 +886,7 @@ class WorkflowManager:
         Returns a list of user :class:`roles <arcgis.gis.workflowmanager.WMRole>` available
         in the local Workflow Manager instance.
 
-        :return: list
+        :return: List
         """
         try:
             role_array = self._gis._con.get(
@@ -1240,7 +1240,7 @@ class WorkflowManager:
         ===============     ====================================================================
 
         :return:
-            boolean
+            Boolean
 
         """
         url = "{base}/community/groups/{groupid}?token={token}".format(
@@ -1330,7 +1330,7 @@ class WorkflowManager:
         ===============     ====================================================================
 
         :return:
-            Workflow Manager :class:`Role <arcgis.gis.workflowmanager.WMRole>` Object
+            Workflow Manager :class:`~arcgis.gis.workflowmanager.WMRole` Object
 
         """
         try:
@@ -1631,7 +1631,7 @@ class WorkflowManager:
         ===============     ====================================================================
 
         :return:
-            boolean
+            Boolean
 
         """
         try:
@@ -1666,7 +1666,7 @@ class WorkflowManager:
         it contains and list the associated job templates. This requires the adminBasic or adminAdvanced privileges.
 
         :return:
-            `list <https://docs.python.org/3/library/stdtypes.html#list>`_
+            `List <https://docs.python.org/3/library/stdtypes.html#list>`_
 
         """
 
@@ -1748,7 +1748,7 @@ class WorkflowManager:
         ===============     ====================================================================
 
         :return:
-            boolean
+            Boolean
 
         .. code-block:: python
 
@@ -1999,7 +1999,7 @@ class SavedSearchesManager:
         ===============     ====================================================================
 
         :return:
-            boolean
+            Boolean
         """
         try:
             url = "{base}/searches/{searchid}?token={token}".format(
@@ -2096,7 +2096,7 @@ class SavedSearchesManager:
         ===============     ====================================================================
 
         :return:
-            boolean
+            Boolean
         """
         try:
             url = "{base}/searches/{searchId}/shareWith?token={token}".format(
@@ -2133,7 +2133,7 @@ class SavedSearchesManager:
         ===============     ====================================================================
 
         :return:
-            list of :class:`~arcgis.gis.workflowmanager.Group` ID
+            List of :class:`~arcgis.gis.workflowmanager.Group` ID
 
         """
 
@@ -2155,7 +2155,7 @@ class Job(object):
     Helper class for managing Workflow Manager jobs in a workflow item. This class is
     not created by users directly. An instance of this class, can be created by calling
     the :meth:`get <arcgis.gis.workflowmanager.JobManager.get>` method of the
-    ``Job Manager`` with the appropriate job ID. The
+    :class:`~arcgis.gis.workflowmanager.JobManager` with the appropriate job ID. The
     :class:`~arcgis.gis.workflowmanager.JobManager` is accessible as the
     :attr:`~arcgis.gis.workflowmanager.WorkflowManager.jobs` property of the
     :class:`~arcgis.gis.workflowmanager.WorkflowManager`.
@@ -2502,7 +2502,7 @@ class Job(object):
         Gets the attachments of a job given job ID
 
         :return:
-            `list <https://docs.python.org/3/library/stdtypes.html#list>`_ of attachments
+            `List <https://docs.python.org/3/library/stdtypes.html#list>`_ of attachments
 
         """
 
@@ -2615,7 +2615,7 @@ class Job(object):
         Gets the comments of a job given job ID
 
         :return:
-            `list <https://docs.python.org/3/library/stdtypes.html#list>`_ of comments
+            `List <https://docs.python.org/3/library/stdtypes.html#list>`_ of comments
 
         """
 

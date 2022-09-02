@@ -1613,7 +1613,7 @@ def display_progress_bar(i, max_images, postText):
 
 class ScannedMapDigitizer:
     """
-    Creates the object for ScannedMapDigitizer class
+    Creates the object for :class:`~arcgis.learn.ScannedMapDigitizer` class
 
     =====================   ============================================
     **Argument**            **Description**
@@ -1667,7 +1667,7 @@ class ScannedMapDigitizer:
     def set_search_region_extent(cls, extent):
 
         """
-        Creates the object for ScannedMapDigitizer class
+        Creates the object for :class:`~arcgis.learn.ScannedMapDigitizer` class
 
         =====================   ============================================
         **Argument**            **Description**
@@ -1808,24 +1808,24 @@ class ScannedMapDigitizer:
         This method generates templates and color masks from scanned maps which
         are used in the subsequent step of template matching.
 
-         =====================   ===============================================
-         **Argument**            **Description**
-         ---------------------   -----------------------------------------------
-         color                   A list containing r, g, b value representing land color.
-                                 The color parameter is required for extracting
-                                 the land region and generating the binary mask.
-         ---------------------   -----------------------------------------------
-         color_delta             A value which defines the range around the
-                                 threshold value for a specific color used for
-                                 creating the mask images.
-                                  Default value is 60.
-         ---------------------   -----------------------------------------------
-         kernel_size             An integer corresponding to size of kernel
-                                 used for dilation(morphological operation).
-         ---------------------   -----------------------------------------------
-         show_result             A Boolean value. Set to "True" to visualize
-                                 results and set to "False" otherwise.
-         =====================   ===============================================
+        =====================   ===============================================
+        **Argument**            **Description**
+        ---------------------   -----------------------------------------------
+        color                   A list containing r, g, b value representing land color.
+                                The color parameter is required for extracting
+                                the land region and generating the binary mask.
+        ---------------------   -----------------------------------------------
+        color_delta             A value which defines the range around the
+                                threshold value for a specific color used for
+                                creating the mask images.
+                                Default value is 60.
+        ---------------------   -----------------------------------------------
+        kernel_size             An integer corresponding to size of kernel
+                                used for dilation(morphological operation).
+        ---------------------   -----------------------------------------------
+        show_result             A Boolean value. Set to "True" to visualize
+                                results and set to "False" otherwise.
+        =====================   ===============================================
 
         """
         process_folder = cls.process_path

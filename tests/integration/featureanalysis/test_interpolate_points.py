@@ -1,23 +1,13 @@
 import sys
 
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
+# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import datetime
 import unittest
 import pandas as pd
 from arcgis.gis import GIS, Item
 from arcgis.features import FeatureLayer
 from arcgis.features.analyze_patterns import interpolate_points
-from arcgis.gis import ProfileManager
-
-profile_list = ProfileManager().list()
-
-if not "ent11" in profile_list:
-    GIS(
-        url="https://gpportal.esri.com/portal/",
-        username="admin",
-        password="esri.agp",
-        profile="ent11",
-    )  # create enterprise 11 connection
+from config_tests import setup_profiles
 
 
 data = [
@@ -1248,7 +1238,8 @@ data = [
     },
 ]
 
-profiles = ["your_online_profile", "ent11"]  # enterprise must be 10.9.1+
+profiles = ["online_test", "ent_test", "kube_test"]
+setup_profiles(profiles[0], profiles[1], profiles[2])
 
 
 class TestInterpolatePoints(unittest.TestCase):

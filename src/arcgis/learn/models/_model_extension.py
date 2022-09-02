@@ -68,31 +68,38 @@ except Exception:
 class ModelExtension(ArcGISModel):
     """
     Creates a ModelExtension object, to train the model for object detection, semantic segmentation, and edge detection.
+
     =====================   ============================================================
     **Argument**            **Description**
     ---------------------   ------------------------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            ``prepare_data`` function.
+                            :meth:`~arcgis.learn.prepare_data`  function.
     ---------------------   ------------------------------------------------------------
     model_conf              A class definition contains the following methods:
-                                * ``get_model(self, data, backbone=None, **kwargs)``: for model definition,
-                                * ``on_batch_begin(self, learn, model_input_batch, model_target_batch, **kwargs)``: for
-                                  feeding input to the model during training,
-                                * ``transform_input(self, xb)``: for feeding input to the model during
-                                  inferencing/validation,
-                                * ``transform_input_multispectral(self, xb)``: for feeding input to the
-                                  model during inferencing/validation in case of multispectral data,
-                                * ``loss(self, model_output, *model_target)``: to return loss value of the model, and
-                                * ``post_process(self, pred, nms_overlap, thres, chip_size, device)``: to post-process
-                                  the output of the object-detection model.
-                                * ``post_process(self, pred, thres)``: to post-process the output of the segmentation model.
+
+                            * ``get_model(self, data, backbone=None, **kwargs)``: for model definition,
+
+                            * ``on_batch_begin(self, learn, model_input_batch, model_target_batch, **kwargs)``: for feeding input to the model during training,
+
+                            * ``transform_input(self, xb)``: for feeding input to the model during inferencing/validation,
+
+                            * ``transform_input_multispectral(self, xb)``: for feeding input to the model during inferencing/validation in case of multispectral data,
+
+                            * ``loss(self, model_output, *model_target)``: to return loss value of the model
+
+                            * ``post_process(self, pred, nms_overlap, thres, chip_size, device)``: to post-process
+                              the output of the object-detection model.
+
+                            * ``post_process(self, pred, thres)``: to post-process the output of the segmentation model.
     ---------------------   ------------------------------------------------------------
     backbone                Optional function. If custom model requires any backbone.
     ---------------------   ------------------------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
     =====================   ============================================================
-    :return: ``ModelExtension`` Object
+
+    :return: :class:`~arcgis.learn.ModelExtension` Object
+
     """
 
     def __init__(self, data, model_conf, backbone=None, pretrained_path=None, **kwargs):
@@ -256,7 +263,8 @@ class ModelExtension(ArcGISModel):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a ``ModelExtension`` object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.ModelExtension` object from an Esri Model Definition (EMD) file.
+
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -264,10 +272,11 @@ class ModelExtension(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from ``prepare_data`` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data`  function or None for
                                 inferencing.
         =====================   ===========================================
-        :return: `ModelExtension` Object
+
+        :return: :class:`~arcgis.learn.ModelExtension` Object
         """
 
         emd_path = _get_emd_path(emd_path)

@@ -640,8 +640,8 @@ class ArcGISModel(object):
                     # In case of maskrcnn make the batch norm trainable
                     next(params_iterator).requires_grad = True
                 self.learn.create_opt(slice(3e-3))
-            if hasattr(self, "_show_results_multispectral"):
-                self.show_results = self._show_results_multispectral
+        if hasattr(self, "_show_results_multispectral"):
+            self.show_results = self._show_results_multispectral
 
     # function for checking if data exists for using class functions.
     def _check_requisites(self):
@@ -875,11 +875,13 @@ class ArcGISModel(object):
         ---------------------   -------------------------------------------
         tensorboard             Optional boolean. Parameter to write the training log.
                                 If set to 'True' the log will be saved at
-                                <dataset-path>/training_log which can be visualized in
+                                `<dataset-path>/training_log` which can be visualized in
                                 tensorboard. Required tensorboardx version=2.1
 
                                 The default value is 'False'.
-                                **Note - Not applicable for Text Models
+
+                                .. note::
+                                    Not applicable for Text Models
         ---------------------   -------------------------------------------
         monitor                 Optional string. Parameter specifies
                                 which metric to monitor while checkpointing
@@ -1761,7 +1763,7 @@ class ArcGISModel(object):
             except:
                 plt.close()
 
-        if self.__str__() == "<PointCNN>":
+        if self.__str__() in ["<PointCNN>", "<RandLANet>"]:
             self.show_results(save_html=True, save_path=model_characteristics_dir)
         elif self.__str__() in [
             "<TextClassifier>",
@@ -1907,11 +1909,11 @@ class ArcGISModel(object):
                                 Only models saved with the default framework
                                 (PyTorch) can be loaded using `from_model`.
                                 ``tflite`` framework (experimental support) is
-                                supported by ``SingleShotDetector - tensorflow backend only``,
-                                ``FeatureClassifier`` and ``RetinaNet - tensorflow backend only``.
+                                supported by :class:`~arcgis.learn.SingleShotDetector` - tensorflow backend only,
+                                :class:`~arcgis.learn.FeatureClassifier` and :class:`~arcgis.learn.RetinaNet` - tensorflow backend only.
                                 ``torchscript`` format is supported by
-                                ``SiamMask``, ``MaskRCNN``, ``SingleShotDetector``,
-                                ``YOLOv3`` and ``RetinaNet``.
+                                :class:`~arcgis.learn.SiamMask`, :class:`~arcgis.learn.MaskRCNN`, :class:`~arcgis.learn.SingleShotDetector`,
+                                :class:`~arcgis.learn.YOLOv3` and :class:`~arcgis.learn.RetinaNet`.
                                 For usage of SiamMask model in ArcGIS Pro >= 2.8,
                                 load the ``PyTorch`` framework saved model
                                 and export it with ``torchscript`` framework
@@ -1921,12 +1923,12 @@ class ArcGISModel(object):
                                 model files additionally generated inside
                                 'torch_scripts' folder.
                                 If framework is ``TF-ONNX`` (Only supported for
-                                ``SingleShotDetector``), ``batch_size`` can
+                                :class:`~arcgis.learn.SingleShotDetector`), ``batch_size`` can
                                 be passed as an optional keyword argument.
         ---------------------   -------------------------------------------
         publish                 Optional boolean. Publishes the DLPK as an item.
         ---------------------   -------------------------------------------
-        gis                     Optional GIS Object. Used for publishing the item.
+        gis                     Optional :class:`~arcgis.gis.GIS`  Object. Used for publishing the item.
                                 If not specified then active gis user is taken.
         ---------------------   -------------------------------------------
         compute_metrics         Optional boolean. Used for computing model

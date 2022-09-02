@@ -3547,7 +3547,17 @@ class _FeatureAnalysisTools(BaseAnalytics):
             params["outputName"] = {"itemProperties": output_name}
             output_name = params["outputName"]
         else:
-            params["outputName"] = {"serviceProperties": {"name": output_name}}
+            params["outputName"] = {
+                "serviceProperties": {"name": output_name},
+                "itemProperties": {
+                    "title": output_name,
+                    "description": "File generated from running the Extract Data solution.",
+                    "tags": "Analysis Result, Extract Data",
+                    "snippet": "Analysis File item generated from Extract Data",
+                    "folderId": "",
+                },
+            }
+
             output_name = params["outputName"]
         if context is not None:
             params["context"] = context
@@ -3560,7 +3570,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             input_layers=input_layers_param,
             extent=extent,
             clip=clip,
-            data_format=data_format,
+            data_format=data_format.upper(),
             output_name=output_name,
             context=context,
             gis=self._gis,
@@ -6114,7 +6124,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         * Where is the center?
         * Which feature is the most accessible from all other features?
         * How dispersed, compact, or integrated are the features?
-        * Are there directional trends?s
+        * Are there directional trends?
 
         ====================    =========================================================
         **Argument**            **Description**
@@ -18105,6 +18115,7 @@ class _GeoanalyticsTools(_AsyncService):
         out_extent=None,
         datastore="GDB",
         context=None,
+        output_name=None,
     ):
         """
 
@@ -18181,7 +18192,7 @@ class _GeoanalyticsTools(_AsyncService):
             params["gax:env:datastore"] = datastore
         if context is not None:
             params["context"] = context
-
+        output_service = self._create_output_service(output_name, task)
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -18212,6 +18223,7 @@ class _GeoanalyticsTools(_AsyncService):
         out_extent=None,
         datastore="GDB",
         context=None,
+        output_name=None,
     ):
         """
 
@@ -18251,7 +18263,7 @@ class _GeoanalyticsTools(_AsyncService):
             params["gax:env:datastore"] = datastore
         if context is not None:
             params["context"] = context
-
+        output_service = self._create_output_service(output_name, task)
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -18282,6 +18294,7 @@ class _GeoanalyticsTools(_AsyncService):
         out_extent=None,
         datastore="GDB",
         context=None,
+        output_name=None,
     ):
         """
 
@@ -18320,6 +18333,7 @@ class _GeoanalyticsTools(_AsyncService):
             params["gax:env:datastore"] = datastore
         if context is not None:
             params["context"] = context
+        output_service = self._create_output_service(output_name, task)
 
         task_url, job_info, job_id = super()._analysis_job(task, params)
 

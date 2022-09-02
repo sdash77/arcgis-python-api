@@ -5,6 +5,8 @@ from ._contentds import (
     MetadataFormatEnum,
     ServiceTypeEnum,
 )
+from ._viewdc import ViewLayerDefParameter
+from ._sfilters import SpatialFilter, SpatialRelationship
 
 __all__ = [
     "ItemTypeEnum",
@@ -12,4 +14,7 @@ __all__ = [
     "CreateServiceParameter",
     "MetadataFormatEnum",
     "ServiceTypeEnum",
+    "ViewLayerDefParameter",
+    "SpatialFilter",
+    "SpatialRelationship",
 ]

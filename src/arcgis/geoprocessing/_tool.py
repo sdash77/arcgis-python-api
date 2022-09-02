@@ -522,17 +522,17 @@ def import_toolbox(url_or_item, gis=None, verbose=False):
     You can call the functions available in the imported module to invoke these tools.
 
 
-        ================  ========================================================
-        **Argument**      **Description**
-        ----------------  --------------------------------------------------------
-        url_or_item       location of toolbox, can be a geoprocessing server url
-                          or Item of type: Geoprocessing Service
-        ----------------  --------------------------------------------------------
-        gis               optional GIS, the GIS used for running the tool.
-                          arcgis.env.active_gis is used if not specified
-        ----------------  --------------------------------------------------------
-        verbose           optional bool, set to True to print the generated module
-        ================  ========================================================
+    ================  ========================================================
+    **Argument**      **Description**
+    ----------------  --------------------------------------------------------
+    url_or_item       location of toolbox, can be a geoprocessing server url
+                      or Item of type: Geoprocessing Service
+    ----------------  --------------------------------------------------------
+    gis               Optional the :class:`~arcgis.gis.GIS` used for running the tool.
+                      :attr:`~arcgis.env.active_gis` is used if not specified
+    ----------------  --------------------------------------------------------
+    verbose           optional bool, set to True to print the generated module
+    ================  ========================================================
 
     Returns module with functions for the various tools in the toolbox
 
@@ -623,7 +623,12 @@ _log = _logging.getLogger(__name__)
     else:
         listed_params = PropertyMap(listed_params)
 
-    return _import_code(r"%s" % src_code, "name", verbose, choice_list=listed_params)
+    if isinstance(url_or_item, Item):
+        name = f"GPService @ {url_or_item.url}"
+        return _import_code(r"%s" % src_code, name, verbose, choice_list=listed_params)
+    else:
+        name = f"GPService @ {url_or_item}"
+        return _import_code(r"%s" % src_code, name, verbose, choice_list=listed_params)
     # print(src_code)
 
 

@@ -31,7 +31,7 @@ except Exception as e:
 
 class ZeroShotClassifier(InferenceOnlyModel):
     """
-    Creates a `ZeroShotClassifier` Object.
+    Creates a :class:`~arcgis.learn.text.ZeroShotClassifier` Object.
     Based on the Hugging Face transformers library
 
     =====================   ===========================================
@@ -62,7 +62,7 @@ class ZeroShotClassifier(InferenceOnlyModel):
                             model.
     =====================   ===========================================
 
-    :return: `ZeroShotClassifier` Object
+    :return: :class:`~arcgis.learn.text.ZeroShotClassifier` Object
     """
 
     #: supported transformer architectures

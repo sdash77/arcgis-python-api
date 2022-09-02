@@ -2248,7 +2248,7 @@ class FeatureLayer(Layer):
         upload_format: str = "featureCollection",
         source_table_name: Optional[str] = None,
         field_mappings: Optional[list[dict[str, str]]] = None,
-        edits: Optional[str] = None,
+        edits: Optional[dict] = None,
         source_info: Optional[dict] = None,
         upsert: bool = False,
         skip_updates: bool = False,
@@ -2300,7 +2300,7 @@ class FeatureLayer(Layer):
                                        field_mappings=[{"name" : "CountyID",
                                                        "sourceName" : "GEOID10"}]
         ------------------------   --------------------------------------------------------------------
-        edits                      Optional string. Only feature collection json is supported. Append
+        edits                      Optional dictionary. Only feature collection json is supported. Append
                                    supports all format through the upload_id or item_id.
         ------------------------   --------------------------------------------------------------------
         source_info                Optional dictionary. This is only needed when appending data from
@@ -2986,7 +2986,12 @@ class FeatureLayer(Layer):
             params["datumTransformation"] = datum_transformation
         if session_id and isinstance(session_id, str):
             params["sessionID"] = session_id
-        if "deletes" not in params and "updates" not in params and "adds" not in params:
+        if (
+            "deletes" not in params
+            and "updates" not in params
+            and "adds" not in params
+            and "attachments" not in params
+        ):
             print("Parameters not valid for edit_features")
             return None
         try:

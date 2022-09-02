@@ -72,7 +72,12 @@ class NotebookServer(object):
     # ----------------------------------------------------------------------
     @property
     def data_access(self) -> "NotebookDataAccess":
-        """Provides access to managing files stored on notebook server."""
+        """Provides access to managing files stored on notebook server.
+
+        :return:
+            :class:`~arcgis.gis.nb._dataaccess.NotebookDataAccess` object
+
+        """
         if self._da is None:
             from ._dataaccess import NotebookDataAccess
 
@@ -131,7 +136,7 @@ class NotebookServer(object):
 
         **This is only avaible if the site can be accessed around the web adapter**
 
-        :return: boolean
+        :return: Boolean
 
         """
         netloc = urlparse(self._url).netloc
@@ -148,7 +153,8 @@ class NotebookServer(object):
         """
         Provides access to the notebook server's logging system
 
-        :return: :class:`~arcgis.gis.nb.LogManager`
+        :return:
+            :class:`~arcgis.gis.nb.LogManager`
 
         """
         if self._logs is None:
@@ -162,7 +168,8 @@ class NotebookServer(object):
         """
         returns access to the system properties of the ArcGIS Notebook Server
 
-        :return: :class:`arcgis.gis.nb.SystemManager`
+        :return:
+            :class:`~arcgis.gis.nb.SystemManager`
 
         """
         if self._system is None:
@@ -224,7 +231,10 @@ class NotebookServer(object):
         """
         Provices access to managing notebook created geoprocessing tools
 
-        :return: :class:`~arcgis.gis.nb._serivces.NBServicesManager`
+
+        :return:
+            :class:`~arcgis.gis.nb._services.NBServicesManager`
+
         """
         if self._services is None:
             from arcgis.gis.nb._services import NBServicesManager

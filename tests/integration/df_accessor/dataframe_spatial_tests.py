@@ -91,6 +91,7 @@ geoms = [
         }
     ),
 ]
+import pytest
 import pandas as pd
 from arcgis.features.geo import GeoAccessor
 from arcgis.features.geo import _io
@@ -458,6 +459,21 @@ class DataframeSpatialTests(unittest.TestCase):
             sdf = from_featureclass(fc)
             assert sdf.spatial.geometry_type[0] == "polygon"
 
+    def test_from_fc_arcpy_datum_tfm(self):
+        """tests reading a SHP from arcpy with a datum transformation"""
+        import arcpy
+        import spatial_reference_helper
+
+        transformation = spatial_reference_helper.get_datum_transformation(
+            arcpy.SpatialReference(4326),
+            arcpy.SpatialReference(102410)
+        )
+        fc = r"./world30.shp"
+        if arcpy.Exists(fc):
+            sdf = pd.DataFrame.spatial.from_featureclass(fc, sr=arcpy.SpatialReference(102410),
+                                                         datum_transformation=transformation)
+            assert sdf.spatial.geometry_type[0].lower() == "polygon"
+
     # --------------------------------------------------------------------------
     def test_from_fc_fiona(self):
         """tests reading a SHP/FGDB from fiona"""
@@ -472,6 +488,7 @@ class DataframeSpatialTests(unittest.TestCase):
         assert sdf.spatial.geometry_type[0].lower() == "polygon"
         _io.fileops.HASARCPY = oval_arcpy
         _io.fileops.HASPYSHP = oval_pyshp
+
 
     # --------------------------------------------------------------------------
     def test_from_fc_fiona_shp(self):
@@ -605,6 +622,7 @@ if __name__ == "__main__":
     if HASARCPY:
         test_inst.test_to_featureclass_arcpy()
         test_inst.test_project_as()
+        test_inst.test_from_fc_arcpy_datum_tfm()
     print("End Testing Package Specific Operations")
     print("#######################################################")
 

@@ -54,7 +54,7 @@ class StoryMap(object):
                         'Story Map'. If no item is passed, a new story is created and saved to
                         your active portal.
     ---------------     --------------------------------------------------------------------
-    gis                 Optional instance of GIS. If none provided the active gis is used.
+    gis                 Optional instance of :class:`~arcgis.gis.GIS` . If none provided the active gis is used.
     ===============     ====================================================================
     """
 
@@ -400,8 +400,8 @@ class StoryMap(object):
                             If none specified, list of all nodes returned.
 
 
-                                ``Values: "image" | "video" | "audio" | "embed" | "webmap" | "text" |
-                                "button" | "separator" | "expressmap" | "webscene" | "immersive"``
+                            Values: `image` | `video` | `audio` | `embed` | `webmap` | `text` |
+                            `button` | `separator` | `expressmap` | `webscene` | `immersive`
         ===============     ====================================================================
 
         :return:
@@ -490,7 +490,7 @@ class StoryMap(object):
         ---------------     --------------------------------------------------------------------
         by_line             Optional string. Crediting the author(s).
         ---------------     --------------------------------------------------------------------
-        image               Optional Image object. The cover image for the story cover.
+        image               Optional :class:`~arcgis.apps.storymap.story_content.Image` object. The cover image for the story cover.
         ===============     ====================================================================
 
         :return: Dictionary representation of the story cover node.
@@ -612,7 +612,7 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     def theme(self, theme: Union[Themes, str] = Themes.SUMMIT):
         """
-        Each story has a theme node in it's resources. This method can be used to change the theme.
+        Each story has a theme node in its resources. This method can be used to change the theme.
         To add a custom theme to your story, pass in the item_id for the item of type Story Map Theme.
 
         ===============     ====================================================================
@@ -621,7 +621,7 @@ class StoryMap(object):
         theme               Required Themes Style or custom theme item id.
                             The theme to set the story to.
 
-                            ``Values: SUMMIT | TIDAL | MESA | RIDGELINE | SLATE | OBSIDIAN | "<item_id>"``
+                            Values: `SUMMIT` | `TIDAL` | `MESA` | `RIDGELINE` | `SLATE` | `OBSIDIAN` | `<item_id>`
         ===============     ====================================================================
 
         .. code-block:: python
@@ -802,14 +802,14 @@ class StoryMap(object):
         ---------------     --------------------------------------------------------------------
         display             Optional String. How the item will be displayed in the story map.
 
-                                For Image, Video, Audio, or Map object.
-                                Values: "small" | "wide" | "full" | "float"
+                            For Image, Video, Audio, or Map object.
+                            Values: "small" | "wide" | "full" | "float"
 
-                                For Gallery:
-                                Values: "jigsaw" | "square-dynamic"
+                            For Gallery:
+                            Values: "jigsaw" | "square-dynamic"
 
-                                For Embed:
-                                Values: "card" | "inline"
+                            For Embed:
+                            Values: "card" | "inline"
         ---------------     --------------------------------------------------------------------
         position            Optional Integer. Indicates the position in which the content will be
                             added. To see all node positions use the ``node`` property.
@@ -836,7 +836,7 @@ class StoryMap(object):
 
         """
         if content and content.node in self._properties["nodes"]:
-            raise Exception("This node already exists. Please try updating instead.")
+            content.node = "n-" + uuid.uuid4().hex[0:6]
 
         # Node id included in all content except separator so create node id for that
         node_id = content.node if content is not None else "n-" + uuid.uuid4().hex[0:6]
@@ -954,7 +954,7 @@ class StoryMap(object):
                             current access is kept. This is used when `publish` parameter is set
                             to True.
 
-                            ``Values: "private" | "org" | "public" ``
+                            Values: `private` | `org` | `public`
         ---------------     --------------------------------------------------------------------
         publish             Optional boolean. If True, the story is saved and also published.
                             Default is false so story is saved with unpublished changes.
@@ -1176,7 +1176,7 @@ class StoryMap(object):
         return clone_story.save()
 
     # ----------------------------------------------------------------------
-    def _delete(self, node_id, resource_id=None):
+    def _delete(self, node_id):
         # Check if node is in story
         if node_id not in self._properties["nodes"]:
             return False
@@ -1201,12 +1201,6 @@ class StoryMap(object):
                     # iterate through children to see if node is part of it
                     if child == node_id:
                         self._properties["nodes"][node]["children"].remove(node_id)
-
-        # Remove from resources dictionary
-        # Note: not all keys are in resources
-        resource = self._properties["resources"].pop(resource_id, None)
-        if resource is not None and "resourceId" in resource["data"]:
-            self._remove_resource(resource["data"]["resourceId"])
 
         return True
 
