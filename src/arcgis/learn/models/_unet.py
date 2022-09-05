@@ -139,7 +139,8 @@ class UnetClassifier(ArcGISModel):
             super().__init__(data, None)
             self._intialize_tensorflow(data, backbone, pretrained_path, kwargs)
         else:
-            super().__init__(data, backbone, **kwargs)
+            super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
+            data = self._data
 
             self._check_dataset_support(self._data)
             if not (self._check_backbone_support(getattr(self, "_backbone", backbone))):
@@ -434,6 +435,7 @@ class UnetClassifier(ArcGISModel):
             data.emd_path = emd_path
             data.emd = emd
             data._is_empty = True
+ 
 
         data.resize_to = resize_to
 
