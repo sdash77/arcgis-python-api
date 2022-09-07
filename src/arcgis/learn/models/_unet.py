@@ -435,7 +435,6 @@ class UnetClassifier(ArcGISModel):
             data.emd_path = emd_path
             data.emd = emd
             data._is_empty = True
- 
 
         data.resize_to = resize_to
 

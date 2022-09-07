@@ -190,7 +190,7 @@ class YOLOv3(ArcGISModel):
             # Removing normalization because YOLO ingests images with values in range 0-1
             data.remove_tfm(data.norm)
             data.norm, data.denorm = None, None
-        
+
         super().__init__(data, pretrained_path=pretrained_path)
         data = self._data
 
@@ -222,7 +222,7 @@ class YOLOv3(ArcGISModel):
             self.config_model["N_BANDS"] = (
                 n_bands if n_bands is not None else data.x[0].data.shape[0]
             )
-        
+
         self._model = YOLOv3_Model(self.config_model)
 
         pretrained = kwargs.get("pretrained_backbone", True)
@@ -243,6 +243,7 @@ class YOLOv3(ArcGISModel):
                     )
             if os.path.exists(weights_file):
                 from IPython.utils import io
+
                 with io.capture_output() as captured:
                     parse_yolo_weights(self._model, weights_file)
 
