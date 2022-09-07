@@ -448,7 +448,7 @@ def _trans_info(data, **kwargs):
 def _si_creator(**kwargs):
     """creates the size information from key/value pairs"""
     si = {"type": "sizeInfo"}
-    if "si_field" in kwargs or "si_minSize" in kwargs:
+    if "si_field" in kwargs or "si_minSize" in kwargs or "size_field" in kwargs:
         si["expression"] = kwargs.pop("si_expresion", "view.scale")
         si["field"] = kwargs.pop("si_field", None)
         si["maxDataValue"] = kwargs.pop("si_max_data_value", None)
@@ -594,6 +594,8 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
         data = list(sdf_or_list[trans_info_field].unique())
     elif isinstance(sdf_or_list, (tuple, list)):
         data = list(set(sdf_or_list))
+    else:
+        data = None
 
     ti = _trans_info(data=data, **kwargs)
     if ti:
@@ -604,6 +606,7 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
     ri = _ri_creator(**kwargs)
     if ri:
         v.append(ri)
+
     return v
 
 
@@ -695,6 +698,353 @@ def generate_heatmap(
         "minPixelIntensity": min_intensity,
         "colorStops": colorStops,
     }
+    return renderer
+
+
+# --------------------------------------------------------------------------
+def generate_unique(
+    geometry_type: str,
+    sdf_or_series=None,
+    colors: Optional[Union[str, list[int], object]] = None,
+    alpha: Optional[float] = 1,
+    **symbol_args,
+):
+
+    vv = []
+    if "size_field" in symbol_args:
+        size_field = symbol_args.pop("size_field")
+        vv.append(
+            _size_info(
+                field=size_field,
+                min_value=sdf_or_series[size_field].min(),
+                max_value=sdf_or_series[size_field].max(),
+                min_size=symbol_args.pop("min_size", 1),
+                max_size=symbol_args.pop("max_size", 24.1),
+                unit=symbol_args.pop("size_units", "unknown"),
+            )
+        )
+    if "ci_field" in symbol_args:
+        color_field = symbol_args.pop("ci_field")
+        vv.append(
+            _color_info(
+                field=color_field,
+                values=sdf_or_series[color_field],
+                steps=symbol_args.pop("ci_steps", 3),
+                colors=symbol_args.pop("ci_color", "Reds_r"),
+            )
+        )
+    if "opacity_expression" in symbol_args and "opacity_stops" in symbol_args:
+        vv.append(
+            {
+                "type": "transparencyInfo",
+                "valueExpression": symbol_args.pop("opacity_expression"),
+                "valueExpressionTitle": "Opacity Expression",
+                "stops": symbol_args.pop("opacity_stops"),
+            }
+        )
+
+    if "arcade_expression" not in symbol_args:
+        if not hasattr(colors, "mpl_colormap"):
+            colors = _format_colors(colors, alpha)
+        if sdf_or_series is None:
+            raise ValueError(
+                "sdf_or_series must be a Pandas' Series"
+                + " or Pandas DataFrame for this type of renderer"
+            )
+        st = symbol_args.pop("symbol_type", None)
+        ss = symbol_args.pop("symbol_style", None)
+        default_symbol = symbol_args.pop("default_symbol", None)
+        if default_symbol is None:
+            if isinstance(colors, (list, tuple)):
+                ccmap = colors[0]
+            else:
+                ccmap = colors
+            default_symbol = create_symbol(
+                geometry_type=geometry_type.lower(),
+                symbol_type=st,
+                symbol_style=ss,
+                colors=ccmap,
+                **symbol_args,
+            )
+        field1 = symbol_args.pop("field1", None)
+        if field1 is None:
+            raise ValueError(
+                "You must provide a single field name to use unique value renderer as field1='columnname'"
+            )
+        field2 = symbol_args.pop("field2", None)
+        field3 = symbol_args.pop("field3", None)
+        fields = [field1]
+        if field2 is not None:
+            fields.append(field2)
+        if field3 is not None:
+            fields.append(field3)
+        if isinstance(fields, str):
+            fields = [fields]
+        field_delimiter = symbol_args.pop("field_delimiter", ",")
+        rotation_expression = symbol_args.pop("rotation_expression", None)
+        rotation_type = symbol_args.pop("rotation_type", "arithmetic")
+
+        renderer = {
+            "type": "uniqueValue",
+            "defaultLabel": symbol_args.pop("default_label", "Other"),
+            "defaultSymbol": default_symbol,
+            "fieldDelimiter": field_delimiter,
+            "rotationExpression": rotation_expression,
+            "rotationType": rotation_type,
+            "valueExpression": symbol_args.pop("arcade_expression", None),
+            "valueExpressionTitle": symbol_args.pop("arcade_title", None),
+            "visualVariables": symbol_args.pop("visual_variables", vv),
+        }
+        unique_values = symbol_args.pop("unique_values", None)
+        if unique_values is None:
+            c = 1
+            for f in fields:
+                renderer["field%s" % c] = f
+                c += 1
+            if len(fields) == 1:
+                try:
+                    uvals = list(sdf_or_series[fields[0]].unique())
+                except:
+                    uvals = sdf_or_series[fields[0]].unique().tolist()
+            else:
+                uvals = (
+                    sdf_or_series.groupby(fields)
+                    .size()
+                    .reset_index()
+                    .rename(columns={0: "count"})
+                    .drop(columns="count")
+                    .tolist()
+                )
+                uvals2 = []
+                for r in uvals:
+                    row = []
+                    for i in r:
+                        row.append(str(i))
+                    uvals2.append(",".join(row))
+                    del r
+                uvals = uvals2
+                if len(uvals) > 255:
+                    uvals = uvals[:255]
+            unique_values = []
+
+            steps = np.linspace(0, 255, len(uvals), dtype=np.int)
+
+            for idx, uval in enumerate(uvals):
+                if hasattr(colors, "mpl_colormap"):
+                    temp_map = colors.mpl_colormap
+                    color_tuple = temp_map(steps[idx], bytes=True)
+                    color = [int(i) for i in color_tuple]
+                elif isinstance(colors[0], str):
+                    color = _cmap2rgb(colors[0], steps[idx], alpha)
+                elif isinstance(colors[0], list):
+                    color = _get_list_value(idx, colors)
+                unique_values.append(
+                    {
+                        "value": uval,
+                        "label": uval,
+                        "description": "",
+                        "symbol": create_symbol(
+                            geometry_type=geometry_type.lower(),
+                            symbol_type=st,
+                            symbol_style=ss,
+                            colors=color,
+                            **symbol_args,
+                        ),
+                    }
+                )
+            renderer["uniqueValueInfos"] = unique_values
+        else:
+            renderer["uniqueValueInfos"] = unique_values
+    else:
+        if sdf_or_series is None:
+            raise ValueError(
+                "sdf_or_series must be a Pandas' Series"
+                + " or Pandas DataFrame for this type of renderer"
+            )
+        st = symbol_args.pop("symbol_type", None)
+        ss = symbol_args.pop("symbol_style", None)
+        default_symbol = symbol_args.pop("default_symbol", None)
+        if default_symbol is None:
+            if isinstance(colors, (list, tuple)):
+                ccmap = colors[0]
+            else:
+                ccmap = colors
+            default_symbol = create_symbol(
+                geometry_type=geometry_type.lower(),
+                symbol_type=st,
+                symbol_style=ss,
+                colors=ccmap,
+                **symbol_args,
+            )
+        field_delimiter = symbol_args.pop("field_delimiter", ",")
+        rotation_expression = symbol_args.pop("rotation_expression", None)
+        rotation_type = symbol_args.pop("rotation_type", "arithmetic")
+
+        renderer = {
+            "type": "uniqueValue",
+            "defaultLabel": symbol_args.pop("default_label", "Other"),
+            "defaultSymbol": default_symbol,
+            "fieldDelimiter": field_delimiter,
+            "rotationExpression": rotation_expression,
+            "rotationType": rotation_type,
+            "valueExpression": symbol_args.pop("arcade_expression", None),
+            "valueExpressionTitle": symbol_args.pop("arcade_title", None),
+            "visualVariables": symbol_args.pop("visual_variables", vv),
+        }
+        if "unique_values" not in symbol_args:
+            raise ValueError("unique_values must be provided if field1 is not given.")
+        renderer["uniqueValueInfos"] = symbol_args.pop("unique_values")
+    return renderer
+
+
+# --------------------------------------------------------------------------
+def generate_classbreaks(
+    geometry_type: str,
+    sdf_or_series=None,
+    colors: Optional[Union[str, list[int], object]] = None,
+    alpha: Optional[float] = 1,
+    **symbol_args,
+):
+    vv = []
+    if "size_field" in symbol_args:
+        size_field = symbol_args.pop("size_field")
+        vv.append(
+            _size_info(
+                field=size_field,
+                min_value=sdf_or_series[size_field].min(),
+                max_value=sdf_or_series[size_field].max(),
+                min_size=symbol_args.pop("min_size", 1),
+                max_size=symbol_args.pop("max_size", 24.1),
+                unit=symbol_args.pop("size_units", "unknown"),
+            )
+        )
+    if "ci_field" in symbol_args:
+        color_field = symbol_args.pop("ci_field")
+        vv.append(
+            _color_info(
+                field=color_field,
+                values=sdf_or_series[color_field],
+                steps=symbol_args.pop("ci_steps", 3),
+                colors=symbol_args.pop("ci_color", "Reds_r"),
+            )
+        )
+    if "opacity_expression" in symbol_args and "opacity_stops" in symbol_args:
+        vv.append(
+            {
+                "type": "transparencyInfo",
+                "valueExpression": symbol_args.pop("opacity_expression"),
+                "valueExpressionTitle": "Opacity Expression",
+                "stops": symbol_args.pop("opacity_stops"),
+            }
+        )
+
+    if sdf_or_series is None:
+        raise ValueError(
+            "sdf_or_series must be a Pandas' Series"
+            + " or Pandas DataFrame for this type of renderer"
+        )
+    class_count = symbol_args.pop(
+        "class_count", 3
+    )  # number of classess for class break
+
+    temp_map = None
+    if hasattr(colors, "mpl_colormap"):
+        temp_map = colors.mpl_colormap
+    else:
+        colors = _format_colors(colors, alpha)
+        if isinstance(colors[0], list) and len(colors) > 1:
+            temp_map = _create_colormap(colors)
+        # possible outcomes are colormap, single rbg array, str colormap name
+
+    try:
+        if hasattr(sdf_or_series, "geometry_type"):
+            gt = sdf_or_series.geometry_type
+        elif (
+            hasattr(sdf_or_series, "spatial")
+            and sdf_or_series.spatial.name
+            and hasattr(sdf_or_series.spatial, "geometry_type")
+        ):
+            gt = sdf_or_series.spatial.geometry_type[0]
+    except:
+        raise Exception(
+            "geometry_type not found, please ensure DataFrame is spatially enabled."
+        )
+    renderer = {
+        "type": "classBreaks",
+        "valueExpression": symbol_args.pop("arcade_expression", None),
+        "valueExpressionTitle": symbol_args.pop("arcade_title", None),
+        "visualVariables": symbol_args.pop("visual_variables", vv),
+        "rotationType": symbol_args.pop("rotation_type", "arithmetic"),
+        "rotationExpression": symbol_args.pop("rotation_expression", None),
+        "normalizationType": symbol_args.pop("normalization_type", None),
+        "normalizationTotal": symbol_args.pop("normalization_total", None),
+        "normalizationField": symbol_args.pop("normalization_field", None),
+        "minValue": symbol_args.pop("min_value", 0),
+        "field": symbol_args.pop("field"),
+        "defaultSymbol": symbol_args.pop(
+            "default_symbol",
+            create_symbol(geometry_type=gt, colors=_format_colors(colors, alpha)[0]),
+        ),
+        "defaultLabel": symbol_args.pop("default_label", "Other"),
+        "classificationMethod": symbol_args.pop("method", None),
+        "classBreakInfos": [],
+        "backgroundFillSymbol": symbol_args.pop("background_fill_symbol", None),
+    }
+    minValue = sdf_or_series[renderer["field"]].min()
+    maxValue = sdf_or_series[renderer["field"]].max()
+
+    def pairwise(iterable, fillvalue=999):
+        "s -> (s0,s1), (s1,s2), (s2, s3), ..."
+        import itertools
+
+        a, b = itertools.tee(iterable)
+        next(b, fillvalue)
+        return itertools.zip_longest(a, b)
+
+    # calculate the class breaks from column data
+    cbs = []
+    breaks = np.linspace(minValue, maxValue, num=class_count + 1).tolist()
+    steps = np.linspace(0, 255, len(breaks), dtype=np.int)
+    ss = symbol_args.pop("symbol_style", None)
+    st = symbol_args.pop("symbol_type", None)
+    import sys
+
+    for idx, pair in enumerate(pairwise(breaks, fillvalue=sys.maxsize)):
+        gt = None
+        if pair[1] is None:
+            break
+        if hasattr(sdf_or_series, "geometry_type"):
+            gt = sdf_or_series.geometry_type
+        elif (
+            hasattr(sdf_or_series, "spatial")
+            and sdf_or_series.spatial.name
+            and hasattr(sdf_or_series.spatial, "geometry_type")
+        ):
+            gt = sdf_or_series.spatial.geometry_type[0]
+        if temp_map:
+            color_tuple = temp_map(steps[idx], bytes=True)
+            color = [int(i) for i in color_tuple]
+        else:
+            color = colors[0]
+        cbs.append(
+            {
+                "classMaxValue": pair[1] or pair[0],
+                "label": "%s - %s" % (pair[0], pair[1] or pair[0]),
+                "description": "%s - %s" % (pair[0], pair[1] or pair[0]),
+                "symbol": create_symbol(
+                    geometry_type=gt,
+                    symbol_style=ss,
+                    symbol_type=st,
+                    colors=color,
+                    cstep=steps[idx],
+                    **symbol_args,
+                ),
+            }
+        )
+        del pair
+    renderer["classBreakInfos"] = cbs
+    for key in [k for k, v in renderer.items() if v is None]:
+        del renderer[key]
     return renderer
 
 
@@ -1417,12 +1767,6 @@ def generate_renderer(
                 temp_map = _create_colormap(colors)
             # possible outcomes are colormap, single rbg array, str colormap name
 
-        """if len(colors) > 1:
-            default_color = colors[1]
-            color = colors[0]
-        else:
-            default_color = colors[0]
-            color = colors[0]"""
         try:
             if hasattr(sdf_or_series, "geometry_type"):
                 gt = sdf_or_series.geometry_type

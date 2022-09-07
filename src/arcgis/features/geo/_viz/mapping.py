@@ -5,7 +5,11 @@ import json
 from typing import Optional, Union
 import pandas as pd
 import arcgis
-from arcgis.mapping.renderer import generate_heatmap
+from arcgis.mapping.renderer import (
+    generate_classbreaks,
+    generate_heatmap,
+    generate_unique,
+)
 from arcgis.mapping.symbol import create_symbol, display_colormaps, show_styles
 from arcgis.mapping.renderer import *
 from arcgis.widgets import MapView
@@ -228,28 +232,35 @@ def plot(
             for c in col:
                 kwargs["field%s" % idx] = c
                 idx += 1
+            r = generate_unique(
+                geometry_type=kwargs.pop("geometry_type", gt[0].lower()),
+                sdf_or_series=df,
+                symbol_type=symbol_type,
+                symbol_style=symbol_style,
+                colors=colors,
+                alpha=alpha,
+                **kwargs,
+            )
         elif renderer_type == "c":
             kwargs["field"] = col[0]
-        r = generate_renderer(
-            geometry_type=kwargs.pop("geometry_type", gt[0].lower()),
-            sdf_or_series=df,
-            label=name,
-            symbol_type=symbol_type,
-            symbol_style=symbol_style,
-            render_type=renderer_type,
-            colors=colors,
-            alpha=alpha,
-            **kwargs,
-        )
+            r = generate_classbreaks(
+                geometry_type=kwargs.pop("geometry_type", gt[0].lower()),
+                sdf_or_series=df,
+                label=name,
+                symbol_type=symbol_type,
+                symbol_style=symbol_style,
+                render_type=renderer_type,
+                colors=colors,
+                alpha=alpha,
+                **kwargs,
+            )
         fc.layer["layerDefinition"]["drawingInfo"]["renderer"] = r
     elif renderer_type in ["u", "u-a"]:
-        r = generate_renderer(
+        r = generate_unique(
             geometry_type=kwargs.pop("geometry_type", gt[0].lower()),
             sdf_or_series=df,
-            label=name,
             symbol_type=symbol_type,
             symbol_style=symbol_style,
-            render_type=renderer_type,
             colors=colors,
             alpha=alpha,
             **kwargs,
