@@ -5,8 +5,9 @@ import json
 from typing import Optional, Union
 import pandas as pd
 import arcgis
+from arcgis.mapping.renderer import generate_heatmap
 from arcgis.mapping.symbol import create_symbol, display_colormaps, show_styles
-from arcgis.mapping.renderer import generate_renderer
+from arcgis.mapping.renderer import *
 from arcgis.widgets import MapView
 
 CLASSIFICATIONS = {
@@ -255,16 +256,17 @@ def plot(
         )
         fc.layer["layerDefinition"]["drawingInfo"]["renderer"] = r
     elif renderer_type == "h":
-        r = generate_renderer(
-            geometry_type=kwargs.pop("geometry_type", gt[0].lower()),
+        r = generate_heatmap(
             sdf_or_series=df,
-            label=name,
-            symbol_type=symbol_type,
-            symbol_style=symbol_style,
-            render_type=renderer_type,
             colors=colors,
             alpha=alpha,
-            **kwargs,
+            blur_radius=kwargs.pop("blur_radius", 10),
+            field=kwargs.pop("field", None),
+            max_intensity=kwargs.pop("max_intensity", 10),
+            min_intensity=kwargs.pop("min_intensity", 0),
+            ratio=kwargs.pop("ratio", 0.01),
+            stops=kwargs.pop("stops", 3),
+            show_none=kwargs.pop("show_none", False),
         )
         fc.layer["layerDefinition"]["drawingInfo"]["renderer"] = r
     elif renderer_type == "str":

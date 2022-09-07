@@ -608,6 +608,97 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
 
 
 # --------------------------------------------------------------------------
+def generate_heatmap(
+    sdf_or_series=None,
+    colors: Optional[Union[str, list[int], object]] = None,
+    alpha: Optional[float] = 1,
+    blur_radius: Optional[int] = 10,
+    field: Optional[str] = None,
+    max_intensity: Optional[str] = 10,
+    min_intensity: Optional[str] = 0,
+    ratio: Optional[float] = 0.01,
+    stops: Optional[int] = 3,
+    show_none: Optional[bool] = False,
+):
+
+    colors = _format_colors(colors, alpha)
+    if sdf_or_series is None and field:
+        raise ValueError(
+            "sdf_or_series must be a Pandas' Series"
+            + " or Pandas DataFrame for this type of renderer"
+        )
+
+    # check if user specified exact RGB colorstops in 'colors'
+    colorStops = []
+    if all([isinstance(i, list) for i in colors]) and len(colors) > 2:
+        if not show_none:
+            colors[0][-1] = 0
+        ratios = np.linspace(0, 1, len(colors)).tolist()
+        for idx in range(0, len(colors)):
+            colorStops.append(
+                {
+                    "ratio": ratios[idx],
+                    "color": colors[idx],
+                }
+            )
+
+    # check if user specified colormaps as colorstops in 'colors'
+    # uses base color from each map
+    elif all([isinstance(i, str) for i in colors]) and len(colors) > 2:
+        if show_none:
+            calpha = alpha
+        else:
+            calpha = 0
+        ratios = np.linspace(0, 1, len(colors)).tolist()
+        colorStops.append(
+            {
+                "ratio": ratios[0],
+                "color": _cmap2rgb(colors=colors[0], step=0, alpha=calpha),
+            }
+        )
+        for idx in range(1, len(colors)):
+            colorStops.append(
+                {
+                    "ratio": ratios[idx],
+                    "color": _cmap2rgb(colors=colors[idx], step=0, alpha=alpha),
+                }
+            )
+
+    else:
+        r = 0
+        if stops < 3:
+            stops = 3
+        ratios = np.linspace(0, 1, num=stops)
+        for idx, cstep in enumerate(
+            np.linspace(0, 255, num=stops, dtype=np.int).tolist()
+        ):
+            if r == 0 and show_none == True:
+                calpha = alpha
+            elif r == 0 and show_none == False:
+                calpha = 0
+            else:
+                calpha = alpha
+
+            colorStops.append(
+                {
+                    "ratio": ratios[idx],
+                    "color": _cmap2rgb(colors=colors[0], step=cstep, alpha=calpha),
+                }
+            )
+            r += ratio
+            del cstep
+    renderer = {
+        "type": "heatmap",
+        "field": field,
+        "blurRadius": blur_radius,
+        "maxPixelIntensity": max_intensity,
+        "minPixelIntensity": min_intensity,
+        "colorStops": colorStops,
+    }
+    return renderer
+
+
+# --------------------------------------------------------------------------
 def generate_renderer(
     geometry_type: str,
     sdf_or_series=None,
@@ -1226,7 +1317,7 @@ def generate_renderer(
                 if len(uvals) > 255:
                     uvals = uvals[:255]
             unique_values = []
-            
+
             steps = np.linspace(0, 255, len(uvals), dtype=np.int)
 
             for idx, uval in enumerate(uvals):
@@ -1359,7 +1450,9 @@ def generate_renderer(
             "field": symbol_args.pop("field"),
             "defaultSymbol": symbol_args.pop(
                 "default_symbol",
-                create_symbol(geometry_type=gt, colors=_format_colors(colors, alpha)[0]),
+                create_symbol(
+                    geometry_type=gt, colors=_format_colors(colors, alpha)[0]
+                ),
             ),
             "defaultLabel": symbol_args.pop("default_label", "Other"),
             "classificationMethod": symbol_args.pop("method", None),
