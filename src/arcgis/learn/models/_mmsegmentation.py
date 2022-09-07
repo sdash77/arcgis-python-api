@@ -133,7 +133,6 @@ class MMSegmentationConfig:
         self.model = model
         self.cfg = cfg
 
-        
         logging.disable(0)
 
         return model

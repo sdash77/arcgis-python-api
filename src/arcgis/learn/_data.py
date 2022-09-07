@@ -1397,18 +1397,18 @@ def prepare_data(
 
     """
     #
-    arcgis_init_kwargs = {        
-        'path': path,
-        'class_mapping': class_mapping,
-        'chip_size': chip_size,
-        'val_split_pct': val_split_pct,
-        'batch_size': batch_size,
-        'transforms': transforms,
-        'collate_fn': collate_fn,
-        'seed': seed,
-        'dataset_type': dataset_type,
-        'resize_to': resize_to,
-        'working_dir': working_dir,
+    arcgis_init_kwargs = {
+        "path": path,
+        "class_mapping": class_mapping,
+        "chip_size": chip_size,
+        "val_split_pct": val_split_pct,
+        "batch_size": batch_size,
+        "transforms": transforms,
+        "collate_fn": collate_fn,
+        "seed": seed,
+        "dataset_type": dataset_type,
+        "resize_to": resize_to,
+        "working_dir": working_dir,
         **kwargs,
     }
     #
@@ -2621,7 +2621,7 @@ def prepare_data(
         if working_dir is not None:
             data.path = Path(os.path.abspath(working_dir))
         _prepare_working_dir(data.path)
-        
+
         data.arcgis_init_kwargs = arcgis_init_kwargs
         return data
 
