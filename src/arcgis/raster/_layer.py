@@ -3998,8 +3998,17 @@ class ImageryLayer(Layer):
         if not isinstance(geometry, Geometry):
             geometry = Geometry(geometry)
 
+        geometry_type_value_list = [
+            "point",
+            "multipoint",
+            "polyline",
+            "polygon",
+            "envelope",
+        ]
         if geometry_type is None:
             geometry_type = "esriGeometry" + geometry.type
+        elif geometry_type.lower() in geometry_type_value_list:
+            geometry_type = "esriGeometry" + geometry_type.lower().capitalize()
 
         url = self._url + "/getSamples"
         params = {"f": "json", "geometry": geometry, "geometryType": geometry_type}
