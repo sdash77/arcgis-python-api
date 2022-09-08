@@ -13871,7 +13871,7 @@ class Item(dict):
             >>> date_1 = dt.datetime(2022,7,31)
             >>> date_2 = dt.datetime.now(2022,8,12)
                 # Early value, later value
-            >>> result = flyr_item.usage(date_range (date_1, date_2))
+            >>> result = flyr_item.usage(date_range = (date_1, date_2))
             >>> result
                      Date  Usage
             0  2022-07-31      0
