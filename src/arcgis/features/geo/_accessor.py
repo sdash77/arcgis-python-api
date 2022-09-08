@@ -2840,7 +2840,7 @@ class GeoAccessor(object):
 
     # ----------------------------------------------------------------------
     @staticmethod
-    def from_xy(df, x_column, y_column, sr=4326):
+    def from_xy(df, x_column, y_column, sr=4326, z_column=None, m_column=None):
         """
         The ``from_xy`` method converts a Pandas DataFrame into a Spatially Enabled DataFrame
         by providing the X/Y columns.
@@ -2856,6 +2856,10 @@ class GeoAccessor(object):
         --------------------    ---------------------------------------------------------
         sr                      Optional int.  The wkid number of the spatial reference.
                                 4326 is the default value.
+        --------------------    ---------------------------------------------------------
+        z_column                Optional string.  The name of the Z-coordinate series
+        --------------------    ---------------------------------------------------------
+        m_column                Optional string.  The name of the M-value series
         ====================    =========================================================
 
         :return: DataFrame
@@ -2863,7 +2867,14 @@ class GeoAccessor(object):
         """
         from ._io.fileops import _from_xy
 
-        return _from_xy(df=df, x_column=x_column, y_column=y_column, sr=sr)
+        return _from_xy(
+            df=df,
+            x_column=x_column,
+            y_column=y_column,
+            sr=sr,
+            z_column=z_column,
+            m_column=m_column,
+        )
 
     # ----------------------------------------------------------------------
     @staticmethod
@@ -3773,7 +3784,7 @@ class GeoAccessor(object):
         :return:
             A boolean indicating `Z` values (True), or not (False)
         """
-        return self._data[self.name].geom.has_z.all()
+        return self._data[self.name].geom.has_z.any()
 
     # ----------------------------------------------------------------------
     @property
@@ -3784,7 +3795,7 @@ class GeoAccessor(object):
         :return:
             A boolean indicating `M` values (True), or not (False)
         """
-        return self._data[self.name].geom.has_m.all()
+        return self._data[self.name].geom.has_m.any()
 
     # ----------------------------------------------------------------------
     @property
