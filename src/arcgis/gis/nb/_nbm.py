@@ -158,7 +158,7 @@ class NotebookManager(object):
         machines, you can use the Task Scheduler app.
 
         .. note::
-            To run this operation in ArcGIS Enterprise, you must log in with 
+            To run this operation in ArcGIS Enterprise, you must log in with
             an Enterprise account. You cannot execute notebooks using the
             ArcGIS Notebook Server primary site administrator account.
 
@@ -202,18 +202,18 @@ class NotebookManager(object):
                  Call ``result()`` to get the response
 
         .. code-block:: python
-        
+
             # Usage Example:
-            
+
             >>> from arcgis.gis import GIS
             >>> gis = GIS("home")
             >>> nb_server = gis.notebook_server[0]
-            
+
             >>> notebook_item = gis.content.get('<notebook_item_id>')
-            
+
             >>> nb_mgr = nb_server.notebooks
             >>> nb_mgr.execute_notebook(notebook_item)
-            
+
         """
         from arcgis.gis import Item
 

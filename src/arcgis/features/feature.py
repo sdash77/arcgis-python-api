@@ -43,23 +43,23 @@ class Feature(object):
     .. code-block:: python
 
         # Obtain a feature from a feature layer:
-        
+
         # Query a Feature Layer to get a Feature Set
         >>> feature_set = feature_layer.query(where="OBJECTID=1")
         # Assign a variable to the list of features in the Feature Set
         >>> feature_list = feature_set.features
         # Get an individual feature
         >>> feature = feature_list[0]
-        
+
         # Verify the object type
         >>> type(feature)
         arcgis.features.feature.Feature
         # Print the string representation of the feature
         >>> feature
-        {"geometry": {"x": -8238318.738276444, "y": 4970309.724235498, "spatialReference": {"wkid": 102100, "latestWkid": 3857}}, 
-        "attributes": {"Incident_Type": "Structural-Sidewalk Collapse", "Location": "927 Broadway", "Borough": "Manhattan", 
+        {"geometry": {"x": -8238318.738276444, "y": 4970309.724235498, "spatialReference": {"wkid": 102100, "latestWkid": 3857}},
+        "attributes": {"Incident_Type": "Structural-Sidewalk Collapse", "Location": "927 Broadway", "Borough": "Manhattan",
         "Creation_Date": 1477743211000, "Closed_Date": null, "Latitude": 40.7144215406227, "Longitude": -74.0060763804198,
-        "ObjectId": 1}}       
+        "ObjectId": 1}}
     """
 
     _geom = None
@@ -116,13 +116,12 @@ class Feature(object):
             'Original Name'
             >>> feat.set_value(field_name = "NAME", value = "New Name")
             True
-            
+
         .. note::
             To save edits from the above snippet, use :meth:`~arcgis.features.FeatureLayer.edit_features`
             with `feat_set` in a list as the `updates` argument.
         """
-        
-        
+
         if field_name in self.fields:
             if value is not None:
                 self._dict["attributes"][field_name] = value
@@ -225,17 +224,17 @@ class Feature(object):
         ------------------      --------------------------------------------------------------------
         value                   Required string.
                                 Values: 'Polyline' | 'Polygon' | 'Point'
-                                
+
                                 .. note::
                                     Setting this value will override the current geometry dictionary
                                     if already present.
-                                
+
         ==================      ====================================================================
 
         :return: The feature's geometry as a dictionary.
-  
+
         .. code-block:: python
-        
+
             # Get the current geometry
             >>> feat_set = feature_layer.query(where="1=1")
             >>> feat_list = feat_set.features
@@ -276,9 +275,9 @@ class Feature(object):
             A dictionary of feature attribute values with field names as the key
 
         .. code-block:: python
-        
+
             #Example to set attribute values
-            
+
             >>> feat_set = feature_layer.query(where="1=1")
             >>> feat_list = feat_set.features
             >>> feat = feat_list[0]

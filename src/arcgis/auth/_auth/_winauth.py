@@ -68,6 +68,11 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
                 self.auth = requests_negotiate_sspi.HttpNegotiateAuth()
             elif not username and not password and HAS_GSSAPI:
                 self.auth = requests_gssapi.HTTPSPNEGOAuth()
+            elif username and password and HAS_SSPI:
+                domain, user = username.split("\\")
+                self.auth = requests_negotiate_sspi.HttpNegotiateAuth(
+                    username=user, password=password, domain=domain
+                )
             elif username and password:
                 send_cbt = kwargs.pop("send_cbt", True)
                 if HAS_NTLM2:
@@ -85,16 +90,8 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
                         ntlm_strict_mode=ntlm_strict_mode,
                     )
                 else:
-                    # this logic should theoretically never be reached, just
-                    # a backup in case LazyLoader fails. sets
-                    # ntlm_compability to 2 for normal ntlm v1 compability
-                    import requests_ntlm2 as ntlm2
-
-                    self.auth = ntlm2.HttpNtlmAuth(
-                        username,
-                        password,
-                        send_cbt=send_cbt,
-                        ntlm_compatibility=2,
+                    self.auth = requests_ntlm2.HttpNtlmAuth(
+                        username, password, send_cbt=send_cbt
                     )
             else:
                 raise ValueError("")

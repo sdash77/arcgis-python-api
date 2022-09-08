@@ -58,7 +58,7 @@ class TestWinAuth(unittest.TestCase):
         with EsriSession(auth=auth) as session:
             resp = session.get(url=iwa_url + "/sharing/rest/portals/self?f=json")
             data = resp.json()
-            assert data["user"]["username"].find(iwa_user.split("\\")[-1]) > -1
+            assert 'creator2' in data["user"]["username"]
 
     def test_win_auth_no_user(self):
         url = iwa_url

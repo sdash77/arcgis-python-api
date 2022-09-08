@@ -1531,7 +1531,7 @@ def enrich(
                                   parameter with standard geography layers that are provided by the
                                   GeoEnrichment class for each country. You can also intersect
                                   features from a publicly available feature service.
-                                  
+
                                   See `intersecting_geographies <https://developers.arcgis.com/rest/geoenrichment/api-reference/enrich.htm#ESRI_SECTION2_6A987CF67F914FA39B61BE14BE115F27>`_
                                   for more details on formatting of this parameter.
     -------------------------     --------------------------------------------------------------------
@@ -1560,11 +1560,11 @@ def enrich(
     =========================     ====================================================================
 
 
-     
 
 
-    :return: 
-       :class:`Spatially Enabled DataFrame <arcgis.features.GeoAccessor>` or Panda's DataFrame 
+
+    :return:
+       :class:`Spatially Enabled DataFrame <arcgis.features.GeoAccessor>` or Panda's DataFrame
        with the requested variables for the study areas.
     """
     # handle the caveat of using a GIS('Pro') input

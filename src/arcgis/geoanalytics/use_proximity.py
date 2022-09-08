@@ -61,8 +61,8 @@ def group_by_proximity(
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     spatial_relationship                                                   Required String. The type of relationship to group by.
 
-                                                                           Choice List: 
-                                                                           
+                                                                           Choice List:
+
                                                                              * ``Intersects``
                                                                              * ``Touches``
                                                                              * ``NearGeodesic``
@@ -76,10 +76,10 @@ def group_by_proximity(
                                                                            in `spatial_near_distance`. The default value is Meters.
 
                                                                            Choice List:
-                                                                           
+
                                                                              * ``Meters``
-                                                                             * ``Kilometers`` 
-                                                                             * ``Feet`` 
+                                                                             * ``Kilometers``
+                                                                             * ``Feet``
                                                                              * ``Miles``
                                                                              * ``NauticalMiles``
                                                                              * ``Yards``
@@ -87,7 +87,7 @@ def group_by_proximity(
     temporal_relationship                                                  Optional String. The type of temporal relationship to group by.
 
                                                                            Choice List:
-                                                                           
+
                                                                              * ``Intersects``
                                                                              * ``Near``
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
@@ -95,15 +95,15 @@ def group_by_proximity(
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     temporal_near_distance_unit                                            Optional String. The temporal unit to be used with the distance value specified in `temporal_near_distance`.
 
-                                                                           Choice List: 
-                                                                           
-                                                                             * ``Milliseconds`` 
-                                                                             * ``Seconds`` 
+                                                                           Choice List:
+
+                                                                             * ``Milliseconds``
+                                                                             * ``Seconds``
                                                                              * ``Minutes``
                                                                              * ``Hours``
-                                                                             * ``Days`` 
+                                                                             * ``Days``
                                                                              * ``Weeks``
-                                                                             * ``Months`` 
+                                                                             * ``Months``
                                                                              * ``Years``
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     output_name                                                            Optional string. The task will create a feature service of the results. You define the name of the service.
@@ -120,7 +120,7 @@ def group_by_proximity(
     future                                                                 Optional Boolean. If ``True``, a GAJob is returned instead of results. The GAJob can be queried on the status of the execution.
     ===================================================================    =============================================================================
 
-    :return: 
+    :return:
         * :class:`~arcgis.gis.Item` when `future=False`
         * ``GAJob`` when `future=True`
 
@@ -255,11 +255,11 @@ def trace_proximity_events(
                                                                            `temporal_search_distance` criteria are considered in proximity of each other.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     spatial_search_distance_unit                                           Required String. The unit of of measure for `spatial_search_distance`.
-                                                                           
+
                                                                            Choice List:
-                                                                           
-                                                                             * ``Meters`` 
-                                                                             * ``Kilometers`` 
+
+                                                                             * ``Meters``
+                                                                             * ``Kilometers``
                                                                              * ``Feet``
                                                                              * ``Miles``
                                                                              * ``NauticalMiles``
@@ -270,16 +270,16 @@ def trace_proximity_events(
                                                                            ``spatial_search_distance`` criteria are considered in proximity of each other.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     temporal_search_distance_unit                                          Required String. The unit of `temporal_search_distance`.
-                                                                           
+
                                                                            Choice List:
-                                                                           
-                                                                             * ``Milliseconds`` 
-                                                                             * ``Seconds`` 
+
+                                                                             * ``Milliseconds``
+                                                                             * ``Seconds``
                                                                              * ``Minutes``
                                                                              * ``Hours``
-                                                                             * ``Days`` 
+                                                                             * ``Days``
                                                                              * ``Weeks``
-                                                                             * ``Months`` 
+                                                                             * ``Months``
                                                                              * ``Years``
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     entity_id_field                                                        Required String. The field used to identify distinct entities.
@@ -292,11 +292,11 @@ def trace_proximity_events(
                                                                            are interested in tracing from.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     distance_method                                                        Required String. The distance type that will be used for the ``spatial_search_distance``.
-                                                                           The default is ``Planar``.  
-                                                                           
+                                                                           The default is ``Planar``.
+
                                                                            Choice List:
-                                                                           
-                                                                             * ``Planar`` 
+
+                                                                             * ``Planar``
                                                                              * ``Geodesic``
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     include_tracks_layer                                                   Optional Boolean. Determines whether or not an additional layer will be
@@ -322,13 +322,13 @@ def trace_proximity_events(
                                                                              * ``outSR`` - the features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
                                                                              * ``dataStore`` - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    future                                                                 optional Boolean. If ``True``, a GPJob is returned instead of results. 
+    future                                                                 optional Boolean. If ``True``, a GPJob is returned instead of results.
                                                                            The GPJob can be queried on the status of the execution.
     ===================================================================    =============================================================================
 
-    :return: 
-        
-        * :class:`~arcgis.gis.Item` when `future=False` 
+    :return:
+
+        * :class:`~arcgis.gis.Item` when `future=False`
         * ``GAJob`` when `future=True`
 
     """
@@ -484,7 +484,7 @@ def create_buffers(
     distance_unit (Required if distance is used)        Optional string. The linear unit to be used with the value specified in distance.
 
                                                         Choice list:
-                                                        
+
                                                           * ``Feet``
                                                           * ``Yards``
                                                           * ``Miles``
@@ -508,7 +508,7 @@ def create_buffers(
     dissolve_option                                     Optional string. Determines how output polygon attributes are processed.
 
                                                         Choice list:
-                                                        
+
                                                           * ``All``
                                                           * ``List``
                                                           * ``None``
@@ -573,7 +573,7 @@ def create_buffers(
                                                         The default value is ``False``
     ================================================    =========================================================
 
-    :return: 
+    :return:
         :class:`~arcgis.features.FeatureLayerCollection`
 
     .. code-block:: python

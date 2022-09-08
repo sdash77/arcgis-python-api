@@ -139,16 +139,16 @@ def run_python_script(
                       The variable name is called **user_variables**.
 
                       .. code-block:: python
-                          
-                          >>> parameters = {"param1": "example", 
-                                            "param2": 1, 
-                                            "val1": 2.0, 
-                                            "more_params": [False, True, None], 
+
+                          >>> parameters = {"param1": "example",
+                                            "param2": 1,
+                                            "val1": 2.0,
+                                            "more_params": [False, True, None],
                                             "status": 4.0}
-                                            
+
                       Only built-in types are supported.
     ----------------  ---------------------------------------------------------------
-    param_as_input    Optional Boolean. If ``True,`` the user_variable will be added 
+    param_as_input    Optional Boolean. If ``True,`` the user_variable will be added
                       if a method past. If ``False``, the variable will not be given into the method.
     ================  ===============================================================
 
@@ -293,17 +293,17 @@ def dissolve_boundaries(
                           * ``Range`` - Finds the difference between the Min and Max values.
                           * ``Stddev`` - Finds the standard deviation of all the points in each polygon.
                           * ``Var`` - Finds the variance of all the points in each polygon.
-                        
+
                         * `statisticType` is one of the following for string fields:
 
                           * ``Count`` - Totals the number of strings for all the points in each polygon.
                           * ``Any`` - Returns a sample string of a point in each polygon.
 
                       .. code-block:: python
-                      
+
                           # Example
-                          >>> summary_fields = [{"statisticType" : "Sum", "onStatisticField" : "quadrat_area_km2"}, 
-                                                {"statisticType" : "Mean", "onStatisticField" : "soil_depth_cm"}, 
+                          >>> summary_fields = [{"statisticType" : "Sum", "onStatisticField" : "quadrat_area_km2"},
+                                                {"statisticType" : "Mean", "onStatisticField" : "soil_depth_cm"},
                                                 {"statisticType" : "Any", "onStatisticField" : "quadrat_desc"}]
     ----------------  ---------------------------------------------------------------
     multipart         Optional boolean. If ``True``, the output service can contain
@@ -329,7 +329,7 @@ def dissolve_boundaries(
                       will not wait for the task to complete. The default is ``False``, which means wait for results.
     ================  ===============================================================
 
-    :return: 
+    :return:
         :class:`~arcgis.features.FeatureLayerCollection`.
 
     .. code-block:: python
@@ -503,7 +503,7 @@ def merge_layers(
                               double to integer, integer to string) except for string to numeric.
 
                       .. code-block:: python
-                      
+
                           # Example:
                           >>> merge_attributes = [{"mergeLayerField": "Mean_Sales",
                                                    "mergeType": "Match",
@@ -524,7 +524,7 @@ def merge_layers(
                         * ``processSR`` - The features will be projected into this coordinate system for analysis.
                         * ``outSR`` - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
                         * ``dataStore`` - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
-                        * ``defaultAggregationStyles`` - If set to ``True``, results will have square, 
+                        * ``defaultAggregationStyles`` - If set to ``True``, results will have square,
                           hexagon, and triangle aggregation styles enabled on results map services.
     ----------------  ---------------------------------------------------------------
     future            Optional boolean. If ``True``, a GPJob is returned instead of
@@ -533,7 +533,7 @@ def merge_layers(
                       The default value is ``False``.
     ================  ===============================================================
 
-    :return: 
+    :return:
         :class:`~arcgis.features.FeatureLayer`.
 
     .. code-block:: python
@@ -664,7 +664,7 @@ def clip_layer(
                           * ``processSR`` - The features will be
                             projected into this coordinate system for analysis.
                           * ``outSR`` - The features will be projected in this coordinate
-                            system after the analysis to be saved. The output spatial reference 
+                            system after the analysis to be saved. The output spatial reference
                             for the spatiotemporal big data store is always WGS84.
                           * ``dataStore`` - Results will be saved to the specified data store.
                             For ArcGIS Enterprise, the default is the spatiotemporal big data store.
@@ -840,8 +840,8 @@ def overlay_data(
     include_overlaps        Optional boolean. Determines whether input features in the same dataset contain
                             overlapping features. The default is `True`. Change this parameter to `False`
                             if you don't want self-intersecting features for the input layer or the
-                            overlay layer. Setting this to `False` will also improve performance. 
-                            
+                            overlay layer. Setting this to `False` will also improve performance.
+
                               * For 10.6 and 10.6.1, this parameter is only used when `overlay_type``
                                 is ``intersect``
                               * For 10.7 or later, the parameter is always `True`.
@@ -866,7 +866,7 @@ def overlay_data(
                             The default value is ``False``.
     ======================  ===============================================================================
 
-    :return: 
+    :return:
        :class:`~arcgis.features.FeatureLayer`.
 
     .. code-block:: python
@@ -977,16 +977,16 @@ def append_data(
     ================  ===============================================================
     **Argument**      **Description**
     ----------------  ---------------------------------------------------------------
-    input_layer       Required :class:`~arcgis.features.FeatureLayer`. The table, point, 
+    input_layer       Required :class:`~arcgis.features.FeatureLayer`. The table, point,
                       line or polygon features.
     ----------------  ---------------------------------------------------------------
-    append_layer      Required :class:`~arcgis.features.FeatureLayer`. The table, point, 
+    append_layer      Required :class:`~arcgis.features.FeatureLayer`. The table, point,
                       line, or polygon features to be appended to the ``input_layer``. To
-                      append geometry, the ``append_layer`` must have the same geometry 
-                      type as the ``input_layer``. If the geometry types are not the same, 
+                      append geometry, the ``append_layer`` must have the same geometry
+                      type as the ``input_layer``. If the geometry types are not the same,
                       the ``append_layer`` geometry will be removed and all other matching
                       fields will be appended. The geometry of the ``input_layer`` will
-                      always be maintained.                      
+                      always be maintained.
     ----------------  ---------------------------------------------------------------
     field_mapping     Defines how the fields in append_layer are appended to the
                       input_layer.
@@ -1012,7 +1012,7 @@ def append_data(
 
                       The following code snippet appends `Average_Sales` to `Mean_Sales`,
                       calculates an expression of WeeklyRate multiplied by 1.5 to
-                      append the values for Bonus, and sets a value of ``null`` 
+                      append the values for Bonus, and sets a value of ``null``
                       for appended features in Errors.
 
                       .. code-block:: python
@@ -1114,7 +1114,7 @@ def calculate_fields(
     data_type                                           Required string. The type for the new field.
 
                                                         Choice list:
-                                                        
+
                                                           * ``Date``
                                                           * ``Double``
                                                           * ``Integer``
@@ -1122,8 +1122,8 @@ def calculate_fields(
     -------------------------------------------------   ---------------------------------------------------------------
     expression                                          Required string. An Arcade expression used to calculate the new
                                                         field values. You can use any of the `Date`, `Logical`,
-                                                        `Mathematical`, or `Text` functions available with Arcade. 
-                                                        
+                                                        `Mathematical`, or `Text` functions available with Arcade.
+
                                                         See
                                                         Arcade `Function Reference <https://developers.arcgis.com/arcade/function-reference/>`_
                                                         for details.
@@ -1143,14 +1143,14 @@ def calculate_fields(
 
                                                         The time boundary parameters are only applicable if the analysis is ``track_aware``.
                                                         The ``time_boundary_split`` parameter defines the scale of the time boundary.
-                                                        In the case above, this would be 1. 
-                                                        
+                                                        In the case above, this would be 1.
+
                                                         See the portal documentation for this tool to learn more.
     -------------------------------------------------   ---------------------------------------------------------------
     time_split_unit                                     Optional string.  The unit to detect an incident is `time_boundary_split` is used.
 
-                                                        Choice list: 
-                                                        
+                                                        Choice list:
+
                                                           * ``Years``
                                                           * ``Months``
                                                           * ``Weeks``
@@ -1308,7 +1308,7 @@ def copy_to_data_store(
                                    * ``processSR`` - The features will be projected into this coordinate system for analysis.
                                    * ``outSR`` - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
                                    * ``dataStore`` - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
-                                   * ``defaultAggregationStyles`` - If set to ``True``, results will have square, 
+                                   * ``defaultAggregationStyles`` - If set to ``True``, results will have square,
                                      hexagon, and triangle aggregation styles enabled on results map services.
     --------------------------   ---------------------------------------------------------------
      future                      Optional boolean. If ``True``, a future object will be returned and the process

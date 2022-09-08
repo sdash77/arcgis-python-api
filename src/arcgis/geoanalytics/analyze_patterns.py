@@ -240,10 +240,10 @@ def forest(
                                                                                 The default value is 'False'.
     =========================================================================   ===========================================================================
 
-    :return: 
-       
+    :return:
+
        * If ``return_tuple`` is set to 'True', a tuple of results with the following keys:
-        
+
          * ``output`` : :class:`~arcgis.features.FeatureLayer`
          * ``output_predicted`` : :class:`~arcgis.features.FeatureLayer`
          * ``coefficient_table`` : :class:`~arcgis.features.Table`
@@ -421,7 +421,7 @@ def gwr(
 
                                                                                 Syntax: ``['arrests']``
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    explanatory_variables                                                       Required list. One or more fields representing independent explanatory variables 
+    explanatory_variables                                                       Required list. One or more fields representing independent explanatory variables
                                                                                 in your regression model.
 
                                                                                 Syntax: ``['population', 'avg_income', 'avg_ed_lvl']``
@@ -431,7 +431,7 @@ def gwr(
     neighborhood_selection_method                                               Optional String. The default value is ``number_of_neighbors``. Specifies how the
                                                                                 neighborhood size will be determined.
 
-                                                                                The neighborhood size will be specified by either the ``number_of_neighbors`` 
+                                                                                The neighborhood size will be specified by either the ``number_of_neighbors``
                                                                                 or  ``distance_band`` argument.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     neighborhood_type                                                           Specifies whether the neighborhood used is constructed as a fixed distance or allowed to vary in spatial extent depending on the density of the features.
@@ -443,7 +443,7 @@ def gwr(
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     distance_band_unit                                                          Optional String. The unit of the distance for the spatial extent of the neighborhood.
 
-                                                                                Values: 
+                                                                                Values:
                                                                                   * ``Meters``
                                                                                   * ``Kilometers``
                                                                                   * ``Feet``
@@ -453,7 +453,7 @@ def gwr(
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     number_of_neighbors                                                         Optional Integer. The closest number of neighbors to consider for each feature. The number should be an integer greater than or equal to `2`.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    local_weighting_scheme                                                      Optional String. Specifies the kernel type that will be used to provide the spatial weighting in the model. 
+    local_weighting_scheme                                                      Optional String. Specifies the kernel type that will be used to provide the spatial weighting in the model.
                                                                                 The kernel defines how each feature is related to other features within its neighborhood.
 
                                                                                 + BiSquare - A weight of 0 will be assigned to any feature outside the neighborhood specified. This is the default.
@@ -477,7 +477,7 @@ def gwr(
 
                                                                                 The default value is 'False'.
     =========================================================================   ===========================================================================
-    
+
     """
     input_layer = _prevent_bds_item(input_layer)
 
@@ -721,16 +721,16 @@ def glr(
 
                                  The default value is ``False``.
     --------------------------   ---------------------------------------------------------------
-    return_tuple                 Optional boolean. If ``True``, a named tuple with multiple 
+    return_tuple                 Optional boolean. If ``True``, a named tuple with multiple
                                  output keys is returned.
 
                                  The default value is 'False'.
     ==========================   ===============================================================
 
-    :return: 
-       
+    :return:
+
        * If ``return_tuple`` is set to 'True', a tuple of results with the following keys:
-        
+
          * ``output`` : :class:`~arcgis.features.FeatureLayer`
          * ``output_predicted`` : :class:`~arcgis.features.FeatureLayer`
          * ``coefficient_table`` : :class:`~arcgis.features.Table`
@@ -885,30 +885,30 @@ def find_point_clusters(
     **Argument**                 **Description**
     --------------------------   ---------------------------------------------------------------
     input_layer                  The point features for which clusters will be found.
-    
+
                                  See :ref:`Feature Input<gaxFeatureInput>` for options.
     --------------------------   ---------------------------------------------------------------
     method                       required String. The algorithm used for cluster analysis. This
                                  parameter must be specified as one of:
-                                 
+
                                    * ``DBSCAN``
                                    * ``HDBSCAN``
     --------------------------   ---------------------------------------------------------------
-    min_feature_clusters         optional Integer. Minimum number of points to consider a 
+    min_feature_clusters         optional Integer. Minimum number of points to consider a
                                  cluster.
     --------------------------   ---------------------------------------------------------------
     search_distance              optional Float.  The distance to search between points to form
-                                 a cluster.  
-                                 
+                                 a cluster.
+
                                  .. note::
                                      This is required for DBSCAN.
     --------------------------   ---------------------------------------------------------------
     distance_unit                optional String. The `search_distance` units.
     --------------------------   ---------------------------------------------------------------
-    output_name                  optional String. The task will create a feature service  with 
+    output_name                  optional String. The task will create a feature service  with
                                  this service name.
     --------------------------   ---------------------------------------------------------------
-    gis                          optional GIS. The :class:`~arcgis.gis.GIS` on which this tool 
+    gis                          optional GIS. The :class:`~arcgis.gis.GIS` on which this tool
                                  runs. If not specified, the active GIS is used.
     --------------------------   ---------------------------------------------------------------
     context                      Optional dict. The context parameter contains additional settings
@@ -923,27 +923,27 @@ def find_point_clusters(
     future                       Optional boolean. If True, a future object will be returned and the process
                                  will not wait for the task to complete. The default is False, which means wait for results.
     --------------------------   ---------------------------------------------------------------
-    time_method                  Optional String. 
-    
+    time_method                  Optional String.
+
                                   * When this parameter is set to ``Linear``:
-                                    
+
                                     * if ``method`` is `DBSCAN`, both space and time will be used to find point clusters.
-                                    * if ``method`` is `HDBSCAN`, this parameter will be ignored and clusters will be found in space only. 
-                                    
+                                    * if ``method`` is `HDBSCAN`, this parameter will be ignored and clusters will be found in space only.
+
                                  .. note::
                                     This parameter can only be used if `input_layer` has time enabled and is of type instant.
-                                 
+
                                  .. note::
                                      Temporal clustering is available at ArcGIS Enterprise 10.8 and later.
     --------------------------   ---------------------------------------------------------------
-    search_duration              Optional String. 
-    
+    search_duration              Optional String.
+
                                    * When this parameter is set to ``Linear``:
-                                   
+
                                      * if ``method`` is `DBSCAN`  this parameter is the time duration within which
                                        `min_feature_clusters` must be found.
                                      * if ``method`` is `HDBSCAN`, this parameter is not used
-                                 
+
                                  .. note::
                                      This parameter is not used if ``time_method`` is not used
     --------------------------   ---------------------------------------------------------------
@@ -1087,7 +1087,7 @@ def calculate_density(
     input_layer                                           Required point feature layer. The point layer on which the density will be calculated.
 
                                                           See :ref:`Feature Input<gaxFeatureInput>`.
-                                                          
+
                                                           .. note::
                                                               Analysis using bins requires a projected coordinate system.
                                                               When aggregating layers into bins, the input layer or processing
@@ -1109,7 +1109,7 @@ def calculate_density(
                                                           The default value is "Uniform".
     -------------------------------------------------     ------------------------------------------------------------------------
     bin_type                                              Required string. The type of bin used to calculate density.
-    
+
                                                           .. note::
                                                               Analysis using ``Square`` or ``Hexagon`` bins requires a projected coordinate system.
                                                               When aggregating layers into bins, the input layer or processing extent (``processSR``) must
@@ -1119,7 +1119,7 @@ def calculate_density(
                                                               is not specified when running analysis, a projection will be picked based on the extent of the data.
 
                                                           Choice list:
-                                                          
+
                                                              * ``Hexagon``
                                                              * ``Square``
     -------------------------------------------------     ------------------------------------------------------------------------
@@ -1141,8 +1141,8 @@ def calculate_density(
     time_step_interval_unit                               Optional string. A string that specifies units of the time step interval.
                                                           This option is only available if the input points are time-enabled and represent an instant in time.
 
-                                                          Choice list: 
-                                                          
+                                                          Choice list:
+
                                                             * ``Milliseconds``
                                                             * ``Seconds``
                                                             * ``Minutes``
@@ -1161,9 +1161,9 @@ def calculate_density(
                                                           This option is only available if the input points are time-enabled and of time type instant.
 
                                                           Choice list:
-                                                          
+
                                                             * ``Years``
-                                                            * ``Months`` 
+                                                            * ``Months``
                                                             * ``Weeks``
                                                             * ``Days``
                                                             * ``Hours``
@@ -1187,7 +1187,7 @@ def calculate_density(
                                                           The linear unit to be used with the value specified in ``bin_size``.
 
                                                           Choice list:
-                                                          
+
                                                             * ``Feet``
                                                             * ``Yards``
                                                             * ``Miles``
@@ -1201,8 +1201,8 @@ def calculate_density(
                                                           size of the area units (for example, square meters to square kilometers) to return larger values.
                                                           This value only scales the result. Possible area units are:
 
-                                                          Choice list: 
-                                                          
+                                                          Choice list:
+
                                                             * ``SquareMeters``
                                                             * ``SquareKilometers``
                                                             * ``Hectares``
@@ -1217,7 +1217,7 @@ def calculate_density(
     -------------------------------------------------     ------------------------------------------------------------------------
     gis                                                   Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------------------------------     ------------------------------------------------------------------------
-    context                                               Optional dict. The context parameter contains additional settings that 
+    context                                               Optional dict. The context parameter contains additional settings that
                                                           affect task execution. For this task, there are four settings (keys in
                                                           the dictionary):
 
@@ -1380,7 +1380,7 @@ def find_hot_spots(
                                                                                                     When generating bins the number and units specified determine the height and length of the square.
 
                                                                                                     Choice list:
-                                                                                                    
+
                                                                                                      * ``Feet``
                                                                                                      * ``Yards``
                                                                                                      * ``Miles``
@@ -1397,7 +1397,7 @@ def find_hot_spots(
                                                                                                     will be calculated. The linear unit to be used with the value specified in ``bin_size``.
 
                                                                                                     Choice list:
-                                                                                                    
+
                                                                                                       * ``Feet``
                                                                                                       * ``Yards``
                                                                                                       * ``Miles``
@@ -1414,7 +1414,7 @@ def find_hot_spots(
                                                                                                     This option is only available if the input points are time-enabled and represent an instant in time.
 
                                                                                                     Choice list:
-                                                                                                    
+
                                                                                                       * ``Years``
                                                                                                       * ``Months``
                                                                                                       * ``Weeks``
@@ -1589,11 +1589,11 @@ def create_space_time_cube(
                                                                                      and ``bin_size_unit`` parameters and temporal size by
                                                                                      the ``time_step_interval`` and ``time_step_interval_unit`` parameters.
                                                                                      See :ref:`Feature Input<gaxFeatureInput>`.
-                                                                                     
+
                                                                                      .. note::
                                                                                          The ``input_layer`` must have a minimum of 60 features.
-                                                                                         
-                                                                                         
+
+
                                                                                      .. note::
                                                                                          Analysis using bins requires a projected coordinate system.
                                                                                          When aggregating layers into bins, the input layer or processing
@@ -1607,9 +1607,9 @@ def create_space_time_cube(
     bin_size                                                                         Required float. The distance for the bins into which ``point_layer`` will be aggregated.
     ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
     bin_size_unit                                                                    Required string. The distance unit for the bins into which ``point_layer`` will be aggregated.
-                                                                                     
+
                                                                                      Choice list:
-                                                          
+
                                                                                          * ``Feet``
                                                                                          * ``Yards``
                                                                                          * ``Miles``
@@ -1618,14 +1618,14 @@ def create_space_time_cube(
                                                                                          * ``NauticalMiles``
     ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
     time_step_interval                                                               Required integer. A numeric value that specifies the duration of the time bin.
-    
+
                                                                                      .. note::
                                                                                          A ``create_space_time_cube`` must have at least 10 time slices.
     ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
     time_step_interval_unit                                                          Required string. A numeric value that specifies the duration unit of the time bin.
-                                                                                     
+
                                                                                      Choice list:
-                                                                                     
+
                                                                                        * ``Years``
                                                                                        * ``Months``
                                                                                        * ``Weeks``
@@ -1636,9 +1636,9 @@ def create_space_time_cube(
                                                                                        * ``Milliseconds``
     ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
     time_step_alignment                                                              Optional string. Defines how aggregation will occur based on a given timeInterval. Options are as follows:
-                                                                                     
+
                                                                                      Choice list:
-                                                                                     
+
                                                                                         * ``StartTime`` - Time is aligned to the first feature in time
                                                                                         * ``EndTime`` - Time is aligned to the last feature in time
                                                                                         * ``ReferenceTime`` - Time is aligned a specified time
@@ -1650,34 +1650,34 @@ def create_space_time_cube(
                                                                                      fill option for empty values that you want to calculate for all points
                                                                                      within each space-time bin. Note that the count of points within each
                                                                                      bin is always returned. By default, all statistics are returned.
-                                                                                     
+
                                                                                      Format:
-                                                                                     
+
                                                                                      .. code-block:: python
-                                                                                         
-                                                                                         [{"statisticType": "statistic type", 
-                                                                                           "onStatisticField": "field name", 
-                                                                                           "fillType": "fill type"}, 
+
+                                                                                         [{"statisticType": "statistic type",
+                                                                                           "onStatisticField": "field name",
+                                                                                           "fillType": "fill type"},
                                                                                           {"statisticType": "statistic type",
                                                                                            "onStatisticField": "fieldName2",
                                                                                            "fillType": "fill type"}]
-                                                                                     
+
                                                                                      ``statisticType`` is one of the following for numeric fields:
-                                                                                     
+
                                                                                        * ``Sum`` - Adds the total value of all the points in each polygon.
                                                                                        * ``Mean`` - Calculates the average of all the points in each polygon.
                                                                                        * ``Min`` - Finds the smallest value of all the points in each polygon.
                                                                                        * ``Max`` - Finds the largest value of all the points in each polygon.
                                                                                        * ``Stddev`` - Finds the standard deviation of all the points in each polygon.
-                                                                                     
+
                                                                                      ``statisticType`` is the following for string fields:
-                                                                                       
+
                                                                                        * ``Count`` - Totals the number of strings for all the points in each polygon.
-                                                                                     
+
                                                                                      ``onStatisticField`` is the name of fields in the input point layer.
-                                                                                     
+
                                                                                      ``fillType`` is one of the following:
-                                                                                     
+
                                                                                        * ``zeros`` - Fills missing values with zeros. This is most appropriate for fields representing counts.
                                                                                        * ``spatialNeighbors`` - Fills missing values by averaging the spatial neighbors. Neighbors are determined by a second degree queens contiguity.
                                                                                        * ``spaceTimeNeighbors`` - Fills missing values by averaging the space-time neighbors. Neighbors are determined by a second degree queens contiguity in both space and time.
