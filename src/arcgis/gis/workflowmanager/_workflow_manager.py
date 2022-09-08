@@ -397,6 +397,30 @@ class JobManager:
             List of newly create job ids
 
         """
+        location_obj = location
+        if location is not None and type(location) is not dict:
+            location_obj = {"geometryType": location.type}
+            if location.type == "Polygon":
+                location_obj["geometry"] = json.dumps(
+                    {
+                        "rings": location.rings,
+                        "spatialReference": location.spatial_reference,
+                    }
+                )
+            elif location.type == "Polyline":
+                location_obj["geometry"] = json.dumps(
+                    {
+                        "paths": location.paths,
+                        "spatialReference": location.spatial_reference,
+                    }
+                )
+            elif location.type == "Multipoint":
+                location_obj["geometry"] = json.dumps(
+                    {
+                        "points": location.points,
+                        "spatialReference": location.spatial_reference,
+                    }
+                )
         job_object = {
             "numberOfJobs": count,
             "jobName": name,
@@ -410,7 +434,7 @@ class JobManager:
             "percentComplete": complete,
             "notes": notes,
             "parentJob": parent,
-            "location": location,
+            "location": location_obj,
             "extendedProperties": extended_properties,
             "relatedProperties": related_properties,
             "jobId": job_id,
