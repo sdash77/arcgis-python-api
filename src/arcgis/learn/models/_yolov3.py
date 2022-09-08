@@ -191,7 +191,8 @@ class YOLOv3(ArcGISModel):
             data.remove_tfm(data.norm)
             data.norm, data.denorm = None, None
 
-        super().__init__(data)
+        super().__init__(data, pretrained_path=pretrained_path)
+        data = self._data
 
         # Creating a dummy class for the backbone because this model does not use a torchvision backbone
         class DarkNet53:
@@ -241,10 +242,10 @@ class YOLOv3(ArcGISModel):
                         "[INFO] Can't download and extract COCO pretrained weights for YOLOv3.\nProceeding without pretrained weights."
                     )
             if os.path.exists(weights_file):
-                parse_yolo_weights(self._model, weights_file)
-                from IPython.display import clear_output
+                from IPython.utils import io
 
-                clear_output()
+                with io.capture_output() as captured:
+                    parse_yolo_weights(self._model, weights_file)
 
         self._loss_f = YOLOv3_Loss()
         self.learn = Learner(data, self._model, loss_func=self._loss_f)
