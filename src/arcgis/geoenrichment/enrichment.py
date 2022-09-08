@@ -1557,7 +1557,7 @@ def enrich(
         if isinstance(area, NamedArea):
             countries.append(area._country)
     # remove duplicates
-    countries = list(set(countries))
+    countries = list(collections.OrderedDict.fromkeys(countries))
 
     # get information from study areas to best perform geoenrichment
     if isinstance(study_areas, Iterable) and not isinstance(study_areas, pd.DataFrame):
@@ -1581,8 +1581,8 @@ def enrich(
         # if no data collection and there is more than one Country, run enrich and append data for each country
         # if first instance of study areas is not Named Area then BA enrich will be used and this is not necessary
         if isinstance(enrich_src, Country):
-            # more than one country present to enrich
-            if len(countries) > 1:
+            # enrich all countries present
+            if len(countries) > 0:
                 enrich_res = pd.DataFrame()
                 for country in countries:
                     for sa in orig_study_areas:
@@ -1611,8 +1611,8 @@ def enrich(
                         return_geometry=return_geometry,
                     )
 
-                    enrich_res = enrich_res.append(enrich_df)
-        # The default, no data collection and not a Country source or same country for all study areas.
+                    enrich_res = pd.concat([enrich_res, enrich_df], ignore_index=True)
+        # The default, no data collection and not a Country source
         else:
             # get all possible requested enrich variables
             src = (
@@ -1633,9 +1633,9 @@ def enrich(
                 return_geometry=return_geometry,
             )
     # check if data collections used as input parameter against available data collections
-    else:
-        # If data collection specified not found in country and more than one is present, check other countries
-        if len(countries) > 0:
+    elif data_collections is not None:
+        # If data collection specified not found in country and more than one is present, check other countries if using Country source.
+        if isinstance(enrich_src, Country) and len(countries) > 0:
             for country in countries:
                 enrich_src = country
                 avail_data_coll = enrich_src.enrich_variables.data_collection.unique()
@@ -1652,7 +1652,7 @@ def enrich(
                 dc for dc in data_collections if dc not in avail_data_coll
             ]
         if len(unavail_data_coll) != 0:
-            raise (
+            raise Exception(
                 "One or more of the data collections you requested is not available. The "
                 'only data\ncollection available globally is "KeyGlobalFacts". For '
                 "working with data specific to a country, you\ncan discover available "
