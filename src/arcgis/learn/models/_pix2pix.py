@@ -54,7 +54,7 @@ class Pix2Pix(ArcGISModel):
     def __init__(
         self, data, pretrained_path=None, perceptual_loss=False, *args, **kwargs
     ):
-        super().__init__(data)
+        super().__init__(data, pretrained_path=pretrained_path, **kwargs)
         self._check_dataset_support(data)
         if self._data.chip_size % 256 == 0:
             pix2pix_gan = pix2pix_model(

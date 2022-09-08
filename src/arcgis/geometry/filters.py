@@ -64,7 +64,14 @@ def intersects(geometry: Geometry, sr: Union[SpatialReference, dict, None] = Non
 
         from arcgis.geometry import Geometry
         from arcgis.geometry.filters import intersects
-
+        
+        # get a feature layer item from the gis
+        >>> flyr_item = gis.content.search("Freeways*", "Feature Layer")[0]
+        >>> freeway_lyr = flyr_item.layers[0]
+        
+        # assign a variable to the spatial reference
+        >>> freeway_sr = freeway_lyr.properties.extent["spatialReference"]
+        
         # select a filter feature to construct its geometry
         >>> rte15_fset = freeway_lyr.query(where="ROUTE_NUM = 'I15'")
         >>> rte15_geom_dict = rte15_fset.features[0].geometry
