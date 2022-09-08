@@ -267,8 +267,8 @@ class TestWorkflowManager(unittest.TestCase):
             location = {
                 "geometryType": "Polygon",
                 "geometry": '{"rings":[[[-6848757.734349992,3330625.6782390587],[-2256822.369376309,'
-                            '6774572.424655061],[-2935181.886149995,1973920.9766344912],[-6848757.734349992,'
-                            '3330625.6782390587]]],"spatialReference":{"latestWkid":3857,"wkid":102100}}',
+                "6774572.424655061],[-2935181.886149995,1973920.9766344912],[-6848757.734349992,"
+                '3330625.6782390587]]],"spatialReference":{"latestWkid":3857,"wkid":102100}}',
             }
 
         return self.connection.workflow_manager.jobs.create(
