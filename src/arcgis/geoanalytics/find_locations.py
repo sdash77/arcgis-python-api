@@ -112,18 +112,18 @@ def geocode_locations(
                                      does not have a header row
                                    * ``field_mapping`` - Field mapping between each input field and
                                      candidate fields on the geocoding service
-                                          
+
                                  .. code-block:: python
-                                        
-                                     # Example 
-                                     >>> geocode_parameters = {field_info: [['ObjectID', 'TEXT', 255], 
+
+                                     # Example
+                                     >>> geocode_parameters = {field_info: [['ObjectID', 'TEXT', 255],
                                                                             ['Address', 'TEXT', 255],
-                                                                            ['Region', 'TEXT', 255], 
+                                                                            ['Region', 'TEXT', 255],
                                                                             ['Postal', 'TEXT', 255]],
                                                                header_row_exists - True,
-                                                               field_mapping: [['ObjectID', 'OBJECTID'], 
+                                                               field_mapping: [['ObjectID', 'OBJECTID'],
                                                                                ['Address', 'Address'],
-                                                                               ['Region', 'Region'], 
+                                                                               ['Region', 'Region'],
                                                                                ['Postal', 'Postal']]
                                                               }
     --------------------------   ---------------------------------------------------------------
@@ -138,7 +138,7 @@ def geocode_locations(
                                    * ``dataStore`` - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     --------------------------   ---------------------------------------------------------------
     future                       Optional boolean. If ``True``, a future object will be returned and the process
-                                 will not wait for the task to complete. The default is ``False``, 
+                                 will not wait for the task to complete. The default is ``False``,
                                  which means wait for results.
     ==========================   ===============================================================
 
@@ -354,17 +354,17 @@ def snap_tracks(
     search_distance_unit           Required String. The unit of the `search_distance`.
     ----------------------------   ---------------------------------------------------------------
     distance_method                Optional String. The method used to calculate search distances
-                                   between points and lines. 
-                                   
+                                   between points and lines.
+
                                    Options:
-                                   
-                                     * ``Planar`` - Calculates distances using a plane method and 
+
+                                     * ``Planar`` - Calculates distances using a plane method and
                                        will not cross the anti-meridian.
-                                     * ``Geodesic`` - Calculates distances geodesically and will 
-                                       allow tracks to cross the anti-meridian. This method is 
-                                       appropriate for large areas and any geographic coordinate 
-                                       system. 
-                                   
+                                     * ``Geodesic`` - Calculates distances geodesically and will
+                                       allow tracks to cross the anti-meridian. This method is
+                                       appropriate for large areas and any geographic coordinate
+                                       system.
+
                                    The default is ``Planar``.
     ----------------------------   ---------------------------------------------------------------
     output_mode                    Optional string. Determines which features are returned.
@@ -575,10 +575,10 @@ def detect_incidents(
                                  In the case above, this would be 1. See the portal documentation for
                                  this tool to learn more.
     --------------------------   ---------------------------------------------------------------
-    time_split_unit              Optional string. The unit to detect an incident if 
+    time_split_unit              Optional string. The unit to detect an incident if
                                  `time_boundary_split` argument is provided.
 
-                                 Choice list: 
+                                 Choice list:
                                     * ``Milliseconds``
                                     * ``Seconds``
                                     * ``Minutes``
@@ -605,12 +605,12 @@ def detect_incidents(
                                    * ``dataStore`` - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     --------------------------   ---------------------------------------------------------------
     future                       Optional boolean. If ``True``, a future object will be returned and the process
-                                 will not wait for the task to complete. 
-                                 
+                                 will not wait for the task to complete.
+
                                  The default is ``False``, which means wait for results.
     ==========================   ===============================================================
 
-    :return: 
+    :return:
         :class:`~arcgis.features.FeatureLayerCollection`.
 
     .. code-block:: python
@@ -819,14 +819,14 @@ def find_dwell_locations(
 
     --------------------------   ---------------------------------------------------------------
     method                       Optional String. The method used to calculate distances between
-                                 points. 
-                                 
+                                 points.
+
                                  Options:
-                                 
+
                                    * ``Planar`` - joins points using a planar method
                                      and will not cross the international date line. This method is
                                      appropriate for local analysis on projected data. This is the
-                                     default. 
+                                     default.
                                    * ``Geodesic`` - joins points geodesically and will
                                      allow tracks to cross the international date line. This method
                                      is appropriate for large areas and geographic coordinate
@@ -845,8 +845,8 @@ def find_dwell_locations(
                                    * ``dataStore`` - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     --------------------------   ---------------------------------------------------------------
     future                       Optional boolean. If ``True``, a future object will be returned and the process
-                                 will not wait for the task to complete. 
-                                 
+                                 will not wait for the task to complete.
+
                                  The default is ``False``, which means wait for results.
     --------------------------   ---------------------------------------------------------------
     time_boundary_split          Optional integer. A time boundary to detect an incident. A time
@@ -856,14 +856,14 @@ def find_dwell_locations(
                                  parameter was introduced in ArcGIS Enterprise 10.8.1.
 
                                  The ``time_boundary_split`` parameter defines the scale of the time boundary.
-                                 In the case above, this would be 1. 
-                                 
+                                 In the case above, this would be 1.
+
                                  See `Find Dwell Locations <https://enterprise.arcgis.com/en/portal/latest/use/geoanalytics-find-dwell-locations.htm>_` to learn more.
     --------------------------   ---------------------------------------------------------------
     time_boundary_unit           Optional string. The unit to detect an incident is `time_boundary_split` is used. This was introduced in ArcGIS Enterprise 10.8.1.
 
-                                 Choice list: 
-                                 
+                                 Choice list:
+
                                     * ``Years``
                                     * ``Months``
                                     * ``Weeks``
@@ -876,8 +876,8 @@ def find_dwell_locations(
                                  begin from. This parameter was introduced in ArcGIS Enterprise 10.8.1.
     ==========================   ===============================================================
 
-    :return: 
-        
+    :return:
+
         * if `future` is ``False``, an output service
         * if `future` is ``True``, a GAJob
 
@@ -1070,7 +1070,7 @@ def find_similar_locations(
                                  or search both the most and least similar.
 
                                  Choice list:
-                                 
+
                                    * ``MostSimilar``
                                    * ``LeastSimilar``
                                    * ``Both``
@@ -1109,8 +1109,8 @@ def find_similar_locations(
                                    * ``dataStore`` - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     --------------------------   ---------------------------------------------------------------
     future                       Optional boolean. If ``True``, a future object will be returned and the process
-                                 will not wait for the task to complete. 
-                                 
+                                 will not wait for the task to complete.
+
                                  The default is ``False``, which means wait for results.
     --------------------------   ---------------------------------------------------------------
     return_tuple                 Optional boolean. If ``True``, a named tuple with multiple output keys is returned.
@@ -1118,15 +1118,15 @@ def find_similar_locations(
                                  The default value is ``False``.
     ==========================   ===============================================================
 
-    :return: 
-        
+    :return:
+
         * If `return_tuple` is ``True``, named tuple with the following keys:
-        
+
           * ``output``: :class:`~arcgis.features.FeatureLayer`
           * ``process_info``: list
 
         * if `return_tuple is ``False``, a :class:`~arcgis.features.FeatureLayer`
-        
+
     .. code-block:: python
 
             # Usage Example: To find potential retail locations based on the current top locations and their attributes.

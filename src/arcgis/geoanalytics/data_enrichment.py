@@ -98,8 +98,8 @@ def calculate_motion_statistics(
                              * ``idle``
                              * ``bearing``
                              * ``all``
-                             
-                             ``all`` is the default. 
+
+                             ``all`` is the default.
     ----------------------  ---------------------------------------------------------------
     track_history_window    Optional Integer. The number of observations (including the
                             current observation) that will be used when calculating summary
@@ -132,14 +132,14 @@ def calculate_motion_statistics(
                             align the time boundary to, represented in milliseconds from epoch.
     ----------------------  ---------------------------------------------------------------
     dist_method             Optional String. The method used to calculate distances between
-                            track observations. 
-                            
-                            There are two methods to choose from: 
+                            track observations.
+
+                            There are two methods to choose from:
                              * ``Planar`` - measures distances using an
                                Euclidean plane and will not calculate statistics across the
-                               date line. 
+                               date line.
                              * ``Geodesic`` - calculations vary depending upon:
-                               
+
                                * If the spatial reference can be panned, calculations
                                  will cross the date line when appropriate
                                * If the spatial reference cannot be panned, calculations will be limited to the
@@ -147,20 +147,20 @@ def calculate_motion_statistics(
     ----------------------  ---------------------------------------------------------------
     distance_unit           Optional String. The units for all results in the Distance
                             motion statistics group.
-                            
-                            Options: 
-                             * ``Meters`` 
+
+                            Options:
+                             * ``Meters``
                              * ``Kilometers``
                              * ``Feet``
                              * ``Miles``
                              * ``NauticalMiles``
                              * ``Yards``
-                             
+
                             ``Meters`` is the default.
     ----------------------  ---------------------------------------------------------------
     duration_unit           Optional String. The units for all results in the Duration motion statistics group.
 
-                            Options: 
+                            Options:
                                 * ``Milliseconds``
                                 * ``Seconds``
                                 * ``Minutes``
@@ -169,38 +169,38 @@ def calculate_motion_statistics(
                                 * ``Weeks``
                                 * ``Months``
                                 * ``Years``
-                                
-                            ``Seconds`` is the default. 
+
+                            ``Seconds`` is the default.
     ----------------------  ---------------------------------------------------------------
     speed_unit              Optional String. The units for all results in the Speed motion statistics group.
 
                             Options:
-                             * ``MetersPerSecond`` (default) 
-                             * ``KilometersPerHour`` 
+                             * ``MetersPerSecond`` (default)
+                             * ``KilometersPerHour``
                              * ``FeetPerSecond``
                              * ``MilesPerHour``
                              * ``NauticalMilesPerHour``
-                             
-                            ``MetersPerSecond`` is the default. 
+
+                            ``MetersPerSecond`` is the default.
     ----------------------  ---------------------------------------------------------------
     accel_unit              Optional String. The units for all results in the Acceleration motion statistics group.
 
                             Options:
                               * ``MetersPerSecondSquared``
                               * ``FeetPerSecondSquared``
-                              
+
                             ``MetersPerSecondSquared`` is the default.
     ----------------------  ---------------------------------------------------------------
     elev_unit               Optional String. The units for all results in the Elevation motion statistics group.
-                            
-                            Options: 
-                                * ``Meters`` 
+
+                            Options:
+                                * ``Meters``
                                 * ``Kilometers``
                                 * ``Feet``
                                 * ``Miles``
                                 * ``NauticalMiles``
                                 * ``Yards``
-                                
+
                             ``Meters`` is the default.
     ----------------------  ---------------------------------------------------------------
     output_name             optional string. The task will create a feature service of the
@@ -222,7 +222,7 @@ def calculate_motion_statistics(
                             The default value is ``False``.
     ======================  ===============================================================
 
-    :return: 
+    :return:
         :class:`~arcgis.features.FeatureLayer`
 
     """
@@ -353,7 +353,7 @@ def enrich_from_grid(
     input_layer             Required layer. The point features that will be enriched
                             by the multi-variable grid. See :ref:`Feature Input<gaxFeatureInput>`.
     ----------------------  ---------------------------------------------------------------
-    grid_layer              Required layer. The multivariable grid layer created using the 
+    grid_layer              Required layer. The multivariable grid layer created using the
                             `Build Multi-Variable Grid <https://enterprise.arcgis.com/en/portal/latest/use/geoanalytics-build-multi-variable-grid.htm>`_
                             tool.
                             See :ref:`Feature Input<gaxFeatureInput>`.
@@ -381,7 +381,7 @@ def enrich_from_grid(
                             The default value is ``False``.
     ======================  ===============================================================
 
-    :return: 
+    :return:
         :class:`~arcgis.features.FeatureLayer`
 
     .. code-block:: python

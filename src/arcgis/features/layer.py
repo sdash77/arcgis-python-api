@@ -2531,9 +2531,9 @@ class FeatureLayer(Layer):
         :return: Dictionary of the query results
 
         .. code-block:: python
-            
+
             # Usage Example:
-            
+
             # Query returning the related records for a feature with objectid value of 2,
             # returning the values in the 6 attribute fields defined in the `field_string`
             # variable:
@@ -2543,10 +2543,10 @@ class FeatureLayer(Layer):
                                                              relationship_id = 0,
                                                              out_fields = field_string,
                                                              return_geometry=True)
-            
+
             >>> list(rel_records.keys())
             ['fields', 'relatedRecordGroups']
-            
+
             >>> rel_records["relatedRecordGroups"]
             [{'objectId': 2,
               'relatedRecords': [{'attributes': {'objectid': 686,
