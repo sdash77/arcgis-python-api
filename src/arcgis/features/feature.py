@@ -43,10 +43,23 @@ class Feature(object):
     .. code-block:: python
 
         # Obtain a feature from a feature layer:
-
-        feature_set = feature_layer.query(where="OBJECTID=1")
-        feature = feature_set[0]
-
+        
+        # Query a Feature Layer to get a Feature Set
+        >>> feature_set = feature_layer.query(where="OBJECTID=1")
+        # Assign a variable to the list of features in the Feature Set
+        >>> feature_list = feature_set.features
+        # Get an individual feature
+        >>> feature = feature_list[0]
+        
+        # Verify the object type
+        >>> type(feature)
+        arcgis.features.feature.Feature
+        # Print the string representation of the feature
+        >>> feature
+        {"geometry": {"x": -8238318.738276444, "y": 4970309.724235498, "spatialReference": {"wkid": 102100, "latestWkid": 3857}}, 
+        "attributes": {"Incident_Type": "Structural-Sidewalk Collapse", "Location": "927 Broadway", "Borough": "Manhattan", 
+        "Creation_Date": 1477743211000, "Closed_Date": null, "Latitude": 40.7144215406227, "Longitude": -74.0060763804198,
+        "ObjectId": 1}}       
     """
 
     _geom = None
@@ -87,14 +100,29 @@ class Feature(object):
 
         .. code-block:: python
 
-            # UsageExample
+            # Usage Example
 
             >>> feat_set = feature_layer.query(where="OBJECTID=1")
-            >>> feat = feat_set[0]
-            >>> feat.set_value(field_name = "field_name", value = "new_value")
+            >>> feat = feat_set.features[0]
+            >>> feat.fields
+            ['OBJECTID',
+             'FID_Commun',
+             'AREA',
+             'PERIMETER',
+             'NAME',
+             'COUNTY',
+             'CONAME']
+            >>> feat.get_value("NAME")
+            'Original Name'
+            >>> feat.set_value(field_name = "NAME", value = "New Name")
             True
-
+            
+        .. note::
+            To save edits from the above snippet, use :meth:`~arcgis.features.FeatureLayer.edit_features`
+            with `feat_set` in a list as the `updates` argument.
         """
+        
+        
         if field_name in self.fields:
             if value is not None:
                 self._dict["attributes"][field_name] = value
@@ -190,17 +218,32 @@ class Feature(object):
     @property
     def geometry(self):
         """
-        Get/Set the geometry of the feature, if any
+        Get/Set the geometry of the feature, if any.
 
         ==================      ====================================================================
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
         value                   Required string.
                                 Values: 'Polyline' | 'Polygon' | 'Point'
+                                
+                                .. note::
+                                    Setting this value will override the current geometry dictionary
+                                    if already present.
+                                
         ==================      ====================================================================
 
-        :return: The feature's geometry as a string
-
+        :return: The feature's geometry as a dictionary.
+  
+        .. code-block:: python
+        
+            # Get the current geometry
+            >>> feat_set = feature_layer.query(where="1=1")
+            >>> feat_list = feat_set.features
+            >>> feat = feat_list[0]
+            >>> feat.geometry
+            {'x': -8238318.738276444,
+             'y': 4970309.724235498,
+             'spatialReference': {'wkid': 102100, 'latestWkid': 3857}}
         """
         if self._geom is None:
             if "geometry" in self._dict.keys():
@@ -232,6 +275,14 @@ class Feature(object):
         :return:
             A dictionary of feature attribute values with field names as the key
 
+        .. code-block:: python
+        
+            #Example to set attribute values
+            
+            >>> feat_set = feature_layer.query(where="1=1")
+            >>> feat_list = feat_set.features
+            >>> feat = feat_list[0]
+            >>> feat.attributes = {"field1 : "value", field2 : "value"}
         """
 
         if self._attributes is None and "attributes" in self._dict:
@@ -303,7 +354,7 @@ class Feature(object):
         Creates a Feature object from a dictionary.
 
         :return:
-            A class:`~arcgis.features.feature.Feature`
+            A :class:`~arcgis.features.Feature`
         """
         geom = feature["geometry"] if "geometry" in feature else None
         if geom and sr and isinstance(geom, dict) and not "spatialReference" in geom:
