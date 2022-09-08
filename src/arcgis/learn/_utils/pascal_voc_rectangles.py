@@ -264,7 +264,7 @@ def show_batch_pascal_voc_rectangles(
 
     # Denormalize X
     x_batch = denorm_x(x_batch, self)
-    
+
     y_bboxes = []
     y_classes = []
     for yb in y_batch:

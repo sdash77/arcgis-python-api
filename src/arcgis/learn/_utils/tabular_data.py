@@ -1298,11 +1298,13 @@ class TabularDataObject(object):
 
             data_source_desc = arcpy.Describe(data_source)
             transformation = spatial_reference_helper.get_datum_transformation(
-                data_source_desc.spatialReference, 
-                arcpy.SpatialReference(4326), 
-                data_source_desc.extent
+                data_source_desc.spatialReference,
+                arcpy.SpatialReference(4326),
+                data_source_desc.extent,
             )
-            sdf = pd.DataFrame.spatial.from_featureclass(data_source, sr="4326", datum_transformation=transformation)
+            sdf = pd.DataFrame.spatial.from_featureclass(
+                data_source, sr="4326", datum_transformation=transformation
+            )
         else:
             sdf = pd.DataFrame()
             data_type = arcpy.Describe(input_features).dataType

@@ -542,11 +542,23 @@ class Country(object):
         return dc_df
 
     @property
+    def hierarchies(self):
+        """
+        Return the available hierarchies and information for them as a dataframe.
+        """
+        return self._ba_cntry._ba._get_hierarchies_df(self._ba_cntry.iso3)
+
+    @property
+    def hierarchy(self):
+        """Get/Set the current hierarchy used. This will affect the enrichment variables"""
+        return self.hierarchies[self.hierarchies["alias"] == self.properties.hierarchy]
+
+    @property
     def enrich_variables(self):
         """
         Pandas Dataframe of available geoenrichment variables.
 
-        For instance, the following code, if run in Jupter, will render the table below.
+        For instance, the following code, if run in Jupyter, will render the table below.
 
         .. code-block:: python
 
@@ -721,6 +733,10 @@ class Country(object):
         output_spatial_reference         The default output will be WGS84 (WKID 4326). If a different output
                                          spatial reference is desired, please provide it here as a WKID or
                                          :class:`~arcgis.geometry.SpatialReference` object instance.
+        ----------------------------     --------------------------------------------------------------------
+        hierarchy                        The hierarchy of the datasets to use. The hierarchy is the "ID" that
+                                         can be found in the `hierarchies` property. If none is provided, the
+                                         default hierarchy will be used.
         ============================     ====================================================================
 
         :return:
@@ -863,6 +879,15 @@ class Country(object):
             enrich_variables = _preproces_data_colletions_and_analysis_variables(
                 self, kwargs["data_collections"], enrich_variables
             )
+
+        # if hierarchy in kwargs, make sure it exists
+        if "hierarchy" in kwargs.keys():
+            hierarchies = self.hierarchies
+            hierarchy_df = hierarchies[hierarchies["ID"] == kwargs["hierarchy"]]
+            if hierarchy_df.empty:
+                ValueError(
+                    "The hierarchy provided is not a valid ID value. To see valid hierarchy ID values see the `hierarchies` property."
+                )
 
         # invoke enrich on the business analyst object
         enrich_res = self._ba_cntry.enrich(
@@ -1506,6 +1531,9 @@ def enrich(
                                   parameter with standard geography layers that are provided by the
                                   GeoEnrichment class for each country. You can also intersect
                                   features from a publicly available feature service.
+                                  
+                                  See `intersecting_geographies <https://developers.arcgis.com/rest/geoenrichment/api-reference/enrich.htm#ESRI_SECTION2_6A987CF67F914FA39B61BE14BE115F27>`_
+                                  for more details on formatting of this parameter.
     -------------------------     --------------------------------------------------------------------
     return_geometry               Optional boolean. A parameter to request the output geometries in
                                   the response.
@@ -1532,11 +1560,12 @@ def enrich(
     =========================     ====================================================================
 
 
-    See `intersecting_geographies <https://developers.arcgis.com/rest/geoenrichment/api-reference/enrich.htm#ESRI_SECTION2_6A987CF67F914FA39B61BE14BE115F27>`_
+     
 
 
-
-    :return: Spatially Enabled DataFrame or Panda's DataFrame with the requested variables for the study areas.
+    :return: 
+       :class:`Spatially Enabled DataFrame <arcgis.features.GeoAccessor>` or Panda's DataFrame 
+       with the requested variables for the study areas.
     """
     # handle the caveat of using a GIS('Pro') input
     gis = _check_gis_source(gis)
