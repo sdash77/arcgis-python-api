@@ -1608,7 +1608,15 @@ class GeoAccessor(object):
             raise ValueError(
                 "`how` is an invalid inputs of %s, but should be %s" % (op, allowed_ops)
             )
-        if self.sr != right_df.spatial.sr:
+        same_sr = False
+        if self.sr == right_df.spatial.sr:
+            same_sr = True
+        else:
+            # check for cases where there is latestWkid by iterating through values of sr
+            for value in self.sr.values():
+                if value in right_df.spatial.sr.values():
+                    same_sr = True
+        if same_sr is False:
             raise Exception("Difference Spatial References, aborting operation")
         index_left = "index_{}".format(left_tag)
         index_right = "index_{}".format(right_tag)
