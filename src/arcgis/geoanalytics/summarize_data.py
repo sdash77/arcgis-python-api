@@ -224,8 +224,8 @@ def build_multivariable_grid(
                                                                            the variables that will be calculated for each layer in ``input_layers``.
 
                                                                            .. code-block:: python
-                                                                           
-                                                                               variable_calculations = 
+
+                                                                               variable_calculations =
                                                                                 [
                                                                                  {
                                                                                      "layer":<index>,
@@ -257,46 +257,46 @@ def build_multivariable_grid(
                                                                                        ]
                                                                                      },
                                                                                    ]
-                                                                             
+
                                                                            Description of the above snippet:
-                                                                             
+
                                                                                 * ``layer`` is the index of the layer in ``input_layers`` that will be
                                                                                   used to calculate the specified variables.
-   
+
                                                                                 * ``variables`` is an array of dict objects that describe the variables
                                                                                   you want to include in the result layer. The array must contain at least
                                                                                   one variable for each layer.
-   
+
                                                                                 * ``type`` can be one of the following variable types:
-   
+
                                                                                    * DistanceToNearest
                                                                                    * AttributeOfNearest
                                                                                    * AttributeSummaryOfRelated
-   
+
                                                                                 * Each type must be configured with a unique set of parameters:
-   
+
                                                                                   * ``outFieldName`` is the name of the field that will be created in the result
                                                                                     layer to store a variable. This is required.
                                                                                   * ``searchDistance`` is a number and ``searchDistanceUnit`` is a linear unit.
-                                                                                    
+
                                                                                     For:
-                                                                                      * ``DistanceToNearest`` and ``AttributeOfNearest`` - both are required 
+                                                                                      * ``DistanceToNearest`` and ``AttributeOfNearest`` - both are required
                                                                                         to define the maximum distance that the tool will search from the
                                                                                         center of each bin to find a feature in the layer. If no feature is within the
                                                                                         distance, null is returned.
                                                                                       * ``AttributeSummaryOfRelated`` - , they are optional to define the radius of
-                                                                                        a circular neighborhood surrounding each bin. All features that intersect this 
-                                                                                        neighborhood will be used to calculate ``statisticType``. If a distance is not defined, 
-                                                                                        only features that intersect a bin will be used to calculate ``statisticType``.                                              
+                                                                                        a circular neighborhood surrounding each bin. All features that intersect this
+                                                                                        neighborhood will be used to calculate ``statisticType``. If a distance is not defined,
+                                                                                        only features that intersect a bin will be used to calculate ``statisticType``.
                                                                                   * ``attributeField`` is required by ``AttributeOfNearest`` and is the name of a field `
                                                                                     in the input layer. The value of this field in the closest feature to each bin will
                                                                                     be included in the result layer.
                                                                                   * ``statisticField`` is required by ``AttributeSummaryOfRelated`` and is the name of a
                                                                                     field in the input layer. This field's values will be used to calculate ``statisticType``.
                                                                                   * ``statisticType`` is required by ``AttributeSummaryOfRelated`` and is one of the following
-                                                                                     
+
                                                                                     * when ``statisticField`` is a numeric field:
-     
+
                                                                                        * ``Count`` - Totals the number of features near or intersecting each bin.
                                                                                        * ``Sum`` - Adds the total value of all features near or intersecting each bin.
                                                                                        * ``Mean`` - Calculates the average of all features near or intersecting each bin.
@@ -305,16 +305,16 @@ def build_multivariable_grid(
                                                                                        * ``Range`` - Finds the difference between Min and Max.
                                                                                        * ``Stddev`` - Finds the standard deviation of all features near or intersecting each bin.
                                                                                        * ``Var`` - Finds the variance of all features near or intersecting each bin.
-     
+
                                                                                     * when ``statisticField`` is a string field:
-     
+
                                                                                        * ``Count`` - Totals the number of strings for all features near or intersecting each bin.
                                                                                        * ``Any`` - Returns a sample string of all features near or intersecting each bin.
-     
+
                                                                                   * ``filter`` is optional for all variable types and is formatted as described in the Feature Input topic.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     bin_size                                                               Required float. The distance for the bins of type ``bin_type`` in the output polygon layer.
-                                                                           ``variable_calculations`` will be calculated at the center of each bin. 
+                                                                           ``variable_calculations`` will be calculated at the center of each bin.
                                                                            When generating bins,
                                                                              * if ``bin_type`` is ``Square`` - the number and units specified determine the height and length of the square.
                                                                              * if ``bin_type`` is ``Hexagon`` 0 the number and units specified determine the distance between parallel sides.
@@ -322,7 +322,7 @@ def build_multivariable_grid(
     bin_unit                                                               Optional string. The distance unit for the bins that will be used to calculate ``variable_calculations``.
 
                                                                            Choice list:
-                                                                           
+
                                                                              * ``Feet``
                                                                              * ``Yard``
                                                                              * ``Miles``
@@ -332,9 +332,9 @@ def build_multivariable_grid(
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     bin_type                                                               Optional string. The type of bin that will be used to generate the result grid. Bin options are the following:
 
-                                                                           Choice list: 
-                                                                           
-                                                                             * ``Hexagon`` 
+                                                                           Choice list:
+
+                                                                             * ``Hexagon``
                                                                              * ``Square``
 
                                                                            .. note::
@@ -342,8 +342,8 @@ def build_multivariable_grid(
                                                                                When aggregating layers into bins, the input layers or processing extent (``processSR``)
                                                                                must have a projected coordinate system. If a projected coordinate system is not
                                                                                specified when running analysis, the World Cylindrical Equal Area (WKID 54034) projection
-                                                                               will be used. 
-                                                                               
+                                                                               will be used.
+
                                                                                * At 10.7 or later, if a projected coordinate system is not specified when
                                                                                  running analysis, a projection will be picked based on the extent of the data.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
@@ -535,9 +535,9 @@ def aggregate_points(
     TOTAL_SALES attribute, you can get the sum of all TOTAL SALES within the space and time of interest. If these transactions are
     for a single city, we could generate areas that are one kilometer grids, and look at weekly time slices to summarize the
     transactions in both time and space.
-    
+
     .. note::
-        Either ``bin_type`` or ``polygon_layer`` must be specified. If ``bin_type`` is used, both ``bin_size`` and 
+        Either ``bin_type`` or ``polygon_layer`` must be specified. If ``bin_type`` is used, both ``bin_size`` and
         ``bin_size_unit`` must be included.
 
     =================================================     ========================================================================
@@ -552,26 +552,26 @@ def aggregate_points(
                                                           The type of bin that will be generated and into which points will be aggregated.
 
                                                           Choice list:
-                                                            
+
                                                             * ``Square``
                                                             * ``Hexagon``
 
                                                           The default value is ``Square``.
-                                                          
+
                                                           .. note::
                                                               Required if ``polygon_layer`` not provided.
     -------------------------------------------------     ------------------------------------------------------------------------
     bin_size (Required if ``bin_type`` is used)           Optional float. The dimension for each bin of ``bin_type`` that
-                                                          the ``point_layer`` will be aggregated into. 
-                                                          
+                                                          the ``point_layer`` will be aggregated into.
+
                                                             * if ``Square`` - the height and length of the sides
                                                             * if ``Hexagon`` - the distance between parallel sides
     -------------------------------------------------     ------------------------------------------------------------------------
-    bin_size_unit (Required if ``bin_size`` is used)      Optional string. The unit for the bins specified by ``bin_type`` that 
+    bin_size_unit (Required if ``bin_size`` is used)      Optional string. The unit for the bins specified by ``bin_type`` that
                                                           the ``point_layer`` will be aggregated into.
 
                                                           Choice list:
-                                                          
+
                                                             * ``Feet``
                                                             * ``Yards``
                                                             * ``Miles``
@@ -581,9 +581,9 @@ def aggregate_points(
 
                                                           For ``bin_type``:
                                                               * if ``Square`` - the units of ``bin_size`` the height and
-                                                                length of the sides 
-                                                              * if ``Hexagon`` -  the units of ``bin_size`` between 
-                                                                parallel sides 
+                                                                length of the sides
+                                                              * if ``Hexagon`` -  the units of ``bin_size`` between
+                                                                parallel sides
     -------------------------------------------------     ------------------------------------------------------------------------
     polygon_layer                                         Optional polygon :class:`feature layer <~arcgis.features.FeatureLayer>`.
                                                           The polygon features (areas) into which the input points will be aggregated.
@@ -597,14 +597,14 @@ def aggregate_points(
 
                                                           The default value is ``None``.
     -------------------------------------------------     ------------------------------------------------------------------------
-    time_step_interval_unit                               Optional string. A string that specifies units of the time step interval. 
-    
-                                                          .. note:: 
-                                                              Only available if input points are time-enabled and represent an 
+    time_step_interval_unit                               Optional string. A string that specifies units of the time step interval.
+
+                                                          .. note::
+                                                              Only available if input points are time-enabled and represent an
                                                               instant in time.
 
                                                           Choice list:
-                                                          
+
                                                             * ``Years``
                                                             * ``Months``
                                                             * ``Weeks``
@@ -620,9 +620,9 @@ def aggregate_points(
                                                           This option is only available if the input points are time-enabled and of time type instant.
     -------------------------------------------------     ------------------------------------------------------------------------
     time_step_repeat_interval_unit                        Optional string. A string that specifies the temporal unit of the step repeat.
-                                                          
-                                                          .. note:: 
-                                                              This option is only available if the input points are time-enabled and 
+
+                                                          .. note::
+                                                              This option is only available if the input points are time-enabled and
                                                               of time type `instant`.
 
                                                           Choice list:
@@ -645,12 +645,12 @@ def aggregate_points(
                                                           for all points within each polygon or bin. Note that the count of points within each polygon is always
                                                           returned. By default, all statistics are returned.
 
-                                                          Example: 
+                                                          Example:
                                                           ``[{"statisticType": "Count", "onStatisticField": "fieldName1"}, {"statisticType": "Any", "onStatisticField": "fieldName2"}]``
 
                                                             * ``onStatisticField`` is the name of the field in the input point layer.
                                                             * ``statisticType`` is one of the following:
-                                                              
+
                                                               * for numeric fields:
 
                                                                 * ``Count`` - Totals the number of values of all the points in each polygon.
@@ -813,7 +813,7 @@ def describe_dataset(
 
     See `Describe Dataset <https://developers.arcgis.com/rest/services-reference/enterprise/describe-dataset.htm>`_
     for additional information.
-    
+
     ================   ===============================================================
     **Argument**       **Description**
     ----------------   ---------------------------------------------------------------
@@ -850,24 +850,24 @@ def describe_dataset(
                        will not wait for the task to complete. The default is ``False``, which means wait for results.
     ----------------   ---------------------------------------------------------------
     return_tuple       Optional boolean. If ``True``, a named tuple with multiple output keys is returned.
-                       The default value is ``False``.                  
+                       The default value is ``False``.
     ================   ===============================================================
 
-    :return: 
-    
+    :return:
+
       * if ``return_tuple`` is ``True``, an tuple with the following keys:
-        
+
          * "output_json" : dict
          * "output" : :class:`~arcgis.features.Layer`
          * "extent_layer" : :class:`~arcgis.features.FeatureLayer`
          * "sample_layer" : :class:`~arcgis.features.FeatureLayer`
          * "process_info" : list
       * if return_tuple`` is ``False``:
-         
+
          * :class:`~arcgis.features.FeatureLayer` of the results.
       * if ``future`` is ``True``:
-         
-         * a job object with a ``result()`` method to access results  
+
+         * a job object with a ``result()`` method to access results
 
     .. code-block:: python
 
@@ -986,226 +986,226 @@ def join_features(
     keep_target: Optional[bool] = None,
 ):
     """
-    .. image:: _static/images/join_features_geo/join_features_geo.png
+     .. image:: _static/images/join_features_geo/join_features_geo.png
 
-    Using either feature layers or tabular data, you can join features and records based on
-    specific relationships between the input layers or tables. Joins will be determined by
-    spatial, temporal, and attribute relationships, and summary statistics can be optionally
-    calculated.
+     Using either feature layers or tabular data, you can join features and records based on
+     specific relationships between the input layers or tables. Joins will be determined by
+     spatial, temporal, and attribute relationships, and summary statistics can be optionally
+     calculated.
 
-    For example
+     For example
 
-        * Given point locations of crime incidents with a time, join the crime data to itself
-          specifying a spatial relationship of crimes within 1 kilometer of each other and that
-          occurred within 1 hour of each other to determine if there are a sequence of crimes
-          close to each other in space and time.
+         * Given point locations of crime incidents with a time, join the crime data to itself
+           specifying a spatial relationship of crimes within 1 kilometer of each other and that
+           occurred within 1 hour of each other to determine if there are a sequence of crimes
+           close to each other in space and time.
 
-        * Given a table of ZIP Codes with demographic information and area features representing
-          residential buildings, join the demographic information to the residences so each
-          residence now has the information.
+         * Given a table of ZIP Codes with demographic information and area features representing
+           residential buildings, join the demographic information to the residences so each
+           residence now has the information.
 
-    The ``join_features`` task works with two layers. ``join_features`` joins attributes from one
-    feature to another based on spatial, temporal, and attribute relationships or some
-    combination of the three. The tool determines all input features that meet the specified
-    join conditions and joins the second input layer to the first. You can optionally join
-    all features to the matching features or summarize the matching features.
+     The ``join_features`` task works with two layers. ``join_features`` joins attributes from one
+     feature to another based on spatial, temporal, and attribute relationships or some
+     combination of the three. The tool determines all input features that meet the specified
+     join conditions and joins the second input layer to the first. You can optionally join
+     all features to the matching features or summarize the matching features.
 
-    ``join_features`` can be applied to points, lines, areas, and tables. A temporal join
-    requires that your input data is time-enabled, and a spatial join requires that your
-    data has a geometry.
+     ``join_features`` can be applied to points, lines, areas, and tables. A temporal join
+     requires that your input data is time-enabled, and a spatial join requires that your
+     data has a geometry.
 
-   See `Join Features <https://developers.arcgis.com/rest/services-reference/enterprise/join-features.htm>`_
-   for additional information.
+    See `Join Features <https://developers.arcgis.com/rest/services-reference/enterprise/join-features.htm>`_
+    for additional information.
 
-    ==========================================================================================================  =============================================================================================
-    **Argument**                                                                                                **Description**
-    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
-    target_layer                                                                                                Required layer. The table, point, line, or polygon features to be joined to. See :ref:`Feature Input<gaxFeatureInput>`.
-    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
-    join_layer                                                                                                  Required layer. The point, line, or polygon features that will be joined to the ``target_layer``.
-                                                                                                                See :ref:`Feature Input<gaxFeatureInput>`.
-    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
-    join_operation                                                                                              Optional string. A string representing the type of join that will be applied.
+     ==========================================================================================================  =============================================================================================
+     **Argument**                                                                                                **Description**
+     ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+     target_layer                                                                                                Required layer. The table, point, line, or polygon features to be joined to. See :ref:`Feature Input<gaxFeatureInput>`.
+     ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+     join_layer                                                                                                  Required layer. The point, line, or polygon features that will be joined to the ``target_layer``.
+                                                                                                                 See :ref:`Feature Input<gaxFeatureInput>`.
+     ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+     join_operation                                                                                              Optional string. A string representing the type of join that will be applied.
 
-                                                                                                                Choice list: 
-                                                                                                                
-                                                                                                                  * ``JoinOneToOne`` - If multiple join features are found that have the same relationships
-                                                                                                                    with a single target feature, the attributes from the multiple join features will be 
-                                                                                                                    aggregated using the specified summary statistics. For example, if a point target
-                                                                                                                    feature is found within two separate polygon join features, the attributes from
-                                                                                                                    the two polygons will be aggregated before being transferred to the output point
-                                                                                                                    feature class. If one polygon has an attribute value of 3 and the other has a value
-                                                                                                                    of 7, and a SummaryField of sum is selected, the aggregated value in the output
-                                                                                                                    feature class will be 10. There will always be a Count field calculated, with a
-                                                                                                                    value of 2, for the number of features specified. This is the default.    
-                                                                                                                  * ``JoinOneToMany`` - If multiple join features are found that have the same relationship
-                                                                                                                    with a single target feature, the output feature class will contain multiple copies (records)
-                                                                                                                    of the target feature. For example, if a single point target feature is found within two
-                                                                                                                    separate polygon join features, the output feature class will contain two copies of the
-                                                                                                                    target feature: one record with the attributes of the first polygon, and another record
-                                                                                                                    with the attributes of the second polygon. There are no summary statistics calculated
-                                                                                                                    with this method.
+                                                                                                                 Choice list:
 
-                                                                                                                The default value is ``JoinOneToOne``.
-    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
-    join_fields                                                                                                 Optional list of dicts. A list of modifications to field names in the joinLayer to be
-                                                                                                                made before completing analysis. Any field that is removed will not have
-                                                                                                                statistics calculated on it.
+                                                                                                                   * ``JoinOneToOne`` - If multiple join features are found that have the same relationships
+                                                                                                                     with a single target feature, the attributes from the multiple join features will be
+                                                                                                                     aggregated using the specified summary statistics. For example, if a point target
+                                                                                                                     feature is found within two separate polygon join features, the attributes from
+                                                                                                                     the two polygons will be aggregated before being transferred to the output point
+                                                                                                                     feature class. If one polygon has an attribute value of 3 and the other has a value
+                                                                                                                     of 7, and a SummaryField of sum is selected, the aggregated value in the output
+                                                                                                                     feature class will be 10. There will always be a Count field calculated, with a
+                                                                                                                     value of 2, for the number of features specified. This is the default.
+                                                                                                                   * ``JoinOneToMany`` - If multiple join features are found that have the same relationship
+                                                                                                                     with a single target feature, the output feature class will contain multiple copies (records)
+                                                                                                                     of the target feature. For example, if a single point target feature is found within two
+                                                                                                                     separate polygon join features, the output feature class will contain two copies of the
+                                                                                                                     target feature: one record with the attributes of the first polygon, and another record
+                                                                                                                     with the attributes of the second polygon. There are no summary statistics calculated
+                                                                                                                     with this method.
 
-                                                                                                                Syntax: ``[{ "action" : "action", "field" : "fieldname1"}, { "action" : "action", "field" : "initial_fieldname", "to" : "new_fieldname"}]``
+                                                                                                                 The default value is ``JoinOneToOne``.
+     ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+     join_fields                                                                                                 Optional list of dicts. A list of modifications to field names in the joinLayer to be
+                                                                                                                 made before completing analysis. Any field that is removed will not have
+                                                                                                                 statistics calculated on it.
 
-                                                                                                                  * ``action`` can be the following:
+                                                                                                                 Syntax: ``[{ "action" : "action", "field" : "fieldname1"}, { "action" : "action", "field" : "initial_fieldname", "to" : "new_fieldname"}]``
 
-                                                                                                                     * remove - Remove a field from analysis and output .
-                                                                                                                     * rename - Rename a field before running analysis.
-    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
-    summary_fields                                                                                              Optional list of dicts. A list of field names and statistical summary types you want to calculate.
-                                                                                                                Note that the count is always returned. By default, all statistics are returned.
+                                                                                                                   * ``action`` can be the following:
 
-                                                                                                                Syntax: ``[{"statisticType" : "<statistic type>", "onStatisticField" : "<field name>" }, ...]``
+                                                                                                                      * remove - Remove a field from analysis and output .
+                                                                                                                      * rename - Rename a field before running analysis.
+     ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+     summary_fields                                                                                              Optional list of dicts. A list of field names and statistical summary types you want to calculate.
+                                                                                                                 Note that the count is always returned. By default, all statistics are returned.
 
-                                                                                                                  * ``onStatisticField`` is the name of the field in the target layer.
-                                                                                                                  * ``statisticType`` is one of the following:
-                                                                                                                  
-                                                                                                                    * for numeric fields:
+                                                                                                                 Syntax: ``[{"statisticType" : "<statistic type>", "onStatisticField" : "<field name>" }, ...]``
 
-                                                                                                                      * ``Count`` - Totals the number of values of all the points in each polygon.
-                                                                                                                      * ``Sum`` - Adds the total value of all the points in each polygon.
-                                                                                                                      * ``Mean`` - Calculates the average of all the points in each polygon.
-                                                                                                                      * ``Min`` - Finds the smallest value of all the points in each polygon.
-                                                                                                                      * ``Max`` - Finds the largest value of all the points in each polygon.
-                                                                                                                      * ``Range`` - Finds the difference between the Min and Max values.
-                                                                                                                      * ``Stddev`` - Finds the standard deviation of all the points in each polygon.
-                                                                                                                      * ``Var`` - Finds the variance of all the points in each polygon.
+                                                                                                                   * ``onStatisticField`` is the name of the field in the target layer.
+                                                                                                                   * ``statisticType`` is one of the following:
 
-                                                                                                                    * for string fields:
+                                                                                                                     * for numeric fields:
 
-                                                                                                                      * ``Count`` - Totals the number of strings for all the points in each polygon.
-                                                                                                                      * ``Any`` - Returns a sample string of a point in each polygon.
-    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
-    spatial_relationship                                                                                        Optional string. Defines the spatial relationship used to spatially join features.
+                                                                                                                       * ``Count`` - Totals the number of values of all the points in each polygon.
+                                                                                                                       * ``Sum`` - Adds the total value of all the points in each polygon.
+                                                                                                                       * ``Mean`` - Calculates the average of all the points in each polygon.
+                                                                                                                       * ``Min`` - Finds the smallest value of all the points in each polygon.
+                                                                                                                       * ``Max`` - Finds the largest value of all the points in each polygon.
+                                                                                                                       * ``Range`` - Finds the difference between the Min and Max values.
+                                                                                                                       * ``Stddev`` - Finds the standard deviation of all the points in each polygon.
+                                                                                                                       * ``Var`` - Finds the variance of all the points in each polygon.
 
-                                                                                                                Choice list: 
-                                                                                                                
-                                                                                                                  * ``Equals`` 
-                                                                                                                  * ``Intersects``
-                                                                                                                  * ``Contains``
-                                                                                                                  * ``Within``
-                                                                                                                  * ``Crosses``
-                                                                                                                  * ``Touches``
-                                                                                                                  * ``Overlaps``
-                                                                                                                  * ``Near``
-                                                                                                                  * ``NearGeodesic``
-    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
-    spatial_near_distance (Required if ``spatial_relationship`` is Near or NearGeodesic)                        Optional float.  A float value used for the search distance to determine if
-                                                                                                                the target features are near the join features. 
-                                                                                                                
-                                                                                                                .. note::
-                                                                                                                     This is only applied if ``Near`` or ``NearGeodesic`` is the selected ``spatial_relationship``.
-                                                                                                                     You can only enter a single distance value. The unit value is supplied by the
-                                                                                                                     ``spatial_near_distance`` parameter. 
-    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
-    spatial_near_distance_unit (Required if ``spatial_relationship`` is Near or NearGeodesic)                   Optional string. The linear unit to be used with the distance value specified in ``spatial_near_distance``.
+                                                                                                                     * for string fields:
 
-                                                                                                                Choice list:
-                                                                                                                
-                                                                                                                  * ``Feet``
-                                                                                                                  * ``Yards``
-                                                                                                                  * ``Miles``
-                                                                                                                  * ``Meters``
-                                                                                                                  * ``Kilometers``
-                                                                                                                  * ``NauticalMiles``
-    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
-    temporal_relationship                                                                                       Optional string. Defines the temporal relationship used to temporally join features.
+                                                                                                                       * ``Count`` - Totals the number of strings for all the points in each polygon.
+                                                                                                                       * ``Any`` - Returns a sample string of a point in each polygon.
+     ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+     spatial_relationship                                                                                        Optional string. Defines the spatial relationship used to spatially join features.
 
-                                                                                                                Choice list : 
-                                                                                                                
-                                                                                                                  * ``Equals``
-                                                                                                                  * ``Intersects``
-                                                                                                                  * ``During``
-                                                                                                                  * ``Contains``
-                                                                                                                  * ``Finishes``
-                                                                                                                  * ``FinishedBy``
-                                                                                                                  * ``Meets``
-                                                                                                                  * ``MetBy``
-                                                                                                                  * ``Overlaps``
-                                                                                                                  * ``OverlappedBy``
-                                                                                                                  * ``Starts``
-                                                                                                                  * ``StartedBy``
-                                                                                                                  * ``Near``
-    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
-    temporal_near_distance (Required if ``temporal_relationship`` is Near, NearBefore, or NearAfter)            Optional integer. An integer value used for the temporal search distance to determine
-                                                                                                                if the target features are temporally near the join features. 
-                                                                                                                
-                                                                                                                .. note:: 
-                                                                                                                    This is only applied if ``Near``, ``NearBefore``, or ``NearAfter`` is the selected ``temporal_relationship``. 
-                                                                                                                    You can only enter a single value. distance value. The units of the distance values are supplied by the 
-                                                                                                                    ``temporal_near_distance_unit`` parameter.                                                                                                                
-    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
-    temporal_near_distance_unit (Required if ``temporal_relationship`` is Near, NearBefore, or NearAfter)       Optional string.The temporal unit to be used with the distance value specified in ``temporal_near_distance``.
+                                                                                                                 Choice list:
 
-                                                                                                                Choice list:
-                                                                                                                
-                                                                                                                  * ``Years``
-                                                                                                                  * ``Months``
-                                                                                                                  * ``Weeks``
-                                                                                                                  * ``Days``
-                                                                                                                  * ``Hours``
-                                                                                                                  * ``Minutes``
-                                                                                                                  * ``Seconds``
-                                                                                                                  * ``Milliseconds``
-    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
-    attribute_relationship                                                                                      Optional list of dicts. A target field, relationship, and join field used to join equal attributes.
+                                                                                                                   * ``Equals``
+                                                                                                                   * ``Intersects``
+                                                                                                                   * ``Contains``
+                                                                                                                   * ``Within``
+                                                                                                                   * ``Crosses``
+                                                                                                                   * ``Touches``
+                                                                                                                   * ``Overlaps``
+                                                                                                                   * ``Near``
+                                                                                                                   * ``NearGeodesic``
+     ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+     spatial_near_distance (Required if ``spatial_relationship`` is Near or NearGeodesic)                        Optional float.  A float value used for the search distance to determine if
+                                                                                                                 the target features are near the join features.
 
-                                                                                                                Syntax: ``[{ "targetField" : "fieldname1", "joinField" : "fieldname2", "operator" : "operator" }]``
-    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
-    join_condition                                                                                              Optional string. Applies a condition to specified fields. Only features with fields that meet
-                                                                                                                these conditions will be joined. For example, to apply a join to a dataset for only those features
-                                                                                                                where health_spending is greater than 20 percent of income, apply a join condition of target['health_spending'] > (join['income'] * .20)
-                                                                                                                using the field health_spending from the first dataset (``target_layer``) and the income field from the second dataset (``join_layer``).
-    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
-    output_name                                                                                                 Optional string. The task will create a feature service of the
-                                                                                                                results. You define the name of the service.
-    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
-    gis                                                                                                         Optional :class:`~arcgis.gis.GIS`. The GIS object where the analysis will take place.
-    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
-    context                                                                                                     Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
+                                                                                                                 .. note::
+                                                                                                                      This is only applied if ``Near`` or ``NearGeodesic`` is the selected ``spatial_relationship``.
+                                                                                                                      You can only enter a single distance value. The unit value is supplied by the
+                                                                                                                      ``spatial_near_distance`` parameter.
+     ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+     spatial_near_distance_unit (Required if ``spatial_relationship`` is Near or NearGeodesic)                   Optional string. The linear unit to be used with the distance value specified in ``spatial_near_distance``.
 
-                                                                                                                  * ``extent`` - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
-                                                                                                                  * ``processSR`` - The features will be projected into this coordinate system for analysis.
-                                                                                                                  * ``outSR`` - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                                                                                                  * ``dataStore`` - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
-    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
-    future                                                                                                      Optional boolean. If ``True``, a GPJob is returned instead of
-                                                                                                                results. The GPJob can be queried on the status of the execution.
+                                                                                                                 Choice list:
 
-                                                                                                                The default value is ``False``.
-    ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
-    keep_target                                                                                                 Optional boolean. Specifies whether all target features will be maintained in the output
-                                                                                                                feature class (known as a left outer join) or only those that have the specified
-                                                                                                                relationships with the join features (inner join). This option is only available when the
-                                                                                                                ``join_operation`` parameter is `JoinOneToOne``. ``False`` (inner join) is the default.
+                                                                                                                   * ``Feet``
+                                                                                                                   * ``Yards``
+                                                                                                                   * ``Miles``
+                                                                                                                   * ``Meters``
+                                                                                                                   * ``Kilometers``
+                                                                                                                   * ``NauticalMiles``
+     ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+     temporal_relationship                                                                                       Optional string. Defines the temporal relationship used to temporally join features.
 
-                                                                                                                .. note::
-                                                                                                                    This parameter is available at ArcGIS Enterprise 10.9 and later.
-    ==========================================================================================================  =============================================================================================
+                                                                                                                 Choice list :
 
-    :return: Output Features as :class:`~arcgis.features.FeatureLayerCollection`
+                                                                                                                   * ``Equals``
+                                                                                                                   * ``Intersects``
+                                                                                                                   * ``During``
+                                                                                                                   * ``Contains``
+                                                                                                                   * ``Finishes``
+                                                                                                                   * ``FinishedBy``
+                                                                                                                   * ``Meets``
+                                                                                                                   * ``MetBy``
+                                                                                                                   * ``Overlaps``
+                                                                                                                   * ``OverlappedBy``
+                                                                                                                   * ``Starts``
+                                                                                                                   * ``StartedBy``
+                                                                                                                   * ``Near``
+     ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+     temporal_near_distance (Required if ``temporal_relationship`` is Near, NearBefore, or NearAfter)            Optional integer. An integer value used for the temporal search distance to determine
+                                                                                                                 if the target features are temporally near the join features.
 
-    .. code-block:: python
+                                                                                                                 .. note::
+                                                                                                                     This is only applied if ``Near``, ``NearBefore``, or ``NearAfter`` is the selected ``temporal_relationship``.
+                                                                                                                     You can only enter a single value. distance value. The units of the distance values are supplied by the
+                                                                                                                     ``temporal_near_distance_unit`` parameter.
+     ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+     temporal_near_distance_unit (Required if ``temporal_relationship`` is Near, NearBefore, or NearAfter)       Optional string.The temporal unit to be used with the distance value specified in ``temporal_near_distance``.
 
-            # Usage Example: To find power outages in your state that may have been caused by a lightning strike.
+                                                                                                                 Choice list:
 
-            output = join_features(target_layer=outages_layer,
-                                   join_layer=lightning,
-                                   join_operation="JoinOneToMany",
-                                   spatial_relationship="Near",
-                                   spatial_near_distance=20,
-                                   spatial_near_distance_unit="Miles",
-                                   temporal_relationship="NearAfter",
-                                   temporal_near_distance=30,
-                                   temporal_near_distance_unit="Minutes",
-                                   output_name="LightningOutages")
+                                                                                                                   * ``Years``
+                                                                                                                   * ``Months``
+                                                                                                                   * ``Weeks``
+                                                                                                                   * ``Days``
+                                                                                                                   * ``Hours``
+                                                                                                                   * ``Minutes``
+                                                                                                                   * ``Seconds``
+                                                                                                                   * ``Milliseconds``
+     ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+     attribute_relationship                                                                                      Optional list of dicts. A target field, relationship, and join field used to join equal attributes.
+
+                                                                                                                 Syntax: ``[{ "targetField" : "fieldname1", "joinField" : "fieldname2", "operator" : "operator" }]``
+     ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+     join_condition                                                                                              Optional string. Applies a condition to specified fields. Only features with fields that meet
+                                                                                                                 these conditions will be joined. For example, to apply a join to a dataset for only those features
+                                                                                                                 where health_spending is greater than 20 percent of income, apply a join condition of target['health_spending'] > (join['income'] * .20)
+                                                                                                                 using the field health_spending from the first dataset (``target_layer``) and the income field from the second dataset (``join_layer``).
+     ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+     output_name                                                                                                 Optional string. The task will create a feature service of the
+                                                                                                                 results. You define the name of the service.
+     ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+     gis                                                                                                         Optional :class:`~arcgis.gis.GIS`. The GIS object where the analysis will take place.
+     ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+     context                                                                                                     Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
+
+                                                                                                                   * ``extent`` - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                                                                                   * ``processSR`` - The features will be projected into this coordinate system for analysis.
+                                                                                                                   * ``outSR`` - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                                                                                                   * ``dataStore`` - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+     ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+     future                                                                                                      Optional boolean. If ``True``, a GPJob is returned instead of
+                                                                                                                 results. The GPJob can be queried on the status of the execution.
+
+                                                                                                                 The default value is ``False``.
+     ----------------------------------------------------------------------------------------------------------  ---------------------------------------------------------------------------------------------
+     keep_target                                                                                                 Optional boolean. Specifies whether all target features will be maintained in the output
+                                                                                                                 feature class (known as a left outer join) or only those that have the specified
+                                                                                                                 relationships with the join features (inner join). This option is only available when the
+                                                                                                                 ``join_operation`` parameter is `JoinOneToOne``. ``False`` (inner join) is the default.
+
+                                                                                                                 .. note::
+                                                                                                                     This parameter is available at ArcGIS Enterprise 10.9 and later.
+     ==========================================================================================================  =============================================================================================
+
+     :return: Output Features as :class:`~arcgis.features.FeatureLayerCollection`
+
+     .. code-block:: python
+
+             # Usage Example: To find power outages in your state that may have been caused by a lightning strike.
+
+             output = join_features(target_layer=outages_layer,
+                                    join_layer=lightning,
+                                    join_operation="JoinOneToMany",
+                                    spatial_relationship="Near",
+                                    spatial_near_distance=20,
+                                    spatial_near_distance_unit="Miles",
+                                    temporal_relationship="NearAfter",
+                                    temporal_near_distance=30,
+                                    temporal_near_distance_unit="Minutes",
+                                    output_name="LightningOutages")
     """
 
     target_layer = _prevent_bds_item(target_layer)
@@ -1364,7 +1364,7 @@ def reconstruct_tracks(
     buffer_field                                                                            Optional string. A field in the ``input_layer`` that contains a buffer distance or a buffer expression.
     --------------------------------------------------------------------------------------  ---------------------------------------------------------------
     summary_fields                                                                          Optional list of dicts. A list of field names and statistical summary types you want to calculate.
-                                                                                            
+
                                                                                             .. note::
                                                                                                 ``count`` is always returned. By default, all statistics are returned.
 
@@ -1372,7 +1372,7 @@ def reconstruct_tracks(
 
                                                                                               * ``onStatisticField`` is the name of the field in the target layer.
                                                                                               * ``statisticType`` is one of the following:
-                                                                                              
+
                                                                                                 * for numeric fields:
 
                                                                                                   * ``Count`` - Totals the number of values of all the points in each polygon.
@@ -1383,18 +1383,18 @@ def reconstruct_tracks(
                                                                                                   * ``Range`` - Finds the difference between the Min and Max values.
                                                                                                   * ``Stddev`` - Finds the standard deviation of all the points in each polygon.
                                                                                                   * ``Var`` - Finds the variance of all the points in each polygon.
-                                                                                                  * ``First`` - Returns the first value of a specified field in the summarized track. 
+                                                                                                  * ``First`` - Returns the first value of a specified field in the summarized track.
                                                                                                     This parameters was introduced at ArcGIS Enterprise 10.8.1.
-                                                                                                  * ``Last`` - Returns the last value of a specified field in the summarized track. 
+                                                                                                  * ``Last`` - Returns the last value of a specified field in the summarized track.
                                                                                                     This parameters was introduced at ArcGIS Enterprise 10.8.1.
 
                                                                                                 * for string fields:
 
                                                                                                   * ``Count`` - Totals the number of strings for all the points in each polygon.
                                                                                                   * ``Any`` - Returns a sample string of a point in each polygon.e of all the points in each polygon.
-                                                                                                  * ``First`` - Returns the first value of a specified field in the summarized track. 
+                                                                                                  * ``First`` - Returns the first value of a specified field in the summarized track.
                                                                                                     This parameters was introduced at ArcGIS Enterprise 10.8.1.
-                                                                                                  * ``Last`` - Returns the last value of a specified field in the summarized track. 
+                                                                                                  * ``Last`` - Returns the last value of a specified field in the summarized track.
                                                                                                     This parameters was introduced at ArcGIS Enterprise 10.8.1.
     --------------------------------------------------------------------------------------  ---------------------------------------------------------------
     time_boundary_split                                                                     Optional integer. A time boundary allows your to analyze values within a defined
@@ -1409,7 +1409,7 @@ def reconstruct_tracks(
                                                                                             if a ``time_boundary_split`` is provided.
 
                                                                                             Choice list:
-                                                                                            
+
                                                                                               * ``Years``
                                                                                               * ``Months``
                                                                                               * ``Weeks``
@@ -1431,8 +1431,8 @@ def reconstruct_tracks(
     --------------------------------------------------------------------------------------  ---------------------------------------------------------------
     distance_split_unit (Required if ``distance_split`` is specified)                       Optional string. The distance unit to be used with the distance value specified in ``distance_split``.
 
-                                                                                            Choice list: 
-                                                                                            
+                                                                                            Choice list:
+
                                                                                               * ``Meters``
                                                                                               * ``Kilometers``
                                                                                               * ``Feet``
@@ -1452,8 +1452,8 @@ def reconstruct_tracks(
     --------------------------------------------------------------------------------------  ---------------------------------------------------------------
     time_split_unit  (Required if ``time_split`` is specified)                              Optional string. The temporal unit to be used with the temporal distance value specified in ``time_split``.
 
-                                                                                            Choice list: 
-                                                                                            
+                                                                                            Choice list:
+
                                                                                               * ``Years``
                                                                                               * ``Months``
                                                                                               * ``Weeks``
@@ -1637,7 +1637,7 @@ def summarize_attributes(
 
                                                                                  * ``onStatisticField`` is the name of the field in the input point layer
                                                                                  * ``statisticType`` is one of the following:
-                                                                                 
+
                                                                                    * for numeric fields:
 
                                                                                       * ``Count`` - Totals the number of values of all the points in each polygon.
@@ -1677,7 +1677,7 @@ def summarize_attributes(
                                                                                  input points are time-enabled and represent an instant in time.
 
                                                                                  Choice list:
-                                                                                 
+
                                                                                    * ``Years``
                                                                                    * ``Months``
                                                                                    * ``Weeks``
@@ -1696,7 +1696,7 @@ def summarize_attributes(
                                                                                  This option is only available if the input points are time-enabled and of time type instant.
 
                                                                                  Choice list:
-                                                                                 
+
                                                                                    * ``Years``
                                                                                    * ``Months``
                                                                                    * ``Weeks``
@@ -1705,7 +1705,7 @@ def summarize_attributes(
                                                                                    * ``Minutes``
                                                                                    * ``Seconds``
                                                                                    * ``Milliseconds`
-                                                                                 
+
                                                                                  The default value is ``None``.
     ---------------------------------------------------------------------------  ---------------------------------------------------------------
     time_step_reference                                                          Optional datetime. A date that specifies the reference time to align the time slices to, represented in milliseconds from epoch.
@@ -1713,7 +1713,7 @@ def summarize_attributes(
                                                                                  input points are time-enabled and of time type instant.
     ===========================================================================  ===============================================================
 
-    :return: 
+    :return:
         :class:`~arcgis.features.FeatureLayerCollection`
 
     .. code-block:: python
@@ -1871,21 +1871,21 @@ def summarize_within(
     ---------------------------------------------------------------------------  ---------------------------------------------------------------
     bin_type (Required if ``summary_polygons`` is not specified)                 Optional string. The type of bin that will be generated and ``summarized_layer`` will be summarized into.
 
-                                                                                 Choice list: 
-                                                                                 
+                                                                                 Choice list:
+
                                                                                    * ``Hexagon``
                                                                                    * ``Square``
 
                                                                                  .. note::
                                                                                      If ``bin_type`` is chosen, ``bin_size`` and ``bin_size_unit`` are required.
-                                                                                 
+
                                                                                  .. note::
                                                                                        Analysis using ``Square`` or ``Hexagon`` bins requires a projected coordinate system.
                                                                                        When aggregating layers into bins, the input layer or processing extent (``processSR``)
                                                                                        must have a projected coordinate system. If a projected coordinate system is not specified:
-                                                                                         
-                                                                                           * At 10.5.1, 10.6, and 10.6.1, the World Cylindrical Equal Area (WKID 54034) projection will be used. 
-                                                                                           * At 10.7 or later, a projection will be picked based on   the extent of the data.                                                                                     
+
+                                                                                           * At 10.5.1, 10.6, and 10.6.1, the World Cylindrical Equal Area (WKID 54034) projection will be used.
+                                                                                           * At 10.7 or later, a projection will be picked based on   the extent of the data.
     ---------------------------------------------------------------------------  ---------------------------------------------------------------
     bin_size  (Required if ``bin_type`` is specified)                            Optional float. The distance for the bins of type ``bin_type``.
                                                                                  When generating bins, for Square, the number and units specified determine the
@@ -1895,7 +1895,7 @@ def summarize_within(
     bin_size_unit (Required if ``bin_size`` is specified)                        Optional string. The linear distance unit for the bins that ``summarized_layer`` will be summarized into.
 
                                                                                  Choice list:
-                                                                                 
+
                                                                                    * ``Feet``
                                                                                    * ``Yards``
                                                                                    * ``Miles``
@@ -1911,10 +1911,10 @@ def summarize_within(
                                                                                  Syntax: ``[{"statisticType" : "<statistic type>", "onStatisticField" : "<field name>" }]``
 
                                                                                    * ``onStatisticField`` is the name of the field in the input point layer.
-                                                                                   * ``statisticType`` is one of the following 
-                                                                                   
+                                                                                   * ``statisticType`` is one of the following
+
                                                                                      * for numeric fields:
-  
+
                                                                                        * ``Count`` - Totals the number of features in each polygon.
                                                                                        * ``Sum`` - Adds the total value of all the features in each polygon.
                                                                                        * ``Mean`` - Calculates the average of all the features in each polygon.
@@ -1940,7 +1940,7 @@ def summarize_within(
 
                                                                                    * ``onStatisticField`` is the name of the field in the input point layer.
                                                                                    * ``statisticType`` is one of the following:
-                                                                                   
+
                                                                                      * for numeric fields:
 
                                                                                        * ``Count`` - The count of each field multiplied by the proportion of the summarized layer within the polygons.
@@ -1967,13 +1967,13 @@ def summarize_within(
                                                                                     * When ``summarized_layer`` contains lines, Choice list: ['Meters', 'Kilometers', 'Feet', 'Yards', 'Miles']
     ---------------------------------------------------------------------------  ---------------------------------------------------------------
     group_by_field                                                               Optional string. This is a field of the ``summarized_layer`` features that you can use to calculate
-                                                                                 statistics separately for each unique attribute value. For example, suppose the ``summarized_layer`` 
+                                                                                 statistics separately for each unique attribute value. For example, suppose the ``summarized_layer``
                                                                                  depicts city boundaries and the ``summary_polgyons`` features are parcels. `
                                                                                  The parcels layer has a `Status` attribute whose value is either `VACANT` or `OCCUPIED``.
                                                                                  To calculate the total area of vacant and occupied parcels within the boundaries of cities,
-                                                                                 use `Status` as the ``group_by_field`` field argument. 
-                                                                                 
-                                                                                 .. note:: 
+                                                                                 use `Status` as the ``group_by_field`` field argument.
+
+                                                                                 .. note::
                                                                                      This parameter is available at ArcGIS Enterprise 10.6.1 and later.
 
                                                                                  When a ``group_by_field`` field is provided, the service returns a table containing the
@@ -1982,8 +1982,8 @@ def summarize_within(
     minority_majority                                                            Optioal boolean. This boolean parameter is applicable only when a ``group_by_field`` is specified.
                                                                                  If true, the minority (least dominant) or the majority (most dominant) attribute values
                                                                                  for each group field are calculated. Two new fields are added to the ``result_layer`` prefixed with
-                                                                                 Majority_ and Minority_. 
-                                                                                 
+                                                                                 Majority_ and Minority_.
+
                                                                                  .. note::
                                                                                      This parameter is available at ArcGIS Enterprise 10.6.1 and later.
 
@@ -1991,8 +1991,8 @@ def summarize_within(
     ---------------------------------------------------------------------------  ---------------------------------------------------------------
     percent_shape                                                                Optioal boolean. This boolean parameter is applicable only when a ``group_by_field`` is specified.
                                                                                  If set to true, the percentage of each unique ``group_by_field`` value is calculated for
-                                                                                 each sum within layer polygon. The default is false. 
-                                                                                 
+                                                                                 each sum within layer polygon. The default is false.
+
                                                                                  .. note::
                                                                                      This parameter is available at ArcGIS Enterprise 10.6.1 and later.
 
@@ -2013,7 +2013,7 @@ def summarize_within(
                                                                                  will not wait for the task to complete. The default is ``False``, which means wait for results.
     ===========================================================================  ===============================================================
 
-    :return: 
+    :return:
         :class:`~arcgis.features.FeatureLayer`.
 
     .. code-block:: python
