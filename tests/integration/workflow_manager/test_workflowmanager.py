@@ -3111,63 +3111,6 @@ class TestWorkflowManager(unittest.TestCase):
         )
         self.assertEqual(len(creations), 2, "Incorrect size")
 
-    def test_execute_webhook(self):
-        # Arrange
-        template_id = self.create_job_template()
-        adds = [
-            {
-                "automationName": "python_api_test",
-                "automationType": "Webhook",
-                "enabled": True,
-                "details": '{"username":"admin","password":"esri.agp","attachment":{"folder":"",'
-                '"customName":"python_api_test"},"outputValues":[{"key":"username",'
-                '"value":"$.events[0].id","isEnabled":true}]} ',
-            }
-        ]
-        template = self.connection.workflow_manager.job_template(template_id)
-        template.update_automated_creation(adds)
-        creations = template.automated_creations
-
-        # Act
-        actual = template.execute_webhook_creation(creations[0]["automationId"], {})
-
-        self.assertEqual(len(creations), 1, "Incorrect size")
-        self.assertEqual(len(actual), 1, "Incorrect size")
-
-    # endregion
-
-    # region Evaluate Web Request
-
-    def test_evaluate_web_request_successfully_returns(self):
-        # Arrange
-        query_params = [
-            {"key": "foo", "value": "bar", "isEnabled": True},
-            {"key": "spam", "value": "eggs", "isEnabled": True},
-        ]
-        output_vals = [
-            {"key": "foo", "value": "$.args.foo", "isEnabled": True},
-            {"key": "spam", "value": "$.args.spam", "isEnabled": True},
-        ]
-
-        # Act
-        result1 = self.connection.workflow_manager.evaluate_web_request(
-            request_type="GET",
-            base_url="https://postman-echo.com/get",
-            query_params=query_params,
-            output_values=output_vals,
-        )
-
-        # Assert
-        self.assertEqual(
-            "bar", result1["outputs"]["outputs"][0]["value"], "not the expected result"
-        )
-        self.assertEqual(
-            "eggs", result1["outputs"]["outputs"][1]["value"], "not the expected result"
-        )
-        self.assertEqual(
-            "200", result1["outputs"]["outputs"][2]["value"], "not the expected result"
-        )
-
     # endregion
 
 
