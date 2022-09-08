@@ -142,7 +142,8 @@ class RetinaNet(ArcGISModel):
                 f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
             )
 
-        super().__init__(data, backbone, **kwargs)
+        super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
+        data = self._data
 
         n_bands = len(getattr(self._data, "_extract_bands", [0, 1, 2]))
         _backbone = self._backbone

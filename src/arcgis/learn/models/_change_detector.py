@@ -67,7 +67,7 @@ class ChangeDetector(ArcGISModel):
                 f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
             )
 
-        super().__init__(data, backbone)
+        super().__init__(data, backbone, pretrained_path=pretrained_path)
         backbone = self._backbone.__name__.lower()
         self.SA_type = attention_type
         self.learn = get_learner(self._data, backbone, self.SA_type)

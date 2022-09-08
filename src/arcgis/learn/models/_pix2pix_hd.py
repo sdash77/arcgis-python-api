@@ -94,7 +94,7 @@ class Pix2PixHD(ArcGISModel):
     """
 
     def __init__(self, data, pretrained_path=None, *args, **kwargs):
-        super().__init__(data, pretrained_path=None, *args, **kwargs)
+        super().__init__(data, pretrained_path=pretrained_path, **kwargs)
         self._check_dataset_support(data)
         # input_nc=3, output_nc=3,
         self.kwargs = kwargs

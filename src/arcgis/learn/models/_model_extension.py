@@ -115,7 +115,8 @@ class ModelExtension(ArcGISModel):
         else:
             del kwargs["ArcGISLearnVersion"]
 
-        super().__init__(data, backbone, **kwargs)
+        super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
+        data = self._data
         self._model_conf = model_conf()
         self._model_conf_class = model_conf
         self._backend = "pytorch"
