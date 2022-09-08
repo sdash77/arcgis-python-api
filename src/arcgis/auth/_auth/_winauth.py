@@ -90,7 +90,7 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
                         ntlm_strict_mode=ntlm_strict_mode,
                     )
                 else:
-                    self.auth = requests_ntlm.HttpNtlmAuth(
+                    self.auth = requests_ntlm2.HttpNtlmAuth(
                         username, password, send_cbt=send_cbt
                     )
             else:
