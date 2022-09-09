@@ -6,7 +6,6 @@ from arcgis.gis.agonb import AGOLNotebookManager
 
 
 def execute_notebook(
-    self,
     item: Item,
     *,
     instance_type: str = None,
@@ -97,7 +96,7 @@ def execute_notebook(
         if gis._portal.is_arcgisonline:
             mgr = gis.notebook_server[0]
             assert isinstance(mgr, AGOLNotebookManager)
-            return mgr.notebooks.execute_notebook(
+            return mgr.notebooksmanager.execute_notebook(
                 item=item,
                 update_portal_item=update_portal_item,
                 parameters=parameters,
@@ -107,7 +106,7 @@ def execute_notebook(
                 future=future,
             )
         else:
-            mgr = gis.notebook_server[server_index]
+            mgr = gis.notebook_server[server_index].notebooks
             assert isinstance(mgr, NotebookManager)
             return mgr.execute_notebook(
                 item=item,
