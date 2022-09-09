@@ -1430,6 +1430,9 @@ def prepare_data(
     if type(path) is str:
         path = Path(path)
 
+    if batch_size == None:
+        batch_size = 2
+
     databunch_kwargs = {"num_workers": 0} if sys.platform == "win32" else {}
     databunch_kwargs["bs"] = batch_size
 
