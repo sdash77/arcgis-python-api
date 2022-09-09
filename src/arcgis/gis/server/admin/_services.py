@@ -1320,7 +1320,7 @@ class Service(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def _service_manifest(self, file_type: str = "json") -> str:
+    def service_manifest(self, file_type: str = "json") -> str:
         """
         The service manifest resource documents the data and other
         resources that define the service origins and power the service.
@@ -1706,21 +1706,6 @@ class ItemInformationManager(BaseServer):
 
         """
         url = "{base}/manifest/manifest.json".format(base=self._url)
-        params = {"f": "json"}
-
-        return self._con.get(url, params)
-
-    # ----------------------------------------------------------------------
-    @property
-    def manifest_xml(self) -> dict:
-        """
-        The service manifest resource documents the data and other resources
-        that define the service origins and power the service. This resource
-        will tell you underlying databases and their location along with
-        other supplementary files that make up the service.
-
-        """
-        url = "{base}/manifest/manifest.xml".format(base=self._url)
         params = {"f": "json"}
 
         return self._con.get(url, params)
