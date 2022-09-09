@@ -169,12 +169,12 @@ class NotebookManager(object):
                 import time
 
                 start_job = self._gis._con.post(url, params)
-                if 'jobUrl' in start_job:
-                    resp = self._gis._con.get(start_job['jobUrl'], {'f': 'json'})
+                if "jobUrl" in start_job:
+                    resp = self._gis._con.get(start_job["jobUrl"], {"f": "json"})
                 else:
                     return start_job
                 if "status" in resp and resp["status"].lower() != "success":
-                    status = self._gis._con.get(start_job['jobUrl'], {'f': 'json'})
+                    status = self._gis._con.get(start_job["jobUrl"], {"f": "json"})
                     i = 0
                     while status["status"].lower() != "completed":
                         time.sleep(0.3 * i)
@@ -185,7 +185,7 @@ class NotebookManager(object):
                             or status["status"].lower().find("error") > -1
                         ):
                             raise Exception(f"Job Fail {status}")
-                        status = self._gis._con.get(start_job['jobUrl'], {'f': 'json'})
+                        status = self._gis._con.get(start_job["jobUrl"], {"f": "json"})
                         i += 1
                         if i > 20:
                             i = 20
