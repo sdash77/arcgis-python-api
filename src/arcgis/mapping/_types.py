@@ -990,6 +990,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         layer: Union[dict, FeatureLayer],
         label_info: list[dict] = None,
         renderer: dict = None,
+        transparency: int = None,
         show_labels: bool = None,
     ):
         """
@@ -1087,6 +1088,8 @@ class WebMap(HasTraits, collections.OrderedDict):
             layer["layerDefinition"]["drawingInfo"] = {}
         if show_labels is not None:
             layer["showLabels"] = show_labels
+        if transparency is not None:
+            layer["opacity"] = 1 - transparency / 100
         if label_info is not None:
             layer["layerDefinition"]["drawingInfo"]["labelingInfo"] = label_info
         if renderer is not None:
