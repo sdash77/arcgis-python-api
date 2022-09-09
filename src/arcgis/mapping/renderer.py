@@ -484,6 +484,46 @@ def _ri_creator(**kwargs):
 
 
 # --------------------------------------------------------------------------
+def _assemble_visual(
+    sdf_or_series,
+    **symbol_args,
+):
+    vv = []
+    if "size_field" in symbol_args:
+        size_field = symbol_args.pop("size_field")
+        vv.append(
+            _size_info(
+                field=size_field,
+                min_value=sdf_or_series[size_field].min(),
+                max_value=sdf_or_series[size_field].max(),
+                min_size=symbol_args.pop("min_size", 1),
+                max_size=symbol_args.pop("max_size", 24.1),
+                unit=symbol_args.pop("size_units", "unknown"),
+            )
+        )
+    if "ci_field" in symbol_args:
+        color_field = symbol_args.pop("ci_field")
+        vv.append(
+            _color_info(
+                field=color_field,
+                values=sdf_or_series[color_field],
+                steps=symbol_args.pop("ci_steps", 3),
+                colors=symbol_args.pop("ci_color", "Reds_r"),
+            )
+        )
+    if "opacity_expression" in symbol_args and "opacity_stops" in symbol_args:
+        vv.append(
+            {
+                "type": "transparencyInfo",
+                "valueExpression": symbol_args.pop("opacity_expression"),
+                "valueExpressionTitle": "Opacity Expression",
+                "stops": symbol_args.pop("opacity_stops"),
+            }
+        )
+    return vv
+
+
+# --------------------------------------------------------------------------
 def visual_variables(geometry_type, sdf_or_list, **kwargs):
     """
     The ``visual_variables`` function is used to create visual variables for the :class:`~arcgis.gis.GIS` object.
@@ -710,29 +750,7 @@ def generate_unique(
     **symbol_args,
 ):
 
-    vv = []
-    if "size_field" in symbol_args:
-        size_field = symbol_args.pop("size_field")
-        vv.append(
-            _size_info(
-                field=size_field,
-                min_value=sdf_or_series[size_field].min(),
-                max_value=sdf_or_series[size_field].max(),
-                min_size=symbol_args.pop("min_size", 1),
-                max_size=symbol_args.pop("max_size", 24.1),
-                unit=symbol_args.pop("size_units", "unknown"),
-            )
-        )
-    if "ci_field" in symbol_args:
-        color_field = symbol_args.pop("ci_field")
-        vv.append(
-            _color_info(
-                field=color_field,
-                values=sdf_or_series[color_field],
-                steps=symbol_args.pop("ci_steps", 3),
-                colors=symbol_args.pop("ci_color", "Reds_r"),
-            )
-        )
+    vv = _assemble_visual(sdf_or_series, **symbol_args)
     if "opacity_expression" in symbol_args and "opacity_stops" in symbol_args:
         vv.append(
             {
@@ -899,35 +917,12 @@ def generate_unique(
 
 # --------------------------------------------------------------------------
 def generate_classbreaks(
-    geometry_type: str,
     sdf_or_series=None,
     colors: Optional[Union[str, list[int], object]] = None,
     alpha: Optional[float] = 1,
     **symbol_args,
 ):
-    vv = []
-    if "size_field" in symbol_args:
-        size_field = symbol_args.pop("size_field")
-        vv.append(
-            _size_info(
-                field=size_field,
-                min_value=sdf_or_series[size_field].min(),
-                max_value=sdf_or_series[size_field].max(),
-                min_size=symbol_args.pop("min_size", 1),
-                max_size=symbol_args.pop("max_size", 24.1),
-                unit=symbol_args.pop("size_units", "unknown"),
-            )
-        )
-    if "ci_field" in symbol_args:
-        color_field = symbol_args.pop("ci_field")
-        vv.append(
-            _color_info(
-                field=color_field,
-                values=sdf_or_series[color_field],
-                steps=symbol_args.pop("ci_steps", 3),
-                colors=symbol_args.pop("ci_color", "Reds_r"),
-            )
-        )
+    vv = _assemble_visual(sdf_or_series, **symbol_args)
     if "opacity_expression" in symbol_args and "opacity_stops" in symbol_args:
         vv.append(
             {
@@ -1045,6 +1040,40 @@ def generate_classbreaks(
     renderer["classBreakInfos"] = cbs
     for key in [k for k, v in renderer.items() if v is None]:
         del renderer[key]
+    return renderer
+
+
+# --------------------------------------------------------------------------
+def generate_simple(
+    geometry_type: str,
+    sdf_or_series=None,
+    label: Optional[str] = None,
+    colors: Optional[Union[str, list[int], object]] = None,
+    alpha: Optional[float] = 1,
+    **symbol_args,
+):
+    cstep = symbol_args.pop("cstep", 0)
+    colors = _format_colors(colors, alpha, cstep)
+    vv = _assemble_visual(sdf_or_series, **symbol_args)
+    symbol = symbol_args.pop("symbol", None)
+    if symbol is None:
+        symbol = create_symbol(
+            geometry_type=geometry_type.lower(),
+            symbol_type=symbol_args.pop("symbol_type", None),
+            symbol_style=symbol_args.pop("symbol_style", None),
+            colors=colors[0],
+            cstep=cstep,
+            **symbol_args,
+        )
+    renderer = {
+        "type": "simple",
+        "label": label,
+        "description": symbol_args.pop("description", ""),
+        "rotationExpression": symbol_args.pop("rotation_expression", ""),
+        "rotationType": symbol_args.pop("rotation_type", "arithmetic"),
+        "visualVariables": symbol_args.pop("visual_variables", vv),
+        "symbol": symbol,
+    }
     return renderer
 
 

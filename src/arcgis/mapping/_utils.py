@@ -67,7 +67,7 @@ def _create_colormap(color_list: list, bins: int = 256):
     return LinearSegmentedColormap.from_list("temp_cmap", mpl_colors, bins)
 
 
-def _format_colors(colors, alpha):
+def _format_colors(colors, alpha, cstep=None):
     """
     Helper to format any form of color input into something usable by the
     renderers. Strings will be tokenized into colormap names or converted
@@ -131,12 +131,16 @@ def _format_colors(colors, alpha):
 
     # palettable palette object
     elif hasattr(colors, "colors"):
-        colors.colors
-        fmt_colors = []
-        for color in colors.colors:
-            val_list = [val for val in color]
-            val_list.append(alpha * 255)
-            fmt_colors.append(val_list)
+        if cstep is not None:
+            temp_map = colors.mpl_colormap
+            color_tuple = temp_map(cstep, bytes=True)
+            fmt_colors = [[int(i) for i in color_tuple]]
+        else:
+            fmt_colors = []
+            for color in colors.colors:
+                val_list = [val for val in color]
+                val_list.append(alpha * 255)
+                fmt_colors.append(val_list)
 
     # any form of string
     elif isinstance(colors, str):

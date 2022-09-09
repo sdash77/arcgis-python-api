@@ -8,6 +8,7 @@ import arcgis
 from arcgis.mapping.renderer import (
     generate_classbreaks,
     generate_heatmap,
+    generate_simple,
     generate_unique,
 )
 from arcgis.mapping.symbol import create_symbol, display_colormaps, show_styles
@@ -50,7 +51,7 @@ def plot(
     symbol_type: Optional[str] = None,
     symbol_style: Optional[str] = None,
     col: Optional[Union[str, list]] = None,
-    colors: Optional[str] = "jet",
+    colors: Optional[Union[str, list, object]] = "jet",
     alpha: float = 1,
     **kwargs,
 ):
@@ -206,7 +207,7 @@ def plot(
         return
     elif renderer_type in [None, "s"]:
         renderer_type = "s"  # simple (default)
-        r = generate_renderer(
+        r = generate_simple(
             geometry_type=gt[0].lower(),
             sdf_or_series=df,
             label=name,
