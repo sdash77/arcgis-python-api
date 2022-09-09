@@ -1910,7 +1910,7 @@ def generate_renderer(
             "type": "temporal",
             "latestObservationRenderer": symbol_args.pop(
                 "latest_observation",
-                generate_renderer(
+                generate_simple(
                     geometry_type="point",
                     label="Latest",
                     render_type="s",
@@ -1921,7 +1921,7 @@ def generate_renderer(
             ),
             "observationRenderer": symbol_args.pop(
                 "observation",
-                generate_renderer(
+                generate_simple(
                     geometry_type="point",
                     label="Observation",
                     render_type="s",
@@ -1932,7 +1932,7 @@ def generate_renderer(
             ),
             "trackRenderer": symbol_args.pop(
                 "track",
-                generate_renderer(
+                generate_simple(
                     geometry_type="polyline",
                     label="Track",
                     render_type="s",
