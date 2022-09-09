@@ -5,6 +5,53 @@ from arcgis.gis.nb import NotebookManager
 from arcgis.gis.agonb import AGOLNotebookManager
 
 
+def list_instances(gis: GIS = None) -> list[dict[str:str]]:
+    """
+    Returns a list of avaialable Machine Instances.
+
+    :returns: list[dict[str:str]]
+    """
+
+    if gis is None:
+        from arcgis import env
+
+        gis = env.active_gis
+        assert gis
+    mgrs = gis.notebook_server
+    if len(mgrs) > 0:
+        if gis._portal.is_arcgisonline:
+            mgr = mgrs[0]
+            ip = mgr.instance_preferences
+            return ip.instances.get("instanceTypePreferences", [])
+    return []
+
+
+def list_runtimes(gis: GIS = None) -> list:
+    """
+    Returns a list of avaialable runtimes.
+
+    :returns: list[dict[str:str]]
+    """
+
+    if gis is None:
+        from arcgis import env
+
+        gis = env.active_gis
+        assert gis
+    mgrs = gis.notebook_server
+    if len(mgrs) > 0:
+        if gis._portal.is_arcgisonline:
+            mgr = mgrs[0]
+            rt = mgr.runtimes
+            return rt.list()
+        else:
+            mgr = mgrs[0]
+            nb = mgr.notebooks
+            rt = nb.runtimes
+            return [r.properties for r in rt]
+    return []
+
+
 def execute_notebook(
     item: Item,
     *,
