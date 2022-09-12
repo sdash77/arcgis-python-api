@@ -261,11 +261,10 @@ def show_batch_pascal_voc_rectangles(
     # Get Batch
     x_batch, y_batch = get_nbatches(data_loader, math.ceil(n_items / self.batch_size))
     x_batch = torch.cat(x_batch)
+
     # Denormalize X
-    x_batch = (
-        self._scaled_std_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch)
-        * x_batch
-    ) + self._scaled_mean_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch)
+    x_batch = denorm_x(x_batch, self)
+
     y_bboxes = []
     y_classes = []
     for yb in y_batch:
