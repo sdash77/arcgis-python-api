@@ -11,8 +11,8 @@ class SerialChart(_BaseWidget):
     =========================   ===========================================
     **Argument**                **Description**
     -------------------------   -------------------------------------------
-    item                        Required Portal Item object. Item object can
-                                be a Feature Layer or a MapWidget.
+    item                        Required Portal :class:`~arcgis.gis.Item` object. Item object can
+                                be a :class:`~arcgis.features.FeatureLayer`  or a MapWidget.
     -------------------------   -------------------------------------------
     name                        Optional string. Name of the serial chart
                                 widget.
@@ -80,7 +80,7 @@ class SerialChart(_BaseWidget):
     @property
     def events(self):
         """
-        :return: list of events attached to the widget.
+        :return: List of events attached to the widget.
         """
         return self._events
 

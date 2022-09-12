@@ -219,6 +219,10 @@ class UserManager(BaseServer):
         Gets the user object as the current logged in user. If the username
         cannot be found, for example, the site administrator account, then
         just the username is returned.
+
+        :return:
+            The :class:`~arcgis.gis.server.User` object or username
+
         """
         res = self.search(username=self._con._username, max_results=1)
         if len(res) == 0:
@@ -481,7 +485,8 @@ class UserManager(BaseServer):
 
 
         :return:
-            The user object.
+            The :class:`~arcgis.gis.server.User` object or None.
+
         """
         res = self.search(username=username, max_results=1)
         if len(res) == 0:
@@ -489,8 +494,13 @@ class UserManager(BaseServer):
         return res[0]
 
     @property
-    def roles(self) -> "RoleManager":
-        """Helper object to manage custom roles for users"""
+    def roles(self):
+        """Helper object to manage custom roles for users
+
+        :return:
+            :class:`~arcgis.gis.server.RoleManager` object
+
+        """
         if self._rm is None:
             self._rm = RoleManager(self._url, gis=self._con)
         return self._rm

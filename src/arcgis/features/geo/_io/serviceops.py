@@ -89,12 +89,15 @@ def from_featureset(fset, sr=None):
 
         pandas_dtypes = {}
         for fld in fset.fields:
-            if "type" in fld:
-                pandas_dtypes[fld["name"]] = _look_up_types[fld["type"]]
-            elif "fieldType" in fld:
-                pandas_dtypes[fld["name"]] = _look_up_types[fld["fieldType"]]
-            else:
-                pandas_dtypes[fld["name"]] = "O"
+            if fld["name"].lower() != "shape":
+
+                if "type" in fld:
+                    pandas_dtypes[fld["name"]] = _look_up_types[fld["type"]]
+                elif "fieldType" in fld:
+                    pandas_dtypes[fld["name"]] = _look_up_types[fld["fieldType"]]
+                else:
+                    pandas_dtypes[fld["name"]] = "O"
+
         if sr is None:
             sr = {"wkid": 4326}
         for feat in fset.features:

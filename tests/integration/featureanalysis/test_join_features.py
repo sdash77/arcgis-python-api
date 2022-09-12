@@ -1,6 +1,6 @@
 import sys
 
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
+# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import datetime
 import unittest
 import pandas as pd
@@ -8,18 +8,7 @@ from arcgis.gis import GIS, Item
 from arcgis.features.layer import Table
 from arcgis.features import FeatureLayer
 from arcgis.features.summarize_data import join_features
-from arcgis.gis import ProfileManager
-
-profile_list = ProfileManager().list()
-
-if not "ent11" in profile_list:
-    GIS(
-        url="https://gpportal.esri.com/portal/",
-        username="admin",
-        password="esri.agp",
-        profile="ent11",
-    )  # create enterprise 11 connection
-
+from config_tests import setup_profiles, stage_data
 
 data = [
     {
@@ -1803,8 +1792,18 @@ data = [
 # download shapefile and upload to respective portal if not already present
 polygon_data = "https://earthworks.stanford.edu/catalog/stanford-dc841dq9031"
 
-
-profiles = ["your_online_profile", "ent11"]  # enterprise must be 10.9.1+
+test_items = [
+    "1ac6896bcafc4dccb29c70f45c442b00",  # Polygon Zips
+    "5fdb2869753140c8836353097b207591",  # US Hospitals
+    "2150d4ebe2124f4c821f43de49a6c679",  # US Airports
+]
+profiles = ["online_test", "ent_test", "kube_test"]
+setup_profiles(
+    profiles[0],
+    profiles[1],
+    profiles[2],
+)
+stage_data(test_items)
 
 
 class TestJoinFeatures(unittest.TestCase):
@@ -1822,7 +1821,7 @@ class TestJoinFeatures(unittest.TestCase):
             if gis._is_agol:
                 polygon_item = gis.content.get("1ac6896bcafc4dccb29c70f45c442b00")
             else:
-                polygon_item = gis.content.get("070c78e3d52e4b97aa2d36a5fb9845fe")
+                polygon_item = gis.content.get("1ac6896bcafc4dccb29c70f45c442b00")
             assert isinstance(point_item, Item)
             assert isinstance(polygon_item, Item)
             point_layer = point_item.layers[0]
@@ -1878,8 +1877,8 @@ class TestJoinFeatures(unittest.TestCase):
                 us_hospitals = gis.content.get("5fdb2869753140c8836353097b207591")
                 us_airports = gis.content.get("2150d4ebe2124f4c821f43de49a6c679")
             else:
-                us_hospitals = gis.content.get("611b534bd637499f92039fe10b2bd877")
-                us_airports = gis.content.get("14238e9f22df4ffa9061e4580684f4ac")
+                us_hospitals = gis.content.get("5fdb2869753140c8836353097b207591")
+                us_airports = gis.content.get("2150d4ebe2124f4c821f43de49a6c679")
             assert isinstance(us_hospitals, Item)
             assert isinstance(us_airports, Item)
             airport_table = us_airports.tables[0]

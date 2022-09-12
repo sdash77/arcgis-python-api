@@ -66,7 +66,7 @@ class AutoML(object):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required TabularDataObject. Returned data object from
-                            `prepare_tabulardata` function.
+                            :meth:`~arcgis.learn.prepare_tabulardata` function.
     ---------------------   -------------------------------------------
     total_time_limit        Optional Int. The total time limit in seconds for
                             AutoML training.
@@ -76,25 +76,10 @@ class AutoML(object):
                             Can be {Basic, Intermediate, Advanced}. This parameter defines
                             the goal of AutoML and how intensive the AutoML search will be.
 
-                            Basic : To to be used when the user wants to explain and
-                                      understand the data.
-                                      Uses 75%/25% train/test split.
-                                      Uses the following models: Baseline, Linear, Decision Tree,
-                                      Random Forest, XGBoost, Neural Network, and Ensemble.
-                                      Has full explanations in reports: learning curves, importance
-                                      plots, and SHAP plots.
-                            Intermediate : To be used when the user wants to train a model that will be
-                                      used in real-life use cases.
-                                      Uses 5-fold CV (Cross-Validation).
-                                      Uses the following models: Linear, Random Forest, LightGBM,
-                                      XGBoost, CatBoost, Neural Network, and Ensemble.
-                                      Has learning curves and importance plots in reports.
-                            Advanced : To be used for machine learning competitions (maximum performance).
-                                      Uses 10-fold CV (Cross-Validation).
-                                      Uses the following models: Decision Tree, Random Forest, Extra Trees,
-                                      XGBoost, CatBoost, Neural Network, Nearest Neighbors, Ensemble,
-                                      and Stacking.It has only learning curves in the reports.
-                                      Default is Basic.
+                            Basic : To to be used when the user wants to explain and understand the data. Uses 75%/25% train/test split. Uses the following models: Baseline, Linear, Decision Tree, Random Forest, XGBoost, Neural Network, and Ensemble. Has full explanations in reports: learning curves, importance  plots, and SHAP plots.
+                            Intermediate : To be used when the user wants to train a model that will be used in real-life use cases. Uses 5-fold CV (Cross-Validation). Uses the following models: Linear, Random Forest, LightGBM, XGBoost, CatBoost, Neural Network, and Ensemble. Has learning curves and importance plots in reports.
+
+                            Advanced : To be used for machine learning competitions (maximum performance). Uses 10-fold CV (Cross-Validation). Uses the following models: Decision Tree, Random Forest, Extra Trees, XGBoost, CatBoost, Neural Network, Nearest Neighbors, Ensemble, and Stacking.It has only learning curves in the reports. Default is Basic
     ---------------------   -------------------------------------------
     algorithms              Optional. List of str.
                             The list of algorithms that will be used in the training. The algorithms can be:
@@ -118,7 +103,7 @@ class AutoML(object):
                             to -1 to use all the cores.
     =====================   ===========================================
 
-    :return: `AutoML` Object
+    :return: :class:`~arcgis.learn.AutoML` Object
     """
 
     def __init__(
@@ -294,7 +279,8 @@ class AutoML(object):
         rows                    Optional number of rows. By default, 5 rows
                                 are displayed.
         =====================   ===========================================
-        :returns dataframe
+        :return:
+            dataframe
         """
         if getattr(self._data, "is_not_empty", True) == False:
             raise Exception(
@@ -321,9 +307,12 @@ class AutoML(object):
             warnings.simplefilter("ignore", UserWarning)
             output_labels = self._predict(validation_data_batch)
         pd.options.mode.chained_assignment = None
-        df = self._data._dataframe.iloc[
-            sample_indexes
-        ]  # .loc[sample_batch]#.reset_index(drop=True).loc[sample_batch].reset_index(drop=True)
+        if self._data._is_classification:
+            df = self._data._dataframe.loc[sample_indexes]
+        else:
+            df = self._data._dataframe.iloc[
+                sample_indexes
+            ]  # .loc[sample_batch]#.reset_index(drop=True).loc[sample_batch].reset_index(drop=True)
 
         if self._data._dependent_variable:
             df[self._data._dependent_variable + "_results"] = output_labels
@@ -334,7 +323,8 @@ class AutoML(object):
 
     def score(self):
         """
-        :returns output from AutoML's model.score(), R2 score in case of regression and Accuracy in case of classification.
+        :return:
+            output from AutoML's model.score(), R2 score in case of regression and Accuracy in case of classification.
         """
         if getattr(self._data, "_is_not_empty", True):
             return self._model.score(self._validation_data_df, self._validation_labels)
@@ -345,7 +335,8 @@ class AutoML(object):
 
     def report(self):
         """
-        :returns a report of the different models trained by AutoML along with their performance.
+        :return:
+            a report of the different models trained by AutoML along with their performance.
         """
         main_readme_html = os.path.join(self._model._results_path, "README.html")
         warnings.warn(
@@ -356,7 +347,8 @@ class AutoML(object):
 
     def predict_proba(self):
         """
-        :returns output from AutoML's model.predict_proba() with prediction probability for the training data
+        :return:
+            output from AutoML's model.predict_proba() with prediction probability for the training data
         """
         if (self._data._is_classification == "classification") or (
             self._data._is_classification == True
@@ -407,7 +399,8 @@ class AutoML(object):
         ---------------------   -------------------------------------------
         path                    Path of the directory where the model should be saved.
         =====================   ===========================================
-        :returns path
+        :return:
+            path
         """
         if getattr(self._data, "_is_not_empty", True) == False:
             raise Exception(
@@ -511,7 +504,9 @@ class AutoML(object):
     @classmethod
     def from_model(cls, emd_path):
         """
-        Creates a `MLModel` Object from an Esri Model Definition (EMD) file.
+        Creates an `AutoML Model` Object from an Esri Model Definition (EMD) file.
+        The model object created can only be used for inference on a new dataset
+        and cannot be retrained.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -520,7 +515,8 @@ class AutoML(object):
                                 file.
         =====================   ===========================================
 
-        :return: `AutoML` Object
+        :return:
+            :class:`~arcgis.learn.AutoML` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -607,7 +603,7 @@ class AutoML(object):
         =================================   =========================================================================
         **Argument**                        **Description**
         ---------------------------------   -------------------------------------------------------------------------
-        input_features                      Optional Feature Layer or spatial dataframe. Required if prediction_type='features'.
+        input_features                      Optional :class:`~arcgis.features.FeatureLayer` or spatial dataframe. Required if prediction_type='features'.
                                             Contains features with location and
                                             some or all fields required to infer the dependent variable value.
         ---------------------------------   -------------------------------------------------------------------------
@@ -617,7 +613,7 @@ class AutoML(object):
         ---------------------------------   -------------------------------------------------------------------------
         datefield                           Optional string. Field name from feature layer
                                             that contains the date, time for the input features.
-                                            Same as `prepare_tabulardata()`.
+                                            Same as :meth:`~arcgis.learn.prepare_tabulardata`.
         ---------------------------------   -------------------------------------------------------------------------
         cell_sizes                          Size of H3 cells (specified as H3 resolution) for spatially
                                             aggregating input features and passing in the cell ids as additional
@@ -626,16 +622,16 @@ class AutoML(object):
                                             and the geometry type is Point. Not applicable when explanatory_rasters
                                             are provided.
         ---------------------------------   -------------------------------------------------------------------------
-        distance_features                   Optional List of Feature Layer objects.
+        distance_features                   Optional List of :class:`~arcgis.features.FeatureLayer` objects.
                                             These layers are used for calculation of field "NEAR_DIST_1",
                                             "NEAR_DIST_2" etc in the output dataframe.
                                             These fields contain the nearest feature distance
                                             from the input_features.
-                                            Same as `prepare_tabulardata()`.
+                                            Same as :meth:`~arcgis.learn.prepare_tabulardata` .
         ---------------------------------   -------------------------------------------------------------------------
         output_layer_name                   Optional string. Used for publishing the output layer.
         ---------------------------------   -------------------------------------------------------------------------
-        gis                                 Optional GIS Object. Used for publishing the item.
+        gis                                 Optional :class:`~arcgis.gis.GIS`  Object. Used for publishing the item.
                                             If not specified then active gis user is taken.
         ---------------------------------   -------------------------------------------------------------------------
         prediction_type                     Optional String.
@@ -653,13 +649,15 @@ class AutoML(object):
                                             Specify mapping of field names from prediction set
                                             to training set.
                                             For example:
-                                                {
-                                                    "Field_Name_1": "Field_1",
-                                                    "Field_Name_2": "Field_2"
-                                                }
+
+                                            |    {
+                                            |        "Field_Name_1": "Field_1",
+                                            |        "Field_Name_2": "Field_2"
+                                            |   }
         =================================   =========================================================================
 
-        :returns Feature Layer if prediction_type='features', dataframe for prediction_type='dataframe' else creates an output raster.
+        :return:
+            :class:`~arcgis.features.FeatureLayer` if prediction_type='features', dataframe for prediction_type='dataframe' else creates an output raster.
 
         """
 
@@ -706,8 +704,32 @@ class AutoML(object):
     ):
         dataframe_complete = False
         if isinstance(input_features, FeatureLayer):
+            try:
+                import arcpy
+                import spatial_reference_helper
+
+                ex = input_features.properties["extent"]
+                data_source_spatial_reference = arcpy.SpatialReference(
+                    ex["spatialReference"].get(
+                        "wkid", ex["spatialReference"].get("latestWkid")
+                    )
+                )
+                extent = arcpy.Extent(
+                    ex["xmin"],
+                    ex["ymin"],
+                    ex["xmax"],
+                    ex["ymax"],
+                    spatial_reference=data_source_spatial_reference,
+                )
+                transformation = spatial_reference_helper.get_datum_transformation(
+                    data_source_spatial_reference, arcpy.SpatialReference(4326), extent
+                )
+            except:
+                transformation = None
             if cell_sizes and not rasters:
-                dataframe = input_features.query(out_sr=4326).sdf
+                dataframe = input_features.query(
+                    out_sr=4326, datum_transformation=transformation
+                ).sdf
                 dataframe = add_h3(dataframe, cell_sizes)
             else:
                 dataframe = input_features.query().sdf

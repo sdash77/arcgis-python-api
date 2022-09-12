@@ -1315,7 +1315,7 @@ def _get_stac_metadata_file(item):
 
     href = None
     if item["collection"] == "sentinel-s2-l2a-cogs":
-        href = item["links"][1]["href"] + "\Multiband"
+        href = rf"{item['links'][1]['href']}\Multiband"
     else:
         if "metadata" in item["assets"]:
             href = item["assets"]["metadata"]["href"]

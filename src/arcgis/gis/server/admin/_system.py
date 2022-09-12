@@ -3,6 +3,7 @@ The System resource is a collection of miscellaneous server-wide
 resources such as server properties, server directories, the
 configuration store, Web Adaptors, and licenses.
 """
+from __future__ import annotations
 from __future__ import absolute_import
 from __future__ import print_function
 from .._common import BaseServer
@@ -63,6 +64,10 @@ class SystemManager(BaseServer):
     def server_properties(self) -> "ServerProperties":
         """
         Gets the server properties for the site as an object.
+
+        :return:
+            :class:`~arcgis.gis.server.ServerProperties` object
+
         """
         return ServerProperties(
             url=self._url + "/properties", connection=self._con, initialize=True
@@ -73,6 +78,7 @@ class SystemManager(BaseServer):
     def _directories(self) -> list:
         """
         Gets the server directory object as a list.
+
         """
         directs = []
         url = self._url + "/directories"
@@ -93,7 +99,7 @@ class SystemManager(BaseServer):
     def directories(self) -> "DirectoryManager":
         """
         :return:
-            The server directory object in a list.
+            The :class:`~arcgis.gis.server.ServerDirectory` object in a list.
         """
         return DirectoryManager(system=self)
 
@@ -109,7 +115,8 @@ class SystemManager(BaseServer):
         ==================     ====================================================================
 
         :return:
-            The ArcGIS Server directory as an object.
+            The ArcGIS Server directory as an object or None.
+
 
         """
         url = self._url + "/directories"
@@ -205,6 +212,9 @@ class SystemManager(BaseServer):
     def jobs(self) -> "Jobs":
         """
         Gets the Jobs object.
+
+        :return:
+            :class:`~arcgis.gis.server.Jobs` object
         """
         url = self._url + "/jobs"
         return Jobs(url=url, connection=self._con, initialize=True)
@@ -339,6 +349,10 @@ class SystemManager(BaseServer):
     def configuration_store(self) -> "ConfigurationStore":
         """
         Gets the ConfigurationStore object for this site.
+
+        :return:
+            :class:`~arcgis.gis.server.ConfigurationStore`
+
         """
         url = self._url + "/configstore"
 
@@ -396,6 +410,57 @@ class SystemManager(BaseServer):
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
+    @property
+    def soap_config(self) -> dict:
+        """
+        The `soap_config` resource lists the URLs for domains allowed to
+        make cross-domain requests, including SOAP and OGC service requests.
+        If the value for `origins` is not updated, no restrictions on
+        cross-domain requests will be made.
+
+        The `set` operation allows you to restrict cross-domain requests to
+        specific domains, including SOAP and OGC service requests. By default,
+        no domains are restricted.
+
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        origins                Optional String. A comma-separated list of URLs of domains allowed
+                               to make requests. The default value, *, denotes all domains, meaning
+                               none are restricted.
+        ==================     ====================================================================
+
+        :returns: dict
+        """
+        url = self._url + "/handlers/soap/soaphandlerconfig"
+        params = {"f": "json"}
+        return self._con.get(path=url, params=params)
+
+    # ----------------------------------------------------------------------
+    @soap_config.setter
+    def soap_config(self, origins: str):
+        """
+        The `set` operation allows you to restrict cross-domain requests to
+        specific domains, including SOAP and OGC service requests. By default,
+        no domains are restricted.
+
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        origins                Optional String. A comma-separated list of URLs of domains allowed
+                               to make requests. The default value, *, denotes all domains, meaning
+                               none are restricted.
+        ==================     ====================================================================
+
+        :returns: dict
+        """
+        params = {"f": "json", "allowedOrigins": origins}
+        url = self._url + "/handlers/soap/soaphandlerconfig/edit"
+        self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
     def _edit_services_directory(
         self,
         allowed_origins: str,
@@ -406,6 +471,9 @@ class SystemManager(BaseServer):
         jsapi_arcgis_css2: str,
         jsapi_arcgis_sdk: str,
         service_dir_enabled: str,
+        callback_functions: bool | None = None,
+        map_text: str | None = None,
+        arcgis_map: str | None = None,
     ) -> bool:
         """
         Allows you to update the Services Directory configuration.  You can do such thing as
@@ -441,6 +509,13 @@ class SystemManager(BaseServer):
         --------------------     --------------------------------------------------------------------
         service_dir_enabled      Required string. Flag to enable/disable the HTML view of the
                                  services directory.
+        --------------------     --------------------------------------------------------------------
+        callback_functions       Optional boolean. Introduced at 11.0. The flag to enable or disable
+                                 the ability to make JSONP callback requests. The JSONP callback
+                                 feature is enabled by default (true) and allows older clients a way
+                                 to make CORS requests without being restricted by the same-origin
+                                 policy. This is useful for older browsers or other clients that do
+                                 not supports CORS requests.
         ====================     ====================================================================
 
 
@@ -458,7 +533,12 @@ class SystemManager(BaseServer):
             "jsapi.arcgis.css2": jsapi_arcgis_css2,
             "jsapi.arcgis.sdk": jsapi_arcgis_sdk,
             "servicesDirEnabled": service_dir_enabled,
+            "callbackFunctionsEnabled": callback_functions,
         }
+        keys = list(params.keys())
+        for key in keys:
+            if params[key] is None:
+                del params[key]
         url = self._url + "/handlers/rest/servicesdirectory/edit"
         res = self._con.post(path=url, postdata=params)
         if "status" in res:
@@ -596,7 +676,7 @@ class PlatformServiceManager(BaseServer):
             for ps in self._json_dict["platformservices"]:
                 if ps["type"].lower() == service.lower():
                     return PlatformService(
-                        url="%s/%s" % (self._url, ps["id"]), gis=self._con
+                        url="%s/%s" % (self._url, ps["id"]), connection=self._con
                     )
         return None
 
@@ -907,89 +987,100 @@ class ServerProperties(BaseServer):
 
     The properties include:
 
-      - CacheSizeForSecureTileRequests -- An integer that specifies the
-        number of users whose token information will be cached. This
-        increases the speed of tile retrieval for cached services. If not
-        specified, the default cache size is 200,000. Both REST and SOAP
-        services honor this property. You'll need to manually restart
-        ArcGIS Server in order for this change to take effect.
-      - DisableAdminDirectoryCache -- Disables browser caching of the
-        Administrator Directory pages. The default is False. To disable
-        browser caching, set this property to True.
-      - disableIPLogging -- When a possible cross-site request forgery
-        (CSRF) attack is detected, the server logs a message containing
-        the possible IP address of the attacker. If you do not want IP
-        addresses listed in the logs, set this property to True. Also,
-        HTTP request referrers are logged at FINE level by the REST and
-        SOAP handlers unless this property is set to True.
-      - javaExtsBeginPort -- Specifies a start port of the port range used
-        for debugging Java server object extensions.
-        Example: 8000
-      - javaExtsEndPort -- Specifies an end port of the port range used for
-        debugging Java server object extensions.
-        Example: 8010
-      - localTempFolder -- Defines the local folder on a machine that can
-        be used by GIS services and objects. If this property is not
-        explicitly set, the services and objects will revert to using the
-        system's default temporary directory.
+    - ``CacheSizeForSecureTileRequests`` -- An integer that specifies the
+      number of users whose token information will be cached. This
+      increases the speed of tile retrieval for cached services. If not
+      specified, the default cache size is 200,000. Both REST and SOAP
+      services honor this property. You'll need to manually restart
+      ArcGIS Server in order for this change to take effect.
 
-        .. note::
-            If this property is used, you must create the temporary directory
-            on every server machine in the site. Example: /tmp/arcgis.
+    - ``DisableAdminDirectoryCache`` -- Disables browser caching of the
+      Administrator Directory pages. The default is False. To disable
+      browser caching, set this property to True.
 
-      - messageFormat -- Defines the transmission protocol supported by
-        the services catalog in the server.
-        Values:
-               - esriServiceCatalogMessageFormatBin,
-               - esriServiceCatalogMessageFormatSoap,
-               - esriServiceCatalogMessageFormatSoapOrBin
+    - ``disableIPLogging`` -- When a possible cross-site request forgery
+      (CSRF) attack is detected, the server logs a message containing
+      the possible IP address of the attacker. If you do not want IP
+      addresses listed in the logs, set this property to True. Also,
+      HTTP request referrers are logged at FINE level by the REST and
+      SOAP handlers unless this property is set to True.
 
-      - messageVersion -- Defines the version supported by the services
-        catalog in the server. Example: esriArcGISVersion101
-      - PushIdentityToDatabase -- Propogates the credentials of the logged-in
-        user to make connections to an Oracle database. This
-        property is only supported for use with Oracle databases.
-        Values: True | False
-      - suspendDuration -- Specifies the duration for which the ArcGIS
-        service hosting processes should suspend at startup. This
-        duration is specified in milliseconds. This is an optional
-        property that takes effect when suspendServiceAtStartup is set
-        to True. If unspecified and suspension of service at startup is
-        requested, then the default suspend duration is 30 seconds.
-        Example: 10000 (meaning 10 seconds)
-      - suspendServiceAtStartup -- Suspends the ArcGIS service hosting
-        processes at startup. This will enable attaching to those
-        processes and debugging code that runs early in the lifecycle of
-        server extensions soon after they are instantiated.
-        Values: True | False
-      - uploadFileExtensionWhitelist -- This specifies what files are
-        allowed to be uploaded through the file upload API by
-        identifying the allowable extensions. It is a list of comma-separated
-        extensions without dots. If this property is not
-        specified, a default list is used. This is the default list: soe,
-        sd, sde, odc, csv, txt, zshp, kmz, and geodatabase.
+    - ``javaExtsBeginPort`` -- Specifies a start port of the port range used
+      for debugging Java server object extensions.
+      Example: ``8000``
 
-        .. note::
-            Updating this list overrides the default list completely. This
-            means if you set this property to a subset of the default list
-            then only those items in the subset will be accepted for upload.
-            Example: sd, so, sde, odc.
+    - ``javaExtsEndPort`` -- Specifies an end port of the port range used for
+      debugging Java server object extensions.
+      Example: ``8010``
 
-      - uploadItemInfoFileExtensionWhitelist -- This specifies what files
-        are allowed to be uploaded through the service iteminfo upload
-        API by identifying the allowable extensions. It should be a list
-        of comma-separated extensions without dots. If this property is
-        not specified, a default list is used. This is the default list:
-        xml, img, png, gif, jpg, jpeg, bmp.
+    - ``localTempFolder`` -- Defines the local folder on a machine that can
+      be used by GIS services and objects. If this property is not
+      explicitly set, the services and objects will revert to using the
+      system's default temporary directory.
 
-        .. note::
-            This list overrides the default list completely. This means if you
-            set this property to a subset of the default list then only those
-            items in the subset will be accepted for upload. Example: png, svg,
-            gif, jpg, tiff, bmp.
+      .. note::
+          If this property is used, you must create the temporary directory
+          on every server machine in the site. Example: /tmp/arcgis.
 
-      - WebContextURL -- Defines the web front end as seen by your users.
-        Example: http://mycompany.com/gis
+    - ``messageFormat`` -- Defines the transmission protocol supported by
+      the services catalog in the server.
+
+      Values:
+      - esriServiceCatalogMessageFormatBin,
+      - esriServiceCatalogMessageFormatSoap,
+      - esriServiceCatalogMessageFormatSoapOrBin
+
+    - ``messageVersion`` -- Defines the version supported by the services
+      catalog in the server.
+      Example: esriArcGISVersion101
+
+    - ``PushIdentityToDatabase`` -- Propogates the credentials of the logged-in
+      user to make connections to an Oracle database. This
+      property is only supported for use with Oracle databases.
+      Values: True | False
+
+    - ``suspendDuration`` -- Specifies the duration for which the ArcGIS
+      service hosting processes should suspend at startup. This
+      duration is specified in milliseconds. This is an optional
+      property that takes effect when suspendServiceAtStartup is set
+      to True. If unspecified and suspension of service at startup is
+      requested, then the default suspend duration is 30 seconds.
+      Example: 10000 (meaning 10 seconds)
+
+    - ``suspendServiceAtStartup`` -- Suspends the ArcGIS service hosting
+      processes at startup. This will enable attaching to those
+      processes and debugging code that runs early in the lifecycle of
+      server extensions soon after they are instantiated.
+      Values: True | False
+
+    - ``uploadFileExtensionWhitelist`` -- This specifies what files are
+      allowed to be uploaded through the file upload API by
+      identifying the allowable extensions. It is a list of comma-separated
+      extensions without dots. If this property is not
+      specified, a default list is used. This is the default list: soe,
+      sd, sde, odc, csv, txt, zshp, kmz, and geodatabase.
+
+      .. note::
+          Updating this list overrides the default list completely. This
+          means if you set this property to a subset of the default list
+          then only those items in the subset will be accepted for upload.
+          Example: sd, so, sde, odc.
+
+    - ``uploadItemInfoFileExtensionWhitelist`` -- This specifies what files
+      are allowed to be uploaded through the service iteminfo upload
+      API by identifying the allowable extensions. It should be a list
+      of comma-separated extensions without dots. If this property is
+      not specified, a default list is used. This is the default list:
+      xml, img, png, gif, jpg, jpeg, bmp.
+
+      .. note::
+          This list overrides the default list completely. This means if you
+          set this property to a subset of the default list then only those
+          items in the subset will be accepted for upload. Example: png, svg,
+          gif, jpg, tiff, bmp.
+
+    - ``WebContextURL`` -- Defines the web front end as seen by your users.
+      Example: ``http://mycompany.com/gis``
 
     """
 
@@ -1167,7 +1258,7 @@ class DirectoryManager(object):
         """
         returns the current service directory properties for the server.
 
-        :return: dict
+        :return: Dict
         """
         return self._system._services_directory
 
@@ -1183,7 +1274,8 @@ class DirectoryManager(object):
         ==================     ====================================================================
 
         :return:
-            The directory object.
+            The ArcGIS Server :class:`~arcgis.gis.server.ServerDirectory` object
+
         """
         return self._system._get_directory(name=name)
 
@@ -1241,14 +1333,17 @@ class ServerDirectory(BaseServer):
 
     The following directory types can be registered with the server:
 
-     - Output -- Stores various information generated by services, such as map
-       images. Instances: One or more
-     - Cache -- Stores tile caches used by map, globe, and image services for
-       rapid performance. Instances: One or more
-     - Jobs -- Stores results and other information from geoprocessing
-       services. Instances: One or more
-     - System -- Stores files that are used internally by the GIS server.
-       Instances: One
+    - Output -- Stores various information generated by services, such as map
+      images. Instances: One or more
+
+    - Cache -- Stores tile caches used by map, globe, and image services for
+      rapid performance. Instances: One or more
+
+    - Jobs -- Stores results and other information from geoprocessing
+      services. Instances: One or more
+
+    - System -- Stores files that are used internally by the GIS server.
+      Instances: One
 
     Server directories that contain output of various GIS
     services can be periodically cleaned to remove old unused files. By

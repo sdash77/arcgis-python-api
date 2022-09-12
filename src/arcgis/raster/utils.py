@@ -15,7 +15,7 @@ def generate_direct_access_url(
     expiration                               Optional integer. Direct access URL expiration time in minutes.
                                              (The default is 1440 ie. 24 hours)
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Keyword only parameter. Optional GIS. The GIS on which this function runs.
+    gis                                      Keyword only parameter. Optional :class:`~arcgis.gis.GIS` . The GIS on which this function runs.
                                              If not specified, the active GIS is used.
     ====================================     ====================================================================
 
@@ -37,7 +37,7 @@ def upload_imagery_to_agol_userstore(
     """
     Uploads file/files to the user's rasterstore on ArcGIS Online and returns the list of urls.
     
-    The list of urls can then be used with :meth:`arcgis.raster.analytics.copy_raster` or :meth:`arcgis.raster.analytics.create_image_collection`
+    The list of urls can then be used with :meth:`~arcgis.raster.analytics.copy_raster` or :meth:`~arcgis.raster.analytics.create_image_collection`
     method to create imagery layers on ArcGIS Online.
     
     For this functionality to work, Azure library packages for Python (Azure SDK for Python - azure-storage-blob: 12.1<= version <=12.9)
@@ -48,7 +48,7 @@ def upload_imagery_to_agol_userstore(
     ------------------------------------     --------------------------------------------------------------------
     files                                    Required. It can be a folder, list of files or single file that needs to be uploaded.
     ------------------------------------     --------------------------------------------------------------------
-    direct_access_url                        Optional string. The direct access url generated using generate_direct_access_url function.
+    direct_access_url                        Optional string. The direct access url generated using :meth:`~arcgis.raster.utils.generate_direct_access_url` .
                                              If not specified, the function would generate the direct access url internally which is valid for 1440 minutes.
     ------------------------------------     --------------------------------------------------------------------
     auto_renew                               Optional boolean. If set to True, function would continue uploading 
@@ -60,21 +60,24 @@ def upload_imagery_to_agol_userstore(
 
                                              Available options:
 
-                                                - "maxUploadConcurrency": Optional integer. Maximum number of parallel connections \
-                                                    to use for large uploads (when individual file/blob size exceeds 64MB). \
-                                                    This is the **max_concurrency** parameter of the `BlobClient.upload_blob() <https://docs.microsoft.com/en-us/python/api/azure-storage-blob/azure.storage.blob.blobclient?view=azure-python#upload-blob-data--blob-type--blobtype-blockblob---blockblob----length-none--metadata-none----kwargs->`__ method. \
-                                                    (The default is 6)
-                                                - "maxWorkerThreads": Optional integer. Maximum number of threads to execute asynchronously \
-                                                    when uploading multiple files. This is the **max_workers** parameter of the `ThreadPoolExecutor() <https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor>`__ class. \
-                                                    (The default is None)
-                                                - "displayProgress": Optional boolean. If set to True, a progress bar will be \
-                                                    displayed for tracking the progress of the uploads to user's rasterstore. \
-                                                    (The default is False)
+                                             - ``maxUploadConcurrency``: Optional integer. Maximum number of parallel connections \
+                                                to use for large uploads (when individual file/blob size exceeds 64MB). \
+                                                This is the **max_concurrency** parameter of the `BlobClient.upload_blob() <https://docs.microsoft.com/en-us/python/api/azure-storage-blob/azure.storage.blob.blobclient?view=azure-python#upload-blob-data--blob-type--blobtype-blockblob---blockblob----length-none--metadata-none----kwargs->`__ method. \
+                                                (The default is 6)
+                                             - ``maxWorkerThreads``: Optional integer. Maximum number of threads to execute asynchronously \
+                                                when uploading multiple files. This is the **max_workers** parameter of the `ThreadPoolExecutor() <https://docs.python.org/3/library/concurrent.futures.html#concurrent.futures.ThreadPoolExecutor>`__ class. \
+                                                (The default is None)
+                                             - ``displayProgress``: Optional boolean. If set to True, a progress bar will be \
+                                                displayed for tracking the progress of the uploads to user's rasterstore. \
+                                                (The default is False)
 
-                                                Example:
-                                                    {"maxUploadConcurrency":8, "maxWorkerThreads":20, "displayProgress":True}
+                                               Example:
+
+                                                    | {"maxUploadConcurrency":8,
+                                                    | "maxWorkerThreads":20,
+                                                    | "displayProgress":True}
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Keyword only parameter. Optional GIS. The GIS on which this function runs.
+    gis                                      Keyword only parameter. Optional :class:`~arcgis.gis.GIS` . The GIS on which this function runs.
                                              If not specified, the active GIS is used.
     ====================================     ====================================================================
 

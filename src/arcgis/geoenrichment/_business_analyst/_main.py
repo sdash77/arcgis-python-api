@@ -347,7 +347,7 @@ class Country(AOI):
         # set the iso3 property based on the iso3
         self.iso3 = self._ba._standardize_country_str(iso3)
 
-        # use the iso3 to filter the available countries to a dataframe of just the country requested
+        # use the iso3 to filter the available countries to a dataframe of just the country requested.
         sel_df = self._ba.countries[self._ba.countries["iso3"] == self.iso3]
 
         # if the data source is local, but no year was provided, get the year
@@ -682,7 +682,7 @@ class BusinessAnalyst(object):
     .. warning::
 
         GeoEnrichment (adding demographic enrich_variables) using ArcGIS Online *does* cost credits.
-        Country (``BusinessAnalyst.countries``) and variable (``Country.enrich_variables``)
+        Country (``BusinessAnalyst.countries``) and variable (:func:`~arcgis.geoenrichment.Country.enrich_variables`)
         introspection does *not* cost any credits.
 
     =============================       ====================================================================
@@ -786,6 +786,7 @@ class BusinessAnalyst(object):
                 "iso3",
                 "data_source_id",
                 "country_id",
+                "hierarchies",
             ],
         )
 
@@ -797,7 +798,15 @@ class BusinessAnalyst(object):
 
         # organize the columns
         cntry_df = cntry_df[
-            ["iso2", "iso3", "name", "vintage", "country_id", "data_source_id"]
+            [
+                "iso2",
+                "iso3",
+                "name",
+                "vintage",
+                "country_id",
+                "data_source_id",
+                "hierarchies",
+            ]
         ]
 
         return cntry_df
@@ -839,6 +848,7 @@ class BusinessAnalyst(object):
                 "abbr3": "iso3",
                 "altName": "alt_name",
                 "defaultDatasetID": "default_dataset",
+                "hierarchies": "hierarchy",
             },
             inplace=True,
             axis=1,
@@ -851,10 +861,78 @@ class BusinessAnalyst(object):
             "datasets",
             "default_dataset",
             "continent",
+            "hierarchy",
         ]
         cntry_df = cntry_df[keep_cols]
 
+        # clean up column for hierarchies to only keep alias if simple
+        alias_names = []
+        for i, v in cntry_df["hierarchy"].items():
+            cntry_hier = []
+            for hier in v:
+                cntry_hier.append(hier["ID"])
+            alias_names.append(cntry_hier)
+        cntry_df["hierarchy"] = alias_names
+
         return cntry_df
+
+    def _get_hierarchies_df(self, country_string: str):
+        """Internal helper method to get the dataframe of hierarchies for each country"""
+        # make sure countries are available
+        ge_err_msg = (
+            "The provided GIS instance does not appear to have geoenrichment enabled and configured, "
+            "so no countries are available."
+        )
+        assert "geoenrichment" in self.source.properties.helperServices, ge_err_msg
+        assert isinstance(
+            self.source.properties.helperServices.geoenrichment["url"], str
+        ), ge_err_msg
+
+        # extract out the geoenrichment url
+        ge_url = self.source.properties.helperServices.geoenrichment["url"]
+        if self.source._is_hosted_nb_home:
+            res = self.source._private_service_url(ge_url)
+            ge_url = (
+                res["privateServiceUrl"]
+                if "privateServiceUrl" in res
+                else res["serviceUrl"]
+            )
+
+        # get a list of countries available on the Web GIS for enrichment
+        url = f"{ge_url}/Geoenrichment/Countries"
+        cntry_res = self.source._con.post(url, {"f": "json"})
+        cntry_dict = cntry_res["countries"]
+
+        # convert the dictionary to a dataframe
+        cntry_df = pd.DataFrame(cntry_dict)
+
+        # clean up some column names for consistency
+        cntry_df.rename(
+            {
+                "abbr3": "iso3",
+            },
+            inplace=True,
+            axis=1,
+        )
+        keep_cols = ["iso3", "hierarchies"]
+        cntry_df = cntry_df[keep_cols]
+
+        # Get dataframe for specific country we are working with
+        cntry_interest_df = cntry_df[cntry_df["iso3"] == country_string]
+        # Get only the hierarchy column value and create own dataframe from it
+        hierarchy_df = pd.DataFrame(cntry_interest_df.iloc[0]["hierarchies"])
+
+        keep_cols = [
+            "ID",
+            "alias",
+            "shortDescription",
+            "datasets",
+            "levelsInfo",
+            "variablesInfo",
+            "hasInterestingFactsStatistics",
+        ]
+        hierarchy_df = hierarchy_df[keep_cols]
+        return hierarchy_df
 
     def _standardize_country_str(self, country_string: str) -> str:
         """Internal helper method to standardize the input for iso3 identifier strings to ISO3."""
@@ -1358,6 +1436,8 @@ class BusinessAnalyst(object):
         Returns:
             Pandas Data Frame
         """
+        from arcgis.geoenrichment.enrichment import NamedArea
+
         # pull out country specific parameters from the kwargs
         country, kwargs = extract_from_kwargs("country", kwargs)
         standard_geography_level, kwargs = extract_from_kwargs(
@@ -1377,11 +1457,15 @@ class BusinessAnalyst(object):
                 geographies = Geometry(geographies)
             elif is_dict_featureset(geographies):
                 geographies = FeatureSet(geographies)
+            # dict of named areas
+            elif isinstance(list(geographies.values())[0], NamedArea):
+                named_areas = list(geographies.values())
+                geographies = [named_area.geometry for named_area in named_areas]
 
-        # if a list of geometries is passed in dict form, convert to Geometry objects
         if isinstance(geographies, Iterable) and not isinstance(
             geographies, pd.DataFrame
         ):
+            # if a list of geometries is passed in dict form, convert to Geometry objects
             if isinstance(geographies[0], dict):
                 if is_dict_geometry(geographies[0]):
                     geographies = [Geometry(g_dict) for g_dict in geographies]
@@ -1768,6 +1852,13 @@ class BusinessAnalyst(object):
                 )
                 > 0
             )
+        elif (
+            "appInfo" in self.source.properties
+            and self.source.properties.appInfo.privileges
+            and "premium:user:geoenrichment"
+            in self.source.properties.appInfo.privileges
+        ):
+            has_ge = True
         else:
             has_ge = False
         assert has_ge, (
@@ -1823,7 +1914,10 @@ class BusinessAnalyst(object):
 
         # if working with a specific country, add this to the payload
         if country is not None:
-            params["useData"] = json.dumps({"sourceCountry": country.properties.iso3})
+            hierarchy = kwargs.pop("hierarchy", country.properties.hierarchy[0])
+            params["useData"] = json.dumps(
+                {"sourceCountry": country.properties.iso3, "hierarchy": hierarchy}
+            )
 
         # get the maximum batch size to ensure is not less than best practices set above
         svc_lmt_url = f'{self.source.properties.helperServices("geoenrichment").url}/Geoenrichment/ServiceLimits'
@@ -1904,6 +1998,15 @@ class BusinessAnalyst(object):
 
         # if a list of dictionaries, which are not geometries, or a list of strings is being passed in, just send
         elif (is_dict and not is_geom) or is_str:
+            if proximity_value is not None:
+                prx_src = self if country is None else country
+                geographies = add_proximity_to_enrich_feature_list(
+                    prx_src,
+                    geographies,
+                    proximity_type,
+                    proximity_metric,
+                    proximity_value,
+                )
             for idx in range(0, len(geographies), batch_size):
                 geo_btch = geographies[idx : idx + batch_size]
                 params["studyAreas"] = json.dumps(geo_btch) if is_dict else geo_btch

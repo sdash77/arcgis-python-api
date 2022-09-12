@@ -31,7 +31,7 @@ except Exception as e:
 
 class QuestionAnswering(InferenceOnlyModel):
     """
-    Creates a `QuestionAnswering` Object.
+    Creates a :class:`~arcgis.learn.text.QuestionAnswering` Object.
     Based on the Hugging Face transformers library
 
     =====================   ===========================================
@@ -62,7 +62,7 @@ class QuestionAnswering(InferenceOnlyModel):
                             model.
     =====================   ===========================================
 
-    :return: `QuestionAnswering` Object
+    :return: :class:`~arcgis.learn.text.QuestionAnswering` Object
     """
 
     #: supported transformer architectures

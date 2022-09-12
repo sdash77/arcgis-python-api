@@ -35,8 +35,6 @@ try:
 except:
     HAS_NTLM2 = False
 
-
-requests_ntlm = LazyLoader("requests_ntlm", strict=True)
 requests = LazyLoader("requests")
 
 
@@ -70,6 +68,11 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
                 self.auth = requests_negotiate_sspi.HttpNegotiateAuth()
             elif not username and not password and HAS_GSSAPI:
                 self.auth = requests_gssapi.HTTPSPNEGOAuth()
+            elif username and password and HAS_SSPI:
+                domain, user = username.split("\\")
+                self.auth = requests_negotiate_sspi.HttpNegotiateAuth(
+                    username=user, password=password, domain=domain
+                )
             elif username and password:
                 send_cbt = kwargs.pop("send_cbt", True)
                 if HAS_NTLM2:
@@ -87,7 +90,7 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
                         ntlm_strict_mode=ntlm_strict_mode,
                     )
                 else:
-                    self.auth = requests_ntlm.HttpNtlmAuth(
+                    self.auth = requests_ntlm2.HttpNtlmAuth(
                         username, password, send_cbt=send_cbt
                     )
             else:
@@ -108,18 +111,20 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
     def generate_portal_server_token(self, r, **kwargs):
         """generates a server token using Portal token"""
         parsed = parse_url(r.url)
+        if parsed.port:
+            server_url = f'{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path[1:].split("/")[0]}'
+        else:
+            server_url = (
+                f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
+            )
         if (
             r.text.lower().find("invalid token") > -1
             or r.text.lower().find("token required") > -1
             or r.text.lower().find("token not found") > -1
-        ) or parsed.netloc in self._server_log:
+            or r.status_code == 401
+        ) or server_url in self._server_log:
             expiration = 16000
-            if parsed.port:
-                server_url = f'{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path[1:].split("/")[0]}'
-            else:
-                server_url = (
-                    f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
-                )
+
             postdata = {
                 "request": "getToken",
                 "serverURL": server_url,
@@ -128,8 +133,8 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
             }
             if expiration:
                 postdata["expiration"] = expiration
-            if parsed.netloc in self._server_log:
-                token_url = self._server_log[parsed.netloc]
+            if server_url in self._server_log:
+                token_url = self._server_log[server_url]
             else:
                 info = requests.get(
                     server_url + "/rest/info?f=json",
@@ -138,12 +143,16 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
                     proxies=self.proxies,
                 ).json()
                 token_url = info["authInfo"]["tokenServicesUrl"]
-                self._server_log[parsed.netloc] = token_url
+                self._server_log[server_url] = token_url
             if server_url in self._tokens:
                 token_str = self._tokens[server_url]
             else:
                 token = requests.post(
-                    token_url, data=postdata, auth=self.auth, proxies=self.proxies
+                    token_url,
+                    data=postdata,
+                    auth=self.auth,
+                    proxies=self.proxies,
+                    verify=self.verify_cert,
                 )
                 token_str = token.json().get("token", None)
                 if token_str is None:
@@ -235,18 +244,19 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
     def generate_portal_server_token(self, r, **kwargs):
         """generates a server token using Portal token"""
         parsed = parse_url(r.url)
+        if parsed.port:
+            server_url = f'{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path[1:].split("/")[0]}'
+        else:
+            server_url = (
+                f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
+            )
         if (
             r.text.lower().find("invalid token") > -1
             or r.text.lower().find("token required") > -1
             or r.text.lower().find("token not found") > -1
-        ) or parsed.netloc in self._server_log:
+        ) or server_url in self._server_log:
             expiration = 16000
-            if parsed.port:
-                server_url = f'{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path[1:].split("/")[0]}'
-            else:
-                server_url = (
-                    f'{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split("/")[0]}'
-                )
+
             postdata = {
                 "request": "getToken",
                 "serverURL": server_url,
@@ -255,8 +265,8 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
             }
             if expiration:
                 postdata["expiration"] = expiration
-            if parsed.netloc in self._server_log:
-                token_url = self._server_log[parsed.netloc]
+            if server_url in self._server_log:
+                token_url = self._server_log[server_url]
             else:
                 info = requests.get(
                     server_url + "/rest/info?f=json",
@@ -265,7 +275,7 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
                     proxies=self.proxies,
                 ).json()
                 token_url = info["authInfo"]["tokenServicesUrl"]
-                self._server_log[parsed.netloc] = token_url
+                self._server_log[server_url] = token_url
             if server_url in self._tokens:
                 token_str = self._tokens[server_url]
             else:

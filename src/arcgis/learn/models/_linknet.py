@@ -51,7 +51,7 @@ class LinkNet(ArcGISModel):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function.
+                            :meth:`~arcgis.learn.prepare_data` function.
     ---------------------   -------------------------------------------
     backbone                Optional function. Backbone CNN model to be used for
                             creating the base of the `LinkNet`, which
@@ -222,7 +222,7 @@ class LinkNet(ArcGISModel):
                                 file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
         :return: `LinkNet` Object

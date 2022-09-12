@@ -111,13 +111,13 @@ class CustomBDCN:
 class BDCNEdgeDetector(ModelExtension):
     """
     Model architecture from https://arxiv.org/pdf/1902.10903.pdf.
-    Creates a ``Bi-Directional Cascade Network for Perceptual Edge Detection`` model
+    Creates a :class:`~arcgis.learn.BDCNEdgeDetector` model
 
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            ``prepare_data`` function.
+                            :meth:`~arcgis.learn.prepare_data`  function.
     ---------------------   -------------------------------------------
     backbone                Optional string. Backbone convolutional neural network
                             model used for feature extraction, which is `vgg19` by
@@ -129,7 +129,7 @@ class BDCNEdgeDetector(ModelExtension):
                             saved.
     =====================   ===========================================
 
-    :return: ``Bi-Directional Cascade Network for Perceptual Edge Detection`` Object
+    :return: :class:`~arcgis.learn.BDCNEdgeDetector` Object
     """
 
     def __init__(self, data, backbone="vgg19", pretrained_path=None):
@@ -223,7 +223,7 @@ class BDCNEdgeDetector(ModelExtension):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a ``Bi-Directional Cascade Network for Perceptual Edge Detection`` object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.BDCNEdgeDetector` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -232,12 +232,12 @@ class BDCNEdgeDetector(ModelExtension):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from ``prepare_data`` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data`  function or None for
                                 inferencing.
 
         =====================   ===========================================
 
-        :return: `Bi-Directional Cascade Network for Perceptual Edge Detection` Object
+        :return: :class:`~arcgis.learn.BDCNEdgeDetector` Object
         """
         emd_path = _get_emd_path(emd_path)
 

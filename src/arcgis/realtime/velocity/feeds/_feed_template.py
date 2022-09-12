@@ -119,9 +119,9 @@ class _FeedTemplate:
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        current_name           str. Current field name.
+        current_name           String. Current field name.
         ------------------     --------------------------------------------------------------------
-        new_name               str. New field name.
+        new_name               String. New field name.
         ==================     ====================================================================
 
         :return: Field collection after transformation
@@ -154,9 +154,9 @@ class _FeedTemplate:
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        name                   str. Field name.
+        name                   String. Field name.
         ------------------     --------------------------------------------------------------------
-        new_data_type          str. New data type for the field.
+        new_data_type          String. New data type for the field.
         ==================     ====================================================================
 
         :return: Boolean - True if data type change was successful
@@ -183,7 +183,7 @@ class _FeedTemplate:
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        name                   str. Field to be removed from the schema.
+        name                   String. Field to be removed from the schema.
         ==================     ====================================================================
 
         :return: Boolean - True if a field is removed, False otherwise
@@ -217,7 +217,7 @@ class _FeedTemplate:
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        field_name             str. Name of the track ID field. Either the original name or renamed
+        field_name             String. Name of the track ID field. Either the original name or renamed
                                field name can be used to specify the track ID.
         ==================     ====================================================================
         """
@@ -245,9 +245,9 @@ class _FeedTemplate:
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        dct                    str. Dict onto which the merge is executed.
+        dct                    String. Dict onto which the merge is executed.
         ------------------     --------------------------------------------------------------------
-        merge_dct               str. This dict will be merged into dct.
+        merge_dct              String. This dict will be merged into dct.
         ==================     ====================================================================
         """
         # Future enhancement - Move this to a util?

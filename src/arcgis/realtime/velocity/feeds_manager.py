@@ -18,7 +18,7 @@ class FeedsManager:
     ------------------     --------------------------------------------------------------------
     url                    URL of the ArcGIS Velocity organization.
     ------------------     --------------------------------------------------------------------
-    gis                    An authenticated :class:`arcigs.gis.GIS` object.
+    gis                    An authenticated :class:`~arcgis.gis.GIS` object.
     ==================     ====================================================================
 
     """

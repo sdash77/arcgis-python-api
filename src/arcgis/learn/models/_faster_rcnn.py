@@ -489,7 +489,7 @@ class FasterRCNN(ModelExtension):
     **Argument**                    **Description**
     -----------------------------   ---------------------------------------------
     data                            Required fastai Databunch. Returned data object from
-                                    ``prepare_data`` function.
+                                    :meth:`~arcgis.learn.prepare_data`  function.
     -----------------------------   ---------------------------------------------
     backbone                        Optional string. Backbone convolutional neural network
                                     model used for feature extraction, which
@@ -575,7 +575,9 @@ class FasterRCNN(ModelExtension):
                                     Default: 0.25
     =============================   =============================================
 
-    :return: ``FasterRCNN`` Object
+    :return:
+        :class:`~arcgis.learn.FasterRCNN` Object
+
     """
 
     def __init__(self, data, backbone="resnet50", pretrained_path=None, **kwargs):
@@ -667,12 +669,13 @@ class FasterRCNN(ModelExtension):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from ``prepare_data`` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data`  function or None for
                                 inferencing.
 
         =====================   ===========================================
 
-        :return: `FasterRCNN` Object
+        :return:
+            :class:`~arcgis.learn.FasterRCNN` Object
         """
         emd_path = _get_emd_path(emd_path)
 

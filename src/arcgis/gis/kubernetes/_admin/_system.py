@@ -264,7 +264,7 @@ class SystemManager(_BaseKube):
         params = {"f": "json"}
         return [
             Container(url=f"{url}/{container['id']}", gis=self._gis)
-            for continer in self._con.get(url, params).get("containerRegistries", [])
+            for container in self._con.get(url, params).get("containerRegistries", [])
         ]
 
     # ----------------------------------------------------------------------

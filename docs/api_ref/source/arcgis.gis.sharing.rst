@@ -23,3 +23,11 @@ DependencyManager
     :members:
     :undoc-members:
     :show-inheritance:
+
+MarketPlaceManager
+---------------------------
+.. autoclass:: arcgis.gis.sharing.MarketPlaceManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
+

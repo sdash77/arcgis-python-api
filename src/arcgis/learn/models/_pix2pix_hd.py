@@ -30,7 +30,7 @@ class Pix2PixHD(ArcGISModel):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function.
+                            :meth:`~arcgis.learn.prepare_data` function.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -90,11 +90,11 @@ class Pix2PixHD(ArcGISModel):
                             Default: 100 (not supported for 3 band imagery)
     =====================   ===========================================
 
-    :return: `Pix2PixHD` Object
+    :return: :class:`~arcgis.learn.Pix2PixHD` Object
     """
 
     def __init__(self, data, pretrained_path=None, *args, **kwargs):
-        super().__init__(data, pretrained_path=None, *args, **kwargs)
+        super().__init__(data, pretrained_path=pretrained_path, **kwargs)
         self._check_dataset_support(data)
         # input_nc=3, output_nc=3,
         self.kwargs = kwargs
@@ -160,7 +160,7 @@ class Pix2PixHD(ArcGISModel):
     def from_model(cls, emd_path, data=None):
 
         """
-        Creates a Pix2PixHD object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.Pix2PixHD` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -169,11 +169,11 @@ class Pix2PixHD(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `Pix2PixHD` Object
+        :return: :class:`~arcgis.learn.Pix2PixHD` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
