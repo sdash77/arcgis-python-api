@@ -15,9 +15,9 @@ class RichText(_BaseWidget):
     -------------------------   -------------------------------------------
     name                        Optional String. Name of the widget.
     -------------------------   -------------------------------------------
-    title                       Optional string. Title of the widget.
+    title                       Optional String. Title of the widget.
     -------------------------   -------------------------------------------
-    description                 Optional string. Description of the widget.
+    description                 Optional String. Description of the widget.
     =========================   ===========================================
     """
 
@@ -47,14 +47,14 @@ class RichText(_BaseWidget):
     @property
     def type(self):
         """
-        :return: widget type.
+        :return: Widget type.
         """
         return self._type
 
     @property
     def text(self):
         """
-        :return: text field for rich text
+        :return: Text field for rich text
         """
         return self._text
 

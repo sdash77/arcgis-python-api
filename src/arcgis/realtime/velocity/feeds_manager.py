@@ -11,14 +11,14 @@ _LOGGER = logging.getLogger(__name__)
 
 class FeedsManager:
     """
-    Use to get feeds item
+    Used to manage a feed item.
 
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-    url                    velocity org URL
+    url                    URL of the ArcGIS Velocity organization.
     ------------------     --------------------------------------------------------------------
-    gis                    an authenticated :class:`arcigs.gis.GIS` object.
+    gis                    An authenticated :class:`~arcgis.gis.GIS` object.
     ==================     ====================================================================
 
     """
@@ -33,7 +33,7 @@ class FeedsManager:
     @property
     def items(self) -> List[Feed]:
         """
-        Get all Feeds
+        Get all feeds.
 
         :return: returns a collection of all configured feed tasks with feed id and feed label.
 
@@ -61,12 +61,12 @@ class FeedsManager:
 
     def get(self, id) -> Feed:
         """
-        Get Feed by id
+        Get feed by ID.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        id                  unique id of a feed
+        id                  Unique ID of a feed.
         ===============     ====================================================================
 
         :return: endpoint response of feed for the given id and label.
@@ -84,12 +84,12 @@ class FeedsManager:
 
     def create(self, feed=None) -> Feed:
         """
-        Creates a new feed configuration
+        Creates a new feed configuration.
 
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        feed                An instance of feed like RSS, HTTP Poller etc.
+        feed                An instance of a feed such as RSS or HTTP Poller.
         ===============     ====================================================================
 
         :return: Id and label of the newly created feed

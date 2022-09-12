@@ -10,7 +10,7 @@ class BaseOGC(object):
     ---------------     --------------------------------------------------------------------
     url                 Required string. The web address of the endpoint.
     ---------------     --------------------------------------------------------------------
-    gis                 Optional GIS. The `GIS` connection object
+    gis                 Optional :class:`~arcgis.gis.GIS` . The `GIS` connection object
     ---------------     --------------------------------------------------------------------
     copyright           Optional String. Describes limitations and usage of the data.
     ---------------     --------------------------------------------------------------------
@@ -57,7 +57,7 @@ class BaseOGC(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return f"<{self.__class__.__name__} @ {self._url}>"
+        return f"< {self.__class__.__name__} @ {self._url} >"
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -178,7 +178,7 @@ class BaseOpenData(BaseOGC):
     ---------------     --------------------------------------------------------------------
     url                 Required string. The web address of the endpoint.
     ---------------     --------------------------------------------------------------------
-    gis                 Optional GIS. The `GIS` connection object
+    gis                 Optional :class:`~arcgis.gis.GIS` . The `GIS` connection object
     ---------------     --------------------------------------------------------------------
     copyright           Optional String. Describes limitations and usage of the data.
     ---------------     --------------------------------------------------------------------

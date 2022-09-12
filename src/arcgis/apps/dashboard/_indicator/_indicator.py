@@ -11,8 +11,8 @@ class Indicator(_BaseWidget):
     =========================   ===========================================
     **Argument**                **Description**
     -------------------------   -------------------------------------------
-    item                        Required Portal Item object. Item object can
-                                be a Feature Layer or a MapWidget.
+    item                        Required Portal :class:`~arcgis.gis.Item` object. Item object can
+                                be a :class:`~arcgis.features.FeatureLayer`  or a MapWidget.
     -------------------------   -------------------------------------------
     name                        Optional string. Name of the Indicator
                                 widget.
@@ -83,7 +83,7 @@ class Indicator(_BaseWidget):
     @property
     def max_features(self):
         """
-        :return: max features for widget.
+        :return: Maximum features for widget.
         """
         return self._max_features
 
@@ -97,7 +97,7 @@ class Indicator(_BaseWidget):
     @property
     def show_last_update(self):
         """
-        :return: show last update or not.
+        :return: Show last update or not.
         """
         return self._show_last_update
 
@@ -350,7 +350,64 @@ class IndicatorData(object):
 
     def add_filter(self, field, join, condition, **kwargs):
         """
-        Add filters associated with widget.
+        Add filters associated with widget. The filters are applied to the
+        layer used    in the initialization of the Indicator widget. Please
+        see `Filter data <https://doc.arcgis.com/en/dashboards/get-started/filter-data.htm>`_
+        for detailed description of how filtering works with dashboard elements.
+
+        ===============     ====================================================
+        **Argument**        **Description**
+        ---------------     ----------------------------------------------------
+        field               The layer's attribute field name that will be used
+                            to limit the features visualized in the widget.
+        ---------------     ----------------------------------------------------
+        join                Specify `AND` or `OR` to indicate whether there
+                            will be one or multiple filter conditions.
+        ---------------     ----------------------------------------------------
+        condition           The operator used to evaluate the attributes and
+                            return the subset of results. The operators
+                            available change depending upon the type of the
+                            attribute field. See
+                            `Filter condition components <https://doc.arcgis.com/en/dashboards/get-started/filter-data.htm>`_
+                            for details on what conditions apply to an
+                            attribute field based on its contents.
+        ===============     ====================================================
+
+        In addition to explicitly named parameters,
+        the :meth:`~arcgis.apps.dashboard.IndicatorData.add_filter` method supports an
+        optional key word argument when the condition is `equal`, `not  equal`
+        `greater than`, `greater than or equal`, `less than`, or
+        `less than or equal`
+
+        ================    ====================================================
+        **kwargs**          **Description**
+        ----------------    ----------------------------------------------------
+        value               The specific value or values to use to determine
+                            which subset of layer or table rows to include.
+        ================    ====================================================
+
+        .. code-block:: python
+
+            # Usage Example
+            >>> indicator1 = Indicator(item=flyr_item)
+            # Set attribute field to use for default statistic of `count`
+            >>> indicator1.data.value_field = "ObjectId"
+            # Add filter for ObjectID's greater than 1500 to data object
+            >>> indicator1.data.add_filter(field="ObjectId",
+                                           join="AND",
+                                           condition="greater than",
+                                           value=1500)
+
+            >>> new_dash = Dashboard()
+            # Set the dashboard layour to include the widget
+            >>> new_dash.layout = add_row([indicator1])
+            >>> saved_dash = new_dash.save(title="Dashboard with Indicator",
+                                            description="Dashboard with indicator widget based
+                                                         "on a hosted feature layer with one"
+                                                         "layer",
+                                            summary="Single layer indicator created in API.",
+                                            tags="python_api,dashboard,single_layer_hfl",
+                                            overwrite=True)
         """
         self._filter_field = field
         if join in ["AND", "OR"]:

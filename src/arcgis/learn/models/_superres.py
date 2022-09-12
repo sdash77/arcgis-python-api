@@ -25,7 +25,7 @@ try:
     from fastai.callbacks import LossMetrics
     from fastai.utils.mem import Path
     from .._utils.common import _get_emd_path
-    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from .._utils.env import is_arcgispronotebook
 
     HAS_FASTAI = True
 except Exception as e:
@@ -45,10 +45,10 @@ class SuperResolution(ArcGISModel):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function.
+                            :meth:`~arcgis.learn.prepare_data` function.
     ---------------------   -------------------------------------------
     backbone                Optional function. Backbone CNN model to be used for
-                            creating the base of the `UnetClassifier`, which
+                            creating the base of the :class:`~arcgis.learn.SuperResolution`, which
                             is `resnet34` by default.
                             Compatible backbones: 'resnet18', 'resnet34', 'resnet50', 'resnet101', 'resnet152'
     ---------------------   -------------------------------------------
@@ -56,7 +56,7 @@ class SuperResolution(ArcGISModel):
                             saved.
     =====================   ===========================================
 
-    :return: `SuperResolution` Object
+    :return: :class:`~arcgis.learn.SuperResolution` Object
     """
 
     def __init__(self, data, backbone=None, pretrained_path=None, *args, **kwargs):
@@ -103,7 +103,7 @@ class SuperResolution(ArcGISModel):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a SuperResolution object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.SuperResolution` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -112,11 +112,11 @@ class SuperResolution(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `SuperResolution` Object
+        :return: :class:`~arcgis.learn.SuperResolution` Object
         """
         return cls.from_emd(data, emd_path)
 
@@ -129,14 +129,14 @@ class SuperResolution(ArcGISModel):
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Esri Model Definition
                                 file.
         =====================   ===========================================
 
-        :return: `SuperResolution` Object
+        :return: :class:`~arcgis.learn.SuperResolution` Object
         """
 
         if not HAS_FASTAI:
@@ -222,7 +222,7 @@ class SuperResolution(ArcGISModel):
 
         self._check_requisites()
         self.learn.show_results(rows=rows)
-        if _IS_ARCGISPRONOTEBOOK:
+        if is_arcgispronotebook():
             from matplotlib import pyplot as plt
 
             plt.show()

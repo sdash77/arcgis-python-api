@@ -1,6 +1,7 @@
 import sys, json, uuid
+import sys
 
-# sys.path.insert(0, r"c:\SVN\geosaurus_master_issue_4790a\src")
+sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
 import unittest
 from arcgis.auth import EsriSession, EsriUserTokenAuth, EsriBuiltInAuth
 

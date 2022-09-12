@@ -3,7 +3,8 @@ A module for managing forms in the ArcGIS platform
 """
 
 import json
-import arcgis
+from typing import Optional, Union
+from arcgis import mapping
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.gis import Item
 from arcgis.features import FeatureLayer
@@ -67,13 +68,13 @@ class FormCollection:
 
     def __next__(self):
         if self._index >= len(self.forms):
-            return StopIteration
+            raise StopIteration
         else:
             self._index += 1
             return self.forms[self._index - 1]
 
     def _refresh_forms(self, parent):
-        if isinstance(parent, arcgis.mapping.WebMap):
+        if isinstance(parent, mapping.WebMap):
             self.forms = self._get_forms_from_webmap(parent)
         elif isinstance(parent, Item):
             if parent.type != "Feature Layer Collection":
@@ -82,7 +83,12 @@ class FormCollection:
         else:
             raise ValueError("Parent item must be webmap or feature layer collection")
 
-    def get(self, item_id=None, title=None, layer_id=None):
+    def get(
+        self,
+        item_id: Optional[str] = None,
+        title: Optional[str] = None,
+        layer_id: Optional[str] = None,
+    ):
         """
         Returns the form for the first layer with a matching item_id, title, or layer_id in the webmap's
         operational layers. Pass one of the three parameters into the method to return the form.
@@ -124,7 +130,22 @@ class FormCollection:
         """This is a shared method which creates an array of forms if given an array of layers."""
         # we save parent here into the form in order to distinguish between whether from_item or from_webmap was used and to get a usable GIS
         for layer in layers:
-            forms.append(FormInfo(layer, parent))
+            FormCollection._get_forms_within_group_layer(forms, layer, parent)
+
+    @staticmethod
+    def _get_forms_within_group_layer(forms, layer, parent, subtype_gl_layer=None):
+        if layer.layerType == "GroupLayer":
+            for sub_layer in reversed(layer.layers):
+                FormCollection._get_forms_within_group_layer(forms, sub_layer, parent)
+        elif layer.layerType == "SubtypeGroupLayer":
+            for sub_layer in reversed(layer.layers):
+                FormCollection._get_forms_within_group_layer(
+                    forms, sub_layer, parent, subtype_gl_layer=layer
+                )
+        elif layer.layerType == "ArcGISFeatureLayer" and not hasattr(
+            layer, "featureCollection"
+        ):
+            forms.append(FormInfo(layer, parent, subtype_gl_layer))
 
     def _get_forms_from_item(self, item):
         """Populates self.forms given an item."""
@@ -157,10 +178,15 @@ class FormInfo:
                            operational layer which contains the formInfo dict. It can be
                            retrieved from a webmap using `arcgis.mapping.WebMap(item).layers[0]`
     ------------------     --------------------------------------------------------------------
-    parent                 Required :class:`arcgis.mapping.WebMap` or :class:`arcgis.gis.Item`.
+    parent                 Required :class:`~arcgis.mapping.WebMap` or :class:`~arcgis.gis.Item`.
                            This is the object which contains the layer, either an item of type
                            `Feature Layer Collection` or a webmap. This is needed to save your
                            form changes to the backend.
+    ------------------     --------------------------------------------------------------------
+    subtype_gl_data        Optional :class:`PropertyMap` or :class:`dict`. This is the
+                           operational layer representing a subtype group layer which contains
+                           the layer containing the form. It can be retrieved from a webmap
+                           using `arcgis.mapping.WebMap(item).layers[0]`
     ==================     ====================================================================
 
     .. code-block:: python
@@ -196,11 +222,17 @@ class FormInfo:
             form_info.update()
     """
 
-    def __init__(self, layer_data, parent):
+    def __init__(self, layer_data, parent, subtype_gl_data=None, **kwargs):
         if not isinstance(layer_data, (dict, PropertyMap)):
             raise ValueError(
                 "Incorrect layer type passed to FormInfo class. Please pass in a property map"
             )
+        if subtype_gl_data and not isinstance(subtype_gl_data, (dict, PropertyMap)):
+            raise ValueError(
+                "Incorrect subtype group layer type passed to FormInfo class. Please pass in a property map"
+            )
+        self._kwargs = kwargs
+        self._subtype_group_layer_data = subtype_gl_data
         self._original_layer = layer_data
         self._layer_data = copy.deepcopy(layer_data)
         self._form = self._layer_data.get("formInfo", {})
@@ -212,6 +244,7 @@ class FormInfo:
                 expression=exp.get("expression"),
                 name=exp.get("name"),
                 title=exp.get("title"),
+                return_type=exp.get("returnType"),
             )
             self._expression_infos.append(expression)
         self._form_elements = self._get_form_element_objects(
@@ -219,7 +252,10 @@ class FormInfo:
         )
         self._parent = parent
         try:
-            url = self._original_layer["url"]
+            if self._subtype_group_layer_data:
+                url = self._subtype_group_layer_data["url"]
+            else:
+                url = self._original_layer["url"]
             self.feature_layer = FeatureLayer(url=url, gis=self._parent._gis)
             self._fields = self._get_fields()
             self._edit_fields = self._get_edit_fields()
@@ -242,7 +278,7 @@ class FormInfo:
         return "None"
 
     def exists(self):
-        """Returns whether or not the form exists for that particular layer."""
+        """Returns whether the form exists for that particular layer or not."""
         return len(self._form_elements) > 0
 
     def clear(self):
@@ -252,7 +288,7 @@ class FormInfo:
         self._title = None
         self._description = None
 
-    def get(self, label=None):
+    def get(self, label: Optional[str] = None):
         """
         Returns a matching FormElement given a label
 
@@ -264,8 +300,7 @@ class FormInfo:
                                form elements
         ==================     ====================================================================
 
-        :return: :class:`~arcgis.mapping.forms.FormFieldElement` or
-        :class:`~arcgis.mapping.forms.FormGroupElement`or `None`
+        :return: :class:`~arcgis.mapping.forms.FormFieldElement` or :class:`~arcgis.mapping.forms.FormGroupElement` or `None`
         """
         try:
             for el in self._form_elements:
@@ -302,13 +337,13 @@ class FormInfo:
 
     @property
     def elements(self):
-        """Returns elements in the form to the user - a list of :class:`arcgis.mapping.forms.FormElement`"""
+        """Returns elements in the form to the user - a list of :class:`~arcgis.mapping.forms.FormElement`"""
         return self._form_elements
 
     @property
     def expressions(self):
         """
-        Returns Arcade expressions used in the form to the user - a list of :class:`arcgis.mapping.forms.FormExpressionInfo`
+        Returns Arcade expressions used in the form to the user - a list of :class:`~arcgis.mapping.forms.FormExpressionInfo`
         """
         return self._expression_infos
 
@@ -327,7 +362,7 @@ class FormInfo:
             else:
                 item_data["layers"][self._layer_data["id"]].pop("formInfo", None)
             self._parent.update(data=item_data)
-        if isinstance(self._parent, arcgis.mapping.WebMap):
+        if isinstance(self._parent, mapping.WebMap):
             if self.exists():
                 self._original_layer["formInfo"] = self.to_dict()
             else:
@@ -351,6 +386,8 @@ class FormInfo:
             data["description"] = self._description
         if self._title:
             data["title"] = self._title
+        for key, value in self._kwargs.items():
+            data[key] = value
         return data
 
     def add_all_attributes(self):
@@ -367,7 +404,11 @@ class FormInfo:
             except Exception:
                 continue
 
-    def add(self, element=None, index=None):
+    def add(
+        self,
+        element=None,
+        index: Optional[int] = None,
+    ):
         """
         Adds a single :class:`~arcgis.mapping.forms.FormElement` to the form. You can add to the form either by instantiating your
         own :class:`~arcgis.mapping.forms.FormFieldElement` or :class:`~arcgis.mapping.forms.FormGroupElement` and passing it into the element parameter here,
@@ -377,40 +418,38 @@ class FormInfo:
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        element                Optional :class:`arcgis.mapping.forms.FormFieldElement` or
-                               :class:`arcgis.mapping.forms.FormGroupElement`.
-        ------------------     --------------------------------------------------------------------
-        field_name             Optional :class:`str`.
-                               An actual field name (not alias) corresponding to a field in the
-                               form's feature layer
+        element                Optional :class:`~arcgis.mapping.forms.FormFieldElement` or
+                               :class:`~arcgis.mapping.forms.FormGroupElement`.
         ------------------     --------------------------------------------------------------------
         index                  Optional :class:`int`.
                                The index where you'd like the element in the form. If not provided,
                                this function will add the new element to the end of the form.
         ==================     ====================================================================
 
-        :return: The element that was added - :class:`arcgis.mapping.forms.FormFieldElement` or
-        :class:`arcgis.mapping.forms.FormGroupElement`
+        :return: The element that was added - :class:`~arcgis.mapping.forms.FormFieldElement` or :class:`~arcgis.mapping.forms.FormGroupElement`
         """
         self._validate_input(element=element)
         self._validate_element(element)
         if index is None:
             index = len(self._form_elements)
         self._form_elements.insert(index, element)
+        self._hydrate_expression_infos()
         return element
 
     def add_field(
         self,
-        field_name,
-        label,
-        description=None,
+        field_name: str,
+        label: str,
+        description: Optional[str] = None,
         visibility_expression=None,
-        domain=None,
-        editable=None,
-        hint=None,
-        input_type=None,
+        domain: Optional[dict] = None,
+        editable: Optional[bool] = None,
+        hint: Optional[str] = None,
+        input_type: Optional[Union[str, dict]] = None,
         required_expression=None,
-        index=None,
+        index: Optional[int] = None,
+        editable_expression=None,
+        value_expression=None,
         **kwargs,
     ):
         """
@@ -431,7 +470,7 @@ class FormInfo:
         description                Optional :class:`str`.
                                    The description of the form element
         ----------------------     --------------------------------------------------------------------
-        visibility_expression      Optional :class:`arcgis.mapping.forms.FormExpressionInfo`.
+        visibility_expression      Optional :class:`~arcgis.mapping.forms.FormExpressionInfo`.
                                    The conditional visibility Arcade expression determining the
                                    visibility of the form element during data collection
         ----------------------     --------------------------------------------------------------------
@@ -449,16 +488,24 @@ class FormInfo:
                                    Options include: "text-area", "text-box", "barcode-scanner",
                                    "combo-box", "radio-buttons", "datetime-picker"
         ----------------------     --------------------------------------------------------------------
-        required_expression        Optional :class:`arcgis.mapping.forms.FormExpressionInfo`.
+        required_expression        Optional :class:`~arcgis.mapping.forms.FormExpressionInfo`.
                                    The conditional visibility Arcade expression determining the
-                                   requiredness of the form element during data collection
+                                   necessity of the form element during data collection
         ----------------------     --------------------------------------------------------------------
         index                      Optional :class:`int`.
                                    The index where you'd like the element in the form. If not provided,
                                    this function will add the new element to the end of the form.
+        ----------------------     --------------------------------------------------------------------
+        editable_expression        Optional :class:`~arcgis.mapping.forms.FormExpressionInfo`.
+                                   The Arcade expression determining the
+                                   editablity of the form element during data collection
+        ----------------------     --------------------------------------------------------------------
+        value_expression           Optional :class:`~arcgis.mapping.forms.FormExpressionInfo`.
+                                   The Arcade expression which calculates a value for the form
+                                   element during data collection
         ======================     ====================================================================
 
-        :return: The element that was added - :class:`arcgis.mapping.forms.FormGroupElement`
+        :return: The element that was added - :class:`~arcgis.mapping.forms.FormGroupElement`
         """
 
         element = FormFieldElement(
@@ -472,17 +519,19 @@ class FormInfo:
             hint=hint,
             input_type=input_type,
             required_expression=required_expression,
+            editable_expression=editable_expression,
+            value_expression=value_expression,
             **kwargs,
         )
         return self.add(element, index=index)
 
     def add_group(
         self,
-        label,
-        description=None,
+        label: str,
+        description: Optional[str] = None,
         visibility_expression=None,
-        initial_state=None,
-        index=None,
+        initial_state: Optional[str] = None,
+        index: Optional[int] = None,
         **kwargs,
     ):
         """
@@ -495,7 +544,7 @@ class FormInfo:
         ----------------------     --------------------------------------------------------------------
         description                Optional :class:`str`. The description of the group
         ----------------------     --------------------------------------------------------------------
-        visibility_expression      Optional :class:`arcgis.mapping.forms.FormExpressionInfo`.
+        visibility_expression      Optional :class:`~arcgis.mapping.forms.FormExpressionInfo`.
                                    The conditional visibility Arcade expression determining the
                                    visibility of the form element during data collection
         ----------------------     --------------------------------------------------------------------
@@ -506,7 +555,7 @@ class FormInfo:
                                    this function will add the new element to the end of the form.
         ======================     ====================================================================
 
-        :return: The element that was added - :class:`arcgis.mapping.forms.FormGroupElement`
+        :return: The element that was added - :class:`~arcgis.mapping.forms.FormGroupElement`
         """
         group_el = FormGroupElement(
             label=label,
@@ -517,7 +566,11 @@ class FormInfo:
         )
         return self.add(group_el, index=index)
 
-    def delete(self, element=None, label=None):
+    def delete(
+        self,
+        element=None,
+        label: Optional[str] = None,
+    ):
         """
         Deletes element from the form. You can use either the element param
         with a form element you get using :attr:`~arcgis.mapping.FormInfo.get()` or you can pass the label of the
@@ -526,16 +579,16 @@ class FormInfo:
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        element                Optional :class:`arcgis.mapping.forms.FormFieldElement` or
-                               :class:`arcgis.mapping.forms.FormGroupElement`
+        element                Optional :class:`~arcgis.mapping.forms.FormFieldElement` or
+                               :class:`~arcgis.mapping.forms.FormGroupElement`
         ------------------     --------------------------------------------------------------------
         label                  Optional :class:`str`.
                                An actual field name (not alias) corresponding to a field in the
                                form's feature layer
         ==================     ====================================================================
 
-        :return: :class:`arcgis.mapping.forms.FormFieldElement` or
-                 :class:`arcgis.mapping.forms.FormGroupElement`
+        :return: :class:`~arcgis.mapping.forms.FormFieldElement` or
+                 :class:`~arcgis.mapping.forms.FormGroupElement`
                  or `False`
         """
         self._validate_input(element=element, field=label)
@@ -543,11 +596,18 @@ class FormInfo:
             element = self.get(label=label)
         try:
             self._form_elements.remove(element)
+            self._hydrate_expression_infos()
             return element
         except Exception:
             return False
 
-    def move(self, element=None, label=None, destination=None, index=None):
+    def move(
+        self,
+        element=None,
+        label: Optional[str] = None,
+        destination=None,
+        index: Optional[int] = None,
+    ):
         """
         Moves a form element in the form to a new location. You can use either the element param
         with a form element you get using :attr:`~arcgis.mapping.FormInfo.get()` or you can pass the label of the
@@ -556,8 +616,8 @@ class FormInfo:
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        element                Optional :class:`arcgis.mapping.forms.FormFieldElement` or
-                               :class:`arcgis.mapping.forms.FormGroupElement`
+        element                Optional :class:`~arcgis.mapping.forms.FormFieldElement` or
+                               :class:`~arcgis.mapping.forms.FormGroupElement`
         ------------------     --------------------------------------------------------------------
         label                  Optional :class:`str`
                                The label of the form element you'd like to move to a new location
@@ -715,6 +775,10 @@ class FormInfo:
             return []
 
     @staticmethod
+    def _get_expression_info(form, expression_name):
+        return next((e for e in form.expressions if e.name == expression_name), None)
+
+    @staticmethod
     def _get_form_element_objects(form_elements, form=None):
         """Shared between FormInfo and FormGroupElement to construct an array of FormElement objects from dictionaries for external usage."""
         elements = []
@@ -730,7 +794,21 @@ class FormInfo:
                     field_name=element.get("fieldName"),
                     hint=element.get("hint"),
                     input_type=element.get("inputType"),
-                    required_expression=element.get("requiredExpression"),
+                    required_expression=FormInfo._get_expression_info(
+                        form, element.get("requiredExpression")
+                    )
+                    if form
+                    else None,
+                    editable_expression=FormInfo._get_expression_info(
+                        form, element.get("editableExpression")
+                    )
+                    if form
+                    else None,
+                    value_expression=FormInfo._get_expression_info(
+                        form, element.get("valueExpression")
+                    )
+                    if form
+                    else None,
                 )
             elif element["type"] == "group":
                 el = FormGroupElement(
@@ -739,7 +817,11 @@ class FormInfo:
                     initial_state=element.get("initialState"),
                     description=element.get("description"),
                     label=element.get("label"),
-                    visibility_expression=element.get("visibilityExpression"),
+                    visibility_expression=FormInfo._get_expression_info(
+                        form, element.get("visibilityExpression")
+                    )
+                    if form
+                    else None,
                 )
             else:
                 el = FormElement(
@@ -747,17 +829,14 @@ class FormInfo:
                     element_type=element.get("type"),
                     description=element.get("description"),
                     label=element.get("label"),
-                    visibility_expression=element.get("visibilityExpression"),
+                    visibility_expression=FormInfo._get_expression_info(
+                        form, element.get("visibilityExpression")
+                    )
+                    if form
+                    else None,
                 )
             elements.append(el)
         return elements
-
-    def _get_expression_info(self, name):
-        """Returns expression info based on name."""
-        for expression in self._expression_infos:
-            if expression.name == name:
-                return expression
-        return None
 
     def _hydrate_expression_infos(self):
         for form_el in self._form_elements:
@@ -767,25 +846,65 @@ class FormInfo:
                     self._hydrate_element_expressions(el)
 
     def _hydrate_element_expressions(self, element):
-        """For each element's visibility and required expression, check if it exists in the expression info list. If it's a FormExpressionInfo object,
-        add it to the list. If it's not, remove the expression as it does not point to anything and we can't form a FormExpressionInfo"""
+        """For each element's visibility and required expression, check if it exists in the expression info list. If it's a :class:`~arcgis.mapping.forms.FormExpressionInfo` object,
+        add it to the list. If it's not, remove the expression as it does not point to anything and we can't form a :class:`~arcgis.mapping.forms.FormExpressionInfo`"""
         if element.visibility_expression:
             if isinstance(element.visibility_expression, FormExpressionInfo):
                 if (
-                    self._get_expression_info(element.visibility_expression.name)
+                    self._get_expression_info(self, element.visibility_expression.name)
                     is None
                 ):
                     self._expression_infos.append(element.visibility_expression)
             else:
-                if self._get_expression_info(element.visibility_expression) is None:
+                if (
+                    self._get_expression_info(self, element.visibility_expression)
+                    is None
+                ):
                     element._visibility_expression = None
-        if element.element_type == "field" and element.required_expression:
-            if isinstance(element.required_expression, FormExpressionInfo):
-                if self._get_expression_info(element.required_expression.name) is None:
-                    self._expression_infos.append(element.required_expression)
-            else:
-                if self._get_expression_info(element.required_expression) is None:
-                    element._required_expression = None
+        if element.element_type == "field":
+            if element.required_expression:
+                if isinstance(element.required_expression, FormExpressionInfo):
+                    if (
+                        self._get_expression_info(
+                            self, element.required_expression.name
+                        )
+                        is None
+                    ):
+                        self._expression_infos.append(element.required_expression)
+                else:
+                    if (
+                        self._get_expression_info(self, element.required_expression)
+                        is None
+                    ):
+                        element._required_expression = None
+            if element.editable_expression:
+                if isinstance(element.editable_expression, FormExpressionInfo):
+                    if (
+                        self._get_expression_info(
+                            self, element.editable_expression.name
+                        )
+                        is None
+                    ):
+                        self._expression_infos.append(element.editable_expression)
+                else:
+                    if (
+                        self._get_expression_info(self, element.editable_expression)
+                        is None
+                    ):
+                        element._editable_expression = None
+            if element.value_expression:
+                if isinstance(element.value_expression, FormExpressionInfo):
+                    if (
+                        self._get_expression_info(self, element.value_expression.name)
+                        is None
+                    ):
+                        self._expression_infos.append(element.value_expression)
+                else:
+                    if (
+                        self._get_expression_info(self, element.value_expression)
+                        is None
+                    ):
+                        element._value_expression = None
 
     def _get_required_fields(self):
         required_fields = []
@@ -822,7 +941,8 @@ class FormInfo:
 
 
 class FormElement:
-    """The superclass class for FormFieldElement and FormGroupElement. Contains properties common to
+    """
+    The superclass class for :class:`~arcgis.mapping.forms.FormFieldElement` and :class:`~arcgis.mapping.forms.FormGroupElement`. Contains properties common to
     the two types of field elements. Instantiate a FormFieldElement or FormGroupElement instead of this class.
     """
 
@@ -893,10 +1013,7 @@ class FormElement:
         if self._element_type:
             el_dict["type"] = self._element_type
         if self._visibility_expression:
-            try:
-                el_dict["visibilityExpression"] = self._visibility_expression.name
-            except AttributeError:
-                el_dict["visibilityExpression"] = self._visibility_expression
+            el_dict["visibilityExpression"] = self._visibility_expression.name
         for key, value in self._kwargs.items():
             el_dict[key] = value
         return el_dict
@@ -914,7 +1031,7 @@ class FormFieldElement(FormElement):
     ======================     ====================================================================
     **Argument**               **Description**
     ----------------------     --------------------------------------------------------------------
-    form                       Optional :class:`arcgis.mapping.forms.FormInfo`.
+    form                       Optional :class:`~arcgis.mapping.forms.FormInfo`.
                                The form which contains this field element.
     ----------------------     --------------------------------------------------------------------
 
@@ -924,7 +1041,7 @@ class FormFieldElement(FormElement):
     label                      Optional :class:`str`.
                                The label of the form element
     ----------------------     --------------------------------------------------------------------
-    visibility_expression      Optional :class:`arcgis.mapping.forms.FormExpressionInfo`.
+    visibility_expression      Optional :class:`~arcgis.mapping.forms.FormExpressionInfo`.
                                The conditional visibility Arcade expression determining the
                                visibility of the form element during data collection
     ----------------------     --------------------------------------------------------------------
@@ -943,12 +1060,13 @@ class FormFieldElement(FormElement):
     ----------------------     --------------------------------------------------------------------
     input_type                 Optional :class:`str` or :class:`dict`.
                                The input type for the form element in ArcGIS Field Maps.
-                               Options include: "text-area", "text-box", "barcode-scanner",
-                               "combo-box", "radio-buttons", "datetime-picker"
+
+                               Options include:
+                                    "text-area", "text-box", "barcode-scanner", "combo-box", "radio-buttons", "datetime-picker"
     ----------------------     --------------------------------------------------------------------
-    required_expression        Optional :class:`arcgis.mapping.forms.FormExpressionInfo`.
+    required_expression        Optional :class:`~arcgis.mapping.forms.FormExpressionInfo`.
                                The conditional visibility Arcade expression determining the
-                               requiredness of the form element during data collection
+                               necessity of the form element during data collection
     ======================     ====================================================================
 
     .. code-block:: python
@@ -983,6 +1101,8 @@ class FormFieldElement(FormElement):
         hint=None,
         input_type=None,
         required_expression=None,
+        editable_expression=None,
+        value_expression=None,
         **kwargs,
     ):
         super().__init__(
@@ -997,8 +1117,10 @@ class FormFieldElement(FormElement):
         self._editable = editable
         self._field_name = field_name
         self._hint = hint
-        self._input_type = input_type
+        self.input_type = input_type
         self._required_expression = required_expression
+        self._editable_expression = editable_expression
+        self._value_expression = value_expression
 
     def __repr__(self):
         if self._label:
@@ -1015,7 +1137,7 @@ class FormFieldElement(FormElement):
         return self._domain
 
     @domain.setter
-    def domain(self, value):
+    def domain(self, value: dict):
         if not isinstance(value, dict):
             raise ValueError("Please pass a dict into this function")
         self._domain = value
@@ -1026,7 +1148,7 @@ class FormFieldElement(FormElement):
         return self._editable
 
     @editable.setter
-    def editable(self, value):
+    def editable(self, value: bool):
         self._editable = value
 
     @property
@@ -1061,17 +1183,19 @@ class FormFieldElement(FormElement):
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        value               Required string.
-                            Values: "text-area" | "text-box" | "barcode-scanner" | "combo-box" |
-                                    "radio-buttons" | "datetime-picker"
+        value               Required string or dictionary.
+
+                            Values:
+
+                                "text-area" | "text-box" | "barcode-scanner" | "combo-box" | "radio-buttons" | "datetime-picker"
         ===============     ====================================================================
 
-        :return: String that represents the input type
+        :return: dictionary that represents the input type
         """
         return self._input_type
 
     @input_type.setter
-    def input_type(self, value):
+    def input_type(self, value: Union[str, dict]):
         if value in [
             "text-area",
             "text-box",
@@ -1085,13 +1209,37 @@ class FormFieldElement(FormElement):
 
     @property
     def required_expression(self):
-        """Gets/sets the required expression of the form element. Takes an object of FormExpressionInfo."""
+        """Gets/sets the required expression of the form element. Takes an object of :class:`~arcgis.mapping.forms.FormExpressionInfo` ."""
         return self._required_expression
 
     @required_expression.setter
     def required_expression(self, value):
         if isinstance(value, FormExpressionInfo) or value is None:
             self._required_expression = value
+        else:
+            raise ValueError("Please pass a FormExpressionInfo object")
+
+    @property
+    def editable_expression(self):
+        """Gets/sets the editable expression of the form element. Takes an object of :class:`~arcgis.mapping.forms.FormExpressionInfo` ."""
+        return self._editable_expression
+
+    @editable_expression.setter
+    def editable_expression(self, value):
+        if isinstance(value, FormExpressionInfo) or value is None:
+            self._editable_expression = value
+        else:
+            raise ValueError("Please pass a FormExpressionInfo object")
+
+    @property
+    def value_expression(self):
+        """Gets/sets the value expression of the form element. Takes an object of :class:`~arcgis.mapping.forms.FormExpressionInfo`  ."""
+        return self._value_expression
+
+    @value_expression.setter
+    def value_expression(self, value):
+        if isinstance(value, FormExpressionInfo) or value is None:
+            self._value_expression = value
         else:
             raise ValueError("Please pass a FormExpressionInfo object")
 
@@ -1108,10 +1256,11 @@ class FormFieldElement(FormElement):
         if self._input_type:
             el_dict["inputType"] = self._input_type
         if self._required_expression:
-            try:
-                el_dict["requiredExpression"] = self._required_expression.name
-            except AttributeError:
-                el_dict["requiredExpression"] = self._required_expression
+            el_dict["requiredExpression"] = self._required_expression.name
+        if self._editable_expression:
+            el_dict["editableExpression"] = self._editable_expression.name
+        if self._value_expression:
+            el_dict["valueExpression"] = self._value_expression.name
         return el_dict
 
 
@@ -1126,7 +1275,7 @@ class FormGroupElement(FormElement):
     ======================     ====================================================================
     **Argument**               **Description**
     ----------------------     --------------------------------------------------------------------
-    form                       Optional :class:`arcgis.mapping.forms.FormInfo`.
+    form                       Optional :class:`~arcgis.mapping.forms.FormInfo`.
                                The form which contains this group element.
     ----------------------     --------------------------------------------------------------------
     description                Optional :class:`str`.
@@ -1135,7 +1284,7 @@ class FormGroupElement(FormElement):
     label                      Optional :class:`str`.
                                The label of the group element
     ----------------------     --------------------------------------------------------------------
-    visibility_expression      Optional :class:`arcgis.mapping.forms.FormExpressionInfo`.
+    visibility_expression      Optional :class:`~arcgis.mapping.forms.FormExpressionInfo`.
                                The conditional visibility Arcade expression determining the
                                visibility of the form element during data collection
     ----------------------     --------------------------------------------------------------------
@@ -1202,7 +1351,7 @@ class FormGroupElement(FormElement):
 
     @property
     def elements(self):
-        """Returns elements in the group to the user - a list of :class:`arcgis.mapping.forms.FormElement`."""
+        """Returns elements in the group to the user - a list of :class:`~arcgis.mapping.forms.FormElement`."""
         return self._form_elements
 
     @property
@@ -1214,18 +1363,23 @@ class FormGroupElement(FormElement):
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required string.
-                            Values: "collapsed" | "expanded"
+
+                            Values:
+
+                                "collapsed" | "expanded"
         ===============     ====================================================================
         """
         return self._initial_state
 
     @initial_state.setter
-    def initial_state(self, value):
+    def initial_state(self, value: str):
         if value not in ["collapsed", "expanded"]:
             raise ValueError("Value can either be collapsed or expanded")
         self._initial_state = value
 
-    def add(self, element=None, index=None):
+    def add(
+        self, element: Optional[FormFieldElement] = None, index: Optional[int] = None
+    ):
         """
         Adds a single form element to the group. You can add to the group either by instantiating
         a FormFieldElement and passing it into the element parameter here,
@@ -1235,37 +1389,36 @@ class FormGroupElement(FormElement):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        element                Optional :class:`arcgis.mapping.forms.FormFieldElement`
-        ------------------     --------------------------------------------------------------------
-        field_name             Optional :class:`str`
-                               An actual field name (not alias) corresponding to a field in the
-                               form's feature layer
+        element                Optional :class:`~arcgis.mapping.forms.FormFieldElement`
         ------------------     --------------------------------------------------------------------
         index                  Optional :class:`int`.
                                The index where you'd like the element in the group. If not provided,
                                this function will add the new element to the end of the group.
         ==================     ====================================================================
 
-        :return: The element that was added - :class:`arcgis.mapping.forms.FormFieldElement`
+        :return: The element that was added - :class:`~arcgis.mapping.forms.FormFieldElement`
         """
         self._validate_element(element)
         if index is None:
             index = len(self._form_elements)
         self._form_elements.insert(index, element)
+        self._form._hydrate_expression_infos()
         return element
 
     def add_field(
         self,
-        field_name,
-        label,
-        description=None,
+        field_name: str,
+        label: str,
+        description: Optional[str] = None,
         visibility_expression=None,
-        domain=None,
-        editable=None,
-        hint=None,
-        input_type=None,
+        domain: Optional[dict] = None,
+        editable: Optional[bool] = None,
+        hint: Optional[str] = None,
+        input_type: Optional[Union[dict, str]] = None,
         required_expression=None,
-        index=None,
+        index: Optional[int] = None,
+        editable_expression=None,
+        value_expression=None,
         **kwargs,
     ):
         """
@@ -1286,7 +1439,7 @@ class FormGroupElement(FormElement):
         description                Optional :class:`str`.
                                    The description of the form element
         ----------------------     --------------------------------------------------------------------
-        visibility_expression      Optional :class:`arcgis.mapping.forms.FormExpressionInfo`.
+        visibility_expression      Optional :class:`~arcgis.mapping.forms.FormExpressionInfo`.
                                    The conditional visibility Arcade expression determining the
                                    visibility of the form element during data collection
         ----------------------     --------------------------------------------------------------------
@@ -1304,13 +1457,20 @@ class FormGroupElement(FormElement):
                                    Options include: "text-area", "text-box", "barcode-scanner",
                                    "combo-box", "radio-buttons", "datetime-picker"
         ----------------------     --------------------------------------------------------------------
-        required_expression        Optional :class:`arcgis.mapping.forms.FormExpressionInfo`.
+        required_expression        Optional :class:`~arcgis.mapping.forms.FormExpressionInfo`.
                                    The conditional visibility Arcade expression determining the
-                                   requiredness of the form element during data collection
+                                   necessity of the form element during data collection
         ----------------------     --------------------------------------------------------------------
         index                      Optional :class:`int`.
                                    The index where you'd like the element in the form. If not provided,
                                    this function will add the new element to the end of the form.
+        ----------------------     --------------------------------------------------------------------
+        editable_expression        Optional :class:`~arcgis.mapping.forms.FormExpressionInfo`.
+                                   The Arcade expression determining how much editable the form element is during data collection
+        ----------------------     --------------------------------------------------------------------
+        value_expression           Optional :class:`~arcgis.mapping.forms.FormExpressionInfo`.
+                                   The Arcade expression which calculates a value for the form
+                                   element during data collection
         ======================     ====================================================================
 
         """
@@ -1325,11 +1485,15 @@ class FormGroupElement(FormElement):
             hint=hint,
             input_type=input_type,
             required_expression=required_expression,
+            editable_expression=editable_expression,
+            value_expression=value_expression,
             **kwargs,
         )
         return self.add(element, index=index)
 
-    def delete(self, element=None, label=None):
+    def delete(
+        self, element: Optional[FormFieldElement] = None, label: Optional[str] = None
+    ):
         """
         Deletes form element from the group. You can use either the element param
         with a form element you get using `FormInfo.get()` or you can pass the label of the
@@ -1338,14 +1502,14 @@ class FormGroupElement(FormElement):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        element                Optional :class:`arcgis.mapping.forms.FormFieldElement`
+        element                Optional :class:`~arcgis.mapping.forms.FormFieldElement`
         ------------------     --------------------------------------------------------------------
         label                  Optional :class:`str`
                                An actual field name (not alias) corresponding to a field in the
                                form's feature layer
         ==================     ====================================================================
 
-        :return: The deleted element - :class:`arcgis.mapping.forms.FormFieldElement` or or `False`
+        :return: The deleted element - :class:`~arcgis.mapping.forms.FormFieldElement` or `False`
         """
         if label:
             element = self.get(label=label)
@@ -1355,21 +1519,27 @@ class FormGroupElement(FormElement):
         except Exception:
             return False
 
-    def move(self, element=None, label=None, destination=None, index=None):
+    def move(
+        self,
+        element: Optional[FormFieldElement] = None,
+        label: Optional[str] = None,
+        destination=None,
+        index: Optional[int] = None,
+    ):
         """
         Moves a form element in the group to a new location. You can use either the element param
-        with a form element you get using FormGroupElement.get() or you can pass the label
+        with a form element you get using `FormGroupElement.get() <:attr:`arcgis.mapping.forms.FormGroupElement.get`>` or you can pass the label
         of the form element you'd like to move into the label param.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        element                Optional :class:`arcgis.mapping.forms.FormFieldElement`
+        element                Optional :class:`~arcgis.mapping.forms.FormFieldElement`
         ------------------     --------------------------------------------------------------------
         label                  Optional :class:`str`
                                The label of the form element you'd like to move to a new location
         ------------------     ----------------------------------------------------------------------
-        destination            Optional :class:`arcgis.mapping.forms.FormInfo` or
+        destination            Optional :class:`~arcgis.mapping.forms.FormInfo` or
                                `arcgis.mapping.forms.FormGroupElement`
                                If moving out of the group (to the form or to new group), please
                                provide this parameter. Otherwise, you will only be allowed to move
@@ -1379,7 +1549,7 @@ class FormGroupElement(FormElement):
                                The index where you'd like the element to move to in the group.
         ==================     ====================================================================
 
-        :return: The element that was moved - :class:`arcgis.mapping.forms.FormFieldElement`
+        :return: The element that was moved - :class:`~arcgis.mapping.forms.FormFieldElement`
         """
         if index is None:
             raise ValueError("Please provide an index")
@@ -1390,7 +1560,7 @@ class FormGroupElement(FormElement):
             destination = self
         return destination.add(element, index=index)
 
-    def get(self, label=None):
+    def get(self, label: Optional[str] = None):
         """
         Returns a matching FormFieldElement in the group given a label
 
@@ -1445,14 +1615,20 @@ class FormExpressionInfo:
     ------------------     --------------------------------------------------------------------
     title                  Optional :class:`int`.
                            The user friendly name for the expressionInfo
+    ------------------     --------------------------------------------------------------------
+    return_type            Optional :class:`str`.
+                           The return type of the expression in expressionInfo
     ==================     ====================================================================
     """
 
-    def __init__(self, expression=None, name=None, title=None):
+    def __init__(
+        self, expression=None, name=None, title=None, return_type="boolean", **kwargs
+    ):
         self._expression = expression
         self._name = name
-        self._return_type = "boolean"
+        self._return_type = return_type
         self._title = title
+        self._kwargs = kwargs
 
     def __repr__(self):
         if self._title:
@@ -1512,4 +1688,6 @@ class FormExpressionInfo:
             exp_dict["expression"] = self._expression
         if self._return_type:
             exp_dict["returnType"] = self._return_type
+        for key, value in self._kwargs.items():
+            exp_dict[key] = value
         return exp_dict

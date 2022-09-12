@@ -1,6 +1,8 @@
 import os
 import logging as _logging
+from typing import Any, Optional
 import arcgis
+from arcgis.gis import GIS
 
 
 _log = _logging.getLogger(__name__)
@@ -25,10 +27,14 @@ def _get_list_value(index, array):
 
 
 def export_map(
-    web_map_as_json=None, format="""PDF""", layout_template="""MAP_ONLY""", gis=None
+    web_map_as_json: Optional[dict] = None,
+    format: str = """PDF""",
+    layout_template: str = """MAP_ONLY""",
+    gis: Optional[GIS] = None,
+    **kwargs,
 ):
     """
-    The ``export_map`` function takes the state of the ``WebMap`` object (for example, included services, layer visibility
+    The ``export_map`` function takes the state of the :class:`~arcgis.mapping.WebMap` object (for example, included services, layer visibility
     settings, client-side graphics, and so forth) and returns either (a) a page layout or
     (b) a map without page surrounds of the specified area of interest in raster or vector format.
     The input for this function is a piece of text in JavaScript object notation (JSON) format describing the layers,
@@ -49,21 +55,30 @@ def export_map(
     ------------------     --------------------------------------------------------------------
     format                 Format (str). Optional parameter.  The format in which the map image
                            for printing will be delivered. The following strings are accepted.
-                           For example:PNG8
-                           Choice list:['PDF', 'PNG32', 'PNG8', 'JPG', 'GIF', 'EPS', 'SVG', 'SVGZ']
+
+                           For example:
+                                PNG8
+
+                           Choice list:
+                                ['PDF', 'PNG32', 'PNG8', 'JPG', 'GIF', 'EPS', 'SVG', 'SVGZ']
     ------------------     --------------------------------------------------------------------
     layout_template        Layout Template (str). Optional parameter.  Either a name of a
                            template from the list or the keyword MAP_ONLY. When MAP_ONLY is chosen
                            or an empty string is passed in, the output map does not contain any
-                           page layout surroundings (for example title, legends, scale bar,
-                           and so forth). Choice list:['A3 Landscape', 'A3 Portrait',
-                           'A4 Landscape', 'A4 Portrait', 'Letter ANSI A Landscape',
-                           'Letter ANSI A Portrait', 'Tabloid ANSI B Landscape',
-                           'Tabloid ANSI B Portrait', 'MAP_ONLY']. You can get the layouts
-                           configured with your GIS by calling the
-                           :meth:get_layout_templates<arcgis.mapping.get_layout_templates> function
+                           page layout surroundings.
+
+                           For example - title, legends, scale bar, and so forth
+
+                           Choice list:
+
+                               | ['A3 Landscape', 'A3 Portrait',
+                               | 'A4 Landscape', 'A4 Portrait', 'Letter ANSI A Landscape',
+                               | 'Letter ANSI A Portrait', 'Tabloid ANSI B Landscape',
+                               | 'Tabloid ANSI B Portrait', 'MAP_ONLY'].
+
+                           You can get the layouts configured with your GIS by calling the :meth:`get_layout_templates <arcgis.mapping.get_layout_templates>` function
     ------------------     --------------------------------------------------------------------
-    gis                    The :class:GIS<arcgis.gis.GIS> to use for printing. Optional
+    gis                    The :class:`~arcgis.gis.GIS` to use for printing. Optional
                            parameter. When not specified, the active GIS will be used.
     ==================     ====================================================================
 
@@ -71,41 +86,33 @@ def export_map(
         A dictionary with URL to download the output file.
     """
 
-    from arcgis.geoprocessing import DataFile
-    from arcgis.geoprocessing._support import _execute_gp_tool
+    from arcgis.geoprocessing import import_toolbox as _import_toolbox
+    from arcgis.geoprocessing._tool import _camelCase_to_underscore
+    from urllib import parse
 
-    param_db = {
-        "web_map_as_json": (str, "Web_Map_as_JSON"),
-        "format": (str, "Format"),
-        "layout_template": (str, "Layout_Template"),
-        "output_file": (DataFile, "Output File"),
-    }
-    return_values = [
-        {"name": "output_file", "display_name": "Output File", "type": DataFile},
-    ]
+    verbose = kwargs.pop("verbose", False)
 
     if gis is None:
         gis = arcgis.env.active_gis
-    kwargs = {
+    params = {
         "web_map_as_json": web_map_as_json,
         "format": format,
         "layout_template": layout_template,
         "gis": gis,
+        "future": False,
     }
+    params.update(kwargs)
+
     url = os.path.dirname(gis.properties.helperServices.printTask.url)
-    return _execute_gp_tool(
-        gis, "Export Web Map Task", kwargs, param_db, return_values, _use_async, url
-    )
+    tbx = _import_toolbox(url, gis=gis, verbose=verbose)
+    basename = os.path.basename(gis.properties.helperServices.printTask.url)
+    basename = _camelCase_to_underscore(parse.unquote_plus(parse.unquote(basename)))
+
+    fn = getattr(tbx, basename)
+    return fn(**params)
 
 
-export_map.__annotations__ = {
-    "web_map_as_json": str,
-    "format": str,
-    "layout_template": str,
-}
-
-
-def get_layout_templates(gis=None):
+def get_layout_templates(gis: Optional[GIS] = None):
     """
 
     The ``get_layout_templates`` method returns the content of the :class:`~arcgis.gis.GIS` object's layout templates.

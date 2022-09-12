@@ -9,6 +9,7 @@ try:
     from fastai.torch_core import split_model_idx
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from ._arcgis_model import _resnet_family, _vgg_family
+    from ._timm_utils import filter_timm_models
 
     HAS_FASTAI = True
 
@@ -24,9 +25,6 @@ class CustomHED:
     try:
         import torch
         from torchvision import models
-        import pathlib
-        import os
-        import fastai
         from arcgis.learn.models import _hed_utils as hed
     except:
         pass
@@ -45,6 +43,12 @@ class CustomHED:
                 self._backbone = getattr(self.models, backbone)
             elif hasattr(self.models.detection, backbone):
                 self._backbone = getattr(self.models.detection, backbone)
+            elif "timm:" in backbone:
+                import timm
+
+                bckbn = backbone.split(":")[1]
+                if hasattr(timm.models, bckbn):
+                    self._backbone = getattr(timm.models, bckbn)
         else:
             self._backbone = backbone
 
@@ -107,24 +111,25 @@ class CustomHED:
 class HEDEdgeDetector(ModelExtension):
     """
     Model architecture from https://arxiv.org/pdf/1504.06375.pdf.
-    Creates a ``Holistically-Nested Edge Detection`` model
+    Creates a :class:`~arcgis.learn.HEDEdgeDetector` model
 
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            ``prepare_data`` function.
+                            :meth:`~arcgis.learn.prepare_data`  function.
     ---------------------   -------------------------------------------
-    backbone                Optional function. Backbone CNN model to be used for
-                            creating the base of the `Holistically-Nested Edge Detection`, which
-                            is `vgg19` by default.
-                            Compatible backbones: resnet and VGG
+    backbone                Optional string. Backbone convolutional neural network
+                            model used for feature extraction, which is `vgg19` by
+                            default.
+                            Supported backbones: ResNet, Vgg family and specified Timm
+                            models(experimental support) from :func:`~arcgis.learn.HEDEdgeDetector.backbones`.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
     =====================   ===========================================
 
-    :return: ``Holistically-Nested Edge Detection`` Object
+    :return: :class:`~arcgis.learn.HEDEdgeDetector` Object
     """
 
     def __init__(self, data, backbone="vgg19", pretrained_path=None, **kwargs):
@@ -174,14 +179,35 @@ class HEDEdgeDetector(ModelExtension):
     def _is_edge_detection(self):
         return True
 
+    @staticmethod
+    def backbones():
+        """Supported list of backbones for this model."""
+        return HEDEdgeDetector._supported_backbones()
+
     @property
     def supported_backbones(self):
-        """Supported torchvision backbones for this model."""
+        """Supported list of backbones for this model."""
         return HEDEdgeDetector._supported_backbones()
 
     @staticmethod
     def _supported_backbones():
-        return [*_resnet_family, *_vgg_family]
+        timm_models = filter_timm_models(
+            [
+                "*dpn*",
+                "*inception*",
+                "*nasnet*",
+                "*tf_efficientnet_cc*",
+                "*repvgg*",
+                "*resnetblur*",
+                "*selecsls*",
+                "*tresnet*",
+                "*hrnet*",
+                "*rexnet*",
+                "*mixnet*",
+            ]
+        )
+        timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
+        return [*_resnet_family, *_vgg_family] + timm_backbones
 
     @property
     def supported_datasets(self):
@@ -195,7 +221,7 @@ class HEDEdgeDetector(ModelExtension):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a ``Holistically-Nested Edge Detection`` object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.HEDEdgeDetector` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -204,12 +230,12 @@ class HEDEdgeDetector(ModelExtension):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from ``prepare_data`` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data`  function or None for
                                 inferencing.
 
         =====================   ===========================================
 
-        :return: `Holistically-Nested Edge Detection` Object
+        :return: :class:`~arcgis.learn.HEDEdgeDetector` Object
         """
         emd_path = _get_emd_path(emd_path)
 

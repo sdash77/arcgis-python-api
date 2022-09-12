@@ -449,9 +449,10 @@ class SubDataSet(object):
             template_frame = random.choice(template_range)
             search_frame = frames[search_frame]
 
-        return self.get_image_anno(
-            video_name, track, template_frame
-        ), self.get_image_anno(video_name, track, search_frame)
+        return (
+            self.get_image_anno(video_name, track, template_frame),
+            self.get_image_anno(video_name, track, search_frame),
+        )
 
     def get_random_target(self, index=-1):
         if index == -1:
@@ -915,16 +916,19 @@ class DataSets(Dataset):
 
         mask = (np.expand_dims(mask, axis=0) > 0.5) * 2 - 1
 
-        return [
-            template,
-            search,
-            cls,
-            delta,
-            delta_weight,
-            np.array(bbox, np.float32),
-            np.array(mask, np.float32),
-            np.array(mask_weight, np.float32),
-        ], [[]]
+        return (
+            [
+                template,
+                search,
+                cls,
+                delta,
+                delta_weight,
+                np.array(bbox, np.float32),
+                np.array(mask, np.float32),
+                np.array(mask_weight, np.float32),
+            ],
+            [[]],
+        )
 
     def show(self, idx, axes=None):
         global image_name_len
@@ -939,7 +943,7 @@ class DataSets(Dataset):
             folder_name = data[0].split(sep)[-2]
             frame_id = data[0].split(sep)[-1].split(".")[1]
             frame_number = data[0].split(sep)[-1].split(".")[0]
-            mask_name = folder_name + sep + str(frame_number)[6 - img_len :]
+            mask_name = folder_name + sep + frame_number.zfill(img_len)
             # key = list(ann[folder_name].keys())[-1]
             for key in list(ann[folder_name].keys()):
                 for cnt in ann[folder_name][key]:
@@ -951,7 +955,7 @@ class DataSets(Dataset):
                 base_folder,
                 "JPEGImages",
                 folder_name,
-                str(frame_number)[6 - img_len :] + ".jpg",
+                frame_number.zfill(img_len) + ".jpg",
             )
 
             image = get_image_for_tracking(img_path)
@@ -987,7 +991,7 @@ class DataSets(Dataset):
             folder_name = data[0].split(sep)[-2]
             frame_id = data[0].split(sep)[-1].split(".")[1]
             frame_number = data[0].split(sep)[-1].split(".")[0]
-            mask_name = folder_name + sep + "000" + str(frame_number)[9 - img_len :]
+            mask_name = folder_name + sep + frame_number.zfill(img_len)
             for key in list(ann[folder_name].keys()):
                 for cnt in ann[folder_name][key]:
                     if cnt["mask_name"] == mask_name:
@@ -999,7 +1003,7 @@ class DataSets(Dataset):
                     img_path = os.path.join(
                         base_folder,
                         "images",
-                        "000" + str(frame_number)[9 - img_len :] + ext,
+                        frame_number.zfill(img_len) + ext,
                     )
                     if os.path.isfile(img_path):
                         break

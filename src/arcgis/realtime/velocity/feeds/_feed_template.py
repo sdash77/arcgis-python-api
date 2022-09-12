@@ -1,6 +1,9 @@
 from collections import abc
 from dataclasses import dataclass, field
-from typing import ClassVar, Any
+from typing import ClassVar
+
+from arcgis.realtime.velocity._reserved_fields import _ReservedFields
+from .time import _START_TIME_TAG, _END_TIME_TAG
 
 _TRACK_ID_TAG: str = "TRACK_ID"
 
@@ -30,9 +33,9 @@ class _FeedTemplate:
     # abstract methods to be implemented by all Feeds
     def _build(self) -> dict:
         """
-        Build the feed configuration object from the current state of this object. This feed configuration can be posted to api endpoint.
+        Build the feed configuration object from the current state of this object. This feed configuration can be posted to the API endpoint.
         To be implemented by concrete classes.
-        for example:
+        For example:
 
         :return: Feed configuration
         """
@@ -50,7 +53,7 @@ class _FeedTemplate:
     def _generate_schema_transformation(self) -> dict:
         """
         Builds the final Schema-transformation dictionary object from the current state of _fields object in the format that can be used
-        to create POST request to velocity.
+        to create POST request to ArcGIS Velocity.
 
         :return: Dictionary object that contains the schema-transformation properties.
         """
@@ -64,6 +67,12 @@ class _FeedTemplate:
         input_schema = self._fields.copy()
         for field in input_schema["attributes"]:
             if field["toField"]:
+                if _ReservedFields.is_reserved(field["toField"]):
+                    # A toField cannot be one of the reserved names.
+                    raise ValueError(
+                        f"'{field['toField']}' is a reserved field name. It must be renamed or dropped"
+                    )
+
                 field_mappings.append(
                     {
                         "fromField": field["name"],
@@ -90,7 +99,7 @@ class _FeedTemplate:
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        feature_schema         dict. the sample_messages_response["featureSchema"] json/dict object.
+        feature_schema         dict. The sample_messages_response["featureSchema"] json/dict object.
         ==================     ====================================================================
         """
         self._fields = feature_schema
@@ -105,20 +114,24 @@ class _FeedTemplate:
 
     def rename_field(self, current_name: str, new_name: str) -> bool:
         """
-        Rename a schema field
+        Rename a field.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        current_name           str. Current field name.
+        current_name           String. Current field name.
         ------------------     --------------------------------------------------------------------
-        new_name               str. New field name.
+        new_name               String. New field name.
         ==================     ====================================================================
 
         :return: Field collection after transformation
         """
         if not new_name.strip():
             raise ValueError("new_name cannot be empty")
+        elif _ReservedFields.is_reserved(new_name):
+            raise ValueError(
+                f"'{new_name}' is a reserved field name and cannot be used."
+            )
 
         if self._fields is not None and self._fields["attributes"]:
             attributes = self._fields["attributes"]
@@ -136,14 +149,14 @@ class _FeedTemplate:
 
     def change_field_data_type(self, name, new_data_type) -> bool:
         """
-        Used to specify the expected data-type of a field
+        Used to specify the expected data type of a field.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        name                   str. field name.
+        name                   String. Field name.
         ------------------     --------------------------------------------------------------------
-        new_data_type          str. new data type for the field.
+        new_data_type          String. New data type for the field.
         ==================     ====================================================================
 
         :return: Boolean - True if data type change was successful
@@ -165,12 +178,12 @@ class _FeedTemplate:
 
     def remove_field(self, name: str) -> bool:
         """
-        Remove a field from the Schema
+        Remove a field from the schema.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        name                   str. Field to be removed from schema.
+        name                   String. Field to be removed from the schema.
         ==================     ====================================================================
 
         :return: Boolean - True if a field is removed, False otherwise
@@ -180,7 +193,16 @@ class _FeedTemplate:
             fields = self._fields["attributes"]
             for field in fields:
                 if field["name"] == name:
+                    # flag the field for removal from schema by clearing the `toField` value
                     field["toField"] = None
+                    if _TRACK_ID_TAG in field["tags"]:
+                        field["tags"].clear()
+                    elif any(
+                        elem in [_START_TIME_TAG, _END_TIME_TAG]
+                        for elem in field["tags"]
+                    ):
+                        self.reset_time_config()
+
                     is_success = True
 
         if is_success:
@@ -190,21 +212,22 @@ class _FeedTemplate:
 
     def set_track_id(self, field_name: str):
         """
-         Set track id field for the feed
+         Set the track ID field for the feed.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        field_name             str. Name of the track-id field.
+        field_name             String. Name of the track ID field. Either the original name or renamed
+                               field name can be used to specify the track ID.
         ==================     ====================================================================
         """
         is_success = False
         for field in self._fields["attributes"]:
-            if field["name"] == field_name:
+            if field["name"] == field_name or field["toField"] == field_name:
                 field["tags"] = [_TRACK_ID_TAG]
                 is_success = True
             elif _TRACK_ID_TAG in field["tags"]:
-                field["tags"] = []
+                field["tags"].clear()
 
         if is_success:
             if self.track_id_field is None:
@@ -222,9 +245,9 @@ class _FeedTemplate:
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        dct                    str. Dict onto which the merge is executed.
+        dct                    String. Dict onto which the merge is executed.
         ------------------     --------------------------------------------------------------------
-        merge_dct               str. This dict will be into dct.
+        merge_dct              String. This dict will be merged into dct.
         ==================     ====================================================================
         """
         # Future enhancement - Move this to a util?

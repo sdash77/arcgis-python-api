@@ -23,20 +23,16 @@
 # Based on https://github.com/pkuCactus/BDCN
 
 import torch
-import warnings
 import numpy as np
 import torch.nn.functional as F
 import torch.nn as nn
 import torch
-from torchvision import models
-import math
 from fastai.callbacks.hooks import hook_outputs
-from fastai.vision.learner import create_body
 from fastai.callbacks.hooks import model_sizes
-from ._arcgis_model import _get_backbone_meta
-from fastprogress.fastprogress import progress_bar
 from fastai.vision import flatten_model
 from collections import Counter
+from ._timm_utils import get_backbone
+from ._hed_utils import modify_layers, get_hooks
 
 
 class _MSBlock(nn.Module):
@@ -87,30 +83,29 @@ class _IDblock(nn.Module):
         return s1, s2
 
 
-class _BDCNModel(nn.Module):
-    def __init__(self, backbone_fn, chip_size=224, pretrained=True):
-        super().__init__()
-
-        backbone_name = backbone_fn.__name__
-        if "vgg" in backbone_name:
-            self.backbone = create_body(backbone_fn, pretrained=pretrained)[0]
-        else:
-            self.backbone = create_body(backbone_fn, pretrained=pretrained)
-
-        self.hookable_modules = flatten_model(self.backbone)
-
-        for i, module in enumerate(self.hookable_modules):
-            if isinstance(module, nn.MaxPool2d):
-                module.ceil_mode = True
-                module.kernel_size = 2
-            elif isinstance(module, nn.Conv2d) and i == 0:
-                module.stride = (1, 1)
-
+def get_bdcn_hooks(backbone_fn, backbone, chip_size):
+    if "timm" in backbone_fn.__module__:
+        hooks = get_hooks(backbone, chip_size)
+    else:
+        hookable_modules = flatten_model(backbone)
         hooks = [
-            self.hookable_modules[i]
-            for i, module in enumerate(self.hookable_modules)
+            hookable_modules[i]
+            for i, module in enumerate(hookable_modules)
             if isinstance(module, nn.ReLU)
         ]
+
+    return hooks
+
+
+class _BDCNModel(nn.Module):
+    def __init__(self, backbone_fn, chip_size=224, pretrained=True):
+
+        super().__init__()
+        self.backbone = get_backbone(backbone_fn, pretrained)
+        if len(self.backbone) < 2:
+            self.backbone = self.backbone[0]
+        modify_layers(self.backbone, backbone_fn)
+        hooks = get_bdcn_hooks(backbone_fn, self.backbone, chip_size)
         self.hook = hook_outputs(hooks)
         model_sizes(self.backbone, size=(chip_size, chip_size))
         layer_shape = [(k.stored.shape[1], k.stored.shape[2]) for k in self.hook]
@@ -169,6 +164,14 @@ class _BDCNModel(nn.Module):
         s51 = self.upsample_8_5(s51)
         s5 = crop(s5, x, 0, 0)
         s51 = crop(s51, x, 0, 0)
+
+        if s1.size(2) != s2.size(2):
+            s1 = F.interpolate(
+                s1, (x.shape[-2], x.shape[-1]), mode="bilinear", align_corners=False
+            )
+            s11 = F.interpolate(
+                s11, (x.shape[-2], x.shape[-1]), mode="bilinear", align_corners=False
+            )
 
         o1, o2, o3, o4, o5 = (
             s1.detach(),

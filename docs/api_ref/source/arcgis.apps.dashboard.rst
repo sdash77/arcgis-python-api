@@ -3,7 +3,8 @@ arcgis.apps.dashboard module
 
 .. automodule:: arcgis.apps.dashboard
 
-The :class:`~arcgis.apps.dashboard.Dashboard` is the main entry point into the Dashboard module.
+The :class:`~arcgis.apps.dashboard.Dashboard` is the main entry point into the Dashboard module. 
+Deprecated as `ArcGIS Dashboards Classic <https://www.esri.com/arcgis-blog/products/ops-dashboard/announcements/dashboards-classic-retiring>`_ is retiring.
 
 
 Dashboard
@@ -42,6 +43,18 @@ Indicator
     :members:
     :undoc-members:
 
+IndicatorData
+--------------------------
+.. autoclass:: arcgis.apps.dashboard.IndicatorData
+    :members:
+    :undoc-members:
+
+ReferenceData
+--------------------------
+.. autoclass:: arcgis.apps.dashboard.ReferenceData
+    :members:
+    :undoc-members:
+    
 List
 --------------------------
 .. autoclass:: arcgis.apps.dashboard.List

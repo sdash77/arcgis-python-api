@@ -6,15 +6,15 @@ from typing import Optional, Dict, Union, List
 
 class _Util:
     """
-    Private class that provides wrapper functions for Connection objects
-    (gis._con) xhr functions and some re-usable function endpoint calls
-    for _start, _stop, _delete operations on a task
+    Private class that provides wrapper functions for connection objects
+    (gis._con) xhr functions and some reusable function endpoint calls
+    for _start, _stop, and _delete operations on a task.
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
     gis                    An authenticated :class:`arcgis.gis.GIS` object.
     ------------------     --------------------------------------------------------------------
-    base_url               Base url of Velocity.
+    base_url               Base URL of ArcGIS Velocity.
     ==================     ====================================================================
     """
 
@@ -29,7 +29,7 @@ class _Util:
 
     def _get_request(self, path) -> Dict:
         """
-        Private wrapper function that  builds the absolute url from
+        Private wrapper function that builds the absolute url from
         the base url + sub-path and then passing it to the xhr GET request
         gis._con.get(<url>, <params>)
 
@@ -48,7 +48,7 @@ class _Util:
 
     def _put_request(self, task_type: str, id: str, payload: Dict = None) -> Dict:
         """
-        Private wrapper function that  builds the absolute url from
+        Private wrapper function that builds the absolute url from
         the base url + sub-path and then passing it to the xhr PUT request
         gis._con.put(<url>, <params>, <payload>)
 
@@ -57,7 +57,7 @@ class _Util:
         ------------------     --------------------------------------------------------------------
         task_type              feeds | realtime | bigdata
         ------------------     --------------------------------------------------------------------
-        id                     unique id of a task
+        id                     Unique ID of a task.
         ------------------     --------------------------------------------------------------------
         **Optional Argument**  **Description**
         ------------------     --------------------------------------------------------------------
@@ -85,7 +85,7 @@ class _Util:
         raise_error: bool = True,
     ) -> Dict:
         """
-        Private wrapper function that  builds the absolute url from
+        Private wrapper function that builds the absolute url from
         the base url + sub-path and then passing it to the xhr POST request
         gis._con.post(<url>, <params>, <payload>)
 
@@ -94,13 +94,13 @@ class _Util:
         ----------------------     --------------------------------------------------------------------
         task_type                  feeds | realtime | bigdata
         ----------------------     --------------------------------------------------------------------
-        id                         unique id of a task
+        id                         Unique ID of a task.
         ----------------------     --------------------------------------------------------------------
         **Optional Argument**      **Description**
         ----------------------     --------------------------------------------------------------------
         payload                    post body
         ----------------------     --------------------------------------------------------------------
-        raise_error                Default value - True.
+        raise_error                Default value is: True
         ======================     ====================================================================
 
         :return: Endpoint response
@@ -125,7 +125,7 @@ class _Util:
 
     def _delete_request(self, path: str) -> bool:
         """
-        Private wrapper function that  builds the absolute url from
+        Private wrapper function that builds the absolute url from
         the base url + sub-path and then passing it to the xhr DELETE reqest
         gis._con.delete(<url>, <params>)
 
@@ -151,7 +151,7 @@ class _Util:
         ------------------     --------------------------------------------------------------------
         task_type              feeds | realtime | bigdata
         ------------------     --------------------------------------------------------------------
-        id                     unique id of a task
+        id                     Unique ID of a task.
         ==================     ====================================================================
 
         :return: Endpoint response
@@ -168,7 +168,7 @@ class _Util:
         ------------------     --------------------------------------------------------------------
         task_type              feeds | realtime | bigdata
         ------------------     --------------------------------------------------------------------
-        id                     unique id of a task
+        id                     Unique ID of a task.
         ==================     ====================================================================
 
         :return: Endpoint response
@@ -185,7 +185,7 @@ class _Util:
         ------------------     --------------------------------------------------------------------
         task_type              feeds | realtime | bigdata
         ------------------     --------------------------------------------------------------------
-        id                     unique id of a task
+        id                     Unique ID of a task.
         ==================     ====================================================================
 
         :return: boolean
@@ -204,7 +204,7 @@ class _Util:
         ------------------     --------------------------------------------------------------------
         task_type              feeds | realtime | bigdata
         ------------------     --------------------------------------------------------------------
-        id                     unique id of a task
+        id                     Unique ID of a task.
         ==================     ====================================================================
 
         :return: endpoint response for task status
@@ -221,7 +221,7 @@ class _Util:
         ------------------     --------------------------------------------------------------------
         task_type              feeds | realtime | bigdata
         ------------------     --------------------------------------------------------------------
-        id                     unique id of a task
+        id                     Unique ID of a task.
         ==================     ====================================================================
 
         :return: endpoint response for task metrics
@@ -237,7 +237,7 @@ class _Util:
         ------------------     --------------------------------------------------------------------
         task_type              feeds | realtime | bigdata
         ------------------     --------------------------------------------------------------------
-        id                     unique id of a task
+        id                     Unique ID of a task.
         ==================     ====================================================================
 
         :return: A bool containing True (for success) or
@@ -257,7 +257,7 @@ class _Util:
         --------------------------      --------------------------------------------------------------------
         response                        Result object of an endpoint
         --------------------------      --------------------------------------------------------------------
-        return_boolean_for_success      Default value False
+        return_boolean_for_success      Default value is: False
         ==========================      ====================================================================
 
         :return: Result or raise exception if status has an 'error' attribute
@@ -291,14 +291,14 @@ class _Util:
     # ----------------------------------------------------------------------
     def sample_messages(self, input_type: str, payload: Dict = None) -> Dict:
         """
-        Gets sample from a feed or source
+        Gets sample from a feed or source.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         input_type             "feed" | "sources"
         ------------------     --------------------------------------------------------------------
-        payload                payload for the sample message
+        payload                Payload for the sample message.
         ==================     ====================================================================
 
         :return: Sample message response including derived schema and raw samples
@@ -313,17 +313,17 @@ class _Util:
     # ----------------------------------------------------------------------
     def test_connection(self, input_type: str, payload: Optional[Dict] = None) -> bool:
         """
-        Tests Connection to a feed, source, output
+        Tests connection to a feed, source, or output.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         input_type             "feed" | "sources" | "outputs"
         ------------------     --------------------------------------------------------------------
-        payload                payload for the feed
+        payload                Payload for the feed.
         ==================     ====================================================================
 
-        :return: True if test connection is successfully else a dictionary with error details.
+        :return: True if test connection is successful else a dictionary with error details.
         """
         if payload is None:
             raise AttributeError("Post request payload is empty")

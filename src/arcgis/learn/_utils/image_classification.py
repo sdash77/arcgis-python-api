@@ -40,7 +40,7 @@ try:
     import fastai
     from .._data import _extract_bands_tfm, _tensor_scaler, _tensor_scaler_tfm
     from .._data import _get_batch_stats, sniff_rgb_bands
-    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from .._utils.env import is_arcgispronotebook
 
     HAS_FASTAI = True
 except:
@@ -220,7 +220,7 @@ def IC_show_results(self, nrows=5, **kwargs):
         ax_prediction.set_title(prediction)
 
         idx += 1
-    if _IS_ARCGISPRONOTEBOOK:
+    if is_arcgispronotebook():
         plt.show()
     return fig, axs
 

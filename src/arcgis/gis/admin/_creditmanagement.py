@@ -1,4 +1,8 @@
 ########################################################################
+from typing import Optional
+import datetime
+
+
 class CreditManager(object):
     """
     Manages an ArcGIS Online organization's credits for users and sites
@@ -39,9 +43,13 @@ class CreditManager(object):
     @property
     def is_enabled(self):
         """
-        boolean that show is credit credit assignment
+        :return:
+            A boolean that shows whether the organization has credit budgeting enabled.
         """
-        return self._gis.properties.creditAssignments == "enabled"
+        if "creditAssignments" in self._gis.properties:
+            return self._gis.properties.creditAssignments == "enabled"
+        else:
+            return False
 
     # ----------------------------------------------------------------------
     def enable(self):
@@ -67,7 +75,7 @@ class CreditManager(object):
 
     # ----------------------------------------------------------------------
     @default_limit.setter
-    def default_limit(self, value):
+    def default_limit(self, value: float):
         """
         Gets/Sets the default credit allocation for ArcGIS Online
         """
@@ -75,7 +83,7 @@ class CreditManager(object):
         self._gis.update_properties(params)
 
     # ----------------------------------------------------------------------
-    def allocate(self, username, credits=None):
+    def allocate(self, username: str, credits: Optional[float] = None):
         """
         Allows organization administrators to allocate credits for
         organizational users in ArcGIS Online
@@ -108,7 +116,7 @@ class CreditManager(object):
             return self.deallocate(username=username)
 
     # ----------------------------------------------------------------------
-    def deallocate(self, username):
+    def deallocate(self, username: str):
         """
         Allows organization administrators to set credit limit to umlimited for
         organizational users in ArcGIS Online
@@ -132,7 +140,12 @@ class CreditManager(object):
         return res
 
     # ----------------------------------------------------------------------
-    def credit_usage(self, start_time=None, end_time=None, time_frame="week"):
+    def credit_usage(
+        self,
+        start_time: Optional[datetime.datetime] = None,
+        end_time: Optional[datetime.datetime] = None,
+        time_frame: str = "week",
+    ):
         """
         returns the total credit consumption for a given time period.
 
@@ -155,7 +168,6 @@ class CreditManager(object):
 
         returns: dictionary
         """
-        import datetime
         from ..._impl.common._utils import local_time_to_online
 
         if start_time and end_time:

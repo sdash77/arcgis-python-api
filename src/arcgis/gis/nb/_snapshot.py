@@ -1,6 +1,7 @@
 import os
 import json
 from collections import namedtuple
+from typing import Optional
 from arcgis.gis import GIS, Item
 from arcgis._impl.common._mixins import PropertyMap
 
@@ -42,7 +43,7 @@ class SnapShot(object):
         return self._sm._download(**params)
 
     # ----------------------------------------------------------------------
-    def save_as_item(self, title):
+    def save_as_item(self, title: str):
         """
         Converts a Snapshot to a new notebook `Item`.
 
@@ -52,14 +53,21 @@ class SnapShot(object):
         title                  Required String. The name of the new notebook.
         ==================     ====================================================================
 
-        :return: Item
+        :return:
+            :class:`~arcgis.gis.Item`
+
         """
         return self._sm._convert(
             item=self._item, snapshot=self.properties["resourceKey"], title=title
         )
 
     # ----------------------------------------------------------------------
-    def restore(self, preserve=True, description=None):
+    def restore(
+        self,
+        title: Optional[str] = None,
+        preserve: bool = True,
+        description: Optional[str] = None,
+    ):
         """
         Rolls back the notebook to a previous snapshot state
 
@@ -73,7 +81,7 @@ class SnapShot(object):
         description            Optional String. Text describing the restoration point.
         ==================     ====================================================================
 
-        :return: dict
+        :return: Dict
         """
         return self._sm._restore(
             item=self._item,
@@ -96,7 +104,7 @@ class SnapShot(object):
         snapshot               Required String. The name of the snapshot.
         ==================     ====================================================================
 
-        :return: bool
+        :return: Boolean
 
         """
         res = self._sm._delete(item=self._item, snapshot=self.properties["resourceKey"])
@@ -144,6 +152,7 @@ class SnapshotManager(object):
 
         :return: Item
 
+
         """
         if isinstance(item, Item) and item.type.lower() == "notebook":
             url = f"{self._url}/convertToItem"
@@ -189,7 +198,14 @@ class SnapshotManager(object):
             raise ValueError("`item` must be a Notebook")
 
     # ----------------------------------------------------------------------
-    def create(self, item, name, description=None, notebook_json=None, access=False):
+    def create(
+        self,
+        item: Item,
+        name: str,
+        description: Optional[str] = None,
+        notebook_json: Optional[dict] = None,
+        access: bool = False,
+    ):
         """
         Creates a Snapshot of a Given Item.
 
@@ -209,7 +225,7 @@ class SnapshotManager(object):
         access                 Optional Bool. When false, the snapshot will not be publicly available.
         ==================     ====================================================================
 
-        :return: dict
+        :return: Dict
 
         """
         if isinstance(item, Item) and item.type.lower() == "notebook":
@@ -228,17 +244,18 @@ class SnapshotManager(object):
             raise ValueError("`item` must be a Notebook")
 
     # ----------------------------------------------------------------------
-    def list(self, item):
+    def list(self, item: Item):
         """
         Returns a list of SnapShots for a notebook item.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        item                   Required Item. The 'Notebook' typed item to get all the snapshots for.
+        item                   Required Item. The Notebook :class:`~arcgis.gis.Item` to get all
+                               snapshots for.
         ==================     ====================================================================
 
-        :return: namedtuple of snapshot properties
+        :return: List of :class:`~arcgis.gis.nb.SnapShot` objects
 
         """
         if isinstance(item, Item) and item.type.lower() == "notebook":
@@ -264,7 +281,14 @@ class SnapshotManager(object):
             raise ValueError("`item` must be a Notebook")
 
     # ----------------------------------------------------------------------
-    def _restore(self, item, snapshot, preserve=True, description=None, title=None):
+    def _restore(
+        self,
+        item: Item,
+        snapshot: str,
+        preserve: bool = True,
+        description: Optional[str] = None,
+        title: Optional[str] = None,
+    ):
         """
         Rolls back the notebook to a previous snapshot state
 
@@ -300,7 +324,7 @@ class SnapshotManager(object):
             raise ValueError("`item` must be a Notebook")
 
     # ----------------------------------------------------------------------
-    def _delete(self, item, snapshot):
+    def _delete(self, item: Item, snapshot: str):
         """
         Deletes a snapshot associated with the notebook item
 

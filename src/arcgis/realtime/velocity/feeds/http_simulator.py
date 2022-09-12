@@ -18,59 +18,55 @@ from arcgis.realtime.velocity.input.format import (
 @dataclass
 class HttpSimulator(_FeedTemplate, _HasTime, _HasGeometry):
     """
-    Simulate events from a text file. This data class can be used to define the feed configuration and use it to create
+    Simulate events from a text file. This data class can be used to define the feed configuration and to create
     the feed.
 
     ============================    ====================================================================
     **Argument**                    **Description**
     ----------------------------    --------------------------------------------------------------------
-    label                           str. Unique label for this feed instance.
+    label                           String. Unique label for this feed instance.
     ----------------------------    --------------------------------------------------------------------
-    description                     str. Feed description.
+    description                     String. Feed description.
     ----------------------------    --------------------------------------------------------------------
-    url                             str. The full URL to the externally accessible simulation file.
+    url                             String. The full URL to the externally accessible simulation file.
     ----------------------------    --------------------------------------------------------------------
-    field_separator                 str. The character, or delimiter, which separates field values in
-                                    the simulation file.
-                                    default value - ","
+    field_separator                 String. The character, or delimiter, which separates field values in
+                                    the simulation file. The default is: ,.
     ----------------------------    --------------------------------------------------------------------
-    features_per_execution          int. The number of records (features) to simulate at a time.
-                                    default value - 1
+    features_per_execution          int. The number of records (features) to simulate at a time. The default
+                                    is: 1.
     ----------------------------    --------------------------------------------------------------------
-    interval_for_sending_events     int. The interval between sending the number of features per execution
-                                    default value - 1000
+    interval_for_sending_events     int. The interval between sending the number of features per execution.
+                                    The default is: 1000.
     ----------------------------    --------------------------------------------------------------------
     repeat_simulation               boolean. Whether to automatically restart from the beginning when
-                                    the end of the file is reached.
-                                    default value - True
+                                    the end of the file is reached. The default is: True.
     ----------------------------    --------------------------------------------------------------------
     time_field_index                int. The numerical index of the date field in the dataset, where the
-                                    index starts at 0.
-                                    default value - 0
+                                    index starts at 0. The default is: 0.
     ----------------------------    --------------------------------------------------------------------
     convert_to_current_time         boolean. Whether to convert the time values in the dataset to
-                                    current time as the data is simulated.
-                                    default value - True
+                                    current time as the data is simulated. The default is: True.
     ============================    ====================================================================
 
     ============================    ====================================================================
     **Optional Argument**           **Description**
     ============================    ====================================================================
-    data_format                     Union[DelimitedFormat].
-                                    An instance that contains the data-format
+    data_format                     [:class:`~arcgis.realtime.velocity.input.DelimitedFormat`].
+                                    An instance that contains the data format
                                     configuration for this feed. Configure only allowed formats.
                                     If this is not set right during initialization, a format will be
                                     auto-detected and set from a sample of the incoming data. This sample
                                     will be fetched from the configuration provided so far in the init.
     ----------------------------    --------------------------------------------------------------------
-    track_id_field                  str. name of the field from the incoming data that should be set as
-                                    track_id.
+    track_id_field                  String. Name of the field from the incoming data that should be set as
+                                    track ID.
     ----------------------------    --------------------------------------------------------------------
-    geometry                        Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry configuration
+    geometry                        [:class:`~arcgis.realtime.velocity.feeds.XYZGeometry`, :class:`~arcgis.realtime.velocity.feeds.SingleFieldGeometry`]. An instance of geometry configuration
                                     that will be used to create geometry objects from the incoming data.
     ----------------------------    --------------------------------------------------------------------
-    time                            Union[TimeInstant, TimeInterval]. An instance of time configuration that
-                                    will be used to create time info from the incoming data.
+    time                            [:class:`~arcgis.realtime.velocity.feeds.TimeInstant`, :class:`~arcgis.realtime.velocity.feeds.TimeInterval`]. An instance of time configuration that
+                                    will be used to create time information from the incoming data.
     ============================    ====================================================================
 
     :return: A data class with Http simulator feed configuration.

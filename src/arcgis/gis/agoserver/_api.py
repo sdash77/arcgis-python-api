@@ -6,7 +6,6 @@ from arcgis.gis import GIS
 
 logging = LazyLoader("logging")
 _isd = LazyLoader("arcgis._impl.common._isd")
-_service = LazyLoader("arcgis.gis.server._service")
 layer = LazyLoader("arcgis.features.layer")
 geocoding = LazyLoader("arcgis.geocoding")
 gptool = LazyLoader("arcgis.geoprocessing._tool")
@@ -63,7 +62,7 @@ def _create_service(url: str, layer_type: str, gis: GIS, name: str = None):
 ###########################################################################
 class AGOLServicesDirectory:
     """
-    The ArcGIS Online ServicesDirectory displays the hosted services for
+    The ArcGIS Online Services Directory displays the hosted services for
     a site.
 
     ==================     ====================================================================
@@ -84,6 +83,14 @@ class AGOLServicesDirectory:
         """initializer"""
         self._gis = gis
         self._url = url
+
+    # ---------------------------------------------------------------------
+    def __str__(self):
+        return f"< AGOLServicesDirectory @ {self._url} >"
+
+    # ---------------------------------------------------------------------
+    def __repr__(self):
+        return f"< AGOLServicesDirectory @ {self._url} >"
 
     # ---------------------------------------------------------------------
     @functools.lru_cache(maxsize=255)

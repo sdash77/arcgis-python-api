@@ -181,7 +181,6 @@ def remove_bounding_boxes_in_padding(
     batch_width=1,
 ):
     """
-
     :param bounding_boxes: the batch of bounding boxes, shape=[B,N,4]
     :param scores: the batch of box scores, shape=[B,N]
     :param classes: the batch of labels, shape=[B,N]

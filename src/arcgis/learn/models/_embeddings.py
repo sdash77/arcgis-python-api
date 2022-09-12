@@ -126,7 +126,7 @@ class TextModule:
 
 class Embeddings:
     """
-    Creates an `Embeddings` Object. This object is capable of giving
+    Creates an :class:`~arcgis.learn.Embeddings` Object. This object is capable of giving
     embeddings for text as well as images. The image embeddings are
     currently supported for RGB images only
 
@@ -137,8 +137,9 @@ class Embeddings:
                             we would like to get the embedding vectors.
                             Valid values are `text` & `image`. Default
                             is set to `image`.
-                            **Note - The image embeddings are currently
-                            supported for `RGB` images only.
+
+                            .. note::
+                                The image embeddings are currently supported for `RGB` images only.
     ---------------------   -------------------------------------------
     backbone                Optional string. Specify the backbone/model-name
                             to be used to get the embedding vectors.
@@ -162,7 +163,7 @@ class Embeddings:
                             model.
     =====================   ===========================================
 
-    :return: `Embeddings` Object
+    :return: :class:`~arcgis.learn.Embeddings` Object
     """
 
     def __init__(self, dataset_type="image", backbone=None, **kwargs):
@@ -349,9 +350,9 @@ class Embeddings:
                                 ['png', 'jpg', 'jpeg', 'tiff', 'tif', 'bmp']
                                 Allowed values for `dataset-type` text are -
                                 ['csv', 'txt', 'json']
-                                **Note - For json files, if we have nested json
-                                structures, then text will be extracted only from
-                                the 1st level.
+
+                                .. note::
+                                        For json files, if we have nested json structures, then text will be extracted only from the 1st level.
         ---------------------   -------------------------------------------
         chip_size               Optional integer. Resize the image to
                                 `chip_size X chip_size` pixels.
@@ -441,7 +442,7 @@ class Embeddings:
         ---------------------   -------------------------------------------
         file_path               Required string. The path to the H5 file which
                                 gets auto generated after the call to the `get`
-                                method of the `Embeddings` class
+                                method of the :class:`~arcgis.learn.Embeddings` class
         ---------------------   -------------------------------------------
         load_to_memory          Optional Bool. whether or not to load the entire
                                 content of the H5 file to memory. Loading very large
@@ -812,7 +813,7 @@ class Embeddings:
         ---------------------   -------------------------------------------
         file_path               Required string. The path to the H5 file which
                                 gets auto generated after the call to the `get`
-                                method of the `Embeddings` class.
+                                method of the :class:`~arcgis.learn.Embeddings` class.
         ---------------------   -------------------------------------------
         visualize_with_items    Optional Bool. Whether or not to visualize the
                                 embeddings with items. Default is set to True.

@@ -1,3 +1,6 @@
+import sys
+
+sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8072\src")
 import datetime
 import copy
 import os
@@ -7,7 +10,7 @@ from pathlib import Path
 import tempfile
 
 
-from arcgis.features.geo import from_featureclass, _io
+from arcgis.features.geo._io.fileops import from_featureclass
 from arcgis.features.geo._array import GeoArray, GeoType
 from arcgis.geometry import Geometry
 import pandas as pd
@@ -90,6 +93,7 @@ geoms = [
 import pytest
 import pandas as pd
 from arcgis.features.geo import GeoAccessor
+from arcgis.features.geo import _io
 
 ##-------------------------------------------------------------------------
 ## Constructor Tests
@@ -173,7 +177,7 @@ def test_set_geometry_accessor_string():
 
 def test_set_geometry_accessor_string_not_valid():
     """set geometry to a column that does not exist"""
-    with pytest.raises(ValueError, message="Expecting ValueError"):
+    with pytest.raises(Exception) as e_info:
         data = [[1, 2, 3, 4]] * len(geoms)
         columns = ["A", "B", "C", "D"]
         df = pd.DataFrame(data=data, columns=columns)
@@ -474,6 +478,21 @@ def test_from_fc_arcpy_path():
         assert sdf.spatial.geometry_type[0] == "polygon"
 
 
+def test_from_fc_arcpy_datum_tfm():
+    """tests reading a SHP from arcpy with a datum transformation"""
+    import arcpy
+    import spatial_reference_helper
+
+    transformation = spatial_reference_helper.get_datum_transformation(
+        arcpy.SpatialReference(4326), 
+        arcpy.SpatialReference(102410)
+    )
+    fc = r"./world30.shp"
+    if arcpy.Exists(fc):
+        sdf = pd.DataFrame.spatial.from_featureclass(fc, sr=arcpy.SpatialReference(102410), datum_transformation=transformation)
+        assert sdf.spatial.geometry_type[0].lower() == "polygon"
+
+
 # --------------------------------------------------------------------------
 def test_from_fc_fiona():
     """tests reading a SHP/FGDB from fiona"""
@@ -624,6 +643,7 @@ if __name__ == "__main__":
     if HASARCPY:
         test_to_featureclass_arcpy()
         test_project_as()
+        test_from_fc_arcpy_datum_tfm()
     print("End Testing Package Specific Operations")
     print("#######################################################")
 

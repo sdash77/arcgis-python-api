@@ -12,8 +12,8 @@ class PieChart(_BaseWidget):
     =========================   ===========================================
     **Argument**                **Description**
     -------------------------   -------------------------------------------
-    item                        Required Portal Item object. Item object can
-                                be a Feature Layer or a MapWidget.
+    item                        Required Portal :class:`~arcgis.gis.Item` object. Item object can
+                                be a Table Layer or a MapWidget.
     -------------------------   -------------------------------------------
     name                        Optional string. Name of the pie chart
                                 widget.
@@ -81,7 +81,7 @@ class PieChart(_BaseWidget):
     @property
     def events(self):
         """
-        :return: list of events attached to the widget.
+        :return: List of events attached to the widget.
         """
         return self._events
 
@@ -130,21 +130,21 @@ class PieChart(_BaseWidget):
     @property
     def max_features(self):
         """
-        :return: max number of features to display.
+        :return: Maximum number of features to display.
         """
         return self._max_features
 
     @max_features.setter
     def max_features(self, value):
         """
-        Set max number of features to display.
+        Set maximum number of features to display.
         """
         self._max_features = int(value)
 
     @property
     def show_last_update(self):
         """
-        :return: show last update or not.
+        :return: Show last update or not.
         """
         return self._show_last_update
 
@@ -158,7 +158,7 @@ class PieChart(_BaseWidget):
     @property
     def labels(self):
         """
-        :return: show labels or not.
+        :return: Show labels or not.
         """
         return self._labels
 

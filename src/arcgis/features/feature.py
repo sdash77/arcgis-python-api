@@ -2,7 +2,9 @@
 In the GIS, entities located in space with a set of properties can be represented as features. This module has the types
 to represent features and collection of features.
 """
+from __future__ import annotations
 from arcgis.auth.tools import LazyLoader
+from typing import Any, Optional, Union
 
 copy = LazyLoader("copy")
 json = LazyLoader("json")
@@ -42,9 +44,22 @@ class Feature(object):
 
         # Obtain a feature from a feature layer:
 
-        feature_set = feature_layer.query(where="OBJECTID=1")
-        feature = feature_set[0]
+        # Query a Feature Layer to get a Feature Set
+        >>> feature_set = feature_layer.query(where="OBJECTID=1")
+        # Assign a variable to the list of features in the Feature Set
+        >>> feature_list = feature_set.features
+        # Get an individual feature
+        >>> feature = feature_list[0]
 
+        # Verify the object type
+        >>> type(feature)
+        arcgis.features.feature.Feature
+        # Print the string representation of the feature
+        >>> feature
+        {"geometry": {"x": -8238318.738276444, "y": 4970309.724235498, "spatialReference": {"wkid": 102100, "latestWkid": 3857}},
+        "attributes": {"Incident_Type": "Structural-Sidewalk Collapse", "Location": "927 Broadway", "Borough": "Manhattan",
+        "Creation_Date": 1477743211000, "Closed_Date": null, "Latitude": 40.7144215406227, "Longitude": -74.0060763804198,
+        "ObjectId": 1}}
     """
 
     _geom = None
@@ -64,7 +79,11 @@ class Feature(object):
             self._dict["attributes"] = attributes
 
     # ----------------------------------------------------------------------
-    def set_value(self, field_name, value):
+    def set_value(
+        self,
+        field_name: str,
+        value: Union[dict, BaseGeometry, Point, MultiPoint, Polyline, Polygon],
+    ):
         """
         Sets an attribute value for a given field name.
 
@@ -81,14 +100,28 @@ class Feature(object):
 
         .. code-block:: python
 
-            # UsageExample
+            # Usage Example
 
             >>> feat_set = feature_layer.query(where="OBJECTID=1")
-            >>> feat = feat_set[0]
-            >>> feat.set_value(field_name = "field_name", value = "new_value")
+            >>> feat = feat_set.features[0]
+            >>> feat.fields
+            ['OBJECTID',
+             'FID_Commun',
+             'AREA',
+             'PERIMETER',
+             'NAME',
+             'COUNTY',
+             'CONAME']
+            >>> feat.get_value("NAME")
+            'Original Name'
+            >>> feat.set_value(field_name = "NAME", value = "New Name")
             True
 
+        .. note::
+            To save edits from the above snippet, use :meth:`~arcgis.features.FeatureLayer.edit_features`
+            with `feat_set` in a list as the `updates` argument.
         """
+
         if field_name in self.fields:
             if value is not None:
                 self._dict["attributes"][field_name] = value
@@ -113,7 +146,7 @@ class Feature(object):
         return True
 
     # ----------------------------------------------------------------------
-    def get_value(self, field_name):
+    def get_value(self, field_name: str):
         """
         Retrieves the value for a specified field name.
 
@@ -184,17 +217,32 @@ class Feature(object):
     @property
     def geometry(self):
         """
-        Get/Set the geometry of the feature, if any
+        Get/Set the geometry of the feature, if any.
 
         ==================      ====================================================================
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
         value                   Required string.
                                 Values: 'Polyline' | 'Polygon' | 'Point'
+
+                                .. note::
+                                    Setting this value will override the current geometry dictionary
+                                    if already present.
+
         ==================      ====================================================================
 
-        :return: The feature's geometry as a string
+        :return: The feature's geometry as a dictionary.
 
+        .. code-block:: python
+
+            # Get the current geometry
+            >>> feat_set = feature_layer.query(where="1=1")
+            >>> feat_list = feat_set.features
+            >>> feat = feat_list[0]
+            >>> feat.geometry
+            {'x': -8238318.738276444,
+             'y': 4970309.724235498,
+             'spatialReference': {'wkid': 102100, 'latestWkid': 3857}}
         """
         if self._geom is None:
             if "geometry" in self._dict.keys():
@@ -226,6 +274,14 @@ class Feature(object):
         :return:
             A dictionary of feature attribute values with field names as the key
 
+        .. code-block:: python
+
+            #Example to set attribute values
+
+            >>> feat_set = feature_layer.query(where="1=1")
+            >>> feat_list = feat_set.features
+            >>> feat = feat_list[0]
+            >>> feat.attributes = {"field1 : "value", field2 : "value"}
         """
 
         if self._attributes is None and "attributes" in self._dict:
@@ -277,7 +333,7 @@ class Feature(object):
 
     # ----------------------------------------------------------------------
     @classmethod
-    def from_json(cls, json_str):
+    def from_json(cls, json_str: str):
         """
         Creates a Feature object from a JSON string.
 
@@ -292,12 +348,12 @@ class Feature(object):
 
     # ----------------------------------------------------------------------
     @classmethod
-    def from_dict(cls, feature, sr=None):
+    def from_dict(cls, feature: str, sr: Optional[dict[str, str]] = None):
         """
         Creates a Feature object from a dictionary.
 
         :return:
-            A class:`~arcgis.features.feature.Feature`
+            A :class:`~arcgis.features.Feature`
         """
         geom = feature["geometry"] if "geometry" in feature else None
         if geom and sr and isinstance(geom, dict) and not "spatialReference" in geom:
@@ -794,7 +850,27 @@ class FeatureSet(object):
 
     # ----------------------------------------------------------------------
     @staticmethod
-    def from_json(json_str):
+    def from_arcpy(fs: "arcpy.FeatureSet") -> "FeatureSet":
+        """
+        Converts an `arcpy` FeatureSet to an `arcgis` FeatureSet
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        fs                  Required arcpy.FeatureSet. The featureset objec to consume.
+        ===============     ====================================================================
+
+        :return:
+           A :class:`~arcgis.features.FeatureSet` object
+        """
+        if hasattr(fs, "JSON") and type(fs).__name__ == "FeatureSet":
+            return FeatureSet.from_dict(_ujson.loads(fs.JSON))
+        else:
+            raise ValueError(f"Invalid input of type {type(fs)}")
+
+    # ----------------------------------------------------------------------
+    @staticmethod
+    def from_json(json_str: str):
         """
         Creates a Feature Set objects from a JSON string.
 
@@ -842,11 +918,13 @@ class FeatureSet(object):
             nn = list(df[nn].index)
             if len(nn) > 0:
                 val = df[col][nn[0]]
-                if isinstance(val, str):
+                if isinstance(val, (str, pd.StringDtype)):
                     return "esriFieldTypeString"
-                elif isinstance(val, tuple([int] + [np.int32])):
+                elif isinstance(
+                    val, tuple([int] + [np.int32, pd.Int32Dtype, pd.Int16Dtype])
+                ):
                     return "esriFieldTypeInteger"
-                elif isinstance(val, (float, np.int64)):
+                elif isinstance(val, (float, np.int64, pd.Int64Dtype)):
                     return "esriFieldTypeDouble"
                 elif isinstance(val, datetime):
                     return "esriFieldTypeDate"
@@ -1066,7 +1144,7 @@ class FeatureSet(object):
 
     # ----------------------------------------------------------------------
     @staticmethod
-    def from_dict(featureset_dict):
+    def from_dict(featureset_dict: dict[str, Any]):
         """
         Creates a Feature Set objects from a dictionary.
 
@@ -1135,7 +1213,7 @@ class FeatureSet(object):
 
     # ----------------------------------------------------------------------
     @spatial_reference.setter
-    def spatial_reference(self, value):
+    def spatial_reference(self, value: Optional[dict[str, int]]):
         """
         See main ``spatial_reference`` property docstring
         """
@@ -1168,7 +1246,7 @@ class FeatureSet(object):
 
     # ----------------------------------------------------------------------
     @has_z.setter
-    def has_z(self, value):
+    def has_z(self, value: Optional[bool]):
         """
         See main ``has_z`` property docstring
         """
@@ -1195,7 +1273,7 @@ class FeatureSet(object):
 
     # ----------------------------------------------------------------------
     @has_m.setter
-    def has_m(self, value):
+    def has_m(self, value: Optional[bool]):
         """
         See main ``has_m`` property docstring
         """
@@ -1222,7 +1300,7 @@ class FeatureSet(object):
 
     # ----------------------------------------------------------------------
     @geometry_type.setter
-    def geometry_type(self, value):
+    def geometry_type(self, value: Optional[str]):
         """
         See main ``geometry_type`` property docstring
         """
@@ -1248,7 +1326,7 @@ class FeatureSet(object):
 
     # ----------------------------------------------------------------------
     @object_id_field_name.setter
-    def object_id_field_name(self, value):
+    def object_id_field_name(self, value: Optional[str]):
         """
         See main ``object_id_field_name`` property docstring
         """
@@ -1274,7 +1352,7 @@ class FeatureSet(object):
 
     # ----------------------------------------------------------------------
     @global_id_field_name.setter
-    def global_id_field_name(self, value):
+    def global_id_field_name(self, value: Optional[str]):
         """
         See main ``global_id_field_name`` property docstring
         """
@@ -1299,14 +1377,14 @@ class FeatureSet(object):
 
     # ----------------------------------------------------------------------
     @display_field_name.setter
-    def display_field_name(self, value):
+    def display_field_name(self, value: Optional[str]):
         """
         See main ``display_field_name`` property docstring
         """
         self._display_field_name = value
 
     # ----------------------------------------------------------------------
-    def save(self, save_location, out_name, encoding=None):
+    def save(self, save_location: str, out_name: str, encoding: Optional[str] = None):
         """
         The ``save`` method saves a Feature Set object to a
         :class:`~arcgis.features.Feature` class on disk.
@@ -1448,7 +1526,7 @@ class FeatureSet(object):
 
     # ----------------------------------------------------------------------
     @fields.setter
-    def fields(self, fields):
+    def fields(self, fields: Optional[dict]):
         """
         See main ``fields`` property docstring
         """
@@ -1517,7 +1595,11 @@ class FeatureCollection(Layer):
             return FeatureSet.from_dict(self.properties["featureSet"])
 
     @staticmethod
-    def from_featureset(fset, symbol=None, name=None):
+    def from_featureset(
+        fset: FeatureSet,
+        symbol: Optional[dict[str, Any]] = None,
+        name: Optional[str] = None,
+    ):
         """
         Creates a :class:`~arcgis.features.FeatureCollection` object from a :class:`~arcgis.features.FeatureSet` object.
 

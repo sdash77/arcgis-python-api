@@ -11,39 +11,44 @@ from arcgis.realtime.velocity.feeds.time import _HasTime, TimeInstant, TimeInter
 class FeatureLayer(_FeedTemplate, _HasTime):
     """
     Poll a feature layer for features at a fixed schedule. This data class can be used to define the feed configuration
-    and use it to create the feed.
+    and to create the feed.
 
-    Data format is Esri Layer. Velocity will automatically handle the location for you.
+    The data format is a feature layer. ArcGIS Velocity will automatically handle the location for you.
 
     =====================           ====================================================================
     **Argument**                    **Description**
     ---------------------           --------------------------------------------------------------------
-    label                           str. Unique label for this feed instance.
+    label                           String. Unique label for this feed instance.
     ---------------------           --------------------------------------------------------------------
-    description                     str. Feed description.
+    description                     String. Feed description.
     ---------------------           --------------------------------------------------------------------
-    query                           str. Feature layer query parameters
-                                    default value - "1=1"
+    query                           String. Feature layer query parameters. The default is: 1=1.
     ---------------------           --------------------------------------------------------------------
-    fields                          str. Requested feature layer output fields. Example - "field1,field2"
-                                    default value - "*"
+    fields                          String. Requested feature layer output fields.
+
+                                    For example:
+
+                                           "field1, field2"
+
+                                    The default is: *.
     ---------------------           --------------------------------------------------------------------
-    outSR                           int. Requested output Spatial Reference
-                                    default value - 4326
-                                    Additional information on Projected and Geographic Coordinate system at:
-                                    https://developers.arcgis.com/rest/services-reference/enterprise/using-spatial-references.htm
+    outSR                           int. Requested output spatial reference. The default is: 4326.
+
+                                    .. note::
+                                        To learn more about projected and geographic coordinate systems, refer to
+                                        `Using spatial references <https://developers.arcgis.com/rest/services-reference/enterprise/using-spatial-references.htm>`_.
     =====================           ====================================================================
 
     =====================           ====================================================================
     **Optional Argument**           **Description**
     =====================           ====================================================================
-                                    Note: either portal_item_id or url is required
-    ---------------------           --------------------------------------------------------------------
-    portal_item_id                  str. Portal item id of the feature layer
-                                    Note: either portal_item_id or url is required
+    portal_item_id                  String. The Portal :class:`~arcgis.gis.Item` ID of the feature layer.
+
+                                    .. note::
+                                        Either the portal_item_id or url is required.
     ---------------------           --------------------------------------------------------------------
     extent                          Dict[str, Any]. A Geometry object that defines the spatial extent for
-                                    the feature layer
+                                    the feature layer.
 
                                     .. code-block:: python
 
@@ -60,8 +65,8 @@ class FeatureLayer(_FeedTemplate, _HasTime):
                                         }
 
     ---------------------           --------------------------------------------------------------------
-    time_stamp_field                str.
-                                    An optional Date field for latest features
+    time_stamp_field                String.
+                                    An optional date field for latest features.
                                     Optionally, specify a date field to be used to retrieve only the latest
                                     features from the feature layer.
 
@@ -70,20 +75,19 @@ class FeatureLayer(_FeedTemplate, _HasTime):
 
                                     If a timestamp field is specified, the first time ArcGIS Velocity polls the feature
                                     layer it will load all features with a timestamp field datetime within the past
-                                    minute and less than the first feed poll time that also meet the criteria of the
-                                    WHERE clause. Each subsequent poll, only features with a timestamp field value
+                                    minute and less than the first feed poll time that also meets the criteria of the
+                                    WHERE clause. With each subsequent poll, only features with a timestamp field value
                                     between the last polling time and the current polling time that also meet the
                                     criteria of the WHERE clause will be loaded.
     ---------------------           --------------------------------------------------------------------
-    track_id_field                  str. Name of the field from the incoming data that should be set as
-                                    track_id.
+    track_id_field                  String. Name of the field from the incoming data that should be set as
+                                    track ID.
     ---------------------           --------------------------------------------------------------------
-    time                            Union[TimeInstant, TimeInterval]. An instance of time configuration that
-                                    will be used to create time info from the incoming data.
+    time                            [:class:`~arcgis.realtime.velocity.feeds.TimeInstant`, :class:`~arcgis.realtime.velocity.feeds.TimeInterval`]. An instance of time configuration that
+                                    will be used to create time information from the incoming data.
     ---------------------           --------------------------------------------------------------------
-    run_interval                    RunInterval. An instance of scheduler configuration.
-
-                                    default value - RunInterval(cron_expression="0 * * ? * * *", timezone="America/Los_Angeles")
+    run_interval                    :class:`~arcgis.realtime.velocity.feeds.RunInterval`. An instance of the scheduler configuration. The default is:
+                                    RunInterval(cron_expression="0 * * ? * * *", timezone="America/Los_Angeles")
     =====================           ====================================================================
 
     :return: A data class with feature layer feed configuration.

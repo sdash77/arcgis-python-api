@@ -23,14 +23,14 @@ class MetadataManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<%s for %s>" % (type(self).__name__, self._gis._url)
+        return "< %s for %s >" % (type(self).__name__, self._gis._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<%s at %s>" % (type(self).__name__, self._gis._url)
+        return "< %s at %s >" % (type(self).__name__, self._gis._url)
 
     # ----------------------------------------------------------------------
-    def enable(self, metadata_format="arcgis"):
+    def enable(self, metadata_format: str = "arcgis"):
         """
         This operation turns on metadata for items and allows the
         administrator to set the default metadata scheme.
@@ -73,7 +73,7 @@ class MetadataManager(object):
         return self._gis.update_properties(properties_dict=params)
 
     # ----------------------------------------------------------------------
-    def update(self, metadata_format="arcgis"):
+    def update(self, metadata_format: str = "arcgis"):
         """
         This operation allows administrators to update the current metdata
         properties.

@@ -1,5 +1,6 @@
 import os
 from fastai.vision.transform import rotate, brightness, contrast
+
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 from arcgis.learn import (
     MLModel,
@@ -29,7 +30,11 @@ from arcgis.learn import (
     DeepSort,
     MMSegmentation,
     MMDetection,
-    AutoML, MLModel
+    AutoML,
+    MLModel,
+    MaXDeepLab,
+    DETReg,
+    AutoDL
 )
 import json
 from arcgis.learn.text import EntityRecognizer, SequenceToSequence
@@ -89,7 +94,7 @@ data = {
         "prepare_data": {
             "path": os.path.join(data_folder, "100_cracks_data"),
             "batch_size": 2,
-            "dataset_type":"PASCAL_VOC_rectangles",
+            "dataset_type": "PASCAL_VOC_rectangles",
         },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "ssd_retina_yolo_fasterrcnn_data"),
@@ -327,8 +332,11 @@ data = {
         "datapath_ms": "fc_data",
         "model": FeatureClassifier,
         "model_test": "fc_test",
-        "prepare_data": {"path": os.path.join(data_folder, "featureClassifier"),
-         "batch_size": 2, "dataset_type":"Imagenet"},
+        "prepare_data": {
+            "path": os.path.join(data_folder, "featureClassifier"),
+            "batch_size": 2,
+            "dataset_type": "Imagenet",
+        },
         "prepare_data_ms": {
             "path": os.path.join(data_folder_ms, "fc_data"),
             "batch_size": 2,
@@ -994,6 +1002,62 @@ data = {
             "model_args": {"batch_size": 1, "padding": 56},
         },
     },
+        "maxdeeplab": {
+        "model_name": "maxdeeplab",
+        "datapath": "panoptic_rgb",
+        "datapath_ms": "panoptic_ms",
+        "model": MaXDeepLab,
+        "model_test": "maxdeeplab_test",
+        "prepare_data": {
+            "path": os.path.join(data_folder, "panoptic_rgb"),
+            "batch_size": 2,
+             "n_masks":38,
+             "resize_to":256
+        },
+        "prepare_data_ms": {
+            "path": os.path.join(data_folder_ms, "panoptic_ms"),
+            "batch_size": 2,
+             "n_masks":38,
+             "resize_to":256,
+            "imagery_type": "multispectral",
+        },
+        "should_test": True,
+        "test_feature_layer": False,
+        "regression_parameter": "panoptic_quality",
+        "regression_test_score": 0.25,
+        "regression_epochs": 15,
+        "inferencing_parameter": {
+            "model_type": "pass",
+        },
+        "inferencing_image_server": {"input_raster": "pass", "context": "pass"},
+    },
+    "detreg": {
+        "model_name": "detreg",
+        "datapath": "panoptic_rgb",
+        "datapath_ms": "panoptic_ms",
+        "model": DETReg,
+        "model_test": "detreg_test",
+        "prepare_data": {
+            "path": os.path.join(data_folder, "rgb_small"),
+            "batch_size": 2,
+             "chip_size":256
+        },
+        "prepare_data_ms": {
+            "path": os.path.join(data_folder_ms, "ms_small"),
+            "batch_size": 2,
+             "chip_size":256,
+            "imagery_type": "multispectral",
+        },
+        "should_test": True,
+        "test_feature_layer": False,
+        "regression_parameter": "average_precision_score",
+        "regression_test_score": 0.55,
+        "regression_epochs": 50,
+        "inferencing_parameter": {
+            "model_type": "pass",
+        },
+        "inferencing_image_server": {"input_raster": "pass", "context": "pass"},
+    },
     "imagecaptioner": {
         "model_name": "imagecaptioner",
         "datapath": "imagecaptioner_data",
@@ -1133,16 +1197,17 @@ data = {
         "model": DeepSort,
         "model_test": "deepsort_test",
         "prepare_data": {
-            "path": os.path.join(
-                data_folder, "deepsort_data"
+            "path": os.path.join(data_folder, "deepsort_data"),
+            "batch_size": 10,
+            "transforms": (
+                [
+                    rotate(degrees=30, p=0.5),
+                    brightness(change=(0.4, 0.6)),
+                    contrast(scale=(0.75, 1.5)),
+                ],
+                [],
             ),
-            "batch_size":10,
-            "transforms": ([
-                rotate(degrees=30, p=0.5),
-                brightness(change=(0.4, 0.6)),
-                contrast(scale=(0.75, 1.5))
-            ], []),
-            "resize_to": (128,64)
+            "resize_to": (128, 64),
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1162,10 +1227,8 @@ data = {
         "model": MMSegmentation,
         "model_test": "mmsegmentation_test",
         "prepare_data": {
-            "path": os.path.join(
-                data_folder, "mmsegmentation_data"
-            ),
-            "batch_size":2
+            "path": os.path.join(data_folder, "mmsegmentation_data"),
+            "batch_size": 2,
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1185,10 +1248,8 @@ data = {
         "model": MMDetection,
         "model_test": "mmdetection_test",
         "prepare_data": {
-            "path": os.path.join(
-                data_folder, "mmdetection_data"
-            ),
-            "batch_size":2
+            "path": os.path.join(data_folder, "mmdetection_data"),
+            "batch_size": 2,
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1201,6 +1262,7 @@ data = {
         },
         "inferencing_image_server": {"input_raster": "pass", "context": "pass"},
     },
+
     "mlmodel": {
         "model_name": "mlmodel",
         "datapath": "automl_data",
@@ -1208,9 +1270,7 @@ data = {
         "model": MLModel,
         "model_test": "automl_test",
         "prepare_tabular_data": {
-            "path": os.path.join(
-                data_folder, "automl_data", "automl_data.csv"
-            )
+            "path": os.path.join(data_folder, "automl_data", "automl_data.csv")
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1230,9 +1290,7 @@ data = {
         "model": AutoML,
         "model_test": "automl_test",
         "prepare_tabular_data": {
-            "path": os.path.join(
-                data_folder, "automl_data", "automl_data.csv"
-            )
+            "path": os.path.join(data_folder, "automl_data", "automl_data.csv")
         },
         "prepare_data_ms": False,
         "should_test": True,
@@ -1338,3 +1396,47 @@ data_inference_only = {
         "labels": [None],
     },
 }
+# from arcgis.learn import ImageryModel, AutoDL
+# import glob
+# data_autodl = {
+#     "autodl_object_det":{
+#         "model_name": "autodl_object_det",
+#         "datapath": "autodl_pascal_voc_rgb",
+#         "datapath_ms": "autodl_pascal_voc_ms",
+#         "model": AutoDL,
+#         "model_test": "autodl_object_det_test",
+#         "prepare_data": {
+#             "path": os.path.join(data_folder, "autodl_pascal_voc_rgb"),
+#             "batch_size": 2,
+#             "chip_size":256, 
+#             "class_mapping":{'1': 'pool'}
+#         },
+#         "prepare_data_ms": {
+#             "path": os.path.join(data_folder_ms, "autodl_pascal_voc_ms"),
+#             "batch_size": 2,
+#             "imagery_type": "multispectral",
+#             "chip_size":256, 
+#             "class_mapping":{'1': 'pool'}
+#         },
+#      "network": ['SingleShotDetector', 'RetinaNet', 'FasterRCNN', 'YOLOv3', 'MMDetection'],
+#      "time": 1  
+#     },
+#     "autodl_pixel_cls":{
+#         "model_name": "autodl_pixel_cls",
+#         "datapath": "autodl_classified_tiles_rgb_small",
+#         "datapath_ms": "autodl_classified_tiles_ms_small",
+#         "model": AutoDL,
+#         "model_test": "autodl_pixel_test",
+#         "prepare_data": {
+#             "path": os.path.join(data_folder, "autodl_classified_tiles_rgb_small"),
+#             "batch_size": 2,
+#             "chip_size":256},
+#         "prepare_data_ms": {
+#             "path": os.path.join(data_folder_ms, "autodl_classified_tiles_ms_small"),
+#             "batch_size": 2,
+#             "imagery_type": "multispectral",
+#             "chip_size":256},
+#      "network": ["DeepLab", "UnetClassifier", "PSPNetClassifier", "MMSegmentation"],
+#      "time": 1  
+#     },
+# }

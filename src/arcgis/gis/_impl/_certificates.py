@@ -1,3 +1,4 @@
+from typing import Optional
 from arcgis._impl.common._mixins import PropertyMap
 
 ###########################################################################
@@ -39,7 +40,7 @@ class CertificateManager(object):
         return self._properties
 
     # ----------------------------------------------------------------------
-    def add(self, name, domain, certificate):
+    def add(self, name: str, domain: str, certificate: str):
         """
         The ``add`` method allows allows administrators to
         register custom X.509 HTTPS certificates with their ArcGIS Online
@@ -58,7 +59,8 @@ class CertificateManager(object):
         ----------------  -------------------------------------------------------------------------------
         domain            Required String. Server domain that the certificate is used for.
         ----------------  -------------------------------------------------------------------------------
-        certificate	  Required String. Base64-encoded certificate text, enclosed between `-----BEGIN CERTIFICATE-----` and `-----END CERTIFICATE-----`.
+        certificate	      Required String. Base64-encoded certificate text, enclosed between
+                          `-----BEGIN CERTIFICATE-----` and `-----END CERTIFICATE-----`.
         ================  ===============================================================================
 
         :return:
@@ -90,7 +92,7 @@ class CertificateManager(object):
         return res
 
     # ----------------------------------------------------------------------
-    def get(self, cert_id):
+    def get(self, cert_id: str):
         """
         The ``get`` method retrieves the certificate information for a single certificate
 
@@ -135,7 +137,7 @@ class CertificateManager(object):
         return None
 
     # ----------------------------------------------------------------------
-    def delete(self, cert_id):
+    def delete(self, cert_id: str):
         """
         The ``delete`` method unregisters the certificate from the organization.
 
@@ -163,7 +165,13 @@ class CertificateManager(object):
         return res
 
     # ----------------------------------------------------------------------
-    def update(self, cert_id, name=None, domain=None, certificate=None):
+    def update(
+        self,
+        cert_id: str,
+        name: Optional[str] = None,
+        domain: Optional[str] = None,
+        certificate: Optional[str] = None,
+    ):
         """
         The ``update`` operation allows organization's
         administrators to update a registered custom X.509 HTTPS

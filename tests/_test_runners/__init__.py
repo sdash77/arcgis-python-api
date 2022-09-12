@@ -4,7 +4,7 @@ import logging
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 formatter_str = (
-    u"-----    %(levelname)s    |    "
+    "-----    %(levelname)s    |    "
     "%(asctime)s    |    "
     "%(filename)s line %(lineno)d"
     "     -----\n"

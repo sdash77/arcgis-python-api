@@ -29,20 +29,30 @@ class _Unit:
 @dataclass(frozen=True)
 class SingleFieldGeometry:
     """
-    Dataclass that holds the Single Field Geometry configuration
+    Dataclass that holds the Single Field Geometry configuration.
 
     ===============     ====================================================================
     **Argument**        **Description**
     ===============     ====================================================================
-    geometry_field      str. Geometry field name esriGeometryPoint, esriGeometryPolyline,
-                        esriGeometryPolygon, esriGeometryMulti
+    geometry_field      String. Geometry field name.
+
+                        Options:
+
+                            esriGeometryPoint, esriGeometryPolyline, esriGeometryPolygon, esriGeometryMulti.
     ---------------     --------------------------------------------------------------------
-    geometry_type       str. Options - esriGeometryPoint, esriGeometryPolyline,
-                        esriGeometryPolygon, esriGeometryMulti
+    geometry_type       String. Geometry type.
+
+                        Options:
+
+                            esriGeometryPoint, esriGeometryPolyline, esriGeometryPolygon, esriGeometryMulti.
     ---------------     --------------------------------------------------------------------
-    geometry_format     str. Options - coordinates, esrijson, geojson, wkt
+    geometry_format     String. Geometry format.
+
+                        Options:
+
+                            coordinates, esrijson, geojson, or wkt.
     ---------------     --------------------------------------------------------------------
-    wkid                int. WKID of the geometry
+    wkid                int. WKID of the geometry.
     ===============     ====================================================================
 
     :return: `True` if the operation is a success
@@ -92,20 +102,20 @@ class XYZGeometry:
     =====================   ====================================================================
     **Argument**            **Description**
     ---------------------   --------------------------------------------------------------------
-    x_field                 str. Longitude field name
+    x_field                 String. Longitude field name.
     ---------------------   --------------------------------------------------------------------
-    y_field                 str. Latitude field name
+    y_field                 String. Latitude field name.
     ---------------------   --------------------------------------------------------------------
-    wkid                    int. WKID of the geometry
+    wkid                    int. WKID of the geometry.
     =====================   ====================================================================
 
     =====================   ====================================================================
     **Optional Argument**   **Description**
     =====================   ====================================================================
-    z_field                 str. Z field name
+    z_field                 String. Z field name.
     ---------------------   --------------------------------------------------------------------
-    z_unit                  str. Options - Kilometers, Meters, Centimeters, Millimeters, Fathoms,
-                            Miles, NauticalMiles, Yards, Feet, Inches
+    z_unit                  String. Z units. Options: Kilometers, Meters, Centimeters, Millimeters, Fathoms,
+                            Miles, NauticalMiles, Yards, Feet, Inches.
     =====================   ====================================================================
 
     :return: `True` if the operation is a success
@@ -145,13 +155,13 @@ class _HasGeometry:
         self, geometry: Union[XYZGeometry, SingleFieldGeometry]
     ) -> bool:
         """
-        Configures the geometry for a feed
+        Configures the geometry for a feed.
 
         ==============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
-        geometry            Union[XYZGeometry, SingleFieldGeometry].
-                            Geometry object used to configure the feed
+        geometry            [:class:`~arcgis.realtime.velocity.feeds.XYZGeometry`, :class:`~arcgis.realtime.velocity.feeds.SingleFieldGeometry`].
+                            Geometry object used to configure the feed.
         ===============     ====================================================================
 
         :return: `True` if the operation is a success

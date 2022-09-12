@@ -3,8 +3,6 @@ from pathlib import Path
 from ._codetemplate import image_classifier_prf
 from ._arcgis_model import _EmptyData
 from functools import partial
-import math
-import types
 from .._data import _raise_fastai_import_error
 import traceback
 import logging
@@ -14,14 +12,12 @@ logger = logging.getLogger()
 try:
     from ._arcgis_model import (
         ArcGISModel,
-        SaveModelCallback,
-        _set_multigpu_callback,
         _resnet_family,
         _set_ddp_multigpu,
         _isnotebook,
     )
+    from ._timm_utils import filter_timm_models, timm_config
     import torch
-    from torchvision import models
     from fastai.vision.learner import unet_learner, cnn_config
     import numpy as np
     from fastai.layers import CrossEntropyFlat
@@ -29,19 +25,15 @@ try:
     from ._unet_utils import (
         is_no_color,
         LabelCallback,
-        _class_array_to_rbg,
         predict_batch,
         show_results_multispectral,
     )
-    from fastai.callbacks import EarlyStoppingCallback
-    from torch.nn import Module as NnModule
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from .._utils.classified_tiles import per_class_metrics
     from ._psp_utils import accuracy
     from ._deeplab_utils import compute_miou
-    import os as arcgis_os
     from matplotlib import pyplot as plt
-    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from .._utils.env import is_arcgispronotebook
 
     HAS_FASTAI = True
 except Exception as e:
@@ -63,11 +55,13 @@ class UnetClassifier(ArcGISModel):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function.
+                            :meth:`~arcgis.learn.prepare_data` function.
     ---------------------   -------------------------------------------
-    backbone                Optional function. Backbone CNN model to be used for
-                            creating the base of the `UnetClassifier`, which
+    backbone                Optional string. Backbone convolutional neural network
+                            model used for feature extraction, which
                             is `resnet34` by default.
+                            Supported backbones: ResNet family and specified Timm
+                            models(experimental support) from :func:`~arcgis.learn.UnetClassifier.backbones`.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -122,7 +116,7 @@ class UnetClassifier(ArcGISModel):
                             Default: []
     =====================   ===========================================
 
-    :return: `UnetClassifier` Object
+    :return: :class:`~arcgis.learn.UnetClassifier` Object
     """
 
     def __init__(
@@ -145,7 +139,8 @@ class UnetClassifier(ArcGISModel):
             super().__init__(data, None)
             self._intialize_tensorflow(data, backbone, pretrained_path, kwargs)
         else:
-            super().__init__(data, backbone, **kwargs)
+            super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
+            data = self._data
 
             self._check_dataset_support(self._data)
             if not (self._check_backbone_support(getattr(self, "_backbone", backbone))):
@@ -192,6 +187,33 @@ class UnetClassifier(ArcGISModel):
                 _backbone_meta = cnn_config(self._orig_backbone)
                 backbone_cut = _backbone_meta["cut"]
                 backbone_split = _backbone_meta["split"]
+
+            if "timm" in self._backbone.__module__:
+
+                for bckbn in ["densenet", "inception_v4", "vgg"]:
+                    if bckbn in self._backbone.__name__:
+                        from torch import nn
+                        from fastai.vision.learner import has_pool_type
+
+                        def bckbn_cut(m):
+                            ll = list(enumerate(m.children()))
+                            cut = next(i for i, o in reversed(ll) if has_pool_type(o))
+                            m = nn.Sequential(*list(m.children())[:cut])
+                            return m[0]
+
+                        backbone_cut = bckbn_cut
+                        backbone_split = None
+                        break
+                else:
+                    timm_meta = timm_config(self._backbone)
+                    backbone_cut = timm_meta["cut"]
+                    backbone_split = timm_meta["split"]
+
+                if (
+                    "nasnet" in self._backbone.__name__
+                    or "repvgg" in self._backbone.__name__
+                ):
+                    backbone_cut = None
 
             if not _isnotebook():
                 _set_ddp_multigpu(self)
@@ -305,12 +327,29 @@ class UnetClassifier(ArcGISModel):
 
     @property
     def supported_backbones(self):
-        """Supported torchvision backbones for this model."""
+        """Supported list of backbones for this model."""
+        return UnetClassifier._supported_backbones()
+
+    @staticmethod
+    def backbones():
+        """Supported list of backbones for this model."""
         return UnetClassifier._supported_backbones()
 
     @staticmethod
     def _supported_backbones():
-        return [*_resnet_family]
+        timm_models = filter_timm_models(
+            [
+                "*dpn*",
+                "*hrnet*",
+                "nasnetalarge",
+                "pnasnet5large",
+                "*repvgg*",
+                "*selecsls*",
+                "*tresnet*",
+            ]
+        )
+        timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
+        return [*_resnet_family] + timm_backbones
 
     @property
     def supported_datasets(self):
@@ -333,11 +372,11 @@ class UnetClassifier(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `UnetClassifier` Object
+        :return: :class:`~arcgis.learn.UnetClassifier` Object
         """
         return cls.from_emd(data, emd_path)
 
@@ -350,14 +389,14 @@ class UnetClassifier(ArcGISModel):
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Esri Model Definition
                                 file.
         =====================   ===========================================
 
-        :return: `UnetClassifier` Object
+        :return: :class:`~arcgis.learn.UnetClassifier` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -446,6 +485,24 @@ class UnetClassifier(ArcGISModel):
     def _show_results_multispectral(
         self, rows=5, alpha=0.7, **kwargs
     ):  # parameters adjusted in kwargs
+        """
+        Shows the ground truth and predictions of model side by side.
+
+        **kwargs**
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Number of rows of data to be displayed, if
+                                batch size is smaller, then the rows will
+                                display the value provided for batch size.
+        ---------------------   -------------------------------------------
+        alpha                   Optional Float. Opacity parameter for label
+                                overlay on image. Float [0.0 - 1.0]
+                                Default: 0.7
+        =====================   ===========================================
+
+        """
         return_fig = kwargs.get("return_fig", False)
         ret_val = show_results_multispectral(self, nrows=rows, alpha=alpha, **kwargs)
         if return_fig:
@@ -473,7 +530,7 @@ class UnetClassifier(ArcGISModel):
         self.learn.show_results(
             rows=rows, ignore_mapped_class=self._ignore_mapped_class, **kwargs
         )
-        if _IS_ARCGISPRONOTEBOOK:
+        if is_arcgispronotebook():
             plt.show()
 
     def accuracy(self):

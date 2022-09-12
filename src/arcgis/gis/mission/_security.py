@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
@@ -7,6 +8,9 @@ class SecurityManager(object):
     """
     This resource is a container for all resources and operations
     pertaining to security in your ArcGIS Mission Server site.
+    Security Manager can be accessed via the
+    :attr:`~arcgis.gis.mission.MissionServer.security` property of
+    :class:`~arcgis.gis.mission.MissionServer` class
     """
 
     _url = None
@@ -34,14 +38,14 @@ class SecurityManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<SecurityManager @ {url}>".format(url=self._url)
+        return "< SecurityManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
         return self.__str__()
 
     # ----------------------------------------------------------------------
-    def _modify_server_role(self, role):
+    def _modify_server_role(self, role: str):
         """
         Allows for the modification of the server role from federated to standalone.
 

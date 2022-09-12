@@ -47,6 +47,7 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
         password: str = None,
         referer: str = "http",
         expiration: int = 1440,
+        proxies: dict = None,
         session: "Session" = None,
         **kwargs,
     ) -> None:
@@ -69,6 +70,10 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
             self._session.verify = kwargs.pop("veriy", True)
         else:
             self._session = session
+        if proxies:
+            self._proxies = proxies
+        else:
+            self._proxies = proxies
 
     # ----------------------------------------------------------------------
     def __str__(self):
@@ -114,16 +119,56 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
             self._token = token_info["access_token"]
             return self._token
         elif (
+            self._client_id
+            and self._client_secret
+            and self._username
+            and self._password
+        ):
+            oauth = OAuth2Session(
+                client=BackendApplicationClient(client_id=self._client_id),
+            )
+
+            oauth.verify = False
+            if self._proxies:
+                oauth.proxies = self._proxies
+
+            res = oauth.fetch_token(
+                token_url=tu,
+                username=self._username,
+                password=self._password,
+                client_id=self._client_id,
+                client_secret=self._client_secret,
+                include_client_id=True,
+                verify=False,
+                proxies=self._proxies,
+                expiration=26000,
+            )
+            if "expires_in" in res:
+                self._create_time = _dt.datetime.fromtimestamp(
+                    res["expires_at"]
+                ) - _dt.timedelta(seconds=7200)
+                self._expiration = res["expires_in"] / 60
+                if "token" in res:
+                    return res["token"]
+                if "access_token" in res:
+                    return res["access_token"]
+        elif (
             self._client_id and self._client_secret
         ):  # case 2: has both client and secret keys
             client = BackendApplicationClient(client_id=self._client_id)
-            oauth = OAuth2Session(client=client)
+            oauth = OAuth2Session(
+                client=client, redirect_uri="urn:ietf:wg:oauth:2.0:oob"
+            )
+            if self._proxies:
+                oauth.proxies = self._proxies
+            oauth.verify = False
             res = oauth.fetch_token(
                 token_url=tu,
                 client_id=self._client_id,
                 client_secret=self._client_secret,
                 include_client_id=True,
                 verify=False,
+                proxies=self._proxies,
             )
             if "expires_in" in res:
                 self._create_time = _dt.datetime.fromtimestamp(
@@ -143,7 +188,12 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
             oauth = OAuth2Session(
                 self._client_id, redirect_uri="urn:ietf:wg:oauth:2.0:oob"
             )
-            authorization_url, state = oauth.authorization_url(auth_url)
+            if self._proxies:
+                oauth.proxies = self._proxies
+            oauth.verify = False
+            authorization_url, state = oauth.authorization_url(
+                auth_url, **{"allow_verification": "false"}
+            )
             print(
                 "Please sign in to your GIS and paste the code that is obtained below."
             )
@@ -162,6 +212,7 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
                 tu,
                 code=authorization_response,
                 verify=False,
+                proxies=self._proxies,
                 include_client_id=True,
                 authorization_response="authorization_code",
             )
@@ -178,6 +229,7 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
                 "response_type": "code",
                 "expiration": -1,  # we want refresh_token to work for the life of the script
                 "redirect_uri": "urn:ietf:wg:oauth:2.0:oob",
+                "allow_verification": "false",
             }
             content = str(self._session.get(auth_url, params=parameters).content)
 
@@ -186,15 +238,29 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
                 pattern = re.compile("var oAuthInfo = ({.*?})", re.DOTALL)
 
             soup = lxml.html.fromstring(content)
+
+            def _load_oauth_info(js_object):
+                """converts the js oauth to dict"""
+                try:
+                    oauth_info = json.loads(js_object)
+                except:
+                    oauth_info = json.loads(js_object + "}")
+                return oauth_info
+
             for script in soup.xpath("//script/text()"):
                 script_code = str(script).strip()
                 matches = pattern.search(script_code)
                 if not matches is None:
                     js_object = matches.groups()[0]
                     try:
-                        oauth_info = json.loads(js_object)
-                    except:
-                        oauth_info = json.loads(js_object + "}")
+                        oauth_info = _load_oauth_info(js_object)
+                    except Exception:
+                        raise Exception(
+                            (
+                                "Could not login. Please validate your creden"
+                                "tials or make sure the security question is set on the user."
+                            )
+                        )
                     break
 
             parameters = {
@@ -255,7 +321,13 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
             # Recreate the request without the token
             #
             parsed = parse_url(r.url)
-            self._invalid_token_urls.add(parsed.netloc)
+            if parsed.port:
+                server_url = (
+                    f"{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path}"
+                )
+            else:
+                server_url = f"{parsed.scheme}://{parsed.netloc}/{parsed.path}"
+            self._invalid_token_urls.add(server_url)
             r.content
             r.raw.release_conn()
             r.request.headers.pop("X-Esri-Authorization", None)
@@ -271,7 +343,13 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
         if self._invalid_token_urls is None:
             self._invalid_token_urls = set()
         parsed = parse_url(r.url)
-        if not parsed.netloc in self._invalid_token_urls:
+        if parsed.port:
+            server_url = (
+                f"{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path}"
+            )
+        else:
+            server_url = f"{parsed.scheme}://{parsed.netloc}/{parsed.path}"
+        if not server_url in self._invalid_token_urls:
             r.register_hook("response", self.handle_40x)
             if self.legacy == False:
                 r.headers["X-Esri-Authorization"] = f"Bearer {self._oauth_token()}"

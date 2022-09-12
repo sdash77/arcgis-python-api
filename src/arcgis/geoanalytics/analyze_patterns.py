@@ -4,18 +4,20 @@ These tools help you identify, quantify, and visualize spatial patterns in your 
 calculate_density takes known quantities of some phenomenon and spreads these quantities across the map.
 find_hot_spots identifies statistically significant clustering in the spatial pattern of your data.
 """
+from __future__ import annotations
 import json as _json
 from datetime import datetime as _datetime
 import logging as _logging
+from typing import Any, Optional, Union
 import arcgis as _arcgis
-from arcgis.features import FeatureSet as _FeatureSet
-from arcgis.features import Table as _Table
-
+from arcgis.features.feature import FeatureCollection
+from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
 from arcgis.geoprocessing._support import _execute_gp_tool
 from arcgis.geoprocessing import DataFile
 from arcgis import env as _env
 from arcgis._impl.common._utils import inspect_function_inputs
 from arcgis.geoprocessing import import_toolbox
+from arcgis.gis import GIS, Item
 from ._util import (
     _id_generator,
     _feature_input,
@@ -30,24 +32,40 @@ _log = _logging.getLogger(__name__)
 _use_async = True
 # --------------------------------------------------------------------------
 def forest(
-    input_layer,
-    var_prediction,
-    var_explanatory,
-    trees,
-    max_tree_depth=None,
-    random_vars=None,
-    sample_size=100,
-    min_leaf_size=None,
-    prediction_type="train",
-    features_to_predict=None,
-    validation=10,
-    importance_tbl=False,
-    exp_var_matching=None,
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
-    return_tuple=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    var_prediction: dict[str, Any],
+    var_explanatory: list[dict[str, Any]],
+    trees: int,
+    max_tree_depth: Optional[int] = None,
+    random_vars: Optional[int] = None,
+    sample_size: int = 100,
+    min_leaf_size: Optional[int] = None,
+    prediction_type: str = "train",
+    features_to_predict: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    validation: int = 10,
+    importance_tbl: bool = False,
+    exp_var_matching: Optional[list[dict[str, Any]]] = None,
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
+    return_tuple: bool = False,
 ):
     """
     .. image:: _static/images/forest/forest.png
@@ -94,7 +112,7 @@ def forest(
                                                                                 (training) values of the variable that will be used to predict
                                                                                 at unknown locations.
 
-                                                                                Syntax: {"fieldName":"<field name>", "categorical":bool}
+                                                                                Syntax: ``{"fieldName":"<field name>", "categorical":bool}``
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     var_explanatory                                                             Required list. A list of fields representing the explanatory
                                                                                 variables and a boolean value denoting whether the fields are
@@ -106,7 +124,7 @@ def forest(
                                                                                 categories such as land cover or presence or absence and 'False'
                                                                                 if the variable is continuous.
 
-                                                                                Syntax: [{"fieldName":"<field name>", "categorical":bool},...]
+                                                                                Syntax: ``[{"fieldName":"<field name>", "categorical":bool},...]``
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     trees                                                                       Required integer. The number of trees to create in the forest model.
                                                                                 More trees will generally result in more accurate model
@@ -192,7 +210,7 @@ def forest(
                                                                                 landcover or presence or absence and 'False' if the variable is
                                                                                 continuous.
 
-                                                                                Syntax: [{"fieldName":"<explanatory field name>", "categorical":bool},
+                                                                                Syntax: ``[{"fieldName":"<explanatory field name>", "categorical":bool}]``
 
                                                                                     + fieldname is the name of the field in the ``input_layer`` used
                                                                                       to predict the ``var_prediction``.
@@ -202,15 +220,15 @@ def forest(
     output_name                                                                 Optional string. The task will create a feature service of the
                                                                                 results. You define the name of the service.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    gis                                                                         Optional GIS. The GIS on which this tool runs. If not
+    gis                                                                         Optional :class:`~arcgis.gis.GIS`. The GIS on which this tool runs. If not
                                                                                 specified, the active GIS is used.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     context                                                                     Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
 
-                                                                                #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
-                                                                                #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
-                                                                                #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                                                                #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+                                                                                  * ``extent`` - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                                                  * ``processSR`` - The features will be projected into this coordinate system for analysis.
+                                                                                  * ``outSR`` - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                                                                  * ``dataStore``- Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     future                                                                      Optional boolean. If 'True', a GPJob is returned instead of
                                                                                 results. The GPJob can be queried on the status of the execution.
@@ -222,17 +240,16 @@ def forest(
                                                                                 The default value is 'False'.
     =========================================================================   ===========================================================================
 
-    :return: a named tuple with the following keys if ``return_tuple`` is set to 'True':
+    :return:
 
-        "output_trained" : :class:`~arcgis.features.FeatureLayer`
+       * If ``return_tuple`` is set to 'True', a tuple of results with the following keys:
 
-        "output_predicted" : :class:`~arcgis.features.FeatureLayer`
+         * ``output`` : :class:`~arcgis.features.FeatureLayer`
+         * ``output_predicted`` : :class:`~arcgis.features.FeatureLayer`
+         * ``coefficient_table`` : :class:`~arcgis.features.Table`
+         * ``process_info`` : list
 
-        "variable_of_importance" : :class:`~arcgis.features.Table`
-
-        "process_info" : list
-
-        else returns a :class:`~arcgis.features.FeatureLayer` of the results.
+       * otherwise, a :class:`~arcgis.features.FeatureLayer`
 
     .. code-block:: python
 
@@ -356,20 +373,27 @@ def forest(
 
 # --------------------------------------------------------------------------
 def gwr(
-    input_layer,
-    explanatory_variables,
-    dependent_variable,
-    model_type="Continuous",
-    neighborhood_selection_method="UserDefined",
-    neighborhood_type="NumberOfNeighbors",
-    distance_band=None,
-    distance_band_unit=None,
-    number_of_neighbors=None,
-    local_weighting_scheme="BiSquare",
-    output_name=None,
-    context=None,
-    gis=None,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    explanatory_variables: list[str],
+    dependent_variable: list[str],
+    model_type: str = "Continuous",
+    neighborhood_selection_method: str = "UserDefined",
+    neighborhood_type: str = "NumberOfNeighbors",
+    distance_band: Optional[float] = None,
+    distance_band_unit: Optional[str] = None,
+    number_of_neighbors: Optional[int] = None,
+    local_weighting_scheme: str = "BiSquare",
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    future: bool = False,
 ):
     """
     This tool performs GeographicallyWeightedRegression (GWR), which is a
@@ -395,20 +419,20 @@ def gwr(
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     dependent_variable                                                          Required list. The numeric field containing the observed values you want to model.
 
-                                                                                Syntax: ['arrests']
+                                                                                Syntax: ``['arrests']``
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    explanatory_variables                                                       Required list. One or more fields representing independent explanatory variables in your regression model.
+    explanatory_variables                                                       Required list. One or more fields representing independent explanatory variables
+                                                                                in your regression model.
 
-                                                                                Syntax: ['population', 'avg_income', 'avg_ed_lvl']
+                                                                                Syntax: ``['population', 'avg_income', 'avg_ed_lvl']``
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     model_type                                                                  Optional String.  The default is 'Continuous'.  Specifies the type of data that will be modeled.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    neighborhood_selection_method                                               Optional String. The default value is 'NumberOfNeighbors'. Specifies how the
+    neighborhood_selection_method                                               Optional String. The default value is ``number_of_neighbors``. Specifies how the
                                                                                 neighborhood size will be determined.
 
-                                                                                - UserDefined - The neighborhood size will be specified by either the
-                                                                                                `number_of_neighbors` or `distance_band` parameter.
-
+                                                                                The neighborhood size will be specified by either the ``number_of_neighbors``
+                                                                                or  ``distance_band`` argument.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     neighborhood_type                                                           Specifies whether the neighborhood used is constructed as a fixed distance or allowed to vary in spatial extent depending on the density of the features.
 
@@ -419,11 +443,18 @@ def gwr(
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     distance_band_unit                                                          Optional String. The unit of the distance for the spatial extent of the neighborhood.
 
-                                                                                Values: `Meters, Kilometers, Feet, Miles, NauticalMiles, or Yards`
+                                                                                Values:
+                                                                                  * ``Meters``
+                                                                                  * ``Kilometers``
+                                                                                  * ``Feet``
+                                                                                  * ``Miles``
+                                                                                  * ``NauticalMiles``
+                                                                                  * ``Yards``
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     number_of_neighbors                                                         Optional Integer. The closest number of neighbors to consider for each feature. The number should be an integer greater than or equal to `2`.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    local_weighting_scheme                                                      Optional String. Specifies the kernel type that will be used to provide the spatial weighting in the model. The kernel defines how each feature is related to other features within its neighborhood.
+    local_weighting_scheme                                                      Optional String. Specifies the kernel type that will be used to provide the spatial weighting in the model.
+                                                                                The kernel defines how each feature is related to other features within its neighborhood.
 
                                                                                 + BiSquare - A weight of 0 will be assigned to any feature outside the neighborhood specified. This is the default.
                                                                                 + Gaussian - All features will receive weights, but weights become exponentially smaller the farther away from the target feature.
@@ -431,22 +462,21 @@ def gwr(
     output_name                                                                 Optional string. The task will create a feature service of the
                                                                                 results. You define the name of the service.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
-    gis                                                                         Optional GIS. The GIS on which this tool runs. If not
+    gis                                                                         Optional :class:`~arcgis.gis.GIS`. The GIS on which this tool runs. If not
                                                                                 specified, the active GIS is used.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     context                                                                     Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
 
-                                                                                #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
-                                                                                #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
-                                                                                #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                                                                #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+                                                                                 * ``extent`` - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                                                 * ``processSR`` - The features will be projected into this coordinate system for analysis.
+                                                                                 * ``outSR`` - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                                                                 * ``dataStore`` - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     -------------------------------------------------------------------------   ---------------------------------------------------------------------------
     future                                                                      Optional boolean. If 'True', a GPJob is returned instead of
                                                                                 results. The GPJob can be queried on the status of the execution.
 
                                                                                 The default value is 'False'.
     =========================================================================   ===========================================================================
-
 
     """
     input_layer = _prevent_bds_item(input_layer)
@@ -559,19 +589,35 @@ def gwr(
 
 # --------------------------------------------------------------------------
 def glr(
-    input_layer,
-    var_dependent,
-    var_explanatory,
-    regression_family="Continuous",
-    features_to_predict=None,
-    gen_coeff_table=False,
-    exp_var_matching=None,
-    dep_mapping=None,
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
-    return_tuple=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    var_dependent: str,
+    var_explanatory: list[str],
+    regression_family: str = "Continuous",
+    features_to_predict: Optional[
+        Union[
+            Item,
+            FeatureCollection,
+            FeatureLayer,
+            FeatureLayerCollection,
+            str,
+            dict[str, Any],
+        ]
+    ] = None,
+    gen_coeff_table: bool = False,
+    exp_var_matching: Optional[list[dict[str, str]]] = None,
+    dep_mapping: Optional[list[dict[str, str]]] = None,
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
+    return_tuple: bool = False,
 ):
     """
     .. image:: _static/images/glr/glr.png
@@ -639,7 +685,7 @@ def glr(
                                  names and types of the fields match between your two input
                                  datasets.
 
-                                 Syntax: [{"predictionLayerField":"<field name>","trainingLayerField": "<field name>"},...]
+                                 Syntax: ``[{"predictionLayerField":"<field name>","trainingLayerField": "<field name>"},...]``
 
                                     + predictionLayerField is the name of a field specified in the
                                       var_explanatoryiables parameter.
@@ -649,7 +695,7 @@ def glr(
     dep_mapping                  Optional list of dicts. A list representing the values used to map to 0
                                  (absence) and 1 (presence) for binary regression.
 
-                                 Syntax: [{"value0":"<false value>"},{"value1":"<true value>"}]
+                                 Syntax: ``[{"value0":"<false value>"},{"value1":"<true value>"}]``
 
                                     + value0 is the string that will be used to represent 0
                                       (absence values).
@@ -660,37 +706,37 @@ def glr(
     output_name                  Optional string. The task will create a feature service of the
                                  results. You define the name of the service.
     --------------------------   ---------------------------------------------------------------
-    gis                          Optional GIS. The GIS on which this tool runs. If not
+    gis                          Optional :class:`~arcgis.gis.GIS`. The GIS on which this tool runs. If not
                                  specified, the active GIS is used.
     --------------------------   ---------------------------------------------------------------
     context                      Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
 
-                                 #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
-                                 #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
-                                 #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                 #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+                                  * ``extent`` - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                  * ``processSR`` - The features will be projected into this coordinate system for analysis.
+                                  * ``outSR`` - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                  * ``dataStore`` - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     --------------------------   ---------------------------------------------------------------
-    future                       Optional boolean. If 'True', a GPJob is returned instead of
+    future                       Optional boolean. If ``True``, a GPJob is returned instead of
                                  results. The GPJob can be queried on the status of the execution.
 
-                                 The default value is 'False'.
+                                 The default value is ``False``.
     --------------------------   ---------------------------------------------------------------
-    return_tuple                 Optional boolean. If 'True', a named tuple with multiple output keys is returned.
+    return_tuple                 Optional boolean. If ``True``, a named tuple with multiple
+                                 output keys is returned.
 
                                  The default value is 'False'.
     ==========================   ===============================================================
 
-    :return: a named tuple with the following keys if ``return_tuple`` is set to 'True':
+    :return:
 
-      "output" : :class:`~arcgis.features.FeatureLayer`
+       * If ``return_tuple`` is set to 'True', a tuple of results with the following keys:
 
-      "output_predicted" : :class:`~arcgis.features.FeatureLayer`
+         * ``output`` : :class:`~arcgis.features.FeatureLayer`
+         * ``output_predicted`` : :class:`~arcgis.features.FeatureLayer`
+         * ``coefficient_table`` : :class:`~arcgis.features.Table`
+         * ``process_info`` : list
 
-      "coefficient_table" : :class:`~arcgis.features.Table`
-
-      "process_info" : list
-
-    else returns a :class:`~arcgis.features.FeatureLayer` of the results.
+       * otherwise, a :class:`~arcgis.features.FeatureLayer`
 
     .. code-block:: python
 
@@ -807,18 +853,25 @@ def glr(
 
 # --------------------------------------------------------------------------
 def find_point_clusters(
-    input_layer,
-    method,
-    min_feature_clusters,
-    search_distance=None,
-    distance_unit=None,
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
-    time_method=None,
-    search_duration=None,
-    duration_unit=None,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    method: str,
+    min_feature_clusters: int,
+    search_distance: Optional[float] = None,
+    distance_unit: Optional[str] = None,
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
+    time_method: Optional[str] = None,
+    search_duration: Optional[str] = None,
+    duration_unit: Optional[str] = None,
 ):
     """
     This tool extracts clusters from your input point features and identifies any surrounding noise.
@@ -831,53 +884,68 @@ def find_point_clusters(
     ==========================   ===============================================================
     **Argument**                 **Description**
     --------------------------   ---------------------------------------------------------------
-    input_layer                  required FeatureSet, The table, point, line or polygon features
-                                 containing potential incidents.
+    input_layer                  The point features for which clusters will be found.
+
+                                 See :ref:`Feature Input<gaxFeatureInput>` for options.
     --------------------------   ---------------------------------------------------------------
     method                       required String. The algorithm used for cluster analysis. This
-                                 parameter must be specified as DBSCAN or HDBSCAN.
+                                 parameter must be specified as one of:
+
+                                   * ``DBSCAN``
+                                   * ``HDBSCAN``
     --------------------------   ---------------------------------------------------------------
-    min_feature_clusters         optional Integer. Minimum number of clusters to find in a dataset.
+    min_feature_clusters         optional Integer. Minimum number of points to consider a
+                                 cluster.
     --------------------------   ---------------------------------------------------------------
     search_distance              optional Float.  The distance to search between points to form
-                                 a cluster.  This is required for DBSCAN.
+                                 a cluster.
+
+                                 .. note::
+                                     This is required for DBSCAN.
     --------------------------   ---------------------------------------------------------------
     distance_unit                optional String. The `search_distance` units.
     --------------------------   ---------------------------------------------------------------
-    output_name                  optional string, The task will create a feature service of the
-                                 results. You define the name of the service.
+    output_name                  optional String. The task will create a feature service  with
+                                 this service name.
     --------------------------   ---------------------------------------------------------------
-    gis                          optional GIS, the GIS on which this tool runs. If not
-                                 specified, the active GIS is used.
+    gis                          optional GIS. The :class:`~arcgis.gis.GIS` on which this tool
+                                 runs. If not specified, the active GIS is used.
     --------------------------   ---------------------------------------------------------------
     context                      Optional dict. The context parameter contains additional settings
                                  that affect task execution. For this task, there are four settings:
 
-                                 #. Extent (``extent``) - A bounding box that defines the analysis area.
-                                    Only those features that intersect the bounding box will be analyzed.
-                                 #. Processing spatial reference (``processSR``) - The features will be
-                                    projected into this coordinate system for analysis.
-                                 #. Output spatial reference (``outSR``) - The features will be projected
-                                    into this coordinate system after the analysis to be saved.
+                                   * ``extent`` - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                   * ``processSR`` - The features will be projected into this coordinate system for analysis.
+                                   * ``outSR`` - The features will be projected into this coordinate system after the analysis to be saved.
                                     The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                 #. Data store (``dataStore``) - Results will be saved to the
-                                    specified data store. The default is the spatiotemporal big data store.
+                                   * ``dataStore`` - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
     --------------------------   ---------------------------------------------------------------
-    future                       Optional boolean. If True, a GPJob is returned instead of
-                                 results. The GPJob can be queried on the status of the execution.
+    future                       Optional boolean. If True, a future object will be returned and the process
+                                 will not wait for the task to complete. The default is False, which means wait for results.
     --------------------------   ---------------------------------------------------------------
-    time_method                  Optional String. When this parameter is set to Linear and `method`
-                                 is `DBSCAN`, both space and time will be used to find point clusters.
-                                 If `method` is `HDBSCAN`, this parameter will be ignored and clusters
-                                 will be found in space only. This parameter can only be used if
-                                 `input_layer` has time enabled and is of type instant. Temporal
-                                 clustering is available at ArcGIS Enterprise 10.8.
+    time_method                  Optional String.
+
+                                  * When this parameter is set to ``Linear``:
+
+                                    * if ``method`` is `DBSCAN`, both space and time will be used to find point clusters.
+                                    * if ``method`` is `HDBSCAN`, this parameter will be ignored and clusters will be found in space only.
+
+                                 .. note::
+                                    This parameter can only be used if `input_layer` has time enabled and is of type instant.
+
+                                 .. note::
+                                     Temporal clustering is available at ArcGIS Enterprise 10.8 and later.
     --------------------------   ---------------------------------------------------------------
-    search_duration              Optional String. When using DBSCAN with timeMethod set as Linear,
-                                 this parameter is the time duration within which
-                                 `min_feature_clusters` must be found. This parameter is not used
-                                 when HDBSCAN is chosen as the clustering method or when
-                                 `time_method` is not used.
+    search_duration              Optional String.
+
+                                   * When this parameter is set to ``Linear``:
+
+                                     * if ``method`` is `DBSCAN`  this parameter is the time duration within which
+                                       `min_feature_clusters` must be found.
+                                     * if ``method`` is `HDBSCAN`, this parameter is not used
+
+                                 .. note::
+                                     This parameter is not used if ``time_method`` is not used
     --------------------------   ---------------------------------------------------------------
     duration_unit                Optional String. The units used for the `search_duration`
                                  parameter. This parameter is required when using DBSCAN but will
@@ -966,24 +1034,31 @@ def find_point_clusters(
 
 # --------------------------------------------------------------------------
 def calculate_density(
-    input_layer,
-    fields=None,
-    weight="""Uniform""",
-    bin_type="""Square""",
-    bin_size=None,
-    bin_size_unit=None,
-    time_step_interval=None,
-    time_step_interval_unit=None,
-    time_step_repeat_interval=None,
-    time_step_repeat_interval_unit=None,
-    time_step_reference=None,
-    radius=None,
-    radius_unit=None,
-    area_units="""SquareKilometers""",
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
+    input_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    fields: Optional[str] = None,
+    weight: str = """Uniform""",
+    bin_type: str = """Square""",
+    bin_size: Optional[float] = None,
+    bin_size_unit: Optional[str] = None,
+    time_step_interval: Optional[int] = None,
+    time_step_interval_unit: Optional[str] = None,
+    time_step_repeat_interval: Optional[str] = None,
+    time_step_repeat_interval_unit: Optional[str] = None,
+    time_step_reference: Optional[_datetime] = None,
+    radius: Optional[int] = None,
+    radius_unit: Optional[str] = None,
+    area_units: str = """SquareKilometers""",
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/calculate_density/calculate_density.png
@@ -1011,13 +1086,17 @@ def calculate_density(
     -------------------------------------------------     ------------------------------------------------------------------------
     input_layer                                           Required point feature layer. The point layer on which the density will be calculated.
 
-                                                          Analysis using ``Square`` or ``Hexagon`` bins requires a projected coordinate system.
-                                                          When aggregating layers into bins, the input layer or processing extent (``processSR``) must
-                                                          have a projected coordinate system. At 10.5.1, 10.6, and 10.6.1, if a projected coordinate
-                                                          system is not specified when running analysis, the World Cylindrical Equal
-                                                          Area (WKID 54034) projection will be used. At 10.7 or later, if a projected coordinate system
-                                                          is not specified when running analysis, a projection will be picked based on the extent of the data.
                                                           See :ref:`Feature Input<gaxFeatureInput>`.
+
+                                                          .. note::
+                                                              Analysis using bins requires a projected coordinate system.
+                                                              When aggregating layers into bins, the input layer or processing
+                                                              extent (``processSR``) must have a projected coordinate system.
+                                                              At 10.5.1, 10.6, and 10.6.1, if a projected coordinate system is
+                                                              not specified when running analysis, the World Cylindrical Equal
+                                                              Area (WKID 54034) projection will be used. At 10.7 or later, if a
+                                                              projected coordinate system is not specified when running analysis,
+                                                              a projection will be picked based on the extent of the data.
     -------------------------------------------------     ------------------------------------------------------------------------
     fields                                                Optional string. Provides one or more field specifying the number of incidents at each location.
                                                           You can calculate the density on multiple fields, and the count of points will always have the density calculated.
@@ -1031,7 +1110,18 @@ def calculate_density(
     -------------------------------------------------     ------------------------------------------------------------------------
     bin_type                                              Required string. The type of bin used to calculate density.
 
-                                                          Choice list: ['Hexagon', 'Square'].
+                                                          .. note::
+                                                              Analysis using ``Square`` or ``Hexagon`` bins requires a projected coordinate system.
+                                                              When aggregating layers into bins, the input layer or processing extent (``processSR``) must
+                                                              have a projected coordinate system. At 10.5.1, 10.6, and 10.6.1, if a projected coordinate
+                                                              system is not specified when running analysis, the World Cylindrical Equal
+                                                              Area (WKID 54034) projection will be used. At 10.7 or later, if a projected coordinate system
+                                                              is not specified when running analysis, a projection will be picked based on the extent of the data.
+
+                                                          Choice list:
+
+                                                             * ``Hexagon``
+                                                             * ``Square``
     -------------------------------------------------     ------------------------------------------------------------------------
     bin_size                                              Required float. The distance for the bins that the ``input_layer`` will be analyzed using.
                                                           When generating bins, for Square, the number and units specified determine the
@@ -1051,7 +1141,16 @@ def calculate_density(
     time_step_interval_unit                               Optional string. A string that specifies units of the time step interval.
                                                           This option is only available if the input points are time-enabled and represent an instant in time.
 
-                                                          Choice list: ['Milliseconds', 'Seconds', 'Minutes', 'Hours', 'Days', 'Weeks', 'Months', 'Years']
+                                                          Choice list:
+
+                                                            * ``Milliseconds``
+                                                            * ``Seconds``
+                                                            * ``Minutes``
+                                                            * ``Hours``
+                                                            * ``Days``
+                                                            * ``Weeks``
+                                                            * ``Months``
+                                                            * ``Years``
 
                                                           The default value is 'None'.
     -------------------------------------------------     ------------------------------------------------------------------------
@@ -1061,7 +1160,16 @@ def calculate_density(
     time_step_repeat_interval_unit                        Optional string. A string that specifies the temporal unit of the step repeat.
                                                           This option is only available if the input points are time-enabled and of time type instant.
 
-                                                          Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
+                                                          Choice list:
+
+                                                            * ``Years``
+                                                            * ``Months``
+                                                            * ``Weeks``
+                                                            * ``Days``
+                                                            * ``Hours``
+                                                            * ``Minutes``
+                                                            * ``Seconds``
+                                                            * ``Milliseconds``
 
                                                           The default value is 'None'.
     -------------------------------------------------     ------------------------------------------------------------------------
@@ -1078,7 +1186,14 @@ def calculate_density(
     radius_unit                                           Required string. The distance unit for the radius defining the neighborhood for which the density will be calculated.
                                                           The linear unit to be used with the value specified in ``bin_size``.
 
-                                                          Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
+                                                          Choice list:
+
+                                                            * ``Feet``
+                                                            * ``Yards``
+                                                            * ``Miles``
+                                                            * ``Meters``
+                                                            * ``Kilometers``
+                                                            * ``NauticalMiles``
 
                                                           The default value is 'Meters'.
     -------------------------------------------------     ------------------------------------------------------------------------
@@ -1086,23 +1201,33 @@ def calculate_density(
                                                           size of the area units (for example, square meters to square kilometers) to return larger values.
                                                           This value only scales the result. Possible area units are:
 
-                                                          Choice list: ['SquareMeters', 'SquareKilometers', 'Hectares', 'SquareFeet', 'SquareYards', 'SquareMiles', 'Acres'].
+                                                          Choice list:
 
-                                                          The default value is "SquareKilometers".
+                                                            * ``SquareMeters``
+                                                            * ``SquareKilometers``
+                                                            * ``Hectares``
+                                                            * ``SquareFeet``
+                                                            * ``SquareYards``
+                                                            * ``SquareMiles``
+                                                            * ``Acres``
+
+                                                          The default value is ``SquareKilometers``.
     -------------------------------------------------     ------------------------------------------------------------------------
     output_name                                           Optional string. The method will create a feature service of the results. You define the name of the service.
     -------------------------------------------------     ------------------------------------------------------------------------
     gis                                                   Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
     -------------------------------------------------     ------------------------------------------------------------------------
-    context                                               Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
+    context                                               Optional dict. The context parameter contains additional settings that
+                                                          affect task execution. For this task, there are four settings (keys in
+                                                          the dictionary):
 
                                                           #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
                                                           #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
                                                           #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
                                                           #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     -------------------------------------------------     ------------------------------------------------------------------------
-    future                                                Optional boolean. If True, a GPJob is returned instead of
-                                                          results. The GPJob can be queried on the status of the execution.
+    future                                                Optional boolean. If True, a future object will be returned and the process
+                                                          will not wait for the task to complete. The default is False, which means wait for results.
     =================================================     ========================================================================
 
     :return: result_layer : Output Features as :class:`~arcgis.features.FeatureLayer`.
@@ -1199,19 +1324,26 @@ def calculate_density(
 
 # --------------------------------------------------------------------------
 def find_hot_spots(
-    point_layer,
-    bin_size=5,
-    bin_size_unit="Miles",
-    neighborhood_distance=5,
-    neighborhood_distance_unit="Miles",
-    time_step_interval=None,
-    time_step_interval_unit=None,
-    time_step_alignment=None,
-    time_step_reference=None,
-    output_name=None,
-    gis=None,
-    context=None,
-    future=False,
+    point_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    bin_size: float = 5,
+    bin_size_unit: str = "Miles",
+    neighborhood_distance: float = 5,
+    neighborhood_distance_unit: str = "Miles",
+    time_step_interval: Optional[int] = None,
+    time_step_interval_unit: Optional[str] = None,
+    time_step_alignment: Optional[str] = None,
+    time_step_reference: Optional[_datetime] = None,
+    output_name: Optional[str] = None,
+    gis: Optional[GIS] = None,
+    context: Optional[dict[str, Any]] = None,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/geo_find_hot_spots/geo_find_hot_spots.png
@@ -1247,7 +1379,14 @@ def find_hot_spots(
                                                                                                     The linear unit to be used with the value specified in ``bin_size``.
                                                                                                     When generating bins the number and units specified determine the height and length of the square.
 
-                                                                                                    Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
+                                                                                                    Choice list:
+
+                                                                                                     * ``Feet``
+                                                                                                     * ``Yards``
+                                                                                                     * ``Miles``
+                                                                                                     * ``Meters``
+                                                                                                     * ``Kilometers``
+                                                                                                     * ``NauticalMiles``
 
                                                                                                     The default value is ``Miles``.
     ----------------------------------------------------------------------------------------------  ---------------------------------------------------------------
@@ -1257,9 +1396,16 @@ def find_hot_spots(
     neighborhood_distance_unit                                                                      Optional string. The distance unit for the radius defining the neighborhood where the hot spots
                                                                                                     will be calculated. The linear unit to be used with the value specified in ``bin_size``.
 
-                                                                                                    Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
+                                                                                                    Choice list:
 
-                                                                                                    The default value is 'Miles'.
+                                                                                                      * ``Feet``
+                                                                                                      * ``Yards``
+                                                                                                      * ``Miles``
+                                                                                                      * ``Meters``
+                                                                                                      * ``Kilometers``
+                                                                                                      * ``NauticalMiles``
+
+                                                                                                    The default value is ``Miles``.
     ----------------------------------------------------------------------------------------------  ---------------------------------------------------------------
     time_step_interval                                                                              Optional integer. A numeric value that specifies duration of the time step interval.
                                                                                                     This option is only available if the input points are time-enabled and represent an instant in time.
@@ -1267,11 +1413,20 @@ def find_hot_spots(
     time_step_interval_unit                                                                         Optional string. A string that specifies units of the time step interval.
                                                                                                     This option is only available if the input points are time-enabled and represent an instant in time.
 
-                                                                                                    Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
+                                                                                                    Choice list:
+
+                                                                                                      * ``Years``
+                                                                                                      * ``Months``
+                                                                                                      * ``Weeks``
+                                                                                                      * ``Days``
+                                                                                                      * ``Hours``
+                                                                                                      * ``Minutes``
+                                                                                                      * ``Seconds``
+                                                                                                      * ``Milliseconds``
     ----------------------------------------------------------------------------------------------  ---------------------------------------------------------------
     time_step_alignment                                                                             Optional string. Defines how aggregation will occur based on a given ``time_step_interval``. Options are as follows:
 
-                                                                                                    Choice list:['EndTime', 'StartTime', 'ReferenceTime']
+                                                                                                    Choice list:
 
                                                                                                         * ``StartTime`` - Time is aligned to the first feature in time.
                                                                                                         * ``EndTime`` - Time is aligned to the last feature in time.
@@ -1282,17 +1437,17 @@ def find_hot_spots(
     ----------------------------------------------------------------------------------------------  ---------------------------------------------------------------
     output_name                                                                                     Optional string. The task will create a feature service of the results. You define the name of the service.
     ----------------------------------------------------------------------------------------------  ---------------------------------------------------------------
-    context                                                                                         Optional string. Context contains additional settings that affect task execution. For this task, there are three settings:
+    context                                                                                         Optional string. Context contains additional settings that affect task execution. For this task, there are four settings:
 
-                                                                                                    #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
-                                                                                                    #. Processing spatial reference (``processSR``) The features will be projected into this coordinate system for analysis.
-                                                                                                    #. Output Spatial Reference (``outSR``) - the features will be projected into this coordinate system after the analysis to be saved.
-                                                                                                       The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                                                                                    #. Data store (``dataStore``) Results will be saved to the specified data store. The default is the spatiotemporal big data store.
+                                                                                                      * ``extent`` - a bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                                                                      * ``processSR`` The features will be projected into this coordinate system for analysis.
+                                                                                                      *  ``outSR`` - the features will be projected into this coordinate system after the analysis to be saved.The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                                                                                      * ``dataStore`` - Results will be saved to the specified data store. The default is the spatiotemporal big data store.
     ----------------------------------------------------------------------------------------------  ---------------------------------------------------------------
-    gis                                                                                             Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                                                                                             Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
     ----------------------------------------------------------------------------------------------  ---------------------------------------------------------------
-    future                                                                                          Optional boolean. If True, a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
+    future                                                                                          Optional boolean. If ``true``, a future object will be returned and the process
+                                                                                                    will not wait for the task to complete. The default is ``false``, which means wait for results.
     ==============================================================================================  ===============================================================
 
     :return: Output Features as a :class:`~arcgis.features.FeatureLayerCollection` item
@@ -1306,12 +1461,17 @@ def find_hot_spots(
                        neighborhood_distance=5,
                        neighborhood_distance_unit='Miles',
                        time_step_interval=1,
-                       time_step_interval_unit="Years",
-                       time_step_alignment="StartTime",
+                       time_step_interval_unit='Years',
+                       time_step_alignment='StartTime',
                        time_step_reference=None,
-                       output_name='find hot spots')
-
-
+                       output_name='find hot spots',
+                       context={'extent': {'xmin': -122.68,
+                                           'ymin': 45.5,
+                                           'xmax': -122.45,
+                                           'ymax': 45.6
+                                           'spatialReference': {'wkid': 4326}},
+                                'outSR':{'wkid': 3857}}
+                      )
     """
     point_layer = _prevent_bds_item(point_layer)
     gis = _arcgis.env.active_gis if gis is None else gis
@@ -1388,17 +1548,24 @@ def find_hot_spots(
 
 # --------------------------------------------------------------------------
 def create_space_time_cube(
-    point_layer: _FeatureSet,
+    point_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
     bin_size: float,
     bin_size_unit: str,
     time_step_interval: int,
     time_step_interval_unit: str,
-    time_step_alignment: str = None,
-    time_step_reference: _datetime = None,
-    summary_fields: str = None,
-    output_name: str = None,
-    context: str = None,
-    gis=None,
+    time_step_alignment: Optional[str] = None,
+    time_step_reference: Optional[_datetime] = None,
+    summary_fields: Optional[str] = None,
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
     future: bool = False,
 ) -> DataFile:
     """
@@ -1422,30 +1589,56 @@ def create_space_time_cube(
                                                                                      and ``bin_size_unit`` parameters and temporal size by
                                                                                      the ``time_step_interval`` and ``time_step_interval_unit`` parameters.
                                                                                      See :ref:`Feature Input<gaxFeatureInput>`.
-                                                                                     Analysis using bins requires a projected coordinate system.
-                                                                                     When aggregating layers into bins, the input layer or processing
-                                                                                     extent (``processSR``) must have a projected coordinate system.
-                                                                                     At 10.5.1, 10.6, and 10.6.1, if a projected coordinate system is
-                                                                                     not specified when running analysis, the World Cylindrical Equal
-                                                                                     Area (WKID 54034) projection will be used. At 10.7 or later, if a
-                                                                                     projected coordinate system is not specified when running analysis,
-                                                                                     a projection will be picked based on the extent of the data.
-                                                                                     .. Note: The ``input_layer`` must have a minimum of 60 features.
+
+                                                                                     .. note::
+                                                                                         The ``input_layer`` must have a minimum of 60 features.
+
+
+                                                                                     .. note::
+                                                                                         Analysis using bins requires a projected coordinate system.
+                                                                                         When aggregating layers into bins, the input layer or processing
+                                                                                         extent (``processSR``) must have a projected coordinate system.
+                                                                                         At 10.5.1, 10.6, and 10.6.1, if a projected coordinate system is
+                                                                                         not specified when running analysis, the World Cylindrical Equal
+                                                                                         Area (WKID 54034) projection will be used. At 10.7 or later, if a
+                                                                                         projected coordinate system is not specified when running analysis,
+                                                                                         a projection will be picked based on the extent of the data.
     ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
     bin_size                                                                         Required float. The distance for the bins into which ``point_layer`` will be aggregated.
-                                                                                     .. Note: A ``create_space_time_cube`` must have at least 10 time slices.
     ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
     bin_size_unit                                                                    Required string. The distance unit for the bins into which ``point_layer`` will be aggregated.
-                                                                                     Choice list: ['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
+
+                                                                                     Choice list:
+
+                                                                                         * ``Feet``
+                                                                                         * ``Yards``
+                                                                                         * ``Miles``
+                                                                                         * ``Meters``
+                                                                                         * ``Kilometers``
+                                                                                         * ``NauticalMiles``
     ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
     time_step_interval                                                               Required integer. A numeric value that specifies the duration of the time bin.
-                                                                                     .. Note:
+
+                                                                                     .. note::
+                                                                                         A ``create_space_time_cube`` must have at least 10 time slices.
     ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
     time_step_interval_unit                                                          Required string. A numeric value that specifies the duration unit of the time bin.
-                                                                                     Choice list:['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds']
+
+                                                                                     Choice list:
+
+                                                                                       * ``Years``
+                                                                                       * ``Months``
+                                                                                       * ``Weeks``
+                                                                                       * ``Days``
+                                                                                       * ``Hours``
+                                                                                       * ``Minutes``
+                                                                                       * ``Seconds``
+                                                                                       * ``Milliseconds``
     ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
     time_step_alignment                                                              Optional string. Defines how aggregation will occur based on a given timeInterval. Options are as follows:
-                                                                                     Choice list: ['EndTime', 'StartTime', 'ReferenceTime']
+
+                                                                                     Choice list:
+
                                                                                         * ``StartTime`` - Time is aligned to the first feature in time
                                                                                         * ``EndTime`` - Time is aligned to the last feature in time
                                                                                         * ``ReferenceTime`` - Time is aligned a specified time
@@ -1453,38 +1646,54 @@ def create_space_time_cube(
     time_step_reference (Required if ``time_step_alignment`` is ReferenceTime)       Optional datetime. A date that specifies the reference time to align the
                                                                                      time bins to if ReferenceTime is specified in ``time_step_alignment``.
     ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
-    summary_fields                                                                   Optional string. A list of field names, statistical summary types, and the
+    summary_fields                                                                   Optional list of dictiaries defining field names, statistical summary types, and the
                                                                                      fill option for empty values that you want to calculate for all points
                                                                                      within each space-time bin. Note that the count of points within each
                                                                                      bin is always returned. By default, all statistics are returned.
-                                                                                     Example: [{"statisticType": "statistic type", "onStatisticField": "field name", "fillType": "fill type", "onStatisticField": "fieldName2"}]
 
-                                                                                     fieldName is the name of the fields in the input point layer.
-                                                                                     statisticType is one of the following for numeric fields:
-                                                                                     * ``Sum`` - Adds the total value of all the points in each polygon.
-                                                                                     * ``Mean`` - Calculates the average of all the points in each polygon.
-                                                                                     * ``Min`` - Finds the smallest value of all the points in each polygon.
-                                                                                     * ``Max`` - Finds the largest value of all the points in each polygon.
-                                                                                     * ``Stddev`` - Finds the standard deviation of all the points in each polygon.
-                                                                                     statisticType is the following for string fields:
-                                                                                     * ``Count`` - Totals the number of strings for all the points in each polygon.
+                                                                                     Format:
 
-                                                                                     fillType is one of the following:
-                                                                                     * ``zeros`` - Fills missing values with zeros. This is most appropriate for fields representing counts.
-                                                                                     * ``spatialNeighbors`` - Fills missing values by averaging the spatial neighbors. Neighbors are determined by a second degree queens contiguity.
-                                                                                     * ``spaceTimeNeighbors`` - Fills missing values by averaging the space-time neighbors. Neighbors are determined by a second degree queens contiguity in both space and time.
-                                                                                     * ``temporalTrend`` - Interpolates values using a univariate spline.
+                                                                                     .. code-block:: python
+
+                                                                                         [{"statisticType": "statistic type",
+                                                                                           "onStatisticField": "field name",
+                                                                                           "fillType": "fill type"},
+                                                                                          {"statisticType": "statistic type",
+                                                                                           "onStatisticField": "fieldName2",
+                                                                                           "fillType": "fill type"}]
+
+                                                                                     ``statisticType`` is one of the following for numeric fields:
+
+                                                                                       * ``Sum`` - Adds the total value of all the points in each polygon.
+                                                                                       * ``Mean`` - Calculates the average of all the points in each polygon.
+                                                                                       * ``Min`` - Finds the smallest value of all the points in each polygon.
+                                                                                       * ``Max`` - Finds the largest value of all the points in each polygon.
+                                                                                       * ``Stddev`` - Finds the standard deviation of all the points in each polygon.
+
+                                                                                     ``statisticType`` is the following for string fields:
+
+                                                                                       * ``Count`` - Totals the number of strings for all the points in each polygon.
+
+                                                                                     ``onStatisticField`` is the name of fields in the input point layer.
+
+                                                                                     ``fillType`` is one of the following:
+
+                                                                                       * ``zeros`` - Fills missing values with zeros. This is most appropriate for fields representing counts.
+                                                                                       * ``spatialNeighbors`` - Fills missing values by averaging the spatial neighbors. Neighbors are determined by a second degree queens contiguity.
+                                                                                       * ``spaceTimeNeighbors`` - Fills missing values by averaging the space-time neighbors. Neighbors are determined by a second degree queens contiguity in both space and time.
+                                                                                       * ``temporalTrend`` - Interpolates values using a univariate spline.
     ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
     output_name                                                                      Required string. The task will create a space time cube (netCDF) of the results. You define the name of the space time cube.
     ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
-    context                                                                          Optional string. Context contains additional settings that affect task execution. For this task, there are three settings:
+    context                                                                          Optional string. Context contains additional settings that affect task execution. For this task, there are two settings:
 
-                                                                                     #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
-                                                                                     #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
+                                                                                       * ``extent`` - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                                                       * ``processSR`` - The features will be projected into this coordinate system for analysis.
     ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
-    gis                                                                              Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                                                                              Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
     ----------------------------------------------------------------------------     ---------------------------------------------------------------------------------------------------
-    future                                                                           Optional boolean. If True, a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
+    future                                                                           Optional boolean. If ``true``, a future object will be returned and the process
+                                                                                     will not wait for the task to complete. The default is ``false``, which means wait for results.
     ============================================================================     ===================================================================================================
 
     :return:

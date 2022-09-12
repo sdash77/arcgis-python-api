@@ -1,11 +1,14 @@
 import sys
 
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7042\src")
+# sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7042\src")
+sys.path.insert(0, r"/Users/cowboy/GitHub/np_geo/src")
 import unittest
 import pandas as pd
 import datetime as _dt
 from arcgis.gis import GIS
 from arcgis.features import analyze_patterns
+from config_tests import setup_profiles
+
 
 data = [
     {
@@ -1786,29 +1789,38 @@ data = [
     },
 ]
 
+profiles = ["online_test", "ent_test", "kube_test"]
+setup_profiles(
+    profiles[0],
+    profiles[1],
+    profiles[2],
+)
+
 
 class TestReplaceSpacesInFeatureAnalysis(unittest.TestCase):
     def test_removing_spaces_logic(self):
         """tests that any space in the output name is replaced with an _"""
-        d = _dt.datetime.now()
-        output_name = "This has Spaces %s" % d.microsecond
-        result = None
-        sdf = pd.DataFrame(data)
-        sdf.spatial.set_geometry("SHAPE")
-        gis = GIS(profile="your_online_profile", verify_cert=False, trust_env=True)
-        try:
-            result = analyze_patterns.find_point_clusters(
-                sdf, min_features_cluster=2, output_name=output_name
-            )
-            assert result.title == output_name
-        except Exception as e:
-            print(e)
-            raise e
+        for profile in profiles:
+            d = _dt.datetime.now()
+            output_name = "This has Spaces %s" % d.microsecond
+            result = None
+            sdf = pd.DataFrame(data)
+            sdf.spatial.set_geometry("SHAPE")
+            gis = GIS(profile=profile, verify_cert=False, trust_env=True)
+            print(gis.users.me)
+            try:
+                result = analyze_patterns.find_point_clusters(
+                    sdf, min_features_cluster=2, output_name=output_name
+                )
+                assert result.title != output_name
+            except Exception as e:
+                print(e)
+                raise e
 
-        finally:
-            if result:
-                result.delete()
-            del gis, sdf
+            finally:
+                if result:
+                    result.delete()
+                del gis, sdf
 
 
 if __name__ == "__main__":

@@ -22,6 +22,7 @@ Contents:
    arcgis.geoenrichment
    arcgis.geometry
    arcgis.geoprocessing
+   arcgis.graph
    arcgis.mapping.toc
    arcgis.realtime
    arcgis.schematics

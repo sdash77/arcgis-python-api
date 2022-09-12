@@ -106,6 +106,13 @@ MMDetection
     :inherited-members:
     :undoc-members:
 
+DETReg
+^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.DETReg
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 Pixel Classification Models
 ---------------------------
 UnetClassifier
@@ -227,6 +234,13 @@ ImageCaptioner
 PointCNN
 ^^^^^^^^
 .. autoclass:: arcgis.learn.PointCNN
+    :members:
+    :inherited-members:
+    :undoc-members:
+
+RandLANet
+^^^^^^^^
+.. autoclass:: arcgis.learn.RandLANet
     :members:
     :inherited-members:
     :undoc-members:

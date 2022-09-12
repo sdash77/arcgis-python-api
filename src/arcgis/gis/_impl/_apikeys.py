@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Optional, Union
 from arcgis._impl.common._isd import InsensitiveDict
 
 
@@ -84,7 +86,7 @@ class APIKey(object):
         return self._gis._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def update(self, http_referers=None, privileges=None):
+    def update(self, http_referers: list[str] = None, privileges: list[str] = None):
         """
         The ``update`` method updates the current APIKey object's properties
 
@@ -179,14 +181,14 @@ class APIKeyManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return f"<API Key Manager @ {self._gis._portal.resturl}>"
+        return f"< API Key Manager @ {self._gis._portal.resturl} >"
 
     # ----------------------------------------------------------------------
     def __repr__(self):
         return self.__str__()
 
     # ----------------------------------------------------------------------
-    def get(self, api_key=None, title=None):
+    def get(self, api_key: APIKey = None, title: Optional[str] = None):
         """
         The ``get`` method retrieves an :class:`~arcgis.gis._impl.APIKey`
         object based on the Key Value or its title.
@@ -220,12 +222,12 @@ class APIKeyManager(object):
     # ----------------------------------------------------------------------
     def create(
         self,
-        title,
-        tags,
-        description=None,
-        http_referers=None,
-        redirect_uris=None,
-        privileges=None,
+        title: str,
+        tags: Union[str, list[str]],
+        description: Optional[str] = None,
+        http_referers: Optional[list[str]] = None,
+        redirect_uris: Optional[list[str]] = None,
+        privileges: Optional[list[str]] = None,
     ):
         """
         The ``create`` method generates a new :class:`~arcgis.gis._impl.APIKey` objects for the Organization.
@@ -275,7 +277,7 @@ class APIKeyManager(object):
                           this API key.
 
 
-                         .. note::
+                          .. note::
                             Privileges can be configured for non  `API Key` type apps as
                             well. The list configured here will be used to grant access to items
                             when item endpoint is accessed with app tokens. The checks will not
@@ -321,7 +323,7 @@ class APIKeyManager(object):
         return APIKey(item=api_item, gis=self._gis)
 
     # ----------------------------------------------------------------------
-    def validate(self, api_key, privileges=None):
+    def validate(self, api_key: APIKey, privileges: Optional[list[str]] = None):
         """
 
         The ``validate`` method checks if an :class:`~arcgis.gis._impl.APIKey` object has a specific privilege.

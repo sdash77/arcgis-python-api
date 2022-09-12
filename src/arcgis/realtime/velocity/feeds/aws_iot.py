@@ -22,52 +22,51 @@ from arcgis.realtime.velocity.input.format import (
 @dataclass
 class AWSIoT(_FeedTemplate, _HasTime, _HasGeometry):
     """
-    Receives events from an AWS Iot broker. This data class can be used to define the feed configuration and use it
+    Receive events from an AWS IoT broker. This data class can be used to define the feed configuration and
     to create the feed.
 
     ==================      ============================================================================================
     **Argument**            **Description**
     ------------------      --------------------------------------------------------------------------------------------
-    label                   str. Unique label for this feed instance.
+    label                   String. Unique label for the feed instance.
     ------------------      --------------------------------------------------------------------------------------------
-    description             str. Feed description.
+    description             String. Feed description.
     ------------------      --------------------------------------------------------------------------------------------
-    endpoint                str. Endpoint for the AWS IoT broker.
+    endpoint                String. Endpoint for the AWS IoT broker.
     ------------------      --------------------------------------------------------------------------------------------
-    topic                   str. Topic over which event messages stream.
+    topic                   String. Topic over which event messages stream.
     ------------------      --------------------------------------------------------------------------------------------
     qos_level               int. The Quality of Service (QoS) level defines the guarantee of delivery for a specific
                             message. A QoS of 0 means a message is delivered zero or more times. It offers better
                             performance, but no guaranteed delivery. A QoS of 1 means a message is delivered at least
-                            once, thereby offering guaranteed delivery. With both levels messages may be delivered
-                            multiple times.
-                            default value - 0
+                            once, thereby offering guaranteed delivery. With both levels, messages may be delivered
+                            multiple times. The default is: 0.
     ==================      ============================================================================================
 
     =====================   ========================================================================================
     **Optional Argument**   **Description**
     =====================   ========================================================================================
-    access_key_id           str. Access key ID for the AWS IoT credentials.
+    access_key_id           String. Access key ID for the AWS IoT credentials.
     ---------------------   ----------------------------------------------------------------------------------------
-    secret_access_key       str. Secret access key for the AWS IoT credentials.
+    secret_access_key       String. Secret access key for the AWS IoT credentials.
     ---------------------   ----------------------------------------------------------------------------------------
-    session_token           str. Session token for the AWS IoT broker.
+    session_token           String. Session token for the AWS IoT broker.
     ---------------------   ----------------------------------------------------------------------------------------
-    data_format             Union[DelimitedFormat, EsriJsonFormat, GeoJsonFormat, JsonFormat, XMLFormat].
-                            An instance that contains the data-format
+    data_format             [:class:`~arcgis.realtime.velocity.input.EsriJsonFormat`, :class:`~arcgis.realtime.velocity.input.GeoJsonFormat`, :class:`~arcgis.realtime.velocity.input.DelimitedFormat`, :class:`~arcgis.realtime.velocity.input.JsonFormat`, :class:`~arcgis.realtime.velocity.input.XMLFormat`].
+                            An instance that contains the data format
                             configuration for this feed. Configure only allowed formats.
                             If this is not set right during initialization, a format will be
                             auto-detected and set from a sample of the incoming data. This sample
                             will be fetched from the configuration provided so far in the init.
     ---------------------   ----------------------------------------------------------------------------------------
-    track_id_field          str. name of the field from the incoming data that should be set as
-                            track_id.
+    track_id_field          String. Name of the field from the incoming data that should be set as the
+                            track ID.
     ---------------------   ----------------------------------------------------------------------------------------
-    geometry                Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry configuration
+    geometry                [:class:`~arcgis.realtime.velocity.feeds.XYZGeometry`, :class:`~arcgis.realtime.velocity.feeds.SingleFieldGeometry`]. An instance of geometry configuration
                             that will be used to create geometry objects from the incoming data.
     ---------------------   ----------------------------------------------------------------------------------------
-    time                    Union[TimeInstant, TimeInterval]. An instance of time configuration that
-                            will be used to create time info from the incoming data.
+    time                    [:class:`~arcgis.realtime.velocity.feeds.TimeInstant`, :class:`~arcgis.realtime.velocity.feeds.TimeInterval`]. An instance of time configuration that
+                            will be used to create time information from the incoming data.
     =====================   ========================================================================================
 
     :return: A data class with AWS Iot feed configuration.

@@ -39,7 +39,7 @@ class Pix2Pix(ArcGISModel):
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch with image chip sizes
                             in multiples of 256. Returned data object from
-                            `prepare_data` function.
+                            :meth:`~arcgis.learn.prepare_data` function.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -48,13 +48,13 @@ class Pix2Pix(ArcGISModel):
                             Default set to False.
     =====================   ===========================================
 
-    :return: `Pix2Pix` Object
+    :return: :class:`~arcgis.learn.Pix2Pix` Object
     """
 
     def __init__(
         self, data, pretrained_path=None, perceptual_loss=False, *args, **kwargs
     ):
-        super().__init__(data)
+        super().__init__(data, pretrained_path=pretrained_path, **kwargs)
         self._check_dataset_support(data)
         if self._data.chip_size % 256 == 0:
             pix2pix_gan = pix2pix_model(
@@ -100,7 +100,7 @@ class Pix2Pix(ArcGISModel):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a Pix2Pix object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.Pix2Pix` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -109,11 +109,11 @@ class Pix2Pix(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `Pix2Pix` Object
+        :return: :class:`~arcgis.learn.Pix2Pix` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -134,7 +134,7 @@ class Pix2Pix(ArcGISModel):
         if data is None:
             if emd.get("IsMultispectral", False):
                 data = _EmptyData(
-                    path=emd_path.parent, loss_func=None, c=2, chip_size=resize_to
+                    path=emd_path.parent, loss_func=None, c=2, chip_size=chip_size
                 )
                 data = get_multispectral_data_params_from_emd(data, emd)
                 data._is_multispectral = emd.get("IsMultispectral", False)
@@ -148,7 +148,7 @@ class Pix2Pix(ArcGISModel):
 
             else:
                 data = _EmptyData(
-                    path=emd_path.parent, loss_func=None, c=2, chip_size=resize_to
+                    path=emd_path.parent, loss_func=None, c=2, chip_size=chip_size
                 )
 
             data.n_channel = emd.get("n_intput_channel", None)
@@ -212,6 +212,14 @@ class Pix2Pix(ArcGISModel):
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
+        =====================   ===========================================
+
+
+        **kwargs**
+
+        =====================   ===========================================
+        rgb_bands               Optional list of integers (band numbers)
+                                to be considered for rgb visualization.
         =====================   ===========================================
 
         """

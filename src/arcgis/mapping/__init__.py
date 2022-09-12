@@ -17,7 +17,6 @@ from ._types import (
     OfflineMapAreaManager,
     PackagingJob,
 )
-from ._types import SceneLayer
 from .forms import (
     FormFieldElement,
     FormExpressionInfo,
@@ -31,7 +30,7 @@ from arcgis.mapping._scenelyrs import (
     IntegratedMeshLayer,
     Point3DLayer,
 )
-from arcgis.mapping._scenelyrs import PointCloudLayer, BuildingLayer
+from arcgis.mapping._scenelyrs import PointCloudLayer, BuildingLayer, SceneLayer
 from arcgis.mapping._scenelyrs import (
     SceneLayerManager,
     EnterpriseSceneLayerManager,

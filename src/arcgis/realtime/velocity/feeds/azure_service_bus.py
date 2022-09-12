@@ -22,45 +22,45 @@ from arcgis.realtime.velocity.input.format import (
 @dataclass
 class AzureServiceBus(_FeedTemplate, _HasTime, _HasGeometry):
     """
-    Receives events from an Azure Service Bus. This data class can be used to define the feed configuration and use it
+    Receive events from an Azure Service Bus. This data class can be used to define the feed configuration and
     to create the feed.
 
     ======================      ==================================================================================
     **Argument**                **Description**
     ----------------------      ----------------------------------------------------------------------------------
-    label                       str. Unique label for this feed instance.
+    label                       String. Unique label for this feed instance.
     ----------------------      ----------------------------------------------------------------------------------
-    description                 str. Feed description.
+    description                 String. Feed description.
     ----------------------      ----------------------------------------------------------------------------------
-    topic_name                  str. Topic name for the Azure Service Bus.
+    topic_name                  String. Topic name for the Azure Service Bus.
     ----------------------      ----------------------------------------------------------------------------------
-    subscription_name           str. Topic name for the Azure Service Bus.
+    subscription_name           String. Topic name for the Azure Service Bus.
     ----------------------      ----------------------------------------------------------------------------------
-    shared_access_key_name      str. Shared access key name for the Azure Service Bus.
+    shared_access_key_name      String. Shared access key name for the Azure Service Bus.
     ----------------------      ----------------------------------------------------------------------------------
-    shared_access_key           str. Shared access key for the Azure Service Bus.
+    shared_access_key           String. Shared access key for the Azure Service Bus.
     ----------------------      ----------------------------------------------------------------------------------
-    endpoint                    str. Endpoint of the Azure Service Bus.
+    endpoint                    String. Endpoint of the Azure Service Bus.
     ======================      ==================================================================================
 
     =====================       ==================================================================================
     **Optional Argument**       **Description**
     =====================       ==================================================================================
-    data_format                 Union[DelimitedFormat, EsriJsonFormat, GeoJsonFormat, JsonFormat, XMLFormat].
-                                An instance that contains the data-format
+    data_format                 [:class:`~arcgis.realtime.velocity.input.EsriJsonFormat`, :class:`~arcgis.realtime.velocity.input.GeoJsonFormat`, :class:`~arcgis.realtime.velocity.input.DelimitedFormat`, :class:`~arcgis.realtime.velocity.input.JsonFormat`, :class:`~arcgis.realtime.velocity.input.XMLFormat`].
+                                An instance that contains the data format
                                 configuration for this feed. Configure only allowed formats.
                                 If this is not set right during initialization, a format will be
                                 auto-detected and set from a sample of the incoming data. This sample
                                 will be fetched from the configuration provided so far in the init.
     ---------------------       ----------------------------------------------------------------------------------
-    track_id_field              str. name of the field from the incoming data that should be set as
-                                track_id.
+    track_id_field              String. Name of the field from the incoming data that should be set as
+                                track ID.
     ---------------------       ----------------------------------------------------------------------------------
-    geometry                    Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry configuration
+    geometry                    [:class:`~arcgis.realtime.velocity.feeds.XYZGeometry`, :class:`~arcgis.realtime.velocity.feeds.SingleFieldGeometry`]. An instance of geometry configuration
                                 that will be used to create geometry objects from the incoming data.
     ---------------------       ----------------------------------------------------------------------------------
-    time                        Union[TimeInstant, TimeInterval]. An instance of time configuration that
-                                will be used to create time info from the incoming data.
+    time                        [:class:`~arcgis.realtime.velocity.feeds.TimeInstant`, :class:`~arcgis.realtime.velocity.feeds.TimeInterval`]. An instance of time configuration that
+                                will be used to create time information from the incoming data.
     =====================       ==================================================================================
 
     :return: A data class with azure service bus feed configuration.

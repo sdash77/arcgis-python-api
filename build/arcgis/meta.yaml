@@ -7,28 +7,29 @@ build:
   number: '0'
 package:
   name: arcgis
-  version: 2.0.0
+  version: 2.1.0
 requirements:
   build:
   - python
+  - pillow
   - cachetools
   - ujson >=3
   - setuptools
   - six
   - notebook
+  - jupyter_client <=6.1.12
   - ipywidgets >=7
   - widgetsnbextension >=3
-  - pandas >=1
+  - pandas >=1.3.5
   - numpy >=1.16.2
   - matplotlib
-  - keyring >=19, <21.8.0
-  - pytest
+  - keyring >=23.0.0
   - pyshp >=2
-  - requests
+  - requests >=2.27.1
   - requests-toolbelt
   - requests-kerberos
   - requests-oauthlib
-  - requests_ntlm
+  - requests_ntlm2
   - requests-negotiate-sspi [win]
   - pywin32-security [win]
   - lerc
@@ -36,24 +37,28 @@ requirements:
   - cryptography
   - lxml
   - certifi
+  - dask
+  - geomet
   run:
   - python
+  - pillow
   - six
   - cachetools
   - notebook
+  - jupyter_client <=6.1.12
   - ipywidgets >=7
   - widgetsnbextension >=3
-  - pandas >=1
+  - pandas >=1.3.5
   - ujson >=3
   - numpy >=1.16.2
   - pyshp >=2
   - matplotlib
-  - keyring >=19, <21.8.0
-  - requests
+  - keyring >=23.0.0
+  - requests >=2.27.1
   - requests-toolbelt
   - requests-kerberos
   - requests-oauthlib
-  - requests_ntlm
+  - requests_ntlm2
   - requests-negotiate-sspi [win]
   - pywin32-security [win]
   - lerc
@@ -62,6 +67,8 @@ requirements:
   - cryptography
   - lxml
   - certifi
+  - dask
+  - geomet
 source:
   path: ../../src
 test:

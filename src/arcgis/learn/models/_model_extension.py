@@ -49,7 +49,7 @@ try:
     )
     from .._video_utils import VideoUtils
     import inspect
-    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from .._utils.env import is_arcgispronotebook
     from matplotlib import pyplot as plt
     import types
     from ._maskrcnn import grid_anchors
@@ -73,28 +73,24 @@ class ModelExtension(ArcGISModel):
     **Argument**            **Description**
     ---------------------   ------------------------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            ``prepare_data`` function.
+                            :meth:`~arcgis.learn.prepare_data`  function.
     ---------------------   ------------------------------------------------------------
     model_conf              A class definition contains the following methods:
 
-                                * ``get_model(self, data, backbone=None, **kwargs)``: for model definition,
+                            * ``get_model(self, data, backbone=None, **kwargs)``: for model definition,
 
-                                * ``on_batch_begin(self, learn, model_input_batch, model_target_batch, **kwargs)``: for
-                                  feeding input to the model during training,
+                            * ``on_batch_begin(self, learn, model_input_batch, model_target_batch, **kwargs)``: for feeding input to the model during training,
 
-                                * ``transform_input(self, xb)``: for feeding input to the model during
-                                  inferencing/validation,
+                            * ``transform_input(self, xb)``: for feeding input to the model during inferencing/validation,
 
-                                * ``transform_input_multispectral(self, xb)``: for feeding input to the
-                                  model during inferencing/validation in case of multispectral data,
+                            * ``transform_input_multispectral(self, xb)``: for feeding input to the model during inferencing/validation in case of multispectral data,
 
-                                * ``loss(self, model_output, *model_target)``: to return loss value of the model, and
+                            * ``loss(self, model_output, *model_target)``: to return loss value of the model
 
-                                * ``post_process(self, pred, nms_overlap, thres, chip_size, device)``: to post-process
-                                  the output of the object-detection model.
+                            * ``post_process(self, pred, nms_overlap, thres, chip_size, device)``: to post-process
+                              the output of the object-detection model.
 
-                                * ``post_process(self, pred, thres)``: to post-process the output of the segmentation model.
-
+                            * ``post_process(self, pred, thres)``: to post-process the output of the segmentation model.
     ---------------------   ------------------------------------------------------------
     backbone                Optional function. If custom model requires any backbone.
     ---------------------   ------------------------------------------------------------
@@ -102,7 +98,8 @@ class ModelExtension(ArcGISModel):
                             saved.
     =====================   ============================================================
 
-    :return: ``ModelExtension`` Object
+    :return: :class:`~arcgis.learn.ModelExtension` Object
+
     """
 
     def __init__(self, data, model_conf, backbone=None, pretrained_path=None, **kwargs):
@@ -118,7 +115,8 @@ class ModelExtension(ArcGISModel):
         else:
             del kwargs["ArcGISLearnVersion"]
 
-        super().__init__(data, backbone, **kwargs)
+        super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
+        data = self._data
         self._model_conf = model_conf()
         self._model_conf_class = model_conf
         self._backend = "pytorch"
@@ -126,9 +124,10 @@ class ModelExtension(ArcGISModel):
         model = self._model_conf.get_model(data, backbone, **kwargs)
         if backbone is not None:
             backbone_name = backbone if type(backbone) is str else backbone.__name__
-            if model_conf.__name__ == "MyFasterRCNN" and backbone_name in [
-                "resnet18",
-                "resnet34",
+            if model_conf.__name__ == "MyFasterRCNN" and backbone_name not in [
+                "resnet50",
+                "resnet101",
+                "resnet152",
             ]:
                 model.rpn.anchor_generator.grid_anchors = types.MethodType(
                     grid_anchors, model.rpn.anchor_generator
@@ -158,9 +157,11 @@ class ModelExtension(ArcGISModel):
             else:
                 from ._psp_utils import accuracy
 
+                ignore_class = kwargs.get("ignore_class", [])
+                accuracy = partial(accuracy, ignore_mapped_class=ignore_class)
                 self.learn.metrics = [accuracy]
             self._code = image_classifier_prf
-        elif self._data.dataset_type == "Panoptic":
+        elif self._data.dataset_type == "Panoptic_Segmentation":
             self._code = panoptic_segmenter_prf
             self._kwargs["n_masks"] = self._data.K
             self._kwargs["instance_classes"] = self._data.instance_classes
@@ -216,7 +217,7 @@ class ModelExtension(ArcGISModel):
             )
             _emd_template["ModelConfiguration"] = "_model_extension_inferencing"
 
-        elif self._data.dataset_type == "Panoptic":
+        elif self._data.dataset_type == "Panoptic_Segmentation":
             _emd_template["ModelType"] = "PanopticSegmenter"
             if save_inference_file:
                 _emd_template["InferenceFunction"] = "ArcGISPanopticSegmenter.py"
@@ -240,7 +241,8 @@ class ModelExtension(ArcGISModel):
         _emd_template["ModelConfigurationFile"] = "ModelConfiguration.py"
         _emd_template["ModelFileConfigurationClass"] = type(self._model_conf).__name__
         _emd_template["DatasetType"] = self._data.dataset_type
-        _emd_template["Kwargs"] = self._kwargs
+        if not hasattr(self._data.train_dl.dataset, "coco"):
+            _emd_template["Kwargs"] = self._kwargs
 
         class_data = {}
         for i, class_name in enumerate(
@@ -262,7 +264,7 @@ class ModelExtension(ArcGISModel):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a ``ModelExtension`` object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.ModelExtension` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -271,12 +273,11 @@ class ModelExtension(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from ``prepare_data`` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data`  function or None for
                                 inferencing.
-
         =====================   ===========================================
 
-        :return: `ModelExtension` Object
+        :return: :class:`~arcgis.learn.ModelExtension` Object
         """
 
         emd_path = _get_emd_path(emd_path)
@@ -359,10 +360,11 @@ class ModelExtension(ArcGISModel):
             data.emd = emd
             data = get_multispectral_data_params_from_emd(data, emd)
             data.dataset_type = dataset_type
-            if dataset_type == "Panoptic":
+            if dataset_type == "Panoptic_Segmentation":
                 data.K = emd["Kwargs"]["n_masks"]
                 data.instance_classes = emd["Kwargs"]["instance_classes"]
         data.resize_to = resize_to
+
         mextnsn = cls(
             data,
             model_configuration,
@@ -381,7 +383,7 @@ class ModelExtension(ArcGISModel):
     def _model_metrics(self):
         if self._data.dataset_type == "Classified_Tiles":
             return {"accuracy": "{0:1.4e}".format(self._get_model_metrics())}
-        elif self._data.dataset_type == "Panoptic":
+        elif self._data.dataset_type == "Panoptic_Segmentation":
             pq = self.panoptic_quality(show_progress=False)
             return {"panoptic_quality": "{:.4f}".format(pq)}
         else:
@@ -443,7 +445,7 @@ class ModelExtension(ArcGISModel):
                 self.per_class_metrics = self._per_class_metrics
                 self.accuracy = self._accuracy
 
-        elif self._data.dataset_type == "Panoptic":
+        elif self._data.dataset_type == "Panoptic_Segmentation":
             self.show_results = self._show_results_panoptic
             self.panoptic_quality = self._panoptic_quality
 
@@ -473,7 +475,6 @@ class ModelExtension(ArcGISModel):
 
         """
         Computes mean IOU on the validation set for each class.
-
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -484,7 +485,6 @@ class ModelExtension(ArcGISModel):
         show_progress           Optional bool. Displays the progress bar if
                                 True.
         =====================   ===========================================
-
         :return: `dict` if mean is False otherwise `float`
         """
         self._check_requisites()
@@ -511,7 +511,6 @@ class ModelExtension(ArcGISModel):
 
         """
         Displays the results of a trained model on a part of the validation set.
-
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -526,7 +525,6 @@ class ModelExtension(ArcGISModel):
                                 boxes, above which the box with the highest
                                 score will be considered a true positive.
         =====================   ===========================================
-
         """
         self._check_requisites()
         if rows > len(self._data.valid_ds):
@@ -539,7 +537,6 @@ class ModelExtension(ArcGISModel):
 
         """
         Displays the results of a trained model on a part of the validation set.
-
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -549,7 +546,6 @@ class ModelExtension(ArcGISModel):
         thresh                  Optional Float. The probability above which
                                 a detection will be considered valid.
         =====================   ===========================================
-
         """
         self._check_requisites()
         if rows > len(self._data.valid_ds):
@@ -561,7 +557,6 @@ class ModelExtension(ArcGISModel):
 
         """
         Displays the results of a trained model on a part of the validation set.
-
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -571,9 +566,7 @@ class ModelExtension(ArcGISModel):
         thresh                  Optional Float. The probability above which
                                 a detection will be considered valid.
         =====================   ===========================================
-
         **kwargs**
-
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -612,6 +605,30 @@ class ModelExtension(ArcGISModel):
     def _show_results_multispectral(
         self, rows=5, thresh=0.3, nms_overlap=0.1, alpha=1, **kwargs
     ):
+        """
+        Displays the results of a trained model on a part of the validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional int. Number of rows of results
+                                to be displayed.
+        ---------------------   -------------------------------------------
+        thresh                  Optional float. The probability above which
+                                a detection will be considered valid.
+        ---------------------   -------------------------------------------
+        nms_overlap             Optional float. The intersection over union
+                                threshold with other predicted bounding
+                                boxes, above which the box with the highest
+                                score will be considered a true positive.
+        ---------------------   -------------------------------------------
+        alpha                   Optional Float.
+                                Opacity of the lables for the corresponding
+                                images. Values range between 0 and 1, where
+                                1 means opaque.
+        =====================   ===========================================
+
+        """
         ret_val = show_results_multispectral(
             self,
             nrows=rows,
@@ -629,7 +646,6 @@ class ModelExtension(ArcGISModel):
     ):  # parameters adjusted in kwargs
         """
         Displays the results of a trained model on a part of the validation set.
-
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -641,7 +657,6 @@ class ModelExtension(ArcGISModel):
                                 images. Values range between 0 and 1, where
                                 1 means opaque.
         =====================   ===========================================
-
         """
         return_fig = kwargs.get("return_fig", False)
         ret_val = show_results_multispectral_segmentation(
@@ -700,7 +715,7 @@ class ModelExtension(ArcGISModel):
             ys = [ds.y.reconstruct(grab_idx(y, i)) for i in range(n_items)]
             zs = [ds.y.reconstruct(z) for z in preds]
         ds.x.show_xyzs(xs, ys, zs, **kwargs)
-        if _IS_ARCGISPRONOTEBOOK:
+        if is_arcgispronotebook():
             plt.show()
 
     def _predict_learn_modified(self, item, **kwargs):
@@ -747,7 +762,6 @@ class ModelExtension(ArcGISModel):
 
         """
         Computes average precision on the validation set for each class.
-
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -764,7 +778,6 @@ class ModelExtension(ArcGISModel):
                                 average precision otherwise returns mean
                                 average precision.
         =====================   ===========================================
-
         :return: `dict` if mean is False otherwise `float`
         """
         self._check_requisites()
@@ -789,7 +802,6 @@ class ModelExtension(ArcGISModel):
     def _edge_detection_accuracies(self, thresh=0.5, buffer=3, show_progress=True):
         """
         Computes precision, recall and f1 score on validation set.
-
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -799,7 +811,6 @@ class ModelExtension(ArcGISModel):
         buffer                  Optional int. pixels in neighborhood to
                                 consider true detection.
         =====================   ===========================================
-
         :return: `dict`
         """
         self._check_requisites()
@@ -815,16 +826,13 @@ class ModelExtension(ArcGISModel):
     def _panoptic_quality(self, show_progress=True, **kwargs):
         """
         Computes the Panoptic Quality metric for panoptic segmentation.
-
          =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         show_progress           Optional bool. Displays the progress bar if
                                 True.
         =====================   ===========================================
-
         :return: `float`
-
         """
         from ._max_deeplab_utils import compute_panoptic_quality
 
@@ -843,7 +851,6 @@ class ModelExtension(ArcGISModel):
 
         """
         Runs prediction on an Image.
-
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -869,13 +876,11 @@ class ModelExtension(ArcGISModel):
                                 was trained on, before detecting objects.
                                 Note that if resize_to parameter was used in prepare_data,
                                 the image is resized to that size instead.
-
                                 By default, this parameter is false and the detections are
                                 run in a sliding window fashion by applying the model on
                                 cropped sections of the image (of the same size as the
                                 model was trained on).
         =====================   ===========================================
-
         :return:  Returns a tuple with predictions, labels and optionally confidence scores
                    if return_scores=True. The predicted bounding boxes are returned as a list
                    of lists containing the  xmin, ymin, width and height of each predicted
@@ -1069,7 +1074,6 @@ class ModelExtension(ArcGISModel):
 
         """
         Runs prediction on a video and appends the output VMTI predictions in the metadata file.
-
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -1125,13 +1129,11 @@ class ModelExtension(ArcGISModel):
                                 trained on, before detecting objects.
                                 Note that if resize_to parameter was used in prepare_data,
                                 the video frames are resized to that size instead.
-
                                 By default, this parameter is false and the detections are run
                                 in a sliding window fashion by applying the model on cropped
                                 sections of the frame (of the same size as the model was
                                 trained on).
         =====================   ===========================================
-
         """
 
         VideoUtils.predict_video(

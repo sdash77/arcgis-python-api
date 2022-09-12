@@ -1,14 +1,10 @@
 """
 Creates renderer dictionaries that can be used to help visualize webmap content
 """
+from __future__ import annotations
+from typing import Optional, Union
 
-import json
-
-import arcgis
 from arcgis._impl.common._utils import chunks
-from arcgis.features import FeatureCollection, FeatureSet
-from arcgis.gis import GIS
-from arcgis.geometry import _types
 from arcgis.mapping._utils import _get_list_value
 from arcgis.mapping.symbol import create_symbol, _cmap2rgb
 
@@ -133,7 +129,7 @@ class _DotDensity(object):
 
     # ----------------------------------------------------------------------
     @shape.setter
-    def shape(self, value):
+    def shape(self, value: str):
         """
         Sets the shape of the dots in the renderer.
         """
@@ -155,7 +151,7 @@ class _DotDensity(object):
 
     # ----------------------------------------------------------------------
     @unit.setter
-    def unit(self, value):
+    def unit(self, value: str):
         """gets/sets the units"""
         self._unit = value
 
@@ -183,7 +179,7 @@ class _DotDensity(object):
 
     # ----------------------------------------------------------------------
     @ref_scale.setter
-    def ref_scale(self, value):
+    def ref_scale(self, value: Union[int, float]):
         """ """
         if isinstance(value, (int, float)):
             self._ref_scale = value
@@ -192,7 +188,7 @@ class _DotDensity(object):
 
     # ----------------------------------------------------------------------
     @size.setter
-    def size(self, value):
+    def size(self, value: Union[int, float]):
         """
         Sets the size of the dots.
         """
@@ -200,7 +196,7 @@ class _DotDensity(object):
 
     # ----------------------------------------------------------------------
     @background.setter
-    def background(self, value):
+    def background(self, value: Union[str, list, tuple]):
         """sets the background color"""
         import random
 
@@ -250,7 +246,14 @@ class _DotDensity(object):
         return t
 
     # ----------------------------------------------------------------------
-    def add_attribute(self, label, field, color, cstep=None, alpha=1):
+    def add_attribute(
+        self,
+        label: str,
+        field: str,
+        color: Union[str, list[int]],
+        cstep: Optional[int] = None,
+        alpha: float = 1,
+    ):
         """
         Assigns an attribute to the dot density renderer
 
@@ -284,7 +287,7 @@ class _DotDensity(object):
             raise ValueError("Field not found in dataset.")
 
     # ----------------------------------------------------------------------
-    def remove_attribute(self, field):
+    def remove_attribute(self, field: str):
         """
         Removes the attribute to the dot density renderer.
 
@@ -305,7 +308,9 @@ class _DotDensity(object):
         return False
 
     # ----------------------------------------------------------------------
-    def add_expression(self, expression, title, label, color):
+    def add_expression(
+        self, expression: str, title: str, label: str, color: Union[list, str]
+    ):
         """
         Adds an arcade expression to the attributes
 
@@ -321,7 +326,7 @@ class _DotDensity(object):
         )
 
     # ----------------------------------------------------------------------
-    def remove_expression(self, label):
+    def remove_expression(self, label: str):
         """
         Adds an arcade expression to the attributes
 
@@ -344,7 +349,7 @@ class _DotDensity(object):
 
     # ----------------------------------------------------------------------
     @dot_value.setter
-    def dot_value(self, value):
+    def dot_value(self, value: Union[float, int]):
         """
         Get/Sets what each dot is worth. This should be an float/integer.
         """
@@ -387,7 +392,7 @@ def _color_info(
     field: str, values: list, steps: int = 6, colors: str = "Reds_r"
 ) -> dict:
     """
-    Creates the Color Infomration Visual Variable from a collection of information.
+    Creates the Color Information Visual Variable from a collection of information.
 
     """
     d = {"type": "colorInfo", "field": field, "stops": []}
@@ -412,7 +417,7 @@ def _color_info(
 
 # --------------------------------------------------------------------------
 def _trans_info(data, **kwargs):
-    """creates a transparancy information for visual variables"""
+    """creates a transparency information for visual variables"""
     ti = None
     if "trans_info_field" in kwargs:
         ti = {}
@@ -491,7 +496,7 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
         Each type of information is detailed in the tables below.
 
     ======================  =========================================================
-    **optional variables**  **description**
+    **Optional variables**  **Description**
     ----------------------  ---------------------------------------------------------
     trans_info_field        Attribute field used for setting the transparency of a
                             feature if no trans_value_exp is provided.
@@ -517,7 +522,7 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
     proportionally between the provided min and max sizes.
 
     ======================  =========================================================
-    **arguements**          **description**
+    **Arguments**           **Description**
     ----------------------  ---------------------------------------------------------
     si_field                Attribute field used for size rendering if no
                             si_expression is provided.
@@ -557,10 +562,10 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
     typically used to rotate symbols that indicate directionality.
 
     ======================  =========================================================
-    **arguements**          **description**
+    **Arguments**          **Description**
     ----------------------  ---------------------------------------------------------
     ri_field                Attribute field used for setting the rotation of a symbol
-                            if no ri_expression is provided.
+                            if no ``ri_expression`` is provided.
     ----------------------  ---------------------------------------------------------
     ri_type                 Defines the origin and direction of rotation depending on
                             how the angle of rotation was measured. Possible values
@@ -575,7 +580,7 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
     ----------------------  ---------------------------------------------------------
     ri_expression           An Arcade expression evaluating to a number.
     ----------------------  ---------------------------------------------------------
-    ri_expression_title     The title identifying and describing the ri_expression
+    ri_expression_title     The title identifying and describing the ``ri_expression``
     ======================  =========================================================
 
 
@@ -586,7 +591,7 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
     v = []
     if isinstance(sdf_or_list, pd.DataFrame) and "trans_info_field" in kwargs:
         trans_info_field = kwargs["trans_info_field"]
-        data = sdf_or_list[trans_info_field].unique().tolist()
+        data = list(sdf_or_list[trans_info_field].unique())
     elif isinstance(sdf_or_list, (tuple, list)):
         data = list(set(sdf_or_list))
 
@@ -604,11 +609,11 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
 
 # --------------------------------------------------------------------------
 def generate_renderer(
-    geometry_type,
+    geometry_type: str,
     sdf_or_series=None,
-    label=None,
-    render_type=None,
-    colors=None,
+    label: Optional[str] = None,
+    render_type: Optional[str] = None,
+    colors: Optional[Union[str, list[int]]] = None,
     **symbol_args,
 ):
     """
@@ -618,7 +623,7 @@ def generate_renderer(
     ======================  =========================================================
     **Explicit Argument**   **Description**
     ----------------------  ---------------------------------------------------------
-    geometry_type           required string. The allowed values are: ``Point``, ``Polyline``,
+    geometry_type           Required string. The allowed values are: ``Point``, ``Polyline``,
                             ``Polygon``, or ``Raster``. This required parameter is used to
                             help ensure the requested renderer is valid for the
                             specific type of geometry.
@@ -640,35 +645,30 @@ def generate_renderer(
                             allowed renderer types based on the geometry.
 
     ----------------------  ---------------------------------------------------------
-    sdf_or_series           optional Pandas Series. The spatial dataset to render.
+    sdf_or_series           Optional Pandas Series. The spatial dataset to render.
     ----------------------  ---------------------------------------------------------
-    label                   optional string. Name of the layer in the TOC/Legend
+    label                   Optional string. Name of the layer in the TOC/Legend
     ----------------------  ---------------------------------------------------------
-    render_type             optional string.  Determines the type of renderer to use
+    render_type             Optional string.  Determines the type of renderer to use
                             for the provided dataset. The default is 's' which is for
                             simple renderers.
 
                             Allowed values:
 
                             + 's' - is a simple renderer that uses one symbol only.
-                            + 'u' - unique renderer symbolizes features based on one
-                                    or more matching string attributes.
-                            + 'u-a' - unique renderer symbolizes features based on
-                                      an arcade expression.
-                            + 'c' - A class breaks renderer symbolizes based on the
-                                    value of some numeric attribute.
-                            + 'h' - heatmap renders point data into a raster
-                                    visualization that emphasizes areas of higher
-                                    density or weighted values.
+                            + 'u' - unique renderer symbolizes features based on one or more matching string attributes.
+                            + 'u-a' - unique renderer symbolizes features based on an arcade expression.
+                            + 'c' - A class breaks renderer symbolizes based on the value of some numeric attribute.
+                            + 'h' - heatmap renders point data into a raster visualization that emphasizes areas of higher density or weighted values.
                             + 'd' - dot density renderer
 
     ----------------------  ---------------------------------------------------------
-    colors                  optional string/list.  Color mapping.  For simple renderer,
+    colors                  Optional string/list.  Color mapping.  For simple renderer,
                             just provide a string.  For more robust renderers like
                             unique renderer, a list can be given.
     ======================  =========================================================
 
-    ** Simple Renderer**
+    **Simple Renderer**
 
     A simple renderer is a renderer that uses one symbol only.
 
@@ -823,12 +823,13 @@ def generate_renderer(
                             using this variable.  The format of each unique value is
                             as follows:
 
-                            {
-                                "value" : <value>,
-                                "label" : <label value>,
-                                "description" : <optional text description>,
-                                "symbol" : {...symbol...}
-                            }
+
+                                | {
+                                |     "value" : <value>,
+                                |     "label" : <label value>,
+                                |     "description" : <optional text description>,
+                                |     "symbol" : {...symbol...}
+                                | }
 
     ======================  =========================================================
 
@@ -932,7 +933,6 @@ def generate_renderer(
                             label               Required String.  Descriptive name of the field.
                             ---------------     --------------------------------------------------------------------
                             color               Required List. A integer array consisting of R,G,B,A values
-                            ---------------     --------------------------------------------------------------------
                             ===============     ====================================================================
 
                             If the field name is not in the SeDF, then an error will be raised on renderering.
@@ -1165,7 +1165,10 @@ def generate_renderer(
                 renderer["field%s" % c] = f
                 c += 1
             if len(fields) == 1:
-                uvals = sdf_or_series[fields[0]].unique().tolist()
+                try:
+                    uvals = list(sdf_or_series[fields[0]].unique())
+                except:
+                    uvals = sdf_or_series[fields[0]].unique().tolist()
             else:
                 uvals = (
                     sdf_or_series.groupby(fields)

@@ -22,11 +22,11 @@ class ContainerNotebook(object):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "<ContainerNotebook @ {url}>".format(url=self._url)
+        return "< ContainerNotebook @ {url}>".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "<ContainerNotebook @ {url}>".format(url=self._url)
+        return "< ContainerNotebook @ {url}>".format(url=self._url)
 
     @property
     def properties(self) -> PropertyMap:
@@ -41,7 +41,7 @@ class ContainerNotebook(object):
     def close(self) -> bool:
         """This operation stops a running notebook
 
-        :return: Bool
+        :return: Boolean
         """
         url = f"{self._url}/close"
         params = {"f": "json"}
@@ -51,7 +51,7 @@ class ContainerNotebook(object):
 ########################################################################
 class DirectoryManager(object):
     """
-    A manages and maintains a collection of all server directories.
+    Manages and maintains a collection of all server directories.
     """
 
     _url = None
@@ -80,11 +80,11 @@ class DirectoryManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "<DirectoryManager @ {url}>".format(url=self._url)
+        return "< DirectoryManager @ {url}>".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "<DirectoryManager @ {url}>".format(url=self._url)
+        return "< DirectoryManager @ {url}>".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -124,7 +124,7 @@ class DirectoryManager(object):
         directory_type	       The type of directory. Values: DATA | WORKSPACE | OUTPUT
         ==================     ====================================================================
 
-        :return: boolean
+        :return: Boolean
 
         """
         params = {"f": "json", "name": name, "path": path, "type": directory_type}
@@ -146,7 +146,7 @@ class DirectoryManager(object):
         directory_id           Required String.  The directory ID to remove.
         ==================     ====================================================================
 
-        :return: boolean
+        :return: Boolean
 
         """
         params = {"f": "json"}
@@ -212,17 +212,18 @@ class WebAdaptor(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<WebAdaptor @ {url}>".format(url=self._url)
+        return "< WebAdaptor @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<WebAdaptor @ {url}>".format(url=self._url)
+        return "< WebAdaptor @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def unregister(self):
         """
         Unregisters a WebAdaptor for the Notebook Server
-        :return: boolean
+
+        :return: Boolean
         """
         url = self._url + "/unregister"
         params = {"f": "json"}
@@ -264,11 +265,11 @@ class WebAdaptorManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "<WebAdaptorManager @ {url}>".format(url=self._url)
+        return "< WebAdaptorManager @ {url}>".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "<WebAdaptorManager @ {url}>".format(url=self._url)
+        return "< WebAdaptorManager @ {url}>".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -367,7 +368,7 @@ class WebAdaptorManager(object):
         """
         Returns all registered Web Adapters
 
-        :return: List
+        :return: List of :class:`~arcgis.gis.nb.WebAdaptor` objects
         """
         url = self._url
         params = {"f": "json"}
@@ -412,11 +413,11 @@ class Container(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<Container @ {url}>".format(url=self._url)
+        return "< Container @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<Container @ {url}>".format(url=self._url)
+        return "< Container @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -437,7 +438,7 @@ class Container(object):
         to provide information about current notebook sessions.
 
 
-        :return: list of dict
+        :return: List of Dict
 
         ==================     ====================================================================
         **Response**           **Description**
@@ -466,6 +467,8 @@ class Container(object):
     def notebooks(self) -> List[ContainerNotebook]:
         """
         A list of all notebooks currently open in the container
+
+        :return: List of :class:`~arcgis.gis.nb.ContainerNotebook` objects
         """
         nbs = []
         url = f"{self._url}/notebooks"
@@ -491,7 +494,7 @@ class Container(object):
         """
         Stops the container
 
-        :return: bool
+        :return: Boolean
         """
         url = f"{self._url}/terminateContainer"
         params = {"f": "json"}
@@ -502,7 +505,7 @@ class Container(object):
         """
         Returns information about the current container
 
-        :return:Dict[str,Any]
+        :return: Dict[str,Any]
 
         """
         url = self._url + "/statistics"
@@ -514,7 +517,7 @@ class Container(object):
         """
         Terminates the current container
 
-        :return: boolean
+        :return: Boolean
         """
         url = self._url + "/terminateContainer"
         params = {"f": "json"}
@@ -563,11 +566,11 @@ class SystemManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "<SystemManager @ {url}>".format(url=self._url)
+        return "< SystemManager @ {url}>".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "<SystemManager @ {url}>".format(url=self._url)
+        return "< SystemManager @ {url}>".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -590,7 +593,7 @@ class SystemManager(object):
         ===============     ====================================================================
         The available properties are as follows:
 
-            + WebContextURL - Defines the web front-end as seen by your users. Example: https://mydomain.com/gis
+            + WebContextURL - Defines the web front-end as seen by your users. Example: ``https://mydomain.com/gis``
             + maxContainersPerNode - The default maximum number of containers that can be opened on a notebook server machine assuming the machine has the necessary CPU/Memory resources to support the containers.
             + idleNotebookThreshold - Specifies the time (in minutes) after which idle notebooks are closed automatically.
             + containerCreatedThreshold - Specifies the time (in minutes) after which an empty container is closed automatically.
@@ -624,11 +627,11 @@ class SystemManager(object):
 
     # ----------------------------------------------------------------------
     @properties.setter
-    def properties(self, value) -> None:
+    def properties(self, value: dict) -> None:
         """
         See main ``properties`` property docstring
         """
-        properties: {
+        properties = {
             "dockerConnectionPort": 2375,
             "webSocketSize": 16,
             "maxContainersPerNode": 20,
@@ -706,7 +709,7 @@ class SystemManager(object):
         creates a new job entry that can be queried for its current status
         and messages.
 
-        :return: list
+        :return: List
 
         """
         url = self._url + "/jobs"
@@ -753,7 +756,7 @@ class SystemManager(object):
                                This is only valid on 10.9+.
         ==================     ====================================================================
 
-        :return: list
+        :return: List
 
         """
         url = self._url + "/jobs"
@@ -776,7 +779,7 @@ class SystemManager(object):
         return self._dir
 
     # ----------------------------------------------------------------------
-    def job_details(self, job_id) -> Dict[str, Any]:
+    def job_details(self, job_id: str) -> Dict[str, Any]:
         """
         A job represents the asynchronous execution of an operation in
         ArcGIS Notebook Server. You can acquire progress information by
@@ -788,7 +791,7 @@ class SystemManager(object):
         job_id                 Required String. The unique identifier of the job.
         ==================     ====================================================================
 
-        :return: dict
+        :return: Dict
 
         """
         url = self._url + "/jobs/{jid}".format(jid=job_id)
@@ -815,7 +818,7 @@ class SystemManager(object):
         implementation is built on top of a file system and stores all the
         configurations in a hierarchy of folders and files.
 
-        :return: dict
+        :return: Dict
 
         """
         url = self._url + "/configStore"

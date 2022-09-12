@@ -1,6 +1,9 @@
+from __future__ import annotations
 import os
 import time
+from typing import Any, Optional, Union
 import uuid
+from arcgis.features.feature import FeatureSet
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis.features import FeatureLayerCollection, FeatureLayer
@@ -8,21 +11,22 @@ from arcgis.features import FeatureLayerCollection, FeatureLayer
 
 class VersionManager(object):
     """
-    VersionManager allows users to manage the branch versioning for FeatureLayerCollection
+    VersionManager allows users to manage the branch versioning for :class:`~arcgis.features.FeatureLayerCollection`
     services. The Version Management Service is responsible for exposing the management
     capabilities necessary to support feature services that work with branch versioned
     datasets.
 
-    See the following for more information: https://developers.arcgis.com/rest/services-reference/version-management-service.htm
+    See the `Version Management Service <https://developers.arcgis.com/rest/services-reference/version-management-service.htm>`_ for more information
 
     ===============     ====================================================================
     **Argument**        **Description**
     ---------------     --------------------------------------------------------------------
     url                 Required String.  The URI to the web resource.
     ---------------     --------------------------------------------------------------------
-    gis                 Required GIS. The enterprise connection to the Portal site.
+    gis                 Required :class:`~arcgis.gis.GIS` . The enterprise connection to the Portal site. A connection
+                        can be passed in such as a Service Directory connection.
     ---------------     --------------------------------------------------------------------
-    flc                 Optional FeatureLayerCollection. This is the parent container that
+    flc                 Optional :class:`~arcgis.features.FeatureLayerCollection` . This is the parent container that
                         the branch versioning is enabled on.
     ===============     ====================================================================
 
@@ -40,9 +44,12 @@ class VersionManager(object):
         """init"""
         if isinstance(gis, GIS):
             self._gis = gis
+            self._con = self._gis._portal.con
+        elif hasattr(gis, "_con"):
+            self._gis = gis
+            self._con = gis._con
         else:
             raise ValueError("gis must be of type GIS")
-        self._con = self._gis._portal.con
         self._url = url
         if isinstance(flc, FeatureLayer):
             self._flc = flc.container
@@ -54,7 +61,7 @@ class VersionManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<VersionManager @ {url}>".format(url=self._url)
+        return "< VersionManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -70,7 +77,9 @@ class VersionManager(object):
         return self._properties
 
     # ----------------------------------------------------------------------
-    def create(self, name, permission="public", description=""):
+    def create(
+        self, name: str, permission: str = "public", description: str = ""
+    ) -> dict:
         """
         Create the named version off of DEFAULT. The version is associated
         with the specified feature service. During creation, the description
@@ -84,13 +93,15 @@ class VersionManager(object):
         permission          Optional String. The access permissions of the new version. The
                             default access permission is public.
 
-                            Values: "private" | "public" | "protected" | "hidden"
+                            Values:
+
+                                "private" | "public" | "protected" | "hidden"
         ---------------     --------------------------------------------------------------------
         description         Optional String. The description of the new version
         ===============     ====================================================================
 
 
-        :return: Boolean. True if successful else False.
+        :return: Dictionary with Version Information
 
         """
         params = {
@@ -103,12 +114,12 @@ class VersionManager(object):
         res = self._con.post(url, params)
         self._versions = None
         if "success" in res:
-            return res["success"]
+            return res
         else:
             return res
 
     # ----------------------------------------------------------------------
-    def purge(self, version, owner=None):
+    def purge(self, version: str, owner: Optional[str] = None):
         """
         Removes a lock from a version
 
@@ -169,7 +180,7 @@ class VersionManager(object):
         return self._versions
 
     # ----------------------------------------------------------------------
-    def search(self, owner=None, show_hidden=False):
+    def search(self, owner: Optional[str] = None, show_hidden: bool = False):
         """
         For the specified feature service, return the info of all versions
         that the client has access to. If the client is the service owner
@@ -193,7 +204,7 @@ class VersionManager(object):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def get(self, version, mode=None):
+    def get(self, version: str, mode: Optional[str] = None):
         """
         Finds and Locations a Version by it's name
 
@@ -208,11 +219,10 @@ class VersionManager(object):
 
                             Values:
 
-                                - edit - starts editting mode
-                                - read - starts reading mode
-                                - None - no mode is started.  This is default.
+                            - edit - starts editing mode
+                            - read - starts reading mode
+                            - None - no mode is started.  This is default.
         ===============     ====================================================================
-
 
         """
         for v in self.all:
@@ -233,9 +243,9 @@ class Version(object):
     ---------------     --------------------------------------------------------------------
     url                 Required String.  The URI to the web resource.
     ---------------     --------------------------------------------------------------------
-    gis                 Required GIS. The enterprise connection to the Portal site.
+    gis                 Required :class:`~arcgis.gis.GIS` . The enterprise connection to the Portal site.
     ---------------     --------------------------------------------------------------------
-    flc                 Optional FeatureLayerCollection. This is the parent container that
+    flc                 Optional :class:`~arcgis.features.FeatureLayerCollection` . This is the parent container that
                         the branch versioning is enabled on.
     ---------------     --------------------------------------------------------------------
     session_guid        Optional String. If a GUID is known for specific version, a user
@@ -247,8 +257,8 @@ class Version(object):
 
                         Allowed Values:
 
-                            + edit - starts an edit session
-                            + read - starts a read session
+                        + edit - starts an edit session
+                        + read - starts a read session
 
     ===============     ====================================================================
 
@@ -264,7 +274,7 @@ class Version(object):
     _validation = None
     # ----------------------------------------------------------------------
 
-    def __init__(self, url, flc, gis=None, session_guid=None, mode=None):
+    def __init__(self, url, flc=None, gis=None, session_guid=None, mode=None):
         """Constructor"""
         if mode:
             self.mode = mode
@@ -294,7 +304,12 @@ class Version(object):
         """
         Provides access to a validation manager.
 
-        :return: :class:`~arcgis.features.ValidationManager`
+        :return:
+            :class:`~arcgis.features._validation.ValidationManager`
+
+
+
+
         """
         if self._validation is None:
             from arcgis.mapping import MapImageLayer
@@ -317,7 +332,9 @@ class Version(object):
         """
         Provides access to a parcel fabric manager
 
-        :return: :class:`~arcgis.features.ParcelFabricManager`
+        :return:
+            :class:`~arcgis.features._parcel.ParcelFabricManager`
+
         """
         if (
             "controllerDatasetLayers" in self._flc.properties
@@ -368,21 +385,29 @@ class Version(object):
     # ----------------------------------------------------------------------
     @property
     def layers(self):
-        """returns the layers in the FeatureLayerCollection"""
+        """returns the layers in the :class:`~arcgis.features.FeatureLayerCollection`"""
         return self._flc.layers
+
+    # ----------------------------------------------------------------------
+    @property
+    def tables(self):
+        """returns the tables in the :class:`~arcgis.features.FeatureLayerCollection`"""
+        return self._flc.tables
 
     # ----------------------------------------------------------------------
     @property
     def mode(self):
         """
-        The `mode` allows versoin editors to start and stop edit, read, or
+        The `mode` allows version editors to start and stop edit, read, or
         view mode.
 
         ==================      ====================================================================
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
         value                   Required string.
+
                                 Values:
+
                                 + edit - calls the `start_editing` method and creates a lock
                                 + read - calls the `start_reading` method and creates a lock
                                 + None - terminates all sessions and lets a user view the version information (default)
@@ -412,7 +437,7 @@ class Version(object):
 
     # ----------------------------------------------------------------------
     @mode.setter
-    def mode(self, value):
+    def mode(self, value: Optional[str]):
         """
         The `mode` allows versoin editors to start and stop edit, read, or
         view mode.
@@ -471,12 +496,12 @@ class Version(object):
         params = {
             "f": "json",
             "versionName": self.properties.versionName,
-            "sessionID": self._guid,
+            "sessionId": self._guid,
         }
         try:
             res = self._con.post(url, params)
         except:
-            params.pop("sessionID")
+            params.pop("sessionId")
             res = self._con.post(url, params)
         if "success" in res:
             return res["success"]
@@ -492,7 +517,9 @@ class Version(object):
         **Argument**            **Description**
         ------------------      --------------------------------------------------------------------
         value                   Required bool.
-                                Values: True | False
+                                Values:
+
+                                    True | False
         ==================      ====================================================================
 
         When set to true, any edits performed on the version will be saved.
@@ -501,7 +528,7 @@ class Version(object):
 
     # ----------------------------------------------------------------------
     @save_edits.setter
-    def save_edits(self, value):
+    def save_edits(self, value: Optional[bool]):
         """
         Get/Set the Property to Save the Changes.
 
@@ -521,13 +548,9 @@ class Version(object):
             "isBeingEdited" in self.properties
             and self.properties.isBeingEdited == False
         ):
-            if (
-                "isBeingRead" in self.properties
-                and self.properties.isBeingRead == False
-            ):
-                self.start_reading()
-                self._properties = None
-            params = {"f": "json", "sessionID": self._guid}
+            self._properties = None
+            params = {"f": "json", "sessionId": self._guid}
+            self.start_reading()
             url = "%s/startEditing" % self._url
             res = self._con.post(url, params)
             if res["success"]:
@@ -536,11 +559,15 @@ class Version(object):
             self._properties = None
             return res["success"]
         elif "isBeingEdited" in self.properties and self.properties.isBeingEdited:
-            return True
-        return False
+            raise Exception(
+                "Version already in edit mode. Only one user can be "
+                "editing a branch version."
+            )
+        else:
+            return False
 
     # ----------------------------------------------------------------------
-    def stop_editing(self, save=None):
+    def stop_editing(self, save: Optional[bool] = None):
         """
         Starts an edit session for the current user.
 
@@ -548,7 +575,7 @@ class Version(object):
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         save                Optional Boolean. States if the values should be saved. If the value
-                            is set, the `save_edits` property will be overrided.
+                            is set, it will override the :attr:`~arcgis.features._version.Version.save_edits` property.
         ===============     ====================================================================
 
 
@@ -560,7 +587,7 @@ class Version(object):
             self._mode = None
             if save is None:
                 save = self.save_edits
-            params = {"f": "json", "sessionID": self._guid, "saveEdits": save}
+            params = {"f": "json", "sessionId": self._guid, "saveEdits": save}
             url = "%s/stopEditing" % self._url
             res = self._con.post(url, params)
             if res["success"]:
@@ -585,7 +612,7 @@ class Version(object):
 
         """
         self._properties = None
-        params = {"f": "json", "sessionID": self._guid}
+        params = {"f": "json", "sessionId": self._guid}
         url = "%s/startReading" % self._url
         res = self._con.post(url, params)
         if res["success"]:
@@ -604,7 +631,7 @@ class Version(object):
 
         """
         self._properties = None
-        params = {"f": "json", "sessionID": self._guid}
+        params = {"f": "json", "sessionId": self._guid}
         url = "%s/stopReading" % self._url
         res = self._con.post(url, params)
         if res["success"]:
@@ -617,7 +644,7 @@ class Version(object):
             return False
 
     # ----------------------------------------------------------------------
-    def delete_forward_edits(self, moment):
+    def delete_forward_edits(self, moment: str):
         """
         If the input moment does not match a specific moment (a moment
         corresponding to an edit operation), the call will return an error.
@@ -640,7 +667,7 @@ class Version(object):
 
         """
         url = "%s/deleteForwardEdits" % self._url
-        params = {"f": "json", "sessionID": self._guid, "moment": moment}
+        params = {"f": "json", "sessionId": self._guid, "moment": moment}
         res = self._con.post(url, params)
         if "success" in res:
             return res["success"]
@@ -649,10 +676,10 @@ class Version(object):
     # ----------------------------------------------------------------------
     def reconcile(
         self,
-        end_with_conflict=False,
-        with_post=False,
-        conflict_detection="byObject",
-        future=False,
+        end_with_conflict: bool = False,
+        with_post: bool = False,
+        conflict_detection: str = "byObject",
+        future: bool = False,
     ):
         """
         Reconcile a version against the DEFAULT version. The reconcile
@@ -682,20 +709,23 @@ class Version(object):
                                .. note::
                                    This parameter was introduced at ArcGIS Enterprise 10.9
 
-                               Values: `byObject` | `byAttribute`
+                               Values:
 
-        --------------------   --------------------------------------------------------------------
-        future                 Optional boolean. If true, the request is processed as an asynchronous
+                                   byObject | byAttribute
+
+        ------------------     --------------------------------------------------------------------
+        future                 Optional boolean. If `True`, the request is processed as an asynchronous
                                job and a URL is returned that points a location displaying the status
                                of the job.
 
                                .. note::
                                    This parameter was introduced at ArcGIS Enterprise 10.9.1
 
-                               The default is False.
+                               The default is `False`.
         ==================     ====================================================================
 
-        :returns: Boolean
+        :return: Boolean.
+        If ``future = True``, then the result is a `Future <https://docs.python.org/3/library/concurrent.futures.html>`_ object. Call ``result()`` to get the response.
 
         """
         if self._mode == "edit":
@@ -708,16 +738,15 @@ class Version(object):
                 "async": future,
             }
             url = "%s/reconcile" % self._url
-
             if future:
                 res = self._con.post(path=url, postdata=params)
-                future = self._run_async(
+                f = self._run_async(
                     self._status_via_url,
                     con=self._con,
                     url=res["statusUrl"],
                     params={"f": "json"},
                 )
-                return future
+                return f
             else:
                 res = self._con.post(url, params)
                 if "success" in res:
@@ -725,7 +754,7 @@ class Version(object):
                 return res
 
     # ----------------------------------------------------------------------
-    def restore(self, rows):
+    def restore(self, rows: list[dict[str, Any]]):
         """
         The `restore` method allows users to restore rows from a common
         ancestor version.  This method is intended to be used when a
@@ -736,27 +765,25 @@ class Version(object):
         ------------------     --------------------------------------------------------------------
         rows                   Required List.  An array of the rows to be restored
 
-                               **Syntax**
+                               Syntax
 
-                               [
-
-                                    {
-
-                                       "layerId": <layerId>,
-                                       "objectIds":[<objectId>]
-
-                                    }
-                               ]
+                                   | [{
+                                   |        "layerId": <layerId>,
+                                   |        "objectIds":[<objectId>]
+                                   |     }]
 
 
 
         ==================     ====================================================================
 
-        :return: Boolean and String. Bool: True if successful else False. String: the moment
+        :return:
+            Boolean and String.
+            Bool: True if successful else False.
+            String: the moment
 
         """
         url = "%s/restoreRows" % self._url
-        params = {"f": "json", "sessionID": self._guid, "rows": rows}
+        params = {"f": "json", "sessionId": self._guid, "rows": rows}
 
         res = self._con.post(url, params)
 
@@ -765,9 +792,15 @@ class Version(object):
         return res
 
     # ----------------------------------------------------------------------
-    def alter(self, owner=None, version=None, description=None, permission=None):
+    def alter(
+        self,
+        owner: Optional[str] = None,
+        version: Optional[str] = None,
+        description: Optional[str] = None,
+        permission: Optional[str] = None,
+    ):
         """
-        The ```alter``` operation changes the geodatabase version's name,
+        The ``alter`` operation changes the geodatabase version's name,
         description, and access permissions.
 
         ===============     ====================================================================
@@ -779,7 +812,9 @@ class Version(object):
         ---------------     --------------------------------------------------------------------
         permission          Optional String. The new access level of the version.
 
-                            Values: private, public, protected, or hidden
+                            Values:
+
+                                "private" | "public" | "protected" | "hidden"
         ---------------     --------------------------------------------------------------------
         description         Optional String. The description of the new version
         ===============     ====================================================================
@@ -805,9 +840,17 @@ class Version(object):
         return False
 
     # ----------------------------------------------------------------------
-    def differences(self, result_type="objectIds", moment=None):
+    def differences(
+        self,
+        result_type="objectIds",
+        moment=None,
+        from_moment=None,
+        layers=None,
+        future=False,
+    ):
+
         """
-        The ```differences``` operation allows you to view differences between
+        The ``differences`` operation allows you to view differences between
         the current version and the default version. The two versions can
         be compared to check for the following conditions.
 
@@ -815,7 +858,7 @@ class Version(object):
         - Updates - features that have different attributes or geometry in the current version than the default version
         - Deletions - features that are present in the default version but not in the current version
 
-        Both differences and conflicts will be returned. It is the clients
+        Both differences and conflicts will be returned. It is the clients'
         responsibility to determine which are differences, and which are conflicts.
 
         ===============     ====================================================================
@@ -824,36 +867,108 @@ class Version(object):
         result_type         Required String.  Determines the type of results to return.
                             The default result type is `objectIds`.
 
-                            Values : `objectIds` or `features`
+                            Values :
+
+                                "objectIds" | "features"
         ---------------     --------------------------------------------------------------------
-        moment              Required String. Moment used to compare current version with default.
+        moment              Required String. Moment used to compare current version with
+                            default.
+        ---------------     --------------------------------------------------------------------
+        from_moment         Optional string. Time epoch value in milliseconds specifying the
+                            time from which to obtain the differences between this value
+                            and the specified ``moment`` argument value.
+
+                            .. note::
+                                - By default, if this parameter is not specified, the ``differences`` operation returns the edits (inserts, updates, and deletes) at the specified value of the ``moment`` argument.
+
+                                - This parameter is only supported on the default version. For a named branch, this parameter will return an error if specified. The common ancestor moment is automatically used.
+
+                                - This parameter was introduced at ArcGIS Enterprise 10.9
+
+        ---------------     --------------------------------------------------------------------
+        layers              Optional list. The layer id values for which differences should
+                            be returned. If not specified, the differences for all layers will
+                            be returned.
+        ---------------     --------------------------------------------------------------------
+        future              Optional boolean. If `True`, the method runs as an asynchronous
+                            job returning a _URL_ value to inspect the status of the job. The
+                            default value is `False`.
         ===============     ====================================================================
 
 
-        :return: Dictionary indicating 'success' or 'error'
+        :return:
+            Dictionary with a `differences` key indicating the various `inserts`, `updates`,
+            or `deletes` for each layer.
 
         """
         url = "%s/differences" % self._url
-        params = {"f": "json", "sessionID": self._guid, "resultType": result_type}
-        return self._con.post(url, params)
+        if from_moment:
+            if not "DEFAULT" in self.properties.versionName:
+                raise (
+                    "The from_moment parameter is only available for the DEFAULT version."
+                )
+        import json
+
+        params = {
+            "f": "json",
+            "sessionId": self._guid,
+            "resultType": result_type,
+            "fromMoment": from_moment,
+            "moment": moment,
+            "layers": layers,
+            "async": future,
+        }
+        if future:
+            res = self._con.post(path=url, postdata=params)
+            n = 1
+            if "statusUrl" in res:
+                time.sleep(1)
+                surl = res["statusUrl"]
+                sres = self._con.get(path=surl, params={"f": "json"})
+                while sres["status"].lower() != "completed":
+                    sres = self._con.get(path=surl, params={"f": "json"})
+                    if sres["status"].lower() in "failed":
+                        if "return_messages" in sres:
+                            return (False, sres)
+                        return False
+                    if n >= 40:
+                        n = 40
+                    time.sleep(0.5 * n)
+                    n += 1
+                else:
+                    return sres
+        else:
+            res = self._con.post(url, params)
+            if "success" in res:
+                return res
+            return res
 
     # ----------------------------------------------------------------------
     def conflicts(self):
         """
-        The ```conflicts``` operation allows you to view the conflicts by layer
+        The ``conflicts`` operation allows you to view the conflicts by layer
         and type (update-update, update-delete, delete-update) that were
         identified during the last Reconcile operation. The features that
         are in conflicts will also be returned as they existed in the branch,
         ancestor, and default versions.
         """
-        params = {"f": "json", "sessionID": self._guid}
+        self.start_reading()
+        params = {"f": "json", "sessionId": self._guid}
         url = "%s/conflicts" % self._url
-        return self._con.post(url, params)
+        resp = self._con.post(url, params)
+        if resp:
+            self.stop_reading()
+        return resp
 
     # ----------------------------------------------------------------------
-    def inspect(self, conflicts, inspect_all=False, set_inspected=False):
+    def inspect(
+        self,
+        conflicts: list[dict[str, Any]],
+        inspect_all: bool = False,
+        set_inspected: bool = False,
+    ):
         """
-        The ```inspect``` operation allows the client to annotate conflicts
+        The ``inspect`` operation allows the client to annotate conflicts
         from the conflict set that was obtained during the last reconcile
         operation. Users can mark the conflicts as being inspected;
         additionally, a description or note can be associated with the
@@ -867,26 +982,20 @@ class Version(object):
 
                             Parameter Format:
 
-                            [
-                                {
-                                  "layerId" : <layerId>,
-                                  "features" : [
-                                    {
-                                      "objectId" : <objectId>,
-                                      "note" : string
-                                    }
-                                  ]
-                                }
-                            ]
+                                | [{
+                                |      "layerId" : <layerId>,
+                                |      "features" : [{
+                                |          "objectId" : <objectId>,
+                                |          "note" : string
+                                |        }]}]
 
                             The objectId key is required. The note parameter is optional.
-
         ---------------     --------------------------------------------------------------------
         inspect_all         Optional Boolean. This parameter, if true, will mark all conflicts
                             as being inspected.
         ---------------     --------------------------------------------------------------------
         set_inspected       Optional Boolean. If True, the examined values will be set to
-                            inspected. If ```inspect_all``` is True, this parameter is ignored.
+                            inspected. If ``inspect_all`` is True, this parameter is ignored.
         ===============     ====================================================================
 
 
@@ -906,7 +1015,7 @@ class Version(object):
         return res["success"]
 
     # ----------------------------------------------------------------------
-    def post(self):
+    def post(self, rows=None, future=False):
         """
         The Post operation allows the client to post the changes in their
         branch to the default version. The client can only post changes if
@@ -914,15 +1023,60 @@ class Version(object):
         If the default version has been modified in the interim, the client
         will have to reconcile again before posting.
 
-        :return: Boolean. True if successful else False.
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        rows                Optional List of dictionaries representing the features or objects
+                            for posting a subset of edits in the current version. The
+                            `objectIds` specified must be edits contained within the current
+                            version, which can be obtained from the
+                            :meth:`~arcgis.features._version.Version.differences` method. The
+                            posted edits will no longer exist in the current version, another
+                            :meth:`~arcgis.features._version.Version.reconcile` is necessary
+                            to see the posted features.
+
+                            .. code-block:: python
+
+                                rows = [
+                                        {"layerId": 0,
+                                         "objectIds": [14,15,17,20]
+                                        },
+                                        {"layerId": 1},
+                                         "objectIds": [123]
+                                        }
+                                       ]
+        ---------------     --------------------------------------------------------------------
+        future              Optional Boolean. If "True", the operation runs as an asynchronous
+                            job. The results are returned as a Url pointing to a location that
+                            indicates the status of the job.
+        ===============     ====================================================================
+
+        :return:
+            Boolean. `True` or a job URL if successful, else `False`.
 
         """
         if self._mode == "edit":
             url = "%s/post" % self._url
-            params = {"f": "json", "sessionID": self._guid}
-            res = self._con.post(url, params)
-            return res["success"]
-        return False
+            params = {
+                "f": "json",
+                "sessionId": self._guid,
+                "rows": rows,
+                "async": future,
+            }
+            if future:
+                res = self._con.post(path=url, postdata=params)
+                f = self._run_async(
+                    self._status_via_url,
+                    con=self._con,
+                    url=res["statusUrl"],
+                    params={"f": "json"},
+                )
+                return f
+            else:
+                res = self._con.post(url, params)
+                return res["success"]
+        else:
+            raise ("Version must be in edit mode to run post.")
 
     # ----------------------------------------------------------------------
     def __enter__(self):
@@ -952,8 +1106,8 @@ class Version(object):
     # ----------------------------------------------------------------------
     def edit(
         self,
-        layer,
-        adds=None,
+        layer: FeatureLayer,
+        adds: Optional[Union[FeatureSet, list]] = None,
         updates=None,
         deletes=None,
         use_global_ids=False,
@@ -966,16 +1120,16 @@ class Version(object):
         =====================   ===========================================
         **Inputs**              **Description**
         ---------------------   -------------------------------------------
-        layer                   Required FeatureLayer. The layer to perform
+        layer                   Required :class:`~arcgis.features.FeatureLayer` . The layer to perform
                                 the edit on.
         ---------------------   -------------------------------------------
-        adds                    Optional FeatureSet/List. The array of
+        adds                    Optional :class:`~arcgis.features.FeatureSet` /List. The array of
                                 features to be added.
         ---------------------   -------------------------------------------
-        updates                 Optional FeatureSet/List. The array of
-                                features to be updateded.
+        updates                 Optional :class:`~arcgis.features.FeatureSet` /List. The array of
+                                features to be updated.
         ---------------------   -------------------------------------------
-        deletes                 Optional FeatureSet/List. string of OIDs to
+        deletes                 Optional :class:`~arcgis.features.FeatureSet` /List. String of OIDs to
                                 remove from service
         ---------------------   -------------------------------------------
         use_global_ids          Optional boolean. Instead of referencing
@@ -1012,17 +1166,20 @@ class Version(object):
             )
         return None
 
-    # ----------------------------------------------------------------------
     def _run_async(self, fn, **inputs):
         """runs the inputs asynchronously"""
         import concurrent.futures
 
         tp = concurrent.futures.ThreadPoolExecutor(1)
-        future = tp.submit(fn=fn, **inputs)
+        try:
+            future = tp.submit(fn=fn, **inputs)
+        except:
+            future = tp.submit(fn, **inputs)
         tp.shutdown(False)
         return future
 
     # ----------------------------------------------------------------------
+
     def _status_via_url(self, con, url, params):
         """
         performs the asynchronous check to see if the operation finishes

@@ -29,7 +29,7 @@ except Exception as e:
 
 class TextGenerator(InferenceOnlyModel):
     """
-    Creates a `TextGenerator` Object.
+    Creates a :class:`~arcgis.learn.text.TextGenerator` Object.
     Based on the Hugging Face transformers library
 
     =====================   ===========================================
@@ -60,7 +60,7 @@ class TextGenerator(InferenceOnlyModel):
                             model.
     =====================   ===========================================
 
-    :return: `TextGenerator` Object
+    :return: :class:`~arcgis.learn.text.TextGenerator` Object
     """
 
     #: supported transformer architectures

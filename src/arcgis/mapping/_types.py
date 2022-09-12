@@ -1,10 +1,14 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, annotations
 
 import logging
 from re import search
 from uuid import uuid4
 from warnings import warn
 from contextlib import contextmanager
+from typing import Any, Optional, Union
+from arcgis.features.layer import FeatureLayer
+from arcgis.gis import Error, Item
+from arcgis.geoprocessing import import_toolbox
 from arcgis.auth.tools import LazyLoader
 
 collections = LazyLoader("collections")
@@ -15,16 +19,16 @@ time = LazyLoader("time")
 datetime = LazyLoader("datetime")
 arcgis = LazyLoader("arcgis")
 _arcgis_features = LazyLoader("arcgis.features")
+_arcgis_mapping = LazyLoader("arcgis.mapping")
 _gis = LazyLoader("arcgis.gis")
-_env = LazyLoader("arcgis.env")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
 _utils = LazyLoader("arcgis._impl.common._utils")
 _geometry = LazyLoader("arcgis.geometry")
 _basemap_definitions = LazyLoader("arcgis.mapping._basemap_definitions")
 _forms = LazyLoader("arcgis.mapping.forms")
+_scenelyrs = LazyLoader("arcgis.mapping._scenelyrs")
+_realtime = LazyLoader("arcgis.realtime")
 _services = LazyLoader("arcgis.gis.server.admin._services")
-
-from arcgis.mapping._scenelyrs import SceneLayer
 
 try:
     from traitlets import HasTraits, observe
@@ -110,8 +114,7 @@ class WebMap(HasTraits, collections.OrderedDict):
 
     .. note::
         To learn more about web maps, see the
-        `Web maps <https://doc.arcgis.com/en/arcgis-online/reference/what-is-web-map.htm>`_ page in the ArcGIS
-        REST API documentation.
+        `Web maps <https://doc.arcgis.com/en/arcgis-online/reference/what-is-web-map.htm>`_ page
 
     ``Web maps`` can be used across ArcGIS apps because they adhere to the same web map specification. This provides
     the functionality to author web maps in one ArcGIS app (including the Python API) and view and modify them in
@@ -119,8 +122,7 @@ class WebMap(HasTraits, collections.OrderedDict):
 
     .. note::
         To learn more about the web map specification, refer to the
-        `Web Map Specification <https://developers.arcgis.com/web-map-specification/>`_ page in the ArcGIS REST API
-        documentation.
+        `Web Map Specification <https://developers.arcgis.com/web-map-specification/>`_ page
 
     ==================     ====================================================================
     **Argument**           **Description**
@@ -181,11 +183,11 @@ class WebMap(HasTraits, collections.OrderedDict):
 
     def __init__(self, webmapitem=None):
         """
-        Constructs an empty WebMap object. If an web map Item is passed, constructs a WebMap object from item on
+        Constructs an empty WebMap object. If a web map Item is passed, constructs a WebMap object from item on
         ArcGIS Online or Enterprise.
         """
 
-        # Dashboard items.
+        # Viewer items.
         self._id = str(uuid4())
         self.type = "mapWidget"
 
@@ -202,7 +204,7 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         self._height = 1
         self._width = 1
-        # Dashboard items end here.
+        # Viewer items end here.
 
         from arcgis.widgets import MapView
 
@@ -218,6 +220,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             self._layers = None
             self._tables = None
             self._basemap = self._webmapdict["baseMap"]
+            self._gallery_basemaps = {}
             self._extent = self.item.extent
         else:
             # default spatial ref for current web map
@@ -230,15 +233,24 @@ class WebMap(HasTraits, collections.OrderedDict):
             self._basemap = {
                 "baseMapLayers": [
                     {
-                        "id": "defaultBasemap",
+                        "id": "world-hillshade-layer",
+                        "url": "https://services.arcgisonline.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer",
                         "layerType": "ArcGISTiledMapServiceLayer",
-                        "url": "https://services.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer",
+                        "title": "World Hillshade",
+                        "showLegend": False,
                         "visibility": True,
                         "opacity": 1,
-                        "title": "World Topographic Map",
-                    }
+                    },
+                    {
+                        "id": "topo-vector-base-layer",
+                        "styleUrl": "https://www.arcgis.com/sharing/rest/content/items/7dc6cea0b1764a1f9af2e679f642f0f5/resources/styles/root.json",
+                        "layerType": "VectorTileLayer",
+                        "title": "World Topo",
+                        "visibility": True,
+                        "opacity": 1,
+                    },
                 ],
-                "title": "Topographic",
+                "title": "Topographic Vector",
             }
             self._gallery_basemaps = {}
             self._webmapdict = {
@@ -308,7 +320,9 @@ class WebMap(HasTraits, collections.OrderedDict):
     def __str__(self):
         return json.dumps(self, default=_utils._date_handler)
 
-    def add_table(self, table, options=None):
+    def add_table(
+        self, table: _arcgis_features.Table, options: Optional[dict[str, Any]] = None
+    ):
         """
         Adds the given Table to the ``WebMap``.
 
@@ -317,7 +331,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         ------------------     --------------------------------------------------------------------
         table                  Required object. You can add:
 
-                                   - :class:`~arcgis.features.Table` objects
+                               - :class:`~arcgis.features.Table` objects
         ------------------     --------------------------------------------------------------------
         options                Optional dict. Specify properties such as ``title``, ``symbol``, ``opacity``,
                                ``visibility``, and ``renderer``
@@ -331,13 +345,132 @@ class WebMap(HasTraits, collections.OrderedDict):
 
             wm = WebMap()
             table = Table('https://some-url.com/')
-            wm.add_layer(table)
+            wm.add_table(table)
         """
-        if not isinstance(table, arcgis.features.Table):
+        if not isinstance(table, _arcgis_features.Table):
             raise Exception("Type of object passed in must of type 'Table'")
         self.add_layer(table, options)
 
-    def add_layer(self, layer, options=None):
+    def move_to_basemap(self, layer: dict):
+        """
+        Move a layer to be a basemap layer.
+        A basemap layer is a layer that provides geographic context to the map.
+        A web map always contains a basemap. The following is a list of possible basemap layer types:
+
+        * Image Service Layer
+
+        * Image Service Vector Layer
+
+        * Map Service Layer
+
+        * Tiled Image Service Layer
+
+        * Tiled Map Service Layer
+
+        * Vector Tile Layer
+
+        =====================       ===================================================================
+        **Argument**                **Definition**
+        ---------------------       -------------------------------------------------------------------
+        layer                       Required Dictionary. The layer dictionary that will be sent to
+                                    basemap layers. This dictionary is found when calling the `layers`
+                                    property on the WebMap. The layer must already be in the WebMap.
+        =====================       ===================================================================
+
+        :return: The WebMap definition if successful, else an error.
+
+        .. code-block:: python
+
+            # Create a WebMap from an existing WebMap Item.
+            wm = WebMap(<webmap_item_id>)
+            # Get and add the layer to the map
+            vtl = gis.content.get("<vector tile layer id>")
+            wm.add_layer(vtl.layers[0])
+            # Move the layer to the basemap
+            layer = wm.layers[0]
+            wm.move_to_basemap(layer)
+            wm.update()
+        """
+        layer_types = [
+            "ArcGISTiledMapServiceLayer",
+            "ArcGISImageServiceLayer",
+            "ArcGISImageServiceVectorLayer",
+            "ArcGISMapServiceLayer",
+            "ArcGISTiledImageServiceLayer",
+            "ArcGISVectorTileLayer",
+        ]
+        if layer in self.layers and layer["layerType"] in layer_types:
+            self._webmapdict["baseMap"]["baseMapLayers"].append(dict(layer))
+            self._webmapdict["operationalLayers"].remove(layer)
+            self.definition = _mixins.PropertyMap(self._webmapdict)
+            return self.basemap
+        elif layer["layerType"] not in layer_types:
+            raise Error(
+                "This layer type cannot be added as a basemap. See method description to know what layer types can be moved to basemap."
+            )
+        else:
+            raise Error(
+                "Make sure the layer dictionary is already added to the WebMap. Use the layers property to see all layers in the WebMap."
+            )
+
+    def move_from_basemap(self, layer):
+        """
+        Move a layer from the basemap layers to the operational layers. The reverse process of
+        `move_to_basemap`.
+
+        =====================       ===================================================================
+        **Argument**                **Definition**
+        ---------------------       -------------------------------------------------------------------
+        layer                       Required Dictionary. The layer dictionary that will be sent to
+                                    operational layers. This dictionary is found when calling the `definition`
+                                    property on the WebMap. The layer must already be a part of the baseMapLayers.
+        =====================       ===================================================================
+
+        :return: The WebMap definition if successful, else an error.
+
+        .. code-block:: python
+
+            wm = WebMap(<webmap_item_id>)
+            layer = wm.definition["baseMap"]["baseMapLayer"][0]
+            wm.move_from_basemap(layer)
+            wm.update()
+        """
+        if layer in self.definition["baseMap"]["baseMapLayers"]:
+            self._webmapdict["operationalLayers"].append(_mixins.PropertyMap(layer))
+            self._webmapdict["baseMap"]["baseMapLayers"].remove(layer)
+            self.definition = _mixins.PropertyMap(self._webmapdict)
+            return self.basemap
+        else:
+            raise Error(
+                "Layer must be part of WebMap's BaseMap Layers in order to add it as an Operational Layer"
+            )
+
+    def basemap_title(self, title: str):
+        """
+        Get/Set the BaseMap Title.
+        Required string title for the basemap that can be used in a table of contents.
+        If None is specified, it takes the title of the first `basemap` in the array.
+        """
+        self._webmapdict["baseMap"]["title"] = title
+        self.definition = _mixins.PropertyMap(self._webmapdict)
+        return self.basemap
+
+    def add_layer(
+        self,
+        layer: Union[
+            _arcgis_features.FeatureLayer,
+            MapImageLayer,
+            _scenelyrs.SceneLayer,
+            arcgis.raster.ImageryLayer,
+            VectorTileLayer,
+            _realtime.StreamLayer,
+            _arcgis_features.FeatureSet,
+            _gis.Item,
+            _arcgis_features.FeatureCollection,
+            _arcgis_features.Table,
+        ],
+        options: Optional[dict[str, Any]] = None,
+    ):
         """
         Adds the given layer to the ``WebMap`` object.
 
@@ -346,13 +479,13 @@ class WebMap(HasTraits, collections.OrderedDict):
         ------------------     --------------------------------------------------------------------
         layer                  Required object. You can add:
 
-                                   - Layer objects such as :class:`~arcgis.features.FeatureLayer`, ``MapImageLayer``,
-                                   ``ImageryLayer`` etc.
-                                   - :class:`~arcgis.gis.Item` objects, :class:`~arcgis.features.FeatureSet` and
-                                   :class:`~arcgis.features.FeatureCollection`
-                                   - :class:`~arcgis.features.Table` objects
+                               - Layer objects such as :class:`~arcgis.features.FeatureLayer`, :class:`~arcgis.mapping.MapImageLayer`, :class:`~arcgis.raster.ImageryLayer` etc.
+
+                               - :class:`~arcgis.gis.Item` objects, :class:`~arcgis.features.FeatureSet` and :class:`~arcgis.features.FeatureCollection`
+
+                               - :class:`~arcgis.features.Table` objects
         ------------------     --------------------------------------------------------------------
-        options                Optional dict. Specify properties such as title, symbol, opacity, visibility, renderer
+        options                Optional Dict. Specify properties such as title, symbol, opacity, visibility, renderer
                                for the layer that is added. If not specified, appropriate defaults are applied.
         ==================     ====================================================================
 
@@ -376,15 +509,74 @@ class WebMap(HasTraits, collections.OrderedDict):
                                   'visibility':False})
             >> True
         """
+        new_layer = self._create_layer_definition(layer, options)
+        # recursive call already added layers, can return
+        if new_layer is True:
+            return True
+        if "layerType" in new_layer:
+            layer_type = new_layer["layerType"]
+        else:
+            layer_type = None
+
+        # region sort layers into 'operationalLayers' or 'tables'
+        if isinstance(layer, _arcgis_features.Table):
+            if "tables" not in self._webmapdict.keys():
+                # There are no tables yet, create one here
+                self._webmapdict["tables"] = [new_layer]
+                self.definition = _mixins.PropertyMap(self._webmapdict)
+            else:
+                # There are tables, just append to it
+                self._webmapdict["tables"].append(new_layer)
+                self.definition = _mixins.PropertyMap(self._webmapdict)
+        else:
+            if "operationalLayers" not in self._webmapdict.keys():
+                # there no layers yet, create one here
+                self._webmapdict["operationalLayers"] = [new_layer]
+                self.definition = _mixins.PropertyMap(self._webmapdict)
+            else:
+                # there are operational layers, just append to it
+                self._webmapdict["operationalLayers"].append(new_layer)
+                self.definition = _mixins.PropertyMap(self._webmapdict)
+        # endregion
+
+        # update layers property
+        if not self._layers:
+            if "operationalLayers" in self._webmapdict:
+                self._layers = []
+                for l in self._webmapdict["operationalLayers"]:
+                    self._layers.append(_mixins.PropertyMap(l))
+                # reverse the layer list - webmap viewer reverses the list always
+                self._layers.reverse()
+        else:
+            # note - no need to add if self._layers was empty as the hydration step above will account for the new layer
+            # need this check to avoid duplicating adding a new table to both layers and tables
+            if "layerType" in new_layer:
+                self._layers.append(_mixins.PropertyMap(new_layer))
+
+        # update tables property
+        if not self._tables:
+            self._tables = []
+            if "tables" in self._webmapdict:
+                for t in self._webmapdict["tables"]:
+                    self._tables.append(_mixins.PropertyMap(t))
+            # reverse the layer list - webmap viewer reverses the list always
+            self._tables.reverse()
+        else:
+            if layer_type == "Table":
+                # note - no need to add if self._layers was empty as the hydration step above will account for the new layer
+                self._tables.append(_mixins.PropertyMap(new_layer))
+
+        return True
+
+    def _create_layer_definition(self, layer, options):
         from arcgis.mapping.ogc._base import BaseOGC
-        from arcgis.mapping.ogc import WMSLayer, WMTSLayer
 
         if options is None:
             options = {}
         if (
-            isinstance(layer, arcgis.features.FeatureLayer)
+            isinstance(layer, _arcgis_features.FeatureLayer)
             and "renderer" not in options
-            and not isinstance(layer, arcgis.features.Table)
+            and not isinstance(layer, _arcgis_features.Table)
         ):
             options["renderer"] = json.loads(layer.renderer.json)
         elif hasattr(layer, "spatial"):
@@ -435,8 +627,8 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         # region infer layer type
         layer_type = None
-        if isinstance(layer, arcgis.gis.Layer) or isinstance(
-            layer, arcgis.features.FeatureSet
+        if isinstance(layer, _gis.Layer) or isinstance(
+            layer, _arcgis_features.FeatureSet
         ):
             if hasattr(layer, "properties"):
                 if hasattr(layer.properties, "name"):
@@ -444,12 +636,12 @@ class WebMap(HasTraits, collections.OrderedDict):
 
                 # find layer type
                 if (
-                    isinstance(layer, arcgis.features.FeatureLayer)
-                    or isinstance(layer, arcgis.features.FeatureCollection)
-                    or isinstance(layer, arcgis.features.FeatureSet)
+                    isinstance(layer, _arcgis_features.FeatureLayer)
+                    or isinstance(layer, _arcgis_features.FeatureCollection)
+                    or isinstance(layer, _arcgis_features.FeatureSet)
                 ):
                     # Can be either a FeatureLayer or a table: figure it out
-                    if isinstance(layer, arcgis.features.Table):
+                    if isinstance(layer, _arcgis_features.Table):
                         layer_type = "Table"
                     else:
                         layer_type = "ArcGISFeatureLayer"
@@ -457,18 +649,18 @@ class WebMap(HasTraits, collections.OrderedDict):
                     layer_type = "ArcGISImageServiceLayer"
                     # todo : get renderer info
 
-                elif isinstance(layer, arcgis.mapping.MapImageLayer):
+                elif isinstance(layer, _arcgis_mapping.MapImageLayer):
                     layer_type = "ArcGISMapServiceLayer"
-                elif isinstance(layer, arcgis.mapping.VectorTileLayer):
+                elif isinstance(layer, _arcgis_mapping.VectorTileLayer):
                     layer_type = "VectorTileLayer"
-                elif isinstance(layer, arcgis.realtime.StreamLayer):
+                elif isinstance(layer, _realtime.StreamLayer):
                     layer_type = "ArcGISStreamLayer"
 
                 if hasattr(layer.properties, "serviceItemId"):
                     item_id = layer.properties.serviceItemId
-            elif isinstance(layer, arcgis.features.FeatureSet):
+            elif isinstance(layer, _arcgis_features.FeatureSet):
                 layer_type = "ArcGISFeatureLayer"
-        elif isinstance(layer, arcgis.gis.Item):
+        elif isinstance(layer, _gis.Item):
             # set the item's extent
             if not self._extent:
                 self._extent = layer.extent
@@ -496,7 +688,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                 return (
                     True  # end add_layer execution after iterating through each layer.
                 )
-        elif isinstance(layer, arcgis.features.FeatureLayerCollection):
+        elif isinstance(layer, _arcgis_features.FeatureLayerCollection):
             if not self._extent:
                 if hasattr(layer.properties, "fullExtent"):
                     self._extent = layer.properties.fullExtent
@@ -557,7 +749,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         if hasattr(layer, "url"):
             new_layer["url"] = layer.url
         elif isinstance(
-            layer, arcgis.features.FeatureCollection
+            layer, _arcgis_features.FeatureCollection
         ):  # feature collection item on web GIS
             if "serviceItemId" in options:
                 # if ItemId is found, then type is fc and insert item id. Else, leave the type as ArcGISFeatureLayer
@@ -606,7 +798,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                 new_layer["renderingRule"] = image_service_parameters["renderingRule"]
 
         # inmem FeatureCollection
-        if isinstance(layer, arcgis.features.FeatureCollection):
+        if isinstance(layer, _arcgis_features.FeatureCollection):
             if hasattr(layer, "layer"):
                 if hasattr(layer.layer, "layers"):
                     fc_layer_definition = dict(layer.layer.layers[0].layerDefinition)
@@ -631,7 +823,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             }
 
         # inmem FeatureSets - typically those which users pass to the `MapView.draw()` method
-        if isinstance(layer, arcgis.features.FeatureSet):
+        if isinstance(layer, _arcgis_features.FeatureSet):
             if not layer_spatial_ref:
                 if hasattr(layer, "spatial_reference"):
                     layer_spatial_ref = layer.spatial_reference
@@ -720,7 +912,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         # endregion
 
         # Add Vector Tile Layer Properties
-        if isinstance(layer, arcgis.mapping._types.VectorTileLayer):
+        if isinstance(layer, _arcgis_mapping.VectorTileLayer):
             new_layer["type"] = "VectorTileLayer"
             new_layer["styleUrl"] = f"{layer.url}/resources/styles/"
 
@@ -745,15 +937,15 @@ class WebMap(HasTraits, collections.OrderedDict):
             }
 
             fields_list = []
-            if isinstance(layer, arcgis.features.FeatureLayer) or isinstance(
+            if isinstance(layer, _arcgis_features.FeatureLayer) or isinstance(
                 layer, arcgis.raster.ImageryLayer
             ):
                 if hasattr(layer.properties, "fields"):
                     fields_list = layer.properties.fields
-            elif isinstance(layer, arcgis.features.FeatureSet):
+            elif isinstance(layer, _arcgis_features.FeatureSet):
                 if hasattr(layer, "fields"):
                     fields_list = layer.fields
-            elif isinstance(layer, arcgis.features.FeatureCollection):
+            elif isinstance(layer, _arcgis_features.FeatureCollection):
                 if hasattr(layer.properties, "layerDefinition"):
                     if hasattr(layer.properties.layerDefinition, "fields"):
                         fields_list = layer.properties.layerDefinition.fields
@@ -791,56 +983,60 @@ class WebMap(HasTraits, collections.OrderedDict):
                 new_layer["featureCollection"]["layers"][0]["popupInfo"] = popup
 
         # endregion
+        return new_layer
 
-        # region sort layers into 'operationalLayers' or 'tables'
-        if isinstance(layer, _arcgis_features.Table):
-            if "tables" not in self._webmapdict.keys():
-                # There are no tables yet, create one here
-                self._webmapdict["tables"] = [new_layer]
-                self.definition = _mixins.PropertyMap(self._webmapdict)
-            else:
-                # There are tables, just append to it
-                self._webmapdict["tables"].append(new_layer)
-                self.definition = _mixins.PropertyMap(self._webmapdict)
-        else:
-            if "operationalLayers" not in self._webmapdict.keys():
-                # there no layers yet, create one here
-                self._webmapdict["operationalLayers"] = [new_layer]
-                self.definition = _mixins.PropertyMap(self._webmapdict)
-            else:
-                # there are operational layers, just append to it
-                self._webmapdict["operationalLayers"].append(new_layer)
-                self.definition = _mixins.PropertyMap(self._webmapdict)
-        # endregion
+    def update_layer(self, layer: Union[dict, FeatureLayer]):
+        """
+        To update the layer dictionary for a layer in the map. For example, to update the renderer dictionary for a layer
+        and have it by dynamically changed on the webmap. Can be used to configure the pop_ups dictionary, renderer,
+        or any other part of the Feature Layer properties.
 
-        # update layers property
-        if not self._layers:
-            if "operationalLayers" in self._webmapdict:
-                self._layers = []
-                for l in self._webmapdict["operationalLayers"]:
-                    self._layers.append(_mixins.PropertyMap(l))
-                # reverse the layer list - webmap viewer reverses the list always
-                self._layers.reverse()
-        else:
-            # note - no need to add if self._layers was empty as the hydration step above will account for the new layer
-            # need this check to avoid duplicating adding a new table to both layers and tables
-            if "layerType" in new_layer:
-                self._layers.append(_mixins.PropertyMap(new_layer))
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        layer                   Required :class:`~arcgis.features.FeatureLayer` or Feature Layer dictionary.
+                                The existing webmap layer with updated properties.
+                                In order to get a layer on the webmap, use the ``layers`` method and
+                                assign the output to a value. Make edits on this value and pass
+                                it in as a dict to update the rendering on the map.
 
-        # update tables property
-        if not self._tables:
-            self._tables = []
-            if "tables" in self._webmapdict:
-                for t in self._webmapdict["tables"]:
-                    self._tables.append(_mixins.PropertyMap(t))
+                                .. warning::
+                                    If the itemId of the feature layer is changed, this will not work.
+        ==================      ====================================================================
+
+        .. code-block:: python
+            # Create Webmap from webmap item
+            wm = WebMap(<wm_item_id>)
+
+            # Get a layer and edit the color
+            fl = wm.layers[0]
+            fl["layerDefinition"]["drawingInfo"]["renderer"]["symbol"]["color"] = [0, 0, 0, 255]
+
+            # Update the layer to see it render on map
+            wm.update_layer(dict(my_lyr))
+
+            # Save with the updates
+            wm_properties= {"title": "Test Update", "tags":["update_layer"], "snippet":"Updated a layer and now save"}
+            wm.save(wm_properties)
+        """
+        if isinstance(layer, FeatureLayer):
+            # Need to remove to re-create the layer view correctly
+            layer = self._create_layer_definition(layer, None)
+        # Find the layer to update based on the id of the layer passed in.
+        lyr_dict = self.get_layer(layer["itemId"])
+        # Get the index so we update the observable list at the correct position.
+        lyr_idx = self._webmapdict["operationalLayers"].index(lyr_dict)
+
+        # Update the observable list, this triggers webmap to render new layer.
+        self._webmapdict["operationalLayers"][lyr_idx] = layer
+
+        # Update the layers property
+        if "operationalLayers" in self._webmapdict:
+            self._layers = []
+            for l in self._webmapdict["operationalLayers"]:
+                self._layers.append(_mixins.PropertyMap(l))
             # reverse the layer list - webmap viewer reverses the list always
-            self._tables.reverse()
-        else:
-            if layer_type == "Table":
-                # note - no need to add if self._layers was empty as the hydration step above will account for the new layer
-                self._tables.append(_mixins.PropertyMap(new_layer))
-
-        return True
+            self._layers.reverse()
 
     def _process_extent(self, extent=None):
         """
@@ -907,17 +1103,17 @@ class WebMap(HasTraits, collections.OrderedDict):
 
     def save(
         self,
-        item_properties,
-        thumbnail=None,
-        metadata=None,
-        owner=None,
-        folder=None,
+        item_properties: dict[str, Any],
+        thumbnail: Optional[str] = None,
+        metadata: Optional[str] = None,
+        owner: Optional[str] = None,
+        folder: Optional[str] = None,
     ):
         """
         Saves the ``WebMap`` object as a new Web Map Item in your :class:`~arcgis.gis.GIS`.
 
         .. note::
-            If you started out with a fresh ``WebMap`` object, use this method to save it as a the web map
+            If you started out with a fresh ``WebMap`` object, use this method to save it as a web map
             :class:`~arcgis.gis.Item` in your
             GIS.
 
@@ -946,7 +1142,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         =================  =====================================================================
         **Key**            **Value**
         -----------------  ---------------------------------------------------------------------
-        typeKeywords       Optional string. Provide a lists all sub-types, see URL 1 below for valid values.
+        typeKeywords       Optional string. Provide a lists all subtypes, see URL 1 below for valid values.
         -----------------  ---------------------------------------------------------------------
         description        Optional string. Description of the item.
         -----------------  ---------------------------------------------------------------------
@@ -1039,7 +1235,12 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         return new_item
 
-    def update(self, item_properties=None, thumbnail=None, metadata=None):
+    def update(
+        self,
+        item_properties: Optional[dict[str, Any]] = None,
+        thumbnail: Optional[str] = None,
+        metadata: Optional[str] = None,
+    ):
         """
         The ``update`` method updates the Web Map Item in your :class:`~arcgis.gis.GIS`
         with the changes you made to the ``WebMap`` object. In addition, you can update
@@ -1328,7 +1529,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         value                  Required string. What basemap you would like to apply to the map
-                               (‘topo’, ‘national-geographic’, etc.).
+                               ('topo', 'national-geographic', etc.).
                                See :attr:`~arcgis.mapping.WebMap.basemaps` and
                                :attr:`~arcgis.mapping.WebMap.gallery_basemaps` for a full list.
         ==================     ====================================================================
@@ -1359,7 +1560,7 @@ class WebMap(HasTraits, collections.OrderedDict):
             wm = WebMap(wm_item)
 
             print(wm.basemaps)
-            >> ['dark-gray', 'dark-gray-vector', 'gray', 'gray-vector', 'hybrid', 'national-geographic', 'oceans', 'osm', 'satellite', 'streets', 'streets-navigation-vector', 'streets-night-vector', 'streets-relief-vector', 'streets-vector', 'terrain', 'topo', 'topo-vector']
+            >> ['dark-gray-vector', 'gray-vector', 'hybrid', 'oceans', 'osm', 'satellite', 'streets-navigation-vector', 'streets-night-vector', 'streets-relief-vector', 'streets-vector', 'terrain', 'topo-vector']
             wm.basemap = 'dark-gray'
             print(wm.gallery_basemaps)
             >> ['custom_dark_gray_canvas', 'imagery', 'imagery_hybrid', 'light_gray_canvas', 'custom_basemap_vector_(proxy)', 'world_imagery_(proxy)', 'world_street_map_(proxy)']
@@ -1376,12 +1577,9 @@ class WebMap(HasTraits, collections.OrderedDict):
             wm.basemap = wm2
 
         """
-        if self._basemap:
-            return _mixins.PropertyMap(self._basemap)
-        else:
-            if "baseMap" in self._webmapdict.keys():
-                self._basemap = self._webmapdict["baseMap"]
-            return _mixins.PropertyMap(self._basemap)
+        if "baseMap" in self._webmapdict.keys():
+            self._basemap = self._webmapdict["baseMap"]
+        return _mixins.PropertyMap(self._basemap)
 
     def _determine_layer_type(self, item):
         # this function determines the basemap layer type for the Web Map Specification
@@ -1503,22 +1701,17 @@ class WebMap(HasTraits, collections.OrderedDict):
         :attr:`~arcgis.mapping.WebMap.basemap` for the ``WebMap``.
         """
         basemaps = [
-            "dark-gray",
             "dark-gray-vector",
-            "gray",
             "gray-vector",
             "hybrid",
-            "national-geographic",
             "oceans",
             "osm",
             "satellite",
-            "streets",
             "streets-navigation-vector",
             "streets-night-vector",
             "streets-relief-vector",
             "streets-vector",
             "terrain",
-            "topo",
             "topo-vector",
         ]
         return basemaps
@@ -1526,8 +1719,9 @@ class WebMap(HasTraits, collections.OrderedDict):
     @property
     def gallery_basemaps(self):
         """
-        Get for a user their portal's custom
-        :attr:`~arcgis.mapping.WebMap.basemap` group.
+        Gets a list of web map titles contained within the
+        :class:`~arcgis.gis.Group` configured as the organization's Basemap
+        gallery.
         """
         if self._gis:
             bmquery = self._gis.properties["basemapGalleryGroupQuery"]
@@ -1544,7 +1738,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         else:
             return []
 
-    def remove_table(self, table):
+    def remove_table(self, table: _arcgis_features.Table):
         """
         The ``remove_table`` method removes the specified table from the ``WebMap``.
 
@@ -1563,7 +1757,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         self._webmapdict["tables"].remove(table)
         self._tables.remove(_mixins.PropertyMap(table))
 
-    def remove_layer(self, layer):
+    def remove_layer(self, layer: _arcgis_features.FeatureLayer):
         """
         The ``remove_layer`` method removes the specified layer from the ``WebMap``.
 
@@ -1574,7 +1768,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        layer                  Required object. Pass the :class:`~arcgis.features.FeatureLaer`
+        layer                  Required object. Pass the :class:`~arcgis.features.FeatureLayer`
                                that needs to be removed from the map. You can get the
                                list of layers in the map by calling the :attr:`~arcgis.mapping.WebMap.layers` property.
         ==================     ====================================================================
@@ -1583,7 +1777,12 @@ class WebMap(HasTraits, collections.OrderedDict):
         self._webmapdict["operationalLayers"].remove(layer)
         self._layers.remove(_mixins.PropertyMap(layer))
 
-    def get_layer(self, item_id=None, title=None, layer_id=None):
+    def get_layer(
+        self,
+        item_id: Optional[str] = None,
+        title: Optional[str] = None,
+        layer_id: Optional[str] = None,
+    ):
         """
         The ``get_layer`` method retrieves the first layer with a matching ``itemId``, ``title``, or ``layer_id`` in
         the``WebMap`` object's operational layers.
@@ -1622,7 +1821,12 @@ class WebMap(HasTraits, collections.OrderedDict):
                     pass
         return None
 
-    def get_table(self, item_id=None, title=None, layer_id=None):
+    def get_table(
+        self,
+        item_id: Optional[str] = None,
+        title: Optional[str] = None,
+        layer_id: Optional[str] = None,
+    ):
         """
         The ``get_table`` method retrieves the first table with a matching ``itemId``, ``title``, or ``layer_id`` in
         the ``WebMap`` object's tables.
@@ -1667,14 +1871,14 @@ class WebMap(HasTraits, collections.OrderedDict):
         The ``offline_areas`` property is the resource manager for offline areas cached for the ``WebMap`` object.
 
         :return:
-            The :class:`~arcgis.mapping.WebMap.OfflineMapAreaManager` for the ``WebMap`` object.
+            The :class:`~arcgis.mapping.OfflineMapAreaManager` for the ``WebMap`` object.
         """
         return OfflineMapAreaManager(self.item, self._gis)
 
     @property
     def pop_ups(self):
         """
-        Get/Set whether popups are enabled for the dashboard widget.
+        Get/Set whether pop ups are enabled for the viewer widget.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1682,12 +1886,12 @@ class WebMap(HasTraits, collections.OrderedDict):
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
 
-        :return: True if popups are enabled for dashboard widget, False otherwise.
+        :return: True if popups are enabled for viewer widget, False otherwise.
         """
         return self._pop_ups
 
     @pop_ups.setter
-    def pop_ups(self, value):
+    def pop_ups(self, value: bool):
         """
         See main ``pop_ups`` property docstring.
         """
@@ -1695,8 +1899,115 @@ class WebMap(HasTraits, collections.OrderedDict):
         if value in [0, "0", False, "false"]:
             self._pop_ups = False
 
+    def configure_pop_ups(self, layer_title: str, field_names: list, visibility: bool):
+        """
+        This method can be used to change the visibility of a field for a layer on the Web Map.
+
+        .. note::
+            Changes will not be seen on the Web Map viewer until the Web Map is saved or updated using
+            the ``save`` or ``update`` method. Once this is done, reload the Web Map to see changes or view
+            on the Portal Web Map Viewer.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        layer_title            Required string. The name of the layer.
+        ------------------     --------------------------------------------------------------------
+        field_names            Required list of strings. The name of the field to change the visibility of.
+        ------------------     --------------------------------------------------------------------
+        visibility             Required bool. True if the field should be visible on the pop up for
+                               the layer, else False.
+        ==================     ====================================================================
+        """
+        layer = self.get_layer(title=layer_title)
+
+        for field_name in field_names:
+            idx = 0
+            for field in layer.popupInfo.fieldInfos:
+                if field["fieldName"] == field_name:
+                    layer.popupInfo.fieldInfos[idx].visible = visibility
+                idx += 1
+        return self.get_layer(title=layer_title)
+
     @property
     def bookmarks(self):
+        """
+        Get/Set whether bookmarks are enabled for the viewer widget.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        value                  Required list of dictionaries. The new bookmarks to be used.
+                               This will replace current bookmarks with the ones passed into the list.
+        ==================     ====================================================================
+
+        :return: Bookmarks in the WebMap item.
+
+        .. code-block:: python
+
+            # Usage Example:
+
+            from arcgis.mapping import WebMap
+            from arcgis.gis import GIS
+
+            # connect to your GIS and get the web map item
+            gis = GIS(url, username, password)
+            wm_item = gis.content.get('1234abcd_web map item id')
+
+            # create a WebMap object from the existing web map item
+            wm = WebMap(wm_item)
+
+            # get current bookmarks
+            my_bookmarks = wm.bookmarks
+
+            # create new bookmarks to replace others
+            bookmark1 = {'extent': {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                        'xmin': -8425179.029160742,
+                        'ymin': 4189089.021381017,
+                        'xmax': -8409834.295732513,
+                        'ymax': 4203784.040068822},
+                        'name': 'Updated Bookmark 1',
+                        'thumbnail': {'url': <url for thumbnail>},
+                        'viewpoint': {'rotation': 30,
+                        'scale': 7222.3819286,
+                        'targetGeometry': {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                        'xmin': -8425179.029160742,
+                        'ymin': 4189089.021381017,
+                        'xmax': -8409834.295732513,
+                        'ymax': 4203784.040068822}}}
+            bookmark2 = {'extent': {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                        'xmin': -83200.034567,
+                        'ymin': 3127089.021381017,
+                        'xmax': -813434.295732513,
+                        'ymax': 4203784.040068822},
+                        'name': 'Updated Bookmark 2',
+                        'thumbnail': {'url': <url for thumbnail>},
+                        'viewpoint': {'rotation': 30,
+                        'scale': 7222.3819286,
+                        'targetGeometry': {'spatialReference': {'latestWkid': 3857, 'wkid': 102100},
+                        'xmin': -8425179.029160742,
+                        'ymin': 4189089.021381017,
+                        'xmax': -8409834.295732513,
+                        'ymax': 4203784.040068822}}}
+
+            # set new bookmark
+            wm.bookmarks = [bookmark1, bookmark2]
+        """
+        if "bookmarks" not in self._webmapdict:
+            self._webmapdict["bookmarks"] = []
+        return self._webmapdict["bookmarks"]
+
+    @bookmarks.setter
+    def bookmarks(self, value: list):
+        """
+        See main ``bookmarks`` property docstring.
+        """
+        if isinstance(value, list):
+            self.definition.bookmarks = value
+            self._webmapdict["bookmarks"] = value
+
+    @property
+    def view_bookmarks(self):
         """
         Get/Set whether bookmarks are enabled for the dashboard widget.
 
@@ -1706,14 +2017,14 @@ class WebMap(HasTraits, collections.OrderedDict):
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
 
-        :return: True if bookmarks are enabled for dashboard widget, False otherwise.
+        :return: True if bookmarks are enabled for viewer widget, False otherwise.
         """
         return self._bookmarks
 
-    @bookmarks.setter
-    def bookmarks(self, value):
+    @view_bookmarks.setter
+    def view_bookmarks(self, value):
         """
-        See main ``bookmarks`` property docstring.
+        See main ``view_bookmarks`` property docstring.
         """
         self._bookmarks = value
         if value in [0, "0", False, "false"]:
@@ -1722,7 +2033,7 @@ class WebMap(HasTraits, collections.OrderedDict):
     @property
     def legend(self):
         """
-        Get/Set whether legend visibility is enabled for the dashboard widget.
+        Get/Set whether legend visibility is enabled for the viewer widget.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1730,12 +2041,12 @@ class WebMap(HasTraits, collections.OrderedDict):
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
 
-        :return: True if legend visibility is enabled for dashboard widget, False otherwise.
+        :return: True if legend visibility is enabled for viewer widget, False otherwise.
         """
         return self._legend
 
     @legend.setter
-    def legend(self, value):
+    def legend(self, value: bool):
         """
         See main ``legend`` property docstring.
         """
@@ -1746,7 +2057,7 @@ class WebMap(HasTraits, collections.OrderedDict):
     @property
     def layer_visibility(self):
         """
-        Get/Set whether layer visibility is enabled for the dashboard widget.
+        Get/Set whether layer visibility is enabled for the viewer widget.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1754,12 +2065,12 @@ class WebMap(HasTraits, collections.OrderedDict):
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
 
-        :return: True if layer visibility is enabled for dashboard widget, False otherwise.
+        :return: True if layer visibility is enabled for viewer widget, False otherwise.
         """
         return self._layer_visibility
 
     @layer_visibility.setter
-    def layer_visibility(self, value):
+    def layer_visibility(self, value: bool):
         """
         See main ``layer_visibility`` property docstring.
         """
@@ -1784,7 +2095,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         return self._basemap_switcher
 
     @basemap_switcher.setter
-    def basemap_switcher(self, value):
+    def basemap_switcher(self, value: bool):
         """
         See main ``basemap_switcher`` property docstring.
         """
@@ -1795,7 +2106,7 @@ class WebMap(HasTraits, collections.OrderedDict):
     @property
     def search(self):
         """
-        Get/Set whether search is enabled for the dashboard widget.
+        Get/Set whether search is enabled for the viewer widget.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1803,12 +2114,12 @@ class WebMap(HasTraits, collections.OrderedDict):
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
 
-        :return: True if search is enabled for dashboard widget, False otherwise.
+        :return: True if search is enabled for viewer widget, False otherwise.
         """
         return self._search
 
     @search.setter
-    def search(self, value):
+    def search(self, value: bool):
         """
         See main ``search`` property docstring.
         """
@@ -1819,7 +2130,7 @@ class WebMap(HasTraits, collections.OrderedDict):
     @property
     def zoom(self):
         """
-        Get/Set whether zoom is enabled for the dashboard widget.
+        Get/Set whether zoom is enabled for the viewer widget.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1827,12 +2138,12 @@ class WebMap(HasTraits, collections.OrderedDict):
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
 
-        :return: True if zoom is enabled for dashboard widget, False otherwise.
+        :return: True if zoom is enabled for viewer widget, False otherwise.
         """
         return self._zoom
 
     @zoom.setter
-    def zoom(self, value):
+    def zoom(self, value: bool):
         """
         See main ``zoom`` property docstring.
         """
@@ -1843,7 +2154,7 @@ class WebMap(HasTraits, collections.OrderedDict):
     @property
     def navigation(self):
         """
-        Get/Set whether navigation is enabled for the dashboard widget.
+        Get/Set whether navigation is enabled for the viewer widget.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1851,12 +2162,12 @@ class WebMap(HasTraits, collections.OrderedDict):
         value                  Required bool. True to enable, False to disable
         ==================     ====================================================================
 
-        :return: True if navigation is enabled for dashboard widget, False otherwise.
+        :return: True if navigation is enabled for viewer widget, False otherwise.
         """
         return self._navigation
 
     @navigation.setter
-    def navigation(self, value):
+    def navigation(self, value: bool):
         """
         See main ``navigation`` property docstring.
         """
@@ -1867,7 +2178,7 @@ class WebMap(HasTraits, collections.OrderedDict):
     @property
     def scale_bar(self):
         """
-        Get/Set the scale bar type for the dashboard widget.
+        Get/Set the scale bar type for the viewer widget.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1881,7 +2192,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         return self._scale_bar
 
     @scale_bar.setter
-    def scale_bar(self, value):
+    def scale_bar(self, value: bool):
         """
         See main ``scale_bar`` property docstring.
         """
@@ -1905,7 +2216,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         return self._height
 
     @height.setter
-    def height(self, value):
+    def height(self, value: bool):
         """
         See main ``height`` property docstring.
         """
@@ -1919,7 +2230,7 @@ class WebMap(HasTraits, collections.OrderedDict):
     @property
     def width(self):
         """
-        Get/Set the width of the dashboard widget.
+        Get/Set the width of the viewer widget.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1932,7 +2243,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         return self._width
 
     @width.setter
-    def width(self, value):
+    def width(self, value: bool):
         """
         See main ``width`` property docstring.
         """
@@ -1993,16 +2304,16 @@ class WebMap(HasTraits, collections.OrderedDict):
 
     def print(
         self,
-        file_format,
-        extent,
-        dpi=92,
-        output_dimensions=(500, 500),
-        scale=None,
-        rotation=None,
-        spatial_reference=None,
-        layout_template="MAP_ONLY",
-        time_extent=None,
-        layout_options=None,
+        file_format: str,
+        extent: dict[str, Any],
+        dpi: int = 92,
+        output_dimensions: tuple[float] = (500, 500),
+        scale: Optional[float] = None,
+        rotation: Optional[float] = None,
+        spatial_reference: Optional[dict[str, Any]] = None,
+        layout_template: str = "MAP_ONLY",
+        time_extent: Optional[Union[tuple[int], list[int]]] = None,
+        layout_options: Optional[dict[str, Any]] = None,
     ):
         """
         The ``print`` method prints the ``WebMap`` object to a printable file such as a PDF, PNG32, JPG.
@@ -2019,14 +2330,12 @@ class WebMap(HasTraits, collections.OrderedDict):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        file_format            | Required `string <https://docs.python.org/3/library/stdtypes.html#str>`_.
-                               Specifies the output file format. Valid types:
+        file_format            Required String. Specifies the output file format. Valid types:
+
                                ``PNG8`` | ``PNG32`` | ``JPG`` | ``GIF`` | ``PDF`` | ``EPS``
                                | ``SVG`` | ``SVGZ``.
         ------------------     --------------------------------------------------------------------
-        extent                 | Required `dictionary <https://docs.python.org/3/tutorial/datastructures.html?highlight=dictionary#dictionaries>`_.
-
-                               Specify the extent to be printed.
+        extent                 Required Dictionary. Specify the extent to be printed.
 
                                .. code-block:: python
 
@@ -2045,19 +2354,15 @@ class WebMap(HasTraits, collections.OrderedDict):
                                of the map on the output page or the ``output_dimensions``,
                                you might notice more features on the output map.
         ------------------     --------------------------------------------------------------------
-        dpi                    | Optional `integer <https://docs.python.org/3/library/functions.html#int>`_.
-
-                               Specify the print resolution of the output file. ``dpi`` stands for
+        dpi                    Optional integer. Specify the print resolution of the output file. ``dpi`` stands for
                                *dots per inch*. A higher number implies better resolution and a
                                larger file size.
         ------------------     --------------------------------------------------------------------
-        output_dimensions      | Optional `tuple <https://docs.python.org/3/library/stdtypes.html?highlight=tuple#tuple>`_ of `integers <https://docs.python.org/3/library/functions.html#int>`_.
-                               Specify the dimensions of the output file in pixels. If the
+        output_dimensions      Optional tuple. Specify the dimensions of the output file in pixels. If the
                                ``layout_template`` is not ``MAP_ONLY``, the specific layout
                                template chosen takes precedence over this paramter.
         ------------------     --------------------------------------------------------------------
-        scale                  | Optional `float <https://docs.python.org/3/library/functions.html?highlight=float#float>`_.
-                               Specify the map scale to be printed. The map scale at which you
+        scale                  Optional float. Specify the map scale to be printed. The map scale at which you
                                want your map to be printed. This parameter is optional but
                                recommended for optimal results. The ``scale`` property is
                                especially useful when map services in the web map have
@@ -2072,25 +2377,21 @@ class WebMap(HasTraits, collections.OrderedDict):
                                output map is drawn at the requested scale centered on the center
                                of the extent.
         ------------------     --------------------------------------------------------------------
-        rotation               | Optional `float <https://docs.python.org/3/library/functions.html?highlight=float#float>`_.
-                               Specify the number of degrees by which the map frame will be
+        rotation               Optional float. Specify the number of degrees by which the map frame will be
                                rotated, measured counterclockwise from the north. To rotate
                                clockwise, use a negative value.
         ------------------     --------------------------------------------------------------------
-        spatial_reference      | Optional `dictionary <https://docs.python.org/3/tutorial/datastructures.html?highlight=dictionary#dictionaries>`_.
-                               Specify the spatial reference in which map should be printed. When
+        spatial_reference      Optional Dictionary.Specify the spatial reference in which map should be printed. When
                                not specified, the following is the order of precedence:
 
-                                 - read from the ``extent`` parameter
-                                 - read from the base map layer of your web map
-                                 - read from the ``layout_template`` chosen
+                               - read from the ``extent`` parameter
+                               - read from the base map layer of your web map
+                               - read from the ``layout_template`` chosen
         ------------------     --------------------------------------------------------------------
-        layout_template        | Optional `string <https://docs.python.org/3/tutorial/introduction.html#strings>`_.
-                               The default value ``MAP_ONLY`` does not use any template. To get the
+        layout_template        Optional String. The default value ``MAP_ONLY`` does not use any template. To get the
                                list of available templates run :meth:`~arcgis.mapping.get_layout_templates()`.
         ------------------     --------------------------------------------------------------------
-        time_extent            | Optional `list <https://docs.python.org/3/tutorial/introduction.html#lists>`_.
-                               If there is a time-aware layer and you want it
+        time_extent            Optional List . If there is a time-aware layer and you want it
                                to be drawn at a specified time, specify this property. This order
                                list can have one or two elements. Add two elements (``startTime``
                                followed by ``endTime``) to represent a time extent, or provide
@@ -2105,8 +2406,7 @@ class WebMap(HasTraits, collections.OrderedDict):
 
                                    >>> time_extent = [1199145600000, 1230768000000]
         ------------------     --------------------------------------------------------------------
-        layout_options         | Optional `dictionary <https://docs.python.org/3/tutorial/datastructures.html?highlight=dictionary#dictionaries>`_.
-                               This defines settings for different available page layout elements
+        layout_options         Optional Dictionary. This defines settings for different available page layout elements
                                and is only needed when an available ``layout_template`` is chosen.
                                Page layout elements include ``title``, ``copyright text``,
                                ``scale bar``, ``author name``, and ``custom text elements``.
@@ -2201,8 +2501,8 @@ class PackagingJob(object):
     ================  ===============================================================
     **Argument**      **Description**
     ----------------  ---------------------------------------------------------------
-    future            Required ``current.futures.Future`` object. The async object created by
-                      the ``geoprocessing`` (GP) task.
+    future            Required `Future <https://docs.python.org/3/library/concurrent.futures.html>`_ object. The async object created by
+                      the ``geoprocessing`` :class:`~arcgis.geoprocessing.GPTask`.
     ----------------  ---------------------------------------------------------------
     notify            Optional Boolean.  When set to ``True``, a message will inform the
                       user that the ``geoprocessing`` task has completed. The default is
@@ -2234,7 +2534,7 @@ class PackagingJob(object):
         The ``ellapse_time`` property retrieves the ``Ellapse Time`` for the ``Job``.
 
         :return:
-            The Ellapsed Time
+            The elapsed time
 
         """
         if self._end_time:
@@ -2355,7 +2655,7 @@ class OfflineMapAreaManager(object):
     .. note::
         Users should not instantiate this class
         directly, instead, should access the methods exposed by accessing the
-        :attr:`~arcgis.mapping.WebMap.offline_area` property on the :class:`~arcgis.mapping.WebMap`
+        :attr:`~arcgis.mapping.WebMap.offline_areas` property on the :class:`~arcgis.mapping.WebMap`
         object.
     """
 
@@ -2410,16 +2710,18 @@ class OfflineMapAreaManager(object):
 
                                If property is present, must be one of the following values:
 
-                               Allowed Values: [features, features_and_attachments, None]
+                               Allowed Values:
+
+                                    features, features_and_attachments, None
         ------------------     --------------------------------------------------------------------
         sync                   `sync` applies to editing layers only.  This string value indicates
                                how the data is synced.
 
                                Allowed Values:
 
-                               sync_features_and_attachments  - bidirectional sync
-                               sync_features_upload_attachments - bidirection sync for feaures but upload only for attachments
-                               upload_features_and_attachments - upload only for both features and attachments (initial replica is just a schema)
+                                   ``sync_features_and_attachments``  - bidirectional sync
+                                   ``sync_features_upload_attachments`` - bidirectional sync for features but upload only for attachments
+                                   ``upload_features_and_attachments`` - upload only for both features and attachments (initial replica is just a schema)
 
 
         ------------------     --------------------------------------------------------------------
@@ -2489,7 +2791,7 @@ class OfflineMapAreaManager(object):
 
     # ----------------------------------------------------------------------
     @offline_properties.setter
-    def offline_properties(self, values):
+    def offline_properties(self, values: dict[str, Any]):
         """
         See main ``offline_properties`` property docstring.
         """
@@ -2589,25 +2891,28 @@ class OfflineMapAreaManager(object):
         import concurrent.futures
 
         tp = concurrent.futures.ThreadPoolExecutor(1)
-        future = tp.submit(fn=fn, **inputs)
+        try:
+            future = tp.submit(fn=fn, **inputs)
+        except:
+            future = tp.submit(fn, **inputs)
         tp.shutdown(False)
         return future
 
     # ----------------------------------------------------------------------
     def create(
         self,
-        area,
-        item_properties=None,
-        folder=None,
-        min_scale=None,
-        max_scale=None,
-        layers_to_ignore=None,
-        refresh_schedule="Never",
-        refresh_rates=None,
-        enable_updates=False,
-        ignore_layers=None,
-        tile_services=None,
-        future=False,
+        area: Union[str, list, dict[str, Any]],
+        item_properties: Optional[dict[str, Any]] = None,
+        folder: Optional[str] = None,
+        min_scale: Optional[int] = None,
+        max_scale: Optional[int] = None,
+        layers_to_ignore: Optional[list[str]] = None,
+        refresh_schedule: str = "Never",
+        refresh_rates: Optional[dict[str, int]] = None,
+        enable_updates: bool = False,
+        ignore_layers: Optional[list[str]] = None,
+        tile_services: Optional[list[dict[str, str]]] = None,
+        future: bool = False,
     ):
         """
 
@@ -2626,31 +2931,32 @@ class OfflineMapAreaManager(object):
         ------------------     --------------------------------------------------------------------
         area                   Required object.  Bookmark or extent. Specify as either:
 
-                                   + bookmark name
+                               + bookmark name
 
-                                    .. code-block:: python
+                                 .. code-block:: python
 
-                                        >>> area = 'Bookmark1'
+                                    >>> area = 'Bookmark1'
 
-                                    .. note:: `WebMap.definition.bookmarks` returns list of bookmarks.
+                                 .. note:: :attr:`~arcgis.mapping.WebMap.bookmarks` returns list of bookmarks.
 
-                                   + list of coordinate pairs:
 
-                                    .. code-block:: python
+                               + list of coordinate pairs:
 
-                                        >>> area = [['xmin', 'ymin'], ['xmax', 'ymax']]
+                                 .. code-block:: python
 
-                                   + dictionary:
+                                    >>> area = [['xmin', 'ymin'], ['xmax', 'ymax']]
 
-                                    .. code-block:: python
+                               + dictionary:
 
-                                        >>> area = {
-                                                    'xmin': <value>,
-                                                    'ymin': <value>,
-                                                    'xmax': <value>,
-                                                    'ymax': <value>,
-                                                    'spatialReference' : {'wkid' : <value>}
-                                                   }
+                                 .. code-block:: python
+
+                                    >>> area = {
+                                                'xmin': <value>,
+                                                'ymin': <value>,
+                                                'xmax': <value>,
+                                                'ymax': <value>,
+                                                'spatialReference' : {'wkid' : <value>}
+                                               }
 
                                .. note::
                                     If spatial reference is not specified, it is assumed 'wkid': 4326.
@@ -2661,11 +2967,11 @@ class OfflineMapAreaManager(object):
         folder                 Optional string. Specify a folder name if you want the offline map
                                area item and the packages to be created inside a folder.
         ------------------     --------------------------------------------------------------------
-        min_scale              Optional number. Specify the minimum scale to cache tile and vector
+        min_scale              Optional integer. Specify the minimum scale to cache tile and vector
                                tile layers. When zoomed out beyond this scale, cached layers would
                                not display.
         ------------------     --------------------------------------------------------------------
-        max_scale              Optional number. Specify the maximum scale to cache tile and vector
+        max_scale              Optional integer. Specify the maximum scale to cache tile and vector
                                tile layers. When zoomed in beyond this scale, cached layers would
                                not display.
         ------------------     --------------------------------------------------------------------
@@ -2678,10 +2984,10 @@ class OfflineMapAreaManager(object):
 
                                The following are valid variables:
 
-                                    + ``Never`` - never refreshes the offline package (default)
-                                    + ``Daily`` - refreshes everyday
-                                    + ``Weekly`` - refreshes once a week
-                                    + ``Monthly`` - refreshes once a month
+                               + ``Never`` - never refreshes the offline package (default)
+                               + ``Daily`` - refreshes everyday
+                               + ``Weekly`` - refreshes once a week
+                               + ``Monthly`` - refreshes once a month
 
         ------------------     --------------------------------------------------------------------
         refresh_rates          Optional dict. This parameter allows for the customization of the
@@ -2698,7 +3004,8 @@ class OfflineMapAreaManager(object):
 
                                - hour - a value between 0-23 (integers)
                                - minute a value between 0-60 (integers)
-                               - nthday - this is used for monthly only. This say the refresh will occur on the 'x' day of the month.
+                               - nthday - this is used for monthly only. This say the refresh will occur
+                                 on the 'x' day of the month.
                                - day_of_week - a value between 0-6 where 0 is Sunday and 6 is Saturday.
 
                                .. code-block:: python
@@ -2745,13 +3052,15 @@ class OfflineMapAreaManager(object):
                                                          "levels": "17,18,19"
                                                         }
                                                        ]
-
+        ------------------     --------------------------------------------------------------------
+        future                 Optional boolean. If True, a future object will be returned and the process
+                               will not wait for the task to complete. The default is False, which means wait for results.
         ==================     ====================================================================
 
         .. note::
             Your ``min_scale`` value is always bigger in value than your ``max_scale``.
 
-        **Key:** ``Value Dictionary Options`` for **Argument:** ``item_properties``
+        Key:Value Dictionary options for argument ``item_properties``
 
         =================  =====================================================================
         **Key**            **Value**
@@ -3366,7 +3675,12 @@ class OfflineMapAreaManager(object):
         return _gis.Item(gis=self._gis, itemid=oma_result)
 
     # ----------------------------------------------------------------------
-    def modify_refresh_schedule(self, item, refresh_schedule=None, refresh_rates=None):
+    def modify_refresh_schedule(
+        self,
+        item: _gis.Item,
+        refresh_schedule: Optional[str] = None,
+        refresh_rates: Optional[dict[str, int]] = None,
+    ):
         """
         The ``modify_refresh_schedule`` method modifies an existing offline package's refresh schedule.
 
@@ -3380,22 +3694,22 @@ class OfflineMapAreaManager(object):
 
                                          The following are valid variables:
 
-                                            + Never - never refreshes the offline package (default)
-                                            + Daily - refreshes everyday
-                                            + Weekly - refreshes once a week
-                                            + Monthly - refreshes once a month
+                                         + Never - never refreshes the offline package (default)
+                                         + Daily - refreshes everyday
+                                         + Weekly - refreshes once a week
+                                         + Monthly - refreshes once a month
         ----------------------------     --------------------------------------------------------------------
         refresh_rates                    Optional dict. This parameter allows for the customization of the
                                          scheduler. Note all time is in UTC.
 
                                          The dictionary accepts the following:
 
-                                         {
-                                         "hour" : 1
-                                         "minute" = 0
-                                         "nthday" = 3
-                                         "day_of_week" = 0
-                                         }
+                                             {
+                                             "hour" : 1
+                                             "minute" = 0
+                                             "nthday" = 3
+                                             "day_of_week" = 0
+                                             }
 
                                          - hour - a value between 0-23 (integers)
                                          - minute a value between 0-60 (integers)
@@ -3404,20 +3718,20 @@ class OfflineMapAreaManager(object):
 
                                          Example **Daily**:
 
-                                         {
-                                         "hour": 10,
-                                         "minute" : 30
-                                         }
+                                             {
+                                             "hour": 10,
+                                             "minute" : 30
+                                             }
 
                                          This means every day at 10:30 AM UTC
 
                                          Example **Weekly**:
 
-                                         {
-                                         "hour" : 23,
-                                         "minute" : 59,
-                                         "day_of_week" : 4
-                                         }
+                                             {
+                                             "hour" : 23,
+                                             "minute" : 59,
+                                             "day_of_week" : 4
+                                             }
 
                                          This means every Wednesday at 11:59 PM UTC
 
@@ -3427,9 +3741,9 @@ class OfflineMapAreaManager(object):
             A boolean indicating success (True), or failure (False)
 
 
-        ## Updates Offline Package Building Everyday at 10:30 AM UTC
-
         .. code-block:: python
+
+            ## Updates Offline Package Building Everyday at 10:30 AM UTC
 
             gis = GIS(profile='owner_profile')
             item = gis.content.get('9b93887c640a4c278765982aa2ec999c')
@@ -3563,7 +3877,9 @@ class OfflineMapAreaManager(object):
         return self._item.related_items("Map2Area", "forward")
 
     # ----------------------------------------------------------------------
-    def update(self, offline_map_area_items=None, future=False):
+    def update(
+        self, offline_map_area_items: Optional[list] = None, future: bool = False
+    ):
         """
         The ``update`` method refreshes existing map area packages associated with the list of ``Map Area`` items
         specified.
@@ -3572,7 +3888,7 @@ class OfflineMapAreaManager(object):
 
         .. note::
             - Offline map area functionality is only available if your :class:`~arcgis.gis.GIS` is ArcGIS Online.
-            - You need to be the owner of the web map or an administrator of your ``GIS``.
+            - You need to be the owner of the web map or an administrator of your :class:`~arcgis.gis.GIS`.
 
         ============================     ====================================================================
         **Argument**                     **Description**
@@ -3602,7 +3918,7 @@ class OfflineMapAreaManager(object):
                env.verbose = True
         """
         # find if 1 or a list of area items is provided
-        if isinstance(offline_map_area_items, arcgis.gis.Item):
+        if isinstance(offline_map_area_items, _gis.Item):
             offline_map_area_items = [offline_map_area_items]
         elif isinstance(offline_map_area_items, str):
             offline_map_area_items = [offline_map_area_items]
@@ -3620,7 +3936,7 @@ class OfflineMapAreaManager(object):
 
         else:
             for offline_map_area_item in offline_map_area_items:
-                if isinstance(offline_map_area_item, arcgis.gis.Item):
+                if isinstance(offline_map_area_item, _gis.Item):
                     _related_packages.extend(
                         offline_map_area_item.related_items("Area2Package", "forward")
                     )
@@ -3655,7 +3971,7 @@ class OfflineMapAreaManager(object):
 ###########################################################################
 class WebScene(collections.OrderedDict):
     """
-    The ``WebScene``represents a web scene and provides access to its basemaps and operational layers as well
+    The ``WebScene`` represents a web scene and provides access to its basemaps and operational layers as well
     as functionality to visualize and interact with them.
 
     If you would like more robust webscene authoring functionality,
@@ -3704,32 +4020,62 @@ class WebScene(collections.OrderedDict):
 ###########################################################################
 class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
     """
-    The ``VectorTileLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise hosted vector tile layers.
+    The ``EnterpriseVectorTileLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise hosted vector tile layers.
+    A Hosted Vector Tile Service is published through a Feature Layer and these methods can only be
+    applied to such Vector Tile Services.
     A :class:`~arcgis.mapping.VectorTileLayer` offers access to layer content.
 
-    ..note:: Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/VectorTileServer/
+    .. note:: Url must be admin url such as: ``https://services.myserver.com/arcgis/server/admin/services/serviceName.VectorTileServer/``
     """
+
+    _gptbx = None
 
     def __init__(self, url, gis=None, vect_tile_lyr=None):
         if url.split("/")[-1].isdigit():
             url = url.replace(f"/{url.split('/')[-1]}", "")
-        if gis._is_agol and gis.version <= [8, 4]:
+        if gis.version <= [8, 4]:
             raise Warning("Manager not available. Update version of Enterprise")
         super(EnterpriseVectorTileLayerManager, self).__init__(url, gis)
         self._vtl = vect_tile_lyr
+        self._is_hosted = self.properties["portalProperties"]["isHosted"]
 
     # ----------------------------------------------------------------------
     def edit(self, service_dictionairy):
         """
-        To edit a service, you need to submit the complete JSON
-        representation of the service, which includes the updates to the
-        service properties. Editing a service causes the service to be
-        restarted with updated properties.
+        This operation edits the properties of a service. To edit a service,
+        you need to submit the complete JSON representation of the service,
+        which includes the updates to the service properties.
+        Editing a service can cause the service to be restarted with updated properties.
+
+        The JSON representation of a service contains the following four sections:
+
+        * Service description properties—Common properties that are shared by all services. These properties typically identify a specific service.
+        * Service framework properties—Properties targeted toward the framework that hosts the GIS service. They define the life cycle and load balancing of the service.
+        * Service type properties—Properties targeted toward the core service type as seen by the server administrator. Since these properties are associated with a server object, they vary across the service types.
+        * Extension properties—Represent the extensions that are enabled on the service.
+
+        .. note::
+            The JSON is submitted to the operation URL as a value of the
+            parameter service. You can leave out the serviceName and type parameters
+            in the JSON representation. Any other properties that are left out are not persisted by the server.
 
         ===================     ====================================================================
         **Argument**            **Description**
         -------------------     --------------------------------------------------------------------
-        service_dictionairy     Required dict. The service JSON as a dictionary.
+        service_dictionary      Required dict. The JSON representation of the service and the
+                                properties that have been updated or added.
+
+                                Example:
+
+                                    |    {
+                                    |        "serviceName": "RI_Fed2019_WM",
+                                    |        "type": "VectorTileServer",
+                                    |        "description": "",
+                                    |        "capabilities": "TilesOnly,Tilemap",
+                                    |        "extensions": [],
+                                    |        "frameworkProperties": {},
+                                    |        "datasets": []
+                                    |        }
         ===================     ====================================================================
 
 
@@ -3740,206 +4086,249 @@ class EnterpriseVectorTileLayerManager(arcgis.gis._GISResource):
 
     # ----------------------------------------------------------------------
     def start(self):
-        """starts the specific service"""
+        """This operation starts a service and loads the service's configuration."""
         vtl_service = _services.Service(self.url, self._gis)
         return vtl_service.start()
 
     # ----------------------------------------------------------------------
     def stop(self):
-        """stops the specific service"""
+        """
+        This operation stops all instances of a service. Once a service is
+        stopped, it cannot process any incoming requests. Performing this
+        operation will stop the respective servers, terminating all pods
+        that run this service.
+        """
         vtl_service = _services.Service(self.url, self._gis)
         return vtl_service.stop()
 
     # ----------------------------------------------------------------------
     def change_provider(self, provider: str):
         """
-        Allows for the switching of the service provide and how it is hosted on the ArcGIS Server instance.
+        The changeProvider operation updates an individual service to use
+        either a dedicated or a shared instance type. When a qualified service
+        is published, the service is automatically set to use shared instances.
 
-        Values:
+        When using this operation, services may populate other provider types
+        as values for the provider parameter, such as ArcObjects and SDS.
+        While these are valid provider types, this operation does not support
+        changing the provider of such services to either ArcObjects11 or DMaps.
+        Services with ArcObjects or SDS as their provider cannot change their instance type.
 
-           + 'ArcObjects' means the service is running under the ArcMap runtime i.e. published from ArcMap
-           + `ArcObjects`: means the service is running under the ArcGIS Pro runtime i.e. published from ArcGIS Pro
-           + `DMaps`: means the service is running in the shared instance pool (and thus running under the ArcGIS Pro provider runtime)
+        ======================      =======================================================
+        **Argument**                **Description**
+        ----------------------      -------------------------------------------------------
+        provider                    Optional String. Specifies the service instance as either
+                                    a shared ("DMaps") or dedicated ("ArcObjects11") instance
+                                    type. These values are case sensitive.
+        ======================      =======================================================
 
         :return: Boolean
 
         """
-        vtl_service = _services.Service(self.url, self._gis)
-        return vtl_service.change_provider(provider)
+        if provider in ["ArcObjects11", "DMaps"]:
+            vtl_service = _services.Service(self.url, self._gis)
+            return vtl_service.change_provider(provider)
+        return False
 
     # ----------------------------------------------------------------------
     def delete(self):
-        """deletes a service from arcgis server"""
+        """
+        This operation deletes an individual service, stopping the service
+        and removing all associated resources and configurations.
+        """
         vtl_service = _services.Service(self.url, self._gis)
         return vtl_service.delete()
+
+    # ----------------------------------------------------------------------
+    @property
+    def _tbx(self):
+        """gets the toolbox"""
+        if self._gptbx is None:
+            self._gptbx = import_toolbox(
+                url_or_item=self._gis.hosting_servers[0].url
+                + "/System/CachingControllers/GPServer",
+                gis=self._gis,
+            )
+            self._gptbx._is_fa = True
+        return self._gptbx
+
+    # ----------------------------------------------------------------------
+    def rebuild_cache(self, min_scale=None, max_scale=None):
+        """
+        The rebuild_cache operation update the scene layer cache to reflect
+        any changes made to the feature layer used to publish this scene layer.
+        The results of the operation is the url to the scene service once it is
+        done rebuilding.
+
+        ======================      =======================================================
+        **Argument**                **Description**
+        ----------------------      -------------------------------------------------------
+        min_scale                   Optional Float. Represents the minimum scale of the tiles.
+                                    If nothing is provided, default value is used.
+        ----------------------      -------------------------------------------------------
+        max_scale                   Optional Float. Represents the maximum scale of the tiles.
+                                    If nothing is provided, default value is used.
+        ======================      =======================================================
+        """
+        return self._tbx.manage_vector_tile_cache(
+            service_name=self.properties.serviceName,
+            service_folder="Hosted",
+            min_scale=min_scale,
+            max_scale=max_scale,
+        )
 
 
 ###########################################################################
 class VectorTileLayerManager(arcgis.gis._GISResource):
     """
-    The ``VectorTileLayerManager`` class allows administration (if access permits) of ArcGIS Online hosted vector tile layers.
+    The ``VectorTileLayerManager`` class allows administration (if access permits) of ArcGIS Online Hosted Vector Tile Layers.
+    A Hosted Vector Tile Service is published through a Feature Layer and these methods can only be
+    applied to such Vector Tile Services.
     A :class:`~arcgis.mapping.VectorTileLayer` offers access to layer content.
 
     .. note::
-        Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/VectorTileServer/
+        Url must be admin url such as: ``https://services.myserver.com/arcgis/rest/admin/services/serviceName/VectorTileServer/``
     """
 
     def __init__(self, url, gis=None, vect_tile_lyr=None):
         if url.split("/")[-1].isdigit():
             url = url.replace(f"/{url.split('/')[-1]}", "")
-        if gis._is_agol and gis.version <= [8, 4]:
-            raise Warning("Manager not available. Update version of Enterprise")
         super(VectorTileLayerManager, self).__init__(url, gis)
         self._vtl = vect_tile_lyr
+        self._source_type = (
+            self.properties["sourceType"]
+            if "sourceType" in self.properties
+            else self.properties["sourceServiceType"]
+        )
 
     # ----------------------------------------------------------------------
-    def refresh(self):
+    def edit_tile_service(
+        self,
+        source_item_id: str | None = None,
+        export_tiles_allowed: bool | None = None,
+        min_scale: float | None = None,
+        max_scale: float | None = None,
+        max_export_tile_count: int | None = None,
+        layers: list[dict] | None = None,
+        cache_max_age: int | None = None,
+        max_zoom: int | None = None,
+    ) -> dict:
         """
-        The refresh operation clears and refreshes the service cache.
-        """
-        if self._gis._is_agol:
-            url = self._url + "/refresh"
-            params = {"f": "json"}
-            res = self._con.post(path=url, params=params)
-            return res
-        else:
-            raise Exception("Refresh method is not available for Enterprise Service.")
+        The edit operation enables editing many parameters in the service definition as well as
+        the source_item_id which can be found by looking at the Vector Tile Layer's related items.
 
-    # ----------------------------------------------------------------------
-    def rebuild_cache(self):
-        """
-        The rebuild_cache operation update the vector tile layer cache to reflect
-        any changes made to the feature layer used to publish this vector tile layer.
-        The results of the operation is a response indicating success, which
-        redirects you to the Job Statistics page, or failure.
-        """
-        if self._gis._is_agol:
-            url = self._url + "/rebuildCache"
-            params = {"f": "json"}
-            return self._con.get(url, params)
-        else:
-            raise Exception(
-                "Rebuild cache method is not available for Enterprise Service."
-            )
-
-    # ----------------------------------------------------------------------
-    def swap(self, target_service_name):
-        """
-        The swap operation replaces the current service cache with an existing one.
-
-        .. note::
-            The ``swap`` operation is for ArcGIS Online only.
-
-        ====================        ====================================================
+        ======================      =======================================================
         **Argument**                **Description**
-        --------------------        ----------------------------------------------------
-        target_service_name         Required string. Name of service you want to swap with.
-        ====================        ====================================================
+        ----------------------      -------------------------------------------------------
+        source_item_id              Optional String. The Source Item ID is the GeoWarehouse
+                                    Item ID of the tile service.
+        ----------------------      -------------------------------------------------------
+        export_tiles_allowed        Optional boolean. ``exports_tiles_allowed`` sets
+                                    the value to let users export tiles
+        ----------------------      -------------------------------------------------------
+        min_scale                   Optional float. Sets the services minimum scale for
+                                    caching. At the moment this parameter can only be set if
+                                    the Vector Tile Layer was published through a service directory.
+        ----------------------      -------------------------------------------------------
+        max_scale                   Optional float. Sets the services maximum scale for
+                                    caching. At the moment this parameter can only be set if
+                                    the Vector Tile Layer was published through a service directory.
+        ----------------------      -------------------------------------------------------
+        max_export_tile_count       Optional int. ``max_export_tile_count`` sets the
+                                    maximum amount of tiles to be exported from a single
+                                    call.
+        ----------------------      -------------------------------------------------------
+        layers                      Optional list of dictionaries. Each dict representing a layer.
 
-        :returns: dictionary indicating success or error
+                                    Syntax Example:
 
+                                        | layers = [{
+                                        |        "name": "Layer Name",
+                                        |        "id": 1159321,
+                                        |        "layerId": 0,
+                                        |        "tableName": "tableName",
+                                        |        "type": "Feature Layer",
+                                        |        "xssTrustedFields": ""
+                                        |    }]
+        ----------------------      -------------------------------------------------------
+        cache_max_age               Optional int. The maximum cache age. At the moment this
+                                    parameter can only be set if the Vector Tile Layer was
+                                    published through a feature service.
+        ----------------------      -------------------------------------------------------
+        max_zoom                    Optional int. The maximum zoom level. At the moment this
+                                    parameter can only be set if the Vector Tile Layer was
+                                    published through a feature service.
+        ======================      =======================================================
+
+        .. code-block:: python
+
+            # USAGE EXAMPLE
+
+            >>> from arcgis.mapping import VectorTileLayer
+            >>> from arcgis.gis import GIS
+
+            # connect to your GIS and get the tile layer item
+            >>> gis = GIS(url, username, password)
+
+            >>> vector_layer_item = gis.content.get('abcd_item-id')
+            >>> source_item_id = vector_tile_item.related_items(rel_type="Service2Data", direction="forward")[0]["id"]
+            >>> vector_tile_layer = VectorTileLayer.fromitem(vector_layer_item)
+            >>> vtl_manager = vector_tile_layer.manager
+            >>> vtl_manager.edit_tile_service(
+                                            min_scale = 50,
+                                            max_scale = 100,
+                                            source_item_id = source_item_id,
+                                            export_tiles_allowed = True,
+                                            max_Export_Tile_Count = 10000
+                                            )
         """
-        if self._gis._is_agol:
-            url = self._url + "/swap"
-            params = {"f": "json", "targetServiceName": target_service_name}
-            return self._con.post(url, params)
-        else:
-            raise Exception("Swap method is not available for Enterprise Service.")
+        # Parameters depend on how the vector tile layer was published.
+        feature_service_pub = True if self._source_type is "FeatureServer" else False
+
+        params = {
+            "f": "json",
+            "serviceDefinition": {},
+        }
+        if max_export_tile_count:
+            params["serviceDefinition"]["maxExportTilesCount"] = max_export_tile_count
+        if export_tiles_allowed and export_tiles_allowed in [True, False]:
+            params["serviceDefinition"]["exportTilesAllowed"] = export_tiles_allowed
+        if source_item_id:
+            params["sourceItemId"] = source_item_id
+        if layers:
+            params["serviceDefinition"]["layerProperties"] = {"layers": layers}
+
+        # These parameters depend on publish source.
+        if min_scale and feature_service_pub is False:
+            params["serviceDefinition"]["minScale"] = min_scale
+        if max_scale and feature_service_pub is False:
+            params["serviceDefinition"]["maxScale"] = max_scale
+        if cache_max_age and feature_service_pub is True:
+            params["serviceDefinition"]["cacheMaxAge"] = cache_max_age
+        if max_zoom and feature_service_pub is False:
+            params["serviceDefinition"]["maxZoom"] = max_zoom
+
+        # endpoint and post call
+        url = self._url + "/edit"
+        return self._con.post(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def status(self):
-        """
-        The status operation returns whether a service is started (available) or stopped.
-        """
-        return self.properties.status
-
-    # ----------------------------------------------------------------------
-    def jobs(self):
-        """
-        The tile service job summary (jobs) resource represents a
-        summary of all jobs associated with a vector tile service.
-        Each job contains a jobid that corresponds to the specific
-        jobid run and redirects you to the Job Statistics page.
-
-        """
-        if self._gis._is_agol:
-            url = self._url + "/jobs"
-            params = {"f": "json"}
-            return self._con.get(url, params)
-        else:
-            raise Exception("Jobs method is not available for Enterprise Service.")
-
-    # ----------------------------------------------------------------------
-    def job_statistics(self, job_id):
-        """
-        The tile service job summary (jobs) resource represents a
-        summary of all jobs associated with a vector tile service.
-        Each job contains a jobid that corresponds to the specific
-        jobid run and redirects you to the Job Statistics page.
-
-        """
-        if self._gis._is_agol:
-            url = self._url + "/jobs/{job_id}".format(job_id=job_id)
-            params = {"f": "json"}
-            return self._con.post(url, params)
-        else:
-            raise Exception(
-                "Job statistics method is not available for Enterprise Service."
-            )
-
-    # ----------------------------------------------------------------------
-    def delete_job(self, job_id):
-        """
-        This operation deletes the specified asynchronous job being run by
-        the geoprocessing service. If the current status of the job is
-        SUBMITTED or EXECUTING, it will cancel the job. Regardless of status,
-        it will remove all information about the job from the system. To cancel a
-        job in progress without removing information, use the Cancel Job operation.
-        """
-        if self._gis._is_agol:
-            url = self._url + "jobs/{job_id}/delete".format(job_id=job_id)
-            params = {"f": "json"}
-            return self._con.post(url, params)
-        else:
-            raise Exception(
-                "Delete job method is not available for Enterprise Service."
-            )
-
-    # ----------------------------------------------------------------------
-    def cancel_job(self, job_id):
-        """
-        The cancel operation supports cancelling a job while update
-        tiles is running from a hosted feature service. The result of this
-        operation is a response indicating success or failure with error
-        code and description.
-        """
-        if self._gis._is_agol:
-            url = self._url + "jobs/{job_id}/cancel".format(job_id=job_id)
-            params = {"f": "json"}
-            return self._con.post(url, params)
-        else:
-            raise Exception("Refresh method is not available for Enterprise Service.")
-
-    # ----------------------------------------------------------------------
-    def update_tiles(self, levels=None, extent=None):
+    def update_tiles(self, merge_bundle: bool = False) -> dict:
         """
         The update_tiles operation supports updating the cooking extent and
-        cache levels in a hosted vector tile service. The results of the
-        operation is a response indicating success, which redirects you
+        cache levels in a Hosted Vector Tile Service. The results of the
+        operation is a response indicating success and a url
         to the Job Statistics page, or failure.
 
-        .. note::
-            The ``update_tiles`` operation is for ArcGIS Online only.
+        It is recommended to use the `rebuild_cache` method when your layer has been
+        published through a Feature Layer since edits require regeneration of the tiles.
 
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
-        levels              Optional String / List of integers, The level of details
-                            to update. Example: "1,2,10,20" or [1,2,10,20]
-        ---------------     ----------------------------------------------------
-        extent              Optional String / Dict. The area to update as Xmin, YMin, XMax, YMax
-                            example: "-100,-50,200,500" or
-                            {'xmin':100, 'ymin':200, 'xmax':105, 'ymax':205}
+        merge_bundle        Optional bool. Default is False. This parameter will
+                            only be set if the Vector Tile Layer has been published
+                            through a service directory.
         ===============     ====================================================
 
         :returns:
@@ -3958,39 +4347,105 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
             >>> vector_layer_item = gis.content.get('abcd_item-id')
             >>> vector_tile_layer = VectorTileLayer.fromitem(vector_layer_item)
             >>> vtl_manager = vector_tile_layer.manager
-            >>> update_tiles = vtl_manager.update_tiles(levels = "11-20",
-                                                        extent = {"xmin":6224324.092137296,
-                                                                    "ymin":487347.5253569535,
-                                                                    "xmax":11473407.698535524,
-                                                                    "ymax":4239488.369818687,
-                                                                    "spatialReference":{"wkid":102100}
-                                                                    }
-                                                        )
+            >>> update_tiles = vtl_manager.update_tiles()
             >>> type(update_tiles)
             <Dictionary>
         """
-        if self._gis._portal.is_arcgisonline:
+        # Parameters depend on how the vector tile layer was published.
+        feature_service_pub = True if self._source_type is "FeatureServer" else False
+
+        params = {"f": "json"}
+        if feature_service_pub:
+            url = "%s/updateTiles" % self._url
+        else:
             url = "%s/update" % self._url
-            params = {"f": "json"}
-            if levels:
-                if isinstance(levels, list):
-                    levels = ",".join(str(e) for e in levels)
-                params["levels"] = levels
-            if extent:
-                if isinstance(extent, dict):
-                    extent2 = "{},{},{},{}".format(
-                        extent["xmin"],
-                        extent["ymin"],
-                        extent["xmax"],
-                        extent["ymax"],
-                    )
-                    extent = extent2
-                params["extent"] = extent
-            return self._con.post(url, params)
-        return None
+            params["mergeBundles"] = merge_bundle
+        return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def rerun_job(self, code, job_id):
+    def refresh(self):
+        """
+        The refresh operation clears and refreshes the service cache.
+        """
+        url = self._url + "/refresh"
+        params = {"f": "json"}
+        return self._con.post(path=url, params=params)
+
+    # ----------------------------------------------------------------------
+    def rebuild_cache(self):
+        """
+        The rebuild_cache operation update the vector tile layer cache to reflect
+        any changes made to the feature layer used to publish this vector tile layer.
+        The results of the operation is a response indicating success, which
+        redirects you to the Job Statistics page, or failure.
+        """
+        url = self._url + "/rebuildCache"
+        params = {"f": "json"}
+        return self._con.get(url, params)
+
+    # ----------------------------------------------------------------------
+    def status(self) -> dict:
+        """
+        The status operation returns a dictionary indicating
+        whether a service is started (available) or stopped.
+        """
+        url = self._url + "/status"
+        params = {"f": "json"}
+        return self._con.get(url, params)
+
+    # ----------------------------------------------------------------------
+    def jobs(self) -> dict:
+        """
+        The tile service job summary (jobs) resource represents a
+        summary of all jobs associated with a vector tile service.
+        Each job contains a jobid that corresponds to the specific
+        jobid run and redirects you to the Job Statistics page.
+
+        """
+        url = self._url + "/jobs"
+        params = {"f": "json"}
+        return self._con.get(url, params)
+
+    # ----------------------------------------------------------------------
+    def job_statistics(self, job_id: str) -> dict:
+        """
+        The tile service job summary (jobs) resource represents a
+        summary of all jobs associated with a vector tile service.
+        Each job contains a jobid that corresponds to the specific
+        jobid run and redirects you to the Job Statistics page.
+
+        """
+        url = self._url + "/jobs/{job_id}".format(job_id=job_id)
+        params = {"f": "json"}
+        return self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def delete_job(self, job_id: str) -> dict:
+        """
+        This operation deletes the specified asynchronous job being run by
+        the geoprocessing service. If the current status of the job is
+        SUBMITTED or EXECUTING, it will cancel the job. Regardless of status,
+        it will remove all information about the job from the system. To cancel a
+        job in progress without removing information, use the Cancel Job operation.
+        """
+        url = self._url + "jobs/{job_id}/delete".format(job_id=job_id)
+        params = {"f": "json"}
+        return self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def cancel_job(self, job_id: str) -> dict:
+        """
+        The cancel operation supports cancelling a job while update
+        tiles is running from a hosted feature service. The result of this
+        operation is a response indicating success or failure with error
+        code and description.
+        """
+        url = self._url + "jobs/{job_id}/cancel".format(job_id=job_id)
+        params = {"f": "json"}
+        return self._con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def rerun_job(self, code, job_id: str) -> dict:
         """
         The ``rerun_job`` operation supports re-running a canceled job from a
         hosted map service. The result of this operation is a response
@@ -4009,135 +4464,41 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
         :returns:
            A boolean or dictionary
         """
-        if self._gis._is_agol:
-            url = self._url + "/jobs/%s/rerun" % job_id
-            params = {"f": "json", "rerun": code}
+        url = self._url + "/jobs/%s/rerun" % job_id
+        params = {"f": "json", "rerun": code}
+        return self._con.post(url, params)
+
+    ######################### These Methods Only Apply to VTL Service from a Service Directory #################################
+    def swap(self, target_service_name):
+        """
+        The swap operation replaces the current service cache with an existing one.
+
+        .. note::
+            The ``swap`` operation is for ArcGIS Online only and can only be used for a Vector
+            Tile Layer published from a service directory.
+
+        ====================        ====================================================
+        **Argument**                **Description**
+        --------------------        ----------------------------------------------------
+        target_service_name         Required string. Name of service you want to swap with.
+        ====================        ====================================================
+
+        :return: Dictionary indicating success or error
+        """
+        if self._source_type != "FeatureServer":
+            url = self._url + "/swap"
+            params = {"f": "json", "targetServiceName": target_service_name}
             return self._con.post(url, params)
-        else:
-            raise Exception("Refresh method is not available for Enterprise Service.")
+        return None
 
     # ----------------------------------------------------------------------
-    def edit_tile_service(
-        self,
-        source_item_id=None,
-        export_tiles_allowed=None,
-        min_scale=None,
-        max_scale=None,
-        max_export_tile_count=None,
-        service_name=None,
-    ):
-        """
-        The edit operation enables editing the service exportTilesAllowed,
-        export_tile_count, max_scale, and min_scale properties. Allowed for
-        Enterprise and ArcGIS Online
-
-        ======================     =======================================================
-        **Argument**               **Description**
-        ----------------------     -------------------------------------------------------
-        source_item_id             Required String. The Source Item ID is the GeoWarehouse
-                                   Item ID of the tile service
-        ----------------------     -------------------------------------------------------
-        export_tiles_allowed       Optional boolean. ``exports_tiles_allowed`` sets
-                                   the value to let users export tiles
-        ----------------------     -------------------------------------------------------
-        min_scale                  Optional float. Sets the services minimum scale for
-                                   caching.
-        ----------------------     -------------------------------------------------------
-        max_scale                  Optional float. Sets the services maximum scale for
-                                   caching.
-        ----------------------     -------------------------------------------------------
-        max_export_tile_count      Optional int. ``max_export_tile_count`` sets the
-                                   maximum amount of tiles to be exported from a single
-                                   call.
-        ----------------------     -------------------------------------------------------
-        service_name               Optional String. Name of the service to edit. This only
-                                   only applies for enterprise.
-        ======================     =======================================================
-
-        .. code-block:: python
-
-            # USAGE EXAMPLE
-
-            >>> from arcgis.mapping import VectorTileLayer
-            >>> from arcgis.gis import GIS
-
-            # connect to your GIS and get the tile layer item
-            >>> gis = GIS(url, username, password)
-
-            >>> vector_layer_item = gis.content.get('abcd_item-id')
-            >>> vector_tile_layer = VectorTileLayer.fromitem(vector_layer_item)
-            >>> vtl_manager = vector_tile_layer.manager
-            >>> vtl_manager.edit_tile_service(service_name = "vector_layer_name",
-                                                        min_scale = 50,
-                                                        max_scale = 100,
-                                                        source_item_id = "geowarehouse_item_id",
-                                                        export_tiles_allowed = True,
-                                                        max_Export_Tile_Count = 10000
-                                                        )
-        """
-        params = {
-            "f": "json",
-        }
-        # request sent to AGO Org
-        if self._gis._is_agol:
-            params = {
-                "minScale": 0.0,
-                "maxScale": 0.0,
-                "exportTilesAllowed": False,
-                "maxExportTilesCount": 100000,
-                "f": "json",
-            }
-
-            if min_scale:
-                params["minScale"] = float(min_scale)
-            else:
-                params.pop("minScale", None)
-            if max_scale:
-                params["maxScale"] = float(max_scale)
-            else:
-                params.pop("maxScale", None)
-            if export_tiles_allowed:
-
-                params["exportTilesAllowed"] = export_tiles_allowed
-            else:
-                params["exportTilesAllowed"] = self.properties.exportTilesAllowed
-
-            params["maxExportTilesCount"] = (
-                max_export_tile_count
-                if max_export_tile_count
-                else self.properties.maxExportTilesCount
-            )
-            if source_item_id:  # only online
-                params["sourceItemId"] = source_item_id
-        elif self._gis._is_agol == False:
-            params["runAsync"] = True
-            params["services"] = {
-                "type": "VectorTileServer",
-                "capabilities": "TilesOnly,Tilemap",
-                "serviceName": self.properties.name,
-            }
-            params["services"]["properties"] = {
-                "exportTilesAllowed": export_tiles_allowed
-            }
-            params["services"]["serviceName"] = self.properties.name
-        url = self._url + "/edit"
-        return self._con.post(path=url, params=params)
-
-    # ----------------------------------------------------------------------
-    def delete_tiles(self, levels, extent=None):
+    def delete_tiles(self):
         """
         The ``delete_tiles`` method deletes tiles from the current cache.
 
-        ===============     ====================================================
-        **Argument**        **Description**
-        ---------------     ----------------------------------------------------
-        extent              Optional dictionary,  If specified, the tiles within
-                            this extent will be deleted or will be deleted based
-                            on the service's full extent.
-        ---------------     ----------------------------------------------------
-        levels              Required string, The level to delete.
-                            Example, 0-5,10,11-20 or 1,2,3 or 0-5
-        ===============     ====================================================
+        .. note::
+            The ``delete_tiles`` operation is for ArcGIS Online only and can only
+            be used for a Vector Tile Layer published from a service directory.
 
         :return:
            A dictionary
@@ -4155,53 +4516,77 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
             >>> vector_layer_item = gis.content.get('abcd_item-id')
             >>> vector_tile_layer = VectorTileLayer.fromitem(vector_layer_item)
             >>> vtl_manager = vector_tile_layer.manager
-            >>> deleted_tiles = vtl_manager.delete_tiles(levels = "11-20",
-                                                  extent = {"xmin":6224324.092137296,
-                                                            "ymin":487347.5253569535,
-                                                            "xmax":11473407.698535524,
-                                                            "ymax":4239488.369818687,
-                                                            "spatialReference":{"wkid":102100}
-                                                            }
-                                                  )
+            >>> deleted_tiles = vtl_manager.delete_tiles()
             >>> type(deleted_tiles)
         """
-        if self._gis._is_agol:
+        if self._source_type != "FeatureServer":
             params = {
                 "f": "json",
-                "levels": levels,
             }
-            if extent:
-                params["extent"] = extent
-            url = self._url + "/deleteTiles"
+            url = self._url + "/delete"
             return self._con.post(url, params)
-        else:
-            raise Exception("Refresh method is not available for Enterprise Service.")
+        return None
 
 
 ###########################################################################
 class VectorTileLayer(arcgis.gis.Layer):
+    """
+    A Vector Tile Layer is a type of data layer used to access and display
+    tiled data and its corresponding styles. This is stored as an item in ArcGIS
+    and is used to access a vector tile service. Layer data include its
+    name, description, and any overriding style definition.
+    """
+
     def __init__(self, url, gis=None):
         super(VectorTileLayer, self).__init__(url, gis)
 
+    # ----------------------------------------------------------------------
     @classmethod
-    def fromitem(cls, item):
+    def fromitem(cls, item) -> VectorTileLayer:
         if not item.type == "Vector Tile Service":
             raise TypeError(
-                "item must be a type of Vector Tile Service, not " + item.type
+                "Item must be a type of Vector Tile Service, not " + item.type
             )
 
         return cls(item.url, item._gis)
 
     # ----------------------------------------------------------------------
     @property
-    def styles(self):
+    def styles(self) -> dict:
+        """
+        The styles property returns styles for vector tiles in Mapbox GL
+        Style specification version 8. The response for this styles resource
+        includes the sprite and glyphs properties, with a relative path
+        to the Vector Tile Sprite and Vector Tile Font resources.
+        It also includes the version property,
+        which represents the version of the style specification.
+        """
         url = "{url}/resources/styles".format(url=self._url)
         params = {"f": "json"}
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
     @property
-    def manager(self):
+    def tile_map(self) -> dict:
+        """
+        The tile_map property describes a quadtree of tiles and can be used to
+        avoid requesting tiles that don't exist in the server. Each node
+        of the tree has an associated tile. The root node (lod 0) covers
+        the entire extent of the data. Children are identified by their position
+        with NW, NE, SW, and SE. Tiles are identified by lod/h/v, where h and v
+        are indexes on a 2^lod by 2^lod grid . These values are derived from the
+        position in the tree. The tree has a variable depth. A node doesn't have
+        children if the complexity of the data in the associated tile is below
+        a threshold. This threshold is based on a combination of number of
+        features, attributes, and vertices.
+
+        """
+        url = "{url}/tilemap".format(url=self._url)
+        return self._con.get(path=url, params={})
+
+    # ----------------------------------------------------------------------
+    @property
+    def manager(self) -> VectorTileLayerManager:
         """
         The ``manager`` property returns an instance of :class:`~arcgis.mapping.VectorTileLayerManager` class or
         :class:`~arcgis.mapping.EnterpriseVectorTileLayerManager` class
@@ -4225,13 +4610,37 @@ class VectorTileLayer(arcgis.gis.Layer):
         return self._admin
 
     # ----------------------------------------------------------------------
-    def tile_fonts(self, fontstack, stack_range):
+    @property
+    def info(self) -> list:
         """
-         The ``tile_fonts`` method retrieves glyphs in
-         `protocol buffer format. <https://developers.google.com/protocol-buffers/>`_
+        The ``info`` property retrieves the relative paths to a list of resource files.
 
-         .. note::
-            The template url for this fonts resource is represented in Vector Tile Style resource.
+        :return:
+           A list of relative paths
+        """
+        url = "{url}/resources/info".format(url=self._url)
+        params = {"f": "json"}
+        res = self._con.get(path=url, params=params)
+        return res["resourceInfo"]
+
+    # ----------------------------------------------------------------------
+    def tile_fonts(self, fontstack: str, stack_range: str):
+        """
+        The ``tile_fonts`` method retrieves glyphs in
+        `protocol buffer format. <https://developers.google.com/protocol-buffers/>`_
+
+        ============================    ===================================================================================================================
+        **Argument**                    **Description**
+        ----------------------------    -------------------------------------------------------------------------------------------------------------------
+        fontstack                       Required string.
+
+                                        .. note::
+                                            The template url for this font resource is represented in the
+                                            `Vector Tile Style <https://developers.arcgis.com/rest/services-reference/enterprise/vector-tile-style.htm>`_
+                                            resource.
+        ----------------------------    -------------------------------------------------------------------------------------------------------------------
+        stack_range                     Required string that depict a range. Ex: "0-255"
+        ============================    ===================================================================================================================
 
         :return:
             Glyphs in PBF format
@@ -4243,7 +4652,7 @@ class VectorTileLayer(arcgis.gis.Layer):
         return self._con.get(path=url, params=params, force_bytes=True)
 
     # ----------------------------------------------------------------------
-    def vector_tile(self, level, row, column):
+    def vector_tile(self, level: int, row: int, column: int):
         """
         The ``vector_tile`` method represents a single vector tile for the map.
 
@@ -4251,7 +4660,19 @@ class VectorTileLayer(arcgis.gis.Layer):
             The bytes for the tile at the specified level, row and column are
             returned in PBF format. If a tile is not found, an error is returned.
 
-        :return:
+        ============================    ================================================
+        **Argument**                    **Description**
+        ----------------------------    ------------------------------------------------
+        level                           Required string. A level number as a string.
+        ----------------------------    ------------------------------------------------
+        row                             Required string. Number of the row that the tile
+                                        belongs to.
+        ----------------------------    ------------------------------------------------
+        column                          Required string. Number of the column that tile
+                                        belongs to.
+        ============================    ================================================
+
+        :returns:
             Bytes in PBF format
         """
         url = "{url}/tile/{level}/{row}/{column}.pbf".format(
@@ -4261,9 +4682,17 @@ class VectorTileLayer(arcgis.gis.Layer):
         return self._con.get(path=url, params=params, try_json=False, force_bytes=True)
 
     # ----------------------------------------------------------------------
-    def tile_sprite(self, out_format="sprite.json"):
+    def tile_sprite(self, out_format: str = "sprite.json") -> dict:
         """
-        The ``tile_sprite`` resource retrieves sprite images and metadata
+        The ``tile_sprite`` resource retrieves sprite images and metadata.
+
+        ============================    ================================================
+        **Argument**                    **Description**
+        ----------------------------    ------------------------------------------------
+        out_format                      Optional string. Default is "sprite.json".
+
+                                        Values: ``sprite.json`` | ``sprite.png`` | ``sprite@2x.png``
+        ============================    ================================================
 
         :return:
             Sprite image and metadata.
@@ -4272,26 +4701,13 @@ class VectorTileLayer(arcgis.gis.Layer):
         return self._con.get(path=url, params={})
 
     # ----------------------------------------------------------------------
-    @property
-    def info(self):
-        """
-        The ``info`` property retrieves the relative paths to a list of resource files.
-
-        :return:
-           A List of relative paths
-        """
-        url = "{url}/resources/info".format(url=self._url)
-        params = {"f": "json"}
-        return self._con.get(path=url, params=params)
-
-    # ----------------------------------------------------------------------
     def export_tiles(
         self,
-        levels=None,
-        export_extent=None,
-        polygon=None,
-        max_export_tile_count=10000,
-    ):
+        levels: str | None = None,
+        export_extent: dict[str, Any] | None = None,
+        polygon: dict[str, Any] | _geometry.Polygon | None = None,
+        create_item: bool = False,
+    ) -> str | Item:
         """
         Export vector tile layer
 
@@ -4313,7 +4729,7 @@ class VectorTileLayer(arcgis.gis.Layer):
                                         //Range values
                                         >>> levels=1-4, 7-9
         ---------------------       -------------------------------------------------------
-        export_extent               Dictionary of the extent (bounding box) of the vector
+        export_extent               Optional dictionary of the extent (bounding box) of the vector
                                     tile package to be exported.
                                     The extent should be within the specified spatial reference.
                                     The default value is the full extent of the tiled map service.
@@ -4328,7 +4744,8 @@ class VectorTileLayer(arcgis.gis.Layer):
                                                              "spatialReference": {"wkid": 4326}
                                                             }
         ---------------------       -------------------------------------------------------
-        polygon                     Introduced at 10.7. A JSON representation of a polygon,
+        polygon                     Optional dictionary.
+                                    Introduced at 10.7. A JSON representation of a polygon,
                                     containing an array of rings and a spatialReference.
 
                                     .. code-block:: python
@@ -4346,12 +4763,9 @@ class VectorTileLayer(arcgis.gis.Layer):
                                                    "spatialReference": {"wkid": 54004}
                                                   }
         ---------------------       -------------------------------------------------------
-        max_export_tile_count       Optional float. ``max_export_tile_count`` sets the
-                                    maximum amount of tiles to be exported from a single
-                                    call.
-
-                                    .. note::
-                                        The default value is 100000.
+        create_item                 Optional boolean. Indicated whether an item will be created
+                                    from the export (True) or a path to a downloaded file (False).
+                                    Default is False. ArcGIS Online Only.
         =====================       =======================================================
 
         :returns:
@@ -4366,7 +4780,6 @@ class VectorTileLayer(arcgis.gis.Layer):
         params = {
             "f": "json",
             "exportBy": "levelId",
-            "maxExportTileCount": max_export_tile_count,
             "levels": levels,
         }
         if export_extent:
@@ -4374,10 +4787,14 @@ class VectorTileLayer(arcgis.gis.Layer):
         # parameter introduced at 10.7
         if polygon and self.gis.version >= [7, 1]:
             params["polygon"] = polygon
-
+        if create_item is True:
+            params["createItem"] = "on"
         url = "{url}/exportTiles".format(url=self._url)
+
+        # a job is returned from the get
         exportJob = self._con.get(path=url, params=params)
 
+        # get the job information
         path = "%s/jobs/%s" % (url, exportJob["jobId"])
 
         resp_params = {"f": "json"}
@@ -4385,8 +4802,10 @@ class VectorTileLayer(arcgis.gis.Layer):
 
         if "status" in job_response or "jobStatus" in job_response:
             status = job_response.get("status") or job_response.get("jobStatus")
+            i = 0
             while not status == "esriJobSucceeded":
-                time.sleep(5)
+                i = i + 1
+                time.sleep(i)
 
                 job_response = self._con.post(path, params)
                 status = job_response.get("status") or job_response.get("jobStatus")
@@ -4416,7 +4835,7 @@ class VectorTileLayer(arcgis.gis.Layer):
         elif "output" in job_response:
             allResults = job_response["output"]
             if allResults["itemId"]:
-                return arcgis.gis.Item(gis=self._gis, itemid=allResults["itemId"])
+                return _gis.Item(gis=self._gis, itemid=allResults["itemId"])
             else:
                 if self._gis._portal.is_arcgisonline:
                     return [
@@ -4431,6 +4850,7 @@ class VectorTileLayer(arcgis.gis.Layer):
         else:
             raise Exception(job_response)
 
+    # ----------------------------------------------------------------------
     def _str_replace(self, mystring, rd):
         """Replaces a value based on a key/value pair where the
         key is the text to replace and the value is the new value.
@@ -4453,10 +4873,10 @@ class VectorTileLayer(arcgis.gis.Layer):
 ###########################################################################
 class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
     """
-    The ``EnterpriseMapImageLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise hosted map image layers.
+    The ``EnterpriseMapImageLayerManager`` class allows administration (if access permits) of ArcGIS Enterprise Map Image Layers and Tile Layers.
     A :class:`~arcgis.mapping.MapImageLayer` offers access to layer content.
 
-    .. note:: Url must be admin url such as: https://services.myserver.com/arcgis/rest/admin/services/serviceName/MapServer/
+    .. note:: Url must be admin url such as: ``https://services.myserver.com/arcgis/rest/admin/services/serviceName/MapServer/``
     """
 
     def __init__(self, url, gis=None, map_img_lyr=None):
@@ -4504,9 +4924,9 @@ class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
 
         Provider parameter options:
 
-           + `ArcObjects` means the service is running under the ArcMap runtime i.e. published from ArcMap
-           + `ArcObjects11`: means the service is running under the ArcGIS Pro runtime i.e. published from ArcGIS Pro
-           + `DMaps`: means the service is running in the shared instance pool (and thus running under the ArcGIS Pro provider runtime)
+        + `ArcObjects` means the service is running under the ArcMap runtime i.e. published from ArcMap
+        + `ArcObjects11`: means the service is running under the ArcGIS Pro runtime i.e. published from ArcGIS Pro
+        + `DMaps`: means the service is running in the shared instance pool (and thus running under the ArcGIS Pro provider runtime)
 
         :return: Boolean
 
@@ -4524,8 +4944,17 @@ class EnterpriseMapImageLayerManager(arcgis.gis._GISResource):
 ###########################################################################
 class MapImageLayerManager(arcgis.gis._GISResource):
     """
-    The ``MapImageLayerManager`` class allows administration (if access permits) of ArcGIS Online hosted map image layers.
-    A :class:`~arcgis.mapping.MapImageLayer` offers access to map and layer content.
+    The ``MapImageLayerManager`` class allows administration (if access permits) of ArcGIS Online Hosted Tile Layers
+    or Cached Map Services.
+    A :class:`~arcgis.mapping.MapImageLayer` offers access to the Map Server endpoints
+    that allow you to edit the tile service, update tiles, refresh, and more.
+
+    To use this manager off of the MapImageLayer Class, pass in a url ending with /MapServer
+    when instantiating that class.
+
+    .. note::
+        Map Image Layers are created from Enterprise Services and their manager can
+        be accessed through the EnterpriseMapImageLayerManager.
     """
 
     def __init__(self, url, gis=None, map_img_lyr=None):
@@ -4535,13 +4964,13 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         self._ms = map_img_lyr
 
     # ----------------------------------------------------------------------
-    def refresh(self, service_definition=True):
+    def refresh(self):
         """
         The ``refresh`` operation refreshes a service, which clears the web
         server cache for the service.
         """
         url = self._url + "/refresh"
-        params = {"f": "json", "serviceDefinition": service_definition}
+        params = {"f": "json"}
 
         res = self._con.post(url, params)
 
@@ -4550,27 +4979,6 @@ class MapImageLayerManager(arcgis.gis._GISResource):
             self._ms._refresh()
 
         return res
-
-    # ----------------------------------------------------------------------
-    def swap(self, target_service_name):
-        """
-        The swap operation replaces the current service cache with an existing one.
-
-        .. note::
-            The ``swap`` operation is for ArcGIS Online only.
-
-        ====================        ====================================================
-        **Argument**                **Description**
-        --------------------        ----------------------------------------------------
-        target_service_name         Required string. Name of service you want to swap with.
-        ====================        ====================================================
-
-        :returns: dictionary indicating success or error
-
-        """
-        url = self._url + "/swap"
-        params = {"f": "json", "targetServiceName": target_service_name}
-        return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
     def cancel_job(self, job_id):
@@ -4583,7 +4991,7 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
-        job_id               Required String. The ``job id`` to cancel.
+        job_id               Required String. The job id to cancel.
         ===============     ====================================================
 
         """
@@ -4592,7 +5000,7 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def job_statistics(self, job_id):
+    def job_statistics(self, job_id: str):
         """
         Returns the job statistics for the given jobId
 
@@ -4602,9 +5010,23 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def import_tiles(self, item, levels=None, extent=None, merge=False, replace=False):
+    def import_tiles(
+        self,
+        item: _gis.Item,
+        levels: Optional[Union[str, list[int]]] = None,
+        extent: Optional[Union[str, dict[str, int]]] = None,
+        merge: bool = False,
+        replace: bool = False,
+    ):
         """
         The ``import_tiles`` method imports tiles from an :class:`~arcgis.gis.Item` object.
+
+        Before executing this operation, you will need to make certain the following prerequisites are met:
+
+        - Upload the TPK you wish to merge with the existing service, take note of its item ID.
+        - Make certain that the uploaded TPK item's tiling scheme matches with the service you wish to import into.
+        - The source service LOD's should include all the LOD's that are part of the imported TPK item. For example, if the source service has tiles from levels 0 through 10, you can import tiles only within these levels and not above it.
+
 
         ===============     ====================================================
         **Argument**        **Description**
@@ -4631,17 +5053,12 @@ class MapImageLayerManager(arcgis.gis._GISResource):
                             merge=true. It controls whether the new tiles will
                             replace the existing ones when merging bundles.
         ===============     ====================================================
-
         :return:
             A dictionary
-
         .. code-block:: python
-
             # USAGE EXAMPLE
-
             >>> from arcgis.mapping import MapImageLayer
             >>> from arcgis.gis import GIS
-
             # connect to your GIS and get the web map item
             >>> gis = GIS(url, username, password)
             >>> map_image_layer = MapImageLayer("<url>", gis)
@@ -4659,7 +5076,6 @@ class MapImageLayerManager(arcgis.gis._GISResource):
                                                           )
             >>> type(imported_tiles)
             <Dictionary>
-
         """
         params = {
             "f": "json",
@@ -4671,7 +5087,7 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         }
         if isinstance(item, str):
             params["sourceItemId"] = item
-        elif isinstance(item, arcgis.gis.Item):
+        elif isinstance(item, _gis.Item):
             params["sourceItemId"] = item.itemid
         else:
             raise ValueError("The `item` must be a string or Item")
@@ -4680,7 +5096,13 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         return res
 
     # ----------------------------------------------------------------------
-    def update_tiles(self, levels=None, extent=None):
+    def update_tiles(
+        self,
+        levels: Optional[Union[str, list[int]]] = None,
+        extent: Optional[Union[str, dict[str, int]]] = None,
+        merge: bool = False,
+        replace: bool = False,
+    ):
         """
         The ``update_tiles`` method starts tile generation for ArcGIS Online. The levels of detail
         and the extent are needed to determine the area where tiles need
@@ -4696,8 +5118,19 @@ class MapImageLayerManager(arcgis.gis._GISResource):
                             to update. Example: "1,2,10,20" or [1,2,10,20]
         ---------------     ----------------------------------------------------
         extent              Optional String / Dict. The area to update as Xmin, YMin, XMax, YMax
-                            example: "-100,-50,200,500" or
-                            {'xmin':100, 'ymin':200, 'xmax':105, 'ymax':205}
+                            Example:
+                                "-100,-50,200,500" or {'xmin':100, 'ymin':200, 'xmax':105, 'ymax':205}
+        ---------------     ----------------------------------------------------
+        merge               Optional Boolean. Default is false and applicable to
+                            compact cache storage format. It controls whether
+                            the bundle files from the TPK file are merged with
+                            the one in the existing cached service. Otherwise,
+                            the bundle files are overwritten.
+        ---------------     ----------------------------------------------------
+        replace             Optional Boolean. Default is false, applicable to
+                            compact cache storage format and used when
+                            merge=true. It controls whether the new tiles will
+                            replace the existing ones when merging bundles.
         ===============     ====================================================
 
         :return:
@@ -4728,7 +5161,11 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         """
         if self._gis._portal.is_arcgisonline:
             url = "%s/updateTiles" % self._url
-            params = {"f": "json"}
+            params = {
+                "f": "json",
+                "mergeBundle": merge,
+                "replaceTiles": replace,
+            }
             if levels:
                 if isinstance(levels, list):
                     levels = ",".join(str(e) for e in levels)
@@ -4748,7 +5185,7 @@ class MapImageLayerManager(arcgis.gis._GISResource):
 
     # ----------------------------------------------------------------------
     @property
-    def rerun_job(self, job_id, code):
+    def rerun_job(self, job_id: str, code: str):
         """
         The ``rerun_job`` operation supports re-running a canceled job from a
         hosted map service. The result of this operation is a response
@@ -4757,11 +5194,11 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
+        job_id              required string, job to reprocess
+        ---------------     ----------------------------------------------------
         code                required string, parameter used to re-run a given
                             jobs with a specific error
                             code: ``ALL | ERROR | CANCELED``
-        ---------------     ----------------------------------------------------
-        job_id              required string, job to reprocess
         ===============     ====================================================
 
         :return:
@@ -4774,12 +5211,12 @@ class MapImageLayerManager(arcgis.gis._GISResource):
     # ----------------------------------------------------------------------
     def edit_tile_service(
         self,
-        service_definition=None,
-        min_scale=None,
-        max_scale=None,
-        source_item_id=None,
-        export_tiles_allowed=False,
-        max_export_tile_count=100000,
+        service_definition: Optional[str] = None,
+        min_scale: Optional[float] = None,
+        max_scale: Optional[float] = None,
+        source_item_id: Optional[str] = None,
+        export_tiles_allowed: bool = False,
+        max_export_tile_count: float = 100000,
     ):
         """
         The ``edit_tile_service`` operation updates a Tile Service's properties.
@@ -4847,19 +5284,19 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def delete_tiles(self, levels, extent=None):
+    def delete_tiles(self, levels: str, extent: Optional[dict[str, int]] = None):
         """
         The ``delete_tiles`` method deletes tiles from the current cache.
 
         ===============     ====================================================
         **Argument**        **Description**
         ---------------     ----------------------------------------------------
-        extent              optional dictionary,  If specified, the tiles within
+        levels              Required string, The level to delete.
+                            Example, 0-5,10,11-20 or 1,2,3 or 0-5
+        ---------------     ----------------------------------------------------
+        extent              Optional dictionary,  If specified, the tiles within
                             this extent will be deleted or will be deleted based
                             on the service's full extent.
-        ---------------     ----------------------------------------------------
-        levels              required string, The level to delete.
-                            Example, 0-5,10,11-20 or 1,2,3 or 0-5
         ===============     ====================================================
 
         :return:
@@ -4923,16 +5360,14 @@ class MapImageLayer(arcgis.gis.Layer):
         self._populate_layers()
         self._admin = None
         try:
-            from arcgis.gis.server._service._adminfactory import (
-                AdminServiceGen,
-            )
+            from arcgis.gis.server._service._adminfactory import AdminServiceGen
 
             self.service = AdminServiceGen(service=self, gis=gis)
         except:
             pass
 
     @classmethod
-    def fromitem(cls, item):
+    def fromitem(cls, item: _gis.Item):
         if not item.type == "Map Service":
             raise TypeError("item must be a type of Map Service, not " + item.type)
         return cls(item.url, item._gis)
@@ -5016,12 +5451,12 @@ class MapImageLayer(arcgis.gis.Layer):
 
     @property
     def manager(self):
+        """
+        The ``manager`` property returns an instance of :class:`~arcgis.mapping.MapImageLayerManager` class
+        for ArcGIS Online and :class:`~arcgis.mapping.EnterpriseMapImageLayerManager` class for ArcGIS Enterprise
+        which provides methods and properties for administering this service.
+        """
         if self._admin is None:
-            """
-            The ``manager`` property returns an instance of :class:`~arcgis.mapping.MapImageLayerManager` class
-            for ArcGIS Online and :class:`~arcgis.mapping.EnterpriseMapImageLayerManager` class for ArcGIS Enterprise
-            which provides methods and properties for administering this service.
-            """
             if self._gis._portal.is_arcgisonline:
                 rd = {"/rest/services/": "/rest/admin/services/"}
                 adminURL = self._str_replace(self._url, rd)
@@ -5037,7 +5472,7 @@ class MapImageLayer(arcgis.gis.Layer):
         return self._admin
 
     # ----------------------------------------------------------------------
-    def create_dynamic_layer(self, layer):
+    def create_dynamic_layer(self, layer: dict[str, Any]):
         """
         The ``create_dynamic_layer`` method creates a dynamic layer.
         A dynamic layer / table represents a single layer / table of a map service published by ArcGIS Server
@@ -5048,33 +5483,35 @@ class MapImageLayer(arcgis.gis.Layer):
         =================     ====================================================================
         **Argument**          **Description**
         -----------------     --------------------------------------------------------------------
-        layer                 required dict.  Dynamic layer/table source definition.
+        layer                 Required dict.  Dynamic layer/table source definition.
+
                               Syntax:
-                              {
-                                "id": <layerOrTableId>,
-                                "source": <layer source>, //required
-                                "definitionExpression": "<definitionExpression>",
-                                "drawingInfo":
-                                {
-                                  "renderer": <renderer>,
-                                  "transparency": <transparency>,
-                                  "scaleSymbols": <true,false>,
-                                  "showLabels": <true,false>,
-                                  "labelingInfo": <labeling info>
-                                },
-                                "layerTimeOptions": //supported only for time enabled map layers
-                                {
-                                  "useTime" : <true,false>,
-                                  "timeDataCumulative" : <true,false>,
-                                  "timeOffset" : <timeOffset>,
-                                  "timeOffsetUnits" : "<esriTimeUnitsCenturies,esriTimeUnitsDays,
-                                                    esriTimeUnitsDecades,esriTimeUnitsHours,
-                                                    esriTimeUnitsMilliseconds,esriTimeUnitsMinutes,
-                                                    esriTimeUnitsMonths,esriTimeUnitsSeconds,
-                                                    esriTimeUnitsWeeks,esriTimeUnitsYears |
-                                                    esriTimeUnitsUnknown>"
-                                }
-                              }
+
+                                  | {
+                                  |   "id": <layerOrTableId>,
+                                  |   "source": <layer source>, //required
+                                  |   "definitionExpression": "<definitionExpression>",
+                                  |   "drawingInfo":
+                                  |   {
+                                  |     "renderer": <renderer>,
+                                  |     "transparency": <transparency>,
+                                  |     "scaleSymbols": <true,false>,
+                                  |     "showLabels": <true,false>,
+                                  |     "labelingInfo": <labeling info>
+                                  |   },
+                                  |   "layerTimeOptions": //supported only for time enabled map layers
+                                  |   {
+                                  |     "useTime" : <true,false>,
+                                  |     "timeDataCumulative" : <true,false>,
+                                  |     "timeOffset" : <timeOffset>,
+                                  |     "timeOffsetUnits" : "<esriTimeUnitsCenturies,esriTimeUnitsDays,
+                                  |                       esriTimeUnitsDecades,esriTimeUnitsHours,
+                                  |                       esriTimeUnitsMilliseconds,esriTimeUnitsMinutes,
+                                  |                       esriTimeUnitsMonths,esriTimeUnitsSeconds,
+                                  |                       esriTimeUnitsWeeks,esriTimeUnitsYears |
+                                  |                       esriTimeUnitsUnknown>"
+                                  |   }
+                                  | }
         =================     ====================================================================
 
         :return:
@@ -5125,7 +5562,7 @@ class MapImageLayer(arcgis.gis.Layer):
             url = "%s/dynamicLayer" % self._url
             d = urlencode(layer)
             url += "?layer=%s" % d
-            return arcgis.features.FeatureLayer(
+            return _arcgis_features.FeatureLayer(
                 url=url, gis=self._gis, dynamic_layer=layer
             )
         return None
@@ -5134,7 +5571,7 @@ class MapImageLayer(arcgis.gis.Layer):
     @property
     def kml(self):
         """
-        The ``kml`` method ``retrieves the KML file for the layer.
+        The ``kml`` method retrieves the KML file for the layer.
 
         :return:
             A KML file
@@ -5175,8 +5612,8 @@ class MapImageLayer(arcgis.gis.Layer):
             The legend symbols include the base64 encoded imageData as well as
             a url that could be used to retrieve the image from the server.
 
-        :return:
-            Legend information
+        :returns:
+            Dictionary of legend information
         """
         url = "%s/legend" % self._url
         return self._con.get(path=url, params={"f": "json"})
@@ -5195,7 +5632,7 @@ class MapImageLayer(arcgis.gis.Layer):
         return self._con.get(url, params)
 
     # ----------------------------------------------------------------------
-    def thumbnail(self, out_path=None):
+    def thumbnail(self, out_path: Optional[str] = None):
         """
         The ``thumbnail`` method retrieves the thumbnail.
 
@@ -5218,29 +5655,29 @@ class MapImageLayer(arcgis.gis.Layer):
     # ----------------------------------------------------------------------
     def identify(
         self,
-        geometry,
-        map_extent,
-        image_display,
-        geometry_type="Point",
-        sr=None,
-        layer_defs=None,
-        time_value=None,
-        time_options=None,
-        layers="all",
-        tolerance=None,
-        return_geometry=True,
-        max_offset=None,
-        precision=4,
-        dynamic_layers=None,
-        return_z=False,
-        return_m=False,
-        gdb_version=None,
-        return_unformatted=False,
-        return_field_name=False,
-        transformations=None,
-        map_range_values=None,
-        layer_range_values=None,
-        layer_parameters=None,
+        geometry: Union[_geometry.Geometry, list],
+        map_extent: str,
+        image_display: Optional[str] = None,
+        geometry_type: str = "Point",
+        sr: Optional[Union[dict[str, Any], str, _geometry.SpatialReference]] = None,
+        layer_defs: Optional[dict[str, Any]] = None,
+        time_value: Optional[Union[list[str], str]] = None,
+        time_options: Optional[dict] = None,
+        layers: str = "all",
+        tolerance: Optional[int] = None,
+        return_geometry: bool = True,
+        max_offset: Optional[int] = None,
+        precision: int = 4,
+        dynamic_layers: Optional[dict[str, Any]] = None,
+        return_z: bool = False,
+        return_m: bool = False,
+        gdb_version: Optional[str] = None,
+        return_unformatted: bool = False,
+        return_field_name: bool = False,
+        transformations: Optional[Union[list[dict], list[int]]] = None,
+        map_range_values: Optional[list[dict[str, Any]]] = None,
+        layer_range_values: Optional[dict[str, Any]] = None,
+        layer_parameters: Optional[list[dict[str, Any]]] = None,
         **kwargs,
     ):
 
@@ -5256,7 +5693,7 @@ class MapImageLayer(arcgis.gis.Layer):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        geometry               required :class:`~arcgis.geometry.Geometry` or list. The geometry
+        geometry               Required :class:`~arcgis.geometry.Geometry` or list. The geometry
                                to identify on. The type of the geometry is specified by the
                                `geometryType` parameter. The structure of the geometries is same as
                                the structure of the JSON geometry objects returned by the API (See
@@ -5264,63 +5701,68 @@ class MapImageLayer(arcgis.gis.Layer):
                                In addition to the JSON structures, for points and envelopes, you
                                can specify the geometries with a simpler comma-separated syntax.
         ------------------     --------------------------------------------------------------------
-        geometry_type          required string.The type of geometry specified by the geometry
+        geometry_type          Required string.The type of geometry specified by the geometry
                                parameter. The geometry type could be a point, line, polygon, or an
                                envelope.
-                               Values: Point,Multipoint,Polyline,Polygon,Envelope
+                               Values:
+                                    "Point" | "Multipoint" | "Polyline" | "Polygon" | "Envelope"
         ------------------     --------------------------------------------------------------------
-        sr                     optional dict, string, or SpatialReference. The well-known ID of the
+        map_extent             Required string. The extent or bounding box of the map currently
+                               being viewed.
+        ------------------     --------------------------------------------------------------------
+        sr                     Optional dict, string, or SpatialReference. The well-known ID of the
                                spatial reference of the input and output geometries as well as the
                                map_extent. If sr is not specified, the geometry and the map_extent
                                are assumed to be in the spatial reference of the map, and the
                                output geometries are also in the spatial reference of the map.
         ------------------     --------------------------------------------------------------------
-        layer_defs             optional dict. Allows you to filter the features of individual
+        layer_defs             Optional dict. Allows you to filter the features of individual
                                layers in the exported map by specifying definition expressions for
                                those layers. Definition expression for a layer that is
                                published with the service will be always honored.
         ------------------     --------------------------------------------------------------------
-        time_value             optional list. The time instant or the time extent of the features
+        time_value             Optional list. The time instant or the time extent of the features
                                to be identified.
         ------------------     --------------------------------------------------------------------
-        time_options           optional dict. The time options per layer. Users can indicate
+        time_options           Optional dict. The time options per layer. Users can indicate
                                whether or not the layer should use the time extent specified by the
                                time parameter or not, whether to draw the layer features
                                cumulatively or not and the time offsets for the layer.
         ------------------     --------------------------------------------------------------------
-        layers                 optional string. The layers to perform the identify operation on.
+        layers                 Optional string. The layers to perform the identify operation on.
                                There are three ways to specify which layers to identify on:
-                                - top: Only the top-most layer at the specified location.
-                                - visible: All visible layers at the specified location.
-                                - all: All layers at the specified location.
+
+                               - ``top``: Only the top-most layer at the specified location.
+                               - ``visible``: All visible layers at the specified location.
+                               - ``all``: All layers at the specified location.
         ------------------     --------------------------------------------------------------------
-        tolerance              optional integer. The distance in screen pixels from the specified
-                               geometry within which the identify should be performed. The value for
+        tolerance              Optional integer. The distance in screen pixels from the specified
+                               geometry within which the ``identify`` operation should be performed. The value for
                                the tolerance is an integer.
         ------------------     --------------------------------------------------------------------
-        map_extent             required string. The extent or bounding box of the map currently
-                               being viewed.
-        ------------------     --------------------------------------------------------------------
-        image_display          optional string. The screen image display parameters (width, height,
+        image_display          Optional string. The screen image display parameters (width, height,
                                and DPI) of the map being currently viewed. The mapExtent and the
                                image_display parameters are used by the server to determine the
                                layers visible in the current extent. They are also used to
                                calculate the distance on the map to search based on the tolerance
                                in screen pixels.
-                               Syntax: <width>, <height>, <dpi>
+
+                               Syntax:
+
+                                    <width>, <height>, <dpi>
         ------------------     --------------------------------------------------------------------
-        return_geometry        optional boolean. If true, the resultset will include the geometries
+        return_geometry        Optional boolean. If true, the resultset will include the geometries
                                associated with each result. The default is true.
         ------------------     --------------------------------------------------------------------
-        max_offset             optional integer. This option can be used to specify the maximum
+        max_offset             Optional integer. This option can be used to specify the maximum
                                allowable offset to be used for generalizing geometries returned by
                                the identify operation.
         ------------------     --------------------------------------------------------------------
-        precision              optional integer. This option can be used to specify the number of
+        precision              Optional integer. This option can be used to specify the number of
                                decimal places in the response geometries returned by the identify
                                operation. This applies to X and Y values only (not m or z-values).
         ------------------     --------------------------------------------------------------------
-        dynamic_layers         optional dict. Use dynamicLayers property to reorder layers and
+        dynamic_layers         Optional dict. Use dynamicLayers property to reorder layers and
                                change the layer data source. dynamicLayers can also be used to add
                                new layer that was not defined in the map used to create the map
                                service. The new layer should have its source pointing to one of the
@@ -5330,41 +5772,42 @@ class MapImageLayer(arcgis.gis.Layer):
                                The first element of the dynamicLayers is stacked on top of all
                                other layers. When defining a dynamic layer, source is required.
         ------------------     --------------------------------------------------------------------
-        return_z               optional boolean. If true, Z values will be included in the results
+        return_z               Optional boolean. If true, Z values will be included in the results
                                if the features have Z values. Otherwise, Z values are not returned.
                                The default is false.
         ------------------     --------------------------------------------------------------------
-        return_m               optional boolean.If true, M values will be included in the results
+        return_m               Optional boolean.If true, M values will be included in the results
                                if the features have M values. Otherwise, M values are not returned.
                                The default is false.
         ------------------     --------------------------------------------------------------------
-        gdb_version            optional string. Switch map layers to point to an alternate
+        gdb_version            Optional string. Switch map layers to point to an alternate
                                geodatabase version.
         ------------------     --------------------------------------------------------------------
-        return_unformatted     optional boolean. If true, the values in the result will not be
-                               formatted i.e. numbers will returned as is and dates will be
+        return_unformatted     Optional boolean. If true, the values in the result will not be
+                               formatted i.e. numbers will be returned as is and dates will be
                                returned as epoch values. The default is False.
         ------------------     --------------------------------------------------------------------
-        return_field_name      optional boolean. Default is False. If true, field names will be
+        return_field_name      Optional boolean. Default is False. If true, field names will be
                                returned instead of field aliases.
         ------------------     --------------------------------------------------------------------
-        transformations        optional list. Use this parameter to apply one or more datum
+        transformations        Optional list. Use this parameter to apply one or more datum
                                transformations to the map when sr is different than the map
                                service's spatial reference. It is an array of transformation
                                elements.
                                Transformations specified here are used to project features from
                                layers within a map service to sr.
         ------------------     --------------------------------------------------------------------
-        map_range_values       optional list. Allows for the filtering features in the exported map
-                               from all layer that are within the specified range instant or extent.
+        map_range_values       Optional list of dictionary(ies). Allows for the filtering features in
+                               the exported map from all layer that are within the specified range
+                               instant or extent.
         ------------------     --------------------------------------------------------------------
-        layer_range_values     optional list. Allows for the filtering of features for each
-                               individual layer that are within the specified range instant or
+        layer_range_values     Optional Dictionary. Allows for the filtering of features
+                               for each individual layer that are within the specified range instant or
                                extent.
         ------------------     --------------------------------------------------------------------
-        layer_parameters       optional list. Allows for the filtering of the features of
-                               individual layers in the exported map by specifying value(s) to an
-                               array of pre-authored parameterized filters for those layers. When
+        layer_parameters       Optional list of dictionary(ies). Allows for the filtering of the
+                               features of individual layers in the exported map by specifying value(s)
+                               to an array of pre-authored parameterized filters for those layers. When
                                value is not specified for any parameter in a request, the default
                                value, that is assigned during authoring time, gets used instead.
         ==================     ====================================================================
@@ -5470,25 +5913,25 @@ class MapImageLayer(arcgis.gis.Layer):
     # ----------------------------------------------------------------------
     def find(
         self,
-        search_text,
-        layers,
-        contains=True,
-        search_fields=None,
-        sr=None,
-        layer_defs=None,
-        return_geometry=True,
-        max_offset=None,
-        precision=None,
-        dynamic_layers=None,
-        return_z=False,
-        return_m=False,
-        gdb_version=None,
-        return_unformatted=False,
-        return_field_name=False,
-        transformations=None,
-        map_range_values=None,
-        layer_range_values=None,
-        layer_parameters=None,
+        search_text: str,
+        layers: str,
+        contains: bool = True,
+        search_fields: Optional[str] = None,
+        sr: Optional[Union[dict[str, Any], str, _geometry.SpatialReference]] = None,
+        layer_defs: Optional[dict[str, Any]] = None,
+        return_geometry: bool = True,
+        max_offset: Optional[int] = None,
+        precision: Optional[int] = None,
+        dynamic_layers: Optional[dict[str, Any]] = None,
+        return_z: bool = False,
+        return_m: bool = False,
+        gdb_version: Optional[str] = None,
+        return_unformatted: bool = False,
+        return_field_name: bool = False,
+        transformations: Optional[Union[list[int], list[dict[str, Any]]]] = None,
+        map_range_values: Optional[list[dict[str, Any]]] = None,
+        layer_range_values: Optional[dict[str, Any]] = None,
+        layer_parameters: Optional[list[dict[str, Any]]] = None,
         **kwargs,
     ):
         """
@@ -5497,45 +5940,46 @@ class MapImageLayer(arcgis.gis.Layer):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        search_text            required string.The search string. This is the text that is searched
+        search_text            Required string.The search string. This is the text that is searched
                                across the layers and fields the user specifies.
         ------------------     --------------------------------------------------------------------
-        layers                 optional string. The layers to perform the identify operation on.
+        layers                 Optional string. The layers to perform the identify operation on.
                                There are three ways to specify which layers to identify on:
-                                - top: Only the top-most layer at the specified location.
-                                - visible: All visible layers at the specified location.
-                                - all: All layers at the specified location.
+
+                               - top: Only the top-most layer at the specified location.
+                               - visible: All visible layers at the specified location.
+                               - all: All layers at the specified location.
         ------------------     --------------------------------------------------------------------
-        contains               optional boolean. If false, the operation searches for an exact
+        contains               Optional boolean. If false, the operation searches for an exact
                                match of the search_text string. An exact match is case sensitive.
                                Otherwise, it searches for a value that contains the search_text
                                provided. This search is not case sensitive. The default is true.
         ------------------     --------------------------------------------------------------------
-        search_fields          optional string. List of field names to look in.
+        search_fields          Optional string. List of field names to look in.
         ------------------     --------------------------------------------------------------------
-        sr                     optional dict, string, or SpatialReference. The well-known ID of the
+        sr                     Optional dict, string, or SpatialReference. The well-known ID of the
                                spatial reference of the input and output geometries as well as the
                                map_extent. If sr is not specified, the geometry and the map_extent
                                are assumed to be in the spatial reference of the map, and the
                                output geometries are also in the spatial reference of the map.
         ------------------     --------------------------------------------------------------------
-        layer_defs             optional dict. Allows you to filter the features of individual
+        layer_defs             Optional dict. Allows you to filter the features of individual
                                layers in the exported map by specifying definition expressions for
                                those layers. Definition expression for a layer that is
                                published with the service will be always honored.
         ------------------     --------------------------------------------------------------------
-        return_geometry        optional boolean. If true, the resultset will include the geometries
+        return_geometry        Optional boolean. If true, the resultset will include the geometries
                                associated with each result. The default is true.
         ------------------     --------------------------------------------------------------------
-        max_offset             optional integer. This option can be used to specify the maximum
+        max_offset             Optional integer. This option can be used to specify the maximum
                                allowable offset to be used for generalizing geometries returned by
                                the identify operation.
         ------------------     --------------------------------------------------------------------
-        precision              optional integer. This option can be used to specify the number of
+        precision              Optional integer. This option can be used to specify the number of
                                decimal places in the response geometries returned by the identify
                                operation. This applies to X and Y values only (not m or z-values).
         ------------------     --------------------------------------------------------------------
-        dynamic_layers         optional dict. Use dynamicLayers property to reorder layers and
+        dynamic_layers         Optional dict. Use dynamicLayers property to reorder layers and
                                change the layer data source. dynamicLayers can also be used to add
                                new layer that was not defined in the map used to create the map
                                service. The new layer should have its source pointing to one of the
@@ -5545,39 +5989,39 @@ class MapImageLayer(arcgis.gis.Layer):
                                The first element of the dynamicLayers is stacked on top of all
                                other layers. When defining a dynamic layer, source is required.
         ------------------     --------------------------------------------------------------------
-        return_z               optional boolean. If true, Z values will be included in the results
+        return_z               Optional boolean. If true, Z values will be included in the results
                                if the features have Z values. Otherwise, Z values are not returned.
                                The default is false.
         ------------------     --------------------------------------------------------------------
-        return_m               optional boolean.If true, M values will be included in the results
+        return_m               Optional boolean.If true, M values will be included in the results
                                if the features have M values. Otherwise, M values are not returned.
                                The default is false.
         ------------------     --------------------------------------------------------------------
-        gdb_version            optional string. Switch map layers to point to an alternate
+        gdb_version            Optional string. Switch map layers to point to an alternate
                                geodatabase version.
         ------------------     --------------------------------------------------------------------
-        return_unformatted     optional boolean. If true, the values in the result will not be
-                               formatted i.e. numbers will returned as is and dates will be
+        return_unformatted     Optional boolean. If true, the values in the result will not be
+                               formatted i.e. numbers will be returned as is and dates will be
                                returned as epoch values.
         ------------------     --------------------------------------------------------------------
-        return_field_name      optional boolean. If true, field names will be returned instead of
+        return_field_name      Optional boolean. If true, field names will be returned instead of
                                field aliases.
         ------------------     --------------------------------------------------------------------
-        transformations        optional list. Use this parameter to apply one or more datum
-                               transformations to the map when sr is different than the map
+        transformations        Optional list. Use this parameter to apply one or more datum
+                               transformations to the map when sr is different from the map
                                service's spatial reference. It is an array of transformation
                                elements.
         ------------------     --------------------------------------------------------------------
-        map_range_values       optional list. Allows you to filter features in the exported map
+        map_range_values       Optional list. Allows you to filter features in the exported map
                                from all layer that are within the specified range instant or
                                extent.
         ------------------     --------------------------------------------------------------------
-        layer_range_values     optional dictionary. Allows you to filter features for each
+        layer_range_values     Optional dictionary. Allows you to filter features for each
                                individual layer that are within the specified range instant or
                                extent. Note: Check range infos at the layer resources for the
                                available ranges.
         ------------------     --------------------------------------------------------------------
-        layer_parameters       optional list. Allows you to filter the features of individual
+        layer_parameters       Optional list. Allows you to filter the features of individual
                                layers in the exported map by specifying value(s) to an array of
                                pre-authored parameterized filters for those layers. When value is
                                not specified for any parameter in a request, the default value,
@@ -5660,7 +6104,9 @@ class MapImageLayer(arcgis.gis.Layer):
         return res
 
     # ----------------------------------------------------------------------
-    def generate_kml(self, save_location, name, layers, options="composite"):
+    def generate_kml(
+        self, save_location: str, name: str, layers: str, options: str = "composite"
+    ):
         """
         The ``generate_Kml`` operation is performed on a map service resource.
         The result of this operation is a KML document wrapped in a KMZ
@@ -5673,15 +6119,15 @@ class MapImageLayer(arcgis.gis.Layer):
         =================     ====================================================================
         **Argument**          **Description**
         -----------------     --------------------------------------------------------------------
-        save_location         required string. Save folder.
+        save_location         Required string. Save folder.
         -----------------     --------------------------------------------------------------------
-        name                  The name of the resulting KML document. This is the name that
-                              appears in the Places panel of Google Earth.
+        name                  Required string. The name of the resulting KML document.
+                              This is the name that appears in the Places panel of Google Earth.
         -----------------     --------------------------------------------------------------------
-        layers                required string. the layers to perform the generateKML operation on.
+        layers                Required string. the layers to perform the generateKML operation on.
                               The layers are specified as a comma-separated list of layer ids.
         -----------------     --------------------------------------------------------------------
-        options               required string. The layer drawing options. Based on the option
+        options               Required string. The layer drawing options. Based on the option
                               chosen, the layers are drawn as one composite image, as separate
                               images, or as vectors. When the KML capability is enabled, the
                               ArcGIS Server administrator has the option of setting the layer
@@ -5711,28 +6157,28 @@ class MapImageLayer(arcgis.gis.Layer):
     # ----------------------------------------------------------------------
     def export_map(
         self,
-        bbox,
-        bbox_sr=None,
-        size="600,550",
-        dpi=200,
-        image_sr=None,
-        image_format="png",
-        layer_defs=None,
-        layers=None,
-        transparent=False,
-        time_value=None,
-        time_options=None,
-        dynamic_layers=None,
-        gdb_version=None,
-        scale=None,
-        rotation=None,
-        transformation=None,
-        map_range_values=None,
-        layer_range_values=None,
-        layer_parameter=None,
-        f="json",
-        save_folder=None,
-        save_file=None,
+        bbox: str,
+        bbox_sr: Optional[int] = None,
+        size: str = "600,550",
+        dpi: int = 200,
+        image_sr: Optional[int] = None,
+        image_format: int = "png",
+        layer_defs: Optional[dict[str, Any]] = None,
+        layers: Optional[str] = None,
+        transparent: bool = False,
+        time_value: Optional[Union[list[int], list[datetime.datetime]]] = None,
+        time_options: Optional[dict[str, Any]] = None,
+        dynamic_layers: Optional[dict[str, Any]] = None,
+        gdb_version: Optional[str] = None,
+        scale: Optional[float] = None,
+        rotation: Optional[float] = None,
+        transformation: Optional[Union[list[int], list[dict[str, Any]]]] = None,
+        map_range_values: Optional[list[dict[str, Any]]] = None,
+        layer_range_values: Optional[list[dict[str, Any]]] = None,
+        layer_parameter: Optional[list[dict[str, Any]]] = None,
+        f: str = "json",
+        save_folder: Optional[str] = None,
+        save_file: Optional[str] = None,
         **kwargs,
     ):
         """
@@ -5744,43 +6190,41 @@ class MapImageLayer(arcgis.gis.Layer):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        bbox                   required string. The extent (bounding box) of the exported image.
+        bbox                   Required string. The extent (bounding box) of the exported image.
                                Unless the bbox_sr parameter has been specified, the bbox is assumed
                                to be in the spatial reference of the map.
         ------------------     --------------------------------------------------------------------
-        bbox_sr                optional integer, ``SpatialReference``. spatial reference of the bbox.
+        bbox_sr                Optional integer, :class:`~arcgis.geometry.SpatialReference`. The spatial reference of the bbox.
         ------------------     --------------------------------------------------------------------
-        size                   optional string. size - size of image in pixels
+        size                   Optional string. size - size of image in pixels
         ------------------     --------------------------------------------------------------------
-        dpi                    optional integer. dots per inch
+        dpi                    Optional integer. dots per inch
         ------------------     --------------------------------------------------------------------
-        image_sr               optional integer, :class:`~arcgis.geometry.SpatialReference`.
+        image_sr               Optional integer, :class:`~arcgis.geometry.SpatialReference`.
                                The spatial reference of the output image.
         ------------------     --------------------------------------------------------------------
-        image_format           optional string. The format of the exported image.
+        image_format           Optional string. The format of the exported image.
                                The default format is .png.
-                               Values: `png | png8 | png24 | jpg | pdf | bmp | gif
-                                       | svg | svgz | emf | ps | png32`
+                               Values:
+                                    png | png8 | png24 | jpg | pdf | bmp | gif | svg | svgz | emf | ps | png32
         ------------------     --------------------------------------------------------------------
-        layer_defs             optional dict. Allows you to filter the features of individual
+        layer_defs             Optional dict. Allows you to filter the features of individual
                                layers in the exported map by specifying definition expressions for
                                those layers. Definition expression for a layer that is
                                published with the service will be always honored.
         ------------------     --------------------------------------------------------------------
-        layers                 optional string. Determines which layers appear on the exported map.
+        layers                 Optional string. Determines which layers appear on the exported map.
                                There are four ways to specify which layers are shown:
-                                 show: Only the layers specified in this list will
-                                       be exported.
-                                 hide: All layers except those specified in this
-                                       list will be exported.
-                                 include: In addition to the layers exported by
-                                          default, the layers specified in this list
-                                          will be exported.
-                                 exclude: The layers exported by default excluding
-                                          those specified in this list will be
-                                          exported.
+
+                               ``show``: Only the layers specified in this list will be exported.
+
+                               ``hide``: All layers except those specified in this list will be exported.
+
+                               ``include``: In addition to the layers exported by default, the layers specified in this list will be exported.
+
+                               ``exclude``: The layers exported by default excluding those specified in this list will be exported.
         ------------------     --------------------------------------------------------------------
-        transparent            optional boolean. If true, the image will be exported with the
+        transparent            Optional boolean. If true, the image will be exported with the
                                background color of the map set as its transparent color. The
                                default is false.
 
@@ -5788,15 +6232,15 @@ class MapImageLayer(arcgis.gis.Layer):
                                 Only the .png and .gif formats support
                                 transparency.
         ------------------     --------------------------------------------------------------------
-        time_value             optional list. The time instant or the time extent of the features
+        time_value             Optional list. The time instant or the time extent of the features
                                to be identified.
         ------------------     --------------------------------------------------------------------
-        time_options           optional dict. The time options per layer. Users can indicate
+        time_options           Optional dict. The time options per layer. Users can indicate
                                whether or not the layer should use the time extent specified by the
                                time parameter or not, whether to draw the layer features
                                cumulatively or not and the time offsets for the layer.
         ------------------     --------------------------------------------------------------------
-        dynamic_layers         optional dict. Use dynamicLayers property to reorder layers and
+        dynamic_layers         Optional dict. Use dynamicLayers property to reorder layers and
                                change the layer data source. dynamicLayers can also be used to add
                                new layer that was not defined in the map used to create the map
                                service. The new layer should have its source pointing to one of the
@@ -5806,33 +6250,33 @@ class MapImageLayer(arcgis.gis.Layer):
                                The first element of the dynamicLayers is stacked on top of all
                                other layers. When defining a dynamic layer, source is required.
         ------------------     --------------------------------------------------------------------
-        gdb_version            optional string. Switch map layers to point to an alternate
+        gdb_version            Optional string. Switch map layers to point to an alternate
                                geodatabase version.
         ------------------     --------------------------------------------------------------------
-        scale                  optional float. Use this parameter to export a map image at a
+        scale                  Optional float. Use this parameter to export a map image at a
                                specific map scale, with the map centered around the center of the
                                specified bounding box (bbox)
         ------------------     --------------------------------------------------------------------
-        rotation               optional float. Use this parameter to export a map image rotated at
+        rotation               Optional float. Use this parameter to export a map image rotated at
                                a specific angle, with the map centered around the center of the
                                specified bounding box (bbox). It could be positive or negative
                                number.
         ------------------     --------------------------------------------------------------------
-        transformations        optional list. Use this parameter to apply one or more datum
+        transformations        Optional list. Use this parameter to apply one or more datum
                                transformations to the map when sr is different than the map
                                service's spatial reference. It is an array of transformation
                                elements.
         ------------------     --------------------------------------------------------------------
-        map_range_values       optional list. Allows you to filter features in the exported map
+        map_range_values       Optional list. Allows you to filter features in the exported map
                                from all layer that are within the specified range instant or
                                extent.
         ------------------     --------------------------------------------------------------------
-        layer_range_values     optional dictionary. Allows you to filter features for each
+        layer_range_values     Optional dictionary. Allows you to filter features for each
                                individual layer that are within the specified range instant or
                                extent. Note: Check range infos at the layer resources for the
                                available ranges.
         ------------------     --------------------------------------------------------------------
-        layer_parameter        optional list. Allows you to filter the features of individual
+        layer_parameter        Optional list. Allows you to filter the features of individual
                                layers in the exported map by specifying value(s) to an array of
                                pre-authored parameterized filters for those layers. When value is
                                not specified for any parameter in a request, the default value,
@@ -5855,7 +6299,7 @@ class MapImageLayer(arcgis.gis.Layer):
             >>> map_image_item = gis.content.get("2aaddab96684405880d27f5261125061")
             >>> map_image_item.export_map(bbox="-104,35.6,-94.32,41",
                                           bbox_sr = 4326,
-                                          image_format ="png,
+                                          image_format ="png",
                                           layers = "include",
                                           transparent = True,
                                           scale = 40.0,
@@ -5931,12 +6375,12 @@ class MapImageLayer(arcgis.gis.Layer):
     # ----------------------------------------------------------------------
     def estimate_export_tiles_size(
         self,
-        export_by,
-        levels,
-        tile_package=False,
-        export_extent="DEFAULTEXTENT",
-        area_of_interest=None,
-        asynchronous=True,
+        export_by: str,
+        levels: str,
+        tile_package: bool = False,
+        export_extent: str = "DEFAULTEXTENT",
+        area_of_interest: Optional[Union[dict[str, Any], _geometry.Polygon]] = None,
+        asynchronous: bool = True,
         **kwargs,
     ):
         """
@@ -5954,22 +6398,24 @@ class MapImageLayer(arcgis.gis.Layer):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        tile_package           optional boolean. Allows estimating the size for either a tile
-                               package or a cache raster data set. Specify the value true for tile
-                               packages format and false for Cache Raster data set. The default
-                               value is False
+        export_by              Required string. The criteria that will be used to select the tile
+                               service levels to export. The values can be Level IDs, cache scales
+                               or the Resolution (in the case of image services).
+                               Values:
+                                    "LevelID" | "Resolution" | "Scale"
         ------------------     --------------------------------------------------------------------
-        levels                 required string. Specify the tiled service levels for which you want
+        levels                 Required string. Specify the tiled service levels for which you want
                                to get the estimates. The values should correspond to Level IDs,
                                cache scales or the Resolution as specified in export_by parameter.
                                The values can be comma separated values or a range.
+
                                Example 1: 1,2,3,4,5,6,7,8,9
                                Example 2: 1-4,7-9
         ------------------     --------------------------------------------------------------------
-        export_by              required string. The criteria that will be used to select the tile
-                               service levels to export. The values can be Level IDs, cache scales
-                               or the Resolution (in the case of image services).
-                               Values: LevelID, Resolution, Scale
+        tile_package           Optional boolean. Allows estimating the size for either a tile
+                               package or a cache raster data set. Specify the value true for tile
+                               packages format and false for Cache Raster data set. The default
+                               value is False
         ------------------     --------------------------------------------------------------------
         export_extent          The extent (bounding box) of the tile package or the cache dataset
                                to be exported. If extent does not include a spatial reference, the
@@ -5978,14 +6424,17 @@ class MapImageLayer(arcgis.gis.Layer):
                                Syntax: <xmin>, <ymin>, <xmax>, <ymax>
                                Example: -104,35.6,-94.32,41
         ------------------     --------------------------------------------------------------------
-        area_of_interest       optiona dictionary or Polygon. This allows exporting tiles within
+        area_of_interest       Optional dictionary or Polygon. This allows exporting tiles within
                                the specified polygon areas. This parameter supersedes extent
                                parameter.
-                               Example: { "features": [{"geometry":{"rings":[[[-100,35],
-                                          [-100,45],[-90,45],[-90,35],[-100,35]]],
-                                          "spatialReference":{"wkid":4326}}}]}
+
+                               Example:
+
+                                    | { "features": [{"geometry":{"rings":[[[-100,35],
+                                    |       [-100,45],[-90,45],[-90,35],[-100,35]]],
+                                    |       "spatialReference":{"wkid":4326}}}]}
         ------------------     --------------------------------------------------------------------
-        asynchronous           optional boolean. The estimate function is run asynchronously
+        asynchronous           Optional boolean. The estimate function is run asynchronously
                                requiring the tool status to be checked manually to force it to
                                run synchronously the tool will check the status until the
                                estimation completes.  The default is True, which means the status
@@ -6019,7 +6468,6 @@ class MapImageLayer(arcgis.gis.Layer):
         else:
             exportJob = self._con.get(url, params)
 
-            job_id = exportJob["jobId"]
             path = "%s/jobs/%s" % (url, exportJob["jobId"])
 
             params = {"f": "json"}
@@ -6048,15 +6496,15 @@ class MapImageLayer(arcgis.gis.Layer):
     # ----------------------------------------------------------------------
     def export_tiles(
         self,
-        levels,
-        export_by="LevelID",
-        tile_package=True,
-        export_extent=None,
-        optimize_for_size=True,
-        compression=75,
-        area_of_interest=None,
-        asynchronous=False,
-        storage_format=None,
+        levels: str,
+        export_by: str = "LevelID",
+        tile_package: bool = True,
+        export_extent: Optional[Union[dict[str, Any], str]] = None,
+        optimize_for_size: bool = True,
+        compression: int = 75,
+        area_of_interest: Optional[Union[dict[str, Any], _geometry.Polygon]] = None,
+        asynchronous: bool = False,
+        storage_format: Optional[str] = None,
         **kwargs,
     ):
         """
@@ -6082,7 +6530,7 @@ class MapImageLayer(arcgis.gis.Layer):
         .. note::
             In ArcGIS Server 10.2.2 and later versions, exportTiles is supported as an
             operation of the Map Server. The use of the
-            http://Map_Service/exportTiles/submitJob operation is deprecated.
+            ``http://Map_Service/exportTiles/submitJob`` operation is deprecated.
             You can provide arguments to the exportTiles operation as defined
             in the following parameters table:
 
@@ -6090,7 +6538,7 @@ class MapImageLayer(arcgis.gis.Layer):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        levels                 required string. Specifies the tiled service levels to export. The
+        levels                 Required string. Specifies the tiled service levels to export. The
                                values should correspond to Level IDs, cache scales. or the
                                resolution as specified in export_by parameter. The values can be
                                comma separated values or a range. Make sure tiles are present at
@@ -6098,28 +6546,31 @@ class MapImageLayer(arcgis.gis.Layer):
                                Example 1: 1,2,3,4,5,6,7,8,9
                                Example 2: 1-4,7-9
         ------------------     --------------------------------------------------------------------
-        export_by              required string. The criteria that will be used to select the tile
+        export_by              Required string. The criteria that will be used to select the tile
                                service levels to export. The values can be Level IDs, cache scales.
-                               or the resolution.  The defaut is 'LevelID'.
-                               Values: `LevelID | Resolution | Scale`
+                               or the resolution.  The default is 'LevelID'.
+                               Values:
+                                    `LevelID | Resolution | Scale`
         ------------------     --------------------------------------------------------------------
-        tile_package           optiona boolean. Allows exporting either a tile package or a cache
+        tile_package           Optional boolean. Allows exporting either a tile package or a cache
                                raster data set. If the value is true, output will be in tile
                                package format, and if the value is false, a cache raster data
                                set is returned. The default value is True.
         ------------------     --------------------------------------------------------------------
-        export_extent          optional dictionary or string. The extent (bounding box) of the tile
+        export_extent          Optional dictionary or string. The extent (bounding box) of the tile
                                package or the cache dataset to be exported. If extent does not
                                include a spatial reference, the extent values are assumed to be in
                                the spatial reference of the map. The default value is full extent
                                of the tiled map service.
-                               Syntax: <xmin>, <ymin>, <xmax>, <ymax>
+                               Syntax:
+                                    <xmin>, <ymin>, <xmax>, <ymax>
                                Example 1: -104,35.6,-94.32,41
-                               Example 2: {"xmin" : -109.55, "ymin" : 25.76,
-                                            "xmax" : -86.39, "ymax" : 49.94,
-                                            "spatialReference" : {"wkid" : 4326}}
+                               Example 2:
+                                    | {"xmin" : -109.55, "ymin" : 25.76,
+                                    | "xmax" : -86.39, "ymax" : 49.94,
+                                    | "spatialReference" : {"wkid" : 4326}}
         ------------------     --------------------------------------------------------------------
-        optimize_for_size      optional boolean. Use this parameter to enable compression of JPEG
+        optimize_for_size      Optional boolean. Use this parameter to enable compression of JPEG
                                tiles and reduce the size of the downloaded tile package or the
                                cache raster data set. Compressing tiles slightly compromises the
                                quality of tiles but helps reduce the size of the download. Try
@@ -6127,7 +6578,7 @@ class MapImageLayer(arcgis.gis.Layer):
                                using this feature.
                                The default value is True.
         ------------------     --------------------------------------------------------------------
-        compression=75,        optional integer. When optimize_for_size=true, you can specify a
+        compression=75,        Optional integer. When optimize_for_size=true, you can specify a
                                compression factor. The value must be between 0 and 100. The value
                                cannot be greater than the default compression already set on the
                                original tile. For example, if the default value is 75, the value
@@ -6135,21 +6586,24 @@ class MapImageLayer(arcgis.gis.Layer):
                                than 75 in this example will attempt to up sample an already
                                compressed tile and will further degrade the quality of tiles.
         ------------------     --------------------------------------------------------------------
-        area_of_interest       optional dictionary, Polygon. The area_of_interest polygon allows
+        area_of_interest       Optional dictionary, Polygon. The area_of_interest polygon allows
                                exporting tiles within the specified polygon areas. This parameter
                                supersedes the exportExtent parameter.
-                               Example: { "features": [{"geometry":{"rings":[[[-100,35],
-                                                      [-100,45],[-90,45],[-90,35],[-100,35]]],
-                                                      "spatialReference":{"wkid":4326}}}]}
+
+                               Example:
+
+                                   | { "features": [{"geometry":{"rings":[[[-100,35],
+                                   |   [-100,45],[-90,45],[-90,35],[-100,35]]],
+                                   |   "spatialReference":{"wkid":4326}}}]}
         ------------------     --------------------------------------------------------------------
-        asynchronous           optional boolean. Default False, this value ensures the returns are
+        asynchronous           Optional boolean. Default False, this value ensures the returns are
                                returned to the user instead of the user having the check the job
                                status manually.
         ------------------     --------------------------------------------------------------------
-        storage_format         optional string. Specifies the type of tile package that will be created.
+        storage_format         Optional string. Specifies the type of tile package that will be created.
 
-                               `tpk` - Tiles are stored using Compact storage format. It is supported across the ArcGIS platform.
-                               `tpkx` - Tiles are stored using CompactV2 storage format, which provides better performance on network shares and cloud store directories. This improved and simplified package structure type is supported by newer versions of ArcGIS products such as ArcGIS Online 7.1, ArcGIS Enterprise 10.7, and ArcGIS Runtime 100.5. This is the default.
+                               | ``tpk`` - Tiles are stored using Compact storage format. It is supported across the ArcGIS platform.
+                               | ``tpkx`` - Tiles are stored using CompactV2 storage format, which provides better performance on network shares and cloud store directories. This improved and simplified package structure type is supported by newer versions of ArcGIS products such as ArcGIS Online 7.1, ArcGIS Enterprise 10.7, and ArcGIS Runtime 100.5. This is the default.
         ==================     ====================================================================
 
         :return:
@@ -6187,7 +6641,6 @@ class MapImageLayer(arcgis.gis.Layer):
         else:
             exportJob = self._con.get(path=url, params=params)
 
-            job_id = exportJob["jobId"]
             path = "%s/jobs/%s" % (url, exportJob["jobId"])
 
             params = {"f": "json"}
@@ -6241,7 +6694,7 @@ class MapImageLayer(arcgis.gis.Layer):
             elif "output" in job_response:
                 allResults = job_response["output"]
                 if allResults["itemId"]:
-                    return arcgis.gis.Item(gis=self._gis, itemid=allResults["itemId"])
+                    return _gis.Item(gis=self._gis, itemid=allResults["itemId"])
                 else:
                     if self._gis._portal.is_arcgisonline:
                         return [

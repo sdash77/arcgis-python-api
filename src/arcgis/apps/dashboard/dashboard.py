@@ -1,17 +1,20 @@
 import atexit
 import json
 import arcgis
+from arcgis._impl.common._deprecate import deprecated
 
 _DASHBOARD_VERSION = 27
 
 _created_dashboards = []
 
 
+@deprecated(deprecated_in="2.0.1", removed_in=None, current_version="2.0.1")
 class Dashboard(object):
     """
-    Creates a Dashboard Object.
+    Creates a :class:`~arcgis.apps.dashboard.Dashboard` Object.
 
-    :return Dashboard object
+    :return:
+        :class:`~arcgis.apps.dashboard.Dashboard` object
     """
 
     def __init__(self):
@@ -45,7 +48,7 @@ class Dashboard(object):
         -------------------------   -------------------------------------------
         tags                        Optional string. Comma separated tags.
         -------------------------   -------------------------------------------
-        gis                         Optional GIS to publish dashboard.
+        gis                         Optional :class:`~arcgis.gis.GIS` to publish dashboard.
                                     By default uses active gis.
         -------------------------   -------------------------------------------
         overwrite                   Optional Boolean.
@@ -75,7 +78,8 @@ class Dashboard(object):
     @property
     def header(self):
         """
-        :return: Header Object
+        :return:
+            :class:`~arcgis.apps.dashboard.Header` object
         """
         return self._header
 
@@ -89,7 +93,8 @@ class Dashboard(object):
     @property
     def side_panel(self):
         """
-        :return Side Panel Object
+        :return:
+            :class:`~arcgis.apps.dashboard.SidePanel` object
         """
         return self._side_panel
 

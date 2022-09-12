@@ -3,6 +3,9 @@ import logging
 import datetime as _datetime
 import platform
 import configparser
+from typing import Optional
+from arcgis.gis import GIS
+from functools import lru_cache
 
 _log = logging.getLogger(__name__)
 ###########################################################################
@@ -21,6 +24,24 @@ class ServerProfileManager(object):
         self._os = platform.system()
         self._cfg_file_path = os.path.expanduser("~") + "/.agsprofile"
         self._cfg_exists = os.path.isfile(self._cfg_file_path)
+
+    # ----------------------------------------------------------------------
+    @lru_cache(maxsize=255)
+    def _keyring_version(self):
+        """returns the keyring version number"""
+        try:
+            # python 3.8+
+            from importlib.metadata import version
+
+            return [int(i) for i in version("keyring").split(".")]
+        except:
+            # python < 3.8
+            import pkg_resources
+
+            return [
+                int(i)
+                for i in pkg_resources.get_distribution("keyring").version.split(".")
+            ]
 
     # ----------------------------------------------------------------------
     def _config_is_in_new_format(self, config):
@@ -104,7 +125,14 @@ class ServerProfileManager(object):
 
         if self._current_keyring_is_recommended():
             # password will be None if no password is found for the profile
-            password = keyring.get_password(self._profile_name, profile)
+
+            if self._keyring_version() >= [23]:
+
+                password = keyring.get_credential(self._profile_name, profile)
+
+                password = getattr(password, "password", None)
+            else:
+                password = keyring.get_password(self._profile_name, profile)
         else:
             password = None
             _log.warn(self._get_keyring_failure_message())
@@ -528,6 +556,24 @@ class ProfileManager(object):
         self._cfg_exists = os.path.isfile(self._cfg_file_path)
 
     # ----------------------------------------------------------------------
+    @lru_cache(maxsize=255)
+    def _keyring_version(self):
+        """returns the keyring version number"""
+        try:
+            # python 3.8+
+            from importlib.metadata import version
+
+            return [int(i) for i in version("keyring").split(".")]
+        except:
+            # python < 3.8
+            import pkg_resources
+
+            return [
+                int(i)
+                for i in pkg_resources.get_distribution("keyring").version.split(".")
+            ]
+
+    # ----------------------------------------------------------------------
     def _config_is_in_new_format(self, config):
         """Any version <= 1.3.0 of the API used a different config file
         formatting that, among other things, did not store the last time
@@ -611,9 +657,18 @@ class ProfileManager(object):
 
         if self._current_keyring_is_recommended():
             # password will be None if no password is found for the profile
-            password = keyring.get_password(
-                "arcgis_python_api_profile_passwords", profile
-            )
+
+            if self._keyring_version() >= [23]:
+
+                password = keyring.get_credential(
+                    "arcgis_python_api_profile_passwords", profile
+                )
+
+                password = getattr(password, "password", None)
+            else:
+                password = keyring.get_password(
+                    "arcgis_python_api_profile_passwords", profile
+                )
         else:
             password = None
             _log.warn(self._get_keyring_failure_message())
@@ -657,13 +712,24 @@ class ProfileManager(object):
         """
         import keyring
 
-        supported_keyrings = [
-            keyring.backends.OS_X.Keyring,
-            keyring.backends.SecretService.Keyring,
-            keyring.backends.Windows.WinVaultKeyring,
-            keyring.backends.kwallet.DBusKeyring,
-            keyring.backends.chainer.ChainerBackend,
-        ]
+        if self._keyring_version() >= [23, 0, 0]:
+            supported_keyrings = [type(r) for r in keyring.backend.get_all_keyring()]
+        else:
+            try:
+                import keyring.backends.OS_X
+                import keyring.backends.kwallet
+                import keyring.backends.chainer
+                import keyring.backends.Windows
+                import keyring.backends.SecretService
+            except Exception as keyringex:
+                print(f"Error importing keyring {str(keyringex)}")
+            supported_keyrings = [
+                keyring.backends.OS_X.Keyring,
+                keyring.backends.SecretService.Keyring,
+                keyring.backends.Windows.WinVaultKeyring,
+                keyring.backends.kwallet.DBusKeyring,
+                keyring.backends.chainer.ChainerBackend,
+            ]
         current_keyring = type(keyring.get_keyring())
         return current_keyring in supported_keyrings
 
@@ -685,7 +751,7 @@ class ProfileManager(object):
         )
 
     # ----------------------------------------------------------------------
-    def list(self, as_df=False):
+    def list(self, as_df: bool = False):
         """
         The ``list`` method retrieves a list of profile names in the configuration file
 
@@ -712,7 +778,7 @@ class ProfileManager(object):
         return []
 
     # --------------------------------------------------------------------------
-    def get(self, profile):
+    def get(self, profile: str):
         """
         The ``get`` method retrieves the profile information for a given entry.
 
@@ -757,7 +823,7 @@ class ProfileManager(object):
         return None
 
     # --------------------------------------------------------------------------
-    def delete(self, profile):
+    def delete(self, profile: str):
         """
         The ``delete`` method deletes a profile permanently from the .arcgisprofile file
 
@@ -805,13 +871,13 @@ class ProfileManager(object):
     # ----------------------------------------------------------------------
     def update(
         self,
-        profile,
-        url=None,
-        username=None,
-        password=None,
-        key_file=None,
-        cert_file=None,
-        client_id=None,
+        profile: str,
+        url: Optional[str] = None,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        key_file: Optional[str] = None,
+        cert_file: Optional[str] = None,
+        client_id: Optional[str] = None,
     ):
         """
         The ``update`` method updates an existing profile in the credential manager.
@@ -860,13 +926,13 @@ class ProfileManager(object):
     # ----------------------------------------------------------------------
     def create(
         self,
-        profile,
-        url=None,
-        username=None,
-        password=None,
-        key_file=None,
-        cert_file=None,
-        client_id=None,
+        profile: str,
+        url: Optional[str] = None,
+        username: Optional[str] = None,
+        password: Optional[str] = None,
+        key_file: Optional[str] = None,
+        cert_file: Optional[str] = None,
+        client_id: Optional[str] = None,
     ):
         """
         The ``create`` method adds a new entry into the Profile Store.
@@ -931,7 +997,7 @@ class ProfileManager(object):
             return False
 
     # ----------------------------------------------------------------------
-    def save_as(self, profile, gis):
+    def save_as(self, profile: str, gis: GIS):
         """
 
         The ``save_as`` method saves and adds the provided :class:`~arcgis.gis.GIS` object to the profile.
@@ -955,7 +1021,6 @@ class ProfileManager(object):
 
 
         """
-        from arcgis.gis import GIS
 
         url = gis._url
         u = gis._username

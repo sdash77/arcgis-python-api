@@ -19,10 +19,10 @@ class TestAnalyzeLSA(unittest.TestCase):
     def setUpClass(cls):
         # Create Python API GIS object and prepare REST service URL strings
         cls.base_server_url = (
-            "https://krennic.esri.com/server/rest/services/ParcelFabric_LSA/"
+            "https://dev0016752.esri.com/server/rest/services/ParcelFabric_LSA/"
         )
         cls.gis = GIS(
-            "https://krennic.esri.com/portal",
+            "https://dev0016752.esri.com/portal",
             "admin",
             "esri.agp",
             verify_cert=False,

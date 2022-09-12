@@ -4,12 +4,11 @@
 # -------------------------------------------------------------------------------
 import unittest
 import os
+import sys
+
+sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils
-from integration.dino_utils.dino_configs import DinoConfigs
-from configparser import ConfigParser
-from pathlib import Path
-import json
 import datetime
 
 # region PreCondition check
@@ -64,48 +63,7 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
         :return:
         """
 
-        # region Read config data
-        _conf_reader = ConfigParser()
-        _conf_reader.read(DinoConfigs.portal_list_file, "UTF-8")
-
-        # cls.portal_url = _conf_reader['arcgiscom']['url']
-        # cls.portal_username = _conf_reader['arcgiscom']['admin_user']
-        # cls.portal_password = _conf_reader['arcgiscom']['admin_password']
-
-        # trying if tests need to be owners of items
-        cls.portal_url = _conf_reader["arcgiscom"]["url"]
-        cls.portal_username = _conf_reader["arcgiscom"]["apidataowner_user"]
-        cls.portal_password = _conf_reader["arcgiscom"]["apidataowner_password"]
-
-        # temporary until tool gets released on production
-        # cls.portal_url = "https://devext.arcgis.com"
-        # cls.portal_username = "amani_devtesting"
-        # cls.portal_password = "123devtesting@1"
-
-        _conf_reader2 = ConfigParser()
-        _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
-
-        cls.qalab_base_path = _conf_reader2["test_data"]["qalab_base_path"]
-        cls.qalab_data_path = (
-            cls.qalab_base_path + _conf_reader2["test_data"]["qalab_dataprep"]
-        )
-        cls.qalab_cls_path = (
-            cls.qalab_base_path + _conf_reader2["test_data"]["qalab_WebMap_cls"]
-        )
-        cls.qalab_output_root = (
-            cls.qalab_base_path + _conf_reader2["test_data"]["qalab_output_root"]
-        )
-        cls.qalab_cls_name = _conf_reader2["test_data"]["qalab_WebMap_cls"]
-        # endregion
-
-        # region precondition checks and sign in
-        r1 = PreconditionChecks.can_ping_portal(cls.portal_url)
-        if not r1:
-            cls.class_skip = True
-
-        cls.gis = GIS(
-            cls.portal_url, cls.portal_username, cls.portal_password, verify_cert=False
-        )
+        cls.gis = GIS(profile="your_online_profile", verify_cert=False)
         if cls.gis is None:
             cls.class_skip = True
 
@@ -159,9 +117,7 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
     )
     def test_create_OfflineMapAreaManager(self):
         try:
-            # wmitem = self.gis.content.get('33c139234203473aa49a959dbf27cfb3')  # old, while in dev cloud.
-            # wmitem = self.gis.content.get('89919db1b67547388bdcdf444b4d2cdb')
-            wmitem = self.gis.content.get("2051a50d9370428297dc08a87db4a43f")
+            wmitem = self.gis.content.get("8d1df5a2b82f406b900f7f623806d36e")
             wm = WebMap(wmitem)
             oma_manager = wm.offline_areas
 
@@ -400,3 +356,7 @@ class Test_WebMap_OMA_AGO(unittest.TestCase):
 # TestModule
 def tearDownModule():
     print("**End GIS module Tests**")
+
+
+if __name__ == "__main__":
+    unittest.main()

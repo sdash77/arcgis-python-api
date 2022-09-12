@@ -4,7 +4,8 @@ GIS Connection Testing for Pro and NBAUTH files
 import os
 import sys
 
-# sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork\src")
+# sys.path.insert(0, r"c:\SVN\geosaurus_master\tests")
+# sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
 import imp
 import json
 import tempfile
@@ -26,23 +27,29 @@ class ArcPyMock(object):
 
 
 try:
-    raise ImportError("missing")
+    # raise ImportError("missing")
     import imp
 
     imp.find_module("arcpy")
-    _HAS_ARCPY = True
-except ImportError:
-    sys.modules["arcpy"] = ArcPyMock()
     import arcpy
 
     _HAS_ARCPY = True
+except ImportError:
+    _HAS_ARCPY = False
 import arcgis
-import pytest
+
+try:
+    arcgis.gis.GIS(profile="your_enterprise_profile")
+    _HAS_KEYRING = True
+except:
+    _HAS_KEYRING = False
+
+# import pytest
 from arcgis.gis import GIS
 from arcgis.gis import ProfileManager
 
 ###########################################################################
-@unittest.mock.patch(target="__main__.arcpy", new=ArcPyMock, create=True)
+@unittest.skipIf(_HAS_ARCPY == False, "No ArcPy, Skipping!")
 class TestProHomeLogic(unittest.TestCase):
     """Tests the 'home' logic"""
 
@@ -126,6 +133,7 @@ class TestProHomeLogic(unittest.TestCase):
 
 
 ###########################################################################
+@unittest.skipIf(_HAS_KEYRING == False, "Keyring not setup, Skipping!")
 class TestHomeNBAUTHLogic(unittest.TestCase):
     """Test the 'home' logic for NBAUTH file"""
 
@@ -242,7 +250,7 @@ class TestHomeNBAUTHLogic(unittest.TestCase):
                     )
                     self.assertEqual(len(os.environ), 1)
                     gis = GIS(url="home", verify_cert=False)
-                    assert gis._con._expiration == 20160
+                    assert gis._con._expiration > 0
                     assert gis.users.me
                     del gis
 

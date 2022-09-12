@@ -52,7 +52,7 @@ class PointCNN(ArcGISModel):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function.
+                            :meth:`~arcgis.learn.prepare_data` function.
     ---------------------   -------------------------------------------
     pretrained_path         Optional String. Path where pre-trained model
                             is saved.
@@ -66,22 +66,25 @@ class PointCNN(ArcGISModel):
     encoder_params          Optional dictionary. The keys of the dictionary are
                             `out_channels`, `P`, `K`, `D` and `m`.
 
-                              Examples:
-                                {'out_channels':[16, 32, 64, 96],
-                                'P':[-1, 768, 384, 128],
-                                'K':[12, 16, 16, 16],
-                                'D':[1, 1, 2, 2],
-                                'm':8
-                                }
+                            Examples:
+
+                                |    {'out_channels':[16, 32, 64, 96],
+                                |    'P':[-1, 768, 384, 128],
+                                |    'K':[12, 16, 16, 16],
+                                |    'D':[1, 1, 2, 2],
+                                |    'm':8
+                                |    }
 
                             Length of `out_channels`, `P`, `K`, `D` should be same.
                             The length denotes the number of layers in encoder.
-                              Parameter Explanation
-                                - 'out_channels': Number of channels produced by each layer,
-                                - 'P': Number of points in each layer,
-                                - 'K': Number of K-nearest neighbor in each layer,
-                                - 'D': Dilation in each layer,
-                                - 'm': Multiplier which is multiplied by each element of out_channel.
+
+                            Parameter Explanation
+
+                            - 'out_channels': Number of channels produced by each layer,
+                            - 'P': Number of points in each layer,
+                            - 'K': Number of K-nearest neighbor in each layer,
+                            - 'D': Dilation in each layer,
+                            - 'm': Multiplier which is multiplied by each element of out_channel.
     ---------------------   -------------------------------------------
     dropout                 Optional float. This parameter will control overfitting.
                             The range of this parameter is [0,1).
@@ -90,7 +93,7 @@ class PointCNN(ArcGISModel):
                             will actually process.
     =====================   ===========================================
 
-    :return: `PointCNN` Object
+    :return: :class:`~arcgis.learn.PointCNN`  Object
     """
 
     def __init__(self, data, pretrained_path=None, *args, **kwargs):
@@ -151,11 +154,11 @@ class PointCNN(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `PointCNN` Object
+        :return: :class:`~arcgis.learn.PointCNN`  Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -271,7 +274,9 @@ class PointCNN(ArcGISModel):
                                 tensorboard. Required tensorboardx version=2.1
 
                                 The default value is 'False'.
-                                **Note - Not applicable for Text Models
+
+                                .. note::
+                                        Not applicable for Text Models
         ---------------------   -------------------------------------------
         monitor                 Optional string. Parameter specifies
                                 which metric to monitor while checkpointing
@@ -375,6 +380,14 @@ class PointCNN(ArcGISModel):
         _emd_template["DataAttributes"][
             "background_classcode"
         ] = self._data.background_classcode
+
+        if hasattr(self.learn.data, "statistics") and self.learn.data.statistics[
+            "parameters"
+        ].get("excludedClasses", False):
+            _emd_template["excludedClasses"] = self.learn.data.statistics["parameters"][
+                "excludedClasses"
+            ]
+
         if self._data.pc_type == "PointCloud_TF":
             _emd_template["DataAttributes"][
                 "extra_feat_indexes"
@@ -394,6 +407,11 @@ class PointCNN(ArcGISModel):
             class_data["Color"] = np.array(color).astype(int).tolist()
             _emd_template["Classes"].append(class_data.copy())
 
+        if hasattr(self.learn.data, "statistics") and self.learn.data.statistics.get(
+            "blockShape", False
+        ):
+            _emd_template["blockShape"] = self.learn.data.statistics.get("blockShape")
+
         return _emd_template
 
     def show_results(self, rows=2, **kwargs):
@@ -401,13 +419,15 @@ class PointCNN(ArcGISModel):
         """
         Displays the results from your model on the validation set
         with ground truth on the left and predictions on the right.
+        Visualization of data, exported in a geographic coordinate system
+        is not yet supported.
 
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional rows. Number of rows to show. Default
                                 value is 2 and maximum value is the `batch_size`
-                                passed in `prepare_data`.
+                                passed in :meth:`~arcgis.learn.prepare_data`.
         =====================   ===========================================
 
         **kwargs**
@@ -428,7 +448,7 @@ class PointCNN(ArcGISModel):
                                 parameter to be [1, 2]. List of all classes
                                 can be accessed from `data.classes` attribute
                                 where `data` is the `Databunch` object returned
-                                by `prepare_data` function.
+                                by :meth:`~arcgis.learn.prepare_data` function.
         ---------------------   -------------------------------------------
         width                   Optional integer. Width of the plot. Default
                                 value is 750.

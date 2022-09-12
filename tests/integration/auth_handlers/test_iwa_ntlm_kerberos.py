@@ -1,6 +1,6 @@
 import sys
 
-# sys.path.insert(0, r"c:\SVN\geosaurus_master_issue_4790a\src")
+# sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
 import platform
 import unittest
 from arcgis.auth import EsriWindowsAuth, EsriKerberosAuth, EsriSession
@@ -12,25 +12,25 @@ except:
     from ._config_utils import get_config_parser
 
 
-if 'iwa' in get_config_parser():
+if "iwa" in get_config_parser():
     SKIP_IWA = False
-    iwa_url = get_config_parser()['iwa']['url']
-    iwa_user = get_config_parser()['iwa']['username']
-    iwa_pw = get_config_parser()['iwa']['password']
+    iwa_url = get_config_parser()["iwa"]["url"]
+    iwa_user = get_config_parser()["iwa"]["username"]
+    iwa_pw = get_config_parser()["iwa"]["password"]
 else:
     SKIP_IWA = True
 
-if 'kerberos' in get_config_parser():
+if "kerberos" in get_config_parser():
     SKIP_KERBEROS = False
-    ker_url = get_config_parser()['kerberos']['url']
+    ker_url = get_config_parser()["kerberos"]["url"]
 else:
     SKIP_KERBEROS = True
 
-if 'ldap' in get_config_parser():
+if "ldap" in get_config_parser():
     SKIP_LDAP = False
-    ldap_url = get_config_parser()['ldap']['url']
-    ldap_user = get_config_parser()['ldap']['username']
-    ldap_pw = get_config_parser()['ldap']['password']
+    ldap_url = get_config_parser()["ldap"]["url"]
+    ldap_user = get_config_parser()["ldap"]["username"]
+    ldap_pw = get_config_parser()["ldap"]["password"]
 else:
     SKIP_LDAP = True
 
@@ -58,7 +58,7 @@ class TestWinAuth(unittest.TestCase):
         with EsriSession(auth=auth) as session:
             resp = session.get(url=iwa_url + "/sharing/rest/portals/self?f=json")
             data = resp.json()
-            assert data["user"]["username"].find(iwa_user.split('\\')[-1]) > -1
+            assert 'creator2' in data["user"]["username"]
 
     def test_win_auth_no_user(self):
         url = iwa_url
@@ -111,10 +111,10 @@ class TestLDAPAuth(unittest.TestCase):
     """LDAP Test"""
 
     def test_ldap(self):
-        ldap_url = "https://rpubrh77017.ags.esri.com/portal"
+        ldap_url = "https://rpubrh8212.ags.esri.com/portal"
         url = f"{ldap_url}/sharing/rest/portals/self?f=json"
         server_url = f"{ldap_url}/sharing/rest/portals/self/servers?f=json"
-        auth = EsriBasicAuth(ldap_user, ldap_pw, legacy=True)
+        auth = EsriBasicAuth(ldap_user, ldap_pw)
         with EsriSession(auth=auth) as session:
             resp = session.get(url)
             data = resp.json()

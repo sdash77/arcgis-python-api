@@ -5,7 +5,9 @@ from arcgis._impl.common._mixins import PropertyMap
 
 class SiteManager(object):
     """
-    Provides the ability to update and restore notebook sites.
+    Provides the ability to update and restore notebook sites. An object of this
+    class can be created using :attr:`~arcgis.gis.nb.NotebookServer.site` property of the
+    :class:`~arcgis.gis.nb.NotebookServer` class
 
     """
 
@@ -39,11 +41,11 @@ class SiteManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<SiteManager @ {url}>".format(url=self._url)
+        return "< SiteManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<SiteManager @ {url}>".format(url=self._url)
+        return "< SiteManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -54,7 +56,7 @@ class SiteManager(object):
         return self._properties
 
     # ----------------------------------------------------------------------
-    def export_site(self, location):
+    def export_site(self, location: str):
         """
         ArcGIS Notebook Server provides this operation to back up the site's
         configuration store, along with the importSite operation to restore
@@ -77,7 +79,7 @@ class SiteManager(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        location               Require String. The folder to save the site to.
+        location               Required String. The folder to save the site to.
         ==================     ====================================================================
 
         :return: string
@@ -88,7 +90,7 @@ class SiteManager(object):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-    def import_site(self, location):
+    def import_site(self, location: str):
         """
         ArcGIS Notebook Server provides this operation to restore a site
         configuration from a backup. The backup will have been created and
@@ -107,7 +109,7 @@ class SiteManager(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        location               Require String. Path to the backup site file.
+        location               Required String. Path to the backup site file.
         ==================     ====================================================================
 
         :return: Boolean

@@ -54,14 +54,14 @@ else:
 
 class SequenceToSequence(ArcGISModel):
     """
-    Creates a SequenceToSequence Object.
+    Creates a :class:`~arcgis.learn.text.SequenceToSequence` Object.
     Based on the Hugging Face transformers library
 
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required text data object, returned from
-                            prepare_textdata function.
+                            :class:`~arcgis.learn.prepare_textdata` function.
     ---------------------   -------------------------------------------
     backbone                Optional string. Specifying the HuggingFace
                             transformer model name to be used to train the
@@ -98,7 +98,7 @@ class SequenceToSequence(ArcGISModel):
                             (DLPK) or Esri Model Definition(EMD) file.
     =====================   ===========================================
 
-    :return: `SequenceToSequence` model object for sequence_translation task.
+    :return: :class:`~arcgis.learn.text.SequenceToSequence` model object for sequence_translation task.
     """
 
     # supported transformer backbones
@@ -264,12 +264,12 @@ class SequenceToSequence(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Optional fastai Databunch. Returned data
-                                object from `prepare_textdata` function or None for
+                                object from :class:`~arcgis.learn.prepare_textdata` function or None for
                                 inferencing.
                                 Default value: None
         =====================   ===========================================
 
-        :return: SequenceToSequence Object
+        :return: :class:`~arcgis.learn.text.SequenceToSequence` Object
         """
         if not HAS_FASTAI:
             from .._data import _raise_fastai_import_error
@@ -340,7 +340,7 @@ class SequenceToSequence(ArcGISModel):
         name_or_path            Required string. Folder path to save the model.
         ---------------------   -------------------------------------------
         framework               Optional string. Defines the framework of the
-                                model. (Only supported by ``SingleShotDetector``, currently.)
+                                model. (Only supported by :class:`~arcgis.learn.SingleShotDetector`, currently.)
                                 If framework used is ``TF-ONNX``, ``batch_size`` can be
                                 passed as an optional keyword argument.
 
@@ -348,7 +348,7 @@ class SequenceToSequence(ArcGISModel):
         ---------------------   -------------------------------------------
         publish                 Optional boolean. Publishes the DLPK as an item.
         ---------------------   -------------------------------------------
-        gis                     Optional GIS Object. Used for publishing the item.
+        gis                     Optional :class:`~arcgis.gis.GIS`  Object. Used for publishing the item.
                                 If not specified then active gis user is taken.
         ---------------------   -------------------------------------------
         compute_metrics         Optional boolean. Used for computing model
@@ -448,10 +448,10 @@ class SequenceToSequence(ArcGISModel):
     def get_model_metrics(self):
         """
         Calculates the following  metrics:
-            * accuracy:   the number of correctly predicted labels in the validation set
-                          divided by the total number of items in the validation set
-            * bleu-score  This value indicates the similarity between model predictions
-                          and the ground truth text. Maximum value is 1
+
+        * accuracy:   the number of correctly predicted labels in the validation set divided by the total number of items in the validation set
+
+        * bleu-score  This value indicates the similarity between model predictions and the ground truth text. Maximum value is 1
 
         :return: a dictionary containing the metrics for classification model.
         """
@@ -579,7 +579,7 @@ class SequenceToSequence(ArcGISModel):
                                 will plot the figure and return nothing.
         =====================   ===========================================
 
-        :return: matplotlib.figure.Figure
+        :return: `matplotlib.figure.Figure <https://matplotlib.org/stable/api/figure_api.html#matplotlib.figure.Figure>`_
         """
         self._check_requisites()
         import matplotlib.pyplot as plt

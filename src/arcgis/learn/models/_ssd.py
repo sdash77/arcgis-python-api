@@ -3,7 +3,6 @@ from pathlib import Path
 import json
 from ._codetemplate import code
 import warnings
-import math
 from .._data import _raise_fastai_import_error
 import traceback
 
@@ -16,16 +15,14 @@ HAS_FASTAI = True
 
 try:
     import torch
+    from torch import tensor, Tensor
     import numpy as np
     from fastai.vision.learner import cnn_learner
     from fastai.callbacks.hooks import model_sizes
     from fastai.vision.learner import create_body, cnn_config
-    from fastai.vision.data import ImageDataBunch
     from fastai.vision import ImageList
-    from fastai.vision import imagenet_stats, normalize
-    from fastai.vision.image import open_image, bb2hw, image2np, Image, pil2tensor
-    from torchvision.models import resnet34
-    from torchvision.models import mobilenet_v2
+    from fastai.vision import imagenet_stats
+    from fastai.vision.image import bb2hw, Image, pil2tensor
     from torchvision import models
     from .._utils.pascal_voc_rectangles import (
         ObjectDetectionCategoryList,
@@ -35,8 +32,6 @@ try:
         SSDHead,
         BCE_Loss,
         FocalLoss,
-        one_hot_embedding,
-        nms,
         postprocess,
     )
     from ._ssd_utils import (
@@ -46,17 +41,13 @@ try:
         avg_iou,
         AveragePrecision,
     )
-    from .._data import prepare_data
-    from fastai.callbacks import EarlyStoppingCallback
     from ._arcgis_model import (
-        SaveModelCallback,
         _set_multigpu_callback,
         _resnet_family,
         _vgg_family,
         _densenet_family,
-        _change_tail,
     )
-    from ._unet_utils import is_no_color
+    from ._timm_utils import timm_config, filter_timm_models, _get_feature_size
     from torch.nn import Module as NnModule
     import PIL
     from .._image_utils import (
@@ -71,8 +62,9 @@ try:
         _get_emd_path,
         read_image,
     )
+    from ._inferencing.util import actn_to_bb, hw2corners, nms_jit
     from fastprogress.fastprogress import progress_bar
-    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from .._utils.env import is_arcgispronotebook
     import matplotlib.pyplot as plt
 except Exception as e:
     import_exception = "\n".join(
@@ -94,6 +86,161 @@ def _mobilenet_split(m: NnModule):
     return m[0][0][0], m[1]
 
 
+from typing import Union, Tuple, Optional, List
+
+
+try:
+
+    @torch.jit.script
+    def _nms_jit_loop(
+        conf_scores, a_ic, nms_overlap: float, thres: float
+    ) -> Tuple[List[Tensor], List[Tensor], List[List[Tensor]]]:
+        out1, out2 = [], []
+        cc = torch.jit.annotate(List[List[Tensor]], [])
+        for cl in range(1, len(conf_scores)):
+            c_mask = conf_scores[cl] > thres
+            if c_mask.sum() == 0:
+                continue
+            scores = conf_scores[cl][c_mask]
+            l_mask = c_mask.unsqueeze(1).expand_as(a_ic)
+            boxes = a_ic[l_mask].view(-1, 4)
+
+            ids, count = nms_jit(
+                boxes.data, scores, nms_overlap, 50
+            )  # FIX- NMS overlap hardcoded #TODO: jit
+            ids = ids[: int(count.item())]
+            out1.append(scores[ids])
+            out2.append(boxes.data[ids])
+            cc.append(
+                [
+                    torch.tensor([cl]).to(conf_scores.device).int()
+                    for i in range(int(count.item()))
+                ]
+            )
+
+        return out1, out2, cc
+
+    @torch.jit.script
+    def _get_jit_predictions(
+        conf_scores, a_ic, nms_overlap: float, thres: float
+    ) -> Tuple[Tensor, Tensor, Tensor]:
+        out1, out2, cc = _nms_jit_loop(conf_scores, a_ic, nms_overlap, thres)
+        if len(cc) == 0:
+            cc = [[torch.tensor([0]).int().to(a_ic.device)]]
+        cc_temp = torch.jit.annotate(List[Tensor], [])
+        for c in range(len(cc)):
+            cc_temp.append(torch.cat(cc[c]))
+        cc_concat = torch.cat(cc_temp)
+        if len(out1) == 0:
+            out1 = [torch.empty((0,), dtype=conf_scores.dtype).to(conf_scores.device)]
+        out1_concat = torch.cat(out1)
+        if len(out2) == 0:
+            out2 = [torch.empty((0,), dtype=conf_scores.dtype).to(conf_scores.device)]
+        out2_concat = torch.cat(out2)
+        bbox, clas, prs, thresh = (
+            out2_concat,
+            cc_concat,
+            out1_concat,
+            thres,
+        )  # FIX- hardcoded threshold
+        return bbox, clas, prs
+
+    @torch.jit.script
+    def _process_jit_bboxes(bboxes: List[Tensor]):
+        # print(bboxes)
+        processed_bboxes = []
+        for batch in range(len(bboxes)):
+            for bbox in bboxes[batch]:
+                output = torch.clone(bbox)
+                bbox[0] = output[1]
+                bbox[1] = output[0]
+                bbox[2] = output[3] - output[1]
+                bbox[3] = output[2] - output[0]
+                processed_bboxes.append(bbox)
+        if not len(processed_bboxes) == 0:
+            out_bboxes = torch.stack([bbox for bbox in processed_bboxes])
+            return out_bboxes
+        else:
+            return torch.empty((len(bboxes), 0, 0, 0)).float()
+
+except:
+    print("torch not available\n")
+
+
+class SSDTracer(torch.nn.Module):
+    def __init__(self, model, device, chip_size, anchors, grid_sizes, trace=False):
+        super().__init__()
+        if trace:
+            self.model = torch.jit.trace(
+                model.to(device),
+                torch.rand(1, 3, chip_size[0], chip_size[1]).to(device),
+            )
+        else:
+            self.model = model.to(device)
+        self.anchors = anchors.to(device)
+        self.grid_sizes = grid_sizes.to(device)
+
+    def _get_nms_preds(
+        self,
+        b_clas,
+        b_bb,
+        idx: int,
+        anchors,
+        grid_sizes,
+        nms_overlap: float,
+        thres: float,
+    ):
+        a_ic = actn_to_bb(b_bb[idx], anchors, grid_sizes)
+        conf_scores = b_clas[idx].sigmoid().t().detach().to(anchors.device)
+        out = _get_jit_predictions(conf_scores, a_ic, nms_overlap, thres)
+        return out
+
+    # TODO: batch_size
+    def process_bboxes(self, batch_output: List[Tensor]) -> List[Tensor]:
+        num_boxes = 0
+        pred_bboxes = []
+        pred_labels = []
+        pred_scores = []
+
+        batch = 0
+
+        for chip_idx, output in enumerate(batch_output[1]):
+            pred_bbox, pred_label, pred_score = self._get_nms_preds(
+                batch_output[0],
+                batch_output[1],
+                chip_idx,
+                self.anchors,
+                self.grid_sizes,
+                nms_overlap=0.1,
+                thres=0.3,
+            )
+
+            batch += 1
+            pred_bboxes.append(pred_bbox)
+            pred_labels.append(pred_label)
+            pred_scores.append(pred_score)
+
+        if not len(pred_bboxes) == 0:
+            pred_bboxes_final = _process_jit_bboxes(pred_bboxes).to(
+                batch_output[0].device
+            )
+            pred_labels_final = torch.stack([label for label in pred_labels]).to(
+                batch_output[0].device
+            )
+            pred_scores_final = torch.stack([score for score in pred_scores]).to(
+                batch_output[0].device
+            )  # TODO
+            return pred_bboxes_final, pred_labels_final, pred_scores_final
+        else:
+            dummy = torch.empty((batch, 0, 0, 0)).float().to(batch_output[0].device)
+            return dummy, dummy, dummy
+
+    def forward(self, inp: Tensor) -> List[Tensor]:
+        out = self.model(inp)
+        out_final = self.process_bboxes(out)
+        return out_final
+
+
 class SingleShotDetector(ArcGISModel):
 
     """
@@ -104,7 +251,7 @@ class SingleShotDetector(ArcGISModel):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function.
+                            :meth:`~arcgis.learn.prepare_data` function.
     ---------------------   -------------------------------------------
     grids                   Required list. Grid sizes used for creating anchor
                             boxes.
@@ -114,9 +261,12 @@ class SingleShotDetector(ArcGISModel):
     ratios                  Optional list of tuples. Aspect ratios of anchor
                             boxes.
     ---------------------   -------------------------------------------
-    backbone                Optional function. Backbone CNN model to be used for
-                            creating the base of the `SingleShotDetector`, which
+    backbone                Optional string. Backbone convolutional neural network
+                            model used for feature extraction, which
                             is `resnet34` by default.
+                            Supported backbones: ResNet, DenseNet, VGG families
+                            and specified Timm models(experimental support) from
+                            :func:`~arcgis.learn.SingleShotDetector.backbones`.
     ---------------------   -------------------------------------------
     dropout                 Optional float. Dropout probability. Increase it to
                             reduce overfitting.
@@ -143,7 +293,8 @@ class SingleShotDetector(ArcGISModel):
                             valid options are 'pytorch', 'tensorflow'
     =====================   ===========================================
 
-    :return: `SingleShotDetector` Object
+    :return:
+        :class:`~arcgis.learn.SingleShotDetector` Object
     """
 
     def __init__(
@@ -164,7 +315,8 @@ class SingleShotDetector(ArcGISModel):
         **kwargs,
     ):
 
-        super().__init__(data, backbone, **kwargs)
+        super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
+        data = self._data
 
         if pretrained_path is not None:
             backbone_pretrained = False
@@ -185,6 +337,13 @@ class SingleShotDetector(ArcGISModel):
                 location_loss_factor,
             )
         else:
+
+            self._check_dataset_support(self._data)
+            if not (self._check_backbone_support(getattr(self, "_backbone", backbone))):
+                raise Exception(
+                    f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
+                )
+
             # assert (location_loss_factor is not None) or ((location_loss_factor > 0) and (location_loss_factor < 1)),
             if not ssd_version in [1, 2]:
                 raise Exception("ssd_version can be only [1,2]")
@@ -199,14 +358,15 @@ class SingleShotDetector(ArcGISModel):
             self._code = code
             self.ssd_version = ssd_version
 
-            backbone_cut = None
-            backbone_split = None
+            if "timm" in self._backbone.__module__:
 
-            self._check_dataset_support(self._data)
-            if not (self._check_backbone_support(getattr(self, "_backbone", backbone))):
-                raise Exception(
-                    f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
-                )
+                timm_meta = timm_config(self._backbone)
+                backbone_cut = timm_meta["cut"]
+                backbone_split = timm_meta["split"]
+            else:
+                backbone_cut = None
+                backbone_split = None
+
             backbone_name = self._backbone.__name__[:3]
 
             if self._backbone.__name__ == "mobilenet_v2":
@@ -277,18 +437,15 @@ class SingleShotDetector(ArcGISModel):
                     grids = list(set(grids))
 
                 self._create_anchors(grids, zooms, ratios)
-                if hasattr(self, "_orig_backbone"):
-                    feature_sizes = model_sizes(
-                        create_body(
-                            self._orig_backbone, pretrained=False, cut=backbone_cut
-                        ),
-                        size=(data.chip_size, data.chip_size),
-                    )
-                else:
-                    feature_sizes = model_sizes(
-                        create_body(self._backbone, pretrained=False, cut=backbone_cut),
-                        size=(data.chip_size, data.chip_size),
-                    )
+
+                feature_sizes = _get_feature_size(
+                    self._orig_backbone
+                    if hasattr(self, "_orig_backbone")
+                    else self._backbone,
+                    cut=backbone_cut,
+                    chip_size=(data.chip_size, data.chip_size),
+                )
+
                 num_features = feature_sizes[-1][-1]
                 num_channels = feature_sizes[-1][1]
 
@@ -296,6 +453,7 @@ class SingleShotDetector(ArcGISModel):
                     grids[0] > 8
                     and abs(num_features - grids[0]) > 4
                     and backbone_name == "res"
+                    and "bit" not in self._backbone.__name__
                 ):
                     num_features = feature_sizes[-2][-1]
                     num_channels = feature_sizes[-2][1]
@@ -353,17 +511,26 @@ class SingleShotDetector(ArcGISModel):
 
     @property
     def supported_backbones(self):
-        """Supported torchvision backbones for this model."""
+        """Supported list of backbones for this model."""
+        return SingleShotDetector._supported_backbones()
+
+    @staticmethod
+    def backbones():
+        """Supported list of backbones for this model."""
         return SingleShotDetector._supported_backbones()
 
     @staticmethod
     def _supported_backbones():
+
+        timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
+        timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
+
         return [
             *_resnet_family,
             *_densenet_family,
             *_vgg_family,
             models.mobilenet_v2.__name__,
-        ]
+        ] + timm_backbones
 
     @property
     def supported_datasets(self):
@@ -393,11 +560,12 @@ class SingleShotDetector(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `SingleShotDetector` Object
+        :return:
+            :class:`~arcgis.learn.SingleShotDetector` Object
         """
         return cls.from_emd(data, emd_path)
 
@@ -411,14 +579,14 @@ class SingleShotDetector(ArcGISModel):
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Esri Model Definition
                                 file.
         =====================   ===========================================
 
-        :return: `SingleShotDetector` Object
+        :return: :class:`~arcgis.learn.SingleShotDetector` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -661,6 +829,118 @@ class SingleShotDetector(ArcGISModel):
             device=device,
         )
 
+    def _save_device_model(self, model, device, save_path):
+        model.eval()
+        if hasattr(self._data, "chip_size"):
+            chip_size = self._data.chip_size
+            if not isinstance(chip_size, tuple):
+                chip_size = (chip_size, chip_size)
+        inp = torch.rand(1, 3, chip_size[0], chip_size[1]).to(device)
+        model = SSDTracer(model, device, chip_size, self._anchors, self._grid_sizes)
+        model = model.to(device)
+        traced_model = None
+        with torch.no_grad():
+            traced_model = self._trace(model, inp, True)
+        torch.jit.save(traced_model, save_path)
+
+        return traced_model
+
+    def _save_pytorch_torchscript(self, name, save=True):
+        traced_model_cpu = None
+        traced_model_gpu = None
+
+        model = self.learn.model
+        model.eval()
+        device = self._device
+
+        cpu = torch.device("cpu")
+        save_path_cpu = (
+            self.learn.path / self.learn.model_dir / f"{name}-cpu.pt"
+        ).__str__()
+        traced_model_cpu = self._save_device_model(model, cpu, save_path_cpu)
+        save_path_cpu = f"{name}-cpu.pt"
+
+        save_path_gpu = ""
+        if torch.cuda.is_available():
+            gpu = torch.device("cuda")
+            save_path_gpu = (
+                self.learn.path / self.learn.model_dir / f"{name}-gpu.pt"
+            ).__str__()
+            traced_model_gpu = self._save_device_model(model, gpu, save_path_gpu)
+            save_path_gpu = f"{name}-gpu.pt"
+
+        model.to(device)
+
+        if not save:
+            return [traced_model_cpu, traced_model_gpu]
+        return [save_path_cpu, save_path_gpu]
+
+    def _save_pytorch_tflite(self, name):
+        import tensorflow as tf
+        import logging
+
+        tf.get_logger().setLevel(logging.ERROR)
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            import onnx
+            import onnx_tf
+            from onnx_tf.backend import prepare
+
+        traced_models = self._save_pytorch_torchscript(name, False)
+        if traced_models[0] is None:
+            return ["", ""]
+
+        cpu = torch.device("cpu")
+        device = cpu
+        traced_model = traced_models[0].to(device)
+        if hasattr(self._data, "chip_size"):
+            chip_size = self._data.chip_size
+            if not isinstance(chip_size, tuple):
+                chip_size = (chip_size, chip_size)
+        num_input_channels = list(self.learn.model.parameters())[0].shape[1]
+        inp = torch.randn([1, num_input_channels, chip_size[0], chip_size[1]]).to(
+            device
+        )
+
+        save_path_tflite = self.learn.path / self.learn.model_dir / f"{name}.tflite"
+        save_path_onnx = self.learn.path / self.learn.model_dir / f"{name}.onnx"
+        save_path_pb = self.learn.path / self.learn.model_dir / f"{name}"
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            torch.onnx.export(
+                traced_model,
+                inp,
+                save_path_onnx,
+                export_params=True,
+                do_constant_folding=False,
+                verbose=True,
+                input_names=["input"],
+                output_names=["output"],
+                opset_version=11,
+            )
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            arcgis_onnx = onnx.load(save_path_onnx)
+            tf_onnx = prepare(arcgis_onnx, logging_level="ERROR")
+            tf_onnx.export_graph(str(save_path_pb))
+
+        converter = tf.lite.TFLiteConverter.from_saved_model(str(save_path_pb))
+        converter.experimental_new_converter = True
+        converter.optimizations = [tf.compat.v1.lite.Optimize.DEFAULT]
+        converter.target_ops = [
+            tf.lite.OpsSet.TFLITE_BUILTINS_INT8,
+            tf.lite.OpsSet.SELECT_TF_OPS,
+        ]
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            tflite_model = converter.convert()
+        with tf.io.gfile.GFile(save_path_tflite, "wb") as f:
+            f.write(tflite_model)
+
+        return [save_path_tflite, save_path_onnx]
+
     def _get_emd_params(self, save_inference_file):
         import random
 
@@ -675,7 +955,11 @@ class SingleShotDetector(ArcGISModel):
         _emd_template["ModelConfiguration"] = "_DynamicSSD"
         _emd_template["ModelType"] = "ObjectDetection"
         _emd_template["ExtractBands"] = [0, 1, 2]
-        _emd_template["backbone"] = self._backbone.__name__
+        if "timm" in self._backbone.__module__:
+            bckbn_name = "timm:" + self._backbone.__name__
+        else:
+            bckbn_name = self._backbone.__name__
+        _emd_template["backbone"] = bckbn_name
         if _emd_template["backbone"] == "backbone_wrapper":
             _emd_template["backbone"] = self._orig_backbone.__name__
         _emd_template["Grids"] = self.grids
@@ -727,12 +1011,36 @@ class SingleShotDetector(ArcGISModel):
         self.learn.show_results(
             rows=rows, thresh=thresh, nms_overlap=nms_overlap, model=self
         )
-        if _IS_ARCGISPRONOTEBOOK:
+        if is_arcgispronotebook():
             plt.show()
 
     def _show_results_multispectral(
         self, rows=5, thresh=0.3, nms_overlap=0.1, alpha=1, **kwargs
     ):
+        """
+        Displays the results of a trained model on a part of the validation set.
+
+        =====================   ===========================================
+        **Argument**            **Description**
+        ---------------------   -------------------------------------------
+        rows                    Optional int. Number of rows of results
+                                to be displayed.
+        ---------------------   -------------------------------------------
+        thresh                  Optional float. The probability above which
+                                a detection will be considered valid.
+        ---------------------   -------------------------------------------
+        nms_overlap             Optional float. The intersection over union
+                                threshold with other predicted bounding
+                                boxes, above which the box with the highest
+                                score will be considered a true positive.
+        ---------------------   -------------------------------------------
+        alpha                   Optional Float.
+                                Opacity of the lables for the corresponding
+                                images. Values range between 0 and 1, where
+                                1 means opaque.
+        =====================   ===========================================
+
+        """
         return_fig = kwargs.get("return_fig", False)
         ret_val = show_results_multispectral(
             self,

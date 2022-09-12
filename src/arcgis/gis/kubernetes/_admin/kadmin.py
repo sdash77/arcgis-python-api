@@ -1,3 +1,4 @@
+from typing import Optional
 from urllib.request import HTTPError
 from arcgis._impl.common._isd import InsensitiveDict
 from ._base import _BaseKube
@@ -38,6 +39,7 @@ class KubernetesAdmin(_BaseKube):
     _organizations = None
     _category_schema = None
     _jobs = None
+    _collaborations = None
 
     # ----------------------------------------------------------------------
     def __init__(self, url, gis):
@@ -192,10 +194,10 @@ class KubernetesAdmin(_BaseKube):
     # ----------------------------------------------------------------------
     def scheduled_tasks(
         self,
-        item: Item = None,
-        active: bool = None,
-        user: User = None,
-        types: str = None,
+        item: Optional[Item] = None,
+        active: Optional[bool] = None,
+        user: Optional[User] = None,
+        types: Optional[str] = None,
     ):
         """
         This property allows `org_admins` to be able to see all scheduled tasks on the enterprise
@@ -246,7 +248,7 @@ class KubernetesAdmin(_BaseKube):
     @property
     def _location_tracking(self):
         """
-        The manager for Location Tracking. See :class:`~arcgis.apps.tracker.LocationTrackingManager'.
+        The manager for Location Sharing. See :class:`~arcgis.apps.tracker.LocationTrackingManager'.
         """
         return LocationTrackingManager(self._gis)
 
@@ -334,6 +336,19 @@ class KubernetesAdmin(_BaseKube):
             url = self._url + "/security"
             self._security = KubeSecurity(url=url, gis=self._gis)
         return self._security
+
+    # ----------------------------------------------------------------------
+    @property
+    def collaborations(self):
+        """
+        The collaborations resource lists all collaborations in which a
+        portal participates
+        """
+        if self._collaborations is None:
+            from arcgis.gis.admin._collaboration import CollaborationManager
+
+            self._collaborations = CollaborationManager(gis=self._gis)
+        return self._collaborations
 
     # ----------------------------------------------------------------------
     @property

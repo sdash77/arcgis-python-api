@@ -6,29 +6,50 @@ aggregate_points calculates statistics about points that fall within specified a
 summarize_nearby calculates statistics for features and their attributes that are within a specified distance.
 summarize_within calculates statistics for area features and attributes that overlap each other.
 """
-import inspect
+from __future__ import annotations
+from datetime import datetime
+from re import U
+from typing import Any, Optional, Union
+
 import arcgis as _arcgis
+from arcgis.features.feature import FeatureCollection
+from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
+from arcgis.gis import GIS, Item
 from .._impl.common._utils import _date_handler
 from .._impl.common._utils import inspect_function_inputs
 import arcgis.network as network
 
 # --------------------------------------------------------------------------
 def aggregate_points(
-    point_layer,
-    polygon_layer=None,
-    keep_boundaries_with_no_points=True,
-    summary_fields=[],
-    group_by_field=None,
-    minority_majority=False,
-    percent_points=False,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
-    bin_type=None,
-    bin_size=None,
-    bin_size_unit=None,
+    point_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    polygon_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ] = None,
+    keep_boundaries_with_no_points: bool = True,
+    summary_fields: list[str] = [],
+    group_by_field: Optional[str] = None,
+    minority_majority: bool = False,
+    percent_points: bool = False,
+    output_name: Optional[Union[str, FeatureLayer]] = None,
+    context: Optional[dict] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
+    bin_type: Optional[str] = None,
+    bin_size: Optional[float] = None,
+    bin_size_unit: Optional[str] = None,
 ):
     """
     .. image:: _static/images/agg_points_standard/aggregate_points.png
@@ -39,7 +60,7 @@ def aggregate_points(
     For example, if your points represented coffee shops and each point has a TOTAL_SALES attribute, you can get statistics like the sum of all TOTAL_SALES within the polygon, or the minimum or maximum TOTAL_SALES value, or the standard deviation of all sales within the polygon.
 
     ====================================    ====================================================================
-    **Parameter**                           **Description**
+    **Argument**                            **Description**
     ------------------------------------    --------------------------------------------------------------------
     point_layer                             Required point layer. The point features that will be aggregated
                                             into the polygons in the polygon_layer. See :ref:`Feature Input<FeatureInput>`.
@@ -94,11 +115,11 @@ def aggregate_points(
                                             If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
     ------------------------------------    --------------------------------------------------------------------
     context                                 Optional dict. Additional settings such as processing extent and output spatial reference.
-                                            For aggregate_points, there are three settings.
+                                            For aggregate_points, there are three settings (`overwrite` is required).
 
                                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                                 .. code-block:: python
 
@@ -111,13 +132,14 @@ def aggregate_points(
                                                                 "outSR": {"wkid": 3857},
                                                                 "overwrite": True}
     ------------------------------------    --------------------------------------------------------------------
-    gis                                     Optional, the GIS on which this tool runs.
+    gis                                     Optional, the :class:`~arcgis.gis.GIS` on which this tool runs.
                                             If not specified, the active GIS is used.
     ------------------------------------    --------------------------------------------------------------------
     estimate                                Optional Boolean. If True, the number of credits to run the operation
                                             will be returned.
     ------------------------------------    --------------------------------------------------------------------
-    future                                  Optional Boolean. When True, the task will be performed asynchronously.
+    future                                  Optional boolean. If True, a future object will be returned and the process
+                                            will not wait for the task to complete. The default is False, which means wait for results.
     ------------------------------------    --------------------------------------------------------------------
     bin_type                                Optional String. The type of bin that will be generated and points
                                             will be aggregated into. Bin options are as follows: Hexagon and Square.
@@ -140,6 +162,7 @@ def aggregate_points(
     ====================================    ====================================================================
 
     :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
+    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
 
     .. code-block:: python
@@ -184,25 +207,39 @@ def aggregate_points(
 
 # --------------------------------------------------------------------------
 def summarize_nearby(
-    sum_nearby_layer,
-    summary_layer,
-    near_type="StraightLine",
-    distances=[],
-    units="Meters",
-    time_of_day=None,
-    time_zone_for_time_of_day="GeoLocal",
-    return_boundaries=True,
-    sum_shape=True,
-    shape_units=None,
-    summary_fields=[],
-    group_by_field=None,
-    minority_majority=False,
-    percent_shape=False,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    sum_nearby_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    summary_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    near_type: str = "StraightLine",
+    distances: Optional[list[str]] = [],
+    units: str = "Meters",
+    time_of_day: Optional[datetime] = None,
+    time_zone_for_time_of_day: str = "GeoLocal",
+    return_boundaries: bool = True,
+    sum_shape: bool = True,
+    shape_units: Optional[str] = None,
+    summary_fields: Optional[list[str]] = [],
+    group_by_field: Optional[str] = None,
+    minority_majority: bool = False,
+    percent_shape: bool = False,
+    output_name: Optional[Union[str, FeatureLayer]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
     """
     .. image:: _static/images/summarize_nearby/summarize_nearby.png
@@ -216,9 +253,9 @@ def summarize_nearby(
       store accessibility.
 
     =========================   ====================================================================================================================
-    **Parameter**               **Description**
+    **Argument**                **Description**
     -------------------------   --------------------------------------------------------------------------------------------------------------------
-    sum_nearby_layer            Required feature layer. Point, line, or polygon features from which distances will be measured to features in the ``summary_layer``. See :ref:`Feature Input<FeatureInput>`.
+    sum_nearby_layer            Required :class:`~arcgis.features.FeatureLayer` . Point, line, or polygon features from which distances will be measured to features in the ``summary_layer``. See :ref:`Feature Input<FeatureInput>`.
     -------------------------   --------------------------------------------------------------------------------------------------------------------
     summary_layer               Required layer. Point, line, or polygon features. Features in this layer that are within the specified distance to features in the ``sum_nearby_layer`` will be summarized. See :ref:`Feature Input<FeatureInput>`.
     -------------------------   --------------------------------------------------------------------------------------------------------------------
@@ -298,11 +335,11 @@ def summarize_nearby(
                                 Examples:
                                 from datetime import datetime
 
-                                * ``time_of_day``- datetime(1990, 1, 4, 1, 3) # 13:03, 4 January 1990. Typical traffic on Thursdays at 1:03 p.m.
-                                * ``time_of_day``- datetime(1990, 1, 7, 17, 0) # 17:00, 7 January 1990. Typical traffic on Sundays at 5:00 p.m.
-                                * ``time_of_day``- datetime(2014, 10, 22, 8, 0) # 8:00, 22 October 2014. If the current time is between 8:00 p.m., 21 Oct. 2014 and 8:00 p.m., 22 Oct. 2014,
+                                * "time_of_day"- datetime(1990, 1, 4, 1, 3) # 13:03, 4 January 1990. Typical traffic on Thursdays at 1:03 p.m.
+                                * "time_of_day"- datetime(1990, 1, 7, 17, 0) # 17:00, 7 January 1990. Typical traffic on Sundays at 5:00 p.m.
+                                * "time_of_day"- datetime(2014, 10, 22, 8, 0) # 8:00, 22 October 2014. If the current time is between 8:00 p.m., 21 Oct. 2014 and 8:00 p.m., 22 Oct. 2014,
                                 live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are referenced.
-                                * ``time_of_day``- datetime(2015, 3, 18, 10, 20) # 10:20, 18 March 2015. If the current time is between 10:20 p.m., 17 Mar. 2015 and 10:20 p.m., 18 Mar. 2015,
+                                * "time_of_day"- datetime(2015, 3, 18, 10, 20) # 10:20, 18 March 2015. If the current time is between 10:20 p.m., 17 Mar. 2015 and 10:20 p.m., 18 Mar. 2015,
                                 live traffic speeds are referenced in the analysis; otherwise, typical traffic speeds are referenced.
     -------------------------   --------------------------------------------------------------------------------------------------------------------
     time_zone_for_time_of_day   Optional string. Specify the time zone or zones of the ``time_of_day`` parameter.
@@ -374,7 +411,7 @@ def summarize_nearby(
 
                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                     .. code-block:: python
 
@@ -389,16 +426,18 @@ def summarize_nearby(
     -------------------------   --------------------------------------------------------------------------------------------------------------------
     estimate                    Optional boolean. Returns the number of credit for the operation.
     -------------------------   --------------------------------------------------------------------------------------------------------------------
-    future                      Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                      Optional boolean. If True, a future object will be returned and the process
+                                will not wait for the task to complete. The default is False, which means wait for results.
     =========================   ====================================================================================================================
 
-    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection` dictionary.
+    :return:
+        result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection` dictionary.
 
-         dict with the following keys:
+        dict with the following keys:
 
-             "result_layer" : layer (FeatureCollection)
+        "result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
-             "group_by_summary" : layer (FeatureCollection)
+        "group_by_summary" : layer (:class:`~arcgis.features.FeatureCollection`)
 
     .. code-block:: python
 
@@ -458,16 +497,23 @@ def summarize_nearby(
 
 # --------------------------------------------------------------------------
 def summarize_center_and_dispersion(
-    analysis_layer,
-    summarize_type=["CentralFeature"],
-    ellipse_size=None,
-    weight_field=None,
-    group_field=None,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
+    analysis_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    summarize_type: list[str] = ["CentralFeature"],
+    ellipse_size: Optional[str] = None,
+    weight_field: Optional[str] = None,
+    group_field: Optional[str] = None,
+    output_name: Optional[Union[str, FeatureLayer]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
 ):
 
     """
@@ -478,41 +524,41 @@ def summarize_center_and_dispersion(
     * Where is the center?
     * Which feature is the most accessible from all other features?
     * How dispersed, compact, or integrated are the features?
-    * Are there directional trends?s
+    * Are there directional trends?
 
-    ====================    =========================================================
+    ====================    ============================================================================================
     **Argument**            **Description**
-    --------------------    ---------------------------------------------------------
-    analysis_layer          Required frature layer. The point, line, or polygon features to be analyzed. See :ref:`Feature Input<FeatureInput>`.
-    --------------------    ---------------------------------------------------------
+    --------------------    --------------------------------------------------------------------------------------------
+    analysis_layer          Required :class:`~arcgis.features.FeatureLayer` . The point, line, or polygon features to be analyzed. See :ref:`Feature Input<FeatureInput>`.
+    --------------------    --------------------------------------------------------------------------------------------
     summarize_type          Required list of strings. The method with which to summarize the ``analysis_layer``.
 
                             Choice list: ["CentralFeature", "MeanCenter", "MedianCenter", "Ellipse"]
-    --------------------    ---------------------------------------------------------
+    --------------------    --------------------------------------------------------------------------------------------
     ellipse_size            Optional string. The size of the output ellipse in standard deviations.
 
                             Choice list: ['1 standard deviations', '2 standard deviations', '3 standard deviations']
 
                             The default ellipse size is '1 standard deviations'.
-    --------------------    ---------------------------------------------------------
+    --------------------    --------------------------------------------------------------------------------------------
     weight_field            Optional field. A numeric field in the ``analysis_layer`` to be used to
                             weight locations according to their relative importance.
-    --------------------    ---------------------------------------------------------
+    --------------------    --------------------------------------------------------------------------------------------
     group_field             Optional field. The field used to group features for separate directional
                             distribution calculations. The ``group_field`` can be of
                             integer, date, or string type.
-    --------------------    ---------------------------------------------------------
+    --------------------    --------------------------------------------------------------------------------------------
     output_name             Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
                             feature layer will cause the new layer to be appended to the Feature Service.
                             If overwrite is True in context, new layer will overwrite existing layer.
                             If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
-    --------------------    ---------------------------------------------------------
+    --------------------    --------------------------------------------------------------------------------------------
     context                 Optional dict. Additional settings such as processing extent and output spatial reference.
                             For summarize_center_and_dispersion, there are three settings.
 
                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 11+
 
                                 .. code-block:: python
 
@@ -524,17 +570,19 @@ def summarize_center_and_dispersion(
                                                         "spatialReference":{"wkid":102100,"latestWkid":3857}},
                                                 "outSR": {"wkid": 3857},
                                                 "overwrite": True}
-    --------------------    ---------------------------------------------------------
+    --------------------    --------------------------------------------------------------------------------------------
     estimate                Optional boolean. If True, the number of credits to run the operation will be returned.
-    --------------------    ---------------------------------------------------------
-    future                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
-    ====================    =========================================================
+    --------------------    --------------------------------------------------------------------------------------------
+    future                  Optional boolean. If True, a future object will be returned and the process
+                            will not wait for the task to complete. The default is False, which means wait for results.
+    ====================    ============================================================================================
 
     :return: list of items if ``output_name`` is supplied else, a Python dictionary with the following keys:
-        "central_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
-        "mean_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
-        "median_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
-        "ellipse_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+
+        | "central_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+        | "mean_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+        | "median_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+        | "ellipse_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
     .. code-block:: python
 
@@ -570,22 +618,36 @@ def summarize_center_and_dispersion(
 
 # --------------------------------------------------------------------------
 def summarize_within(
-    sum_within_layer,
-    summary_layer,
-    sum_shape=True,
-    shape_units=None,
-    summary_fields=[],
-    group_by_field=None,
-    minority_majority=False,
-    percent_shape=False,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
-    bin_type="Square",
-    bin_size=None,
-    bin_size_unit=None,
+    sum_within_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    summary_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    sum_shape: bool = True,
+    shape_units: Optional[str] = None,
+    summary_fields: Optional[list[str]] = [],
+    group_by_field: Optional[str] = None,
+    minority_majority: bool = False,
+    percent_shape: bool = False,
+    output_name: Optional[Union[str, FeatureLayer]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
+    bin_type: str = "Square",
+    bin_size: Optional[float] = None,
+    bin_size_unit: Optional[str] = None,
 ):
     """
     .. image:: _static/images/summarize_within/summarize_within.png
@@ -593,9 +655,9 @@ def summarize_within(
     The ``summarize_within`` method finds the point, line, or polygon features (or portions of these features)
     that are within the boundaries of polygons in another layer. For example:
 
-        * Given a layer of watershed boundaries and a layer of land-use boundaries by land-use type, calculate total acreage of land-use type for each watershed.
-        * Given a layer of parcels in a county and a layer of city boundaries, summarize the average value of vacant parcels within each city boundary.
-        * Given a layer of counties and a layer of roads, summarize the total mileage of roads by road type within each county.
+    * Given a layer of watershed boundaries and a layer of land-use boundaries by land-use type, calculate total acreage of land-use type for each watershed.
+    * Given a layer of parcels in a county and a layer of city boundaries, summarize the average value of vacant parcels within each city boundary.
+    * Given a layer of counties and a layer of roads, summarize the total mileage of roads by road type within each county.
 
     You can think of ``summarize_within`` as taking two layers and stacking them on top of each other.
     One of the layers, the ``sum_within_layer`` must be a polygon layer, and imagine that these polygon
@@ -608,11 +670,11 @@ def summarize_within(
     =====================================   =========================================================
     **Argument**                            **Description**
     -------------------------------------   ---------------------------------------------------------
-    sum_within_layer                        Required feature layer. The polygon features. Features, or
+    sum_within_layer                        Required :class:`~arcgis.features.FeatureLayer` . The polygon features. Features, or
                                             portions of features, in the ``summary_layer`` (below) that fall within
                                             the boundaries of these polygons will be summarized. See :ref:`Feature Input<FeatureInput>`.
     -------------------------------------   ---------------------------------------------------------
-    summary_layer                           Required feature layer. Point, line, or polygon features that will be summarized for each polygon in the ``sum_within_layer``.
+    summary_layer                           Required :class:`~arcgis.features.FeatureLayer` . Point, line, or polygon features that will be summarized for each polygon in the ``sum_within_layer``.
                                             See :ref:`Feature Input<FeatureInput>`.
     -------------------------------------   ---------------------------------------------------------
     sum_shape                               Optional boolean. A boolean value that instructs the task to calculate statistics
@@ -661,7 +723,7 @@ def summarize_within(
 
                                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                                 .. code-block:: python
 
@@ -676,7 +738,8 @@ def summarize_within(
     -------------------------------------   ---------------------------------------------------------
     estimate                                Optional boolean. If True, the number of credits to run the operation will be returned.
     -------------------------------------   ---------------------------------------------------------
-    future                                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                                  Optional boolean. If True, a future object will be returned and the process
+                                            will not wait for the task to complete. The default is False, which means wait for results.
     -------------------------------------   ---------------------------------------------------------
     bin_type                                Required string. The type of bin used to calculate density.
 
@@ -693,13 +756,14 @@ def summarize_within(
                                             The default is 'Meters'.
     =====================================   =========================================================
 
-    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection` dictionary.
+    :return:
+        result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection` dictionary.
 
         dict with the following keys:
 
-            "result_layer" : layer (FeatureCollection)
+        "result_layer" : layer (FeatureCollection)
 
-            "group_by_summary" : layer (FeatureCollection)
+        "group_by_summary" : layer (FeatureCollection)
 
     .. code-block:: python
 
@@ -742,21 +806,35 @@ def summarize_within(
 
 # --------------------------------------------------------------------------
 def join_features(
-    target_layer,
-    join_layer,
-    spatial_relationship=None,
-    spatial_relationship_distance=None,
-    spatial_relationship_distance_units=None,
-    attribute_relationship=None,
-    join_operation="""JoinOneToOne""",
-    summary_fields=None,
-    output_name=None,
-    context=None,
-    gis=None,
-    estimate=False,
-    future=False,
-    join_type="INNER",
-    records_to_match=None,
+    target_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    join_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    spatial_relationship: Optional[str] = None,
+    spatial_relationship_distance: Optional[float] = None,
+    spatial_relationship_distance_units: Optional[str] = None,
+    attribute_relationship: Optional[list[dict[str, Any]]] = None,
+    join_operation: str = """JoinOneToOne""",
+    summary_fields: Optional[list[dict[str[Any]]]] = None,
+    output_name: Optional[Union[str, FeatureLayer]] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    estimate: bool = False,
+    future: bool = False,
+    join_type: str = "INNER",
+    records_to_match: Optional[dict[str, Any]] = None,
 ):
     """
     .. image:: _static/images/join_features/join_features.png
@@ -765,14 +843,14 @@ def join_features(
     from one feature to another based on spatial and attribute relationships.
 
     ============================================================================================    =================================================================================================================================
-    **Parameter**                                                                                   **Description**
+    **Argument**                                                                                    **Description**
     --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
     target_layer                                                                                    Required layer. The point, line, polygon or table layer that will have attributes from
                                                                                                     the ``join_layer`` appended to its table. See :ref:`Feature Input<FeatureInput>`.
     --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
     join_layer                                                                                      Required layer. The point, line, polygon or table layer that will be joined to the ``target_layer``. See :ref:`Feature Input<FeatureInput>`.
     --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
-    spatial_relationship                                                                            Required string. Defines the spatial relationship used to spatially join features.
+    spatial_relationship                                                                            Required string if not table layers. Defines the spatial relationship used to spatially join features.
 
                                                                                                     Choice list: ['identicalto', 'intersects', 'completelycontains', 'completelywithin', 'withindistance']
     --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
@@ -790,28 +868,20 @@ def join_features(
     attribute_relationship                                                                          Optional list of dicts. Defines an attribute relationship used to join features. Features are matched when the field
                                                                                                     values in the join layer are equal to field values in the target layer.
     --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
-    join_operation                                                                                  Optional string. A string representing the type of join that will be applied.
+    join_operation                                                                                  Optional string. A string representing the type of join that will be applied
 
                                                                                                     Choice list: ['JoinOneToOne', 'JoinOneToMany']
 
-                                                                                                    * ``JoinOneToOne`` - If multiple join features are found that have the same relationships with a
-                                                                                                        single target feature, the attributes from the multiple join features will be aggregated using
-                                                                                                        the specified summary statistics. For example, if a point target feature is found within two
-                                                                                                        separate polygon join features, the attributes from the two polygons will be aggregated before
-                                                                                                        being transferred to the output point feature class. If one polygon has an attribute value of
-                                                                                                        3 and the other has a value of 7, and a SummaryField of sum is selected, the aggregated value
-                                                                                                        in the output feature class will be 10. There will always be a Count field calculated, with a
-                                                                                                        value of 2, for the number of features specified. This is the default.
+                                                                                                    * ``JoinOneToOne`` - If multiple join features are found that have the same relationships with asingle target feature, the attributes from the multiple join features will be aggregated using the specified summary statistics.
+                                                                                                      For example, if a point target feature is found within two separate polygon join features, the attributes from the two polygons will be aggregated before being transferred to the output point feature class.
+                                                                                                      If one polygon has an attribute value of 3 and the other has a value of 7, and a SummaryField of sum is selected, the aggregated value
+                                                                                                      in the output feature class will be 10. There will always be a Count field calculated, with a value of 2, for the number of features specified. This is the default.
 
-                                                                                                    * ``JoinOneToMany`` - If multiple join features are found that have the same relationship with
-                                                                                                        a single target feature, the output feature class will contain multiple copies (records) of
-                                                                                                        the target feature. For example, if a single point target feature is found within two separate
-                                                                                                        polygon join features, the output feature class will contain two copies of the target feature:
-                                                                                                        one record with the attributes of the first polygon, and another record with the attributes of
-                                                                                                        the second polygon. There are no summary statistics calculated with this method.
+                                                                                                    * ``JoinOneToMany`` - If multiple join features are found that have the same relationship with a single target feature, the output feature class will contain multiple copies (records) of the target feature.
+                                                                                                      For example, if a single point target feature is found within two separate polygon join features, the output feature class will contain two copies of the target feature:
+                                                                                                      one record with the attributes of the first polygon, and another record with the attributes of the second polygon. There are no summary statistics calculated with this method.
     --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
-    summary_fields                                                                                  Optional list of dicts. A list of field names and statistical summary types that you want to calculate.
-                                                                                                    Note that the count is always returned by default.
+    summary_fields                                                                                  Optional list of dicts. A list of field names and statistical summary types that you want to calculate. Note that the count is always returned by default.
 
                                                                                                     fieldName is the name of one of the numeric fields found in the input join layer.
 
@@ -833,7 +903,7 @@ def join_features(
 
                                                                                                     - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                                                                     - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                                                                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer.
+                                                                                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                                                                                         .. code-block:: python
 
@@ -848,12 +918,16 @@ def join_features(
     --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
     estimate                                                                                        Optional boolean. If True, the number of credits to run the operation will be returned.
     --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
-    future                                                                                          Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                                                                                          Optional boolean. If True, a future object will be returned and the process
+                                                                                                    will not wait for the task to complete. The default is False, which means wait for results.
     --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
     join_type                                                                                       Optional String.  Determines the type of join performed on the datasets.  The allowed values are INNER or LEFT.
     --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
     records_to_match                                                                                Optional Dict. Defines how two features are joined.
-                                                                                                    Example: {"groupByFields":"","orderByFields":"objectid ASC","topCount":1}
+                                                                                                    Example:
+                                                                                                        | {"groupByFields":"",
+                                                                                                        | "orderByFields":"objectid ASC",
+                                                                                                        | "topCount":1}
     ============================================================================================    =================================================================================================================================
 
     :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.

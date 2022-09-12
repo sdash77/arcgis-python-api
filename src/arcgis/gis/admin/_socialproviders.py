@@ -16,7 +16,8 @@ class SocialProviders(object):
     value               Required GIS.  This is an administrator connection to a GIS site.
     ===============     ====================================================================
 
-    :return: SocialProviders class
+    :return:
+        :class:`~arcgis.gis.admin.SocialProviders` object
 
     """
 
@@ -33,11 +34,11 @@ class SocialProviders(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -99,7 +100,7 @@ class SocialProviders(object):
 
     # ----------------------------------------------------------------------
     @configuration.setter
-    def configuration(self, value):
+    def configuration(self, value: dict):
         """
         See main ``configuration`` property docstring
         """

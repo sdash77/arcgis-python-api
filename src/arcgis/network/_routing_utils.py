@@ -1,8 +1,8 @@
 import logging as _logging
+from typing import Optional
 import arcgis
-from datetime import datetime
 from functools import lru_cache
-
+from arcgis.gis import GIS
 from arcgis.geoprocessing import import_toolbox as _import_toolbox
 from arcgis._impl.common._utils import _validate_url
 
@@ -17,22 +17,25 @@ def _create_toolbox(url, gis, verbose=False):
     return _import_toolbox(url_or_item=url, gis=gis, verbose=verbose)
 
 
-def get_travel_modes(gis=None):
+def get_travel_modes(gis: Optional[GIS] = None):
     """
 
 
     Get a list of travel modes that can be used with directions and routing services available in your portal.
 
-    Parameters:
+    =================================================     ========================================================================
+    **Argument**                                          **Description**
+    -------------------------------------------------     ------------------------------------------------------------------------
+    gis                                                   Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
+    =================================================     ========================================================================
 
-    gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+    :return: the following as a named tuple:
+    * supported_travel_modes - Supported Travel Modes as a FeatureSet
+    * default_travel_mode - Default Travel Mode as a str
 
 
-    Returns the following as a named tuple:
-       supported_travel_modes - Supported Travel Modes as a FeatureSet
-       default_travel_mode - Default Travel Mode as a str
-
-    See https://logistics.arcgis.com/arcgis/rest/directories/arcgisoutput/World/Utilities_GPServer/World_Utilities/GetTravelModes.htm for additional help.
+    See `GetTravelModes <https://developers.arcgis.com/rest/network/api-reference/gettravelmodes-synchronous-task.htm>`_ for additional help.
     """
 
     if gis is None:
@@ -47,7 +50,11 @@ def get_travel_modes(gis=None):
 get_travel_modes.__annotations__ = {"return": tuple}
 
 
-def get_tool_info(service_name="asyncRoute", tool_name="FindRoutes", gis=None):
+def get_tool_info(
+    service_name: str = "asyncRoute",
+    tool_name: str = "FindRoutes",
+    gis: Optional[GIS] = None,
+):
     """
 
 

@@ -1,11 +1,15 @@
 """
 Utility functions useful for Business Analyst - the glue functions not fitting neatly anywhere else.
 """
-from collections import Iterable
+import asyncio
 from functools import wraps, lru_cache
 import importlib
-from typing import AnyStr, Union
+from itertools import product
+import re
+import threading
+from typing import Any, AnyStr, Iterable, Optional, Tuple, Union
 
+from arcgis.features import FeatureSet
 from arcgis.gis import GIS, User
 from arcgis.geometry import Geometry, SpatialReference
 import numpy as np
@@ -42,10 +46,13 @@ def local_vs_gis(fn):
                 src = getattr(self, val)
                 break
 
+        # create the prefix string with the ablity to handle leading underscores...enabling underscored preprocessing
+        prefix = fn_name if fn_name.startswith("_") else f"_{fn_name}"
+
         # if performing analysis locally, try to access the function locally, but if not implemented, catch the error
         if src == "local":
             try:
-                fn_to_call = getattr(self, f"_{fn_name}_local")
+                fn_to_call = getattr(self, f"{prefix}_local")
             except AttributeError:
                 raise NotImplementedError(
                     f"'{fn_name}' not available using 'local' as the source."
@@ -54,7 +61,7 @@ def local_vs_gis(fn):
         # now, if performing analysis using a Web GIS, then access the function referencing remote resources
         elif isinstance(src, GIS):
             try:
-                fn_to_call = getattr(self, f"_{fn_name}_gis")
+                fn_to_call = getattr(self, f"{prefix}_gis")
             except AttributeError:
                 raise NotImplementedError(
                     f"'{fn_name}' not available using a Web GIS as the source."
@@ -107,7 +114,7 @@ def local_ba_data_avail() -> bool:
     return avail
 
 
-def set_source(in_source: Union[str, GIS] = None) -> Union[str, GIS]:
+def set_source(in_source: Optional[Union[str, GIS]] = None) -> Union[str, GIS]:
     """
     Helper function to check source input. The source can be set explicitly, but if nothing is provided, it
     assumes the order of local first and then a Web GIS. Along the way, it also checks to see if a GIS object
@@ -204,7 +211,10 @@ def can_enrich_gis(user: User) -> bool:
     return bool_enrich
 
 
-def has_networkanalysis_gis(user: User, network_function: str = None) -> bool:
+def has_networkanalysis_gis(
+    user: User,
+    network_function: Optional[str] = None,
+) -> bool:
     """Determine if the provided user has network analysis privileges in the Web GIS.
 
     .. note::
@@ -235,7 +245,7 @@ def has_networkanalysis_gis(user: User, network_function: str = None) -> bool:
             f'the list of network functions [{", ".join(ntwrk_fn_lst)}.'
         )
 
-    # privileges may no be available
+    # privileges may not be available
     _assert_privileges_access(user)
 
     # get the network analysis capabilities from the privileges
@@ -265,7 +275,7 @@ def has_networkanalysis_gis(user: User, network_function: str = None) -> bool:
 
 def geography_iterable_to_arcpy_geometry_list(
     geography_iterable: Union[pd.DataFrame, Iterable, Geometry],
-    geometry_filter: str = None,
+    geometry_filter: Optional[str] = None,
 ) -> list:
     """
     Processing helper to convert a iterable of geography_levels to a list of ArcPy Geometry objects suitable for input
@@ -425,20 +435,73 @@ def validate_spatial_reference(
     return sr
 
 
+def is_dict_geometry(in_dict: dict) -> bool:
+    """Determine if input dictionary is a Geometry object."""
+    if (
+        ("x" in in_dict.keys() and "y" in in_dict.keys())
+        or ("points" in in_dict.keys())
+        or ("ringCurves" in in_dict.keys())
+        or ("rings" in in_dict.keys())
+        or ("paths" in in_dict.keys())
+        or ("pathCurves" in in_dict.keys())
+    ):
+        is_geometry = True
+    else:
+        is_geometry = False
+    return is_geometry
+
+
+def is_dict_featureset(in_dict: dict) -> bool:
+    """Determine if input dictionary is a FeatureSet."""
+    if isinstance(in_dict, dict):
+        is_featureset = "features" in in_dict.keys() and "fields" in in_dict.keys()
+    else:
+        is_featureset = False
+    return is_featureset
+
+
 def get_spatially_enabled_dataframe(
-    input_object: Union[pd.DataFrame, pd.Series, Geometry, Iterable, np.ndarray],
+    input_object: Union[
+        pd.DataFrame, pd.Series, Geometry, FeatureSet, Iterable, np.ndarray
+    ],
     spatial_column: str = "SHAPE",
 ) -> pd.DataFrame:
     """Garbage disposal taking variety of possible inputs and outputting, if possible, a Pandas Spatially Enabled
     DataFrame."""
-    # if just a geometry passed in, we need to get it into an iterable
-    if isinstance(input_object, Geometry):
+    # ensure only one FeatureSet getting passed in if an iterable is passed in
+    if isinstance(input_object, Iterable) and not isinstance(
+        input_object, pd.DataFrame
+    ):
+        if is_dict_featureset(input_object[0]) or isinstance(input_object, FeatureSet):
+            assert len(input_object) == 1, "Only one FeatureSet can be used for input"
+
+            # pop out the FeatureSet if this is passed in
+            if isinstance(input_object[0], FeatureSet):
+                input_object = input_object[0]
+
+    # check if is FeatureSet dict and convert to FeatureSet object if it is
+    if is_dict_featureset(input_object):
+        input_object = FeatureSet(input_object)
+
+    # if a FeatureSet, convert to spatially enabled data frame
+    if isinstance(input_object, FeatureSet):
+        input_object = input_object.sdf
+
+    # if just a single geometry passed in, we need to get it into a list
+    if isinstance(input_object, (Geometry, dict)):
         input_object = [input_object]
 
-    # now, if any type of iterable other than a series, make into a series
+    # if any type of iterable other than a series, make into a series
     if isinstance(input_object, (Iterable, np.ndarray)) and not isinstance(
         input_object, pd.DataFrame
     ):
+
+        # Geometry objects may be passed in as an iterable of dicts - convert to Geometry if this is the case
+        first_obj = input_object[0]
+        if isinstance(first_obj, dict):
+            if is_dict_geometry(first_obj):
+                input_object = [Geometry(obj) for obj in input_object]
+
         input_object = pd.Series(input_object)
 
     # at this juncture, the only real options are either a Series or DataFrame, so if Series, make into DataFrame
@@ -467,7 +530,7 @@ def preproces_code_inputs(codes):
     return codes
 
 
-def get_top_codes(codes: Union[pd.Series, list, tuple], threshold=0.5) -> list:
+def get_top_codes(codes: Union[pd.Series, list, tuple], threshold: float = 0.5) -> list:
     """Get the top category codes by only keeping those compromising 50% or greater of the records.
 
     Args:
@@ -506,19 +569,20 @@ def get_top_codes(codes: Union[pd.Series, list, tuple], threshold=0.5) -> list:
 
 def pep8ify(name):
     """PEP8ify name"""
-    import re
-
-    if "." in name:
-        name = name[name.rfind(".") + 1 :]
-    if name[0].isdigit():
-        name = "level_" + name
-    name = name.replace(".", "_")
-    if "_" in name:
-        name = name.lower()
-    s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
-    s2 = re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
-    s3 = s2.replace(" ", "")
-    return s3
+    if name is None:
+        res = None
+    else:
+        if "." in name:
+            name = name[name.rfind(".") + 1 :]
+        if name[0].isdigit():
+            name = "level_" + name
+        name = name.replace(".", "_")
+        if "_" in name:
+            name = name.lower()
+        s1 = re.sub("(.)([A-Z][a-z]+)", r"\1_\2", name)
+        s2 = re.sub("([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
+        res = s2.replace(" ", "")
+    return res
 
 
 def pro_at_least_version(version: str) -> bool:
@@ -544,14 +608,218 @@ def pro_at_least_version(version: str) -> bool:
     v_lst, in_lst = [lst + ([0] * (max_len - len(lst))) for lst in [v_lst, in_lst]]
 
     # variable to store status
-    at_least = True
+    at_least = False
 
     # test all the parts of the input version against the current version
     for idx in range(0, max_len):
 
         # evaluate if the part and if greater, break and report status
         if v_lst[idx] < in_lst[idx]:
-            at_least = False
+            at_least = True
             break
 
     return at_least
+
+
+def extract_from_kwargs(paramater_key: str, kwargs: dict) -> Tuple[Any, dict]:
+    """
+    Provide ability to unpack value from kwargs in relatively streamlined fashion.
+    Args:
+        paramater_key: String key of value to be extracted from kwargs.
+        kwargs: The dictionary of keyword arguments for the value to be extracted from.
+    Returns:
+        Tuple of the parameter value proided as input and the kwargs updated to no longer
+        include the parameter retrieved.
+    """
+    if paramater_key in kwargs.keys():
+        param_val = kwargs[paramater_key]
+        del kwargs[paramater_key]
+    else:
+        param_val = None
+    return param_val, kwargs
+
+
+def validate_network_travel_mode(source, travel_mode: str):
+    """Validate the travel_mode string or index."""
+    # dictionary of potential aliases for travel modes
+    travel_mode_dict = {"walk": "walking", "drive": "driving", "truck": "trucking"}
+
+    # flag for ensuring a travel mode match is found
+    travel_mode_match = False
+
+    # if the travel mode was provided as a string, get the correct travel mode alias
+    if isinstance(travel_mode, str):
+
+        # switch to all lowercase to mitigate case discrepancies
+        travel_mode = travel_mode.lower()
+
+        # if the proximity type is straight line, just make sure in correct format (used for enrich method)
+        if travel_mode == "straight_line" or travel_mode == "Straight Line":
+            travel_mode = "Straight Line"
+            travel_mode_match = True
+
+        # tru to find a transportation travel mode
+        else:
+
+            # account for potential differences in descriptions from alias dict by building a list of candidates
+            prx_lst = [travel_mode]
+
+            for key, val in travel_mode_dict.items():
+                if key in travel_mode and val not in travel_mode:
+                    prx_lst.append(travel_mode.replace(key, val))
+
+            # look in the name and alias columns for a match
+            for col, prx_mthd in product(["name", "alias"], prx_lst):
+
+                # try to find a match in the column for the proximity method
+                tmp_df = source.travel_modes[
+                    source.travel_modes[col].str.lower() == prx_mthd
+                ]
+
+                # if a match is found, pluck out the alias
+                if len(tmp_df):
+                    travel_mode = tmp_df.iloc[0]["alias"]
+                    travel_mode_match = True
+                    break
+
+    # check if potential match by travel mode index
+    elif isinstance(travel_mode, int):
+        assert travel_mode < len(source.travel_modes.index)
+        travel_mode = source.travel_modes.iloc[travel_mode]["alias"]
+        travel_mode_match = True
+
+    # ensure a recognized proximity type was found
+    assert (
+        travel_mode_match
+    ), f"The travel mode provided, {travel_mode}, is not recognized as an available travel mode."
+
+    return travel_mode
+
+
+def add_proximity_to_enrich_feature(
+    source: GIS,
+    feature: dict,
+    travel_mode: str = "straight_line",
+    proximity_metric: Optional[str] = None,
+    proximity_value: int = 1,
+    proximity_area_overlap: bool = True,
+) -> dict:
+    """Add proximity metrics onto a feature in a feature set for sending to the enrich REST endpoint."""
+    # alias list to standardize the proximity_metric input
+    if proximity_metric is not None:
+
+        trvl_md_aliases = {
+            "kilometers": ["kilometer", "km"],
+            "miles": ["mile"],
+            "minutes": ["min"],
+        }
+
+        # ensure lowercase to avoid issues with case
+        proximity_metric = proximity_metric.lower()
+
+        # look through the names and aliases to see if we can find one
+        for val, alias_lst in trvl_md_aliases.items():
+            if proximity_metric == val or proximity_metric in alias_lst:
+                proximity_metric = val
+                break
+
+    # if just doing a buffer, set the correct area type and set variable for travel mode type
+    if travel_mode is None:
+        travel_mode = "straight_line"
+    if travel_mode == "straight_line":
+        feature["areaType"] = (
+            "RingBuffer" if proximity_area_overlap else "RingBufferBands"
+        )
+        trvl_md_typ = "distance"
+
+    # otherwise, doing a network type and need to figure out what the travel mode is
+    else:
+        feature["areaType"] = "NetworkServiceArea"
+
+        # scrub the travel mode
+        travel_mode = validate_network_travel_mode(source, travel_mode)
+
+        # pull out the category from the travel modes and set the travel mode flat (temporal or distance)
+        trvl_md_typ = source.travel_modes[
+            source.travel_modes["alias"] == travel_mode
+        ].iloc[0]["impedance_category"]
+
+        # tack on polygon area overlap
+        if proximity_area_overlap:
+            feature["networkOptions"] = {"polygon_overlap_type": "Disks"}
+        else:
+            feature["networkOptions"] = {"polygon_overlap_type": "Rings"}
+
+    # if no proximity metric provided, provide default based on travel mode, and also validate if provided
+    if proximity_metric is None and trvl_md_typ == "distance":
+        proximity_metric = "kilometers"
+    elif proximity_metric is None and trvl_md_typ == "temporal":
+        proximity_metric = "minutes"
+
+    # set the buffer units if now populated
+    if proximity_metric is not None:
+        feature["bufferUnits"] = proximity_metric
+
+    # if the proximity_value is a single value
+    if isinstance(proximity_value, (int, float)):
+        proximity_value = [proximity_value]
+
+    # if some other iterable was used for input, make sure a list
+    if not isinstance(proximity_value, list):
+        proximity_value = list(proximity_value)
+
+    # put the scalar proximity value(s) in the payload
+    feature["bufferRadii"] = proximity_value
+
+    return feature
+
+
+def add_proximity_to_enrich_feature_list(
+    source: GIS,
+    feature_list: Iterable,
+    travel_mode: str = "straight_line",
+    proximity_metric: Optional[str] = None,
+    proximity_value: int = 1,
+    proximity_area_overlap: bool = True,
+) -> list:
+    """Add proxmity metrics to a FeatureSet for sending to the enrich REST endpoint."""
+    prx_feat_lst = [
+        add_proximity_to_enrich_feature(
+            source,
+            f,
+            travel_mode,
+            proximity_metric,
+            proximity_value,
+            proximity_area_overlap,
+        )
+        for f in feature_list
+    ]
+    return prx_feat_lst
+
+
+# asynchronous function support section - solution located on StackOverflow
+# https://stackoverflow.com/questions/55409641/asyncio-run-cannot-be-called-from-a-running-event-loop
+class RunThread(threading.Thread):
+    def __init__(self, func, args, kwargs):
+        self.func = func
+        self.args = args
+        self.kwargs = kwargs
+        self.result = None
+        super().__init__()
+
+    def run(self):
+        self.result = asyncio.run(self.func(*self.args, **self.kwargs))
+
+
+def run_async(func, *args, **kwargs):
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+    if loop and loop.is_running():
+        thread = RunThread(func, args, kwargs)
+        thread.start()
+        thread.join()
+        return thread.result
+    else:
+        return asyncio.run(func(*args, **kwargs))

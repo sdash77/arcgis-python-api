@@ -42,10 +42,11 @@ While redistributing the Work or Derivative Works thereof, You may choose to off
 """
 
 import torch
-from torch import nn, LongTensor
+from torch import nn, LongTensor, Tensor
 import torch.nn.functional as F
 from fastai.vision.image import ImageBBox
 from fastai.vision.data import ObjectCategoryList, ObjectItemList
+from fastai.vision.learner import create_body
 import numpy as np
 from fastai.callbacks.hooks import model_sizes, hook_outputs
 from fastai.layers import conv2d, conv_layer
@@ -54,8 +55,10 @@ import math
 import matplotlib.pyplot as plt
 import warnings
 import logging
+from typing import Tuple, List
 from fastai.basic_train import Callback
 from fastai.torch_core import add_metrics
+from ._timm_utils import _get_feature_size
 
 from fastprogress.fastprogress import progress_bar
 
@@ -85,7 +88,9 @@ class RetinaNetModel(nn.Module):
 
     def __init__(
         self,
-        encoder,
+        backbone,
+        backbone_pretrained,
+        backbone_cut,
         n_classes,
         final_bias=0.0,
         chs=256,
@@ -100,11 +105,16 @@ class RetinaNetModel(nn.Module):
         super().__init__()
         self.n_classes, self.flatten = n_classes, flatten
         self.chip_size = chip_size
+        encoder = create_body(backbone, backbone_pretrained, backbone_cut)
 
         # Fetch the sizes of various activation layers of the backbone
-        sfs_szs = model_sizes(encoder, size=self.chip_size)
+        sfs_szs = _get_feature_size(
+            backbone,
+            cut=backbone_cut,
+            chip_size=self.chip_size,
+        )
 
-        hooks = hook_outputs(encoder)
+        hooks = hook_outputs(nn.Sequential(*encoder.children()))
 
         self.encoder = encoder
         self.c5top5 = conv2d(sfs_szs[-1][1], chs, ks=1, bias=True)
@@ -123,7 +133,7 @@ class RetinaNetModel(nn.Module):
         self.box_regressor = self._head_subnet(4, n_anchors, 0.0, chs=chs)
 
         # Create a dummy x to be passed through the model and fetch the sizes
-        x_dummy = torch.rand(n_bands, self.chip_size[0], self.chip_size[1]).unsqueeze(0)
+        x_dummy = torch.rand(2, n_bands, self.chip_size[0], self.chip_size[1])
         p_states = self._create_p_states(x_dummy)
         self.sizes = [[p.size(2), p.size(3)] for p in p_states]
 
@@ -176,10 +186,17 @@ class RetinaNetModel(nn.Module):
 #########################
 
 
-def create_grid(size):
+@torch.jit.script
+def create_grid(size: Tuple[int, int]):
     "Create a grid of a given `size`."
-    H, W = size if is_tuple(size) else (size, size)
-    grid = torch.FloatTensor(H, W, 2)
+    # print(size)
+    out_size = size if isinstance(size, tuple) else (size, size)  # TODO: here
+    # grid = torch.FloatTensor(H, W, 2)#here
+    H = int(out_size[0])
+    W = int(out_size[1])
+    # print(type(H),H,out_size)
+
+    grid = torch.empty((H, W, 2)).float()
     linear_points = (
         torch.linspace(-1 + 1 / W, 1 - 1 / W, W) if W > 1 else torch.tensor([0.0])
     )
@@ -205,33 +222,62 @@ def show_anchors(ancs, size):
         ax.annotate(i, xy=(x, y))
 
 
-def create_anchors(sizes, ratios, scales, flatten=True):
+def get_anchors(anchors: List[Tensor], flatten: bool):
+    if torch.jit.is_scripting():
+        return torch.cat([anc.view(-1, 4) for anc in anchors], 0)
+    else:
+        return (
+            torch.cat([anc.view(-1, 4) for anc in anchors], 0) if flatten else anchors
+        )
+
+
+@torch.jit.script
+def create_anchors(
+    sizes: List[List[int]],
+    ratios: List[float],
+    scales: List[float],
+    flatten: bool = True,
+):
     "Create anchor of `sizes`, `ratios` and `scales`."
     aspects = [
         [[s * math.sqrt(r), s * math.sqrt(1 / r)] for s in scales] for r in ratios
     ]
     aspects = torch.tensor(aspects).view(-1, 2)
     anchors = []
-    for h, w in sizes:
+    for idx, size in enumerate(sizes):
         # 4 here to have the anchors overlap.
+        h = size[0]
+        w = size[1]
         sized_aspects = 4 * (aspects * torch.tensor([2 / h, 2 / w])).unsqueeze(0)
-        base_grid = create_grid((h, w)).unsqueeze(1)
+        base_grid = create_grid((h, w)).unsqueeze(1)  # TODO
         n, a = base_grid.size(0), aspects.size(0)
         ancs = torch.cat([base_grid.expand(n, a, 2), sized_aspects.expand(n, a, 2)], 2)
         anchors.append(ancs.view(h, w, a, 4))
-    return torch.cat([anc.view(-1, 4) for anc in anchors], 0) if flatten else anchors
+    return get_anchors(anchors, flatten)
 
 
-def activ_to_bbox(acts, anchors, flatten=True):
+def activ_to_bbox(acts, anchors, flatten: bool = True):
     "Extrapolate bounding boxes on anchors from the model activations."
-    if flatten:
+    if torch.jit.is_scripting():
         with torch.no_grad():
-            acts.mul_(acts.new_tensor([[0.1, 0.1, 0.2, 0.2]]))
+            # acts.mul_(acts.new_tensor([[0.1, 0.1, 0.2, 0.2]]))
+            acts.mul_(
+                torch.tensor(
+                    [[0.1, 0.1, 0.2, 0.2]], dtype=acts.dtype, device=acts.device
+                )
+            )
             centers = anchors[..., 2:] * acts[..., :2] + anchors[..., :2]
             sizes = anchors[..., 2:] * torch.exp(acts[..., :2])
         return torch.cat([centers, sizes], -1)
     else:
-        return [activ_to_bbox(act, anc) for act, anc in zip(acts, anchors)]
+        if flatten:
+            with torch.no_grad():
+                acts.mul_(acts.new_tensor([[0.1, 0.1, 0.2, 0.2]]))
+                centers = anchors[..., 2:] * acts[..., :2] + anchors[..., :2]
+                sizes = anchors[..., 2:] * torch.exp(acts[..., :2])
+            return torch.cat([centers, sizes], -1)
+        else:
+            return [activ_to_bbox(act, anc) for act, anc in zip(acts, anchors)]
 
 
 def cthw2tlbr(boxes):
@@ -399,10 +445,10 @@ class RetinaNetFocalLoss(nn.Module):
 ######################
 
 
-def nms(boxes, scores, thresh=0.2):
+def nms(boxes, scores, thresh: float = 0.2):
     idx_sort = scores.argsort(descending=True)
     boxes, scores = boxes[idx_sort], scores[idx_sort]
-    to_keep, indexes = [], torch.LongTensor(range_of(scores))
+    to_keep, indexes = [], torch.tensor(range_of(scores)).long()
     while len(scores) > 0:
         to_keep.append(idx_sort[indexes[0]])
         iou_vals = IoU_values(boxes, boxes[:1]).squeeze()
@@ -410,7 +456,8 @@ def nms(boxes, scores, thresh=0.2):
         if len(mask_keep.nonzero()) == 0:
             break
         boxes, scores, indexes = boxes[mask_keep], scores[mask_keep], indexes[mask_keep]
-    return LongTensor(to_keep)
+    to_keep = [int(idx.item()) for idx in to_keep]
+    return torch.tensor(to_keep).long()
 
 
 def process_output(output, detect_thresh=0.25, crit=None):
@@ -592,9 +639,10 @@ def compute_ap_score(tps, p_scores, clas, n_gts, n_classes):
     aps = []
 
     for cls in range(1, n_classes + 1):
-        tps_cls, fps_cls = tps[clas == cls].float().cumsum(0), fps[
-            clas == cls
-        ].float().cumsum(0)
+        tps_cls, fps_cls = (
+            tps[clas == cls].float().cumsum(0),
+            fps[clas == cls].float().cumsum(0),
+        )
         if tps_cls.numel() != 0 and tps_cls[-1] != 0:
             precision = tps_cls / (tps_cls + fps_cls + 1e-8)
             recall = tps_cls / (n_gts[cls - 1] + 1e-8)
@@ -613,3 +661,149 @@ def compute_ap(precision, recall):
     idx = np.where(recall[1:] != recall[:-1])[0]
     ap = np.sum((recall[idx + 1] - recall[idx]) * precision[idx + 1])
     return ap
+
+
+try:
+
+    @torch.jit.script
+    def _process_output_jit(
+        output: Tuple[Tensor, Tensor], detect_thresh: float, crit_vals: List[Tensor]
+    ):
+        clas_pred = output[0].clone().detach()
+        bbox_pred = output[1].clone().detach()
+        sizes: List[List[int]] = crit_vals[0].clone().detach().tolist()
+        ratios: List[float] = crit_vals[1].clone().detach().tolist()
+        scales: List[float] = crit_vals[2].clone().detach().tolist()
+        anchors = create_anchors(sizes, ratios, scales).to(clas_pred.device)
+        bbox_pred = activ_to_bbox(bbox_pred, anchors)
+        clas_pred = torch.sigmoid(clas_pred)
+        detect_mask = clas_pred.max(1)[0] > detect_thresh
+        bbox_pred, clas_pred = bbox_pred[detect_mask], clas_pred[detect_mask]
+        bbox_pred = tlbr2cthw(torch.clamp(cthw2tlbr(bbox_pred), min=-1, max=1))
+        # Handling the case when the there are no predictions on an image
+        if clas_pred.shape[0] == 0:
+            scores = clas_pred.squeeze()
+            preds = torch.zeros(clas_pred.shape).long().squeeze()
+        else:
+            scores, preds = clas_pred.max(1)
+
+        return bbox_pred, scores, preds
+
+    @torch.jit.script
+    def _get_predictions_jit(
+        output: Tuple[Tensor, Tensor],
+        detect_thresh: float,
+        nms_overlap: float,
+        crit_vals: List[Tensor],
+    ):
+        bbox_pred, scores, preds = _process_output_jit(output, detect_thresh, crit_vals)
+        device = output[0].device
+
+        # Filter out the predicted boxes with size zero
+        mask_keep = (bbox_pred[:, 2] * bbox_pred[:, 3]) != 0
+        bbox_pred, preds, scores = (
+            bbox_pred[mask_keep],
+            preds[mask_keep],
+            scores[mask_keep],
+        )
+
+        # Apply nms
+        to_keep = nms(bbox_pred, scores, thresh=nms_overlap)
+
+        bbox_pred, preds, scores = (
+            bbox_pred[to_keep].to(device),
+            preds[to_keep].to(device),
+            scores[to_keep].to(device),
+        )
+
+        # Convert the bbox predictions to TL-BR to be passed to ImageBBox Class in fastai through reconstruct
+        bbox_pred = cthw2tlbr(bbox_pred)
+        # Add 1 to class predictions to account for prepending of background as a class
+        preds += 1
+
+        return bbox_pred, preds, scores
+
+    @torch.jit.script
+    def _analyze_pred_jit(
+        pred: Tuple[Tensor, Tensor],
+        thresh: float,
+        nms_overlap: float,
+        crit_vals: List[Tensor],
+    ):
+        return _get_predictions_jit(
+            pred, detect_thresh=thresh, nms_overlap=nms_overlap, crit_vals=crit_vals
+        )
+
+    def _post_process(bboxes):
+        # print(bboxes)
+        processed_bboxes = []
+        for bbox in bboxes:
+            bbox = (bbox + 1) / 2
+            output = torch.clone(bbox)
+            bbox[0] = output[1]
+            bbox[1] = output[0]
+            bbox[2] = output[3]
+            bbox[3] = output[2]
+            processed_bboxes.append(bbox)
+
+        out_bboxes = torch.stack([bbox for bbox in processed_bboxes])
+        return out_bboxes
+
+    def _reconstruct_jit(t: Tuple[Tensor, Tensor, Tensor]):  # TODO
+        """Function to take post-processed output of model and return ImageBBox."""
+
+        bboxes, labels, scores = t
+        if not len((labels).nonzero()) == 0:
+            i = (labels).nonzero().min()
+            bboxes, labels, scores = bboxes[i:], labels[i:], scores[i:]
+
+        return bboxes, labels, scores
+
+    @torch.jit.script
+    def _process_bboxes_jit(
+        output: List[Tensor], crit_vals: List[Tensor]
+    ) -> Tuple[Tensor, Tensor, Tensor]:
+        pred_bboxes = []
+        pred_labels = []
+        pred_scores = []
+
+        batch = 0
+        for chip_idx, (clas) in enumerate(output[0]):
+
+            bboxes = output[1]
+            bbox = bboxes[chip_idx].clone().detach()
+
+            pp_output = _analyze_pred_jit(
+                pred=(clas, bbox), thresh=0.1, nms_overlap=0.1, crit_vals=crit_vals
+            )
+
+            if pp_output is None:
+                continue
+
+            t = list(pp_output)
+            if len(t[0]) == 0:
+                continue
+
+            output_final = _reconstruct_jit(pp_output)
+
+            if not output_final[0] is None:
+                pred_bboxes.append(_post_process(output_final[0]))
+                pred_labels.append(output_final[1])
+                pred_scores.append(output_final[2])
+                batch += 1
+
+        if not len(pred_bboxes) == 0:
+            pred_bboxes_final = torch.stack([bbox for bbox in pred_bboxes])
+            pred_labels_final = torch.stack([label for label in pred_labels])
+            pred_scores_final = torch.stack([score for score in pred_scores])
+            return pred_bboxes_final, pred_labels_final, pred_scores_final
+        else:
+            dummy = torch.empty((batch, 0, 0, 0)).float()
+            return dummy, dummy, dummy
+
+except Exception as e:
+    import traceback
+
+    import_exception = "\n".join(
+        traceback.format_exception(type(e), e, e.__traceback__)
+    )

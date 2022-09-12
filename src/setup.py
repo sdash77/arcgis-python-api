@@ -7,6 +7,7 @@ https://github.com/pypa/sampleproject
 # Always prefer setuptools over distutils
 from setuptools import setup
 from setuptools import find_packages
+from setuptools.dist import Distribution
 from setuptools.command.develop import develop as _develop
 from setuptools.command.install import install as _install
 from setuptools.command.egg_info import egg_info as _egg_info
@@ -21,8 +22,23 @@ import atexit
 import logging
 import site
 
+import logging
+
 log = logging.getLogger()
+log.setLevel(logging.DEBUG)
+handler = logging.StreamHandler(sys.stdout)
+handler.setLevel(logging.DEBUG)
+log.addHandler(handler)
+
+
 here = path.abspath(path.dirname(__file__))
+
+
+class BinaryDistribution(Distribution):
+    """Distribution which always forces a binary package with platform name"""
+
+    def has_ext_modules(foo):
+        return True
 
 
 def _get_rel_site_packages_dir():
@@ -47,17 +63,20 @@ if conda_install_mode:
     dependencies = []
 else:
     dependencies = [
-        "urllib3 >=1.25.10,<1.26.0",
+        "pillow",
+        "urllib3",
         "cachetools",
         "six",
         "lxml",
+        "notebook",
         "cryptography",
         "ipywidgets >=7",
         "widgetsnbextension >=3",
-        "pandas >=1",
+        "jupyter-client <=6.1.12",
+        "pandas >=1.3.5",
         "numpy >=1.16.2",
         "matplotlib",
-        "keyring >=19,<=21.8.*",
+        "keyring >=23.3.*",
         "lerc",
         "ujson >=3",
         "jupyterlab",
@@ -65,14 +84,15 @@ else:
         'pywin32 >=223;platform_system=="Windows"',
         "pyshp >=2",
         "geomet",
-        "requests",
+        "requests >=2.27.1",
         "requests-oauthlib",
         "requests_toolbelt",
-        "requests_ntlm",
+        "requests-ntlm2",
         'requests-negotiate-sspi;platform_system=="Windows"',
         'requests-kerberos;platform_system=="Windows"',
         'winkerberos;platform_system=="Windows"',
         "requests-gssapi",
+        "dask",
     ]
 
 
@@ -96,30 +116,39 @@ def _post_install():
         import arcgis
 
         activate_map_widget = True
-    except Exception:
+    except Exception as e:
+
         log.exception(
             "arcgis/notebook packages don't appear to be installed: "
             "map widget not activated, may not work. The rest of "
             "install is unaffected by this. Exception caught: "
         )
+        log.exception(e)
         activate_map_widget = False
 
     if activate_map_widget:
         log.warning("Attempting to activate map widget...")
+        print("Attempting to activate map widget...")
         try:
+
             log.warning(
                 nbext.install_nbextension_python("arcgis", sys_prefix=True, logger=log)
             )
+
             log.warning(
                 nbext.enable_nbextension_python("arcgis", sys_prefix=True, logger=log)
             )
+
             log.warning(
                 nbext.enable_nbextension_python(
                     "widgetsnbextension", sys_prefix=True, logger=log
                 )
             )
-        except Exception:
+
+        except Exception as e:
+            print(f"Activating the widget failed {e}")
             log.exception("Activating map widget failed: Continuing install..")
+            log.exception(e)
 
     # 2) If the OS is Mac OSX, run the OpenSSL workaround
     platform_is_osx = sys.platform == "darwin"
@@ -189,27 +218,12 @@ data_files = [
         ],
     ),
 ]
-if not "darwin" in sys.platform:
-    _get_rel_site_packages_dir() + "arcgis/gis/_impl"
-    data_files += [
-        (
-            _get_rel_site_packages_dir() + "arcgis/gis/_impl",
-            [
-                "arcgis/gis/_impl/_decrypt_nbauth.cp37-win_amd64.pyd",
-                "arcgis/gis/_impl/_decrypt_nbauth.cp38-win_amd64.pyd",
-                "arcgis/gis/_impl/_decrypt_nbauth.cp39-win_amd64.pyd",
-                "arcgis/gis/_impl/_decrypt_nbauth.cpython-37m-x86_64-linux-gnu.so",
-                "arcgis/gis/_impl/_decrypt_nbauth.cpython-38-x86_64-linux-gnu.so",
-                "arcgis/gis/_impl/_decrypt_nbauth.cpython-39-x86_64-linux-gnu.so",
-            ],
-        )
-    ]
 
 
 def get_version():
     """gets the version from environment variable or sets via manually setting"""
     MAJOR = "2"
-    MINOR = "0"
+    MINOR = "1"
     try:
         import os
 
@@ -240,6 +254,7 @@ kwargs = {
     "author_email": "python@esri.com",
     # Choose your license
     "license": "Esri Master License Agreement (MLA) - http://www.esri.com/LEGAL/pdfs/mla_e204_e300/english.pdf",
+    "platforms": ["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
     # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     "classifiers": [
         # How mature is this project? Common values are
@@ -277,6 +292,7 @@ kwargs = {
     # Alternatively, if you want to distribute just a my_module.py, uncomment
     # this:
     "packages": find_packages(),
+    "python_requires": ">=3.7, <3.10",
     "include_package_data": True,
     "data_files": data_files,
     # List run-time dependencies here.  These will be installed by pip when
@@ -303,6 +319,7 @@ kwargs = {
     "extras_require": {
         "gp": ["dill"],
     },
+    "distclass": BinaryDistribution,
     # extras_require={
     #     'dev': ['check-manifest'],
     #     'test': ['coverage'],
@@ -315,18 +332,20 @@ kwargs = {
     # },
     "package_data": {
         "arcgis": [
-            "raster/*.dll",
-            "raster/*.so",
+            "gis/_impl/*.pyd",
+            "gis/_impl/*.so",
+            "graph/_decoder/**/*.pyd",
+            "graph/_decoder/**/*.so",
             "learn/*.dll",
             "learn/*.so",
-            "learn/_tracking/*.pyd",
-            "learn/_tracking/*.dll",
             "learn/_mmdetection_config/*.py",
             "learn/_mmdetection_config/**/*.py",
             "learn/_mmdetection_config/**/**/*.py",
             "learn/_mmseg_config/*.py",
-            "gis/_impl/*.pyd",
-            "gis/_impl/*.so",
+            "learn/_tracking/*.pyd",
+            "learn/_tracking/*.dll",
+            "raster/*.dll",
+            "raster/*.so",
         ],
     },
     # Although 'package_data' is the preferred approach, in some case you may

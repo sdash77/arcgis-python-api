@@ -1,7 +1,13 @@
+from enum import unique
 from pathlib import Path
 import json
+
+import numpy
 from ._model_extension import ModelExtension
 from ._arcgis_model import _EmptyData
+import logging
+
+logger = logging.getLogger()
 
 try:
     from fastai.vision import flatten_model
@@ -43,7 +49,7 @@ class MMSegmentationConfig:
 
         config = kwargs.get("model", False)
         checkpoint = kwargs.get("model_weight", False)
-
+        class_weight = kwargs.get("class_weight", None)
         if self.os.path.exists(self.pathlib.Path(config)):
             cfg = mmcv.Config.fromfile(config)
             cfg.model.pretrained = None
@@ -73,15 +79,19 @@ class MMSegmentationConfig:
         if isinstance(cfg.model.decode_head, list):
             for dcd_head in cfg.model.decode_head:
                 dcd_head.num_classes = data.c
+                dcd_head.loss_decode.class_weight = class_weight
         else:
             cfg.model.decode_head.num_classes = data.c
+            cfg.model.decode_head.loss_decode.class_weight = class_weight
 
         if hasattr(cfg.model, "auxiliary_head"):
             if isinstance(cfg.model.auxiliary_head, list):
                 for aux_head in cfg.model.auxiliary_head:
                     aux_head.num_classes = data.c
+                    aux_head.loss_decode.class_weight = class_weight
             else:
                 cfg.model.auxiliary_head.num_classes = data.c
+                cfg.model.auxiliary_head.loss_decode.class_weight = class_weight
         if cfg.model.backbone.type == "CGNet" and getattr(
             data, "_is_multispectral", False
         ):
@@ -122,6 +132,8 @@ class MMSegmentationConfig:
 
         self.model = model
         self.cfg = cfg
+
+        logging.disable(0)
 
         return model
 
@@ -204,26 +216,87 @@ class MMSegmentation(ModelExtension):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            ``prepare_data`` function.
+                            :meth:`~arcgis.learn.prepare_data`  function.
     ---------------------   -------------------------------------------
     model                   Required model name or path to the configuration file
-                            from ``MMSegmentation`` repository. The list of the
+                            from :class:`~arcgis.learn.MMSegmentation` repository. The list of the
                             supported models can be queried using
-                            ``MMSegmentation.supported_models``.
+                            :attr:`~arcgis.learn.MMSegmentation.supported_models`
     ---------------------   -------------------------------------------
     model_weight            Optional path of the model weight from
-                            ``MMSegmentation`` repository.
+                            :class:`~arcgis.learn.MMSegmentation` repository.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
     =====================   ===========================================
 
-    :return: ``MMSegmentation`` Object
+    **kwargs**
+
+    =====================   ===========================================
+    class_balancing         Optional boolean. If True, it will balance the
+                            cross-entropy loss inverse to the frequency
+                            of pixels per class. Default: False.
+    ---------------------   -------------------------------------------
+    ignore_classes          Optional list. It will contain the list of class
+                            values on which model will not incur loss.
+                            Default: []
+    =====================   ===========================================
+
+    :return: :class:`~arcgis.learn.MMSegmentation` Object
     """
 
     def __init__(self, data, model, model_weight=False, pretrained_path=None, **kwargs):
 
         self._check_dataset_support(data)
+
+        self._ignore_classes = kwargs.get("ignore_classes", [])
+        self.class_balancing = kwargs.get("class_balancing", False)
+        if self._ignore_classes != [] and len(data.classes) <= 2:
+            raise Exception(
+                f"`ignore_classes` parameter can only be used when the dataset has more than 2 classes."
+            )
+
+        data_classes = list(data.class_mapping.keys())
+        if 0 not in list(data.class_mapping.values()):
+            self._ignore_mapped_class = [
+                data_classes.index(k) + 1 for k in self._ignore_classes if k != 0
+            ]
+        else:
+            self._ignore_mapped_class = [
+                data_classes.index(k) + 1 for k in self._ignore_classes
+            ]
+        if self._ignore_classes != []:
+            if 0 not in self._ignore_mapped_class:
+                self._ignore_mapped_class.insert(0, 0)
+
+        class_weight = None
+        if self.class_balancing:
+            if data.class_weight is not None:
+                # Handle condition when nodata is already at pixel value 0 in data
+                if (data.c - 1) == data.class_weight.shape[0]:
+                    class_weight = [
+                        data.class_weight.mean()
+                    ] + data.class_weight.tolist()
+                else:
+                    class_weight = data.class_weight.tolist()
+            else:
+                if getattr(data, "overflow_encountered", False):
+                    logger.warning(
+                        "Overflow Encountered. Ignoring `class_balancing` parameter."
+                    )
+                    class_weight = [1.0] * len(data.classes)
+                else:
+                    logger.warning(
+                        "Could not find 'NumPixelsPerClass' in 'esri_accumulated_stats.json'. Ignoring `class_balancing` parameter."
+                    )
+
+        if self._ignore_classes != []:
+            if not self.class_balancing:
+                class_weight = [1.0] * data.c
+            for idx in self._ignore_mapped_class:
+                class_weight[idx] = 0.0
+
+        self._final_class_weight = class_weight
 
         super().__init__(
             data,
@@ -231,6 +304,8 @@ class MMSegmentation(ModelExtension):
             pretrained_path=pretrained_path,
             model=model,
             model_weight=model_weight,
+            ignore_class=self._ignore_mapped_class,
+            class_weight=self._final_class_weight,
         )
         idx = self._freeze()
         self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
@@ -299,7 +374,7 @@ class MMSegmentation(ModelExtension):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a ``MMSegmentation`` object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.MMSegmentation` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -308,12 +383,12 @@ class MMSegmentation(ModelExtension):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from ``prepare_data`` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data`  function or None for
                                 inferencing.
 
         =====================   ===========================================
 
-        :return: `MMSegmentation` Object
+        :return: :class:`~arcgis.learn.MMSegmentation` Object
         """
         emd_path = _get_emd_path(emd_path)
 

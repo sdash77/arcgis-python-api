@@ -1,12 +1,15 @@
 import os
-from arcgis.gis import GIS
+from typing import Optional
+from arcgis.gis import GIS, Item
 from arcgis._impl.common._mixins import PropertyMap
 import concurrent.futures
 
 ########################################################################
 class NotebookManager(object):
     """
-    Provides access to managing a site's notebooks
+    Provides access to managing a site's notebooks. An object of this
+    class can be created using :attr:`~arcgis.gis.nb.NotebookServer.notebooks` property of the
+    :class:`~arcgis.gis.nb.NotebookServer` class
     """
 
     _url = None
@@ -37,11 +40,11 @@ class NotebookManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<NotebookManager @ {url}>".format(url=self._url)
+        return "< NotebookManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<NotebookManager @ {url}>".format(url=self._url)
+        return "< NotebookManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -124,24 +127,28 @@ class NotebookManager(object):
         from arcgis._impl._async.jobs import Job
 
         tp = concurrent.futures.ThreadPoolExecutor(1)
-        future = tp.submit(fn=fn, **kwargs)
+        try:
+            future = tp.submit(fn=fn, **kwargs)
+        except:
+            future = tp.submit(fn, **kwargs)
         tp.shutdown(False)
         return Job(future, task_name, jobid, task_url, notify, gis=gis)
 
     # ----------------------------------------------------------------------
     def execute_notebook(
         self,
-        item,
-        update_portal_item=True,
-        parameters=None,
-        save_parameters=False,
-        future=False,
+        item: Item,
+        update_portal_item: bool = True,
+        parameters: Optional[list] = None,
+        save_parameters: bool = False,
+        future: bool = False,
     ):
         """
 
-        The Execute Notebook operation allows administrators to remotely
-        run a notebook in their ArcGIS Notebook Server site. The notebook
-        specified in the operation will be run with all cells in order.
+        The Execute Notebook operation allows administrators and users with
+        the `Create and Edit Notebooks` privilege to remotely
+        run a notebook that they own.  The notebook pecified in the operation will be run with all
+        cells in order.
 
         Using this operation, you can schedule the execution of a notebook,
         either once or with a regular occurrence. This allows you to
@@ -150,10 +157,10 @@ class NotebookManager(object):
         a cron job to schedule the executeNotebook operation; on Windows
         machines, you can use the Task Scheduler app.
 
-        :Note: To run this operation, you must be logged in with an ArcGIS
-            Enterprise portal account. You cannot execute notebooks from
-            the ArcGIS Notebook Server primary site administrator
-            account.
+        .. note::
+            To run this operation in ArcGIS Enterprise, you must log in with
+            an Enterprise account. You cannot execute notebooks using the
+            ArcGIS Notebook Server primary site administrator account.
 
         You can specify parameters to be used in the notebook at execution
         time. If you've specified one or more parameters, they'll be
@@ -186,11 +193,26 @@ class NotebookManager(object):
                                 should be saved in the notebook for future use. The default is
                                 false.
         --------------------    --------------------------------------------------------------------
-        future                  Optional Boolean.  The default is false.  When True, the operation
-                                returns a notebook job that will let you view the results as needed.
+        future                  Optional boolean. If True, a Job object will be returned and the process
+                                will not wait for the task to complete. The default is False, which means wait for results.
         ====================    ====================================================================
 
-        :return: Boolean
+        :return: Dict else If ``future = True``, then the result is
+                 a `concurrent.futures.Future <https://docs.python.org/3/library/concurrent.futures.html>`_ object.
+                 Call ``result()`` to get the response
+
+        .. code-block:: python
+
+            # Usage Example:
+
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS("home")
+            >>> nb_server = gis.notebook_server[0]
+
+            >>> notebook_item = gis.content.get('<notebook_item_id>')
+
+            >>> nb_mgr = nb_server.notebooks
+            >>> nb_mgr.execute_notebook(notebook_item)
 
         """
         from arcgis.gis import Item
@@ -218,7 +240,6 @@ class NotebookManager(object):
                 if "status" in resp and resp["status"] == "success":
                     job_id = resp["jobId"]
                     status = nbs.system.job_details(job_id)
-                    i = 0
                     while status["status"].lower() != "completed":
                         time.sleep(0.3)
                         if status["status"].lower() == "failed":
@@ -227,7 +248,7 @@ class NotebookManager(object):
                             status["status"].lower().find("fail") > -1
                             or status["status"].lower().find("error") > -1
                         ):
-                            raise Exception(f"Job Fail {jobstatus}")
+                            raise Exception(f"Job Fail {status}")
                         status = nbs.system.job_details(job_id)
                     return status
                 return resp
@@ -243,7 +264,11 @@ class NotebookManager(object):
 
     # ----------------------------------------------------------------------
     def open_notebook(
-        self, itemid, templateid=None, nb_runtimeid=None, template_nb=None
+        self,
+        itemid: str,
+        templateid: Optional[str] = None,
+        nb_runtimeid: Optional[str] = None,
+        template_nb: Optional[str] = None,
     ):
         """
 
@@ -270,7 +295,7 @@ class NotebookManager(object):
         template_nb             Optional String. The start up template for the notebook.
         ==================      ====================================================================
 
-        :return: dict
+        :return: Dict
 
         """
         params = {
@@ -378,11 +403,11 @@ class Runtime(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<Runtime @ {url}>".format(url=self._url)
+        return "< Runtime @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<Runtime @ {url}>".format(url=self._url)
+        return "< Runtime @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -397,7 +422,7 @@ class Runtime(object):
         """
         Deletes the current runtime from the ArcGIS Notebook Server
 
-        :return: boolean
+        :return: Boolean
 
         """
         url = self._url + "/unregister"
@@ -410,21 +435,21 @@ class Runtime(object):
     # ----------------------------------------------------------------------
     def update(
         self,
-        name=None,
-        image_id=None,
-        max_cpu=None,
-        max_memory=None,
-        memory_unit=None,
-        max_swap_memory=None,
-        swap_memory_unit=None,
-        shared_memory=None,
-        docker_runtime=None,
-        shared_unit=None,
-        version=None,
-        container_type=None,
-        pull_string=None,
-        require_advanced_priv=None,
-        manifest=None,
+        name: Optional[str] = None,
+        image_id: Optional[str] = None,
+        max_cpu: Optional[float] = None,
+        max_memory: Optional[float] = None,
+        memory_unit: Optional[str] = None,
+        max_swap_memory: Optional[str] = None,
+        swap_memory_unit: Optional[str] = None,
+        shared_memory: Optional[str] = None,
+        docker_runtime: Optional[str] = None,
+        shared_unit: Optional[str] = None,
+        version: Optional[str] = None,
+        container_type: Optional[str] = None,
+        pull_string: Optional[str] = None,
+        require_advanced_priv: Optional[bool] = None,
+        manifest: Optional[str] = None,
     ):
         """
         This operation allows you to update the properties of a notebook
@@ -542,11 +567,11 @@ class Notebook(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<Notebook @ {url}>".format(url=self._url)
+        return "< Notebook @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<Notebook @ {url}>".format(url=self._url)
+        return "< Notebook @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
