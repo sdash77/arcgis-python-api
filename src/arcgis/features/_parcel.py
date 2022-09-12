@@ -1174,8 +1174,6 @@ class ParcelFabricManager(object):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
-
-    # ----------------------------------------------------------------------
     def transfer_parcel(
         self,
         transfer_parcel_feature: dict[str, Any],
@@ -1261,14 +1259,14 @@ class ParcelFabricManager(object):
         future: bool = False,
     ):
         """
-        The :meth:`~set_line_label_position` Sets the label position of the line's COGO dimension to the
+        The :meth:`~set_line_label_position` sets the label position of the line's COGO dimension to the
         left of the parcel line, to the right of the parcel line, or centered over the parcel line.
 
         =======================     =======================================================================
         **Argument**                **Description**
         -----------------------     -----------------------------------------------------------------------
-        parcel_line_features        Required List. Parameter representing the line parcels to which label
-                                    positions will be set.
+        parcel_line_features        Required List. Parameter representing the input parcel line layers with
+                                    label positions that will be updated.
 
                                     :Syntax:
 
@@ -1277,8 +1275,9 @@ class ParcelFabricManager(object):
                                         >>> parcel_line_features=[{"id":"<guid>","layerId":"<layerID>"},{...}]
 
         --------------------        --------------------------------------------------------------------
-        future                      Optional boolean. If `True`, the request is processed as an asynchronous job and a URL is returned that points a location
-                                    displaying the status of the job.
+        future                      Optional boolean. If `True`, the request is processed as an asynchronous
+                                    job and a URL is returned that points a location displaying the status
+                                    of the job.
 
                                     The default is `False`.
         =======================     =======================================================================
