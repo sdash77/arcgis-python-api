@@ -1095,9 +1095,11 @@ class AutoDL:
             top_models = list(self._train_df.head(2)["Model"])
             all_trained_models = list(self._train_df["Model"])
             if self.verbose:
-                log_msg = """{date}: Top two performing models are - {network}""".format(
-                    date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
-                    network=" ".join(top_models),
+                log_msg = (
+                    """{date}: Top two performing models are - {network}""".format(
+                        date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
+                        network=" ".join(top_models),
+                    )
                 )
                 print(log_msg)
                 self.logger_dict.append(log_msg)
@@ -1160,7 +1162,8 @@ class AutoDL:
                     break
                 if self._model_stats()[model]["is_mm"]:
                     log_msg = """{date}: {model} does not have additional backbones, skipping.""".format(
-                        date=dt.now().strftime("%d-%m-%Y %H:%M:%S"), model=model,
+                        date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
+                        model=model,
                     )
                     print(log_msg)
                     self.logger_dict.append(log_msg)
@@ -1180,10 +1183,12 @@ class AutoDL:
                     if "timm" not in backbone
                 ]
                 if self.verbose:
-                    log_msg = """{date}: Selected backbones for {model}: {bb} .""".format(
-                        date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
-                        model=model,
-                        bb=" ".join(supported_backbone),
+                    log_msg = (
+                        """{date}: Selected backbones for {model}: {bb} .""".format(
+                            date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
+                            model=model,
+                            bb=" ".join(supported_backbone),
+                        )
                     )
                     print(log_msg)
                     self.logger_dict.append(log_msg)
@@ -1314,20 +1319,53 @@ class AutoDL:
             "DeepLab": {"time": 1600, "is_mm": False, "executed": False},
             "UnetClassifier": {"time": 6550, "is_mm": False, "executed": False},
             "PSPNetClassifier": {"time": 6550, "is_mm": False, "executed": False},
-            "ANN": {"time": 1550, "is_mm": True,},
-            "APCNet": {"time": 1650, "is_mm": True,},
-            "CCNet": {"time": 3500, "is_mm": True,},
-            "CGNet": {"time": 700, "is_mm": True,},
-            "DeepLabV3": {"time": 4200, "is_mm": True,},
+            "ANN": {
+                "time": 1550,
+                "is_mm": True,
+            },
+            "APCNet": {
+                "time": 1650,
+                "is_mm": True,
+            },
+            "CCNet": {
+                "time": 3500,
+                "is_mm": True,
+            },
+            "CGNet": {
+                "time": 700,
+                "is_mm": True,
+            },
+            "DeepLabV3": {
+                "time": 4200,
+                "is_mm": True,
+            },
             "SingleShotDetector": {"time": 1600, "is_mm": False, "executed": False},
             "RetinaNet": {"time": 6550, "is_mm": False, "executed": False},
             "FasterRCNN": {"time": 6550, "is_mm": False, "executed": False},
-            "YOLOv3": {"time": 1550, "is_mm": False,},
-            "ATSS": {"time": 1650, "is_mm": True,},
-            "CARAFE": {"time": 3500, "is_mm": True,},
-            "CascadeRCNN": {"time": 700, "is_mm": True,},
-            "CascadeRPN": {"time": 4200, "is_mm": True,},
-            "DCN": {"time": 4200, "is_mm": True,},
+            "YOLOv3": {
+                "time": 1550,
+                "is_mm": False,
+            },
+            "ATSS": {
+                "time": 1650,
+                "is_mm": True,
+            },
+            "CARAFE": {
+                "time": 3500,
+                "is_mm": True,
+            },
+            "CascadeRCNN": {
+                "time": 700,
+                "is_mm": True,
+            },
+            "CascadeRPN": {
+                "time": 4200,
+                "is_mm": True,
+            },
+            "DCN": {
+                "time": 4200,
+                "is_mm": True,
+            },
         }
         return details
 
