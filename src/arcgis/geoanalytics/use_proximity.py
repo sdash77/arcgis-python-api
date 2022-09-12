@@ -61,43 +61,68 @@ def group_by_proximity(
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     spatial_relationship                                                   Required String. The type of relationship to group by.
 
-                                                                           Values: ```Intersects, Touches, NearGeodesic, NearPlanar```
+                                                                           Choice List:
+
+                                                                             * ``Intersects``
+                                                                             * ``Touches``
+                                                                             * ``NearGeodesic``
+                                                                             * ``NearPlanar``
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     spatial_near_distance                                                  Optional Float. A float value used for the search distance to determine if
-                                                                           features are near one another. This is only applied if `NewGeodesic` or
-                                                                           `NewPlanar` is the selected `spatial_relationship`.
+                                                                           features are near one another. This is only applied if ``NearGeodesic`` or
+                                                                           ``NewPlanar`` is the selected ``spatial_relationship``.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     spatial_near_distance_unit                                             Optional String. The linear unit to be used with the distance value specified
                                                                            in `spatial_near_distance`. The default value is Meters.
 
-                                                                           Values: Meters | Kilometers | Feet | Miles | NauticalMiles | Yards
+                                                                           Choice List:
+
+                                                                             * ``Meters``
+                                                                             * ``Kilometers``
+                                                                             * ``Feet``
+                                                                             * ``Miles``
+                                                                             * ``NauticalMiles``
+                                                                             * ``Yards``
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     temporal_relationship                                                  Optional String. The type of temporal relationship to group by.
 
-                                                                           Values: Intersects | Near
+                                                                           Choice List:
+
+                                                                             * ``Intersects``
+                                                                             * ``Near``
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     temporal_near_distance                                                 Optional Float. A float value used for the temporal search distance to determine if features are near one another.
-
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     temporal_near_distance_unit                                            Optional String. The temporal unit to be used with the distance value specified in `temporal_near_distance`.
 
-                                                                           Values: Milliseconds | Seconds | Minutes | Hours | Days | Weeks| Months | Years
+                                                                           Choice List:
+
+                                                                             * ``Milliseconds``
+                                                                             * ``Seconds``
+                                                                             * ``Minutes``
+                                                                             * ``Hours``
+                                                                             * ``Days``
+                                                                             * ``Weeks``
+                                                                             * ``Months``
+                                                                             * ``Years``
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     output_name                                                            Optional string. The task will create a feature service of the results. You define the name of the service.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    gis                                                                    Optional GIS. The GIS object where the analysis will take place.
+    gis                                                                    Optional :class:`~arcgis.gis.GIS`. The GIS object where the analysis will take place.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     context                                                                Optional string. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
 
-                                                                           #. Extent (``extent``) - a bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
-                                                                           #. Processing spatial reference (``processSR``) The features will be projected into this coordinate system for analysis.
-                                                                           #. Output Spatial Reference (``outSR``) - the features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                                                           #. Data store (``dataStore``) Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+                                                                            * ``extent`` - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                                            * ``processSR`` - The features will be projected into this coordinate system for analysis.
+                                                                            * ``outSR`` - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                                                            * ``dataStore`` - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    future                                                                 optional Boolean. If True, a GAJob is returned instead of results. The GAJob can be queried on the status of the execution.
+    future                                                                 Optional Boolean. If ``True``, a GAJob is returned instead of results. The GAJob can be queried on the status of the execution.
     ===================================================================    =============================================================================
 
-    :return: :class:`~arcgis.gis.Item` when Future=False or GAJob when Future=True
+    :return:
+        * :class:`~arcgis.gis.Item` when `future=False`
+        * ``GAJob`` when `future=True`
 
     """
     input_features = _prevent_bds_item(input_layer)
@@ -230,14 +255,32 @@ def trace_proximity_events(
                                                                            `temporal_search_distance` criteria are considered in proximity of each other.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     spatial_search_distance_unit                                           Required String. The unit of of measure for `spatial_search_distance`.
-                                                                           Values: Meters | Kilometers | Feet | Miles | NauticalMiles | Yards
+
+                                                                           Choice List:
+
+                                                                             * ``Meters``
+                                                                             * ``Kilometers``
+                                                                             * ``Feet``
+                                                                             * ``Miles``
+                                                                             * ``NauticalMiles``
+                                                                             * ``Yards``
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     temporal_search_distance                                               Required Float. The maximum duration between two points that are considered
                                                                            in proximity. Features closer together in time and that also meet the
-                                                                           `spatial_search_distance` criteria are considered in proximity of each other.
+                                                                           ``spatial_search_distance`` criteria are considered in proximity of each other.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     temporal_search_distance_unit                                          Required String. The unit of `temporal_search_distance`.
-                                                                           Values: Milliseconds | Seconds | Minutes | Hours | Days | Weeks| Months | Years
+
+                                                                           Choice List:
+
+                                                                             * ``Milliseconds``
+                                                                             * ``Seconds``
+                                                                             * ``Minutes``
+                                                                             * ``Hours``
+                                                                             * ``Days``
+                                                                             * ``Weeks``
+                                                                             * ``Months``
+                                                                             * ``Years``
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     entity_id_field                                                        Required String. The field used to identify distinct entities.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
@@ -248,12 +291,17 @@ def trace_proximity_events(
     entities_of_interest_layer                                             Optional Layer. A feature class used to specify one or more entities that you
                                                                            are interested in tracing from.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    distance_method                                                        Required String. The distance type that will be used for the `spatial_search_distance`.
-                                                                           The default is `Planar`.  Allowed values: `Planar` or `Geodesic`.
+    distance_method                                                        Required String. The distance type that will be used for the ``spatial_search_distance``.
+                                                                           The default is ``Planar``.
+
+                                                                           Choice List:
+
+                                                                             * ``Planar``
+                                                                             * ``Geodesic``
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     include_tracks_layer                                                   Optional Boolean. Determines whether or not an additional layer will be
                                                                            created containing the first trace event in tracks and all subsequent
-                                                                           features. The default is `False`.
+                                                                           features. The default is ``False``.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     max_trace_depth                                                        Optional Integer. The maximum degrees of separation between an entity of
                                                                            interest and an entity further down the trace.
@@ -265,19 +313,23 @@ def trace_proximity_events(
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     output_name                                                            Optional string. The task will create a feature service of the results. You define the name of the service.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    gis                                                                    Optional GIS. The GIS object where the analysis will take place.
+    gis                                                                    Optional :class:`~arcgis.gis.GIS`. The GIS object where the analysis will take place.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     context                                                                Optional string. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
 
-                                                                           #.  Extent (``extent``) - a bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
-                                                                           #. Processing spatial reference (``processSR``) The features will be projected into this coordinate system for analysis.
-                                                                           #. Output Spatial Reference (``outSR``) - the features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                                                           #. Data store (``dataStore``) Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+                                                                             * ``extent`` - a bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                                             * ``processSR`` - The features will be projected into this coordinate system for analysis.
+                                                                             * ``outSR`` - the features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                                                             * ``dataStore`` - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
-    future                                                                 optional Boolean. If True, a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
+    future                                                                 optional Boolean. If ``True``, a GPJob is returned instead of results.
+                                                                           The GPJob can be queried on the status of the execution.
     ===================================================================    =============================================================================
 
-    :return: :class:`~arcgis.gis.Item` when Future=False or GAJob when Future=True
+    :return:
+
+        * :class:`~arcgis.gis.Item` when `future=False`
+        * ``GAJob`` when `future=True`
 
     """
     input_points = _prevent_bds_item(input_points)
@@ -431,9 +483,16 @@ def create_buffers(
     ------------------------------------------------    ---------------------------------------------------------
     distance_unit (Required if distance is used)        Optional string. The linear unit to be used with the value specified in distance.
 
-                                                        Choice list:['Feet', 'Yards', 'Miles', 'Meters', 'Kilometers', 'NauticalMiles']
+                                                        Choice list:
 
-                                                        The default value is "Miles" when `field` is None.
+                                                          * ``Feet``
+                                                          * ``Yards``
+                                                          * ``Miles``
+                                                          * ``Meters``
+                                                          * ``Kilometers``
+                                                          * ``NauticalMiles``
+
+                                                        The default value is ``Miles`` when `field` is None.
     ------------------------------------------------    ---------------------------------------------------------
     field (Required if distance not provided)           Optional string. A field on the ``input_layer`` containing a buffer distance or a field expression.
                                                         A buffer expression must begin with an equal sign (=). To learn more about buffer expressions
@@ -448,20 +507,24 @@ def create_buffers(
     ------------------------------------------------    ---------------------------------------------------------
     dissolve_option                                     Optional string. Determines how output polygon attributes are processed.
 
-                                                        Choice list:['All', 'List', 'None']
+                                                        Choice list:
 
-                                                        +----------------------------------+---------------------------------------------------------------------------------------------------+
-                                                        |Value                             | Description                                                                                       |
-                                                        +----------------------------------+---------------------------------------------------------------------------------------------------+
-                                                        | All - All features are dissolved | You can calculate summary statistics and determine if you want multipart or single part features. |
-                                                        | into one feature.                |                                                                                                   |
-                                                        +----------------------------------+---------------------------------------------------------------------------------------------------+
-                                                        | List - Features with the same    | You can calculate summary statistics and determine if you want multipart or single part features. |
-                                                        | value in the specified field     |                                                                                                   |
-                                                        | will be dissolve together.       |                                                                                                   |
-                                                        +----------------------------------+---------------------------------------------------------------------------------------------------+
-                                                        | None - No features are dissolved.| There are no additional dissolve options.                                                         |
-                                                        +----------------------------------+---------------------------------------------------------------------------------------------------+
+                                                          * ``All``
+                                                          * ``List``
+                                                          * ``None``
+
+                                                        +--------------------------------------+---------------------------------------------------------------------------------------------------+
+                                                        |Value                                 | Description                                                                                       |
+                                                        +--------------------------------------+---------------------------------------------------------------------------------------------------+
+                                                        | ``All`` - All features are dissolved | You can calculate summary statistics and determine if you want multipart or single part features. |
+                                                        | into one feature.                    |                                                                                                   |
+                                                        +--------------------------------------+---------------------------------------------------------------------------------------------------+
+                                                        | ``List`` - Features with the same    | You can calculate summary statistics and determine if you want multipart or single part features. |
+                                                        | value in the specified field         |                                                                                                   |
+                                                        | will be dissolve together.           |                                                                                                   |
+                                                        +--------------------------------------+---------------------------------------------------------------------------------------------------+
+                                                        | ``None`` - No features are dissolved.| There are no additional dissolve options.                                                         |
+                                                        +--------------------------------------+---------------------------------------------------------------------------------------------------+
     ------------------------------------------------    ---------------------------------------------------------
     dissolve_fields                                     Specifies the fields to dissolve on. Multiple fields may be provided.
     ------------------------------------------------    ---------------------------------------------------------
@@ -470,11 +533,11 @@ def create_buffers(
                                                         are only available if dissolveOption = List or All. By default, all
                                                         statistics are returned.
 
-                                                        Example: [{"statisticType": "statistic type", "onStatisticField": "field name"}, ..}]
+                                                        Example: ``[{"statisticType": "statistic type", "onStatisticField": "field name"}]``
 
-                                                        fieldName is the name of the fields in the input point layer.
+                                                          * ``onStatisticField`` is the name of the field in the input point layer.
 
-                                                        statisticType is one of the following for numeric fields:
+                                                          * ``statisticType`` is one of the following for numeric fields:
 
                                                             * ``Count`` - Totals the number of values of all the points in each polygon.
                                                             * ``Sum`` - Adds the total value of all the points in each polygon.
@@ -485,7 +548,7 @@ def create_buffers(
                                                             * ``Stddev`` - Finds the standard deviation of all the points in each polygon.
                                                             * ``Var`` - Finds the variance of all the points in each polygon.
 
-                                                        statisticType is the following for string fields:
+                                                          * ``statisticType`` is one of the following for string fields:
 
                                                             * ``Count`` - Totals the number of strings for all the points in each polygon.
                                                             * ``Any`` - Returns a sample string of a point in each polygon.
@@ -496,21 +559,22 @@ def create_buffers(
     ------------------------------------------------    ---------------------------------------------------------
     output_name                                         Optional string. The task will create a feature service of the results. You define the name of the service.
     ------------------------------------------------    ---------------------------------------------------------
-    gis                                                 Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                                                 Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
     ------------------------------------------------    ---------------------------------------------------------
     context                                             Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
 
-                                                        #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
-                                                        #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
-                                                        #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                                        #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+                                                          * ``extent`` - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                                          * ``processSR`` - The features will be projected into this coordinate system for analysis.
+                                                          * ``outSR`` - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                                          * ``dataStore`` - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     ------------------------------------------------    ---------------------------------------------------------
-    future                                              Optional boolean. If 'True', the value is returned as a GPJob.
+    future                                              Optional boolean. If ``True``, the value is returned as a GPJob.
 
-                                                        The default value is 'False'
+                                                        The default value is ``False``
     ================================================    =========================================================
 
-    :return: Output Features as a :class:`~arcgis.features.FeatureLayerCollection`
+    :return:
+        :class:`~arcgis.features.FeatureLayerCollection`
 
     .. code-block:: python
 

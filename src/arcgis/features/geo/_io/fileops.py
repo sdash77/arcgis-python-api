@@ -163,16 +163,24 @@ def _geometry_to_geojson(geom):
 
 
 # --------------------------------------------------------------------------
-def _from_xy(df, x_column, y_column, sr=None):
+def _from_xy(df, x_column, y_column, sr=None, z_column=None, m_column=None):
     """
-    Takes an X/Y Column and Creates a Point Geometry from it.
+    Takes an X/Y Column and Creates a Point Geometry from it. Can handle Z
+    and M Columns as well.
     """
     from arcgis.geometry import SpatialReference, Point
     from arcgis.features.geo._array import GeoArray
 
-    def _xy_to_geometry(x, y, sr):
+    def _xy_to_geometry(x, y, sr, z=None, m=None):
         """converts x/y coordinates to Point object"""
-        return Point({"spatialReference": sr, "x": x, "y": y})
+        if z and m:
+            return Point({"spatialReference": sr, "x": x, "y": y, "z": z, "m": m})
+        elif z and not m:
+            return Point({"spatialReference": sr, "x": x, "y": y, "z": z})
+        elif m and not z:
+            return Point({"spatialReference": sr, "x": x, "y": y, "m": m})
+        else:
+            return Point({"spatialReference": sr, "x": x, "y": y})
 
     if sr is None:
         sr = SpatialReference({"wkid": 4326})
@@ -186,7 +194,33 @@ def _from_xy(df, x_column, y_column, sr=None):
     geoms = []
     v_func = np.vectorize(_xy_to_geometry, otypes="O")
     ags_geom = np.empty(len(df), dtype="O")
-    ags_geom[:] = v_func(df[x_column].values, df[y_column].values, sr)
+
+    if z_column and m_column:
+        ags_geom[:] = v_func(
+            df[x_column].values,
+            df[y_column].values,
+            sr,
+            df[z_column].values,
+            df[m_column].values,
+        )
+    elif z_column and not m_column:
+        ags_geom[:] = v_func(
+            df[x_column].values,
+            df[y_column].values,
+            sr,
+            df[z_column].values,
+            None,
+        )
+    elif m_column and not z_column:
+        ags_geom[:] = v_func(
+            df[x_column].values,
+            df[y_column].values,
+            sr,
+            None,
+            df[m_column].values,
+        )
+    else:
+        ags_geom[:] = v_func(df[x_column].values, df[y_column].values, sr)
     df["SHAPE"] = GeoArray(ags_geom)
     df.spatial.name
     for i in range(len(df)):
@@ -574,11 +608,11 @@ def from_featureclass(filename, **kwargs):
     spatial_filter                  A `Geometry` object that will filter the results.  This requires
                                     `arcpy` to work.
     ---------------------------     --------------------------------------------------------------------
-    sr                              A Spatial reference to project (or tranform) output GeoDataFrame to.  
+    sr                              A Spatial reference to project (or tranform) output GeoDataFrame to.
                                     This requires `arcpy` to work.
     ---------------------------     --------------------------------------------------------------------
-    datum_transformation            Used in combination with 'sr' parameter. if the spatial reference of 
-                                    output GeoDataFrame and input data do not share the same datum, 
+    datum_transformation            Used in combination with 'sr' parameter. if the spatial reference of
+                                    output GeoDataFrame and input data do not share the same datum,
                                     an appropriate datum transformation should be specified.
                                     To Learn more see [Geographic datum transformations](https://pro.arcgis.com/en/pro-app/help/mapping/properties/geographic-coordinate-system-transformation.htm)
                                     This requires `arcpy` to work.
@@ -668,7 +702,7 @@ def from_featureclass(filename, **kwargs):
             where_clause=where_clause,
             sql_clause=sql_clause,
             spatial_reference=sr,
-            datum_transformation=kwargs.get('datum_transformation', None)
+            datum_transformation=kwargs.get("datum_transformation", None),
         ) as rows:
             srows = []
             for row in rows:

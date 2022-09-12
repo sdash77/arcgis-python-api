@@ -1274,7 +1274,7 @@ class Geometry(BaseGeometry):
             A boolean indicating yes (True), or no (False)
 
         """
-        return self.get("hasZ", False)
+        return self.get("hasZ", False) | self.get("z", False)
 
     # ----------------------------------------------------------------------
     @property
@@ -1286,7 +1286,7 @@ class Geometry(BaseGeometry):
             A boolean indicating yes (True), or no (False)
 
         """
-        return self.get("hasM", False)
+        return self.get("hasM", False) | self.get("m", False)
 
     # ----------------------------------------------------------------------
     @property

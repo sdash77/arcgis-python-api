@@ -1608,7 +1608,15 @@ class GeoAccessor(object):
             raise ValueError(
                 "`how` is an invalid inputs of %s, but should be %s" % (op, allowed_ops)
             )
-        if self.sr != right_df.spatial.sr:
+        same_sr = False
+        if self.sr == right_df.spatial.sr:
+            same_sr = True
+        else:
+            # check for cases where there is latestWkid by iterating through values of sr
+            for value in self.sr.values():
+                if value in right_df.spatial.sr.values():
+                    same_sr = True
+        if same_sr is False:
             raise Exception("Difference Spatial References, aborting operation")
         index_left = "index_{}".format(left_tag)
         index_right = "index_{}".format(right_tag)
@@ -2840,7 +2848,7 @@ class GeoAccessor(object):
 
     # ----------------------------------------------------------------------
     @staticmethod
-    def from_xy(df, x_column, y_column, sr=4326):
+    def from_xy(df, x_column, y_column, sr=4326, z_column=None, m_column=None):
         """
         The ``from_xy`` method converts a Pandas DataFrame into a Spatially Enabled DataFrame
         by providing the X/Y columns.
@@ -2856,6 +2864,10 @@ class GeoAccessor(object):
         --------------------    ---------------------------------------------------------
         sr                      Optional int.  The wkid number of the spatial reference.
                                 4326 is the default value.
+        --------------------    ---------------------------------------------------------
+        z_column                Optional string.  The name of the Z-coordinate series
+        --------------------    ---------------------------------------------------------
+        m_column                Optional string.  The name of the M-value series
         ====================    =========================================================
 
         :return: DataFrame
@@ -2863,7 +2875,14 @@ class GeoAccessor(object):
         """
         from ._io.fileops import _from_xy
 
-        return _from_xy(df=df, x_column=x_column, y_column=y_column, sr=sr)
+        return _from_xy(
+            df=df,
+            x_column=x_column,
+            y_column=y_column,
+            sr=sr,
+            z_column=z_column,
+            m_column=m_column,
+        )
 
     # ----------------------------------------------------------------------
     @staticmethod
@@ -2938,11 +2957,11 @@ class GeoAccessor(object):
         spatial_filter                  A `Geometry` object that will filter the results.  This requires
                                         `arcpy` to work.
         ---------------------------     --------------------------------------------------------------------
-        sr                              A Spatial reference to project (or tranform) output GeoDataFrame to.  
-                                        This requires `arcpy` to work.
+        sr                              A Spatial reference to project (or transform) output GeoDataFrame
+                                        to. This requires `arcpy` to work.
         ---------------------------     --------------------------------------------------------------------
-        datum_transformation            Used in combination with 'sr' parameter. if the spatial reference of 
-                                        output GeoDataFrame and input data do not share the same datum, 
+        datum_transformation            Used in combination with 'sr' parameter. if the spatial reference of
+                                        output GeoDataFrame and input data do not share the same datum,
                                         an appropriate datum transformation should be specified.
                                         To Learn more see [Geographic datum transformations](https://pro.arcgis.com/en/pro-app/help/mapping/properties/geographic-coordinate-system-transformation.htm)
                                         This requires `arcpy` to work.
@@ -3773,7 +3792,7 @@ class GeoAccessor(object):
         :return:
             A boolean indicating `Z` values (True), or not (False)
         """
-        return self._data[self.name].geom.has_z.all()
+        return self._data[self.name].geom.has_z.any()
 
     # ----------------------------------------------------------------------
     @property
@@ -3784,7 +3803,7 @@ class GeoAccessor(object):
         :return:
             A boolean indicating `M` values (True), or not (False)
         """
-        return self._data[self.name].geom.has_m.all()
+        return self._data[self.name].geom.has_m.any()
 
     # ----------------------------------------------------------------------
     @property
