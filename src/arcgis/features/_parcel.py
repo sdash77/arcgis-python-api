@@ -1261,15 +1261,15 @@ class ParcelFabricManager(object):
         future: bool = False,
     ):
         """
-        The :meth:`~set_line_label_position` Sets the label position of the line's COGO dimension to the 
+        The :meth:`~set_line_label_position` Sets the label position of the line's COGO dimension to the
         left of the parcel line, to the right of the parcel line, or centered over the parcel line.
 
         =======================     =======================================================================
         **Argument**                **Description**
         -----------------------     -----------------------------------------------------------------------
-        parcel_line_features        Required List. Parameter representing the line parcels to which label 
-                                    positions will be set. 
-                                    
+        parcel_line_features        Required List. Parameter representing the line parcels to which label
+                                    positions will be set.
+
                                     :Syntax:
 
                                     .. code-block:: python
@@ -1308,7 +1308,7 @@ class ParcelFabricManager(object):
             res = self._con.post(url, params)
             return res
         return self._con.post(url, params)
-        
+
     # ----------------------------------------------------------------------
 
     def _run_async(self, fn, **inputs):
