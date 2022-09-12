@@ -9039,7 +9039,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 "itemProperties": {"itemId": output_service.itemid},
             }
         elif isinstance(output_name, arcgis.gis.Item):
-            output_service = None  # output_name
+            output_service = output_name
             output_raster = {"itemProperties": {"itemId": output_service.itemid}}
         else:
             raise TypeError("output_raster should be a string (service name) or Item")
