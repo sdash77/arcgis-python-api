@@ -994,10 +994,13 @@ class WebMap(HasTraits, collections.OrderedDict):
         show_labels: bool = None,
     ):
         """
-        Method to update a WebMap layer's drawing info. Works for standalone layers and individual layers found
-        within group layers. Allows for a user to manually add their own renderers and label classes, and toggle whether
-        the labels are visible. Useful in tandem with the map widget, allowing for style changes without opening the
-        online map viewer.
+        Method to alter a WebMap layer's drawing info. Works for standalone layers and individual layers found
+        within group layers. Allows for a user to manually add their own renderers and label classes, toggle whether
+        the labels are visible, and control the transparency of a layer. Useful in tandem with the map widget,
+        allowing for style changes without opening the online map viewer.
+
+        .. note::
+            In order to save changes made through this method, call ``WebMap.update()`` or ``WebMap.save()``.
 
         ==================      ====================================================================
         **Argument**            **Description**
@@ -1018,6 +1021,9 @@ class WebMap(HasTraits, collections.OrderedDict):
         renderer                Optional dictonary. Can be manually constructed or the output of
                                 ``generate_renderer()``. Determines the layer style of the passed
                                 layer.
+        ------------------      --------------------------------------------------------------------
+        transparency            Optional int. Determines transparency/opacity of the layer on 0-100
+                                scale, with 0 being fully opaque and 100 being fully transparent.
         ------------------      --------------------------------------------------------------------
         show_labels             Optional boolean. Determines whether the layer labels are visible or
                                 not.
@@ -1078,6 +1084,7 @@ class WebMap(HasTraits, collections.OrderedDict):
                 change_layer,
                 label_info = label,
                 renderer = rend,
+                transparency = 40,
                 show_labels = True,
             )
         """
@@ -1147,13 +1154,15 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         # In case the layer is within a group layer
         except ValueError:
+            # temp_dict = self._webmapdict
             for item in self._webmapdict["operationalLayers"]:
                 if (item["layerType"] == "GroupLayer") and (lyr_dict in item["layers"]):
                     grp_idx = self._webmapdict["operationalLayers"].index(item)
                     lyr_idx = item["layers"].index(lyr_dict)
-                    self._webmapdict["operationalLayers"][grp_idx]["layers"][
-                        lyr_idx
-                    ] = layer
+                    # need to make a copy so observable list picks it up
+                    grp_copy = self._webmapdict["operationalLayers"][grp_idx]
+                    grp_copy["layers"][lyr_idx] = layer
+                    self._webmapdict["operationalLayers"][grp_idx] = grp_copy
                     break
 
         # Update the layers property
