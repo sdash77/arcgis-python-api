@@ -1255,6 +1255,61 @@ class ParcelFabricManager(object):
         return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
+    def set_line_label_position(
+        self,
+        parcel_line_features: list[dict[str, Any]],
+        future: bool = False,
+    ):
+        """
+        The :meth:`~set_line_label_position` Sets the label position of the line's COGO dimension to the 
+        left of the parcel line, to the right of the parcel line, or centered over the parcel line.
+
+        =======================     =======================================================================
+        **Argument**                **Description**
+        -----------------------     -----------------------------------------------------------------------
+        parcel_line_features        Required List. Parameter representing the line parcels to which label 
+                                    positions will be set. 
+                                    
+                                    :Syntax:
+
+                                    .. code-block:: python
+
+                                        >>> parcel_line_features=[{"id":"<guid>","layerId":"<layerID>"},{...}]
+
+        --------------------        --------------------------------------------------------------------
+        future                      Optional boolean. If `True`, the request is processed as an asynchronous job and a URL is returned that points a location
+                                    displaying the status of the job.
+
+                                    The default is `False`.
+        =======================     =======================================================================
+
+        :return: Dictionary indicating 'success' or 'error' with a list of edited features
+
+        """
+        url = "{base}/setParcelLineLabelPosition".format(base=self._url)
+        params = {
+            "gdbVersion": self._version.properties.versionName,
+            "sessionId": self._version._guid,
+            "parcelFeatures": parcel_line_features,
+            "async": future,
+            "f": "json",
+        }
+
+        if future:
+            res = self._con.post(path=url, postdata=params)
+            f = self._run_async(
+                self._status_via_url,
+                con=self._con,
+                url=res["statusUrl"],
+                params={"f": "json"},
+            )
+            return f
+        else:
+            res = self._con.post(url, params)
+            return res
+        return self._con.post(url, params)
+        
+    # ----------------------------------------------------------------------
 
     def _run_async(self, fn, **inputs):
         """runs the inputs asynchronously"""
