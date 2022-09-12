@@ -1294,11 +1294,11 @@ class ImageryLayer(Layer):
         process_as_multidimensional     Optional boolean. Specifies whether to process the image service as a
                                         multidimensional image service.
 
-                                            - ``False`` - Pixel values of the specified rendering rules and mosaic
-                                            rule at the specified geometry will be returned. This is the
+                                            - ``False`` - Pixel values of the specified rendering rules and mosaic\
+                                            rule at the specified geometry will be returned. This is the\
                                             default.
-                                            - ``True`` - The image service is treated as a multidimensional raster,
-                                            and pixel values from all slices, along with additional properties
+                                            - ``True`` - The image service is treated as a multidimensional raster,\
+                                            and pixel values from all slices, along with additional properties\
                                             describing the slices, will be returned.
 
                                         .. note::
