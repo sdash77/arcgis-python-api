@@ -1,11 +1,11 @@
-arcgis\.gis\.agonb module
+arcgis.gis.agonb module
 ===========================
 
 .. automodule:: arcgis.gis.agonb
 
 AGOLNotebookManager
 ---------------------
-.. autoclass:: arcgis.gis.agoserver.AGOLNotebookManager
+.. autoclass:: arcgis.gis.agonb.AGOLNotebookManager
     :members:
     :undoc-members:
     :show-inheritance:
