@@ -1580,9 +1580,11 @@ def enrich(
     # keep list of countries for data_collection check
     countries = []
 
-    # perform geocoding to get countries
+    # perform geocoding to get countries from string addresses
     if isinstance(study_areas, list):
         for index, value in enumerate(study_areas):
+            if isinstance(value, BufferStudyArea):
+                value = BufferStudyArea.area
             if isinstance(value, str):
                 # geocode the string and extract the country
                 geocoded_area = geocode(value)[0]
