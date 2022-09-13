@@ -5,7 +5,7 @@ from arcgis.gis.nb import NotebookManager
 from arcgis.gis.agonb import AGOLNotebookManager
 
 
-def list_instances(gis: GIS = None) -> list[dict[str:str]]:
+def _list_instances(gis: GIS = None) -> list[dict[str:str]]:
     """
     Returns a list of avaialable Machine Instances.
 
@@ -55,7 +55,6 @@ def list_runtimes(gis: GIS = None) -> list:
 def execute_notebook(
     item: Item,
     *,
-    instance_type: str = None,
     timeout: int = 50,
     update_portal_item: bool = True,
     parameters: list = None,
@@ -118,8 +117,6 @@ def execute_notebook(
                             should be saved in the notebook for future use. The default is
                             false.
     --------------------    --------------------------------------------------------------------
-    instance_type           Optional String. The instance type. This is only available on ArcGIS Online.
-    --------------------    --------------------------------------------------------------------
     timeout                 Optional Int. The number of minutes to run the instance before timeout. This is only available on ArcGIS Online.
     --------------------    --------------------------------------------------------------------
     future                  Optional boolean. If True, a Job object will be returned and the process
@@ -131,16 +128,17 @@ def execute_notebook(
               Call ``result()`` to get the response
 
     """
-    assert isinstance(gis, GIS)
     if gis is None:
         from arcgis import env
 
-        gis = env.active_gis
+        gis = env.active_gis or item._gis
         assert gis
+
     mgrs = gis.notebook_server
     if len(mgrs) > 0:
 
         if gis._portal.is_arcgisonline:
+            instance_type = None
             mgr = gis.notebook_server[0]
             assert isinstance(mgr, AGOLNotebookManager)
             return mgr.notebooksmanager.execute_notebook(

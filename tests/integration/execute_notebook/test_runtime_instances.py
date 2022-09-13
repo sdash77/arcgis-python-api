@@ -116,13 +116,6 @@ class Test_RuntimeInstancesMethodAGOL(unittest.TestCase):
         res = list_runtimes(gis)
         assert isinstance(res, list)
 
-    def test_istances(self):
-        gis = self._gis
-        from arcgis.notebook import list_instances
-
-        res = list_instances(gis)
-        assert isinstance(res, list)
-
 
 class Test_RuntimeInstancesMethodEnterprise(unittest.TestCase):
     @classmethod
@@ -143,14 +136,6 @@ class Test_RuntimeInstancesMethodEnterprise(unittest.TestCase):
         from arcgis.notebook import list_runtimes
 
         res = list_runtimes(gis)
-        assert isinstance(res, list)
-
-    def test_istances(self):
-        gis = self._gis
-        from arcgis.notebook import list_instances
-
-        res = list_instances(gis)
-        assert len(res) == 0
         assert isinstance(res, list)
 
 
