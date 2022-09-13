@@ -605,6 +605,26 @@ class ArcGISModel(object):
         self._backend = getattr(self, "_backend", "pytorch")
         self._model_metrics_cache = None
         self._slice_lr = True
+        self._pretrained_path = kwargs.get("pretrained_path", None)
+        self._check_data_support_with_pretrained_path()
+
+    def _check_data_support_with_pretrained_path(self):
+        if self._data is not None and self._pretrained_path is not None:
+            with open(Path(self._pretrained_path).with_suffix(".emd")) as f:
+                emd = json.load(f)
+            if self._data.chip_size != emd["ImageHeight"]:
+                import copy
+                from .._data import prepare_data
+                import logging
+
+                logger = logging.getLogger()
+                logger.warning(
+                    f"""Setting the `chip_size` of input data ({self._data.chip_size}) to same as input model's ({emd["ImageHeight"]})."""
+                )
+                arcgis_init_kwargs = copy.deepcopy(self._data.arcgis_init_kwargs)
+                arcgis_init_kwargs["chip_size"] = emd["ImageHeight"]
+                arcgis_init_kwargs["resize_to"] = emd["resize_to"]
+                self._data = prepare_data(**arcgis_init_kwargs)
 
     def _check_backbone_support(self, backbone):
         "Fetches the backbone name and returns True if it is in the list of supported backbones"

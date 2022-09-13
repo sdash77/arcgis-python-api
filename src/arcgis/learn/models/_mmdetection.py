@@ -103,6 +103,8 @@ class MMDetectionConfig:
         self.model = model
         self.cfg = cfg
 
+        logging.disable(0)
+
         return model
 
     def on_batch_begin(self, learn, model_input_batch, model_target_batch, **kwargs):

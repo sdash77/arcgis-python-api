@@ -315,7 +315,8 @@ class SingleShotDetector(ArcGISModel):
         **kwargs,
     ):
 
-        super().__init__(data, backbone, **kwargs)
+        super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
+        data = self._data
 
         if pretrained_path is not None:
             backbone_pretrained = False

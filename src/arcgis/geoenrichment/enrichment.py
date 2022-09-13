@@ -542,11 +542,23 @@ class Country(object):
         return dc_df
 
     @property
+    def hierarchies(self):
+        """
+        Return the available hierarchies and information for them as a dataframe.
+        """
+        return self._ba_cntry._ba._get_hierarchies_df(self._ba_cntry.iso3)
+
+    @property
+    def hierarchy(self):
+        """Get/Set the current hierarchy used. This will affect the enrichment variables"""
+        return self.hierarchies[self.hierarchies["alias"] == self.properties.hierarchy]
+
+    @property
     def enrich_variables(self):
         """
         Pandas Dataframe of available geoenrichment variables.
 
-        For instance, the following code, if run in Jupter, will render the table below.
+        For instance, the following code, if run in Jupyter, will render the table below.
 
         .. code-block:: python
 
@@ -721,6 +733,10 @@ class Country(object):
         output_spatial_reference         The default output will be WGS84 (WKID 4326). If a different output
                                          spatial reference is desired, please provide it here as a WKID or
                                          :class:`~arcgis.geometry.SpatialReference` object instance.
+        ----------------------------     --------------------------------------------------------------------
+        hierarchy                        The hierarchy of the datasets to use. The hierarchy is the "ID" that
+                                         can be found in the `hierarchies` property. If none is provided, the
+                                         default hierarchy will be used.
         ============================     ====================================================================
 
         :return:
@@ -863,6 +879,15 @@ class Country(object):
             enrich_variables = _preproces_data_colletions_and_analysis_variables(
                 self, kwargs["data_collections"], enrich_variables
             )
+
+        # if hierarchy in kwargs, make sure it exists
+        if "hierarchy" in kwargs.keys():
+            hierarchies = self.hierarchies
+            hierarchy_df = hierarchies[hierarchies["ID"] == kwargs["hierarchy"]]
+            if hierarchy_df.empty:
+                ValueError(
+                    "The hierarchy provided is not a valid ID value. To see valid hierarchy ID values see the `hierarchies` property."
+                )
 
         # invoke enrich on the business analyst object
         enrich_res = self._ba_cntry.enrich(
@@ -1440,7 +1465,7 @@ def enrich(
     for enrichment. This area can be defined using additional parameters, but by
     default is one kilometer around the geometry. Also, only straight-line distance
     is supported with line geometries, but points can use available transportation
-    network methods – typically drive distance or drive time.
+    network methods - typically drive distance or drive time.
 
     While already popular for site analysis, forecast modeling for a store or
     facility location, enrich provides access to a massive amount of data for any
@@ -1482,6 +1507,10 @@ def enrich(
                                   Enrichment attributes can describe various types of information such
                                   as demographic characteristics and geographic context of the
                                   locations or areas submitted as input features in study_areas.
+
+                                  If none are specified then 'KeyGlobalFacts' is used. To see a list of
+                                  the data collections available for a country you can use the Country class:
+                                  `Country.enrich_variables.data_collection.unique()`
     -------------------------     --------------------------------------------------------------------
     analysis_variables            Optional list. A Data Collection is a preassembled list of
                                   attributes that will be used to enrich the input features. With the
@@ -1506,6 +1535,9 @@ def enrich(
                                   parameter with standard geography layers that are provided by the
                                   GeoEnrichment class for each country. You can also intersect
                                   features from a publicly available feature service.
+
+                                  See `intersecting_geographies <https://developers.arcgis.com/rest/geoenrichment/api-reference/enrich.htm#ESRI_SECTION2_6A987CF67F914FA39B61BE14BE115F27>`_
+                                  for more details on formatting of this parameter.
     -------------------------     --------------------------------------------------------------------
     return_geometry               Optional boolean. A parameter to request the output geometries in
                                   the response.
@@ -1532,11 +1564,12 @@ def enrich(
     =========================     ====================================================================
 
 
-    See `intersecting_geographies <https://developers.arcgis.com/rest/geoenrichment/api-reference/enrich.htm#ESRI_SECTION2_6A987CF67F914FA39B61BE14BE115F27>`_
 
 
 
-    :return: Spatially Enabled DataFrame or Panda's DataFrame with the requested variables for the study areas.
+    :return:
+       :class:`Spatially Enabled DataFrame <arcgis.features.GeoAccessor>` or Panda's DataFrame
+       with the requested variables for the study areas.
     """
     # handle the caveat of using a GIS('Pro') input
     gis = _check_gis_source(gis)
@@ -1547,6 +1580,15 @@ def enrich(
     # pull out named area properties if present and set to use country instead of just BA global
     standard_geography_level = None
 
+    # keep list of countries for data_collection check
+    countries = []
+    for area in study_areas:
+        if isinstance(area, NamedArea):
+            countries.append(area._country)
+    # remove duplicates
+    countries = list(collections.OrderedDict.fromkeys(countries))
+
+    # get information from study areas to best perform geoenrichment
     if isinstance(study_areas, Iterable) and not isinstance(study_areas, pd.DataFrame):
         if isinstance(study_areas, dict):
             first_geo = list(study_areas.values())[0]
@@ -1555,6 +1597,7 @@ def enrich(
             first_geo = study_areas[0]
 
         if isinstance(first_geo, NamedArea):
+            orig_study_areas = study_areas
             study_areas = [na._areaid for na in study_areas]
             standard_geography_level = first_geo._currlvl
             enrich_src = first_geo._country
@@ -1563,35 +1606,105 @@ def enrich(
             proximity_metric = first_geo.units
             proximity_value = first_geo.radii
 
+    if data_collections is None:
+        # if no data collection and there is more than one Country, run enrich and append data for each country
+        # if first instance of study areas is not Named Area then BA enrich will be used and this is not necessary
+        if isinstance(enrich_src, Country):
+            # enrich all countries present
+            if len(countries) > 0:
+                enrich_res = pd.DataFrame()
+                for country in countries:
+                    for sa in orig_study_areas:
+                        if sa._country is country:
+                            standard_geography_level = sa._currlvl
+                            break
+                    enrich_src = country
+                    # get all possible requested enrich variables
+                    src = (
+                        enrich_src._ba_cntry
+                        if isinstance(enrich_src, Country)
+                        else enrich_src
+                    )
+                    enrich_vars = _preproces_data_colletions_and_analysis_variables(
+                        src, data_collections, analysis_variables
+                    )
+
+                    # invoke enrich on the business analyst object
+                    enrich_df = enrich_src.enrich(
+                        study_areas,
+                        enrich_variables=enrich_vars,
+                        proximity_type=proximity_type,
+                        proximity_value=proximity_value,
+                        proximity_metric=proximity_metric,
+                        standard_geography_level=standard_geography_level,
+                        return_geometry=return_geometry,
+                    )
+
+                    enrich_res = pd.concat([enrich_res, enrich_df], ignore_index=True)
+        # The default, no data collection and not a Country source
+        else:
+            # get all possible requested enrich variables
+            src = (
+                enrich_src._ba_cntry if isinstance(enrich_src, Country) else enrich_src
+            )
+            enrich_vars = _preproces_data_colletions_and_analysis_variables(
+                src, data_collections, analysis_variables
+            )
+
+            # invoke enrich on the business analyst object
+            enrich_res = enrich_src.enrich(
+                study_areas,
+                enrich_variables=enrich_vars,
+                proximity_type=proximity_type,
+                proximity_value=proximity_value,
+                proximity_metric=proximity_metric,
+                standard_geography_level=standard_geography_level,
+                return_geometry=return_geometry,
+            )
     # check if data collections used as input parameter against available data collections
-    if data_collections is not None:
-        avail_data_coll = enrich_src.enrich_variables.data_collection.unique()
-        unavail_data_coll = [dc for dc in data_collections if dc not in avail_data_coll]
-        assert len(unavail_data_coll) == 0, (
-            "One or more of the data collections you requested is not available. The "
-            'only data\ncollection available globally is "KeyGlobalFacts". For '
-            "working with data specific to a country, you\ncan discover available "
-            "data collections using "
-            "Country.enrich_variables.data_collection.unique(),\nand enrich using "
-            "the Country.enrich method."
+    elif data_collections is not None:
+        # If data collection specified not found in country and more than one is present, check other countries if using Country source.
+        if isinstance(enrich_src, Country) and len(countries) > 0:
+            for country in countries:
+                enrich_src = country
+                avail_data_coll = enrich_src.enrich_variables.data_collection.unique()
+                unavail_data_coll = [
+                    dc for dc in data_collections if dc not in avail_data_coll
+                ]
+                # If found instance of data collection then break with the country
+                if len(unavail_data_coll) == 0:
+                    break
+        # else do simple check for country and return error if needed
+        else:
+            avail_data_coll = enrich_src.enrich_variables.data_collection.unique()
+            unavail_data_coll = [
+                dc for dc in data_collections if dc not in avail_data_coll
+            ]
+        if len(unavail_data_coll) != 0:
+            raise Exception(
+                "One or more of the data collections you requested is not available. The "
+                'only data\ncollection available globally is "KeyGlobalFacts". For '
+                "working with data specific to a country, you\ncan discover available "
+                "data collections using "
+                "Country.enrich_variables.data_collection.unique()."
+            )
+
+        # get all possible requested enrich variables
+        src = enrich_src._ba_cntry if isinstance(enrich_src, Country) else enrich_src
+        enrich_vars = _preproces_data_colletions_and_analysis_variables(
+            src, data_collections, analysis_variables
         )
 
-    # get all possible requested enrich variables
-    src = enrich_src._ba_cntry if isinstance(enrich_src, Country) else enrich_src
-    enrich_vars = _preproces_data_colletions_and_analysis_variables(
-        src, data_collections, analysis_variables
-    )
-
-    # invoke enrich on the business analyst object
-    enrich_res = enrich_src.enrich(
-        study_areas,
-        enrich_variables=enrich_vars,
-        proximity_type=proximity_type,
-        proximity_value=proximity_value,
-        proximity_metric=proximity_metric,
-        standard_geography_level=standard_geography_level,
-        return_geometry=return_geometry,
-    )
+        # invoke enrich on the business analyst object
+        enrich_res = enrich_src.enrich(
+            study_areas,
+            enrich_variables=enrich_vars,
+            proximity_type=proximity_type,
+            proximity_value=proximity_value,
+            proximity_metric=proximity_metric,
+            standard_geography_level=standard_geography_level,
+            return_geometry=return_geometry,
+        )
 
     return enrich_res
 

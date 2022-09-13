@@ -1177,7 +1177,7 @@ class ImageryLayer(Layer):
     # ----------------------------------------------------------------------
     def identify(
         self,
-        geometry: Union[dict[str, Any], Polygon, Point],
+        geometry: Union[dict[str, Any], Polygon, Point, MultiPoint, Envelope],
         mosaic_rule: Optional[Union[str, dict]] = None,
         rendering_rules: Optional[Union[list[str], dict[str, Any]]] = None,
         pixel_size: Optional[Union[str, dict[str, int]]] = None,
@@ -1193,7 +1193,9 @@ class ImageryLayer(Layer):
 
         The ``identify`` method identifies the content of an image layer for a given location
         and a given mosaic rule. The location can be a :class:`~arcgis.geometry.Point` or a
-        :class:`~arcgis.geometry.Polygon`.
+        :class:`~arcgis.geometry.Polygon` or a
+        :class:`~arcgis.geometry.Envelope` or a
+        :class:`~arcgis.geometry.MultiPoint`
 
         .. note::
             The ``identify`` operation is supported by both mosaic dataset and
@@ -1214,12 +1216,13 @@ class ImageryLayer(Layer):
         ============================    ====================================================================
         **Arguments**                   **Description**
         ----------------------------    --------------------------------------------------------------------
-        geometry                        Required dictionary/Point/Polygon. A :class:`~arcgis.geometry.Geometry` that
+        geometry                        Required dictionary/Point/Polygon/MultiPoint/Envelope. A :class:`~arcgis.geometry.Geometry` that
                                         defines the location to be identified.
 
                                         .. note::
-                                            The location can be a point or polygon or envelope.
-                                            Support for envelope was added at 10.9.1.
+                                            The location can be a point or polygon or envelope or multipoint.
+                                              - Support for envelope was added at 10.9.1.
+                                              - Support for multipoint was added at 11.0.
         ----------------------------    --------------------------------------------------------------------
         mosaic_rule                     Optional string or dict. Specifies the mosaic rule when defining how
                                         individual images should be mosaicked. When a mosaic rule is not
@@ -1291,11 +1294,11 @@ class ImageryLayer(Layer):
         process_as_multidimensional     Optional boolean. Specifies whether to process the image service as a
                                         multidimensional image service.
 
-                                            - ``False`` - Pixel values of the specified rendering rules and mosaic
-                                            rule at the specified geometry will be returned. This is the
+                                            - ``False`` - Pixel values of the specified rendering rules and mosaic\
+                                            rule at the specified geometry will be returned. This is the\
                                             default.
-                                            - ``True`` - The image service is treated as a multidimensional raster,
-                                            and pixel values from all slices, along with additional properties
+                                            - ``True`` - The image service is treated as a multidimensional raster,\
+                                            and pixel values from all slices, along with additional properties\
                                             describing the slices, will be returned.
 
                                         .. note::
@@ -1325,7 +1328,7 @@ class ImageryLayer(Layer):
 
         url = "%s/identify" % self._url
         params = {"f": "json", "geometry": dict(geometry)}
-        from arcgis.geometry._types import Point, Polygon, Envelope
+        from arcgis.geometry._types import Point, Polygon, Envelope, MultiPoint
         from arcgis._impl.common._mixins import PropertyMap
 
         if isinstance(geometry, Point):
@@ -1334,9 +1337,13 @@ class ImageryLayer(Layer):
             params["geometryType"] = "esriGeometryPolygon"
         elif isinstance(geometry, (Envelope, PropertyMap)):
             params["geometryType"] = "esriGeometryEnvelope"
+        elif isinstance(geometry, MultiPoint):
+            params["geometryType"] = "esriGeometryMultipoint"
         elif isinstance(geometry, dict):
             if "x" in geometry:
                 params["geometryType"] = "esriGeometryPoint"
+            elif "points" in geometry:
+                params["geometryType"] = "esriGeometryMultipoint"
             elif "xmin" in geometry:
                 params["geometryType"] = "esriGeometryEnvelope"
             else:
@@ -2270,8 +2277,7 @@ class ImageryLayer(Layer):
                                         list of field names.
         ------------------------------  --------------------------------------------------------------------
         time_filter                     Optional datetime.date, datetime.datetime or timestamp in
-                                        milliseconds. The time instant or the time extent of the exported
-                                        image.
+                                        milliseconds. The time instant or the time extent to query.
 
                                         Syntax: time_filter=<timeInstant>
 
@@ -3277,7 +3283,7 @@ class ImageryLayer(Layer):
                                           - pixel_size='0.18,0.18'
         ----------------------------    --------------------------------------------------------------------
         time                            Optional datetime.date, datetime.datetime or timestamp string. The
-                                        time instant or the time extent of the exported image.
+                                        time instant or the time extent to compute statistics and histograms.
                                         Time instant specified as datetime.date, datetime.datetime or
                                         timestamp in milliseconds since epoch
                                         Syntax: time=<timeInstant>
@@ -3742,7 +3748,7 @@ class ImageryLayer(Layer):
                                           - pixel_size='0.18,0.18'
         ----------------------------    --------------------------------------------------------------------
         time                            Optional datetime.date, datetime.datetime or timestamp string. The
-                                        time instant or the time extent of the exported image.
+                                        time instant or the time extent to compute the histogram.
                                         Time instant specified as datetime.date, datetime.datetime or
                                         timestamp in milliseconds since epoch
                                         Syntax: time=<timeInstant>
@@ -3875,6 +3881,15 @@ class ImageryLayer(Layer):
         interpolation: Optional[str] = None,
         out_fields: Optional[str] = None,
         slice_id: Optional[int] = None,
+        time: Optional[
+            Union[
+                str,
+                list[datetime.date],
+                list[datetime.datetime],
+                datetime.date,
+                datetime.datetime,
+            ]
+        ] = None,
     ):
         """
         The ``get_samples`` operation is supported by both mosaic dataset and raster
@@ -3956,6 +3971,20 @@ class ImageryLayer(Layer):
         slice_id                 Optional integer. The slice ID of a multidimensional raster. The operation 
                                  will be performed for the specified slice.
                                  This parameter is available from 10.9 onwards.
+        -----------------------  -----------------------------------------------------------------------
+        time                     Optional datetime.date, datetime.datetime or timestamp string.
+                                 The time instant or time extent of the raster to be sampled.
+                                 Time instant specified as datetime.date, datetime.datetime or
+                                 timestamp in milliseconds since epoch
+                                 Syntax: time=<timeInstant>
+                                        
+                                 Time extent specified as list of [<startTime>, <endTime>]
+                                 For time extents one of <startTime> or <endTime> could be None. A
+                                 None value specified for start time or end time will represent
+                                 infinity for start or end time respectively.
+                                 Syntax: time=[<startTime>, <endTime>] ; specified as
+                                 datetime.date, datetime.datetime or timestamp
+                                 This parameter is available from 10.9 onwards.
         =======================  =======================================================================
 
         :return:
@@ -3969,8 +3998,17 @@ class ImageryLayer(Layer):
         if not isinstance(geometry, Geometry):
             geometry = Geometry(geometry)
 
+        geometry_type_value_list = [
+            "point",
+            "multipoint",
+            "polyline",
+            "polygon",
+            "envelope",
+        ]
         if geometry_type is None:
             geometry_type = "esriGeometry" + geometry.type
+        elif geometry_type.lower() in geometry_type_value_list:
+            geometry_type = "esriGeometry" + geometry_type.lower().capitalize()
 
         url = self._url + "/getSamples"
         params = {"f": "json", "geometry": geometry, "geometryType": geometry_type}
@@ -3993,6 +4031,12 @@ class ImageryLayer(Layer):
             params["outFields"] = out_fields
         if slice_id is not None:
             params["sliceId"] = slice_id
+
+        from ._util import _set_time_param
+
+        if time is not None:
+            params["time"] = _set_time_param(time)
+
         if self._datastore_raster:
             params["Raster"] = self._uri
 
@@ -4517,8 +4561,7 @@ class ImageryLayer(Layer):
                                         list of field names.
         ------------------------------  --------------------------------------------------------------------
         time_filter                     optional datetime.date, datetime.datetime or timestamp in
-                                        milliseconds. The time instant or the time extent of the exported
-                                        image.
+                                        milliseconds. The time instant or the time extent to compute mdim info.
 
                                         Syntax: time_filter=<timeInstant>
 
@@ -6607,7 +6650,7 @@ class ImageryLayer(Layer):
                                           - pixel_size='0.18,0.18'
         ----------------------------    --------------------------------------------------------------------
         time                            Optional datetime.date, datetime.datetime or timestamp string. The
-                                        time instant or the time extent of the exported image.
+                                        time instant or the time extent to compute statistics and histograms.
                                         Time instant specified as datetime.date, datetime.datetime or
                                         timestamp in milliseconds since epoch
                                         Syntax: time=<timeInstant>
@@ -8760,7 +8803,7 @@ class Raster:
                                         **Note:** This parameter is honoured if the raster uses "image_server" engine.
         ----------------------------    --------------------------------------------------------------------
         time                            Optional datetime.date, datetime.datetime or timestamp string. The
-                                        time instant or the time extent of the exported image.
+                                        time instant or the time extent to compute statistics and histograms.
                                         Time instant specified as datetime.date, datetime.datetime or
                                         timestamp in milliseconds since epoch
                                         Syntax: time=<timeInstant>
@@ -10234,7 +10277,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
                                         **Note:** This parameter is honoured if the raster uses "image_server" engine.
         ----------------------------    --------------------------------------------------------------------
         time                            Optional datetime.date, datetime.datetime or timestamp string. The
-                                        time instant or the time extent of the exported image.
+                                        time instant or the time extent to compute statistics and histograms. .
                                         Time instant specified as datetime.date, datetime.datetime or
                                         timestamp in milliseconds since epoch
                                         Syntax: time=<timeInstant>
@@ -11151,7 +11194,7 @@ class _ArcpyRaster(Raster, ImageryLayer):
                                         **Note:** This parameter is honoured if the raster uses "image_server" engine.
         ----------------------------    --------------------------------------------------------------------
         time                            optional datetime.date, datetime.datetime or timestamp string. The
-                                        time instant or the time extent of the exported image.
+                                        time instant or the time extent to compute statistics and histograms.
                                         Time instant specified as datetime.date, datetime.datetime or
                                         timestamp in milliseconds since epoch
                                         Syntax: time=<timeInstant>
