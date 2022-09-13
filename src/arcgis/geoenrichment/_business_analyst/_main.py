@@ -1,6 +1,7 @@
 import asyncio
 from collections import namedtuple
 from copy import deepcopy
+from functools import lru_cache
 import json
 from pathlib import Path
 import re
@@ -14,7 +15,6 @@ from arcgis.geometry import Geometry, SpatialReference
 from arcgis.network.analysis import get_travel_modes
 from arcgis._impl.common._utils import _lazy_property as lazy_property
 import pandas as pd
-import requests
 
 from ._utils import (
     add_proximity_to_enrich_feature_list,
@@ -2133,6 +2133,7 @@ class BusinessAnalyst(object):
 
         return enrich_df
 
+    @lru_cache(maxsize=255)
     def _standardize_enrich_column_name(
         self, column_name: str, country: Optional[Country] = None
     ):
