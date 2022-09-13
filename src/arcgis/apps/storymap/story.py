@@ -1186,6 +1186,10 @@ class StoryMap(object):
             Do not forget to save the target story once you are done copying and making
             any further edits.
 
+        .. note::
+            This method can take time depending on the number of resources. Each resource coming
+            from a file must be copied over.
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
