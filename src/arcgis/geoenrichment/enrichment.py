@@ -1584,7 +1584,7 @@ def enrich(
     if isinstance(study_areas, list):
         for index, value in enumerate(study_areas):
             if isinstance(value, BufferStudyArea):
-                value = BufferStudyArea.area
+                value = value.area
             if isinstance(value, str):
                 # geocode the string and extract the country
                 geocoded_area = geocode(value)[0]
@@ -1592,8 +1592,12 @@ def enrich(
                 if index == 0:
                     # if the first instance is a geocoded area, assign enrich_src
                     enrich_src = Country(geocoded_area["attributes"]["Country"])
-    elif isinstance(study_areas, str):
-        geocoded_area = geocode(study_areas)[0]
+    elif isinstance(study_areas, str) or isinstance(study_areas, BufferStudyArea):
+        if isinstance(study_areas, BufferStudyArea):
+            study_area = study_areas.area
+        else:
+            study_area = study_areas
+        geocoded_area = geocode(study_area)[0]
         enrich_src = Country(geocoded_area["attributes"]["Country"])
         countries.append(enrich_src)
 
