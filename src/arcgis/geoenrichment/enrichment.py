@@ -9,6 +9,7 @@ from arcgis import env
 from arcgis.features import FeatureSet, GeoAccessor, GeoSeriesAccessor
 from arcgis.geometry import Geometry, SpatialReference
 from arcgis.gis import GIS
+from arcgis.geocoding import geocode
 from arcgis._impl.common._deprecate import deprecated
 from arcgis._impl.common._utils import _lazy_property
 import pandas as pd
@@ -1465,7 +1466,7 @@ def enrich(
     for enrichment. This area can be defined using additional parameters, but by
     default is one kilometer around the geometry. Also, only straight-line distance
     is supported with line geometries, but points can use available transportation
-    network methods – typically drive distance or drive time.
+    network methods - typically drive distance or drive time.
 
     While already popular for site analysis, forecast modeling for a store or
     facility location, enrich provides access to a massive amount of data for any
@@ -1559,10 +1560,6 @@ def enrich(
                                   ``kilometers``.
     =========================     ====================================================================
 
-
-
-
-
     :return:
        :class:`Spatially Enabled DataFrame <arcgis.features.GeoAccessor>` or Panda's DataFrame
        with the requested variables for the study areas.
@@ -1576,7 +1573,13 @@ def enrich(
     # pull out named area properties if present and set to use country instead of just BA global
     standard_geography_level = None
 
-    if isinstance(study_areas, Iterable) and not isinstance(study_areas, pd.DataFrame):
+    if not isinstance(study_areas, pd.DataFrame):
+        if isinstance(study_areas, list) and isinstance(study_areas[0], str):
+            for index, value in enumerate(study_areas):
+                if isinstance(value, str):
+                    study_areas[index] = geocode(value)[0]
+        elif isinstance(study_areas, str):
+            study_areas = geocode(study_areas)[0]
         if isinstance(study_areas, dict):
             first_geo = list(study_areas.values())[0]
             study_areas = list(study_areas.values())
