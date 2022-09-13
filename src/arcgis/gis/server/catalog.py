@@ -1,3 +1,4 @@
+from __future__ import annotations
 import ssl
 import logging
 from typing import Optional
@@ -290,6 +291,31 @@ class ServicesDirectory(BaseServer):
                     )
                 del s
         return None
+
+    # ----------------------------------------------------------------------
+    def footprints(self, folder: str | None = None, out_sr: dict | None = None) -> dict:
+        """
+        Returns the Services' extents for all services in a given folder.
+
+        =====================     ====================================================================
+        **Arguments**             **Description**
+        ---------------------     --------------------------------------------------------------------
+        folder                    Optional String. The name of the folder to examine for the footprints.
+        ---------------------     --------------------------------------------------------------------
+        out_sr                    Optional Integer.  The well-known ID of the spatial reference. The default is 4326.
+        =====================     ====================================================================
+
+        :returns: dict[str, Any]
+
+        """
+        params = {"f": "json", "option": "footprints"}
+        if out_sr:
+            params["outSR"] = out_sr
+        if folder and folder.lower() in [f.lower() for f in self.folders]:
+            url = f"{self._url}/{folder}"
+        elif folder is None:
+            url = self._url
+        return self._con.get(url, params)
 
     # ----------------------------------------------------------------------
     def list(self, folder: Optional[str] = None):
