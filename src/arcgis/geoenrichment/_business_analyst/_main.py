@@ -2077,7 +2077,7 @@ class BusinessAnalyst(object):
 
         # bach request asynchronously
         enrich_res_df = run_async(
-            _get_enrich_rest, ge_url, req_param_lst, retrieve_geometry
+            _get_enrich_rest, ge_url, req_param_lst, retrieve_geometry, self.source
         )
 
         # clean up the response dataframe schema
@@ -2146,7 +2146,7 @@ class BusinessAnalyst(object):
 
 
 async def _get_enrich_rest(
-    ge_url: str, payload_lst: Iterable[dict], retrieve_geometry: bool
+    ge_url: str, payload_lst: Iterable[dict], retrieve_geometry: bool, source: GIS
 ) -> Awaitable[pd.DataFrame]:
     """Function enabling batching of enrich rest call asynchronously."""
     # variable for storing results
@@ -2159,35 +2159,21 @@ async def _get_enrich_rest(
         loop = asyncio.get_event_loop()
 
         # get a listener, a future object, and send request to the server
-        future = loop.run_in_executor(None, requests.post, ge_url, payload)
+        future = loop.run_in_executor(None, source._con.post, ge_url, payload)
 
         # hold short for response (but since using async, other requests get queued up)
         res = await future
 
-        # pluck out the JSON payload as a dictionary to work with
-        r_json = res.json()
-
         # ensure a valid result is received
-        if "error" in r_json:
-            err = r_json["error"]
+        if "error" in res["messages"]:
+            err = res["messages"]["error"]
             raise Exception(
                 "Error in enriching data using Business Analyst Enrich REST endpoint - Error "
                 f'Code {err["code"]}: {err["message"]}'
             )
 
-        if len(r_json["messages"]):
-            err_msg_lst = [
-                m for m in r_json["messages"] if m["type"] == "esriJobMessageTypeError"
-            ]
-            if len(err_msg_lst):
-                err = err_msg_lst[0]
-                raise Exception(
-                    "An error was encountered processing the request using the Business Analyst REST endpoint - "
-                    f"Error: {err['id']}: {err['description']}"
-                )
-
         # pull out the response feature set
-        fs = r_json["results"][0]["value"]["FeatureSet"]
+        fs = res["results"][0]["value"]["FeatureSet"]
         assert (
             len(fs) > 0
         ), "No results were returned. Please ensure you are using the correct country."
