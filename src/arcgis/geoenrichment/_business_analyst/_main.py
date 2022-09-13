@@ -1068,6 +1068,7 @@ class BusinessAnalyst(object):
 
         return ev
 
+    @lru_cache(maxsize=255)
     def _get_enrich_variables_gis(self, iso3: Optional[str] = None) -> pd.DataFrame:
         """Provide method to return enrich variables at both the BusinessAnalyst and AOI (Country) levels."""
         # construct the url with the option to simply not explicitly specify a iso3
