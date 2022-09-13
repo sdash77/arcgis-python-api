@@ -1587,9 +1587,9 @@ def enrich(
                 # geocode the string and extract the country
                 geocoded_area = geocode(value)[0]
                 countries.append(Country(geocoded_area["attributes"]["Country"]))
-            if index == 0:
-                # if the first instance is a geocoded area, assign enrich_src
-                enrich_src = Country(geocoded_area["attributes"]["Country"])
+                if index == 0:
+                    # if the first instance is a geocoded area, assign enrich_src
+                    enrich_src = Country(geocoded_area["attributes"]["Country"])
     elif isinstance(study_areas, str):
         geocoded_area = geocode(study_areas)[0]
         enrich_src = Country(geocoded_area["attributes"]["Country"])
@@ -1602,7 +1602,6 @@ def enrich(
 
     # remove duplicates
     countries = list(collections.OrderedDict.fromkeys(countries))
-    orig_study_areas = study_areas
 
     # get further information from study areas to best perform geoenrichment
     if isinstance(study_areas, dict):
@@ -1613,6 +1612,7 @@ def enrich(
 
     # assign further properties if found
     if isinstance(first_geo, NamedArea):
+        orig_study_areas = study_areas
         study_areas = [na._areaid for na in study_areas]
         standard_geography_level = first_geo._currlvl
         enrich_src = first_geo._country
@@ -1624,16 +1624,15 @@ def enrich(
     if data_collections is None:
         # if no data collection and there is more than one Country, run enrich and append data for each country
         # if first instance of study areas is not Named Area then BA enrich will be used and this is not necessary
-        if isinstance(enrich_src, Country):
+        if isinstance(enrich_src, Country) and isinstance(first_geo, NamedArea):
             # enrich all countries present
             if len(countries) > 0:
                 enrich_res = pd.DataFrame()
                 for country in countries:
                     for sa in orig_study_areas:
-                        if isinstance(sa, NamedArea):
-                            if sa._country is country:
-                                standard_geography_level = sa._currlvl
-                                break
+                        if sa._country is country:
+                            standard_geography_level = sa._currlvl
+                            break
                     enrich_src = country
                     # get all possible requested enrich variables
                     src = (
@@ -1657,7 +1656,7 @@ def enrich(
                     )
 
                     enrich_res = pd.concat([enrich_res, enrich_df], ignore_index=True)
-        # The default, no data collection and not a Country source
+        # The default
         else:
             # get all possible requested enrich variables
             src = (
@@ -1666,6 +1665,9 @@ def enrich(
             enrich_vars = _preproces_data_colletions_and_analysis_variables(
                 src, data_collections, analysis_variables
             )
+            # if no data collection, doesn't need to be a Country
+            # doing this will avoid error if using string addresses
+            enrich_src = _business_analyst.BusinessAnalyst(gis)
 
             # invoke enrich on the business analyst object
             enrich_res = enrich_src.enrich(
