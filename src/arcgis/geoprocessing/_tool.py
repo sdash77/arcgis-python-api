@@ -335,11 +335,11 @@ def _inspect_tool(taskprops, map_as_result):
             }
         )
 
-    helpstring = " \n\t\n"
+    helpstring = r" \n\t\n"
     if "docstring" in taskprops:
-        helpstring += _strip_html(taskprops["docstring"])
+        helpstring += rf"{_strip_html(taskprops['docstring'])}"
     if "description" in taskprops:
-        helpstring += _strip_html(taskprops["description"])
+        helpstring += rf"{_strip_html(taskprops['description'])}"  # _strip_html(taskprops["description"])
 
     helpstring = helpstring + "\n\nParameters:"
 
@@ -360,7 +360,7 @@ def _inspect_tool(taskprops, map_as_result):
                 if "choiceList" in t
             }
         )
-        helpstring += param_helpstring
+        helpstring += param_helpstring.replace("\\", "\\\\")
         name_param.update(param_name_param)
         if param_spec is not None:
             spec.append(param_spec)
@@ -372,8 +372,8 @@ def _inspect_tool(taskprops, map_as_result):
             return_values.append(param_return_values)
 
     # gis=None
-    helpstring += "\n\n\tgis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.\n"
-    helpstring += "\n\n\tfuture: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.\n"
+    helpstring += r"\n\n\tgis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.\n"
+    helpstring += r"\n\n\tfuture: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.\n"
 
     if len(return_values) == 1:
         helpstring = (
@@ -462,7 +462,7 @@ def _process_parameter(param, map_as_result):
             helpstring = helpstring + " Required parameter. "
 
         if "description" in param:
-            helpstring = helpstring + " " + param["description"]
+            helpstring = helpstring + " " + param["description"].replace("\\", "\\\\")
 
         if param_chcs is not None and len(param_chcs) > 0:
             if isinstance(param_chcs, (tuple, list)):
@@ -522,17 +522,17 @@ def import_toolbox(url_or_item, gis=None, verbose=False):
     You can call the functions available in the imported module to invoke these tools.
 
 
-        ================  ========================================================
-        **Argument**      **Description**
-        ----------------  --------------------------------------------------------
-        url_or_item       location of toolbox, can be a geoprocessing server url
-                          or Item of type: Geoprocessing Service
-        ----------------  --------------------------------------------------------
-        gis               optional GIS, the GIS used for running the tool.
-                          arcgis.env.active_gis is used if not specified
-        ----------------  --------------------------------------------------------
-        verbose           optional bool, set to True to print the generated module
-        ================  ========================================================
+    ================  ========================================================
+    **Argument**      **Description**
+    ----------------  --------------------------------------------------------
+    url_or_item       location of toolbox, can be a geoprocessing server url
+                      or Item of type: Geoprocessing Service
+    ----------------  --------------------------------------------------------
+    gis               Optional the :class:`~arcgis.gis.GIS` used for running the tool.
+                      :attr:`~arcgis.env.active_gis` is used if not specified
+    ----------------  --------------------------------------------------------
+    verbose           optional bool, set to True to print the generated module
+    ================  ========================================================
 
     Returns module with functions for the various tools in the toolbox
 
@@ -592,7 +592,14 @@ _log = _logging.getLogger(__name__)
     src_code += '\n_url = "' + url + '"'
     src_code += "\n_use_async = " + str(use_async) + "\n\n"
     listed_params = {}
-    if len(tbx.properties.tasks) < 4:
+    if (
+        len(tbx.properties.tasks) < 4
+        or gis._portal.is_kubernetes
+        or isinstance(
+            gis._con._session.auth,
+            (arcgis.auth.EsriKerberosAuth, arcgis.auth.EsriWindowsAuth),
+        )
+    ):
         for task in tbx.properties.tasks:
             fn_src, choice_list, func_name = _generate_fn(task, tbx)
             src_code += fn_src
@@ -616,7 +623,12 @@ _log = _logging.getLogger(__name__)
     else:
         listed_params = PropertyMap(listed_params)
 
-    return _import_code(src_code, "name", verbose, choice_list=listed_params)
+    if isinstance(url_or_item, Item):
+        name = f"GPService @ {url_or_item.url}"
+        return _import_code(r"%s" % src_code, name, verbose, choice_list=listed_params)
+    else:
+        name = f"GPService @ {url_or_item}"
+        return _import_code(r"%s" % src_code, name, verbose, choice_list=listed_params)
     # print(src_code)
 
 
@@ -964,12 +976,12 @@ class Toolbox(_AsyncResource):
             if "docstring" in taskprops:
                 docstring = taskprops["docstring"]
                 text_docstring = re.sub(r"&lt; */? *\w+ */?\ *&gt;", "", docstring)
-                helpstring = helpstring + ". " + text_docstring
+                helpstring = re.escape(helpstring) + ". " + re.escape(text_docstring)
 
             if "description" in taskprops:
                 description = taskprops["description"]
                 text_description = re.sub(r"&lt; */? *\w+ */?\ *&gt;", "", description)
-                helpstring += " \n \n" + text_description
+                helpstring += " \n \n" + re.escape(text_description)
 
             helpstring = helpstring + "\n\nParameters:"
 
@@ -1139,7 +1151,7 @@ class Toolbox(_AsyncResource):
         # http://sampleserver1.arcgisonline.com/ArcGIS/rest/Services/Specialty/ESRI_Currents_World/GPServer
 
     def __str__(self):
-        return "<Toolbox url:" + self.url + ">"
+        return "< Toolbox url:" + self.url + " >"
 
     def _execute(self, params):
         caller_fnname = inspect.stack()[1][3]

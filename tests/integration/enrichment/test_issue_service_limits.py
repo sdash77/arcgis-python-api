@@ -49,6 +49,7 @@ class TestGEHorizontalScaling(unittest.TestCase):
             "your_online_profile",
             "your_enterprise_profile",
         ]:
+            print(f'Using profile: {profile}')
             gis = GIS(profile=profile, verify_cert=False)
             item = None
             if (

@@ -169,7 +169,7 @@ class MapFeatureLayer(Layer):
             :class:`~arcgis.mapping.WebMap`.
 
         :return:
-            ```InsensitiveDict```: A case-insensitive ``dict`` like object used to update and alter JSON
+            ``InsensitiveDict``: A case-insensitive ``dict`` like object used to update and alter JSON
             A varients of a case-less dictionary that allows for dot and bracket notation.
 
         """
@@ -211,7 +211,7 @@ class MapFeatureLayer(Layer):
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         item                                     Required :class:`~arcgis.gis.Item` object. The type of item should be
-                                                 a :class:`~arcgis.mapping.MapImageService` object.
+                                                 a :class:`~arcgis.mapping.MapServiceLayer` object.
         ------------------------------------     --------------------------------------------------------------------
         layer_id                                 Optional integer. The id of the layer in the Map Service's Layer.
                                                  The default is 0.
@@ -670,7 +670,7 @@ class MapFeatureLayer(Layer):
                                             of features/records satisfying the query. Otherwise, the response is
                                             a :class:`~arcgis.features.FeatureSet`. The default is `False`. This
                                             option supersedes the `returns_ids_only` parameter. If
-                                            ``returnCountOnly = True`, the response will return both the count
+                                            ``returnCountOnly = True`` , the response will return both the count
                                             and the extent.
         -------------------------------     --------------------------------------------------------------------
         return_extent_only                  Optional boolean. If `True`, the response only includes the extent
@@ -802,43 +802,44 @@ class MapFeatureLayer(Layer):
                                             For more information on datum transformations, please see the transformation
                                             parameter in the `Project operation <https://developers.arcgis.com/rest/services-reference/project.htm>`_.
 
-                                            **Examples**
+                                            Example:
 
 
-                                                ===========     ===================================
-                                                Inputs          Description
-                                                -----------     -----------------------------------
-                                                WKID            Integer.
-                                                                .. code-block:: python
+                                            ===========     ===================================
+                                            Inputs          Description
+                                            -----------     -----------------------------------
+                                            WKID            Integer.
 
-                                                                    >>> datum_transformation=4326
+                                                            .. code-block:: python
 
-                                                -----------     -----------------------------------
-                                                WKT             Dict.
+                                                                >>> datum_transformation=4326
 
-                                                                .. code-block:: python
+                                            -----------     -----------------------------------
+                                            WKT             Dict.
 
-                                                                    >>> datum_transformation = {"wkt": "<WKT>"}
+                                                            .. code-block:: python
 
-                                                -----------     -----------------------------------
-                                                Composite       Dict.
+                                                                >>> datum_transformation = {"wkt": "<WKT>"}
 
-                                                                .. code-block:: python
+                                            -----------     -----------------------------------
+                                            Composite       Dict.
 
-                                                                    >>> datum_transformation = {"geoTransforms" : [
-                                                                                                                   {"wkid" : "<id>",
-                                                                                                                    "forward" : True | False},
-                                                                                                                   {"wkt" : "WKT",
-                                                                                                                    "forward" : True: False}
-                                                                                                                  ]
-                                                                                               }
+                                                            .. code-block:: python
 
-                                                ===========     ===================================
+                                                                >>> datum_transformation = {"geoTransforms" : [
+                                                                                                               {"wkid" : "<id>",
+                                                                                                                "forward" : True | False},
+                                                                                                               {"wkt" : "WKT",
+                                                                                                                "forward" : True: False}
+                                                                                                              ]
+                                                                                           }
+
+                                            ===========     ===================================
         -------------------------------     --------------------------------------------------------------------
         range_values                        Optional List. Allows you to filter features from the layer that are
                                             within the specified range instant or extent.
 
-                                            ::
+                                            .. code-block:: python
 
                                                 >>> range_values = [
                                                                     {
@@ -1095,7 +1096,7 @@ class MapFeatureLayer(Layer):
             _fld_lu = {
                 "esriFieldTypeSmallInteger": np.int32,
                 "esriFieldTypeInteger": np.int64,
-                "esriFieldTypeSingle": np.int32,
+                "esriFieldTypeSingle": float,
                 "esriFieldTypeDouble": float,
                 "esriFieldTypeFloat": float,
                 "esriFieldTypeString": str,
@@ -1332,7 +1333,8 @@ class MapFeatureLayer(Layer):
                                    If historic_moment is not specified, the query will apply to the
                                    current features.
 
-                                   Syntax: historic_moment=<Epoch time in milliseconds>
+                                   Syntax:
+                                        historic_moment=<Epoch time in milliseconds>
         ----------------------     --------------------------------------------------------------------
         return_true_curves         Optional boolean. Optional parameter that is false by default. When
                                    set to true, returns true curves in output geometries; otherwise,
@@ -1383,7 +1385,7 @@ class MapFeatureLayer(Layer):
     # ----------------------------------------------------------------------
     def get_html_popup(self, oid: str):
         """
-        The ``get_html_Popup`` resource provides details about the HTML pop-up
+        The ``get_html_popup`` resource provides details about the HTML pop-up
         authored by the user using ArcGIS Pro or ArcGIS Desktop.
 
         ===============     ====================================================================
@@ -1515,7 +1517,7 @@ class MapFeatureLayer(Layer):
             _fld_lu = {
                 "esriFieldTypeSmallInteger": np.int32,
                 "esriFieldTypeInteger": np.int64,
-                "esriFieldTypeSingle": np.int32,
+                "esriFieldTypeSingle": float,
                 "esriFieldTypeDouble": float,
                 "esriFieldTypeFloat": float,
                 "esriFieldTypeString": str,
@@ -1534,7 +1536,7 @@ class MapFeatureLayer(Layer):
             _fld_lu = {
                 "esriFieldTypeSmallInteger": np.int32,
                 "esriFieldTypeInteger": np.int64,
-                "esriFieldTypeSingle": np.int32,
+                "esriFieldTypeSingle": float,
                 "esriFieldTypeDouble": float,
                 "esriFieldTypeFloat": float,
                 "esriFieldTypeString": str,
@@ -1703,7 +1705,7 @@ class MapTable(MapFeatureLayer):
     The ``MapTable`` class represents entity classes with uniform properties.
 
     .. note::
-        In addition to working with "entities with ``location`` as
+        In addition to working with entities with ``location`` as
         features, the :class:`~arcgis.gis.GIS` can also work with non-spatial entities as rows in tables.
 
     Working with tables is similar to working with a :class:`~arcgis.mapping.MapFeatureLayer`, except that the rows
@@ -2163,7 +2165,7 @@ class MapTable(MapFeatureLayer):
             _fld_lu = {
                 "esriFieldTypeSmallInteger": np.int32,
                 "esriFieldTypeInteger": np.int64,
-                "esriFieldTypeSingle": np.int32,
+                "esriFieldTypeSingle": float,
                 "esriFieldTypeDouble": float,
                 "esriFieldTypeFloat": float,
                 "esriFieldTypeString": str,
@@ -2316,7 +2318,7 @@ class _MSILayerFactory(type):
     ------------------     --------------------------------------------------------------------
     url                    Required string, specify the url ending in /MapServer/<index>
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS object. If not specified, the active GIS connection is
+    gis                    Optional :class:`~arcgis.gis.GIS`  object. If not specified, the active GIS connection is
                            used.
     ==================     ====================================================================
 
@@ -2342,21 +2344,21 @@ class _MSILayerFactory(type):
                 url=url,
                 gis=gis,
                 container=container,
-                dynamic_layer=container,
+                dynamic_layer=dynamic_layer,
             )
         elif "type" in props and props.type.lower() == "raster layer":
             return MapRasterLayer(
                 url=url,
                 gis=gis,
                 container=container,
-                dynamic_layer=container,
+                dynamic_layer=dynamic_layer,
             )
         elif "type" in props and props.type.lower() == "feature layer":
             return MapFeatureLayer(
                 url=url,
                 gis=gis,
                 container=container,
-                dynamic_layer=container,
+                dynamic_layer=dynamic_layer,
             )
         return lyr
 
@@ -2395,5 +2397,5 @@ class MapServiceLayer(Layer, metaclass=_MSILayerFactory):
         Constructs a Map Services Layer given a URL and GIS
         """
         super(MapServiceLayer, self).__init__(
-            url=url, gis=gis, container=container, dynamic_layer=container
+            url=url, gis=gis, container=container, dynamic_layer=dynamic_layer
         )

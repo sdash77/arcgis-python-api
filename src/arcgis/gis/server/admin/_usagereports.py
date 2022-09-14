@@ -6,9 +6,10 @@ usage report.
 from __future__ import absolute_import
 from __future__ import print_function
 import json
-import six
 from .._common import BaseServer
 from urllib.parse import quote
+from arcgis.gis import GIS
+from typing import Optional
 
 ########################################################################
 class ReportManager(BaseServer):
@@ -24,7 +25,7 @@ class ReportManager(BaseServer):
     _metrics = None
     _reports = None
     # ----------------------------------------------------------------------
-    def __init__(self, url, gis, initialize=False):
+    def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """Constructor
 
         ==================     ====================================================================
@@ -49,15 +50,15 @@ class ReportManager(BaseServer):
             self._init(gis)
 
     # ----------------------------------------------------------------------
-    def __str__(self):
+    def __str__(self) -> str:
         return "<%s at %s>" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<%s at %s>" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
-    def list(self):
+    def list(self) -> list:
         """
         Retrieves a list of reports on the server.
 
@@ -77,7 +78,7 @@ class ReportManager(BaseServer):
 
     # ----------------------------------------------------------------------
     @property
-    def settings(self):
+    def settings(self) -> dict:
         """
         Gets the current usage reports settings. The usage reports
         settings are applied to the entire site. When usage
@@ -96,7 +97,12 @@ class ReportManager(BaseServer):
         return self._con.get(path=url, params=params)
 
     # ----------------------------------------------------------------------
-    def edit(self, interval, enabled=True, max_history=0):
+    def edit(
+        self,
+        interval: str,
+        enabled: bool = True,
+        max_history: int = 0,
+    ) -> dict:
         """
         Edits the usage reports settings that are applied to the entire site.
 
@@ -135,14 +141,14 @@ class ReportManager(BaseServer):
     # ----------------------------------------------------------------------
     def create(
         self,
-        reportname,
-        queries,
-        metadata=None,
-        since="LAST_DAY",
-        from_value=None,
-        to_value=None,
-        aggregation_interval=None,
-    ):
+        reportname: str,
+        queries: list,
+        metadata: Optional[str] = None,
+        since: str = "LAST_DAY",
+        from_value: Optional[int] = None,
+        to_value: Optional[int] = None,
+        aggregation_interval: Optional[str] = None,
+    ) -> dict:
         """
         Creates a new usage report. A usage report is created by submitting
         a JSON representation of the usage report to this operation.
@@ -344,8 +350,11 @@ class ReportManager(BaseServer):
 
     # ----------------------------------------------------------------------
     def quick_report(
-        self, since="LAST_WEEK", queries="services/", metrics="RequestsFailed"
-    ):
+        self,
+        since: str = "LAST_WEEK",
+        queries: str = "services/",
+        metrics: str = "RequestsFailed",
+    ) -> dict:
         """
         Generates an on the fly usage report for a service, services, or folder.
 
@@ -474,7 +483,7 @@ class Report(BaseServer):
     _queries = None
     _metadata = None
     # ----------------------------------------------------------------------
-    def __init__(self, url, gis, initialize=False):
+    def __init__(self, url: str, gis: GIS, initialize: bool = False):
         """
         Constructor
 
@@ -497,7 +506,7 @@ class Report(BaseServer):
             self._init()
 
     # ----------------------------------------------------------------------
-    def edit(self):
+    def edit(self) -> dict:
         """
         Edits the usage report. To edit a usage report, submit
         the complete JSON representation of the usage report which
@@ -526,7 +535,7 @@ class Report(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def delete(self):
+    def delete(self) -> dict:
         """
         Deletes this usage report.
 
@@ -540,7 +549,7 @@ class Report(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def query(self, query_filter=None):
+    def query(self, query_filter: Optional[str] = None) -> dict:
         """
         Retrieves server usage data for this report. This operation
         aggregates and filters server usage statistics for the entire

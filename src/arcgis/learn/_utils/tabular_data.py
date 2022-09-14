@@ -7,10 +7,8 @@ import os
 from pathlib import Path
 import traceback
 
-
 import arcgis
 from arcgis.features import FeatureLayer
-
 
 try:
     from fastai.tabular import TabularList
@@ -22,13 +20,13 @@ try:
     from fastai.data_block import DatasetType
     import torch
     import pandas as pd
+    from .utils import arcpy_localization_helper
 
     HAS_FASTAI = True
 
 except Exception as e:
     import_trace = traceback.format_exc()
     HAS_FASTAI = False
-
 
 HAS_NUMPY = True
 try:
@@ -46,6 +44,7 @@ try:
         LabelEncoder,
         MinMaxScaler,
         StandardScaler,
+        OrdinalEncoder,
     )
 except:
     HAS_SK_LEARN = False
@@ -80,6 +79,7 @@ class TabularDataObject(object):
         procs=None,
         val_split_pct=0.1,
         seed=42,
+        stratify=False,
         batch_size=64,
         index_field=None,
         column_transforms_mapping=None,
@@ -124,6 +124,26 @@ class TabularDataObject(object):
         tabular_data._dependent_variable = tabular_data._field_mapping[
             "dependent_variable"
         ]
+        tabular_data._feature_field_variables = tabular_data._field_mapping[
+            "feature_field_variables"
+        ]
+        tabular_data._raster_field_variables = tabular_data._field_mapping[
+            "raster_field_variables"
+        ]
+        if tabular_data._dependent_variable:
+            if (
+                tabular_data._dataframe[tabular_data._dependent_variable]
+                .isnull()
+                .values.any()
+            ):
+                msg = arcpy_localization_helper(
+                    "Rows having null values in dependent variable are removed and model will be trained with remaining data",
+                    260145,
+                    "WARNING",
+                )
+                tabular_data._dataframe = tabular_data._dataframe[
+                    ~tabular_data._dataframe[tabular_data._dependent_variable].isna()
+                ]
         tabular_data._index_data = tabular_data._field_mapping["index_data"]
         tabular_data._index_field = index_field
 
@@ -132,26 +152,90 @@ class TabularDataObject(object):
         tabular_data._val_split_pct = val_split_pct
         tabular_data._bs = batch_size
         tabular_data._seed = seed
+        tabular_data._cell_sizes = cell_sizes
+
+        tabular_data._is_empty = False
 
         validation_indexes = []
         if tabular_data._dependent_variable:
             random.seed(seed)
-            validation_indexes = random.sample(
-                range(len(tabular_data._dataframe)),
-                round(val_split_pct * len(tabular_data._dataframe)),
-            )
+            if tabular_data._is_classification():
+                if stratify:
+                    try:
+                        from sklearn.model_selection import train_test_split
+
+                        dependent_variable_column = tabular_data._dataframe[
+                            tabular_data._dependent_variable
+                        ]
+                        if (
+                            len(set(dependent_variable_column.values))
+                            > len(dependent_variable_column.values) * val_split_pct
+                        ):
+                            classes = len(set(dependent_variable_column.values))
+                            xlen = len(dependent_variable_column.values)
+                            sample_shortage = math.ceil(
+                                (classes - xlen * val_split_pct) / val_split_pct
+                            )
+                            req_instances_per_class = (xlen + sample_shortage) / classes
+                            classes_below_req_intances = list(
+                                dependent_variable_column.value_counts()[
+                                    dependent_variable_column.value_counts()
+                                    < req_instances_per_class
+                                ].index
+                            )
+                            warnings.warn(
+                                f'For valid statification all classes should have at least {str(req_instances_per_class)} data points, class(es) {",".join(str(classes_below_req_intances))} in your data does not meet the condition. Unable to perform stratified splitting, falling back to random split'
+                            )
+                            validation_indexes = tabular_data._dataframe.sample(
+                                n=round(val_split_pct * len(tabular_data._dataframe)),
+                                replace=False,
+                                random_state=seed,
+                            ).index.to_list()
+                        else:
+                            train, test = train_test_split(
+                                tabular_data._dataframe,
+                                test_size=val_split_pct,
+                                random_state=seed,
+                                stratify=dependent_variable_column,
+                            )
+                            validation_indexes = test.index.tolist()
+                    except Exception as e:
+                        warnings.warn(
+                            f"Unable to perform stratified splitting [reason : {e}], falling back to random split"
+                        )
+                        validation_indexes = tabular_data._dataframe.sample(
+                            n=round(val_split_pct * len(tabular_data._dataframe)),
+                            replace=False,
+                            random_state=seed,
+                        ).index.to_list()
+                else:
+                    validation_indexes = tabular_data._dataframe.sample(
+                        n=round(val_split_pct * len(tabular_data._dataframe)),
+                        replace=False,
+                        random_state=seed,
+                    ).index.to_list()
+            else:
+                validation_indexes = random.sample(
+                    range(len(tabular_data._dataframe)),
+                    round(val_split_pct * len(tabular_data._dataframe)),
+                )
+
             tabular_data._validation_indexes = validation_indexes
 
-        tabular_data._training_indexes = list(
-            set([i for i in range(len(tabular_data._dataframe))])
-            - set(validation_indexes)
-        )
+        if tabular_data._is_classification():
+            tabular_data._training_indexes = list(
+                set([i for i in tabular_data._dataframe.index])
+                - set(validation_indexes)
+            )
+        else:
+            tabular_data._training_indexes = list(
+                set([i for i in range(len(tabular_data._dataframe))])
+                - set(validation_indexes)
+            )
         if not tabular_data._dependent_variable:
             tabular_data._validation_indexes = list(
                 set([i for i in range(len(tabular_data._dataframe))])
             )
-
-        tabular_data._is_empty = False
 
         if tabular_data._dependent_variable:
             tabular_data._is_classification = tabular_data._is_classification()
@@ -346,8 +430,10 @@ class TabularDataObject(object):
         labels = df[self._dependent_variable]
 
         if labels.isna().sum().sum() != 0:
-            raise Exception(
-                "You have some missing values in dependent variable column."
+            msg = arcpy_localization_helper(
+                "You have some missing values in dependent variable column.",
+                260144,
+                "ERROR",
             )
 
         unique_labels = labels.unique()
@@ -388,6 +474,7 @@ class TabularDataObject(object):
             self._procs,
             self._validation_indexes,
             self._bs,
+            self._is_classification,
         )
 
     @property
@@ -427,24 +514,68 @@ class TabularDataObject(object):
         if self._categorical_variables:
             mapping = {}
             for variable in self._categorical_variables:
-                labelEncoder = LabelEncoder()
-                dataframe[variable] = np.array(
-                    labelEncoder.fit_transform(dataframe[variable]), dtype="int64"
+                labelEncoder = OrdinalEncoder(
+                    handle_unknown="use_encoded_value", unknown_value=-1
                 )
+                try:
+                    dataframe[variable] = np.array(
+                        labelEncoder.fit_transform(
+                            dataframe[variable].values.reshape(-1, 1)
+                        ),
+                        dtype="int64",
+                    )
+                except:
+                    dataframe[variable] = np.array(
+                        labelEncoder.fit_transform(
+                            dataframe[variable].values.to_numpy().reshape(-1, 1)
+                        ),
+                        dtype="int64",
+                    )
                 mapping[variable] = labelEncoder
             self._encoder_mapping = mapping
 
-        processed_data = _procs.fit_transform(dataframe)
+        try:
+            processed_data = _procs.fit_transform(dataframe)
+        except:
+            msg = arcpy_localization_helper(
+                "Unable to fit transforms. This could be because some of the columns in your dataset have multiple datatypes.",
+                260143,
+                "ERROR",
+            )
 
-        training_data = processed_data.take(self._training_indexes, axis=0)
-        training_labels = None
-        if self._dependent_variable:
-            training_labels = labels.take(self._training_indexes)
+        if self._is_classification:
+            scaled_features_df = pd.DataFrame(
+                processed_data, index=dataframe.index, columns=dataframe.columns
+            )
+            scaled_labels_df = pd.DataFrame(labels, index=dataframe.index)
 
-        validation_data = processed_data.take(self._validation_indexes, axis=0)
-        validation_labels = None
-        if self._dependent_variable:
-            validation_labels = labels.take(self._validation_indexes)
+            training_data = scaled_features_df.loc[self._training_indexes].to_numpy()
+            training_labels = None
+            if self._dependent_variable:
+                training_labels = (
+                    scaled_labels_df.loc[self._training_indexes].to_numpy().squeeze()
+                )
+
+            validation_data = scaled_features_df.loc[
+                self._validation_indexes
+            ].to_numpy()
+            validation_labels = None
+            if self._dependent_variable:
+                validation_labels = (
+                    scaled_labels_df.loc[self._validation_indexes].to_numpy().squeeze()
+                )
+            del scaled_features_df
+            del scaled_labels_df
+        else:
+            training_data = processed_data.take(self._training_indexes, axis=0)
+            training_labels = None
+            if self._dependent_variable:
+                training_labels = labels.take(self._training_indexes)
+
+            validation_data = processed_data.take(self._validation_indexes, axis=0)
+            validation_labels = None
+            if self._dependent_variable:
+                validation_labels = labels.take(self._validation_indexes)
 
         return training_data, training_labels, validation_data, validation_labels
 
@@ -779,7 +910,8 @@ class TabularDataObject(object):
         if self._encoder_mapping:
             for variable, encoder in self._encoder_mapping.items():
                 dataframe[variable] = np.array(
-                    encoder.fit_transform(dataframe[variable]), dtype="int64"
+                    encoder.fit_transform(dataframe[variable].values.reshape(-1, 1)),
+                    dtype="int64",
                 )
 
         if fit:
@@ -819,7 +951,12 @@ class TabularDataObject(object):
             rows = len(self._training_indexes)
 
         random_batch = random.sample(self._training_indexes, rows)
-        return self._dataframe.iloc[random_batch].sort_index()
+
+        # using loc instead of iloc to get data when dataframe doesnt have continuous indexes
+        if self._is_classification:
+            return self._dataframe.loc[random_batch].sort_index()
+        else:
+            return self._dataframe.iloc[random_batch].sort_index()
 
     def _show_graph(self, seq_len=None, rows=5):
         """
@@ -914,17 +1051,21 @@ class TabularDataObject(object):
         distance_feature_layers = (
             distance_feature_layers if distance_feature_layers else []
         )
-
+        feature_field_variables = []
+        raster_field_variables = []
         continuous_variables = []
         categorical_variables = []
         for field in feature_variables:
             if isinstance(field, tuple):
                 if field[1]:
                     categorical_variables.append(field[0])
+                    feature_field_variables.append(field[0])
                 else:
                     continuous_variables.append(field[0])
+                    feature_field_variables.append(field[0])
             else:
                 continuous_variables.append(field)
+                feature_field_variables.append(field)
 
         rasters = []
         bands = []
@@ -945,24 +1086,36 @@ class TabularDataObject(object):
                         for index, band in enumerate(raster[1]):
                             if band == 0:
                                 continuous_variables.append(raster[0].name)
+                                raster_field_variables.append(raster[0].name)
                             else:
                                 continuous_variables.append(raster[0].name + f"_{band}")
+                                raster_field_variables.append(
+                                    raster[0].name + f"_{band}"
+                                )
                     elif isinstance(raster[1], bool):
                         band_count = raster[0].band_count
                         if raster[1]:
                             for index in range(band_count):
                                 if index == 0:
                                     categorical_variables.append(raster[0].name)
+                                    raster_field_variables.append(raster[0].name)
                                 else:
                                     categorical_variables.append(
+                                        raster[0].name + f"_{index}"
+                                    )
+                                    raster_field_variables.append(
                                         raster[0].name + f"_{index}"
                                     )
                         else:
                             for index in range(band_count):
                                 if index == 0:
                                     continuous_variables.append(raster[0].name)
+                                    raster_field_variables.append(raster[0].name)
                                 else:
                                     continuous_variables.append(
+                                        raster[0].name + f"_{index}"
+                                    )
+                                    raster_field_variables.append(
                                         raster[0].name + f"_{index}"
                                     )
                     else:
@@ -983,24 +1136,34 @@ class TabularDataObject(object):
                         for index, band in enumerate(raster[2]):
                             if band == 0:
                                 categorical_variables.append(raster[0].name)
+                                raster_field_variables.append(raster[0].name)
                             else:
                                 categorical_variables.append(
+                                    raster[0].name + f"_{band}"
+                                )
+                                raster_field_variables.append(
                                     raster[0].name + f"_{band}"
                                 )
                     else:
                         for index, band in enumerate(raster[2]):
                             if band == 0:
                                 continuous_variables.append(raster[0].name)
+                                raster_field_variables.append(raster[0].name)
                             else:
                                 continuous_variables.append(raster[0].name + f"_{band}")
+                                raster_field_variables.append(
+                                    raster[0].name + f"_{band}"
+                                )
             else:
                 rasters.append(raster)
                 band_count = raster.band_count
                 for index in range(band_count):
                     if index == 0:
                         continuous_variables.append(raster.name)
+                        raster_field_variables.append(raster.name)
                     else:
                         continuous_variables.append(raster.name + f"_{index}")
+                        raster_field_variables.append(raster.name + f"_{index}")
 
         dataframe, index_data = TabularDataObject._process_layer(
             input_features,
@@ -1014,8 +1177,8 @@ class TabularDataObject(object):
         dataframe_columns = dataframe.columns
         if distance_feature_layers:
             count = 1
-            while f"NEAR_DIST_{count}" in dataframe_columns:
-                continuous_variables.append(f"NEAR_DIST_{count}")
+            while f"DIST_{count}" in dataframe_columns:
+                continuous_variables.append(f"DIST_{count}")
                 count = count + 1
 
         if cell_sizes and not rasters:
@@ -1026,6 +1189,15 @@ class TabularDataObject(object):
         fields_to_keep = continuous_variables + categorical_variables
         if dependent_variable:
             fields_to_keep = fields_to_keep + [dependent_variable]
+
+        try:
+            for col in fields_to_keep:
+                if not col in dataframe.columns:
+                    msg = arcpy_localization_helper(
+                        "Field does not exist within table", 728, "ERROR", str(col)
+                    )
+        except:
+            pass
 
         for column in dataframe_columns:
             if column not in fields_to_keep:
@@ -1040,9 +1212,10 @@ class TabularDataObject(object):
                 column in categorical_variables
                 and dataframe[column].unique().shape[0] > 20
             ):
-                warnings.warn(
-                    f"Column {column} has more than 20 unique value. Sure this is categorical?"
-                )
+                pass
+                # warnings.warn(
+                #    f"Column {column} has more than 20 unique value. Sure this is categorical?"
+                # )
 
         if date_field:
             date_fields = [
@@ -1082,6 +1255,12 @@ class TabularDataObject(object):
                 if continuous_variables
                 else [],
                 "index_data": index_data,
+                "feature_field_variables": feature_field_variables
+                if feature_field_variables
+                else [],
+                "raster_field_variables": raster_field_variables
+                if raster_field_variables
+                else [],
             },
         )
 
@@ -1096,70 +1275,151 @@ class TabularDataObject(object):
         index_data = None
         data_source = None
         import arcpy
+        import spatial_reference_helper
         import pandas as pd
 
         # if ((distance_feature) and (data_source)):F
         if not is_table_obj:
-            data_source = input_features.dataSource
+            if isinstance(input_features, tuple):
+                input_features = input_features[0]
+                data_source = str(input_features)
+            else:
+                try:
+                    data_source = str(input_features)
+                except:
+                    data_source = input_features.dataSource
             count = 1
             for distance_layer in distance_feature:
                 # field_1 = 'NEAR_FID_'+str(count)
-                field_2 = "NEAR_DIST_" + str(count)
+                field_2 = "DIST_" + str(count)
                 fields = [["NEAR_DIST", field_2]]
                 arcpy.Near_analysis(data_source, distance_layer, field_names=fields)
                 count = count + 1
-            sdf = pd.DataFrame.spatial.from_featureclass(data_source, sr="4326")
+
+            data_source_desc = arcpy.Describe(data_source)
+            transformation = spatial_reference_helper.get_datum_transformation(
+                data_source_desc.spatialReference,
+                arcpy.SpatialReference(4326),
+                data_source_desc.extent,
+            )
+            sdf = pd.DataFrame.spatial.from_featureclass(
+                data_source, sr="4326", datum_transformation=transformation
+            )
         else:
             sdf = pd.DataFrame()
             data_type = arcpy.Describe(input_features).dataType
-            if data_type == "TableView":
+            if data_type in ["TableView", "TextFile"]:
                 sdf = pd.DataFrame.spatial.from_table(str(input_features))
+            if len(sdf) == 0:
+                msg = arcpy_localization_helper(
+                    "Could not process the data. Your csv or table might contain columns with all null values. ",
+                    260200,
+                    "ERROR",
+                )
         rasters_data = {}
         if data_source:
             for cnt, raster in enumerate(raster_list):
+                categorical = False
                 if isinstance(raster, tuple):
+                    if len(raster) == 2:
+                        categorical = raster[1]
+                    raster = raster[0]
+                try:
+                    sr = raster._engine_obj._raster.spatialReference
+                except:
                     try:
-                        wkt = raster[0].extent["spatialReference"]["wkt"]
+                        import arcpy
+
+                        sr = arcpy.SpatialReference(
+                            raster.extent["spatialReference"]["wkid"]
+                        )
                     except:
-                        wkt = raster[0].extent["spatialReference"]["wkid"]
-                else:
-                    try:
-                        wkt = raster.extent["spatialReference"]["wkt"]
-                    except:
-                        wkt = raster.extent["spatialReference"]["wkid"]
-                sr = arcpy.SpatialReference()
-                sr.loadFromString(wkt)
+                        try:
+                            import arcpy
+
+                            sr = arcpy.SpatialReference(
+                                raster.extent["spatialReference"]["wkt"]
+                            )
+                        except:
+                            msg = arcpy_localization_helper(
+                                "One or more input rasters do not have a valid spatial reference.",
+                                517,
+                                "ERROR",
+                            )
                 for i in range(raster.band_count):
                     if i == 0:
                         rasters_data[raster.name] = []
                     else:
                         rasters_data[raster.name + f"_{i}"] = []
-                fields = ["SHAPE@X", "SHAPE@Y"]
-                with arcpy.da.SearchCursor(
-                    data_source, fields, spatial_reference=sr
-                ) as cursor:
-                    for row in cursor:
-                        # print(u'{0}, {1}'.format(row[0], row[1]))
-                        if arcpy.Describe(data_source).shapeType == "Point":
-                            raster_value = raster.read(
-                                origin_coordinate=(row[0], row[1]), ncols=1, nrows=1
-                            )
-                            value = raster_value[0][0]
-                        else:  # Polygon
-                            import random
 
-                            value = [random.uniform(0.3, 0.7)]
-                        for i in range(len(value)):
-                            if i == 0:
-                                rasters_data[raster.name].append(value[i])
-                            else:
-                                rasters_data[raster.name + f"_{i}"].append(value[i])
-                for key, value in rasters_data.items():
-                    sdf[key] = value
+                describe_obj = arcpy.Describe(data_source)
+                if describe_obj.shapeType == "Polygon":
+                    statistic = "MAJORITY" if categorical else "MEAN"
+                    cached_oo = arcpy.env.overwriteOutput
+                    arcpy.env.overwriteOutput = True
+                    zonetable = arcpy.CreateTable_management("memory", "zonetable")
 
+                    try:
+                        arcpy.sa.ZonalStatisticsAsTable(
+                            data_source,
+                            describe_obj.oidFieldName,
+                            raster.path + raster.name,
+                            zonetable,
+                            "DATA",
+                            statistic,
+                        )
+                    except:
+                        if statistic == "MAJORITY":
+                            err_code = 110212
+                            param = raster.name
+                        else:
+                            err_code = 10162
+                            param = None
+
+                        msg = arcpy_localization_helper(
+                            "Pixel type of raster is float, which cannot be used as a categorical variable.",
+                            err_code,
+                            "ERROR",
+                            param,
+                        )
+                        exit()
+
+                    table_df = pd.DataFrame.spatial.from_table("memory\\zonetable")
+                    arcpy.env.overwriteOutput = cached_oo
+
+                    oidfield = table_df.columns[1]
+                    new_index = pd.Index(np.arange(1, len(sdf) + 2, 1), name=oidfield)
+                    rasdf = (
+                        table_df.set_index(oidfield)
+                        .reindex(new_index)
+                        .reset_index()[statistic]
+                    )
+                    sdf[raster.name] = rasdf
+
+                elif describe_obj.shapeType == "Point":
+                    fields = ["SHAPE@X", "SHAPE@Y"]
+                    with arcpy.da.SearchCursor(
+                        data_source, fields, spatial_reference=sr
+                    ) as cursor:
+                        for row in cursor:
+                            # print(u'{0}, {1}'.format(row[0], row[1]))
+                            # if arcpy.Describe(data_source).shapeType == "Point":
+                            try:
+                                raster_value = raster.read(
+                                    origin_coordinate=(row[0], row[1]), ncols=1, nrows=1
+                                )
+                                value = raster_value[0][0]
+                            except:
+                                value = [np.NaN]
+                            for i in range(len(value)):
+                                if i == 0:
+                                    rasters_data[raster.name].append(value[i])
+                                else:
+                                    rasters_data[raster.name + f"_{i}"].append(value[i])
+                    for key, value in rasters_data.items():
+                        sdf[key] = value
             if index_field in list(sdf.columns.values):
                 index_data = sdf[index_field].values
-
         return sdf, index_data
 
     @staticmethod
@@ -1175,7 +1435,11 @@ class TabularDataObject(object):
                     out_sr = 4326
                 sdf = input_features.query(out_sr=out_sr).sdf
 
-            elif hasattr(input_features, "dataSource"):
+            elif (
+                hasattr(input_features, "dataSource")
+                or str(input_features).endswith(".shp")
+                or isinstance(input_features, tuple)
+            ):
                 sdf, index_data = TabularDataObject._sdf_gptool_workflow(
                     input_features,
                     distance_layers,
@@ -1219,7 +1483,7 @@ class TabularDataObject(object):
                     for i in range(len(connecting_df)):
                         near_dist.append(connecting_df.iloc[i]["Total_Miles"])
 
-                    sdf[f"NEAR_DIST_{count}"] = near_dist
+                    sdf[f"DIST_{count}"] = near_dist
                     count = count + 1
 
             # Process Raster Data to get information.
@@ -1486,7 +1750,12 @@ class TabularDataObject(object):
 
     @staticmethod
     def _prepare_databunch(
-        dataframe, fields_mapping, procs=None, validation_indexes=[], batch_size=64
+        dataframe,
+        fields_mapping,
+        procs=None,
+        validation_indexes=[],
+        batch_size=64,
+        is_classification=False,
     ):
 
         if procs is None:
@@ -1512,12 +1781,24 @@ class TabularDataObject(object):
         ):
             kwargs_variables["device"] = torch.device("cpu")
 
+        sorted_dataframe = dataframe.copy()
+        sorted_dataframe["sorted_index_col"] = range(0, len(dataframe))
+        if is_classification:
+            validation_indexes_sorted = sorted_dataframe.loc[validation_indexes][
+                "sorted_index_col"
+            ].to_list()
+        else:
+            validation_indexes_sorted = sorted_dataframe.iloc[validation_indexes][
+                "sorted_index_col"
+            ].to_list()
+        del sorted_dataframe
+
         data_bunch = TabularDataBunch.from_df(
             temp_file,
             dataframe,
             fields_mapping["dependent_variable"],
             procs=procs,
-            valid_idx=validation_indexes,
+            valid_idx=validation_indexes_sorted,
             **kwargs_variables,
         )
 
@@ -1570,6 +1851,12 @@ def explain_prediction(
         "DecisionTreeRegressor",
         "ExtraTreeClassifier",
         "ExtraTreeRegressor",
+        "LGBMRegressor",
+        "LGBMClassifier",
+        "XGBRegressor",
+        "XGBClassifier",
+        "CatBoostRegressor",
+        "CatBoostClassifier",
     ]
     sklearn_regressors = [
         "LinearRegression",
@@ -1649,7 +1936,7 @@ def explain_prediction(
 
 
 def add_h3(sdf, cell_sizes):
-    if sdf["SHAPE"][0]["spatialReference"]["wkid"] == 4326:
+    if sdf["SHAPE"].iloc[0]["spatialReference"]["wkid"] == 4326:
         if (
             "polygon" in sdf.spatial.geometry_type
             or "point" in sdf.spatial.geometry_type
@@ -1677,16 +1964,7 @@ def point_to_h3(sdf, cell_sizes):
         elif "point" in sdf.spatial.geometry_type:
             h3_id = sdf["SHAPE"].apply(lambda x: h3.geo_to_h3(x["y"], x["x"], res))
 
-        unq_h3_ids = list(set(h3_id))
-        h3_to_token = {}
-        token_to_h3 = {}
-        for i in range(len(unq_h3_ids)):
-            h3_to_token[unq_h3_ids[i]] = i
-            token_to_h3[i] = unq_h3_ids[i]
-
-        tokens = [h3_to_token[id] for id in h3_id]
-
-        sdf[f"zone{res}_id"] = tokens
+        sdf[f"zone{res}_id"] = h3_id
     return sdf
 
 
@@ -1857,7 +2135,6 @@ def show_local_interpretation(
 
 
 def global_interpretation(model, plot_type="bar", method="KernelRegressor"):
-
     try:
         import shap
     except:
@@ -1926,7 +2203,13 @@ def global_interpretation(model, plot_type="bar", method="KernelRegressor"):
         return
     with warnings.catch_warnings():
         warnings.simplefilter("ignore", UserWarning)
-        shap_values = explainer.shap_values(df, approximate=True)
+        approximate = True
+        if hasattr(model, "_model_type"):
+            if model._model_type.startswith(
+                "lightgbm."
+            ) or model._model_type.startswith("catboost."):
+                approximate = False
+        shap_values = explainer.shap_values(df, approximate=approximate)
     if plot_type == "bar":
         return shap.summary_plot(shap_values, df, plot_type="bar")
     else:

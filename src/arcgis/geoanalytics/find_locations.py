@@ -102,23 +102,30 @@ def geocode_locations(
                                  AnalyzeGeocodeInput and modify the field mapping instead of
                                  constructing this JSON by hand.
 
-                                 **Values**
+                                 **Values:**
 
-                                 **field_info** - A list of triples with the field names of your input
-                                 data, the field type (usually TEXT), and the allowed length
-                                 (usually 255).
-                                 Example: [['ObjectID', 'TEXT', 255], ['Address', 'TEXT', 255],
-                                          ['Region', 'TEXT', 255], ['Postal', 'TEXT', 255]]
+                                   * ``field_info`` - A list of triples with the field names of your input
+                                     data, the field type (usually TEXT), and the allowed length
+                                     (usually 255)
+                                   * ``header_row_exists`` - Enter ``True`` or ``False``.
+                                   * ``column_names`` - Submit the column names of your data if your data
+                                     does not have a header row
+                                   * ``field_mapping`` - Field mapping between each input field and
+                                     candidate fields on the geocoding service
 
-                                 **header_row_exists** - Enter true or false.
+                                 .. code-block:: python
 
-                                 **column_names** - Submit the column names of your data if your data
-                                 does not have a header row.
-
-                                 **field_mapping** - Field mapping between each input field and
-                                 candidate fields on the geocoding service.
-                                 Example: [['ObjectID', 'OBJECTID'], ['Address', 'Address'],
-                                          ['Region', 'Region'], ['Postal', 'Postal']]
+                                     # Example
+                                     >>> geocode_parameters = {field_info: [['ObjectID', 'TEXT', 255],
+                                                                            ['Address', 'TEXT', 255],
+                                                                            ['Region', 'TEXT', 255],
+                                                                            ['Postal', 'TEXT', 255]],
+                                                               header_row_exists - True,
+                                                               field_mapping: [['ObjectID', 'OBJECTID'],
+                                                                               ['Address', 'Address'],
+                                                                               ['Region', 'Region'],
+                                                                               ['Postal', 'Postal']]
+                                                              }
     --------------------------   ---------------------------------------------------------------
     gis                          Optional GIS. The GIS on which this tool runs. If not
                                  specified, the active GIS is used.
@@ -126,12 +133,13 @@ def geocode_locations(
     context                      Optional dict. Context contains additional settings that affect task execution.
                                  For this task, there are three settings:
 
-                                 Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
-                                 Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                 Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+                                   * ``processSR`` - The features will be projected into this coordinate system for analysis.
+                                   * ``outSR`` - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                   * ``dataStore`` - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     --------------------------   ---------------------------------------------------------------
-    future                       Optional boolean. If True, a GPJob is returned instead of
-                                 results. The GPJob can be queried on the status of the execution.
+    future                       Optional boolean. If ``True``, a future object will be returned and the process
+                                 will not wait for the task to complete. The default is ``False``,
+                                 which means wait for results.
     ==========================   ===============================================================
 
 
@@ -282,6 +290,187 @@ def geocode_locations(
         raise
 
 
+def snap_tracks(
+    point_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    polyline_layer: Union[
+        Item,
+        FeatureCollection,
+        FeatureLayer,
+        FeatureLayerCollection,
+        str,
+        dict[str, Any],
+    ],
+    track_fields: str,
+    connectivity_field_matching: dict[str, Any],
+    search_distance: float,
+    search_distance_unit: str,
+    distance_method: str = "Planar",
+    output_mode: str = "AllFeatures",
+    polyline_fields_to_include: Optional[str] = None,
+    direction_field_matching: dict[str, Any] = None,
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+):
+    """
+    The `snap_tracks` method matches track points to polylines.
+
+    ============================   ===============================================================
+    **Argument**                   **Description**
+    ----------------------------   ---------------------------------------------------------------
+    point_layer                    Required layer. The track point features that will be matched
+                                   to polylines. See :ref:`Feature Input<gaxFeatureInput>`.
+    ----------------------------   ---------------------------------------------------------------
+    polyline_layer                 Required layer. The polyline features to which track points
+                                   will be matched. See :ref:`Feature Input<gaxFeatureInput>`.
+    ----------------------------   ---------------------------------------------------------------
+    track_fields                   Required string. The fields used to identify distinct tracks.
+                                   There can be multiple ``track_fields``.
+    ----------------------------   ---------------------------------------------------------------
+    connectivity_field_matching    Required Dict[str,Any]. The polyline layer fields that will be
+                                   used to define the connectivity of the input polyline features.
+
+                                   The following values are required:
+
+                                   -  ``polylineID`` - The unique identifier for the line
+                                   -  ``fromNodeID`` - The node where the travel along a line is moving away from
+                                   -  ``toNodeID`` - The node where the travel along a line is moving to
+
+    ----------------------------   ---------------------------------------------------------------
+    search_distance                Required float. The maximum distance allowed between a point
+                                   and any polyline in order to be considered a match. It is
+                                   recommended to use values less than or equal to 50 meters.
+                                   Larger distances will result in a longer process time and less
+                                   accurate results.
+    ----------------------------   ---------------------------------------------------------------
+    search_distance_unit           Required String. The unit of the `search_distance`.
+    ----------------------------   ---------------------------------------------------------------
+    distance_method                Optional String. The method used to calculate search distances
+                                   between points and lines.
+
+                                   Options:
+
+                                     * ``Planar`` - Calculates distances using a plane method and
+                                       will not cross the anti-meridian.
+                                     * ``Geodesic`` - Calculates distances geodesically and will
+                                       allow tracks to cross the anti-meridian. This method is
+                                       appropriate for large areas and any geographic coordinate
+                                       system.
+
+                                   The default is ``Planar``.
+    ----------------------------   ---------------------------------------------------------------
+    output_mode                    Optional string. Determines which features are returned.
+
+                                   Choice list:
+
+                                   - ``AllFeatures`` - All of the input features are returned.
+                                   - ``Incidents`` - Only features that were found to be incidents
+                                     are returned.
+
+                                   The default value is ``AllFeatures``.
+    ----------------------------   ---------------------------------------------------------------
+    polyline_fields_to_include     Optional String. One or more fields from the polyine layer that
+                                   will be included in the output result.
+    ----------------------------   ---------------------------------------------------------------
+    direction_field_matching       Optional dict[str, Any]. The polyline layer field and attribute
+                                   values that will be used to define the direction of the input
+                                   polyline features.
+    ----------------------------   ---------------------------------------------------------------
+    output_name                    Optional string, The task will create a feature service of the
+                                   results. You define the name of the service.
+    ----------------------------   ---------------------------------------------------------------
+    gis                            Optional :class:`~arcgis.gis.GIS` on which this tool runs. If not
+                                   specified, the active GIS is used.
+    ----------------------------   ---------------------------------------------------------------
+    context                        Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
+
+                                     * ``extent`` - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                     * ``processSR`` - The features will be projected into this coordinate system for analysis.
+                                     * ``outSR`` - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                     * ``dataStore`` - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+    ----------------------------   ---------------------------------------------------------------
+    future                         Optional boolean. If ``True``, a GPJob is returned instead of
+                                   results. The GPJob can be queried on the status of the execution.
+
+                                   The default value is ``False``.
+    ============================   ===============================================================
+
+    """
+    _gis = gis or _arcgis.env.active_gis
+    point_layer = _prevent_bds_item(point_layer)
+    polyline_layer = _prevent_bds_item(polyline_layer)
+    gis = _arcgis.env.active_gis if gis is None else gis
+    url = gis.properties.helperServices.geoanalytics.url
+    tbx = _import_toolbox(url, gis=gis)
+
+    if output_name is None:
+        output_service_name = _id_generator(prefix="Snap_Tracks_")
+        output_name = output_service_name.replace(" ", "_")
+    else:
+        output_service_name = output_name.replace(" ", "_")
+    if context is not None:
+        output_datastore = context.get("dataStore", None)
+    else:
+        output_datastore = None
+    output_service = _create_output_service(
+        gis,
+        output_name,
+        output_service_name,
+        "Detect Incidents",
+        output_datastore=output_datastore,
+    )
+
+    if output_service:
+        output_name = _json.dumps(
+            {
+                "serviceProperties": {
+                    "name": output_name,
+                    "serviceUrl": output_service.url,
+                },
+                "itemProperties": {"itemId": output_service.itemid},
+            }
+        )
+    else:
+        output_name = output_service_name
+        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
+
+    params = {
+        "point_layer": point_layer,
+        "polyline_layer": polyline_layer,
+        "track_fields": track_fields,
+        "polyline_fields_to_include": polyline_fields_to_include,
+        "connectivity_field_matching": connectivity_field_matching,
+        "direction_field_matching": direction_field_matching,
+        "search_distance": search_distance,
+        "search_distance_unit": search_distance_unit,
+        "distance_method": distance_method,
+        "output_mode": output_mode,
+        "output_name": output_name,
+        "context": context,
+        "gis": _gis,
+        "future": True,
+    }
+    if context is None:
+        context = {}
+        _set_context(context)
+
+    params = inspect_function_inputs(tbx.snap_tracks, **params)
+
+    result = tbx.snap_tracks(**params)
+    job = GAJob(result, return_service=output_service)
+    if future:
+        return job
+    return job.result()
+
+
 def detect_incidents(
     input_layer: Union[
         Item,
@@ -368,13 +557,13 @@ def detect_incidents(
     --------------------------   ---------------------------------------------------------------
     output_mode                  Optional string. Determines which features are returned.
 
-                                 Choice list: [AllFeatures', 'Incidents']
+                                 Choice list:
 
                                  - ``AllFeatures`` - All of the input features are returned.
                                  - ``Incidents`` - Only features that were found to be incidents
                                    are returned.
 
-                                 The default value is 'AllFeatures'.
+                                 The default value is ``AllFeatures``.
     --------------------------   ---------------------------------------------------------------
     time_boundary_split          Optional integer. A time boundary to detect and incident. A time
                                  boundary allows your to analyze values within a defined time span.
@@ -386,9 +575,18 @@ def detect_incidents(
                                  In the case above, this would be 1. See the portal documentation for
                                  this tool to learn more.
     --------------------------   ---------------------------------------------------------------
-    time_split_unit              Optional string. The unit to detect an incident is `time_boundary_split` is used.
+    time_split_unit              Optional string. The unit to detect an incident if
+                                 `time_boundary_split` argument is provided.
 
-                                 Choice list: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds'].
+                                 Choice list:
+                                    * ``Milliseconds``
+                                    * ``Seconds``
+                                    * ``Minutes``
+                                    * ``Hours``
+                                    * ``Days``
+                                    * ``Weeks``
+                                    * ``Months``
+                                    * ``Years``
     --------------------------   ---------------------------------------------------------------
     time_reference               Optional datetime.detetime. The starting date/time where analysis will
                                  begin from.
@@ -396,23 +594,24 @@ def detect_incidents(
     output_name                  optional string, The task will create a feature service of the
                                  results. You define the name of the service.
     --------------------------   ---------------------------------------------------------------
-    gis                          optional GIS, the GIS on which this tool runs. If not
+    gis                          optional :class:`~arcgis.gis.GIS` on which this tool runs. If not
                                  specified, the active GIS is used.
     --------------------------   ---------------------------------------------------------------
     context                      Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
 
-                                 #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
-                                 #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
-                                 #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                 #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+                                   * ``extent`` - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                   * ``processSR`` - The features will be projected into this coordinate system for analysis.
+                                   * ``outSR`` - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                   * ``dataStore`` - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     --------------------------   ---------------------------------------------------------------
-    future                       optional boolean. If True, a GPJob is returned instead of
-                                 results. The GPJob can be queried on the status of the execution.
+    future                       Optional boolean. If ``True``, a future object will be returned and the process
+                                 will not wait for the task to complete.
 
-                                 The default value is 'False'.
+                                 The default is ``False``, which means wait for results.
     ==========================   ===============================================================
 
-    :return: result_layer : Output Features as :class:`~arcgis.features.FeatureLayerCollection`.
+    :return:
+        :class:`~arcgis.features.FeatureLayerCollection`.
 
     .. code-block:: python
 
@@ -560,7 +759,7 @@ def find_dwell_locations(
     ==========================   ===============================================================
     **Argument**                 **Description**
     --------------------------   ---------------------------------------------------------------
-    input_layer                  Required layer. The ``input_layer`` is a time-enabled point
+    input_layer                  Required layer. A time-enabled layer with point
                                  features from which dwell locations will be found.
     --------------------------   ---------------------------------------------------------------
     track_fields                 Required String. The fields used to identify distinct tracks.
@@ -592,81 +791,95 @@ def find_dwell_locations(
 
                                  onStatisticField specifies the name of the fields in the target layer. statisticType is one of the following:
 
-                                 -  Count - For numeric fields, this totals the number of values for all the points in each dwell. For string fields, this totals the number of strings for all the points in each dwell.
-                                 -  Sum - Adds the total value of all the points in each dwell. For numeric fields.
-                                 -  Mean - Calculates the average of all the points in each dwell. For numeric fields.
-                                 -  Max - Calculates the largest value of all the points in each dwell. For numeric fields.
-                                 -  Range - Finds the difference between the Min and Max values. For numeric fields.
-                                 -  Stddev - Finds the standard deviation of all the points in each dwell. For numeric fields.
-                                 -  Var - Finds the variance of all the points in each dwell. For numeric fields.
-                                 -  Any - Returns a sample string of a point in each dwell. For string and numeric fields.
-                                 -  First - Returns a the first value of a specified field in the summarized track. For string and numeric fields. This parameters was introduced at ArcGIS Enterprise 10.8.1.
-                                 -  Last - Returns a the last value of a specified field in the summarized track. For string and numeric fields. This parameters was introduced at ArcGIS Enterprise 10.8.1.
+                                 -  ``Count`` - For numeric fields, this totals the number of values for all the points in each dwell. For string fields, this totals the number of strings for all the points in each dwell.
+                                 -  ``Sum`` - Adds the total value of all the points in each dwell. For numeric fields.
+                                 -  ``Mean ``- Calculates the average of all the points in each dwell. For numeric fields.
+                                 -  ``Max`` - Calculates the largest value of all the points in each dwell. For numeric fields.
+                                 -  ``Range`` - Finds the difference between the Min and Max values. For numeric fields.
+                                 -  ``Stddev`` - Finds the standard deviation of all the points in each dwell. For numeric fields.
+                                 -  ``Var`` - Finds the variance of all the points in each dwell. For numeric fields.
+                                 -  ``Any`` - Returns a sample string of a point in each dwell. For string and numeric fields.
+                                 -  ``First`` - Returns a the first value of a specified field in the summarized track. For string and numeric fields. This parameters was introduced at ArcGIS Enterprise 10.8.1.
+                                 -  ``Last`` - Returns a the last value of a specified field in the summarized track. For string and numeric fields. This parameters was introduced at ArcGIS Enterprise 10.8.1.
 
-                                 Example:
+                                 Example syntax for an argument:
 
-                                 ```python
+                                 .. code-block:: python
 
-                                 [{"statisticType": "Mean", "onStatisticField": "Annual_Sales"},
-                                  {"statisticType": "Sum", "onStatisticField": "Annual_Sales"}]
-
-                                 ```
-
+                                     >>> summary_fields = [{"statisticType": "Mean", "onStatisticField": "Annual_Sales"},
+                                                           {"statisticType": "Sum", "onStatisticField": "Annual_Sales"}]
     --------------------------   ---------------------------------------------------------------
     dwell_type                   Optional String. Determines which features are returned and the
                                  format. Four types are available:
 
-                                   -  DwellMeanCenters - A point representing the centroid of each discovered dwell location. This is the default.
-                                   -  DwellConvexHulls - Polygons representing the convex hull of each dwell group.
-                                   -  DwellFeatures - All of the input point features determined to belong to a dwell are returned.
-                                   -  AllFeatures - All of the input point features are returned.
+                                   -  ``DwellMeanCenters`` - A point representing the centroid of each discovered dwell location. This is the default.
+                                   -  ``DwellConvexHulls`` - Polygons representing the convex hull of each dwell group.
+                                   -  ``DwellFeatures`` - All of the input point features determined to belong to a dwell are returned.
+                                   -  ``AllFeatures`` - All of the input point features are returned.
 
     --------------------------   ---------------------------------------------------------------
     method                       Optional String. The method used to calculate distances between
-                                 points. There are two methods from which to choose: Planar and
-                                 Geodesic. The Planar method joins points using a planar method
-                                 and will not cross the international date line. This method is
-                                 appropriate for local analysis on projected data. This is the
-                                 default. The Geodesic method joins points geodesically and will
-                                 allow tracks to cross the international date line. This method
-                                 is appropriate for large areas and geographic coordinate
-                                 systems.
+                                 points.
+
+                                 Options:
+
+                                   * ``Planar`` - joins points using a planar method
+                                     and will not cross the international date line. This method is
+                                     appropriate for local analysis on projected data. This is the
+                                     default.
+                                   * ``Geodesic`` - joins points geodesically and will
+                                     allow tracks to cross the international date line. This method
+                                     is appropriate for large areas and geographic coordinate
+                                     systems.
     --------------------------   ---------------------------------------------------------------
     output_name                  Optional string. The task will create a feature service of the results.
                                  You define the name of the service.
     --------------------------   ---------------------------------------------------------------
-    gis                          Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                          Optional :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
     --------------------------   ---------------------------------------------------------------
     context                      Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
 
-                                 #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
-                                 #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
-                                 #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                 #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+                                   * ``extent`` - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                   * ``processSR`` - The features will be projected into this coordinate system for analysis.
+                                   * ``outSR`` - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                   * ``dataStore`` - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     --------------------------   ---------------------------------------------------------------
-    future                       Optional boolean. If 'True', a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
+    future                       Optional boolean. If ``True``, a future object will be returned and the process
+                                 will not wait for the task to complete.
 
-                                 The default value is 'False'.
+                                 The default is ``False``, which means wait for results.
     --------------------------   ---------------------------------------------------------------
-    time_boundary_split          Optional integer. A time boundary to detect and incident. A time
-                                 boundary allows your to analyze values within a defined time span.
+    time_boundary_split          Optional integer. A time boundary to detect an incident. A time
+                                 boundary allows you to analyze values within a defined time span.
                                  For example, if you use a time boundary of 1 day, starting on January
                                  1st, 1980 tracks will be analyzed 1 day at a time. The time boundary
                                  parameter was introduced in ArcGIS Enterprise 10.8.1.
 
                                  The ``time_boundary_split`` parameter defines the scale of the time boundary.
-                                 In the case above, this would be 1. See the portal documentation for
-                                 this tool to learn more.
+                                 In the case above, this would be 1.
+
+                                 See `Find Dwell Locations <https://enterprise.arcgis.com/en/portal/latest/use/geoanalytics-find-dwell-locations.htm>_` to learn more.
     --------------------------   ---------------------------------------------------------------
     time_boundary_unit           Optional string. The unit to detect an incident is `time_boundary_split` is used. This was introduced in ArcGIS Enterprise 10.8.1.
 
-                                 Choice list: ['Years', 'Months', 'Weeks', 'Days', 'Hours', 'Minutes', 'Seconds', 'Milliseconds'].
+                                 Choice list:
+
+                                    * ``Years``
+                                    * ``Months``
+                                    * ``Weeks``
+                                    * ``Days``
+                                    * ``Hours``
+                                    * ``Minutes``
+                                    * ``Seconds``
     --------------------------   ---------------------------------------------------------------
     time_boundary_ref            Optional datetime.detetime. The starting date/time where analysis will
                                  begin from. This parameter was introduced in ArcGIS Enterprise 10.8.1.
     ==========================   ===============================================================
 
-    :return: Output Service if future is False and GAJob if future is True
+    :return:
+
+        * if `future` is ``False``, an output service
+        * if `future` is ``True``, a GAJob
 
     """
     gis = None
@@ -856,19 +1069,23 @@ def find_similar_locations(
                                  features that are either most similar or least similar to the ``input_layer``,
                                  or search both the most and least similar.
 
-                                 Choice list:['MostSimilar', 'LeastSimilar', 'Both']
+                                 Choice list:
 
-                                 The default value is 'MostSimilar'.
+                                   * ``MostSimilar``
+                                   * ``LeastSimilar``
+                                   * ``Both``
+
+                                 The default value is ``MostSimilar``.
     --------------------------   ---------------------------------------------------------------
     match_method                 Optional string. The method you select determines how matching is determined.
 
-                                 Choice list:['AttributeValues', 'AttributeProfiles']
+                                 Choice list:
 
-                                    * The ``AttributeValues`` method uses the squared differences of standardized values.
-                                    * The ``AttributeProfiles`` method uses cosine similarity mathematics to compare the profile
+                                    * ``AttributeValues`` - uses the squared differences of standardized values.
+                                    * ``AttributeProfiles`` - uses cosine similarity mathematics to compare the profile
                                       of standardized values. Using ``AttributeProfiles`` requires the use of at least two analysis fields.
 
-                                 The default value is 'AttributeValues'.
+                                 The default value is ``AttributeValues``.
     --------------------------   ---------------------------------------------------------------
     number_of_results            Optional integer. The number of ranked candidate locations output
                                  to ``similar_result_layer``. If ``number_of_results`` is not set, the 10
@@ -882,31 +1099,33 @@ def find_similar_locations(
     output_name                  Optional string. The task will create a feature service of the results.
                                  You define the name of the service.
     --------------------------   ---------------------------------------------------------------
-    gis                          Optional GIS. The GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                          Optional :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
     --------------------------   ---------------------------------------------------------------
     context                      Optional dict. The context parameter contains additional settings that affect task execution. For this task, there are four settings:
 
-                                 #. Extent (``extent``) - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
-                                 #. Processing spatial reference (``processSR``) - The features will be projected into this coordinate system for analysis.
-                                 #. Output spatial reference (``outSR``) - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
-                                 #. Data store (``dataStore``) - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
+                                   * ``extent`` - A bounding box that defines the analysis area. Only those features that intersect the bounding box will be analyzed.
+                                   * ``processSR`` - The features will be projected into this coordinate system for analysis.
+                                   * ``outSR`` - The features will be projected into this coordinate system after the analysis to be saved. The output spatial reference for the spatiotemporal big data store is always WGS84.
+                                   * ``dataStore`` - Results will be saved to the specified data store. For ArcGIS Enterprise, the default is the spatiotemporal big data store.
     --------------------------   ---------------------------------------------------------------
-    future                       Optional boolean. If 'True', a GPJob is returned instead of results. The GPJob can be queried on the status of the execution.
+    future                       Optional boolean. If ``True``, a future object will be returned and the process
+                                 will not wait for the task to complete.
 
-                                 The default value is 'False'.
+                                 The default is ``False``, which means wait for results.
     --------------------------   ---------------------------------------------------------------
-    return_tuple                 Optional boolean. If 'True', a named tuple with multiple output keys is returned.
+    return_tuple                 Optional boolean. If ``True``, a named tuple with multiple output keys is returned.
 
-                                 The default value is 'False'.
+                                 The default value is ``False``.
     ==========================   ===============================================================
 
-    :return: named tuple with the following keys if ``return_tuple`` is set to 'True':
+    :return:
 
-      "output" : :class:`~arcgis.features.FeatureLayer`
+        * If `return_tuple` is ``True``, named tuple with the following keys:
 
-      "process_info" : list
+          * ``output``: :class:`~arcgis.features.FeatureLayer`
+          * ``process_info``: list
 
-    else returns a :class:`~arcgis.features.FeatureLayer` of the results.
+        * if `return_tuple is ``False``, a :class:`~arcgis.features.FeatureLayer`
 
     .. code-block:: python
 

@@ -14,6 +14,7 @@ import io
 import os
 import re
 import time
+import shutil
 import tempfile
 import zipfile
 import configparser
@@ -24,6 +25,15 @@ from datetime import datetime
 import logging
 from typing import Any, Optional, Union
 from urllib.error import HTTPError
+from arcgis.gis._impl import (
+    ItemProperties,
+    MetadataFormatEnum,
+    CreateServiceParameter,
+    ServiceTypeEnum,
+    ViewLayerDefParameter,
+    SpatialRelationship,
+    SpatialFilter,
+)
 import concurrent.futures
 
 from cachetools import cached, TTLCache
@@ -174,9 +184,8 @@ class GIS(object):
 
                         ex: 127.0.0.1
     ----------------    ---------------------------------------------------------------
-    use_gen_token       Optional Boolean. The default is `False`. For older
-                        Enterprises, the BUILT-IN users can specify using the
-                        generateToken end point for creating the token.
+    use_gen_token       Optional Boolean. The default is `False`. Uses generateToken
+                        login over OAuth2 login.
     ----------------    ---------------------------------------------------------------
     proxy_port          Optional integer. The proxy host port.  The default is 80.
     ----------------    ---------------------------------------------------------------
@@ -208,7 +217,9 @@ class GIS(object):
     expiration          Optional Integer.  The default is 60 minutes.  The expiration
                         time for a given token.  This is used for user provided tokens
                         and API Keys.
-
+    ----------------    ---------------------------------------------------------------
+    validate_url        Optional Boolean. The default is False. A user can choose to
+                        validate the URL on an `Item`'s url.
     ================    ===============================================================
 
     .. code-block:: python
@@ -281,6 +292,7 @@ class GIS(object):
     _product_version = None
     _is_agol = None
     _pds = None
+    _validate_item_url = None
     """If 'True', the GIS instance is a GIS('home') from hosted nbs"""
     # admin = None
     # oauth = None
@@ -319,6 +331,7 @@ class GIS(object):
         certificate verification in the Python process. However, this should not be done in production environments and is
         strongly discouraged.
         """
+        self._validate_item_url = kwargs.pop("validate_url", False)
         self._use_gen_token = kwargs.pop("use_gen_token", False)
         self._proxy_host = kwargs.pop("proxy_host", None)
         self._proxy_port = kwargs.pop("proxy_port", 80)
@@ -423,6 +436,11 @@ class GIS(object):
         self._utoken = kwargs.pop("token", None)
         client_secret = kwargs.pop("client_secret", None)
         self._api_key = None
+        if verify_cert == False:
+            log = logging.getLogger()
+            log.warning(
+                "Setting `verify_cert` to False is a security risk, use at your own risk."
+            )
         if self._username is None:
             if "ESRI_API_KEY" in os.environ and self._utoken is None:
                 self._utoken = os.environ.get("ESRI_API_KEY", None)
@@ -622,11 +640,20 @@ class GIS(object):
             and self._portal.is_arcgisonline == False
         ):
             try:
-                from .admin.portaladmin import PortalAdminManager
+                if self._portal.is_kubernetes:
+                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
 
-                self.admin = PortalAdminManager(
-                    url="%s/portaladmin" % self._portal.url, gis=self, is_admin=False
-                )
+                    url = self._portal.url + "/admin"
+                    self.admin = KubernetesAdmin(url=url, gis=self)
+                else:
+
+                    from .admin.portaladmin import PortalAdminManager
+
+                    self.admin = PortalAdminManager(
+                        url="%s/portaladmin" % self._portal.url,
+                        gis=self,
+                        is_admin=False,
+                    )
             except:
                 pass
         elif (
@@ -650,13 +677,19 @@ class GIS(object):
                     can_publish = False
             if can_publish:
                 try:
-                    from .admin.portaladmin import PortalAdminManager
+                    if self.properties.isPortal and self._portal.is_kubernetes:
+                        from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
 
-                    self.admin = PortalAdminManager(
-                        url="%s/portaladmin" % self._portal.url,
-                        gis=self,
-                        is_admin=False,
-                    )
+                        url = self._portal.url + "/admin"
+                        self.admin = KubernetesAdmin(url=url, gis=self)
+                    else:
+                        from .admin.portaladmin import PortalAdminManager
+
+                        self.admin = PortalAdminManager(
+                            url="%s/portaladmin" % self._portal.url,
+                            gis=self,
+                            is_admin=False,
+                        )
                 except:
                     pass
         if (
@@ -667,11 +700,19 @@ class GIS(object):
             and self._portal.is_arcgisonline == False
         ):
             try:
-                from .admin.portaladmin import PortalAdminManager
+                if self.properties.isPortal and self._portal.is_kubernetes:
+                    from arcgis.gis.kubernetes._admin.kadmin import KubernetesAdmin
 
-                self.admin = PortalAdminManager(
-                    url="%s/portaladmin" % self._portal.url, gis=self, is_admin=False
-                )
+                    url = self._portal.url + "/admin"
+                    self.admin = KubernetesAdmin(url=url, gis=self)
+                else:
+                    from .admin.portaladmin import PortalAdminManager
+
+                    self.admin = PortalAdminManager(
+                        url="%s/portaladmin" % self._portal.url,
+                        gis=self,
+                        is_admin=False,
+                    )
             except:
                 pass
         # self._tools = _Tools(self)
@@ -962,21 +1003,30 @@ class GIS(object):
             raise Exception("Hub is currently only compatible with ArcGIS Online.")
 
     @_lazy_property
-    def notebook_server(self) -> "list[NotebookServer]":
+    def sites(self):
+        """
+        The ``sites`` property is the resource manager for Enterprise Sites. See :class:`~arcgis.apps.sites` for more information.
+        """
+        if not self._portal.is_arcgisonline:
+            return arcgis.apps.hub.SiteManager(self)
+        else:
+            raise Exception("Please access your ArcGIS Online sites through your Hub.")
+
+    @_lazy_property
+    def notebook_server(self) -> "list[NotebookServer]" | "list[AGOLNotebookManager]":
         """
         The ``notebook_server`` property provides access to the :class:`~arcgis.gis.nb.NotebookServer` registered
         with the organization or enterprise.
-
         :return: `List <https://docs.python.org/3/library/stdtypes.html#lists>`_ [`NotebookServer`]
         """
         if self._portal.is_arcgisonline:
             urls = self._registered_servers()
             url = urls.get("urls", {}).get("notebooks", {}).get("https", None)
             if url:
-                from arcgis.gis.nb import NotebookServer
+                from arcgis.gis.agonb import AGOLNotebookManager
 
                 url = f"https://{url[0]}/admin"
-                return [NotebookServer(url=url, gis=self)]
+                return [AGOLNotebookManager(url=url, gis=self)]
         else:
             try:
                 from arcgis.gis.nb import NotebookServer
@@ -996,13 +1046,10 @@ class GIS(object):
     def datastore(self):
         """
         The ``datastore`` property is the resource manager for GIS datastores.
-
         .. note::
             This is only available with ArcGIS Enterprise 10.7+.
             See :class:`~arcgis.gis._impl._datastores.PortalDataStore` for more information.
-
         :return: A :class:`~arcgis.gis._impl._datastores.PortalDataStore` object
-
         """
         if self.version >= [7, 1] and not self._portal.is_arcgisonline:
             from arcgis.gis._impl._datastores import PortalDataStore
@@ -1698,6 +1745,8 @@ class GroupMigrationManager(object):
         if job_id:
             url = f"{self._gis._portal.resturl}portals/self/jobs/{job_id}"
             params["f"] = "json"
+            if key:
+                params["key"] = key
             res = self._con.post(url, params)
             while res["status"] not in ["completed", "complete"]:
                 res = self._con.post(url, params)
@@ -1746,6 +1795,10 @@ class GroupMigrationManager(object):
 
             params["async"] = json.dumps(True)
             res = self._gis._con.post(url, params)
+            if not "jobId" in res:
+                raise Exception(
+                    f"Either group has no items, or items failed or were skipped: {res}"
+                )
             executor = concurrent.futures.ThreadPoolExecutor(1)
             futureobj = executor.submit(
                 self._status, **{"job_id": res["jobId"], "key": res["key"]}
@@ -1757,6 +1810,7 @@ class GroupMigrationManager(object):
                 jobid=res["jobId"],
                 gis=self._gis,
                 notify=arcgis_env.verbose,
+                key=res.get("key", None),
             )
             if future:
                 return job
@@ -1805,6 +1859,7 @@ class GroupMigrationManager(object):
         :return:
             A dictionary --or-- :class:`~arcgis.gis._impl._jb.StatusJob` when `future=True`
         """
+
         assert isinstance(epk_item, Item)
         if isinstance(item_ids, list):
             item_ids = ",".join([i.id if isinstance(i, Item) else i for i in item_ids])
@@ -1823,12 +1878,13 @@ class GroupMigrationManager(object):
                 self._status, **{"job_id": res["jobId"], "key": res["key"]}
             )
             executor.shutdown(False)
-            job = StatusJob(
+            job = arcgis.gis._impl._jb.StatusJob(
                 future=futureobj,
                 op="Export Group Content",
                 jobid=res["jobId"],
                 gis=self._gis,
                 notify=arcgis_env.verbose,
+                key=res.get("key", None),
             )
             if future:
                 return job
@@ -1898,10 +1954,10 @@ class DatastoreManager(object):
         self._server = server
 
     def __str__(self):
-        return "<%s for %s>" % (type(self).__name__, self._admin_url)
+        return "< %s for %s >" % (type(self).__name__, self._admin_url)
 
     def __repr__(self):
-        return "<%s for %s>" % (type(self).__name__, self._admin_url)
+        return "< %s for %s >" % (type(self).__name__, self._admin_url)
 
     @property
     def config(self):
@@ -2545,11 +2601,45 @@ class UserManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<UserManager @ {url}>".format(url=self._gis._url)
+        return "< UserManager at {url} >".format(url=self._gis._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
         return self.__str__()
+
+    # ----------------------------------------------------------------------
+    def delete_users(self, users: list[User]) -> list[str]:
+        """
+        Allows the administrator to remove users from a portal. Before the
+        administrator can remove the user, all of the user's content and
+        groups must be reassigned or deleted.
+
+        ================  =========]======================================================================
+        **Keys**          **Description**
+        ----------------  -------------------------------------------------------------------------------
+        users             Required list[User]. A list of users to delete from the organization.
+        ================  ===============================================================================
+
+        :returns: list[str] containing the users who could not be removed.
+        """
+        from arcgis._impl.common._utils import chunks as _chunks
+
+        url = f"{self._gis._portal.resturl}portals/self/removeUsers"
+        results = []
+        with concurrent.futures.ThreadPoolExecutor(5) as executor:
+            jobs = []
+            for chunk in _chunks(users, n=100):
+                users_str = ",".join([u.username for u in chunk])
+                params = {"f": "json", "users": users_str}
+                future = executor.submit(
+                    self._gis._con.post, **{"path": url, "params": params}
+                )
+                jobs.append(future)
+            for future in concurrent.futures.as_completed(jobs):
+                users = future.result().get("notRemoved", [])
+                results.extend(users)
+
+        return results
 
     # ----------------------------------------------------------------------
     @property
@@ -2718,7 +2808,7 @@ class UserManager(object):
         res = self._gis._con.get(url, params)
         results = res["userLicenseTypes"]
         while res["nextStart"] > -1:
-            params["start"] += 255
+            params["start"] = res["nextStart"]
             res = self._gis._con.get(url, params)
             results += res["userLicenseTypes"]
         return results
@@ -2986,14 +3076,17 @@ class UserManager(object):
             Data Editor         iBBBBBBBBBBBBBBB
             CustomRole          bKrTCjFF9tKbaFk8
 
-            >>> gis.users.create(username='new_user_1',
-                                            password='<strong_password>',
-                                            firstname='New',
-                                            lastname='User',
-                                            email='namee@organization.com',
-                                            description='User with custom role assigned',
-                                            role='bKrTCjFF9tKbaFk8',
-                                            user_type='Creator')
+            >>> user1 = gis.users.create(username='new_user_1',
+                                         password='<strong_password>',
+                                         firstname='New',
+                                         lastname='User',
+                                         email='namee@organization.com',
+                                         description='User with custom role assigned',
+                                         role='bKrTCjFF9tKbaFk8',
+                                         user_type='Creator')
+
+            >>> if user1: # setting the start_page of the newly created user
+            >>>     user1.landing_page = "organization"
 
         """
         if any(
@@ -3791,6 +3884,87 @@ class UserManager(object):
         return False
 
     # ----------------------------------------------------------------------
+    def assign_categories(self, users: list[User], categories: list[str]) -> list:
+        """ """
+        results = []
+        for user in users:
+            results.append({user.username: user.update(categories=categories)})
+        return results
+
+    # ----------------------------------------------------------------------
+    @property
+    def categories(self) -> dict:
+        """
+        Defines the member categories.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        value                  Required List. A list of categories to assign to the organization.
+                               If `None` is given, the categories will be erased.
+        ==================     ====================================================================
+
+        :returns: list
+
+        """
+        if dict(self._gis.properties).get("hasMemberCategorySchema", False):
+            url = f"{self._gis._portal.resturl}portals/self/memberCategorySchema"
+            params = {"f": "json"}
+            return self._gis._con.get(url, params).get("memberCategorySchema", [])
+        return None
+
+    # ----------------------------------------------------------------------
+    @categories.setter
+    def categories(self, value: list):
+        """
+        Defines the member categories.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        value                  Required List. A list of categories to assign to the organization.
+                               If `None` is given, the categories will be erased.
+        ==================     ====================================================================
+
+        :returns: list
+
+        """
+        if self._gis.version < [10, 1]:
+            return
+        if value is None and dict(self._gis.properties).get(
+            "hasMemberCategorySchema", False
+        ):
+            url = f"{self._gis._portal.resturl}portals/self/deleteMemberCategorySchema"
+            params = {"f": "json"}
+            res = self._gis._con.post(url, params)
+            if res.get("success", False) == False:
+                raise Exception(res)
+        elif isinstance(value, (tuple, list)):
+            url = f"{self._gis._portal.resturl}portals/self/assignMemberCategorySchema"
+            params = {
+                "f": "json",
+                "memberCategorySchema": {
+                    "memberCategorySchema": [
+                        {
+                            "title": "Categories",
+                            "categories": list(value),
+                        }
+                    ]
+                },
+            }
+            res = self._gis._con.post(url, params)
+            if res.get("success", False) == False:
+                raise Exception(res)
+        elif isinstance(value, dict) and "memberCategorySchema" in value:
+            url = f"{self._gis._portal.resturl}portals/self/assignMemberCategorySchema"
+            params = {"f": "json", "memberCategorySchema": value}
+            res = self._gis._con.post(url, params)
+            if res.get("success", False) == False:
+                raise Exception(res)
+        else:
+            raise ValueError("A list or tuple must be given to set the categories.")
+
+    # ----------------------------------------------------------------------
     def advanced_search(
         self,
         query: str,
@@ -3819,7 +3993,25 @@ class UserManager(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        query                  Required String.  The search query.
+        query                  Required String.  The search query. When the search filters
+                               contain two or more clauses, the recommended schema is to have
+                               clauses separated by blank, or `AND`, e.g.
+
+                               :Usage Example:
+
+
+                               gis.users.advanced_search(query='owner:USERNAME type:map')
+                               # or
+                               gis.users.advanced_search(query='type:map AND owner:USERNAME')
+
+                               .. warning::
+                               When the clauses are separated by comma, the filtering condition
+                               for `owner` should not be placed at the first position, e.g.
+                               `gis.users.advanced_search(query='type:map, owner:USERNAME')`
+                               is allowed, while
+                               `gis.users.advanced_search(query='owner:USERNAME, type:map')`
+                               is not. For more, please check
+                               https://developers.arcgis.com/rest/users-groups-and-items/search-reference.htm
         ------------------     --------------------------------------------------------------------
         return_count           Optional Boolean.  If True, the number of users found by the query
                                string is returned.
@@ -3838,7 +4030,9 @@ class UserManager(object):
                                records are arranged after they have been sorted. The allowed
                                values are: asc for ascending and desc for descending.
         ------------------     --------------------------------------------------------------------
-        as_dict                Optional Boolean. If True, the response comes back as a dictionary.
+        as_dict                Required Boolean. If True, the results comes back as a dictionary.
+                               The result of the method will always be a dictionary but the
+                               `results` key in the dictionary will be changed if set to False.
         ==================     ====================================================================
 
         :return:
@@ -3848,7 +4042,7 @@ class UserManager(object):
 
             # Usage Example
 
-            >>> gis.users.advanced_search(query ="1234", sort_field = "username", max_users=20, as_dict=20)
+            >>> gis.users.advanced_search(query ="1234", sort_field = "username", max_users=20, as_dict=False)
         """
         from arcgis.gis._impl import _search
 
@@ -3945,8 +4139,13 @@ class UserManager(object):
         return None
 
     def org_search(
-        self, query: str = None, sort_field: str = None, sort_order: str = None
-    ) -> tuple:
+        self,
+        query: str = None,
+        sort_field: str = None,
+        sort_order: str = None,
+        as_dict: bool = False,
+        exclude: bool = False,
+    ) -> tuple[User] | tuple[dict[str, Any]]:
         """
         The `org_search` method allows users to find users within the organization only.
         Users can search for details such as `provider`, `fullName` and other user properties
@@ -3962,35 +4161,66 @@ class UserManager(object):
         sort_field        Optional string. Valid values can be username (the default) or created.
         ----------------  --------------------------------------------------------
         sort_order        Optional string. Valid values are asc (the default) or desc.
+        ----------------  --------------------------------------------------------
+        as_dict           Optional Boolean. Returns the raw response for each user as a dictionary
+        ----------------  --------------------------------------------------------
+        exclude           Optional Boolean. If `True`, the system accounts will be excluded from the query.
         ================  ========================================================
 
-        :returns: List[User]
+        :returns: Tuple[User] | Tuple[dict[str,Any]]
         """
         results = []
+
         if query is None:
             query = "*"
+        if exclude:
+            query = f"-username:esri_livingatlas -username:esri_boundaries -username:esri_demographics -username:esri_nav ({query})"
+        count = self.advanced_search(query, return_count=True)
+
         url = f"{self._gis._portal.resturl}/portals/self/users/search"
+        num = 100
         params = {
-            "num": 100,
+            "num": num,
             "f": "json",
             "q": query,
             "start": 1,
             "sortField": sort_field or "",
             "sortOrder": sort_order or "",
         }
-        resp = self._gis._con.get(url, params)
-        results.extend(resp.get("results", []))
-        while resp.get("nextStart", -1) > 0:
-            params["start"] = resp["nextStart"]
+        if count <= num:
             resp = self._gis._con.get(url, params)
-            users = resp.get("results", [])
-            results.extend(users)
-            if len(users) == 0:
-                break
-        return tuple(
-            User(gis=self._gis, username=user["username"], userdict=user)
-            for user in results
-        )
+            results.extend(resp.get("results", []))
+            while resp.get("nextStart", -1) > 0:
+                params["start"] = resp["nextStart"]
+                resp = self._gis._con.get(url, params)
+                users = resp.get("results", [])
+                results.extend(users)
+                if len(users) == 0:
+                    break
+        else:  # use multiple threads to capture the data.
+            iterations = (count // num) + int((count % num > 0))
+            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+                future_users = {}
+                for i in range(iterations):
+                    params["start"] = 1 + i * params["num"]
+
+                    future_users[
+                        executor.submit(
+                            self._gis._con.get, **{"path": url, "params": params}
+                        )
+                    ] = i
+                for future in concurrent.futures.as_completed(future_users):
+                    users = future.result().get("results", [])
+                    results.extend(users)
+
+        if as_dict:
+            return tuple(results)
+        else:
+
+            return tuple(
+                User(gis=self._gis, username=user["username"], userdict=user)
+                for user in results
+            )
 
     # ----------------------------------------------------------------------
     def search(
@@ -4302,7 +4532,7 @@ class RoleManager(object):
             >>> org_roles = role_mgr.all()
 
             >>> for role in org_roles:
-                print(f"{role.name:25}{role.role_id}"
+            >>>     print(f"{role.name:25}{role.role_id}")
 
                 Viewer                   iAAAAAAAAAAAAAAA
                 Data Editor              iBBBBBBBBBBBBBBB
@@ -4564,6 +4794,9 @@ class GroupManager(object):
         display_settings: Optional[str] = None,
         is_open_data: bool = False,
         leaving_disallowed: bool = False,
+        hidden_members: bool = False,
+        membership_access: Optional[str] = None,
+        autojoin: bool = False,
     ):
         """
         The ``create`` method creates a group with the values for any particular arguments that are specified.
@@ -4637,6 +4870,23 @@ class GroupManager(object):
                               from choosing to leave the group. If True, only an
                               administrator can remove them from the group. The default
                               is False.
+        ------------------    ---------------------------------------------------------
+        hidden_members        Optional Boolean. Only applies to org accounts. If true,
+                              only the group owner, group managers, and default
+                              administrators can see all members of the group.
+        ------------------    ---------------------------------------------------------
+        membership_access     Optional String. Sets the membership access for the group.
+                              Setting to `org` restricts group access to members of
+                              your organization. Setting to `collaboration` restricts the
+                              membership access to partnered collaboration and your
+                              organization members. If `None` set, any organization
+                              will have access. `None` is the default.
+
+                              Values: `org`, `collaboration`, or `None`
+        ------------------    ---------------------------------------------------------
+        autojoin              Optional Boolean. The default is `False`. Only applies to
+                              org accounts. If `True`, this group will allow joined
+                              without requesting membership approval.
         ====================  =========================================================
 
         :return:
@@ -4687,6 +4937,13 @@ class GroupManager(object):
             params["capabilities"] = ""
         params["isOpenData"] = is_open_data
         params["MAX_FILE_SIZE"] = max_file_size
+        if hidden_members in [True, False]:
+            params["hiddenMembers"] = hidden_members
+        if membership_access in ["org", "collaboration", None]:
+            params["membershipAccess"] = membership_access
+        if autojoin in [True, False]:
+            params["autoJoin"] = autojoin
+
         if (
             isinstance(display_settings, str)
             and display_settings.lower() in display_settings_lu
@@ -4882,6 +5139,60 @@ class ContentManager(object):
         return self._gis._con.get(curl, params, ignore_error_key=True)
 
     # ----------------------------------------------------------------------
+    def can_reassign(self, items: list[Item], user: User) -> list[dict[str, Any]]:
+        """
+        Checks if a `list[Item]` can be reassigned to a particular user.
+        The operation checks whether the items owned by one user can be successfully
+        reassigned to a specified user before performing the `reassign` operation.
+        Users assigned the default administrator role, or a custom role with
+        administrative privileges, can perform this operation. The item owner can
+        also use this operation; if the item owner that performs this operation
+        is not a default administrator, or assigned a custom role with
+        administrative privileges, they must have the portal:user:reassignItems
+        privilege assigned to them to transfer content to another user.
+
+        ======================     ====================================================================
+        **Argument**               **Description**
+        ----------------------     --------------------------------------------------------------------
+        items                      Required list[Item]. A list of Items. The maximum number of items
+                                   that can be transferred at one time is 100.
+        ----------------------     --------------------------------------------------------------------
+        user                       Required User. The user the items will be reassigned to. For a user
+                                   to be eligible to receive transferred content, they must meet the
+                                   following requirements:
+
+                                   - The user must be assigned the portal:user:receiveItems privilege to receive the transferred content.
+                                   - The user must have a user type that allows them to own content.
+                                   - If the items being transferred to the user are shared with a group, the user receiving the items must be a member of the group. If the group is a view-only group, the user receiving the items must be the group owner or a group manager.
+
+                                   If the above requirements are not met, an error response will be returned.
+        ======================     ====================================================================
+
+        :returns: `list[dict[str, Any]]`
+        """
+        if self._gis.version < [10, 1] and self._gis._portal.is_arcgisonline == False:
+            return []
+        urls = {}
+        params = {}
+        params["f"] = "json"
+        params["targetUsername"] = user.username
+        params["items"] = None
+        for item in items:
+            if item.owner in urls:
+                urls[item.owner]["itemids"].append(item.itemid)
+            else:
+                urls[item.owner] = {
+                    "itemids": [item.itemid],
+                    "url": f"{self._gis._portal.resturl}content/users/{item.owner}/canReassignItems",
+                }
+        results = []
+        for key, value in urls.items():
+            params["items"] = ",".join(value["itemids"])
+            results.append(self._gis._con.post(value["url"], params))
+            #
+        return results
+
+    # ---------------------------------------------------------------------
     def cost(
         self,
         tile_storage: Optional[float] = None,
@@ -4955,7 +5266,7 @@ class ContentManager(object):
 
         Available in ArcGIS Enterprise 10.9.1+
 
-        :returns: DependencyManager or None for ArcGIS Online.
+        :returns: :class:`~arcgis.gis.sharing.DependencyManager` or None for ArcGIS Online.
         """
         if self._depmgr is None and self._gis._portal.is_arcgisonline == False:
             from arcgis.gis.sharing._dependency import DependencyManager
@@ -4963,6 +5274,21 @@ class ContentManager(object):
             self._depmgr = DependencyManager(gis=self._gis)
         return self._depmgr
 
+    # ----------------------------------------------------------------------
+    @property
+    def marketplace(self) -> "MarketPlaceManager":
+        """
+        Provides users the ability to manage the content's presence on the marketplace.
+
+        :returns: MarketPlaceManager or None if not available
+        """
+        if self._mrktplcmgr is None and self._gis._portal.is_arcgisonline == False:
+            from arcgis.gis.sharing._marketplace import MarketPlaceManager
+
+            self._mrktplcmgr = MarketPlaceManager(gis=self._gis)
+        return self._mrktplcmgr
+
+    # ----------------------------------------------------------------------
     def _add_by_part(
         self, file_path, itemid, item_properties, size=1e7, owner=None, folder=None
     ):
@@ -5167,7 +5493,7 @@ class ContentManager(object):
     # ----------------------------------------------------------------------
     def add(
         self,
-        item_properties: dict[str, Any],
+        item_properties: dict[str, Any] | ItemProperties,
         data: Optional[str] = None,
         thumbnail: Optional[str] = None,
         metadata: Optional[str] = None,
@@ -5300,8 +5626,17 @@ class ContentManager(object):
         """
 
         filetype = None
-        if not isinstance(item_properties, dict):
-            raise ValueError("`item_properties` must be  dictionary.")
+
+        if not isinstance(item_properties, (dict, ItemProperties)):
+            raise ValueError(
+                "`item_properties` must be  dictionary or `ItemProperties`."
+            )
+        elif isinstance(item_properties, ItemProperties):
+            thumbnail = thumbnail or item_properties.thumbnail
+            metadata = metadata or item_properties.metadata
+            item_properties = item_properties.to_dict()
+            item_properties.pop("thumbnail", None)
+            item_properties.pop("metadata", None)
         if item_id and isinstance(item_id, str) and len(item_id) == 32:
             item_properties["itemIdToCreate"] = item_id
         if isinstance(data, arcgis.features.FeatureCollection):
@@ -5444,7 +5779,8 @@ class ContentManager(object):
         else:
             if filetype:
                 item_properties["fileName"] = os.path.basename(data)
-
+            if "text" in kwargs:
+                item_properties["text"] = kwargs.pop("text", None)
             itemid = self._portal.add_item(
                 item_properties, data, thumbnail, metadata, owner_name, folder
             )
@@ -5474,6 +5810,7 @@ class ContentManager(object):
         location_type: Optional[str] = None,
         source_country: str = "world",
         country_hint: Optional[str] = None,
+        enable_global_geocoding: Optional[bool] = None,
     ):
         """
         The ``analyze`` method helps a client analyze a CSV or Excel file (.xlsx, .xls) prior to publishing or
@@ -5527,6 +5864,8 @@ class ContentManager(object):
         source_country             Optional string. The two character country code associated with the geocoding service, default is "world".
         -----------------------    -------------------------------------------------------------
         country_hint               Optional string. If first time analyzing, the hint is used. If source country is already specified than sourcecountry is used.
+        -----------------------    -------------------------------------------------------------
+        enable_global_geocoding    Optional boolean. Default is None. When True, the global geocoder is used.
         =======================    =============================================================
 
         :return: dictionary
@@ -5589,11 +5928,50 @@ class ContentManager(object):
             params["analyzeParameters"]["sourceCountry"] = source_country
         if country_hint:
             params["analyzeParameters"]["sourcecountryhint"] = country_hint
-
+        if enable_global_geocoding in [True, False]:
+            params["analyzeParameters"][
+                "enableGlobalGeocoding"
+            ] = enable_global_geocoding
         gis = self._gis
         params["analyzeParameters"] = json.dumps(params["analyzeParameters"])
 
         return gis._con.post(path=surl, postdata=params, files=files)
+
+    # ----------------------------------------------------------------------
+    def create_empty_service(
+        self, parameters: CreateServiceParameter, *, owner: User | None = None
+    ) -> Item:
+        """
+        Creates a blank or view based service.
+
+        =======================    =============================================================
+        **Argument**               **Description**
+        -----------------------    -------------------------------------------------------------
+        parameters                 Required CreateServiceParameter. A dataclass that provides the
+                                   create service parameters.
+        -----------------------    -------------------------------------------------------------
+        owner                      Optional User. The user to save the service to.
+        =======================    =============================================================
+
+        :returns: Item
+        """
+
+        if owner:
+            username = owner.username
+        else:
+            owner = self._gis.users.me
+            username = owner.username
+        self._gis._portal.resturl
+        url = f"{self._gis._portal.resturl}content/users/{username}/createService"
+        params = parameters.to_dict()
+        params["f"] = "json"
+        res = self._gis._con.post(url, params)
+        itemid = res.get("itemId", None)
+
+        if itemid:
+            return self.get(itemid)
+        else:
+            return res
 
     # ----------------------------------------------------------------------
     def create_service(
@@ -5844,7 +6222,35 @@ class ContentManager(object):
         ================    ===============================================================
         **Argument**        **Description**
         ----------------    ---------------------------------------------------------------
-        query               Required String.  The search query.
+        query               Required String.  The search query. When the search filters
+                            contain two or more clauses, the recommended schema is to have
+                            clauses separated by blank, or `AND`, e.g.
+
+                            .. code-block:: python
+
+                               #Usage Example:
+
+
+                                >>> gis.content.advanced_search(query='owner:USERNAME type:map')
+                                # or
+                                >>> gis.content.advanced_search(query='type:map AND owner:USERNAME')
+
+
+                            .. warning::
+                                When the clauses are separated by comma, the filtering condition
+                                for `owner` should not be placed at the first position, e.g.
+
+                                .. code-block:: python
+
+                                    >>> gis.content.advanced_search(query='type:map, owner:USERNAME')
+
+                                is allowed, while
+
+                                .. code-block:: python
+
+                                    >>> gis.content.advanced_search(query='owner:USERNAME, type:map')
+
+                                is not.  For more information, please check `Users, groups and items <https://developers.arcgis.com/rest/users-groups-and-items/search-reference.htm>`_.
         ----------------    ---------------------------------------------------------------
         bbox                Optional String/List. This is the xmin,ymin,xmax,ymax bounding
                             box to limit the search in.  Items like documents do not have
@@ -5882,7 +6288,9 @@ class ContentManager(object):
                             each `count_fields`. The default value is None, and maximum size
                             allowed is 200.
         ----------------    ---------------------------------------------------------------
-        as_dict             Required Boolean. If True, the response comes back as a dictionary.
+        as_dict             Required Boolean. If True, the results comes back as a dictionary.
+                            The result of the method will always be a dictionary but the
+                            `results` key in the dictionary will be changed if set to False.
         ================    ===============================================================
 
         :return:
@@ -6121,7 +6529,24 @@ class ContentManager(object):
         ================  ==========================================================================
         **Argument**      **Description**
         ----------------  --------------------------------------------------------------------------
-        query             Required string. A query string.  See notes above.
+        query             Required string. A query string.  See notes above. When the search filters
+                          contain two or more clauses, the recommended schema is to have clauses
+                          separated by blank, or `AND`, e.g.
+
+                          :Usage Example:
+
+
+                          gis.content.search(query='owner:USERNAME type:map')
+                          # or
+                          gis.content.search(query='type:map AND owner:USERNAME')
+
+                          .. warning::
+                          When the clauses are separated by comma, the filtering condition
+                          for `owner` should not be placed at the first position, e.g.
+                          `gis.content.search(query='type:map, owner:USERNAME')`
+                          is recommended, while
+                          `gis.content.search(query='owner:USERNAME, type:map')`
+                          is not.
         ----------------  --------------------------------------------------------------------------
         item_type         Optional string. The type of item to search. See `Items and item types <https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm>`_
                           for comprehensive list of values (the type column).
@@ -6453,7 +6878,7 @@ class ContentManager(object):
         -------------------  --------------------------------------------------------------------------
         future               Optional Boolean.  This allows the operation to run asynchronously allowing
                              the user to not pause the thread and continue to perform multiple operations.
-                             The default is `True`.  When `True` the result of the method will be a
+                             The default is `False`.  When `True` the result of the method will be a
                              concurrent `Future` object.  The `result` of the method can be obtained
                              using the `result()` on the `Future` object.  When `False`, and Item is
                              returned. Future == True is only supported for 'shapefiles' and 'gpx' files.
@@ -6461,7 +6886,7 @@ class ContentManager(object):
 
         :return:
             The method has 3 potential returns:
-                1. A `Future` object when `future==True`,
+                1. A `Future` object when `future==True`, Call ``results()`` to get the response.
                 2. An :class:`~arcgis.gis.Item` object when `future==False`
                 3. A dictionary of error messages when Exceptions are raised
 
@@ -6687,6 +7112,19 @@ class ContentManager(object):
                                modified in order to allow for successful publishing.
         ---------------------  --------------------------------------------------------------------------
         service_name           Optional String. The name for the service that will be added to the Item.
+        ---------------------  --------------------------------------------------------------------------
+        overwrite              Optional boolean. If True, the specified feature layer for the specified
+                               feature service will be overwritten.
+        ---------------------  --------------------------------------------------------------------------
+        append                 Optional boolean. If True, the SeDF will be appended to the specified
+                               feature service.
+        ---------------------  --------------------------------------------------------------------------
+        service                Dictionary that is required if `overwrite = True` or `append = True`.
+                               Dictionary with two keys: "FeatureServiceId" and "layers".
+                               "featureServiceId" value is a string of the feature service id that the layer
+                               belongs to.
+                               "layer" value is an integer depicting the index value of the layer to
+                               overwrite. For append, None can be passed as value.
         =====================  ==========================================================================
 
 
@@ -6702,7 +7140,11 @@ class ContentManager(object):
             warnings.warn(
                 "`item_id` is not allowed at this version of Portal, please use Enterprise 10.8.1+"
             )
-        from arcgis.features import FeatureCollection, FeatureSet
+        from arcgis.features import (
+            FeatureCollection,
+            FeatureSet,
+            FeatureLayerCollection,
+        )
 
         from arcgis._impl.common._utils import zipws
 
@@ -6764,7 +7206,7 @@ class ContentManager(object):
                 )
 
                 zip_fgdb = zipws(path=fgdb, outfile=temp_zip, keep=True)
-                item = self.add(
+                fgdb_item = self.add(
                     item_properties={
                         "title": title,
                         "type": "File Geodatabase",
@@ -6774,17 +7216,103 @@ class ContentManager(object):
                     folder=folder,
                 )
                 shutil.rmtree(temp_dir, ignore_errors=True)
+
+                # Publish as new feature layer
                 publish_parameters = {
                     "hasStaticData": True,
-                    "name": os.path.splitext(item["name"])[0],
+                    "name": os.path.splitext(fgdb_item["name"])[0],
                     "maxRecordCount": 2000,
                     "layerInfo": {"capabilities": capabilities},
                 }
                 if target_sr is not None:
                     publish_parameters["targetSR"] = {"wkid": target_sr}
-                return item.publish(
+
+                new_item = fgdb_item.publish(
                     publish_parameters=publish_parameters, item_id=item_id
                 )
+
+                # If overwrite or append specified, perform overwrite or append
+                overwrite = kwargs.pop("overwrite", False)
+                append = kwargs.pop("append", False)
+                if overwrite or append:
+                    # Get user defined parameters
+                    fs_dict = kwargs.pop("service", None)
+                    if fs_dict is None:
+                        raise ValueError(
+                            "If overwite or append is True, then the feature service id needs to be specified in the `service` parameter."
+                        )
+                    fs_id = fs_dict["featureServiceId"]
+
+                    fl_index = fs_dict["layer"]
+
+                    # Create the feature layer manager for the existing feature service
+                    fs_item = self._gis.content.get(fs_id)
+                    flc = FeatureLayerCollection.fromitem(fs_item)
+                    flc_manager = flc.manager
+
+                    # Get properties from the newly created feature layer
+                    new_fl = new_item.layers[0]
+                    publish_parameters = new_fl.properties
+
+                    # Overwrite or Append Steps
+                    if overwrite:
+                        # update the name and id to represent correct values
+                        publish_parameters["name"] = flc.manager.properties.layers[
+                            fl_index
+                        ]["name"]
+                        publish_parameters["id"] = fl_index
+
+                        # Perform edit on the flc
+                        # Step 1: Preserve layer ids
+                        revert = False
+                        if (
+                            "preserveLayerIds" not in flc_manager.properties
+                            or flc_manager.properties["preserveLayerIds"] is not True
+                        ):
+                            flc_manager.update_definition({"preserveLayerIds": True})
+                            revert = True
+                        # Step 2: Delete layer from definition
+                        flc_manager.delete_from_definition(
+                            {"layers": [{"id": fl_index}]}
+                        )
+                        # Step 3: Add new layer to definition
+                        flc_manager.add_to_definition(
+                            {"layers": [dict(publish_parameters)]}
+                        )
+                        # Step 4: Cleanup
+                        if revert:
+                            flc_manager.update_definition({"preserveLayerIds": False})
+                    elif append:
+                        # Add new layer to definition
+                        flc_manager.add_to_definition(
+                            {"layers": [dict(publish_parameters)]}
+                        )
+                        # Find the index at which the layer was added
+                        for layer in flc_manager.properties.layers:
+                            if layer["name"] == publish_parameters["name"]:
+                                fl_index = layer["id"]
+
+                    # Add new item dependency and append the features
+                    if (
+                        "filegdb"
+                        in fs_item.layers[fl_index].properties.supportedAppendFormats
+                    ):
+                        ItemDependency(fs_item).add("itemid", fgdb_item.id)
+                        fs_item.layers[fl_index].append(
+                            item_id=fgdb_item.id, upload_format="filegdb"
+                        )
+                    else:
+                        # When filegdb not supported through append, use featureCollection
+                        features = new_item.layers[0].query().features
+                        fs_item.layers[fl_index].edit_features(adds=features)
+
+                    # Feature layer was added to existing feature service so can delete the item
+                    new_item.delete()
+
+                    # return the updated feature service
+                    return self._gis.content.get(fs_id)
+                else:
+                    return new_item
             elif has_pyshp:
                 import random
                 import string
@@ -6805,6 +7333,63 @@ class ContentManager(object):
                     folder=folder,
                 )
                 shutil.rmtree(temp_dir, ignore_errors=True)
+
+                # If overwrite or append specified, perform overwrite or append
+                overwrite = kwargs.pop("overwrite", False)
+                append = kwargs.pop("append", False)
+                if overwrite or append:
+                    # Get user defined parameters
+                    fs_dict = kwargs.pop("service", None)
+                    if fs_dict is None:
+                        raise ValueError(
+                            "If overwite is True, then the feature service id and layer index need to be specified in the `service` parameter."
+                        )
+                    fs_id = fs_dict["featureServiceId"]
+                    fl_index = fs_dict["layer"]
+
+                    # Create the feature layer manager for the existing feature service
+                    fs_item = self._gis.content.get(fs_id)
+                    flc = FeatureLayerCollection.fromitem(fs_item)
+                    flc_manager = flc.manager
+
+                    # Analyze the shapefile item to get definition for new feature layer
+                    publish_parameters_orig = flc_manager.properties["layers"][fl_index]
+                    publish_parameters = self._gis.content.analyze(
+                        item=item, file_type="shapefile"
+                    )["publishParameters"]["layers"][0]
+
+                    # Update to get all correct parameters to add to definition
+                    publish_parameters.update(publish_parameters_orig)
+                    if overwrite:
+                        publish_parameters["id"] = fl_index
+
+                        # Perform edit on the feature layer collection using the manager
+                        revert = False
+                        if flc_manager.properties["preserveLayerIds"] is not True:
+                            flc_manager.update_definition({"preserveLayerIds": True})
+                            revert = True
+                        flc_manager.delete_from_definition(
+                            {"layers": [{"id": fl_index}]}
+                        )
+                        flc_manager.add_to_definition({"layers": [publish_parameters]})
+                        if revert:
+                            flc_manager.update_definition({"preserveLayerIds": False})
+                    elif append:
+                        # add new layer definition to existing service
+                        flc_manager.add_to_definition({"layers": [publish_parameters]})
+                        # find position at which it was added
+                        for layer in flc_manager.properties.layers:
+                            if layer["name"] == publish_parameters["name"]:
+                                fl_index = layer["id"]
+
+                    # Add new dependency on the shapefile and append the features
+                    ItemDependency(fs_item).add("itemid", item.id)
+                    fs_item.layers[fl_index].append(
+                        item_id=item.id, upload_format="shapefile"
+                    )
+
+                    return self._gis.content.get(fs_id)
+                # Publish as new Feature Layer
                 publish_parameters = {
                     "hasStaticData": True,
                     "name": os.path.splitext(item["name"])[0],
@@ -6820,20 +7405,27 @@ class ContentManager(object):
         elif isinstance(df, pd.DataFrame) and "location_type" not in kwargs:
             # CSV WORKFLOW
             path = "content/features/analyze"
-
+            if kwargs.get("geocode_url", None):
+                geocode_url = kwargs.get("geocode_url")
+            else:
+                locators = [
+                    gc["url"]
+                    for gc in self._gis.properties.helperServices.geocode
+                    if gc.get("batch", False)
+                ]
+                if len(locators) == 0:
+                    raise Exception("No batch geocoding service found.")
+                geocode_url = locators[0]
             postdata = {
                 "f": "pjson",
-                "text": df.to_csv(),
+                "text": df.to_csv(index_label="OBJECTID"),
                 "filetype": "csv",
                 "analyzeParameters": {
                     "enableGlobalGeocoding": "true",
                     "sourceLocale": "en-us",
-                    # "locationType":"address",
                     "sourceCountry": "",
                     "sourceCountryHint": "",
-                    "geocodeServiceUrl": self._gis.properties.helperServices.geocode[0][
-                        "url"
-                    ],
+                    "geocodeServiceUrl": geocode_url,
                 },
             }
 
@@ -6841,23 +7433,19 @@ class ContentManager(object):
                 postdata["analyzeParameters"]["locationType"] = "address"
 
             res = self._portal.con.post(path, postdata)
-            # import json
-            # json.dumps(res)
             if address_fields is not None:
                 res["publishParameters"].update({"addressFields": address_fields})
 
             path = "content/features/generate"
             postdata = {
                 "f": "pjson",
-                "text": df.to_csv(),
+                "text": df.to_csv(index_label="OBJECTID"),
                 "filetype": "csv",
                 "publishParameters": json.dumps(res["publishParameters"]),
             }
             if item_id:
                 postdata["itemIdToCreate"] = item_id
-            res = self._portal.con.post(
-                path, postdata
-            )  # , use_ordered_dict=True) - OrderedDict >36< _mixins.PropertyMap
+            res = self._portal.con.post_multipart(path, postdata)
 
             fc = FeatureCollection(res["featureCollection"]["layers"][0])
             return fc
@@ -6875,13 +7463,8 @@ class ContentManager(object):
                     "sourceCountryHint": kwargs.pop("country_hint", ""),
                     "geocodeServiceUrl": kwargs.pop(
                         "geocode_url",
-                        self._gis.properties.helperServices.geocode[0]["url"],
+                        geocode_url,
                     ),
-                    # "locationType": kwargs.pop('location_type', None),
-                    # "latitudeFieldName" : kwargs.pop("latitude_field", None),
-                    # "longitudeFieldName" : kwargs.pop("longitude_field", None),
-                    # "coordinateFieldName" : kwargs.pop("coordinate_field_name", None),
-                    # "coordinateFieldType" : kwargs.pop("coordinate_field_type", None)
                 },
             }
             update_dict = {}
@@ -7433,7 +8016,7 @@ class CategorySchemaManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<CategorySchemaManager @ {url}>".format(url=self._url)
+        return "< CategorySchemaManager at {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -7786,6 +8369,7 @@ class ResourceManager(object):
         folder_name: Optional[str] = None,
         file_name: Optional[str] = None,
         text: Optional[str] = None,
+        properties: Optional[dict[Any, Any]] = None,
     ):
         """The ``update`` operation allows you to update existing file resources of an item.
         File resources use storage space from your quota and are scanned for viruses. The item size
@@ -7813,6 +8397,9 @@ class ResourceManager(object):
         ----------------  ---------------------------------------------------------------
         text              Optional string. Text input to be added as a file resource,
                           used together with file_name.
+        ----------------  ---------------------------------------------------------------
+        properties        Optional Dictionary. Set the properties for the resources such
+                          as the `editInfo`.
         ================  ===============================================================
 
         :return:
@@ -7860,7 +8447,8 @@ class ResourceManager(object):
             params["fileName"] = file_name
         if text is not None:
             params["text"] = text
-
+        if isinstance(properties, dict):
+            params["properties"] = properties
         resp = self._portal.con.post(query_url, params, files=files)
         return resp
 
@@ -8128,7 +8716,25 @@ class Group(dict):
         ================    ===============================================================
         **Argument**        **Description**
         ----------------    ---------------------------------------------------------------
-        query               Required String.  The search query.
+        query               Required String.  The search query. When the search filters
+                            contain two or more clauses, the recommended schema is to have
+                            clauses separated by blank, or `AND`, e.g.
+
+                            :Usage Example:
+
+
+                            group.search(query='owner:USERNAME type:map')
+                            # or
+                            group.search(query='type:map AND owner:USERNAME')
+
+                            .. warning::
+                            When the clauses are separated by comma, the filtering condition
+                            for `owner` should not be placed at the first position, e.g.
+                            `group.search(query='type:map, owner:USERNAME')`
+                            is allowed, while
+                            `group.search(query='owner:USERNAME, type:map')`
+                            is not. For more, please check
+                            https://developers.arcgis.com/rest/users-groups-and-items/search-reference.htm
         ----------------    ---------------------------------------------------------------
         bbox                Optional String/List. This is the xmin,ymin,xmax,ymax bounding
                             box to limit the search in.  Items like documents do not have
@@ -8157,7 +8763,9 @@ class Group(dict):
                             records are arranged after they have been sorted. The allowed
                             values are: asc for ascending and desc for descending.
         ----------------    ---------------------------------------------------------------
-        as_dict             Required Boolean. If True, the response comes back as a dictionary.
+        as_dict             Required Boolean. If True, the results comes back as a dictionary.
+                            The result of the method will always be a dictionary but the
+                            `results` key in the dictionary will be changed if set to False.
         ================    ===============================================================
 
         :return: List of :class:`~arcgis.gis.Item` objects
@@ -8837,6 +9445,10 @@ class Group(dict):
         display_settings: Optional[str] = None,
         is_open_data: bool = False,
         leaving_disallowed: bool = False,
+        member_access: bool = None,
+        hidden_members: bool = False,
+        membership_access: Optional[str] = None,
+        autojoin: bool = False,
     ):
         """
         The ``update`` method updates the group's properties with the values supplied for particular arguments.
@@ -8899,6 +9511,23 @@ class Group(dict):
                             from choosing to leave the group. If True, only an
                             administrator can remove them from the group. The default
                             is False.
+        ------------------  ---------------------------------------------------------
+        hidden_members      Optional Boolean. Only applies to org accounts. If true,
+                            only the group owner, group managers, and default
+                            administrators can see all members of the group.
+        ------------------  ---------------------------------------------------------
+        membership_access   Optional String. Sets the membership access for the group.
+                            Setting to `org` restricts group access to members of
+                            your organization. Setting to `collaboration` restricts the
+                            membership access to partnered collaboration and your
+                            organization members. If `None` set, any organization
+                            will have access. `None` is the default.
+
+                            Values: `org`, `collaboration`, or `None`
+        ------------------  ---------------------------------------------------------
+        autojoin            Optional Boolean. The default is `False`. Only applies to
+                            org accounts. If `True`, this group will allow joined
+                            without requesting membership approval.
         ==================  =========================================================
 
         :return:
@@ -8954,6 +9583,9 @@ class Group(dict):
             display_settings=display_settings,
             is_open_data=is_open_data,
             leaving_disallowed=leaving_disallowed,
+            hidden_members=hidden_members,
+            membership_access=membership_access,
+            autojoin=autojoin,
         )
         if resp:
             self._hydrate()
@@ -9512,7 +10144,21 @@ class User(dict):
         res = self._gis._con.post(url, params)
         time.sleep(2)
         try:
-            item = Item(self._gis, res["itemId"])
+            count = 0
+            item = None
+            while count < 5:
+                try:
+                    item = Item(self._gis, res["itemId"])
+                except:
+                    ...
+                if item:
+                    break
+                count += 1
+                time.sleep(count)
+
+            if item is None:
+                raise Exception(f"Cannot find Item: {res['itemID']}")
+
             status = item.status()
             counter = 1
             while not status["status"] in ["completed", "failed"]:
@@ -9542,7 +10188,12 @@ class User(dict):
         return None
 
     # ----------------------------------------------------------------------
-    def generate_direct_access_url(self, store_type: str) -> str:
+    def generate_direct_access_url(
+        self,
+        store_type: str,
+        expiration: int | None = None,
+        subfolder: str | None = None,
+    ) -> dict | None:
         """
         The ``generate_direct_access_url`` method creates a direct access URL that is ideal
         for uploading large files to datafile share, notebook workspaces or raster stores.
@@ -9555,9 +10206,13 @@ class User(dict):
         ---------------------  ---------------------------------------------------------
         store_type             Optional String. The type of upload URL to generate.
                                Types: `big_data_file`, 'notebook', or 'raster`.
+        ---------------------  ---------------------------------------------------------
+        expiration             Optional Int. The expiration of the link in minutes.  The default is 1440.
+        ---------------------  ---------------------------------------------------------
+        subfolder              Optional String. The folder to upload to. The default is `None`.
         =====================  =========================================================
 
-        :return: A string representing a direct access URL
+        :return: A dictionary containing the direct access URL
 
         .. code-block:: python
 
@@ -9575,8 +10230,15 @@ class User(dict):
             "raster": "rasterStore",
         }
         url = f"{self._gis._portal.resturl}content/users/{self.username}/generateDirectAccessUrl"
-        params = {"f": "json", "expiration": 1440, "storeType": _lu[store_type.lower()]}
-        return self._portal.con.get(url, params)
+        params = {
+            "f": "json",
+            "expiration": expiration or 1440,
+            "storeType": _lu[store_type.lower()],
+        }
+        if subfolder:
+            params["subPath"] = subfolder
+
+        return self._portal.con.post(url, params)
 
     # ----------------------------------------------------------------------
     @property
@@ -10126,6 +10788,7 @@ class User(dict):
         security_question: Optional[int] = None,
         security_answer: Optional[str] = None,
         culture_format: Optional[str] = None,
+        categories: Optional[list] = None,
     ):
 
         """
@@ -10197,6 +10860,10 @@ class User(dict):
                             security_answer="Working on the Python API"
         ------------------  ----------------------------------------------------------
         culture_format      Optional String. Specifies user-preferred number and date format
+        ------------------  ----------------------------------------------------------
+        categories          Optional List[str]. A list of category names.
+
+                            example: ```categories = ["category11", "category12"]```
         ==================  ==========================================================
 
         :return:
@@ -10243,7 +10910,9 @@ class User(dict):
             "cultureFormat": culture_format,
             "region": region,
         }
-        if security_answer and security_question:
+        if categories:
+            params["categories"] = categories
+        if security_answer and not security_question is None:
             params["securityQuestionIdx"] = security_question
             params["securityAnswer"] = security_answer
         for k, v in copy.copy(params).items():
@@ -10254,8 +10923,8 @@ class User(dict):
             files = {"thumbnail": thumbnail}
         else:
             files = None
-        url = "%s/sharing/rest/community/users/%s/update" % (
-            self._gis._url,
+        url = "%scommunity/users/%s/update" % (
+            self._gis._portal.resturl,
             self._user_id,
         )
         ret = self._gis._con.post(path=url, postdata=params, files=files)
@@ -10281,9 +10950,15 @@ class User(dict):
 
            # Usage example: Setting login page
 
-           >>> user1 = gis.users.get("org_data_viewer")
+           >>> user1 = gis.users.get("org_data_viewer") # approach 1: set via landing_page
 
            >>> user1.landing_page = "map"
+
+           >>> us = user.user_settings # approach 2: set via user_settings
+
+           >>> us['landingPage']['url'] = "webmap/viewer.html"
+
+           >>> user1.user_settings = us
 
         """
         value = self.user_settings.get("landingPage", {}).get("url", "")
@@ -10352,6 +11027,17 @@ class User(dict):
         ================  ==========================================================
 
         :return: dict
+
+        .. code-block:: python
+
+           # Usage example: Getting the current user settings
+
+           >>> us = user.user_settings # similar to setting the landing_page property
+
+           >>> us['landingPage']['url'] = "webmap/viewer.html"
+
+           >>> user1.user_settings = us
+
         """
         url = "%s/sharing/rest/community/users/%s/properties" % (
             self._gis._url,
@@ -11293,6 +11979,9 @@ class Item(dict):
                 except:
                     pass
                 return self["tables"]
+        elif name == "url" and self._gis._validate_item_url:
+            url = dict.__getitem__(self, "url")
+            return self._validate_url(url)
         return super(Item, self).__getattribute__(name)
 
     def __getattr__(self, name):  # support item attributes
@@ -11323,7 +12012,7 @@ class Item(dict):
 
         :return: bool
         """
-        url = f"{self._portal.resturl}content/users/{self._gis.users.me.username}/items/{self.itemid}/canDelete"
+        url = f"{self._portal.resturl}content/users/{self.owner}/items/{self.itemid}/canDelete"
         params = {"f": "json"}
         try:
             return self._gis._con.get(url, params).get("success", False)
@@ -11391,11 +12080,13 @@ class Item(dict):
             self.contentStatus = value
             self._hydrate()
 
+    # ----------------------------------------------------------------------
     @property
     def homepage(self):
         """The ``homepage`` property gets the URL to the HTML page for the item."""
         return "{}{}{}".format(self._gis.url, "/home/item.html?id=", self.itemid)
 
+    # ----------------------------------------------------------------------
     def copy_feature_layer_collection(
         self,
         service_name: str,
@@ -11583,6 +12274,7 @@ class Item(dict):
                 pass
         return None
 
+    # ----------------------------------------------------------------------
     def download(
         self, save_path: Optional[str] = None, file_name: Optional[str] = None
     ):
@@ -11681,6 +12373,7 @@ class Item(dict):
         else:
             return download_path
 
+    # ----------------------------------------------------------------------
     def export(
         self,
         title: str,
@@ -11871,6 +12564,7 @@ class Item(dict):
                     thumbnail_url_path, try_json=False, force_bytes=True
                 )
 
+    # ----------------------------------------------------------------------
     def download_thumbnail(self, save_folder: Optional[str] = None):
         """
         The ``download_thumbnail`` method is similar to the ``download`` method but only downloads the item thumbnail.
@@ -11913,6 +12607,7 @@ class Item(dict):
         else:
             return None
 
+    # ----------------------------------------------------------------------
     def get_thumbnail_link(self):
 
         """
@@ -11938,9 +12633,233 @@ class Item(dict):
             )
             return thumbnail_url_path
 
+    # ----------------------------------------------------------------------
+    def create_thumbnail(self, update: bool = True):
+        """
+        The ``create_thumbnail`` method creates a Thumbnail for a feature service portal item using the service's
+        symbology and the print service registered for the enterprise.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        update              Optional boolean. When set to True, the item will be updated with the
+                            thumbnail generated in this call, else it will not update the item.
+                            The default is True.
+        ===============     ====================================================================
+
+        :return: A :class:`~arcgis.geoprocessing._types.DataFile` object
+
+        """
+        from arcgis.geoprocessing._tool import Toolbox
+        from arcgis.features import FeatureLayer, FeatureLayerCollection
+        from arcgis.gis.server._service import Service
+
+        props = self._gis.properties
+        gp_url = os.path.dirname(self._gis.properties.helperServices.printTask.url)
+
+        if self.type == "Feature Service":
+            layers = []
+            container = self.layers[0].container
+            extent = container.properties.initialExtent
+            for lyr in self.layers:
+                layers.append(
+                    {
+                        "id": "%s_%s"
+                        % (lyr.properties.serviceItemId, lyr.properties.id),
+                        "title": lyr.properties.name,
+                        "opacity": 1,
+                        "minScale": lyr.properties.minScale,
+                        "maxScale": lyr.properties.maxScale,
+                        "layerDefinition": {
+                            "drawingInfo": dict(lyr.properties.drawingInfo)
+                        },
+                        "token": self._gis._con.token,
+                        "url": lyr._url,
+                    }
+                )
+                del lyr
+            wmjs = {
+                "mapOptions": {
+                    "showAttribution": False,
+                    "extent": dict(extent),
+                    "spatialReference": dict(container.properties.spatialReference),
+                },
+                "operationalLayers": layers,
+                "exportOptions": {"outputSize": [600, 400], "dpi": 96},
+            }
+
+        elif self.type == "Web Map":
+            import json
+
+            layers = []
+            mapjson = self.get_data()
+            container = None
+            for lyr in mapjson["baseMap"]["baseMapLayers"]:
+                del lyr["layerType"]
+                layers.append(lyr)
+            for lyr in mapjson["operationalLayers"]:
+                flyr = Service(url=lyr["url"], server=self._gis._con)
+                if container is None and isinstance(flyr, FeatureLayer):
+                    container = FeatureLayerCollection(
+                        url=os.path.dirname(flyr._url), gis=self._gis
+                    )
+                layers.append(
+                    {
+                        "id": "%s" % lyr["id"],
+                        "title": lyr["title"],
+                        "opacity": lyr["opacity"] if "opacity" in lyr else None,
+                        "minScale": flyr.properties.minScale,
+                        "maxScale": flyr.properties.maxScale,
+                        "layerDefinition": {
+                            "drawingInfo": dict(flyr.properties.drawingInfo)
+                        },
+                        "token": self._gis._con.token,
+                        "url": lyr["url"],
+                    }
+                )
+                del lyr
+
+            wmjs = {
+                "mapOptions": {
+                    "showAttribution": False,
+                    "extent": dict(container.properties.initialExtent)
+                    if container
+                    else dict(self._gis.properties.defaultExtent),
+                    "spatialReference": dict(container.properties.spatialReference)
+                    if container
+                    else dict(self._gis.properties.defaultExtent.spatialReference),
+                },
+                "operationalLayers": layers,
+                "exportOptions": {"outputSize": [600, 400], "dpi": 96},
+            }
+        else:
+            return None
+        if (
+            isinstance(self._gis._portal, _portalpy.Portal)
+            and self._gis._portal.is_arcgisonline
+        ):
+            tbx = Toolbox(url=gp_url)
+        else:
+            tbx = Toolbox(url=gp_url, gis=self._gis)
+        res = tbx.export_web_map_task(web_map_as_json=wmjs, format="png32")
+        if update:
+            self.update(item_properties={"thumbnailUrl": res.url})
+        return res
+
+    # ----------------------------------------------------------------------
+    def delete_thumbnail(self) -> bool:
+        """
+        Deletes the item's thumbnail
+
+        :returns: bool
+        """
+        url = f"{self._gis._portal.resturl}content/users/{self.owner}/items/{self.itemid}/deleteThumbnail"
+        params = {"f": "json"}
+        res = self._gis._con.post(url, params)
+        if res.get("success", False):
+            self._hydrated = False
+            self._hydrate()
+            return True
+        return res
+
+    # ----------------------------------------------------------------------
+    def update_thumbnail(
+        self,
+        file_path: str | None = None,
+        encoded_image: str | None = None,
+        file_name: str | None = None,
+        url: str | None = None,
+    ) -> bool:
+        """
+        The `update_thumbnail` updates the thumbnail of any ArcGIS item in your organization. The updated thumbnail
+        can be provided in a variety of formats, as either a file to be uploaded as part of a multipart request,
+        a direct URL to the thumbnail file, or as a Base64 encoded image.
+
+        ================  =========================================================================================
+        **Argument**      **Description**
+        ----------------  -----------------------------------------------------------------------------------------
+        file_path         Optional String. The local path to the thumbnail.
+        ----------------  -----------------------------------------------------------------------------------------
+        encoded_image     Optional String. A base64 encoded image as a string.
+        ----------------  -----------------------------------------------------------------------------------------
+        file_name         Optional String. This is required with `encoded_image` is used. It is the name of the file
+                          with extension.  Example thumbnail.png
+        ----------------  -----------------------------------------------------------------------------------------
+        url               Optional String. A URL location of a thumbnail.
+        ================  =========================================================================================
+
+
+        .. code-block:: python
+
+            # Usage Example 1: Using a base64 encoded image
+
+            gis = GIS(profile='your_profile')
+            item = gis.content.get(<item id>)
+            base64_img = (
+                'data:image/png;base64,'
+                'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAAsTAAA'
+                'LEwEAmpwYAAAB1klEQVQ4jY2TTUhUURTHf+fy/HrjhNEX2KRGiyIXg8xgSURuokX'
+                'LxFW0qDTaSQupkHirthK0qF0WQQQR0UCbwCQyw8KCiDbShEYLJQdmpsk3895p4aS'
+                'v92ass7pcfv/zP+fcc4U6kXKe2pTY3tjSUHjtnFgB0VqchC/SY8/293S23f+6VEj'
+                '9KKwCoPDNIJdmr598GOZNJKNWTic7tqb27WwNuuwGvVWrAit84fsmMzE1P1+1TiK'
+                'MVKvYUjdBvzPZXCwXzyhyWNBgVYkgrIow09VJMznpyebWE+Tdn9cEroBSc1JVPS+'
+                '6moh5Xyjj65vEgBxafGzWetTh+rr1eE/c/TMYg8hlAOvI6JP4KmwLgJ4qD0TIbli'
+                'TB+sunjkbeLekKsZ6Zc8V027aBRoBRHVoduDiSypmGFG7CrcBEyDHA0ZNfNphC0D'
+                '6amYa6ANw3YbWD4Pn3oIc+EdL36V3od0A+MaMAXmA8x2Zyn+IQeQeBDfRcUw3B+2'
+                'PxwZ/EdtTDpCPQLMh9TKx0k3pXipEVlknsf5KoNzGyOe1sz8nvYtTQT6yyvTjIax'
+                'smHGB9pFx4n3jIEfDePQvCIrnn0J4B/gA5J4XcRfu4JZuRAw3C51OtOjM3l2bMb8'
+                'Br5eXCsT/w/EAAAAASUVORK5CYII='
+            )
+            res = item.update_thumbnail(encoded_image=base64_img, file_name="thumbnail.png")
+
+        .. code-block:: python
+
+            # Usage Example 2: URL image
+
+            gis = GIS(profile='your_profile')
+            item = gis.content.get(<item id>)
+            img_url = "https://www.esri.com/content/dam/esrisites/en-us/common/icons/product-logos/ArcGIS-Pro.png"
+            res = item.update_thumbnail(url=img_url)
+
+        .. code-block:: python
+
+            # Usage Example 3: Using a local file
+
+            gis = GIS(profile='your_profile')
+            item = gis.content.get(<item id>)
+            fp = "c:/images/ArcGIS-Pro.png"
+            res = item.update_thumbnail(file_path=fp)
+
+        :returns: bool
+        """
+        if file_path is None and encoded_image is None and url is None:
+            return False
+        files = None
+        rest_url = f"{self._gis._portal.resturl}content/users/{self.owner}/items/{self.itemid}/updateThumbnail"
+        params = {
+            "f": "json",
+        }
+        if file_path and os.path.isfile(file_path):
+            files = []
+            files.append(("file", file_path, os.path.basename(file_path)))
+        elif encoded_image:
+            params["data"] = encoded_image
+        elif url:
+            params["url"] = url
+        if encoded_image and file_name is None:
+            params["filename"] = "thumbnail.png"
+        elif file_name:
+            params["filename"] = file_name
+        resp = self._gis._con.post(rest_url, params, files=files)
+        if resp.get("success", False):
+            self._hydrated = False
+            self._hydrate()
+            return True
+        return False
+
+    # ----------------------------------------------------------------------
     @property
     def metadata(self):
-
         """The ``metadata`` property gets and sets the item metadata for the specified item.
         ``metadata`` returns None if the item does not have metadata.
 
@@ -11966,18 +12885,19 @@ class Item(dict):
         """
         See main ``metadata`` property docstring
         """
-        import shutil
-        from six import string_types
-
         xml_file = os.path.join(tempfile.gettempdir(), "metadata.xml")
         if os.path.isfile(xml_file) == True:
             os.remove(xml_file)
-        if os.path.isfile(value) == True and str(value).lower().endswith(".xml"):
+        if (
+            str(value).lower().endswith(".xml")
+            and len(value) <= 32767
+            and os.path.isfile(value) == True
+        ):
             if os.path.basename(value).lower() != "metadata.xml":
                 shutil.copy(value, xml_file)
             else:
                 xml_file = value
-        elif isinstance(value, string_types):
+        elif isinstance(value, str):
             with open(xml_file, mode="w") as writer:
                 writer.write(value)
                 writer.close()
@@ -11985,6 +12905,7 @@ class Item(dict):
             raise ValueError("Input must be XML path file or XML Text")
         return self.update(metadata=xml_file)
 
+    # ----------------------------------------------------------------------
     def download_metadata(self, save_folder: Optional[str] = None):
         """
         The ``download_metadata`` method is similar to the ``download`` method but only downloads the item metadata for
@@ -12071,6 +12992,7 @@ class Item(dict):
         icon = self._gis.url + "/home/js/jsapi/esri/css/images/item_type_icons/" + icon
         return icon
 
+    # ----------------------------------------------------------------------
     def _ux_item_type(self):
         item_type = self.type
         if self.type == "Geoprocessing Service":
@@ -12087,6 +13009,7 @@ class Item(dict):
             item_type = self.type.replace("Service", "Layer")
         return item_type
 
+    # ----------------------------------------------------------------------
     def _repr_html_(self):
         thumbnail = self.thumbnail
         if self.thumbnail is None or not self._portal.is_logged_in:
@@ -12154,11 +13077,13 @@ class Item(dict):
                 """
         )
 
+    # ----------------------------------------------------------------------
     def __str__(self):
         return self.__repr__()
         # state = ["   %s=%r" % (attribute, value) for (attribute, value) in self.__dict__.items()]
         # return '\n'.join(state)
 
+    # ----------------------------------------------------------------------
     def __repr__(self):
         return '<%s title:"%s" type:%s owner:%s>' % (
             type(self).__name__,
@@ -12167,6 +13092,7 @@ class Item(dict):
             self.owner,
         )
 
+    # ----------------------------------------------------------------------
     def reassign_to(self, target_owner: str, target_folder: Optional[str] = None):
         """
         The ``reassign_to`` method allows the administrator to reassign a single item from one user to another.
@@ -12204,6 +13130,7 @@ class Item(dict):
             self._hydrate()  # refresh
             return resp
 
+    # ----------------------------------------------------------------------
     @property
     def shared_with(self):
         """
@@ -12315,6 +13242,7 @@ class Item(dict):
 
         return ret_dict
 
+    # ----------------------------------------------------------------------
     def share(
         self,
         everyone: bool = False,
@@ -12422,6 +13350,7 @@ class Item(dict):
         self._hydrate()
         return res
 
+    # ----------------------------------------------------------------------
     def unshare(self, groups: Union[list[str], list[Group]]):
         """
         The ``unshare`` method stops sharing of the Item with the specified list of groups.
@@ -12473,6 +13402,7 @@ class Item(dict):
             owner = self._user_id
             return self._portal.unshare_item(self.itemid, owner, folder, group_ids)
 
+    # ----------------------------------------------------------------------
     def delete(self, force: bool = False, dry_run: bool = False):
         """
         The ``delete`` method deletes the item. If the item is unable to be deleted , a RuntimeException is raised.
@@ -12559,117 +13489,10 @@ class Item(dict):
         else:
             return self._portal.delete_item(self.itemid, self._user_id, folder, force)
 
-    def create_thumbnail(self, update: bool = True):
-        """
-        The ``create_thumbnail`` method creates a Thumbnail for a feature service portal item using the service's
-        symbology and the print service registered for the enterprise.
-
-        ===============     ====================================================================
-        **Argument**        **Description**
-        ---------------     --------------------------------------------------------------------
-        update              Optional boolean. When set to True, the item will be updated with the
-                            thumbnail generated in this call, else it will not update the item.
-                            The default is True.
-        ===============     ====================================================================
-
-        :return: A :class:`~arcgis.geoprocessing._types.DataFile` object
-
-        """
-        from arcgis.geoprocessing._tool import Toolbox
-        from arcgis.features import FeatureLayer, FeatureLayerCollection
-        from arcgis.gis.server._service import Service
-
-        props = self._gis.properties
-        gp_url = os.path.dirname(self._gis.properties.helperServices.printTask.url)
-
-        if self.type == "Feature Service":
-            layers = []
-            container = self.layers[0].container
-            extent = container.properties.initialExtent
-            for lyr in self.layers:
-                layers.append(
-                    {
-                        "id": "%s_%s"
-                        % (lyr.properties.serviceItemId, lyr.properties.id),
-                        "title": lyr.properties.name,
-                        "opacity": 1,
-                        "minScale": lyr.properties.minScale,
-                        "maxScale": lyr.properties.maxScale,
-                        "layerDefinition": {
-                            "drawingInfo": dict(lyr.properties.drawingInfo)
-                        },
-                        "token": self._gis._con.token,
-                        "url": lyr._url,
-                    }
-                )
-                del lyr
-            wmjs = {
-                "mapOptions": {
-                    "showAttribution": False,
-                    "extent": dict(extent),
-                    "spatialReference": dict(container.properties.spatialReference),
-                },
-                "operationalLayers": layers,
-                "exportOptions": {"outputSize": [600, 400], "dpi": 96},
-            }
-
-        elif self.type == "Web Map":
-            import json
-
-            layers = []
-            mapjson = self.get_data()
-            container = None
-            for lyr in mapjson["baseMap"]["baseMapLayers"]:
-                del lyr["layerType"]
-                layers.append(lyr)
-            for lyr in mapjson["operationalLayers"]:
-                flyr = Service(url=lyr["url"], server=self._gis._con)
-                if container is None and isinstance(flyr, FeatureLayer):
-                    container = FeatureLayerCollection(
-                        url=os.path.dirname(flyr._url), gis=self._gis
-                    )
-                layers.append(
-                    {
-                        "id": "%s" % lyr["id"],
-                        "title": lyr["title"],
-                        "opacity": lyr["opacity"],
-                        "minScale": flyr.properties.minScale,
-                        "maxScale": flyr.properties.maxScale,
-                        "layerDefinition": {
-                            "drawingInfo": dict(flyr.properties.drawingInfo)
-                        },
-                        "token": self._gis._con.token,
-                        "url": lyr["url"],
-                    }
-                )
-                del lyr
-            wmjs = {
-                "mapOptions": {
-                    "showAttribution": False,
-                    "extent": dict(container.properties.initialExtent),
-                    "spatialReference": dict(container.properties.spatialReference),
-                },
-                "operationalLayers": layers,
-                "exportOptions": {"outputSize": [600, 400], "dpi": 96},
-            }
-            print()
-        else:
-            return None
-        if (
-            isinstance(self._gis._portal, _portalpy.Portal)
-            and self._gis._portal.is_arcgisonline
-        ):
-            tbx = Toolbox(url=gp_url)
-        else:
-            tbx = Toolbox(url=gp_url, gis=self._gis)
-        res = tbx.export_web_map_task(web_map_as_json=wmjs, format="png32")
-        if update:
-            self.update(item_properties={"thumbnailUrl": res.url})
-        return res
-
+    # ----------------------------------------------------------------------
     def update(
         self,
-        item_properties: Optional[dict[str, Any]] = None,
+        item_properties: Optional[dict[str, Any]] | ItemProperties = None,
         data: Optional[str] = None,
         thumbnail: Optional[str] = None,
         metadata: Optional[str] = None,
@@ -12739,9 +13562,6 @@ class Item(dict):
          culture            Optional string. Locale, country and language information.
          -----------------  ---------------------------------------------------------------------
          access             Optional string. Valid values are private, shared, org, or public.
-         -----------------  ---------------------------------------------------------------------
-         commentsEnabled    Optional boolean. Default is true, controls whether comments are allowed (true)
-                            or not allowed (false).
          =================  =====================================================================
 
 
@@ -12760,6 +13580,26 @@ class Item(dict):
              item.update(description ="aggregated US hurricane data", title = "US Hurricane Data",
                              tags = "Hurricanes, USA, Natural Disasters")
         """
+        if isinstance(item_properties, ItemProperties):
+            if (
+                thumbnail is None
+                and item_properties.thumbnail
+                and (
+                    os.path.isfile(item_properties.thumbnail)
+                    or item_properties.thumbnail_url
+                )
+            ):
+                thumbnail = item_properties.thumbnail or item_properties.thumbnail_url
+            if (
+                metadata is None
+                and item_properties.metadata
+                and os.path.isfile(item_properties.metadata)
+            ):
+                metadata = item_properties.metadata
+
+            item_properties = item_properties.to_dict()
+            item_properties.pop("metadata", None)
+            item_properties.pop("thumbnail", None)
         if (
             data
             and isinstance(data, str)
@@ -12873,6 +13713,76 @@ class Item(dict):
                 self._hydrate()
             return ret
 
+    # ----------------------------------------------------------------------
+    def update_info(self, file: str, folder_name: Optional[str] = None):
+        """
+        You can upload JSON, XML, CFG, TXT, PBF, and PNG files only. The file size limit is 100K.
+        The uploaded file is also available through the https://item-url/info/filename resource.
+
+        Must be the owner of the item to update this.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        file                Required String. The path to the file that will be uploaded.
+        ---------------     --------------------------------------------------------------------
+        folder_name         Optional String. The name of the subfolder for added information.
+        ===============     ====================================================================
+
+        :return: Success or Failure
+        """
+        url = "{resturl}content/users/{owner}/items/{itemid}/updateInfo".format(
+            resturl=self._gis._portal.resturl, owner=self.owner, itemid=self.itemid
+        )
+        params = {
+            "f": "json",
+            "file": file,
+            "folderName": folder_name,
+        }
+        res = self._portal.con.post(url, params)
+        self._hydrated = False
+        self._hydrate()
+        return res
+
+    # ----------------------------------------------------------------------
+    def delete_info(self, file: str):
+        """
+        This is available for all items and allows you to delete an individual file from an item's esriinfo folder.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        file                Required String. The file to be deleted.
+        ===============     ====================================================================
+
+        """
+        url = "{resturl}content/users/{owner}/items/{itemid}/deleteInfo".format(
+            resturl=self._gis._portal.resturl, owner=self.owner, itemid=self.itemid
+        )
+        params = {
+            "f": "json",
+            "file": file,
+        }
+        res = self._portal.con.post(url, params)
+        self._hydrated = False
+        self._hydrate()
+        return res
+
+    # ----------------------------------------------------------------------
+    @property
+    def view_manager(self) -> ViewManager | None:
+        """
+        If the `Item` is a `Feature Service` and a `Hosted Service`, the `Item`
+        can have views.  This Manager allows users to work with `Feature Service`
+        to create **views**
+
+        :returns: ViewManager
+        """
+        if self.type == "Feature Service" and "Hosted Service" in self.typeKeywords:
+            return ViewManager(item=self)
+        return None
+
+    # ----------------------------------------------------------------------
     @cached(cache=TTLCache(maxsize=255, ttl=60))
     def usage(self, date_range: str = "7D", as_df: bool = True):
         """
@@ -12911,21 +13821,25 @@ class Item(dict):
         date_range          Optional string.  The default is 7d.  This is the period to query
                             usage for a given item.
 
-                            =======  =========================
-                            24H      Past 24 hours
-                            -------  -------------------------
-                            7D       Past 7 days (default)
-                            -------  -------------------------
-                            14D      Past 14 days
-                            -------  -------------------------
-                            30D      Past 30 days
-                            -------  -------------------------
-                            60D      Past 60 days
-                            -------  -------------------------
-                            6M       Past 6 months
-                            -------  -------------------------
-                            1Y       Past 12 months
-                            =======  =========================
+                            =============           =========================
+                            24H                     Past 24 hours
+                            -------------           -------------------------
+                            7D                      Past 7 days (default)
+                            -------------           -------------------------
+                            14D                     Past 14 days
+                            -------------           -------------------------
+                            30D                     Past 30 days
+                            -------------           -------------------------
+                            60D                     Past 60 days
+                            -------------           -------------------------
+                            6M                      Past 6 months
+                            -------------           -------------------------
+                            1Y                      Past 12 months
+                            -------------           -------------------------
+                            (date1,date2)           Tuple of 2 datetime
+                                                    objects defining custom
+                                                    date range
+                            =============           =========================
         ---------------     --------------------------------------------------------------------
         as_df               Optional boolean.  Returns a Pandas DataFrame when True, returns data
                             as a dictionary when False
@@ -12933,6 +13847,46 @@ class Item(dict):
 
         :return: Pandas `DataFrame <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html>`_ or Dictionary
 
+        .. code-block:: python
+
+            # Usage Example #1: Standard date_range
+
+            >>> flyr_item = gis.content.get("8961540a52da402876e0168fa29bb82d")
+            >>> result = flyr_item.usage(date_range = "7D")
+                Date  Usage
+            0 2022-08-05      0
+            1 2022-08-06      0
+            2 2022-08-07      0
+            3 2022-08-08      0
+            4 2022-08-09      0
+            5 2022-08-10      0
+            6 2022-08-11      0
+            7 2022-08-12      8
+
+            # Usage Example #2: Custom date_range
+
+            >>> import datetime as dt
+
+            >>> flyr_item = gis.content.get("8961540a52da402876e0168fa29bb82d")
+            >>> date_1 = dt.datetime(2022,7,31)
+            >>> date_2 = dt.datetime.now(2022,8,12)
+                # Early value, later value
+            >>> result = flyr_item.usage(date_range (date_1, date_2))
+            >>> result
+                     Date  Usage
+            0  2022-07-31      0
+            1  2022-08-01      0
+            2  2022-08-02      0
+            3  2022-08-03      0
+            4  2022-08-04      0
+            5  2022-08-05      0
+            6  2022-08-06      0
+            7  2022-08-07      0
+            8  2022-08-08      0
+            9  2022-08-09      0
+            10 2022-08-10      0
+            11 2022-08-11      0
+            12 2022-08-12     10
         """
         if not self._portal.is_arcgisonline:
             raise ValueError("Usage() only supported for ArcGIS Online items.")
@@ -12964,8 +13918,7 @@ class Item(dict):
 
         if self.type == "Vector Tile Service":
             params["name"] = self.title.replace(" ", "_")
-        if self.type == "Map Service":
-            params["name"] = self.title.replace(" ", "_")
+
         if isinstance(date_range, (tuple, list)) and len(date_range) == 2:
             params["period"] = "1d"
             params["startTime"] = int(date_range[0].timestamp() * 1000)
@@ -13103,13 +14056,14 @@ class Item(dict):
                     df = pd.DataFrame([], columns=["Date", "Usage"])
                 elif len(res["data"]):
                     df = pd.DataFrame(res["data"][0]["num"], columns=["Date", "Usage"])
-                    res.Date = pd.to_datetime(res["Date"], unit="ms")
+                    df.Date = pd.to_datetime(df["Date"], unit="ms")
                     df.Usage = df.Usage.astype(int)
                 return df
             return res
         except:
             return None
 
+    # ----------------------------------------------------------------------
     def get_data(self, try_json: bool = True):
         """
         The ``get_data`` method retrieves the data associated with an item.
@@ -13155,6 +14109,7 @@ class Item(dict):
         else:
             return item_data
 
+    # ----------------------------------------------------------------------
     def dependent_upon(self):
 
         """
@@ -13165,6 +14120,7 @@ class Item(dict):
             with an ArcGIS Enterprise."""
         return self._portal.get_item_dependencies(self.itemid)
 
+    # ----------------------------------------------------------------------
     def dependent_to(self):
         """
         The ``dependent_to`` method returns items, urls, etc that are dependent to this item.
@@ -13175,6 +14131,7 @@ class Item(dict):
         """
         return self._portal.get_item_dependents_to(self.itemid)
 
+    # ----------------------------------------------------------------------
     _RELATIONSHIP_TYPES = frozenset(
         [
             "Area2CustomPackage",
@@ -13210,6 +14167,7 @@ class Item(dict):
 
     _RELATIONSHIP_DIRECTIONS = frozenset(["forward", "reverse"])
 
+    # ----------------------------------------------------------------------
     def related_items(self, rel_type: str, direction: str = "forward"):
         """
         The ``related_items`` method retrieves the items related to this item. Relationships can be added and deleted
@@ -13257,6 +14215,7 @@ class Item(dict):
             related_items.append(Item(self._gis, related_item["id"], related_item))
         return related_items
 
+    # ----------------------------------------------------------------------
     def add_relationship(self, rel_item: Item, rel_type: str):
 
         """The ``add_relationship`` method adds a relationship from the current item to ``rel_item``.
@@ -13308,6 +14267,7 @@ class Item(dict):
         if resp:
             return resp.get("success")
 
+    # ----------------------------------------------------------------------
     def delete_relationship(self, rel_item: Item, rel_type: str):
         """
         The ``delete_relationship`` method  deletes a relationship between this item and the rel_item.
@@ -13346,6 +14306,7 @@ class Item(dict):
         if resp:
             return resp.get("success")
 
+    # ----------------------------------------------------------------------
     def publish(
         self,
         publish_parameters: Optional[dict[str, Any]] = None,
@@ -13471,7 +14432,7 @@ class Item(dict):
         buildInitialCache = build_initial_cache
         if file_type is None:
             if self["type"] == "GeoPackage":
-                fileType = "gpkg"
+                fileType = "geoPackage"
             elif self["type"].lower().find("excel") > -1:
                 fileType = "excel"
             elif self["type"] == "Compact Tile Package":
@@ -13664,11 +14625,14 @@ class Item(dict):
                     "maxRecordCount": 2000,
                     "layerInfo": {"capabilities": "Query"},
                 }
-
-        elif fileType in [
-            "csv",
-            "excel",
-        ]:  # merge users passed-in publish parameters with analyze results
+        elif (
+            fileType
+            in [
+                "csv",
+                "excel",
+            ]
+            and overwrite is False
+        ):  # merge users passed-in publish parameters with analyze results
             publish_parameters_orig = publish_parameters
 
             res = self._gis.content.analyze(item=self, file_type=fileType)
@@ -13691,21 +14655,14 @@ class Item(dict):
                             publish_parameters["layerInfo"]
                         )
 
-                # check if layers key exist. If not, add empty array to avoid error in update
-                if "layers" not in publish_parameters_orig:
-                    publish_parameters_orig["layers"] = []
-
-                # update layers but layer index must match
-                # update the layers otherwise general update will overwrite nested dictionary
-                for idx, lyr in enumerate(publish_parameters["layers"]):
-                    lyr.update(publish_parameters_orig["layers"][idx])
-
-                # delete since already updated and avoid overwritting
-                if "layers" in publish_parameters_orig:
-                    del publish_parameters_orig["layers"]
-
-                # do general update
+                # do general update and assign service name
                 publish_parameters.update(publish_parameters_orig)
+                service_name = re.sub(r"[\W_]+", "_", self["title"])
+                publish_parameters.update({"name": service_name})
+                if not self._gis.content.is_service_name_available(
+                    publish_parameters["name"], "featureService"
+                ):
+                    raise Exception("Service name already exists in your org.")
 
         ret = self._portal.publish_item(
             self.itemid,
@@ -13785,7 +14742,7 @@ class Item(dict):
             serviceitem_id = self._check_publish_status(ret, folder)
         return Item(self._gis, serviceitem_id)
 
-    def move(self, folder: str, owner: Optional[str] = None):
+    def move(self, folder: str):
         """
         The ``move`` method moves the current item to the name of the folder passed when ``move`` is called.
 
@@ -13796,9 +14753,6 @@ class Item(dict):
                           Use '/' for the root folder. For other folders, pass in the
                           folder name as a string, or a dictionary containing the folder ID,
                           such as the dictionary obtained from the folders property.
-        ----------------  ---------------------------------------------------------------
-        owner             Optional string or Owner object.  The name of the user to
-                          move to.
         ================  ===============================================================
 
         :return:
@@ -14063,6 +15017,7 @@ class Item(dict):
             raise ValueError("Input must of type FeatureService")
         return
 
+    # ----------------------------------------------------------------------
     def protect(self, enable: bool = True):
         """
         The ``protect`` method enables or disables delete protection on this item, essentially allowing the item to be
@@ -14090,6 +15045,7 @@ class Item(dict):
         self._hydrate()
         return res
 
+    # ----------------------------------------------------------------------
     def _check_publish_status(self, ret, folder):
         """Internal method to check the status of a publishing job.
 
@@ -14832,7 +15788,7 @@ class Item(dict):
                               )
 
         """
-        if self.type.lower() in ["application", "api key"]:
+        if self.type.lower() in ["api key"]:
             return None
         if redirect_uris is None:
             redirect_uris = []
@@ -14898,6 +15854,43 @@ class Item(dict):
         return res["success"]
 
     # ----------------------------------------------------------------------
+    def package_info(self, folder: Optional[str] = None) -> str:
+        """
+        Items will have a package info file available only if that item is
+        an ArcGIS package (for example, a layer package or map package). It
+        contains information that is used by clients (ArcGIS Pro, ArcGIS
+        Explorer, and so on) to work appropriately with downloaded
+        packages. Navigating to the URL will result in a package info file
+        (.pkinfo) being downloaded.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        folder              Optional string. The save location of the pkinfo file.
+        ===============     ====================================================================
+
+        :returns: str
+        """
+
+        url = f"{self._gis._portal.resturl}content/items/{self.itemid}/item.pkinfo"
+        res = self._portal.con.get(url, {}, try_json=False, out_folder=folder)
+        return res
+
+    # ----------------------------------------------------------------------
+    @property
+    def item_card(self) -> str:
+        """
+        Returns an XML representation of the Item
+
+        :returns: A string path to the downloaded XML file.
+        """
+        url = (
+            f"{self._gis._portal.resturl}content/items/{self.itemid}/info/iteminfo.xml"
+        )
+        res = self._portal.con.get(url, {"f": "json"})
+        return res
+
+    # ----------------------------------------------------------------------
     @property
     def app_info(self):
         """
@@ -14919,6 +15912,225 @@ class Item(dict):
             return self._portal.con.get(url, params)
         except:
             return {}
+
+    # ----------------------------------------------------------------------
+    @functools.lru_cache(maxsize=255)
+    def _validate_url(
+        self, url: str | None = None, return_type: str | None = None
+    ) -> str:
+        """checks if the URL endpoint is reachable via public and/or private url
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        url                 Optional String. URL to check. If `None` it is obtained from the Item['url'] key
+        ---------------     --------------------------------------------------------------------
+        return_type         Option String. The options are "BOTH", "PUBLIC_ONLY", "PRIVATE_ONLY".
+                            When "BOTH" is selected, which is defualt first the public URL is
+                            validated if that fails, then the private URL is given. For
+                            "PUBLIC_ONLY", the public URL is given back. For "PRIVATE_ONLY" only
+                            the private URL is given. If no private URL exists, then the public is
+                            returned.
+
+        ===============     ====================================================================
+
+        :returns: string
+        """
+        if return_type is None:
+            return_type = "BOTH"
+        elif str(return_type).upper() in ["BOTH", "PRIVATE_ONLY", "PUBLIC_ONLY"]:
+            return_type = str(return_type).upper()
+        else:
+            raise ValueError("Invalid `return_type`.")
+        if url is None:
+            url = self["url"]
+        res = self._gis._private_service_url(url)
+        private_url = res.get("privateServiceUrl", None)
+        public_url = res.get("serviceUrl", None)
+        if return_type == "BOTH":
+            if private_url is None and public_url:
+                return public_url
+            elif private_url is None and public_url is None:
+                return url
+            elif public_url == private_url:
+                return public_url
+            elif public_url != private_url:
+                for purl in [public_url, private_url]:
+                    try:
+                        if purl:
+                            self._gis._con.get(purl)
+                            return purl
+                    except:
+                        ...
+        elif return_type == "PUBLIC_ONLY":
+            return public_url
+        elif return_type == "PRIVATE_ONLY":
+            return private_url or public_url
+        return url
+
+
+########################################################################
+class ViewManager:
+    """The View Manager"""
+
+    _item = None
+    _gis = None
+
+    def __init__(self, item: Item):
+        self._item = item
+        self._gis = item._gis
+
+    # ----------------------------------------------------------------------
+    def list(self) -> list[Item]:
+        """
+        Returns all views for a given item
+
+        :returns: list[Item]
+        """
+        return [
+            i
+            for i in self._item.related_items("Service2Data", "reverse")
+            if "View Service" in i.typeKeywords
+        ]
+
+    # ----------------------------------------------------------------------
+    def create(
+        self,
+        name: str,
+        spatial_reference: dict[str, Any] | None = None,
+        extent: dict[str, int | float] | None = None,
+        allow_schema_changes: bool = True,
+        updateable: bool = True,
+        capabilities: str = "Query",
+        view_layers: list[int] | None = None,
+        view_tables: list[int] | None = None,
+        *,
+        description: str | None = None,
+        tags: str | None = None,
+        snippet: str | None = None,
+        overwrite: bool | None = None,
+        set_item_id: str | None = None,
+        preserve_layer_ids: bool = False,
+    ) -> Item:
+        """
+        Creates a view of an existing feature service Item. You can create a view, if you need a different view of the data
+        represented by a hosted feature layer, for example, you want to apply different editor settings, apply different
+        styles or filters, define which features or fields are available, or share the data to different groups than
+        the hosted feature layer  create a hosted feature layer view of that hosted feature layer.
+
+        When you create a feature layer view, a new hosted feature layer item is added to Content. This new layer is a
+        view of the data in the hosted feature layer, which means updates made to the data appear in the hosted feature
+        layer and all of its hosted feature layer views. However, since the view is a separate layer, you can change
+        properties and settings on this item separately from the hosted feature layer from which it is created.
+
+        For example, you can allow members of your organization to edit the hosted feature layer but share a read-only
+        feature layer view with the public.
+
+        To learn more about views visit: https://doc.arcgis.com/en/arcgis-online/share-maps/create-hosted-views.htm
+
+        ====================     ====================================================================
+        **Argument**             **Description**
+        --------------------     --------------------------------------------------------------------
+        name                     Required string. Name of the new view item
+        --------------------     --------------------------------------------------------------------
+        spatial_reference        Optional dict. Specify the spatial reference of the view
+        --------------------     --------------------------------------------------------------------
+        extent                   Optional dict. Specify the extent of the view
+        --------------------     --------------------------------------------------------------------
+        allow_schema_changes     Optional bool. Default is True. Determines if a view can alter a
+                                 service's schema.
+        --------------------     --------------------------------------------------------------------
+        updateable               Optional bool. Default is True. Determines if view can update values
+        --------------------     --------------------------------------------------------------------
+        capabilities             Optional string. Specify capabilities as a comma separated string.
+                                 For example "Query, Update, Delete". Default is 'Query'.
+        --------------------     --------------------------------------------------------------------
+        view_layers              Optional list. Specify list of layers present in the FeatureLayerCollection
+                                 that you want in the view.
+        --------------------     --------------------------------------------------------------------
+        view_tables              Optional list. Specify list of tables present in the FeatureLayerCollection
+                                 that you want in the view.
+        --------------------     --------------------------------------------------------------------
+        description              Optional String. A user-friendly description for the published dataset.
+        --------------------     --------------------------------------------------------------------
+        tags                     Optional String. The comma separated string of descriptive words.
+        --------------------     --------------------------------------------------------------------
+        snippet                  Optional String. A short description of the view item.
+        --------------------     --------------------------------------------------------------------
+        overwrite                Optional Boolean.  If true, the view is overwritten, False is the default.
+        --------------------     --------------------------------------------------------------------
+        set_item_id              Optional String. If set, the ItemId is defined by the user, not the system.
+        --------------------     --------------------------------------------------------------------
+        preserve_layer_ids       Optional Boolean. Preserves the layer's `id` on it's definition when `True`.  The default is `False`.
+        ====================     ====================================================================
+
+        .. code-block:: python  (optional)
+
+           USAGE EXAMPLE: Create a veiw from a hosted feature layer
+
+           crime_fl_item = gis.content.search("2012 crime")[0]
+           view = crime_fl_item.view_manager.create(name=uuid.uuid4().hex[:9], # create random name
+                                                    updateable=True,
+                                                    allow_schema_changes=False,
+                                                    capabilities="Query,Update,Delete")
+
+        :return:
+            Returns the newly created :class:`~arcgis.gis.Item` for the view.
+        """
+        flc = arcgis.features.FeatureLayerCollection.fromitem(self._item)
+        mgr = flc.manager
+        return mgr.create_view(
+            name=name,
+            spatial_reference=spatial_reference,
+            extent=extent,
+            allow_schema_changes=allow_schema_changes,
+            updateable=updateable,
+            capabilities=capabilities,
+            view_layers=view_layers,
+            view_tables=view_tables,
+            description=description,
+            tags=tags,
+            snippet=snippet,
+            overwrite=overwrite,
+            set_item_id=set_item_id,
+            preserve_layer_ids=preserve_layer_ids,
+        )
+
+    # ----------------------------------------------------------------------
+    def get_definitions(self, item: Item) -> list[ViewLayerDefParameter]:
+        """Gets the View Definition Parmaeters for a Given Item"""
+        if "View Service" in item.typeKeywords:
+            from arcgis.gis._impl._dataclasses import ViewLayerDefParameter
+
+            services = item.layers + item.tables
+            return [ViewLayerDefParameter.fromlayer(lyr) for lyr in services]
+        return []
+
+    # ----------------------------------------------------------------------
+    def update(self, layer_def: list[ViewLayerDefParameter] | None = None) -> bool:
+        """
+        Updates a set of layers with new queries, geometries, and column visibilities.
+
+        :returns: boolean
+        """
+        results = []
+        assert isinstance(layer_def, (list, tuple))
+        for lyrdef in layer_def:
+            assert isinstance(lyrdef, ViewLayerDefParameter)
+            layer = layer_def.layer
+            assert isinstance(layer, arcgis.features.FeatureLayer)
+            if "isView" in lyrdef.layer.properties and lyrdef.layer.properties.isView:
+                results.append(
+                    {
+                        layer._url: layer.container.manager.update_definition(
+                            lyrdef.as_json()
+                        )
+                    }
+                )
+            else:
+                raise ValueError("The layer is not a view.")
+            del lyrdef
+        return results
 
 
 ########################################################################

@@ -679,13 +679,15 @@ def show_point_cloud_batch(self, rows=2, figsize=(6, 12), color_mapping=None, **
 
     """
     It will plot 3d point cloud data you exported in the notebook.
+    Visualization of data, exported in a geographic coordinate system
+    is not yet supported.
 
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     rows                    Optional rows. Number of rows to show. Default
                             value is 2 and maximum value is the `batch_size`
-                            passed in `prepare_data`.
+                            passed in :meth:`~arcgis.learn.prepare_data` .
     ---------------------   -------------------------------------------
     color_mapping           Optional dictionary. Mapping from class value
                             to RGB values. Default value example:
@@ -706,7 +708,7 @@ def show_point_cloud_batch(self, rows=2, figsize=(6, 12), color_mapping=None, **
                             parameter to be [1, 2]. List of all classes
                             can be accessed from `data.classes` attribute
                             where `data` is the `Databunch` object returned
-                            by `prepare_data` function.
+                            by :meth:`~arcgis.learn.prepare_data`  function.
     ---------------------   -------------------------------------------
     width                   Optional integer. Width of the plot. Default
                             value is 750.
@@ -849,13 +851,15 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
 
     """
     It will plot 3d point cloud data you exported in the notebook.
+    Visualization of data, exported in a geographic coordinate system
+    is not yet supported.
 
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     rows                    Optional rows. Number of rows to show. Default
                             value is 2 and maximum value is the `batch_size`
-                            passed in `prepare_data`.
+                            passed in :meth:`~arcgis.learn.prepare_data` .
     ---------------------   -------------------------------------------
     color_mapping           Optional dictionary. Mapping from class value
                             to RGB values. Default value example:
@@ -876,7 +880,7 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
                             parameter to be [1, 2]. List of all classes
                             can be accessed from `data.classes` attribute
                             where `data` is the `Databunch` object returned
-                            by `prepare_data` function.
+                            by :meth:`~arcgis.learn.prepare_data`  function.
     ---------------------   -------------------------------------------
     width                   Optional integer. Width of the plot. Default
                             value is 750.
@@ -2473,6 +2477,8 @@ def show_results(self, rows, color_mapping=None, **kwargs):
     """
     It will plot results from your trained model with ground truth on the
     left and predictions on the right.
+    Visualization of data, exported in a geographic coordinate system
+    is not yet supported.
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -2722,24 +2728,27 @@ def compute_precision_recall(self):
     all_y = []
     all_pred = []
     for x_in, y_in in iter(valid_dl):
-        x_in, point_nums = x_in  ## (batch, total_points, num_features), (batch,)
-        batch, _, num_features = x_in.shape
-        indices = torch.tensor(
-            get_indices(batch, self.sample_point_num, point_nums.long())
-        ).to(x_in.device)
-        indices = indices.view(-1, 2).long()
-        x_in = (
-            x_in[indices[:, 0], indices[:, 1]]
-            .view(batch, self.sample_point_num, num_features)
-            .contiguous()
-        )  ## batch, self.sample_point_num, num_features
-        y_in = (
-            y_in[indices[:, 0], indices[:, 1]]
-            .view(batch, self.sample_point_num)
-            .contiguous()
-            .cpu()
-            .numpy()
-        )  ## batch, self.sample_point_num
+        if not getattr(self, "_is_RandLANet", False):
+            x_in, point_nums = x_in  ## (batch, total_points, num_features), (batch,)
+            batch, _, num_features = x_in.shape
+            indices = torch.tensor(
+                get_indices(batch, self.sample_point_num, point_nums.long())
+            ).to(x_in.device)
+            indices = indices.view(-1, 2).long()
+            x_in = (
+                x_in[indices[:, 0], indices[:, 1]]
+                .view(batch, self.sample_point_num, num_features)
+                .contiguous()
+            )  ## batch, self.sample_point_num, num_features
+            y_in = (
+                y_in[indices[:, 0], indices[:, 1]]
+                .view(batch, self.sample_point_num)
+                .contiguous()
+                .cpu()
+                .numpy()
+            )  ## batch, self.sample_point_num
+        else:
+            y_in = y_in.cpu().numpy()
         with torch.no_grad():
             preds = model(x_in).detach().cpu().numpy()
         predicted_labels = preds.argmax(axis=-1)
@@ -2859,7 +2868,7 @@ def augment(points, xforms, range=None):
 class Transform3d(object):
 
     """
-    Creates a 3D transformation that can be used in `prepare_data`
+    Creates a 3D transformation that can be used in :meth:`~arcgis.learn.prepare_data`
     to apply data augmentation to blocks, with a 50 % probability.
     Applicable only for dataset_type=’PointCloud’.
 
@@ -2888,7 +2897,7 @@ class Transform3d(object):
                             Default: 0.0.
     =====================   ===========================================
 
-    :return: `Transform3d` object
+    :return: :class:`~arcgis.learn.Transform3d` object
     """
 
     def __init__(
@@ -3170,6 +3179,8 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
     """
     It will plot results from your trained model with ground truth on the
     left and predictions on the right.
+    Visualization of data, exported in a geographic coordinate system
+    is not yet supported.
 
     =====================   ===========================================
     **Argument**            **Description**

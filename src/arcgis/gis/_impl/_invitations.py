@@ -20,11 +20,11 @@ class InvitationManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<InvitationManager @ {url}>".format(url=self._url)
+        return "< InvitationManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<InvitationManager @ {url}>".format(url=self._url)
+        return "< InvitationManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __len__(self):

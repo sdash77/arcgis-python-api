@@ -177,8 +177,10 @@ class Logs(BasePortalAdmin):
                           delimited list of filter definitions. If any definition is
                           omitted, it defaults to all ("*").
                           :Example:
+
                           {"codes":[204000-205999,212015,219114], "users":["admin","jcho"],
-                           "source": ["PORTAL ADMIN"]}
+                          "source": ["PORTAL ADMIN"]}
+
                           The source of logged events are generated from the sharing,
                           administrative, and portal components of the software.
                           For example:

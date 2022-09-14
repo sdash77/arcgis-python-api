@@ -457,11 +457,14 @@ class Geocoder(_GISResource):
                 matches = [None] * len(addresses)
                 locations = resp["locations"]
                 for idx, location in enumerate(locations):
-                    geom = copy.copy(location["location"])
-                    if "spatialReference" not in geom:
+                    geom = copy.copy(location.get("location", None))
+                    if geom and "spatialReference" not in geom:
                         geom["spatialReference"] = sr
                     att = location["attributes"]
-                    matches[idx] = {"geometry": Geometry(geom), "attributes": att}
+                    if geom:
+                        matches[idx] = {"geometry": Geometry(geom), "attributes": att}
+                    else:
+                        matches[idx] = {"geometry": None, "attributes": att}
                 return FeatureSet(features=matches, spatial_reference=sr)
             elif resp is not None and as_featureset == False:
                 matches = [None] * len(addresses)
@@ -1010,6 +1013,8 @@ def geocode_from_items(
 
     _item_type = "SERVICE"
     item = None
+    if gis is None:
+        gis = arcgis.env.active_gis
     url = gis.properties.helperServices.asyncGeocode.url
     tbx = Toolbox(url=url, gis=gis)
 
@@ -1041,7 +1046,24 @@ def geocode_from_items(
             "The registered geocoders are not valid to use with this tool."
         )
 
-    if isinstance(input_data, Item):
+    if (
+        isinstance(input_data, Item)
+        and input_data.type == "Feature Service"
+        and input_data.tables
+    ):
+        lyr = input_data.tables[0]
+        kwargs["input_table"] = {"url": lyr.url}
+        if gis._con.token:
+            kwargs["input_table"]["serviceToken"] = gis._con.token
+        if geocode_parameters is None:
+
+            kwargs["geocode_parameters"] = analyze_geocode_input(
+                input_table_or_item=lyr,
+                geocode_service_url=geocode_service_url,
+                gis=gis,
+            )
+
+    elif isinstance(input_data, Item):
         _item_type = input_data.type
         kwargs["input_file_item"] = {"itemid": input_data.itemid}
     elif isinstance(input_data, dict):
@@ -1084,31 +1106,21 @@ def geocode_from_items(
             geocode_service_url=geocode_service_url,
             gis=gis,
         )
-
-    if output_type == "Feature Layer" and output_name is None:
+    if output_type in ["Feature Layer", "Feature Service", "FeatureLayer"]:
+        output_type = "Feature Service"
+        kwargs["output_type"] = "Feature Service"
         if output_name is None:
-            output_service = _create_output_service(
-                gis=gis,
-                output_name="Geocoded_Feature_Service_ %" % uid,
-                output_service_name="Geocoded_Feature_Service_ %" % uid,
-                task="Geocoding",
-            )
-        else:  # output_type == 'Feature Layer':
-            output_service = _create_output_service(
-                gis=gis,
-                output_name="Geocoded_Feature_Service_%s" % uid,
-                output_service_name="Geocoded_Feature_Service_%s" % uid,
-                task="Geocoding",
-            )
-        kwargs["output_name"] = json.dumps(
-            {
-                "serviceProperties": {
-                    "name": output_name,
-                    "serviceUrl": output_service.url,
-                },
-                "itemProperties": {"itemId": output_service.itemid},
+
+            kwargs["output_name"] = {
+                "serviceProperties": {"name": "Geocoded_Feature_Service_%s" % uid}
             }
-        )
+        else:
+            kwargs["output_name"] = {
+                "serviceProperties": {
+                    "name": "Geocoded_Feature_Service_%s"
+                    % output_name.replace(" ", "_")
+                }
+            }
     elif output_type in ["XLS", "xls", "XLSX", "xlsx"]:
         if output_name:
             kwargs["output_name"] = {
@@ -1122,7 +1134,7 @@ def geocode_from_items(
                 }
             }
         else:
-            output_name = "Geocoded_Result_ %" % uid
+            output_name = "Geocoded_Result_ %s" % uid
             kwargs["output_name"] = {
                 "itemProperties": {
                     "title": "Geocoded Results %s" % output_name,
@@ -1161,9 +1173,16 @@ def geocode_from_items(
     for k, v in list(kwargs.items()):
         if v is None:
             kwargs.pop(k)
+
     res = tbx.batch_geocode(**kwargs)
     if "itemId" in res:
         return gis.content.get(res["itemId"])
+    elif hasattr(res, "geocode_result"):
+        item_id = res.geocode_result.get("itemId", None)
+        if item_id:
+            return gis.content.get(item_id)
+        else:
+            res
     else:
         return res
 
@@ -1481,7 +1500,7 @@ def batch_geocode(
     as_featureset: bool = False,
     match_out_of_range: bool = True,
     location_type: str = "street",
-    search_extent: Optional[Union[list[dict[str, Any], dict[str, Any]]]] = None,
+    search_extent: Optional[Union[list[dict[str, Any]], dict[str, Any]]] = None,
     lang_code: str = "EN",
     preferred_label_values: Optional[str] = None,
     out_fields: Optional[str] = None,
@@ -1627,7 +1646,7 @@ def suggest(
     distance: Optional[float] = None,
     category: Optional[str] = None,
     geocoder: Optional[Geocoder] = None,
-    search_extent: Optional[Union[list[dict[str, Any], dict[str, Any]]]] = None,
+    search_extent: Optional[Union[list[dict[str, Any]], dict[str, Any]]] = None,
     max_suggestions: int = 5,
     country_code: Optional[str] = None,
 ):

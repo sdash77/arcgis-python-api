@@ -103,6 +103,8 @@ class MMDetectionConfig:
         self.model = model
         self.cfg = cfg
 
+        logging.disable(0)
+
         return model
 
     def on_batch_begin(self, learn, model_input_batch, model_target_batch, **kwargs):
@@ -192,9 +194,11 @@ class MMDetectionConfig:
 
         if hasattr(self.model, "roi_head"):
             self.model.roi_head.test_cfg.nms.iou_threshold = self.nms_thres
+            thres = self.model.roi_head.test_cfg.score_thr
             self.model.roi_head.test_cfg.score_thr = self.thresh
         else:
             self.model.bbox_head.test_cfg.nms.iou_threshold = self.nms_thres
+            thres = self.model.bbox_head.test_cfg.score_thr
             self.model.bbox_head.test_cfg.score_thr = self.thresh
 
         post_processed_pred = []
@@ -207,11 +211,11 @@ class MMDetectionConfig:
             label = self.numpy.concatenate(label) + 1
             score = bbox[:, -1]
             bbox = bbox[:, 0:-1]
-
+            kip_pred = score > thres
             bbox, label, score = (
-                self.torch.from_numpy(bbox),
-                self.torch.from_numpy(label),
-                self.torch.from_numpy(score),
+                self.torch.from_numpy(bbox[kip_pred]),
+                self.torch.from_numpy(label[kip_pred]),
+                self.torch.from_numpy(score[kip_pred]),
             )
             # convert bboxes in range -1 to 1.
             bbox = bbox / (chip_size / 2) - 1
@@ -233,21 +237,21 @@ class MMDetection(ModelExtension):
     **Argument**                    **Description**
     -----------------------------   ---------------------------------------------
     data                            Required fastai Databunch. Returned data object from
-                                    ``prepare_data`` function.
+                                    :meth:`~arcgis.learn.prepare_data`  function.
     -----------------------------   ---------------------------------------------
     model                           Required model name or path to the configuration file
-                                    from ``MMDetection`` repository. The list of the
+                                    from :class:`~arcgis.learn.MMDetection` repository. The list of the
                                     supported models can be queried using
-                                    ``MMDetection.supported_models``.
+                                    :attr:`~arcgis.learn.MMDetection.supported_models` .
     -----------------------------   ---------------------------------------------
     model_weight                    Optional path of the model weight from
-                                    ``MMDetection`` repository.
+                                    :class:`~arcgis.learn.MMDetection` repository.
     -----------------------------   ---------------------------------------------
     pretrained_path                 Optional string. Path where pre-trained model is
                                     saved.
     =============================   =============================================
 
-    :return: ``MMDetection`` Object
+    :return: :class:`~arcgis.learn.MMDetection` Object
     """
 
     def __init__(self, data, model, model_weight=False, pretrained_path=None, **kwargs):
@@ -327,7 +331,7 @@ class MMDetection(ModelExtension):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a ``MMDetection`` object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.MMDetection` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -336,12 +340,12 @@ class MMDetection(ModelExtension):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from ``prepare_data`` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data`  function or None for
                                 inferencing.
 
         =====================   ===========================================
 
-        :return: `MMDetection` Object
+        :return: :class:`~arcgis.learn.MMDetection` Object
         """
         emd_path = _get_emd_path(emd_path)
 

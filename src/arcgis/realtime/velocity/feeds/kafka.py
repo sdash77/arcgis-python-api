@@ -2,7 +2,12 @@ from typing import Union, Optional, ClassVar
 from dataclasses import dataclass
 
 from arcgis.realtime import Velocity
-from arcgis.realtime.velocity.feeds.kafka_authentication_type import NoAuth, SASLPlain
+from arcgis.realtime.velocity.feeds.kafka_authentication_type import (
+    NoAuth,
+    SASLPlain,
+    SaslScramSha256,
+    SaslScramSha512,
+)
 from arcgis.realtime.velocity.feeds._feed_template import _FeedTemplate
 from arcgis.realtime.velocity.feeds.geometry import (
     _HasGeometry,
@@ -26,43 +31,46 @@ class Kafka(_FeedTemplate, _HasTime, _HasGeometry):
     Receive event data from a Kafka broker. This data class can be used to define the feed configuration and to
     create the feed.
 
-    ==================      ====================================================================
+    ==================      ============================================================================================
     **Argument**            **Description**
-    ------------------      --------------------------------------------------------------------
-    label                   str. Unique label for this feed instance.
-    ------------------      --------------------------------------------------------------------
-    description             str. Feed description.
-    ------------------      --------------------------------------------------------------------
-    brokers                 str. Comma-separated list of Kafka brokers, including the port, such as
-                            host1.domain.com:9092,host2.domain.com:9092.
+    ------------------      --------------------------------------------------------------------------------------------
+    label                   String. Unique label for this feed instance.
+    ------------------      --------------------------------------------------------------------------------------------
+    description             String. Feed description.
+    ------------------      --------------------------------------------------------------------------------------------
+    brokers                 String. Comma-separated list of Kafka brokers, including the port, such as
 
-                            For example: kafkaServer1.hostname.com:9092,kafkaServer2.hostname.com:9092
-    ------------------      --------------------------------------------------------------------
-    topics                  str. Topic to which the output will send messages.
-    ------------------      --------------------------------------------------------------------
-    authentication          Union[NoAuth, SASLPlain]. Kafka authentication type.
-    ==================      ====================================================================
+                            ``host1.domain.com:9092`` , ``host2.domain.com:9092`` .
+
+                            For example:
+
+                                kafkaServer1.hostname.com:9092,kafkaServer2.hostname.com:9092
+    ------------------      --------------------------------------------------------------------------------------------
+    topics                  String. Topic to which the output will send messages.
+    ------------------      --------------------------------------------------------------------------------------------
+    authentication          [:class:`~arcgis.realtime.velocity.feeds.NoAuth`, :class:`~arcgis.realtime.velocity.feeds.SASLPlain` ,  :class:`~arcgis.realtime.velocity.feeds.SaslScramSha512` :class:`~arcgis.realtime.velocity.feeds.SaslScramSha256`]. Kafka authentication type.
+    ==================      ============================================================================================
 
     =====================   ============================================================================================
     **Optional Argument**   **Description**
     =====================   ============================================================================================
-    consumer_group_id       str. A unique string that identifies the consumer group this feed
+    consumer_group_id       String. A unique string that identifies the consumer group this feed
                             belongs to as a consumer.
     ---------------------   --------------------------------------------------------------------------------------------
-    data_format             Union[DelimitedFormat, EsriJsonFormat, GeoJsonFormat, JsonFormat, XMLFormat].
+    data_format             [:class:`~arcgis.realtime.velocity.input.EsriJsonFormat`, :class:`~arcgis.realtime.velocity.input.GeoJsonFormat`, :class:`~arcgis.realtime.velocity.input.DelimitedFormat`, :class:`~arcgis.realtime.velocity.input.JsonFormat`, :class:`~arcgis.realtime.velocity.input.XMLFormat`].
                             An instance that contains the data format
                             configuration for this feed. Configure only allowed formats.
                             If this is not set right during initialization, a format will be
                             auto-detected and set from a sample of the incoming data. This sample
                             will be fetched from the configuration provided so far in the init.
     ---------------------   --------------------------------------------------------------------------------------------
-    track_id_field          str. name of the field from the incoming data that should be set as
+    track_id_field          String. name of the field from the incoming data that should be set as
                             track ID.
     ---------------------   --------------------------------------------------------------------------------------------
-    geometry                Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry configuration
+    geometry                [:class:`~arcgis.realtime.velocity.feeds.XYZGeometry`, :class:`~arcgis.realtime.velocity.feeds.SingleFieldGeometry`]. An instance of geometry configuration
                             that will be used to create geometry objects from the incoming data.
     ---------------------   --------------------------------------------------------------------------------------------
-    time                    Union[TimeInstant, TimeInterval]. An instance of time configuration that
+    time                    [:class:`~arcgis.realtime.velocity.feeds.TimeInstant`, :class:`~arcgis.realtime.velocity.feeds.TimeInterval`]. An instance of time configuration that
                             will be used to create time information from the incoming data.
     =====================   ============================================================================================
 
@@ -100,7 +108,7 @@ class Kafka(_FeedTemplate, _HasTime, _HasGeometry):
     # Kafka specific properties
     brokers: str
     topics: str
-    authentication: Union[NoAuth, SASLPlain]
+    authentication: Union[NoAuth, SASLPlain, SaslScramSha256, SaslScramSha512]
     consumer_group_id: Optional[str] = None
 
     # user can define these properties even after initialization

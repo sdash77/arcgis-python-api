@@ -106,12 +106,13 @@ def trace_downstream(
 
                            The default value is False.
     ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS Object instance. If not provided as input, a GIS object instance logged into an
+    gis                    Optional :class:`~arcgis.gis.GIS` Object instance. If not provided as input, a GIS object instance logged into an
                            active portal with elevation helper services defined must already
                            be created in the active Python session. A GIS object instance can
                            also be optionally explicitly passed in through this parameter.
     ------------------     --------------------------------------------------------------------
-    future                 Optional boolean. If True, the result will be a `GPJob` and results will be returned asynchronously.
+    future                 Optional boolean. If True, a future object will be returned and the process
+                           will not wait for the task to complete. The default is False, which means wait for results.
     ==================     ====================================================================
 
     :return: A new :class:`~arcgis.features.FeatureSet`
@@ -241,7 +242,7 @@ def watershed(
 
                                  The default value is False.
     ------------------------     --------------------------------------------------------------------
-    gis                          Optional GIS Object instance. If not provided as input, a GIS object instance logged into an
+    gis                          Optional :class:`~arcgis.gis.GIS` Object instance. If not provided as input, a GIS object instance logged into an
                                  active portal with elevation helper services defined must already
                                  be created in the active Python session. A GIS object instance can
                                  also be optionally explicitly passed in through this parameter.
@@ -251,7 +252,8 @@ def watershed(
 
                                  The default value is True.
     ------------------------     --------------------------------------------------------------------
-    future                       Optional boolean. If True, the result will be a `GPJob` and results will be returned asynchronously.
+    future                       Optional boolean. If True, a future object will be returned and the process
+                                 will not wait for the task to complete. The default is False, which means wait for results.
     ========================     ====================================================================
 
     :return:

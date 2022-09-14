@@ -46,6 +46,25 @@ try:
 except ImportError:
     _FEATURE_INPUTS = (Feature, FeatureSet, FeatureLayer, FeatureCollection)
 
+
+def _is_dask(df):
+    """check if dask DataFrame"""
+    try:
+        import dask.dataframe as dd
+
+        if (
+            isinstance(df, dd.DataFrame)
+            and hasattr(df, "spatial")
+            and getattr(df.spatial, "name")
+        ):
+            return True
+        else:
+            return False
+    except Exception as e:
+        return False
+    return False
+
+
 __all__ = [
     "_GeoanalyticsTools",
     "_FeatureAnalysisTools",
@@ -102,6 +121,16 @@ def _tempinput(data):
 
 ###########################################################################
 class BaseAnalytics(object):
+    @lru_cache(maxsize=255)
+    def _validate_token(self, con: "Connection", url: str, token: str) -> bool:
+        """validates that a token should be given to the endpoint"""
+        resp = con.get(f"{url}?token={token}", try_json=True, return_raw_response=True)
+        if resp.text.lower().find("error") == -1:
+            return True
+        else:
+            return False
+        return False
+
     def _feature_input(self, input_layer):
         from arcgis.features.geo._accessor import _is_geoenabled
 
@@ -217,7 +246,10 @@ class BaseAnalytics(object):
                         token = input_layer.layers[0]._gis._con._create_token(
                             input_layer_url
                         )
-                        input_param.update({"serviceToken": token})
+                        if token and self._validate_token(
+                            input_layer._gis._con, url=input_layer_url, token=token
+                        ):
+                            input_param.update({"serviceToken": token})
                 except:
                     pass
             elif input_layer.type.lower() == "feature collection":
@@ -248,7 +280,10 @@ class BaseAnalytics(object):
                     and "serviceToken" not in input_param.keys()
                 ):
                     token = input_layer._gis._con._create_token(input_layer_url)
-                    input_param.update({"serviceToken": token})
+                    if token and self._validate_token(
+                        input_layer._gis._con, url=input_layer_url, token=token
+                    ):
+                        input_param.update({"serviceToken": token})
             except:
                 pass
 
@@ -258,6 +293,10 @@ class BaseAnalytics(object):
             input_param = point_fs
             input_param["featureSet"]["features"][0]["geometry"]["x"] = input_layer[1]
             input_param["featureSet"]["features"][0]["geometry"]["y"] = input_layer[0]
+        elif _is_dask(input_layer):
+            input_param = (
+                input_layer.spatial.to_feature_collection().compute()._lyr_dict
+            )
 
         elif isinstance(
             input_layer, dict
@@ -780,7 +819,11 @@ class _FeatureAnalysisTools(BaseAnalytics):
     # ----------------------------------------------------------------------
     def _output_name_dict(self, output_name, overwrite):
         if output_name and isinstance(output_name, str):
-            output_name = {"serviceProperties": {"name": output_name}}
+            output_name = {
+                "serviceProperties": {
+                    "name": str(output_name).strip().replace(" ", "_")
+                }
+            }
         elif output_name and isinstance(output_name, FeatureLayer):
             _lyr_dict = {
                 "serviceProperties": {
@@ -3504,7 +3547,17 @@ class _FeatureAnalysisTools(BaseAnalytics):
             params["outputName"] = {"itemProperties": output_name}
             output_name = params["outputName"]
         else:
-            params["outputName"] = {"serviceProperties": {"name": output_name}}
+            params["outputName"] = {
+                "serviceProperties": {"name": output_name},
+                "itemProperties": {
+                    "title": output_name,
+                    "description": "File generated from running the Extract Data solution.",
+                    "tags": "Analysis Result, Extract Data",
+                    "snippet": "Analysis File item generated from Extract Data",
+                    "folderId": "",
+                },
+            }
+
             output_name = params["outputName"]
         if context is not None:
             params["context"] = context
@@ -3517,7 +3570,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             input_layers=input_layers_param,
             extent=extent,
             clip=clip,
-            data_format=data_format,
+            data_format=data_format.upper(),
             output_name=output_name,
             context=context,
             gis=self._gis,
@@ -4502,7 +4555,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                                                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+                                                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online.
 
                                                                                 .. code-block:: python
 
@@ -5402,6 +5455,9 @@ class _FeatureAnalysisTools(BaseAnalytics):
             "output_name": output_name,
             "context": context,
             "records_to_match": records_to_match,
+            "spatial_relationship": spatial_relationship,
+            "spatial_relationship_distance": spatial_relationship_distance,
+            "spatial_relationship_distance_units": spatial_relationship_distance_units,
             "future": future,
             "join_type": join_type,
         }
@@ -6068,7 +6124,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         * Where is the center?
         * Which feature is the most accessible from all other features?
         * How dispersed, compact, or integrated are the features?
-        * Are there directional trends?s
+        * Are there directional trends?
 
         ====================    =========================================================
         **Argument**            **Description**
@@ -6102,7 +6158,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online Only.
+                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online Only and Enterprise 11+.
 
                                     .. code-block:: python
 
@@ -6132,7 +6188,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
         params = {}
         analysis_layer = self._feature_input(analysis_layer)
-        if self._gis._is_agol:
+
+        if self._gis.version > [9, 2] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -7675,7 +7732,7 @@ class _OrthoMappingTools:
         context=None,
         gis=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
 
@@ -7794,7 +7851,7 @@ class _OrthoMappingTools:
         context=None,
         gis=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         The `compute_control_points` operation is a service tool that's used to compute matching control points between images in an image collection, and for matching control points between the image collection's images and the reference image.
@@ -7886,7 +7943,7 @@ class _OrthoMappingTools:
         context=None,
         gis=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
 
@@ -7981,7 +8038,7 @@ class _OrthoMappingTools:
         context=None,
         gis=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         The `compute_sensor_model` operation is a service that computes the bundle block adjustment for the image collection and applies the frame transformation to the images. It also generates the control point, solution, solution points, and flight path tables, though these tables are not published as portal items.
@@ -8075,7 +8132,7 @@ class _OrthoMappingTools:
         context=None,
         gis=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
 
@@ -8151,7 +8208,7 @@ class _OrthoMappingTools:
         context=None,
         gis=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
 
@@ -8297,7 +8354,7 @@ class _OrthoMappingTools:
         context=None,
         gis=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         The `generate_orthomosaic` is a service tool that's used to generate a single orthorectified, mosaicked image from an image collection after the block adjustment.
@@ -8507,7 +8564,7 @@ class _OrthoMappingTools:
         context=None,
         gis=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         The `match_control_points` is a tool that takes a collection of ground control points in JSON as input, and at least on of the ground control points has matching tie points. The service will compute the remaining matching tie points.
@@ -8982,7 +9039,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 "itemProperties": {"itemId": output_service.itemid},
             }
         elif isinstance(output_name, arcgis.gis.Item):
-            output_service = None  # output_name
+            output_service = output_name
             output_raster = {"itemProperties": {"itemId": output_service.itemid}}
         else:
             raise TypeError("output_raster should be a string (service name) or Item")
@@ -9333,7 +9390,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         raster_type_params=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
 
         """
@@ -9443,7 +9500,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         value_range=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         Computes the extent of every raster in a mosaic dataset.
@@ -9556,7 +9613,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         context=None,
         input_barriers=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
 
         """
@@ -9645,7 +9702,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_back_direction_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
 
         """
@@ -9839,7 +9896,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         allocation_field=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
 
         """ """
@@ -9918,7 +9975,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         additional_input_raster=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
 
         """
@@ -9985,7 +10042,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         process_all_raster_items=False,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
 
         """
@@ -10114,7 +10171,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         value_field=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
 
         """
@@ -10185,7 +10242,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         create_multipart_features=False,
         max_vertices_per_feature=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         This service tool converts imagery data to feature class vector data.
@@ -10327,7 +10384,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         context=None,
         future=False,
         md_to_upload=None,
-        **kwargs
+        **kwargs,
     ):
 
         """
@@ -10560,7 +10617,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         above_ground_level_output_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
 
         """ """
@@ -10707,7 +10764,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         process_all_raster_items=False,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         Function can be used to generate feature service that contains polygons on detected objects
@@ -10906,7 +10963,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_neighbor_network_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         calculates the optimum cost network from a set of input regions.
@@ -11077,7 +11134,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         path_type=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """DetermineTravelCostPathsToDestinations GPtool"""
         task = "DetermineTravelCostPathsToDestinations"
@@ -11114,7 +11171,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         destination_field=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         Calculates the least cost polyline path between sources and known destinations.
@@ -11317,9 +11374,13 @@ class _RasterAnalysisTools(BaseAnalytics):
         process_all_raster_items=False,
         blacken_around_feature=False,
         fix_chip_size=True,
+        additional_input_raster=None,
+        input_instance_data=None,
+        instance_class_value_field=None,
+        min_polygon_overlap_ratio=0,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         Function is designed to generate training sample image chips from the input imagery data with
@@ -11507,6 +11568,11 @@ class _RasterAnalysisTools(BaseAnalytics):
                 "Classified_Tiles",
                 "RCNN_Masks",
                 "Labeled_Tiles",
+                "MultiLabeled_Tiles",
+                "Export_Tiles",
+                "CycleGAN",
+                "Imagenet",
+                "Panoptic_Segmentation",
             ]
             if not metadata_format in metadataFormatAllowedValues:
                 raise RuntimeError(
@@ -11526,7 +11592,42 @@ class _RasterAnalysisTools(BaseAnalytics):
                     + str(reference_system_allowed_values)
                 )
 
+        if additional_input_raster is not None:
+            additional_input_raster = self._layer_input(
+                input_layer=additional_input_raster
+            )
+
+        if input_instance_data is not None:
+            input_instance_data = self._layer_input(input_layer=input_instance_data)
+
         if (
+            "currentVersion" in self._gis._tools.rasteranalysis.properties.keys()
+        ) and self._gis._tools.rasteranalysis.properties["currentVersion"] >= 11.0:
+            gpjob = self._tbx.export_training_datafor_deep_learning(
+                input_raster=input_raster,
+                output_location=output_location,
+                input_class_data=input_class_data,
+                chip_format=chip_format,
+                tile_size=tile_size,
+                stride_size=stride_size,
+                metadata_format=metadata_format,
+                class_value_field=class_value_field,
+                buffer_radius=buffer_radius,
+                input_mask_polygons=input_mask_polygons,
+                rotation_angle=rotation_angle,
+                reference_system=reference_system,
+                process_all_raster_items=process_all_raster_items,
+                blacken_around_feature=blacken_around_feature,
+                fix_chip_size=fix_chip_size,
+                additional_input_raster=additional_input_raster,
+                input_instance_data=input_instance_data,
+                instance_class_value_field=instance_class_value_field,
+                min_polygon_overlap_ratio=min_polygon_overlap_ratio,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
+        elif (
             "currentVersion" in self._gis._tools.rasteranalysis.properties.keys()
         ) and self._gis._tools.rasteranalysis.properties["currentVersion"] >= 10.8:
             gpjob = self._tbx.export_training_datafor_deep_learning(
@@ -11645,7 +11746,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_drop_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         Replaces cells of a raster corresponding to a mask
@@ -11789,7 +11890,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
 
@@ -11970,7 +12071,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_prediction_error=False,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         This tool allows you to predict values at new locations based on measurements from a collection of points. The tool
@@ -12235,7 +12336,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         remove_tiling_artifacts=False,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         Groups together adjacent pixels having similar spectral and spatial characteristics into
@@ -12394,7 +12495,9 @@ class _RasterAnalysisTools(BaseAnalytics):
         process_as_multidimensional=False,
         percentile_value=90,
         percentile_interpolation_type="AUTO_DETECT",
-        **kwargs
+        circular_calculation=False,
+        circular_wrap_value=360,
+        **kwargs,
     ):
         """
         Parameters
@@ -12522,7 +12625,9 @@ class _RasterAnalysisTools(BaseAnalytics):
                 gis=gis,
                 future=True,
             )
-        elif (current_version is not None) and current_version >= 10.9:
+        elif (current_version is not None) and (
+            current_version >= 10.9 and current_version < 11
+        ):
             gpjob = self._tbx.summarize_raster_within(
                 input_zone_layer=input_zone_layer,
                 zone_field=zone_field,
@@ -12534,6 +12639,23 @@ class _RasterAnalysisTools(BaseAnalytics):
                 process_as_multidimensional=process_as_multidimensional,
                 percentile_value=percentile_value,
                 percentile_interpolation_type=percentile_interpolation_type,
+                gis=gis,
+                future=True,
+            )
+        elif (current_version is not None) and current_version >= 11:
+            gpjob = self._tbx.summarize_raster_within(
+                input_zone_layer=input_zone_layer,
+                zone_field=zone_field,
+                input_raster_layerto_summarize=input_raster_layer_to_summarize,
+                output_name=output_raster,
+                statistic_type=statistic_type,
+                ignore_missing_values=ignore_missing_values,
+                context=context,
+                process_as_multidimensional=process_as_multidimensional,
+                percentile_value=percentile_value,
+                percentile_interpolation_type=percentile_interpolation_type,
+                circular_calculation=circular_calculation,
+                circular_wrap_value=circular_wrap_value,
                 gis=gis,
                 future=True,
             )
@@ -12559,7 +12681,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         segment_attributes="COLOR;MEAN",
         dimension_value_field=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
 
@@ -12630,7 +12752,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         return_first_file=False,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
 
         """
@@ -12757,7 +12879,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         raster_type_name=None,
         raster_type_params=None,
         md_to_upload=None,
-        **kwargs
+        **kwargs,
     ):
         """
          input_raster: inputRaster (str). Required parameter.
@@ -12923,7 +13045,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         dimensionless=False,
         percentile_value=90,
         percentile_interpolation_type="NEAREST",
-        **kwargs
+        **kwargs,
     ):
         """
         input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
@@ -13136,7 +13258,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         context=None,
         reference_mean_raster=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
@@ -13272,7 +13394,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         context=None,
         future=False,
         delete_transpose=False,
-        **kwargs
+        **kwargs,
     ):
         """
         input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
@@ -13345,7 +13467,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         slope_p_value=False,
         seasonal_period="DAYS",
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
@@ -13525,7 +13647,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         interval_unit=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
@@ -13667,7 +13789,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         comparison="EQUAL_TO",
         occurrence="FIRST_OCCURRENCE",
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         input_raster: inputRaster (str). Required parameter.
@@ -13890,7 +14012,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         value_option=[],
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         input_raster: inputRaster (str). Required parameter.
@@ -13971,7 +14093,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         iteration_unit=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
@@ -14102,7 +14224,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         destination_field=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
 
@@ -14251,7 +14373,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_feature_class=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         Function can be used to output feature service with assigned class label for each feature based on
@@ -14427,7 +14549,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         num_of_bands=None,
         composite_value=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         Parameters
@@ -14483,7 +14605,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         context=None,
         future=False,
         create_network_paths="DESTINATIONS_TO_SOURCES",
-        **kwargs
+        **kwargs,
     ):
         """
         Parameters
@@ -14660,7 +14782,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_neighbor_connections_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         Parameters
@@ -14902,7 +15024,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_source_location_raster_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
 
         """
@@ -15095,7 +15217,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_source_location_raster_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
 
         """
@@ -15291,7 +15413,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
@@ -15381,7 +15503,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         input_change_analysis_raster: inputChangeAnalysisRaster (str). Required parameter.
@@ -15563,7 +15685,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         dimension_description=None,
         dimension_unit=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         target_multidimensional_raster: targetMultidimensionalRaster (str). Required parameter.
@@ -15649,7 +15771,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         generate_feature_class=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         in_rasters: inRasters (str). Required parameter.
@@ -15789,7 +15911,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         mask_features=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         detected_features: detectedFeatures (str). Required parameter.
@@ -15902,7 +16024,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         input_multidimensional_rasters: inputMultidimensionalRasters (str). Required parameter.
@@ -15984,7 +16106,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         input_multidimensional_raster: inputMultidimensionalRaster (str). Required parameter.
@@ -16083,7 +16205,9 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_name=None,
         context=None,
         future=False,
-        **kwargs
+        circular_calculation=False,
+        circular_wrap_value=360,
+        **kwargs,
     ):
         """
         Calculates  the values of a raster within the zones of another dataset and reports the results to a table.
@@ -16301,20 +16425,44 @@ class _RasterAnalysisTools(BaseAnalytics):
         else:
             output_name = json.dumps({"serviceProperties": {"name": output_name}})
 
-        gpjob = self._tbx.zonal_statistics_as_table(
-            input_zone_raster_or_features=input_zone_raster_or_features,
-            input_value_raster=input_value_raster,
-            zone_field=zone_field,
-            ignore_nodata=ignore_nodata,
-            statistic_type=statistic_type,
-            percentile_values=percentile_values,
-            process_as_multidimensional=process_as_multidimensional,
-            percentile_interpolation_type=percentile_interpolation_type,
-            output_table_name=output_name,
-            context=context,
-            gis=self._gis,
-            future=True,
-        )
+        current_version = None
+        if "currentVersion" in self._gis._tools.rasteranalysis.properties.keys():
+            current_version = self._gis._tools.rasteranalysis.properties[
+                "currentVersion"
+            ]
+
+        if (current_version is not None) and current_version < 11:
+            gpjob = self._tbx.zonal_statistics_as_table(
+                input_zone_raster_or_features=input_zone_raster_or_features,
+                input_value_raster=input_value_raster,
+                zone_field=zone_field,
+                ignore_nodata=ignore_nodata,
+                statistic_type=statistic_type,
+                percentile_values=percentile_values,
+                process_as_multidimensional=process_as_multidimensional,
+                percentile_interpolation_type=percentile_interpolation_type,
+                output_table_name=output_name,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
+        elif (current_version is not None) and current_version >= 11:
+            gpjob = self._tbx.zonal_statistics_as_table(
+                input_zone_raster_or_features=input_zone_raster_or_features,
+                input_value_raster=input_value_raster,
+                zone_field=zone_field,
+                ignore_nodata=ignore_nodata,
+                statistic_type=statistic_type,
+                percentile_values=percentile_values,
+                process_as_multidimensional=process_as_multidimensional,
+                percentile_interpolation_type=percentile_interpolation_type,
+                output_table_name=output_name,
+                context=context,
+                gis=self._gis,
+                future=True,
+                circular_calculation=circular_calculation,
+                circular_wrap_value=circular_wrap_value,
+            )
 
         gpjob._is_ra = True
         gpjob._item_properties = True
@@ -16336,7 +16484,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         input_from_raster: inputFromRaster (str). Required parameter.
@@ -16346,7 +16494,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_name: outputName (str). Required parameter.
 
         compute_change_method: computeChangeMethod (str). Optional parameter.
-           Choice list:DIFFERENCE,RELATIVE_DIFFERENCE,CATEGORICAL_DIFFERENCE
+           Choice list:DIFFERENCE,RELATIVE_DIFFERENCE,CATEGORICAL_DIFFERENCE, SPECTRAL_EUCLIDEAN_DISTANCE, SPECTRAL_ANGLE_DIFFERENCE, BAND_WITH_MOST_CHANGE
 
         from_classes: fromClasses (str). Optional parameter.
 
@@ -16487,7 +16635,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         overwrite_model=False,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         Function can be used to train a deep learning model using the output from the
@@ -16498,7 +16646,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        input_folder                             Required string. This is the input location for the training sample data.
+        in_folder                                Required string. This is the input location for the training sample data.
                                                  It can be the path of output location on the file share raster data store or a
                                                  shared file system path.
                                                  The training sample data folder needs to be the output of export_training_data function,
@@ -16622,6 +16770,14 @@ class _RasterAnalysisTools(BaseAnalytics):
 
         if isinstance(in_folder, arcgis.gis.Datastore):
             in_folder = in_folder.datapath
+        elif isinstance(in_folder, list):
+            in_folder = [
+                folder.datapath
+                if isinstance(folder, arcgis.gis.Datastore)
+                else str(folder)
+                for folder in in_folder
+            ]
+            in_folder = ",".join(in_folder)
 
         if pretrained_model is not None:
             pretrained_model = self._set_param(pretrained_model)
@@ -16698,7 +16854,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_summary_table_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         Generates a table containing the pixel count for each class, in each slice of an input categorical raster.
@@ -16856,7 +17012,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_importance_table_name=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         Models the relationship between explanatory variables (independent variables) and a target dataset (dependent variable).
@@ -17037,7 +17193,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_tile_package=None,
         context=None,
         future=False,
-        **kwargs
+        **kwargs,
     ):
         """
         input_imagery_layer: inputImageryLayer (str). Required parameter.
@@ -18034,6 +18190,7 @@ class _GeoanalyticsTools(_AsyncService):
         out_extent=None,
         datastore="GDB",
         context=None,
+        output_name=None,
     ):
         """
 
@@ -18110,7 +18267,7 @@ class _GeoanalyticsTools(_AsyncService):
             params["gax:env:datastore"] = datastore
         if context is not None:
             params["context"] = context
-
+        output_service = self._create_output_service(output_name, task)
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -18141,6 +18298,7 @@ class _GeoanalyticsTools(_AsyncService):
         out_extent=None,
         datastore="GDB",
         context=None,
+        output_name=None,
     ):
         """
 
@@ -18180,7 +18338,7 @@ class _GeoanalyticsTools(_AsyncService):
             params["gax:env:datastore"] = datastore
         if context is not None:
             params["context"] = context
-
+        output_service = self._create_output_service(output_name, task)
         task_url, job_info, job_id = super()._analysis_job(task, params)
 
         job_info = super()._analysis_job_status(task_url, job_info)
@@ -18211,6 +18369,7 @@ class _GeoanalyticsTools(_AsyncService):
         out_extent=None,
         datastore="GDB",
         context=None,
+        output_name=None,
     ):
         """
 
@@ -18249,6 +18408,7 @@ class _GeoanalyticsTools(_AsyncService):
             params["gax:env:datastore"] = datastore
         if context is not None:
             params["context"] = context
+        output_service = self._create_output_service(output_name, task)
 
         task_url, job_info, job_id = super()._analysis_job(task, params)
 

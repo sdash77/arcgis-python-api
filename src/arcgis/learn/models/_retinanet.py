@@ -89,13 +89,13 @@ class RetinaNet(ArcGISModel):
     """
     Creates a RetinaNet Object Detector with the specified zoom scales
     and aspect ratios.
-    Based on the Fast.ai notebook at https://github.com/fastai/fastai_dev/blob/master/dev_nb/102a_coco.ipynb
+    Based on the `Fast.ai notebook <https://github.com/fastai/fastai_dev/blob/master/dev_nb/102a_coco.ipynb>`_
 
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function.
+                            :meth:`~arcgis.learn.prepare_data` function.
     ---------------------   -------------------------------------------
     scales                  Optional list of float values. Zoom scales of anchor boxes.
     ---------------------   -------------------------------------------
@@ -106,13 +106,14 @@ class RetinaNet(ArcGISModel):
                             model used for feature extraction, which
                             is `resnet50` by default.
                             Supported backbones: ResNet family and specified Timm
-                            models from :func:`~arcgis.learn.RetinaNet.backbones`.
+                            models(experimental support) from :func:`~arcgis.learn.RetinaNet.backbones`.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
     =====================   ===========================================
 
-    :return: `RetinaNet` Object
+    :return:
+        :class:`~arcgis.learn.RetinaNet` Object
     """
 
     def __init__(
@@ -141,7 +142,8 @@ class RetinaNet(ArcGISModel):
                 f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
             )
 
-        super().__init__(data, backbone, **kwargs)
+        super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
+        data = self._data
 
         n_bands = len(getattr(self._data, "_extract_bands", [0, 1, 2]))
         _backbone = self._backbone
@@ -337,7 +339,7 @@ class RetinaNet(ArcGISModel):
 
     @staticmethod
     def _supported_backbones():
-        timm_models = filter_timm_models()
+        timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         return [*_resnet_family] + timm_backbones
 
@@ -407,11 +409,12 @@ class RetinaNet(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `RetinaNet` Object
+        :return:
+            :class:`~arcgis.learn.RetinaNet` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)

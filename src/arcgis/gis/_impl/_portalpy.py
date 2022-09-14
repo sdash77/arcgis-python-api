@@ -17,7 +17,7 @@ from ..._impl.common._utils import _to_utf8
 from urllib import request
 from urllib.parse import urlparse
 
-__version__ = "2.0.1"
+__version__ = "2.1.0"
 
 _log = logging.getLogger(__name__)
 
@@ -1264,6 +1264,7 @@ class Portal(object):
 
         # If we've never retrieved the properties before, or the caller is
         # forcing a check of the server, then check the server
+        resp = None
         if not self._properties or force:
             path = "accounts/self" if self._is_pre_162 else "portals/self"
             resp = None
@@ -2351,6 +2352,9 @@ class Portal(object):
         display_settings: Optional[str] = None,
         is_open_data: bool = False,
         leaving_disallowed: bool = False,
+        hidden_members: bool = False,
+        membership_access: Optional[str] = None,
+        autojoin: bool = False,
     ):
         """Updates a group.
 
@@ -2447,6 +2451,13 @@ class Portal(object):
                         os.rename(thumbnail, new_thumbnail)
                         thumbnail = new_thumbnail
             files.append(("thumbnail", thumbnail, os.path.basename(thumbnail)))
+
+        if hidden_members in [True, False]:
+            postdata["hiddenMembers"] = hidden_members
+        if membership_access in ["org", "collaboration", None]:
+            postdata["membershipAccess"] = membership_access
+        if autojoin in [True, False]:
+            postdata["autoJoin"] = autojoin
 
         resp = self.con.post(
             "community/groups/" + group_id + "/update", postdata, files
@@ -2742,13 +2753,13 @@ class Portal(object):
             a boolean if succeeded.
         """
         resp = self.con.post("content/users/" + owner, self._postdata())
-        if resp and "folders" in resp:
-            # Loop through each folder JSON object
-            for fldr in resp["folders"]:
-                if (
-                    fldr["title"].upper() == folder_name.upper()
-                ):  # Force both strings to upper case for comparison
-                    return fldr["id"]
+        result = [
+            f["id"]
+            for f in resp.get("folders", [])
+            if folder_name.lower() in [f["id"].lower(), f["title"].lower()]
+        ]
+        if len(result) > 0:
+            return result[0]
         return None  # no such folder found for this owner
 
     def _is_searching_public(self, scope):

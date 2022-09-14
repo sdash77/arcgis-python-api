@@ -1,3 +1,4 @@
+from __future__ import annotations
 import ssl
 import logging
 from typing import Optional
@@ -42,13 +43,13 @@ class ServicesDirectory(BaseServer):
     url                       string required. The web address to the ArcGIS Server administration
                               end point.
 
-                              Example: https://mysite.com/arcgis
+                              Example: ``https://mysite.com/arcgis``
 
                               The URL should be formatted as follows:
                               <scheme>://<host>:<port (optional)>/<web adapter>
     ---------------------     --------------------------------------------------------------------
     baseurl                   optional string, the root URL to a site.
-                              Example: https://mysite.com/arcgis
+                              Example: ``https://mysite.com/arcgis``
     ---------------------     --------------------------------------------------------------------
     tokenurl                  optional string. Used when a site if federated or when the token
                               URL differs from the site's baseurl.  If a site is federated, the
@@ -231,11 +232,11 @@ class ServicesDirectory(BaseServer):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<%s at %s>" % (type(self).__name__, self.url)
+        return "< %s @ %s >" % (type(self).__name__, self.url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<%s at %s>" % (type(self).__name__, self.url)
+        return "< %s @ %s >" % (type(self).__name__, self.url)
 
     # ----------------------------------------------------------------------
     def report(self, as_html: bool = True, folder: Optional[str] = None):
@@ -290,6 +291,31 @@ class ServicesDirectory(BaseServer):
                     )
                 del s
         return None
+
+    # ----------------------------------------------------------------------
+    def footprints(self, folder: str | None = None, out_sr: dict | None = None) -> dict:
+        """
+        Returns the Services' extents for all services in a given folder.
+
+        =====================     ====================================================================
+        **Arguments**             **Description**
+        ---------------------     --------------------------------------------------------------------
+        folder                    Optional String. The name of the folder to examine for the footprints.
+        ---------------------     --------------------------------------------------------------------
+        out_sr                    Optional Integer.  The well-known ID of the spatial reference. The default is 4326.
+        =====================     ====================================================================
+
+        :returns: dict[str, Any]
+
+        """
+        params = {"f": "json", "option": "footprints"}
+        if out_sr:
+            params["outSR"] = out_sr
+        if folder and folder.lower() in [f.lower() for f in self.folders]:
+            url = f"{self._url}/{folder}"
+        elif folder is None:
+            url = self._url
+        return self._con.get(url, params)
 
     # ----------------------------------------------------------------------
     def list(self, folder: Optional[str] = None):

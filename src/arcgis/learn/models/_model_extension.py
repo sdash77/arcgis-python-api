@@ -68,31 +68,38 @@ except Exception:
 class ModelExtension(ArcGISModel):
     """
     Creates a ModelExtension object, to train the model for object detection, semantic segmentation, and edge detection.
+
     =====================   ============================================================
     **Argument**            **Description**
     ---------------------   ------------------------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            ``prepare_data`` function.
+                            :meth:`~arcgis.learn.prepare_data`  function.
     ---------------------   ------------------------------------------------------------
     model_conf              A class definition contains the following methods:
-                                * ``get_model(self, data, backbone=None, **kwargs)``: for model definition,
-                                * ``on_batch_begin(self, learn, model_input_batch, model_target_batch, **kwargs)``: for
-                                  feeding input to the model during training,
-                                * ``transform_input(self, xb)``: for feeding input to the model during
-                                  inferencing/validation,
-                                * ``transform_input_multispectral(self, xb)``: for feeding input to the
-                                  model during inferencing/validation in case of multispectral data,
-                                * ``loss(self, model_output, *model_target)``: to return loss value of the model, and
-                                * ``post_process(self, pred, nms_overlap, thres, chip_size, device)``: to post-process
-                                  the output of the object-detection model.
-                                * ``post_process(self, pred, thres)``: to post-process the output of the segmentation model.
+
+                            * ``get_model(self, data, backbone=None, **kwargs)``: for model definition,
+
+                            * ``on_batch_begin(self, learn, model_input_batch, model_target_batch, **kwargs)``: for feeding input to the model during training,
+
+                            * ``transform_input(self, xb)``: for feeding input to the model during inferencing/validation,
+
+                            * ``transform_input_multispectral(self, xb)``: for feeding input to the model during inferencing/validation in case of multispectral data,
+
+                            * ``loss(self, model_output, *model_target)``: to return loss value of the model
+
+                            * ``post_process(self, pred, nms_overlap, thres, chip_size, device)``: to post-process
+                              the output of the object-detection model.
+
+                            * ``post_process(self, pred, thres)``: to post-process the output of the segmentation model.
     ---------------------   ------------------------------------------------------------
     backbone                Optional function. If custom model requires any backbone.
     ---------------------   ------------------------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
     =====================   ============================================================
-    :return: ``ModelExtension`` Object
+
+    :return: :class:`~arcgis.learn.ModelExtension` Object
+
     """
 
     def __init__(self, data, model_conf, backbone=None, pretrained_path=None, **kwargs):
@@ -108,11 +115,9 @@ class ModelExtension(ArcGISModel):
         else:
             del kwargs["ArcGISLearnVersion"]
 
-        super().__init__(data, backbone, **kwargs)
-        if model_conf.__name__ == "CustomDetReg":
-            self._model_conf = model_conf(**kwargs)
-        else:
-            self._model_conf = model_conf()
+        super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
+        data = self._data
+        self._model_conf = model_conf()
         self._model_conf_class = model_conf
         self._backend = "pytorch"
         self._kwargs = kwargs
@@ -259,7 +264,8 @@ class ModelExtension(ArcGISModel):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a ``ModelExtension`` object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.ModelExtension` object from an Esri Model Definition (EMD) file.
+
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -267,10 +273,11 @@ class ModelExtension(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from ``prepare_data`` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data`  function or None for
                                 inferencing.
         =====================   ===========================================
-        :return: `ModelExtension` Object
+
+        :return: :class:`~arcgis.learn.ModelExtension` Object
         """
 
         emd_path = _get_emd_path(emd_path)
@@ -357,16 +364,14 @@ class ModelExtension(ArcGISModel):
                 data.K = emd["Kwargs"]["n_masks"]
                 data.instance_classes = emd["Kwargs"]["instance_classes"]
         data.resize_to = resize_to
-        if modelconfclass == "CustomDetReg":
-            mextnsn = cls(data, pretrained_path=str(model_file))
-        else:
-            mextnsn = cls(
-                data,
-                model_configuration,
-                backbone,
-                pretrained_path=str(model_file),
-                **kwargs,
-            )
+
+        mextnsn = cls(
+            data,
+            model_configuration,
+            backbone,
+            pretrained_path=str(model_file),
+            **kwargs,
+        )
 
         if not data_passed and dataset_type == "PASCAL_VOC_rectangles":
             mextnsn.learn.data.single_ds.classes = mextnsn._data.classes
@@ -443,14 +448,6 @@ class ModelExtension(ArcGISModel):
         elif self._data.dataset_type == "Panoptic_Segmentation":
             self.show_results = self._show_results_panoptic
             self.panoptic_quality = self._panoptic_quality
-
-        elif hasattr(self, "coco_data"):
-            self.show_results = self._model_conf._show_results
-            self.predict = self._model_conf.predict
-            self.lr_find = self._model_conf.lr_find
-            self.average_precision_score = (
-                self._model_conf.average_precision_score_detreg
-            )
 
         else:
             if self._is_multispectral:
