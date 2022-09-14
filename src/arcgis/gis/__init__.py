@@ -1204,7 +1204,8 @@ class GIS(object):
             ]
             tile_urls = [
                 _agoserver.AGOLServicesDirectory(
-                    f"https://{url}/tiles/{pid}/arcgis/rest/services", gis=self,
+                    f"https://{url}/tiles/{pid}/arcgis/rest/services",
+                    gis=self,
                 )
                 for url in tile_urls
             ]
