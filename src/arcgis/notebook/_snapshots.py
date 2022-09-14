@@ -67,20 +67,20 @@ def create_snapshot(
             notebook_json=notebook_json,
             access=access,
         )
-    if 'resourceKey' in res:
+    if "resourceKey" in res:
         l = [
             s
             for s in item.snapshots
-            if s.properties['resourceKey'] == res['resourceKey']
+            if s.properties["resourceKey"] == res["resourceKey"]
         ]
         if len(l) > 0:
             return l[0]
 
-    elif 'snapshotResourceKey' in res:
+    elif "snapshotResourceKey" in res:
         l = [
             s
             for s in item.snapshots
-            if s.properties['resourceKey'] == res['snapshotResourceKey']
+            if s.properties["resourceKey"] == res["snapshotResourceKey"]
         ]
         if len(l) > 0:
             return l[0]
