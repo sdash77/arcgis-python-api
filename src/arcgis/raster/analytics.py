@@ -6335,7 +6335,7 @@ def find_argument_statistics(
 
                                              - LAST_OCCURRENCE : The value of the dimension will be returned the last time the argument statistic is reached.
     ------------------------------------     --------------------------------------------------------------------
-    gis                                      Keyword only parameter. Optional GIS. the GIS on which this tool runs. If not specified,
+    gis                                      Keyword only parameter. Optional :class:`~arcgis.gis.GIS` object. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
     future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
