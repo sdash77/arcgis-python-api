@@ -2958,3 +2958,62 @@ class Timeline(object):
             content._add_image(story=self._story)
         elif isinstance(content, Text):
             content._add_text(story=self._story)
+
+
+###############################################################################################################
+class MapTour(object):
+    """
+    Create a MapTour object from a pre-existing `maptour` node.
+
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    node_id             Required String. The node id for the map tour type.
+    ---------------     --------------------------------------------------------------------
+    story               Required :class:`~arcgis.apps.storymap.story.StoryMap` that the map tour belongs to.
+    ===============     ====================================================================
+
+    .. code-block:: python
+
+        >>> my_story.nodes #use to find map tour node id
+
+        # Method 1: Use the MapTour Class
+        >>> maptour = MapTour(my_story, <node_id>)
+
+        # Method 2: Use the get method in story
+        >>> maptour = my_story.get(node = <node_id>)
+    """
+
+    def __init__(self, story, node: str):
+        # Content must already exist in the story
+        # Map Tour is not an immersive node
+        self._story = story
+        self.node = node
+        self.map = story._properties["nodes"][node]["data"]["map"]
+        self._type = story._properties["nodes"][node]["type"]
+        if self._type != "tour":
+            raise Exception("This node is not of type tour.")
+        self._subtype = story._properties["nodes"][node]["data"]["type"]
+        self._events = story._properties["nodes"][node]["children"]
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Map Tour"
+
+    # ----------------------------------------------------------------------
+    @property
+    def style(self):
+        """Get the type and subtype of the map tour"""
+        return (
+            self._story._properties["nodes"][self.node]["data"]["type"]
+            + " - "
+            + self._story._properties["nodes"][self.node]["data"]["subtype"]
+        )
+
+    # ----------------------------------------------------------------------
+    @property
+    def places(self):
+        """
+        List all places on the map
+        """
+        return self._story._properties["nodes"][self.node]["data"]["places"]
