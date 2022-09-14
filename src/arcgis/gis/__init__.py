@@ -11769,7 +11769,8 @@ class Item(dict):
             if self._gis._portal.is_arcgisonline == False:
                 return nbs.notebooks.snapshots.list(self)
             elif self._gis._portal.is_arcgisonline:
-                return nbs.snapshots.list(self)
+                sm = nbs.snaphots
+                return sm.list(self)
         return []
 
     # ----------------------------------------------------------------------

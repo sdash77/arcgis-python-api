@@ -10,6 +10,9 @@ import logging
 import unittest
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
+from arcgis.gis.agonb import snapshot as _agosnapshot
+from arcgis.gis.nb import _snapshot as _entsnapshot
+from arcgis.notebook import list_snapshots, create_snapshot
 
 __logger__ = logging.getLogger()
 
@@ -131,61 +134,29 @@ class TestAGOLNotebookManager(unittest.TestCase):
             data=fp,
         )
 
-    def test_execute_notebook_agol(self):
-        """tests the AGOL execute notebook method"""
-        gis = self._gis
-        from arcgis.notebook import execute_notebook
+    def test_snapshots_agol(self):
+        """tests the AGO snapshot function"""
+        res = create_snapshot(self._item, name='abcd2')
+        assert res
+        assert isinstance(res, _agosnapshot.SnapShot)
 
-        res = execute_notebook(
-            item=self._item,
-            timeout=50,
-            update_portal_item=True,
-            parameters=None,
-            save_parameters=False,
-            server_index=0,
-            gis=gis,
-            future=False,
-        )
-        assert isinstance(res, dict)
-        assert "jobUrl" in res
-
-    def test_execute_notebook_agol_future(self):
-        """tests the AGOL execute notebook method"""
-        from arcgis._impl._async.jobs import Job
-
-        gis = self._gis
-        from arcgis.notebook import execute_notebook
-
-        res = execute_notebook(
-            item=self._item,
-            timeout=50,
-            update_portal_item=True,
-            parameters=None,
-            save_parameters=False,
-            server_index=0,
-            gis=gis,
-            future=True,
-        )
-        assert isinstance(res, Job)
-        assert res.result()
+    def test_list_snapshots(self):
+        """tests the list_snapshots method"""
+        res = create_snapshot(self._item, name='abcd2')
+        assert len(self._item.snapshots) == len(list_snapshots(self._item))
 
 
-class Test_ExecuteNotebookMethod(unittest.TestCase):
+class TestEntNotebookManager(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         assert cls._item.delete()
 
     @classmethod
     def setUpClass(cls):
-        url = "https://rqawinbi01pt.ags.esri.com/gis"
-        username = "NBAdvanced"
-        password = "NBAdvanced.1"
-        ent_json_data = '{"nbformat_minor":2,"metadata":{"language_info":{"pygments_lexer":"ipython3","nbconvert_exporter":"python","codemirror_mode":{"name":"ipython","version":3},"name":"python","mimetype":"text/x-python","file_extension":".py","version":"3.7.11"},"esriNotebookRuntime":{"notebookRuntimeName":"ArcGIS Notebook Python 3 Standard","notebookRuntimeVersion":"6.0"},"kernelspec":{"name":"python3","language":"python","display_name":"Python 3 (ipykernel)"}},"cells":[{"metadata":{},"source":"## Welcome to your notebook.\\n","cell_type":"markdown"},{"metadata":{},"source":"#### Run this cell to connect to your GIS and get started:","cell_type":"markdown"},{"outputs":[{"output_type":"stream","name":"stderr","text":"/opt/conda/lib/python3.7/site-packages/arcgis/gis/__init__.py:575: UserWarning:\\n\\nYou are logged on as andrew with an administrator role, proceed with caution.\\n\\n"}],"metadata":{"trusted":false},"execution_count":1,"source":"from arcgis.gis import GIS\\ngis = GIS(\\"home\\")","cell_type":"code"},{"metadata":{},"source":"#### Now you are ready to start!","cell_type":"markdown"},{"outputs":[{"output_type":"stream","name":"stdout","text":"<User username:andrew>\\n"}],"metadata":{"trusted":false},"execution_count":2,"source":"print(gis.users.me)","cell_type":"code"},{"outputs":[{"output_type":"stream","name":"stdout","text":"I\'m finished\\n"}],"metadata":{"trusted":true},"execution_count":1,"source":"output = \\"I\'m finished\\"\\nprint(output)","cell_type":"code"},{"outputs":[],"metadata":{"trusted":true},"execution_count":null,"source":"","cell_type":"code"}],"nbformat":4}'
-
         cls._gis = GIS(
-            url=url,
-            username=username,
-            password=password,
+            url="https://rqawinbi01pt.ags.esri.com/gis",
+            username="NBAdvanced",
+            password="NBAdvanced.1",
             verify_cert=False,
             proxy=PROXIES,
         )
@@ -202,49 +173,40 @@ class Test_ExecuteNotebookMethod(unittest.TestCase):
                 "title": f"item_{uuid.uuid4().hex[:6]}",
                 "properties": {
                     "notebookRuntimeName": "ArcGIS Notebook Python 3 Advanced",
-                    "notebookRuntimeVersion": "8.0",
+                    "notebookRuntimeVersion": "5.0",
                 },
             },
             data=fp,
         )
 
-    def test_execute_notebook_ent(self):
-        """tests the AGOL execute notebook method"""
-        gis = self._gis
-        from arcgis.notebook import execute_notebook
+    def test_snapshots_ent(self):
+        """tests the Enterprise snapshot function"""
+        res = create_snapshot(self._item, name='abcd2')
+        assert res
+        assert isinstance(res, _entsnapshot.SnapShot)
 
-        res = execute_notebook(
-            item=self._item,
-            timeout=50,
-            update_portal_item=True,
-            parameters=None,
-            save_parameters=False,
-            server_index=0,
-            gis=gis,
-            future=False,
-        )
-        assert isinstance(res, dict)
-        assert "jobUrl" in res
+    def test_list_snapshots(self):
+        """tests the list_snapshots method"""
+        res = create_snapshot(self._item, name='abcd2')
+        assert len(self._item.snapshots) == len(list_snapshots(self._item))
 
-    def test_execute_notebook_ent_future(self):
-        """tests the AGOL execute notebook method"""
-        from arcgis._impl._async.jobs import Job
 
-        gis = self._gis
-        from arcgis.notebook import execute_notebook
-
-        res = execute_notebook(
-            item=self._item,
-            timeout=50,
-            update_portal_item=True,
-            parameters=None,
-            save_parameters=False,
-            server_index=0,
-            gis=gis,
-            future=True,
-        )
-        assert isinstance(res, Job)
-        assert res.result()
+"""
+if __name__ == "__main__":
+    url = "https://rqawinbi01pt.ags.esri.com/gis"
+    username = "PAPIadmin"
+    password = "PAPIletmein01"
+    gis = GIS(url=url, username=username, password=password, verify_cert=False)
+    item = gis.content.get("7a289cd368af41a89edeca783dc0072f")
+    res1 = create_snapshot(item, name='abcd2')
+    [s.delete() for s in item.snapshots]
+    print(res1)
+    gis = GIS(profile='your_online_profile', verify_cert=False)
+    item = gis.content.get("11662e6097c34ec2be7043cdc17cfce2")
+    res2 = create_snapshot(item, name='abcd2')
+    print(res2)
+    [s.delete() for s in item.snapshots]
+"""
 
 
 if __name__ == "__main__":
