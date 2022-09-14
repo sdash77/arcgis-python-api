@@ -188,6 +188,7 @@ class Server(BaseServer):
         sd_file: str,
         folder: Optional[str] = None,
         service_config: Optional[dict] = None,
+        future: bool = False,
     ) -> bool:
         """
         Publishes a service definition file to ArcGIS Server.
