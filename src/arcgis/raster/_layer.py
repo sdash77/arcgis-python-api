@@ -45,11 +45,15 @@ except:
 
 
 def _get_rendering_service_layer(layer):
-    from .functions.utility import _generate_layer_token
+    if layer._rendering_service_layer:
+        return layer._rendering_service_layer
+    else:
+        from .functions.utility import _generate_layer_token
 
-    token = _generate_layer_token(layer, layer.url)
-    newlyr = ImageryLayer({"input_raster": layer.url + "?token=" + token}, layer._gis)
-    return newlyr
+        token = _generate_layer_token(layer, layer.url)
+        newlyr = ImageryLayer({"input_raster": layer.url + "?token=" + token}, layer._gis)
+        layer._rendering_service_layer = newlyr
+        return newlyr
 
 
 def _find_and_replace_mosaic_rule(fnarg_ra, mosaic_rule, url):
@@ -691,6 +695,7 @@ class ImageryLayer(Layer):
         self._extent_set = False
         self._original_info = {}
         self._rendering_rule_from_item = False
+        self._rendering_service_layer = None
 
     @property
     def rasters(self):
