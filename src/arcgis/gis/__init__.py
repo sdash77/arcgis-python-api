@@ -1165,6 +1165,16 @@ class GIS(object):
 
     # ----------------------------------------------------------------------
     @property
+    def subscription_information(self) -> dict:
+        """
+        Returns the ArcGIS Online Subscription Information for a Site.
+
+        :return: dictionary
+        """
+        return self._subscription_information
+
+    # ----------------------------------------------------------------------
+    @property
     def version(self):
         """The ``version`` property returns the GIS version number"""
         self._is_agol = self._portal.is_arcgisonline
