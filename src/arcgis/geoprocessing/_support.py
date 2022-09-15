@@ -374,9 +374,13 @@ def _execute_gp_tool(
         and isinstance(gis._con, Connection)
     ):
         gis = gis._con
-    elif isinstance(gis, Connection):
+
+    if isinstance(gis, Connection):
         log = logging.getLogger()
         log.warning("Using Connection object over GIS object")
+        ngis = GIS(set_active=False)
+        ngis._con = gis
+        gis = ngis
 
     gp_params = {"f": "json"}
 

@@ -1204,7 +1204,8 @@ class GIS(object):
             ]
             tile_urls = [
                 _agoserver.AGOLServicesDirectory(
-                    f"https://{url}/tiles/{pid}/arcgis/rest/services", gis=self
+                    f"https://{url}/tiles/{pid}/arcgis/rest/services",
+                    gis=self,
                 )
                 for url in tile_urls
             ]
@@ -1214,7 +1215,7 @@ class GIS(object):
 
             info = self._registered_servers()
             servers = [
-                ServicesDirectory(server["url"], portal_connection=self._con)
+                ServicesDirectory(server["url"], portal_connection=self._con, gis=self)
                 for server in info["servers"]
                 if server.get("serverRole", None) == "HOSTING_SERVER"
             ]
