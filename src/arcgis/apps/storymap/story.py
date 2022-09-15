@@ -1306,6 +1306,8 @@ class StoryMap(object):
             node = Content.Gallery(story=self, node_id=node_id)
         elif node_type == "timeline":
             node = Content.Timeline(self, node_id)
+        elif node_type == "tour":
+            node = Content.MapTour(self, node_id)
         elif node_type == "immersive":
             # immersive has subtype sidecar (more to add later)
             subtype = self._properties["nodes"][node_id]["data"]["type"]
