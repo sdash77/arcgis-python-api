@@ -1322,15 +1322,19 @@ class StoryMap(object):
             or isinstance(node_class, Content.Timeline)
         ):
             return self._properties["nodes"][node]["children"]
+        elif isinstance(node_class, Content.Swipe):
+            return list(self._properties["nodes"][node]["data"]["contents"].values())
+        elif isinstance(node_class, Content.MapTour):
+            mt = self.get(node)
+            return mt._children
         elif isinstance(node_class, str):
             if (
                 "immersive" in node_class.lower()
                 or "credits" in node_class.lower()
                 or "event" in node_class.lower()
+                or "carousel" in node_class.lower()
             ):
                 return self._properties["nodes"][node]["children"]
-        elif isinstance(node_class, Content.Swipe):
-            return list(self._properties["nodes"][node]["data"]["contents"].values())
         else:
             return None
 

@@ -3002,6 +3002,21 @@ class MapTour(object):
 
     # ----------------------------------------------------------------------
     @property
+    def _children(self) -> list:
+        """private method to gather all children of a map tour from places data"""
+        children = [self.map]
+        for place in self.places:
+            if place["contents"]:
+                for content in place["contents"]:
+                    children.append(content)
+            if place["media"]:
+                children.append(place["media"])
+            if place["title"]:
+                children.append(place["title"])
+        return children
+
+    # ----------------------------------------------------------------------
+    @property
     def style(self):
         """Get the type and subtype of the map tour"""
         return (
