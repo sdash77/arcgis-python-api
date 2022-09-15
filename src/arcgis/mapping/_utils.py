@@ -53,7 +53,11 @@ def _convert_colorbrewer(cb_list: list, alpha: float = 1):
     return new_list
 
 
-def _create_colormap(color_list: list, bins: int = 256):
+def _create_colormap(
+    color_list: list,
+    name: str = "temp_cmap",
+    bins: int = 256,
+):
     from matplotlib.colors import LinearSegmentedColormap
 
     if len(color_list) < 2:
@@ -64,7 +68,7 @@ def _create_colormap(color_list: list, bins: int = 256):
         conv = (color[0] / 255, color[1] / 255, color[2] / 255)
         mpl_colors.append(conv)
 
-    return LinearSegmentedColormap.from_list("temp_cmap", mpl_colors, bins)
+    return LinearSegmentedColormap.from_list(name, mpl_colors, bins)
 
 
 def _format_colors(colors, alpha, cstep=None):

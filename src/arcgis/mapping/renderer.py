@@ -435,10 +435,10 @@ def _trans_info(data, **kwargs):
                 del d
             del data
         elif data is None and stops is None:
-            raise Exception("Cannot create transparancy info.")
+            raise Exception("Cannot create transparency info.")
 
         ti["stops"] = stops
-        ti["type"] = "transparancyInfo"
+        ti["type"] = "transparencyInfo"
         ti["valueExpression"] = kwargs.pop("trans_value_exp", None)
         ti["valueExpressionTitle"] = kwargs.pop("trans_exp_title", None)
     return ti
@@ -488,6 +488,12 @@ def _assemble_visual(
     sdf_or_series,
     **symbol_args,
 ):
+    """
+    Helper function to put together a certain form of visual variables for
+    renderer functions. Less useful than visual_variables() but
+    necessary, for the time being, to ensure backwards compatibility for
+    users who may be using generate_renderer() with specific kwargs.
+    """
     vv = []
     if "size_field" in symbol_args:
         size_field = symbol_args.pop("size_field")
@@ -646,7 +652,6 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
     ri = _ri_creator(**kwargs)
     if ri:
         v.append(ri)
-
     return v
 
 
@@ -750,15 +755,15 @@ def generate_unique(
     **symbol_args,
 ):
 
-    vv = _assemble_visual(sdf_or_series, **symbol_args)
-    if "opacity_expression" in symbol_args and "opacity_stops" in symbol_args:
-        vv.append(
-            {
-                "type": "transparencyInfo",
-                "valueExpression": symbol_args.pop("opacity_expression"),
-                "valueExpressionTitle": "Opacity Expression",
-                "stops": symbol_args.pop("opacity_stops"),
-            }
+    if (
+        "size_field" in symbol_args
+        or "ci_field" in symbol_args
+        or "opacity_expression" in symbol_args
+    ):
+        vv = _assemble_visual(sdf_or_series, **symbol_args)
+    else:
+        vv = visual_variables(
+            geometry_type=geometry_type, sdf_or_list=sdf_or_series, **symbol_args
         )
 
     if "arcade_expression" not in symbol_args:
@@ -918,19 +923,20 @@ def generate_unique(
 # --------------------------------------------------------------------------
 def generate_classbreaks(
     sdf_or_series=None,
+    geometry_type: Optional[str] = None,
     colors: Optional[Union[str, list[int], object]] = None,
     alpha: Optional[float] = 1,
     **symbol_args,
 ):
-    vv = _assemble_visual(sdf_or_series, **symbol_args)
-    if "opacity_expression" in symbol_args and "opacity_stops" in symbol_args:
-        vv.append(
-            {
-                "type": "transparencyInfo",
-                "valueExpression": symbol_args.pop("opacity_expression"),
-                "valueExpressionTitle": "Opacity Expression",
-                "stops": symbol_args.pop("opacity_stops"),
-            }
+    if (
+        "size_field" in symbol_args
+        or "ci_field" in symbol_args
+        or "opacity_expression" in symbol_args
+    ):
+        vv = _assemble_visual(sdf_or_series, **symbol_args)
+    else:
+        vv = visual_variables(
+            geometry_type=geometry_type, sdf_or_list=sdf_or_series, **symbol_args
         )
 
     if sdf_or_series is None:
@@ -998,7 +1004,7 @@ def generate_classbreaks(
 
     # calculate the class breaks from column data
     cbs = []
-    breaks = np.linspace(minValue, maxValue, num=class_count + 1).tolist()
+    breaks = np.linspace(float(minValue), float(maxValue), num=class_count + 1).tolist()
     steps = np.linspace(0, 255, len(breaks), dtype=np.int)
     ss = symbol_args.pop("symbol_style", None)
     st = symbol_args.pop("symbol_type", None)
@@ -1052,9 +1058,22 @@ def generate_simple(
     alpha: Optional[float] = 1,
     **symbol_args,
 ):
-    cstep = symbol_args.pop("cstep", 0)
+    if (
+        "size_field" in symbol_args
+        or "ci_field" in symbol_args
+        or "opacity_expression" in symbol_args
+    ):
+        vv = _assemble_visual(sdf_or_series, **symbol_args)
+    else:
+        vv = visual_variables(
+            geometry_type=geometry_type, sdf_or_list=sdf_or_series, **symbol_args
+        )
+    cstep = symbol_args.pop("cstep", None)
+    """if "cstep" in symbol_args:
+        fstep = symbol_args["cstep"]
+    else:
+        fstep = 0"""
     colors = _format_colors(colors, alpha, cstep)
-    vv = _assemble_visual(sdf_or_series, **symbol_args)
     symbol = symbol_args.pop("symbol", None)
     if symbol is None:
         symbol = create_symbol(
