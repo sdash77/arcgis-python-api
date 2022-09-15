@@ -4485,7 +4485,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
 
         :return: Dictionary indicating success or error
         """
-        if self._source_type is not "FeatureServer":
+        if self._source_type != "FeatureServer":
             url = self._url + "/swap"
             params = {"f": "json", "targetServiceName": target_service_name}
             return self._con.post(url, params)
@@ -4519,7 +4519,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
             >>> deleted_tiles = vtl_manager.delete_tiles()
             >>> type(deleted_tiles)
         """
-        if self._source_type is not "FeatureServer":
+        if self._source_type != "FeatureServer":
             params = {
                 "f": "json",
             }

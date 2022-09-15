@@ -704,8 +704,32 @@ class AutoML(object):
     ):
         dataframe_complete = False
         if isinstance(input_features, FeatureLayer):
+            try:
+                import arcpy
+                import spatial_reference_helper
+
+                ex = input_features.properties["extent"]
+                data_source_spatial_reference = arcpy.SpatialReference(
+                    ex["spatialReference"].get(
+                        "wkid", ex["spatialReference"].get("latestWkid")
+                    )
+                )
+                extent = arcpy.Extent(
+                    ex["xmin"],
+                    ex["ymin"],
+                    ex["xmax"],
+                    ex["ymax"],
+                    spatial_reference=data_source_spatial_reference,
+                )
+                transformation = spatial_reference_helper.get_datum_transformation(
+                    data_source_spatial_reference, arcpy.SpatialReference(4326), extent
+                )
+            except:
+                transformation = None
             if cell_sizes and not rasters:
-                dataframe = input_features.query(out_sr=4326).sdf
+                dataframe = input_features.query(
+                    out_sr=4326, datum_transformation=transformation
+                ).sdf
                 dataframe = add_h3(dataframe, cell_sizes)
             else:
                 dataframe = input_features.query().sdf

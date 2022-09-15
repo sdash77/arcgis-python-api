@@ -24,6 +24,8 @@ def show_batch_labeled_tiles(self, rows=3, **kwargs):  # parameters adjusted in 
     -------------------------------------------------------------------
 
     """
+    from .._utils.common import denorm_x
+
     nrows = rows
     ncols = kwargs.get("ncols", nrows)
     # start_index = kwargs.get('start_index', 0) # Does not work with dataloader
@@ -80,12 +82,10 @@ def show_batch_labeled_tiles(self, rows=3, **kwargs):  # parameters adjusted in 
     # Get Batch
     x_batch, y_batch = get_nbatches(data_loader, nbatches)
     x_batch = torch.cat(x_batch)
-    # Denormalize X
-    x_batch = (
-        self._scaled_std_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch)
-        * x_batch
-    ) + self._scaled_mean_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch)
     y_batch = torch.cat(y_batch)
+
+    # Denormalize X
+    x_batch = denorm_x(x_batch, self)
 
     # Extract RGB Bands
     symbology_x_batch = x_batch[:, symbology_bands]
