@@ -1214,7 +1214,7 @@ class GIS(object):
 
             info = self._registered_servers()
             servers = [
-                ServicesDirectory(server["url"], gis=self)
+                ServicesDirectory(server["url"], portal_connection=self._con)
                 for server in info["servers"]
                 if server.get("serverRole", None) == "HOSTING_SERVER"
             ]
