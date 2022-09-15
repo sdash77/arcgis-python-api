@@ -311,7 +311,7 @@ def publish_hosted_imagery_layer(input_data: list,
     ====================================     ====================================================================
 
     :return:
-        List of file paths.
+    Imagery layer item
 
         """
 
