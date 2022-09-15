@@ -51,7 +51,9 @@ def _get_rendering_service_layer(layer):
         from .functions.utility import _generate_layer_token
 
         token = _generate_layer_token(layer, layer.url)
-        newlyr = ImageryLayer({"input_raster": layer.url + "?token=" + token}, layer._gis)
+        newlyr = ImageryLayer(
+            {"input_raster": layer.url + "?token=" + token}, layer._gis
+        )
         layer._rendering_service_layer = newlyr
         return newlyr
 
