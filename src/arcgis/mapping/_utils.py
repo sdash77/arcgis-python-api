@@ -34,7 +34,7 @@ def export_map(
     **kwargs,
 ):
     """
-    The ``export_map`` function takes the state of the ``WebMap`` object (for example, included services, layer visibility
+    The ``export_map`` function takes the state of the :class:`~arcgis.mapping.WebMap` object (for example, included services, layer visibility
     settings, client-side graphics, and so forth) and returns either (a) a page layout or
     (b) a map without page surrounds of the specified area of interest in raster or vector format.
     The input for this function is a piece of text in JavaScript object notation (JSON) format describing the layers,
@@ -55,21 +55,30 @@ def export_map(
     ------------------     --------------------------------------------------------------------
     format                 Format (str). Optional parameter.  The format in which the map image
                            for printing will be delivered. The following strings are accepted.
-                           For example:PNG8
-                           Choice list:['PDF', 'PNG32', 'PNG8', 'JPG', 'GIF', 'EPS', 'SVG', 'SVGZ']
+
+                           For example:
+                                PNG8
+
+                           Choice list:
+                                ['PDF', 'PNG32', 'PNG8', 'JPG', 'GIF', 'EPS', 'SVG', 'SVGZ']
     ------------------     --------------------------------------------------------------------
     layout_template        Layout Template (str). Optional parameter.  Either a name of a
                            template from the list or the keyword MAP_ONLY. When MAP_ONLY is chosen
                            or an empty string is passed in, the output map does not contain any
-                           page layout surroundings (for example title, legends, scale bar,
-                           and so forth). Choice list:['A3 Landscape', 'A3 Portrait',
-                           'A4 Landscape', 'A4 Portrait', 'Letter ANSI A Landscape',
-                           'Letter ANSI A Portrait', 'Tabloid ANSI B Landscape',
-                           'Tabloid ANSI B Portrait', 'MAP_ONLY']. You can get the layouts
-                           configured with your GIS by calling the
-                           :meth:get_layout_templates<arcgis.mapping.get_layout_templates> function
+                           page layout surroundings.
+
+                           For example - title, legends, scale bar, and so forth
+
+                           Choice list:
+
+                               | ['A3 Landscape', 'A3 Portrait',
+                               | 'A4 Landscape', 'A4 Portrait', 'Letter ANSI A Landscape',
+                               | 'Letter ANSI A Portrait', 'Tabloid ANSI B Landscape',
+                               | 'Tabloid ANSI B Portrait', 'MAP_ONLY'].
+
+                           You can get the layouts configured with your GIS by calling the :meth:`get_layout_templates <arcgis.mapping.get_layout_templates>` function
     ------------------     --------------------------------------------------------------------
-    gis                    The :class:GIS<arcgis.gis.GIS> to use for printing. Optional
+    gis                    The :class:`~arcgis.gis.GIS` to use for printing. Optional
                            parameter. When not specified, the active GIS will be used.
     ==================     ====================================================================
 

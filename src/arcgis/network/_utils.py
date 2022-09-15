@@ -51,7 +51,7 @@ def _gp_travel_mode(gis: GIS, travel_mode: str = None) -> str:
 # -------------------------------------------------------------------------
 def _route_service_travel_modes(gis, travel_mode: str = None) -> str:
     """gets the default values from the routing service"""
-    url = _validate_url(gis.properties.helperServices.route.url)
+    url = _validate_url(gis.properties.helperServices.route.url, gis)
     route_service = network.RouteLayer(url, gis=gis)
     modes = route_service.retrieve_travel_modes()
     if travel_mode is None:
@@ -84,7 +84,7 @@ def default_travel_mode(gis: GIS) -> str:
         output = network.analysis.get_travel_modes(gis=gis)
         return output.default_travel_mode
     except:
-        url = _validate_url(gis.properties.helperServices.route.url)
+        url = _validate_url(gis.properties.helperServices.route.url, gis)
         route_service = network.RouteLayer(url, gis=gis)
         modes = route_service.retrieve_travel_modes()
         return modes["defaultTravelMode"]

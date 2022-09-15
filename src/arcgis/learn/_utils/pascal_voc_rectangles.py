@@ -16,7 +16,7 @@ from matplotlib import pyplot as plt
 from matplotlib import patheffects
 from fastai.basic_data import DatasetType
 from fastai.torch_core import grab_idx
-from .._utils.env import _IS_ARCGISPRONOTEBOOK
+from .._utils.env import is_arcgispronotebook
 from typing import Callable
 import warnings
 
@@ -261,11 +261,10 @@ def show_batch_pascal_voc_rectangles(
     # Get Batch
     x_batch, y_batch = get_nbatches(data_loader, math.ceil(n_items / self.batch_size))
     x_batch = torch.cat(x_batch)
+
     # Denormalize X
-    x_batch = (
-        self._scaled_std_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch)
-        * x_batch
-    ) + self._scaled_mean_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch)
+    x_batch = denorm_x(x_batch, self)
+
     y_bboxes = []
     y_classes = []
     for yb in y_batch:
@@ -342,7 +341,7 @@ def show_batch_pascal_voc_rectangles(
             else:
                 axi.axis("off")
             idx += 1
-    if _IS_ARCGISPRONOTEBOOK:
+    if is_arcgispronotebook():
         plt.show()
 
 
@@ -641,7 +640,7 @@ def show_results_multispectral(
                     )
 
         idx += 1
-    if _IS_ARCGISPRONOTEBOOK:
+    if is_arcgispronotebook():
         plt.show()
     return fig, axs
 

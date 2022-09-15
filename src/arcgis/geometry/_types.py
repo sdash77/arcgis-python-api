@@ -890,7 +890,7 @@ class Geometry(BaseGeometry):
         """
         Creates a Python API Geometry object from a Shapely geometry object.
 
-        ..note::
+        .. note::
             Must have shapely installed
 
         =================   ====================================================================
@@ -1274,7 +1274,7 @@ class Geometry(BaseGeometry):
             A boolean indicating yes (True), or no (False)
 
         """
-        return self.get("hasZ", False)
+        return self.get("hasZ", False) | self.get("z", False)
 
     # ----------------------------------------------------------------------
     @property
@@ -1286,7 +1286,7 @@ class Geometry(BaseGeometry):
             A boolean indicating yes (True), or no (False)
 
         """
-        return self.get("hasM", False)
+        return self.get("hasM", False) | self.get("m", False)
 
     # ----------------------------------------------------------------------
     @property
@@ -2338,7 +2338,7 @@ class Geometry(BaseGeometry):
         ===============     ====================================================================
 
         :return:
-            A `~arcgis.geometry.Geometry` object indicating an intersection, or None for no intersection
+            A :class:`~arcgis.geometry.Geometry` object indicating an intersection, or None for no intersection
 
         .. code-block:: python
 

@@ -3,14 +3,12 @@ arcgis.geoenrichment module
 
 .. automodule:: arcgis.geoenrichment
 
-
 Country
 --------------
 .. autoclass:: arcgis.geoenrichment.Country
     :inherited-members:
     :members:
     :undoc-members:
-
 
 get_countries
 ---------------

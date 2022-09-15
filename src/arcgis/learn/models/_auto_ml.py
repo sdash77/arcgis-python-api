@@ -15,14 +15,14 @@ import traceback
 import arcgis
 from arcgis.features import FeatureLayer
 
-
 HAS_AUTO_ML_DEPS = True
 import_exception = None
 
 try:
     from ._arcgis_model import ArcGISModel, _raise_fastai_import_error
-    from arcgis.learn._utils.tabular_data import TabularDataObject
+    from arcgis.learn._utils.tabular_data import TabularDataObject, add_h3
     from arcgis.learn._utils.common import _get_emd_path
+    from arcgis.learn._utils.utils import arcpy_localization_helper
 
     HAS_FASTAI = True
 except:
@@ -32,6 +32,7 @@ except:
 try:
     import sklearn
     from sklearn import *
+    from sklearn import preprocessing
     import numpy as np
     import pandas as pd
 except Exception as e:
@@ -65,35 +66,20 @@ class AutoML(object):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required TabularDataObject. Returned data object from
-                            `prepare_tabulardata` function.
+                            :meth:`~arcgis.learn.prepare_tabulardata` function.
     ---------------------   -------------------------------------------
     total_time_limit        Optional Int. The total time limit in seconds for
                             AutoML training.
                             Default is 3600 (1 Hr)
     ---------------------   -------------------------------------------
     mode                    Optional Str.
-                            Can be {Explain, Perform, Compete}. This parameter defines
+                            Can be {Basic, Intermediate, Advanced}. This parameter defines
                             the goal of AutoML and how intensive the AutoML search will be.
 
-                            Basic : To to be used when the user wants to explain and
-                                      understand the data.
-                                      Uses 75%/25% train/test split.
-                                      Uses the following models: Baseline, Linear, Decision Tree,
-                                      Random Forest, XGBoost, Neural Network, and Ensemble.
-                                      Has full explanations in reports: learning curves, importance
-                                      plots, and SHAP plots.
-                            Intermediate : To be used when the user wants to train a model that will be
-                                      used in real-life use cases.
-                                      Uses 5-fold CV (Cross-Validation).
-                                      Uses the following models: Linear, Random Forest, LightGBM,
-                                      XGBoost, CatBoost, Neural Network, and Ensemble.
-                                      Has learning curves and importance plots in reports.
-                            Advanced : To be used for machine learning competitions (maximum performance).
-                                      Uses 10-fold CV (Cross-Validation).
-                                      Uses the following models: Decision Tree, Random Forest, Extra Trees,
-                                      XGBoost, CatBoost, Neural Network, Nearest Neighbors, Ensemble,
-                                      and Stacking.It has only learning curves in the reports.
-                                      Default is Explain.
+                            Basic : To to be used when the user wants to explain and understand the data. Uses 75%/25% train/test split. Uses the following models: Baseline, Linear, Decision Tree, Random Forest, XGBoost, Neural Network, and Ensemble. Has full explanations in reports: learning curves, importance  plots, and SHAP plots.
+                            Intermediate : To be used when the user wants to train a model that will be used in real-life use cases. Uses 5-fold CV (Cross-Validation). Uses the following models: Linear, Random Forest, LightGBM, XGBoost, CatBoost, Neural Network, and Ensemble. Has learning curves and importance plots in reports.
+
+                            Advanced : To be used for machine learning competitions (maximum performance). Uses 10-fold CV (Cross-Validation). Uses the following models: Decision Tree, Random Forest, Extra Trees, XGBoost, CatBoost, Neural Network, Nearest Neighbors, Ensemble, and Stacking.It has only learning curves in the reports. Default is Basic
     ---------------------   -------------------------------------------
     algorithms              Optional. List of str.
                             The list of algorithms that will be used in the training. The algorithms can be:
@@ -113,21 +99,22 @@ class AutoML(object):
                             In all other cases, regression is performed on the dataset.
     ---------------------   -------------------------------------------
     n_jobs                  Optional. Int.
-                            Number of CPU cores to be used. By default, it is set to -1 which uses
-                            all processes.
+                            Number of CPU cores to be used. By default, it is set to 1.Set it
+                            to -1 to use all the cores.
     =====================   ===========================================
 
-    :return: `AutoML` Object
+    :return: :class:`~arcgis.learn.AutoML` Object
     """
 
     def __init__(
         self,
         data=None,
         total_time_limit=3600,
-        mode="Explain",
+        mode="Basic",
         algorithms=None,
         eval_metric="auto",
-        n_jobs=-1,
+        n_jobs=1,
+        ml_task="auto",
     ):
         try:
             from supervised.automl import AutoML as base_AutoML
@@ -190,8 +177,24 @@ class AutoML(object):
                 columns=self._data._continuous_variables
                 + self._data._categorical_variables,
             )
-            if mode == "Explain":
+            if ml_task == "auto":
+                ml_task = self.get_ml_task(self._all_labels)
+            if ml_task == "text":
+                msg = arcpy_localization_helper(
+                    "Dependent variable has more than 200 unique values more than half of the total records are unique, hence there is not enough information to train a model",
+                    260154,
+                    "ERROR",
+                )
+                exit(260146)
+            if (mode == "Explain") or (mode == "Basic"):
                 explain_level = 2
+                zone_list = ["zone3_id", "zone4_id", "zone5_id", "zone6_id", "zone7_id"]
+                # try:
+                #    self._all_data_df = self._all_data_df.drop(columns=zone_list)
+                #    self._data._continuous_variables = [x for x in self._data._continuous_variables if x not in zone_list]
+                #    self._data._categorical_variables = [x for x in self._data._categorical_variables if x not in zone_list]
+                # except:
+                #    pass
             else:
                 explain_level = 0  # Setting explain level to 0 in case of Perform and Compete as EDA seems to be creating memory issues
 
@@ -215,6 +218,7 @@ class AutoML(object):
             self._model = base_AutoML(
                 results_path=result_path,
                 mode=mode,
+                ml_task=ml_task,
                 algorithms=algorithms,
                 total_time_limit=total_time_limit,
                 golden_features=False,
@@ -228,12 +232,35 @@ class AutoML(object):
             self._model = base_AutoML(results_path=result_path)
             self._model._results_path = self._data.path
 
+    def get_ml_task(self, all_labels):
+        try:
+            if isinstance(all_labels[0], str):
+                unique = np.unique(all_labels, return_counts=False)
+                if len(unique) == 2:
+                    return "binary_classification"
+                elif len(unique) > 200 and len(unique) > int(0.5 * all_labels.shape[0]):
+                    return "text"
+                else:
+                    return "multiclass_classification"
+            else:
+                return "auto"
+        except:
+            return "auto"
+
     def fit(self):
         """
         Fits the AutoML model.
         """
         if getattr(self._data, "_is_not_empty", True):
-            self._model.fit(self._all_data_df, self._all_labels)
+            try:
+                self._model.fit(self._all_data_df, self._all_labels)
+            except:
+                msg = arcpy_localization_helper(
+                    "The desired models could not be trained using the input data provided.",
+                    260150,
+                    "ERROR",
+                )
+                exit()
         else:
             raise Exception("Fit can be called only with data.")
         # self.save()
@@ -252,7 +279,8 @@ class AutoML(object):
         rows                    Optional number of rows. By default, 5 rows
                                 are displayed.
         =====================   ===========================================
-        :returns dataframe
+        :return:
+            dataframe
         """
         if getattr(self._data, "is_not_empty", True) == False:
             raise Exception(
@@ -279,9 +307,12 @@ class AutoML(object):
             warnings.simplefilter("ignore", UserWarning)
             output_labels = self._predict(validation_data_batch)
         pd.options.mode.chained_assignment = None
-        df = self._data._dataframe.iloc[
-            sample_indexes
-        ]  # .loc[sample_batch]#.reset_index(drop=True).loc[sample_batch].reset_index(drop=True)
+        if self._data._is_classification:
+            df = self._data._dataframe.loc[sample_indexes]
+        else:
+            df = self._data._dataframe.iloc[
+                sample_indexes
+            ]  # .loc[sample_batch]#.reset_index(drop=True).loc[sample_batch].reset_index(drop=True)
 
         if self._data._dependent_variable:
             df[self._data._dependent_variable + "_results"] = output_labels
@@ -292,7 +323,8 @@ class AutoML(object):
 
     def score(self):
         """
-        :returns output from AutoML's model.score(), R2 score in case of regression and Accuracy in case of classification.
+        :return:
+            output from AutoML's model.score(), R2 score in case of regression and Accuracy in case of classification.
         """
         if getattr(self._data, "_is_not_empty", True):
             return self._model.score(self._validation_data_df, self._validation_labels)
@@ -303,7 +335,8 @@ class AutoML(object):
 
     def report(self):
         """
-        :returns a report of the different models trained by AutoML along with their performance.
+        :return:
+            a report of the different models trained by AutoML along with their performance.
         """
         main_readme_html = os.path.join(self._model._results_path, "README.html")
         warnings.warn(
@@ -314,7 +347,8 @@ class AutoML(object):
 
     def predict_proba(self):
         """
-        :returns output from AutoML's model.predict_proba() with prediction probability for the training data
+        :return:
+            output from AutoML's model.predict_proba() with prediction probability for the training data
         """
         if (self._data._is_classification == "classification") or (
             self._data._is_classification == True
@@ -365,7 +399,8 @@ class AutoML(object):
         ---------------------   -------------------------------------------
         path                    Path of the directory where the model should be saved.
         =====================   ===========================================
-        :returns path
+        :return:
+            path
         """
         if getattr(self._data, "_is_not_empty", True) == False:
             raise Exception(
@@ -458,6 +493,10 @@ class AutoML(object):
             emd_params["dependent_variable"] = self._data._dependent_variable
 
         emd_params["continuous_variables"] = self._data._continuous_variables
+        if self._data._feature_field_variables:
+            emd_params["_feature_field_variables"] = self._data._feature_field_variables
+        if self._data._raster_field_variables:
+            emd_params["_raster_field_variables"] = self._data._raster_field_variables
 
         with open(emd_file, "w") as f:
             f.write(json.dumps(emd_params, indent=4))
@@ -465,7 +504,9 @@ class AutoML(object):
     @classmethod
     def from_model(cls, emd_path):
         """
-        Creates a `MLModel` Object from an Esri Model Definition (EMD) file.
+        Creates an `AutoML Model` Object from an Esri Model Definition (EMD) file.
+        The model object created can only be used for inference on a new dataset
+        and cannot be retrained.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -474,7 +515,8 @@ class AutoML(object):
                                 file.
         =====================   ===========================================
 
-        :return: `AutoML` Object
+        :return:
+            :class:`~arcgis.learn.AutoML` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -552,6 +594,7 @@ class AutoML(object):
         prediction_type="features",
         output_raster_path=None,
         match_field_names=None,
+        cell_sizes=[3, 4, 5, 6, 7],
     ):
         """
 
@@ -560,7 +603,7 @@ class AutoML(object):
         =================================   =========================================================================
         **Argument**                        **Description**
         ---------------------------------   -------------------------------------------------------------------------
-        input_features                      Optional Feature Layer or spatial dataframe. Required if prediction_type='features'.
+        input_features                      Optional :class:`~arcgis.features.FeatureLayer` or spatial dataframe. Required if prediction_type='features'.
                                             Contains features with location and
                                             some or all fields required to infer the dependent variable value.
         ---------------------------------   -------------------------------------------------------------------------
@@ -570,18 +613,25 @@ class AutoML(object):
         ---------------------------------   -------------------------------------------------------------------------
         datefield                           Optional string. Field name from feature layer
                                             that contains the date, time for the input features.
-                                            Same as `prepare_tabulardata()`.
+                                            Same as :meth:`~arcgis.learn.prepare_tabulardata`.
         ---------------------------------   -------------------------------------------------------------------------
-        distance_features                   Optional List of Feature Layer objects.
+        cell_sizes                          Size of H3 cells (specified as H3 resolution) for spatially
+                                            aggregating input features and passing in the cell ids as additional
+                                            explanatory variables to the model. If a spatial dataframe is passed
+                                            as input_features, ensure that the spatial reference is 4326,
+                                            and the geometry type is Point. Not applicable when explanatory_rasters
+                                            are provided.
+        ---------------------------------   -------------------------------------------------------------------------
+        distance_features                   Optional List of :class:`~arcgis.features.FeatureLayer` objects.
                                             These layers are used for calculation of field "NEAR_DIST_1",
                                             "NEAR_DIST_2" etc in the output dataframe.
                                             These fields contain the nearest feature distance
                                             from the input_features.
-                                            Same as `prepare_tabulardata()`.
+                                            Same as :meth:`~arcgis.learn.prepare_tabulardata` .
         ---------------------------------   -------------------------------------------------------------------------
         output_layer_name                   Optional string. Used for publishing the output layer.
         ---------------------------------   -------------------------------------------------------------------------
-        gis                                 Optional GIS Object. Used for publishing the item.
+        gis                                 Optional :class:`~arcgis.gis.GIS`  Object. Used for publishing the item.
                                             If not specified then active gis user is taken.
         ---------------------------------   -------------------------------------------------------------------------
         prediction_type                     Optional String.
@@ -599,13 +649,15 @@ class AutoML(object):
                                             Specify mapping of field names from prediction set
                                             to training set.
                                             For example:
-                                                {
-                                                    "Field_Name_1": "Field_1",
-                                                    "Field_Name_2": "Field_2"
-                                                }
+
+                                            |    {
+                                            |        "Field_Name_1": "Field_1",
+                                            |        "Field_Name_2": "Field_2"
+                                            |   }
         =================================   =========================================================================
 
-        :returns Feature Layer if prediction_type='features', dataframe for prediction_type='dataframe' else creates an output raster.
+        :return:
+            :class:`~arcgis.features.FeatureLayer` if prediction_type='features', dataframe for prediction_type='dataframe' else creates an output raster.
 
         """
 
@@ -620,6 +672,7 @@ class AutoML(object):
                 input_features,
                 rasters,
                 datefield,
+                cell_sizes,
                 distance_features,
                 output_layer_name,
                 gis,
@@ -642,15 +695,49 @@ class AutoML(object):
         input_features,
         rasters=None,
         datefield=None,
+        cell_sizes=[3, 4, 5, 6, 7],
         distance_feature_layers=None,
         output_name="Prediction Layer",
         gis=None,
         match_field_names=None,
         prediction_type="features",
     ):
+        dataframe_complete = False
         if isinstance(input_features, FeatureLayer):
-            dataframe = input_features.query().sdf
-        elif hasattr(input_features, "dataSource"):
+            try:
+                import arcpy
+                import spatial_reference_helper
+
+                ex = input_features.properties["extent"]
+                data_source_spatial_reference = arcpy.SpatialReference(
+                    ex["spatialReference"].get(
+                        "wkid", ex["spatialReference"].get("latestWkid")
+                    )
+                )
+                extent = arcpy.Extent(
+                    ex["xmin"],
+                    ex["ymin"],
+                    ex["xmax"],
+                    ex["ymax"],
+                    spatial_reference=data_source_spatial_reference,
+                )
+                transformation = spatial_reference_helper.get_datum_transformation(
+                    data_source_spatial_reference, arcpy.SpatialReference(4326), extent
+                )
+            except:
+                transformation = None
+            if cell_sizes and not rasters:
+                dataframe = input_features.query(
+                    out_sr=4326, datum_transformation=transformation
+                ).sdf
+                dataframe = add_h3(dataframe, cell_sizes)
+            else:
+                dataframe = input_features.query().sdf
+        elif (
+            hasattr(input_features, "dataSource")
+            or str(input_features).endswith(".shp")
+            or isinstance(input_features, tuple)
+        ):
             dataframe, index_data = TabularDataObject._sdf_gptool_workflow(
                 input_features,
                 distance_feature_layers,
@@ -658,6 +745,9 @@ class AutoML(object):
                 index_field=None,
                 is_table_obj=False,
             )
+            if cell_sizes and not rasters:
+                dataframe = add_h3(dataframe, cell_sizes)
+            dataframe_complete = True
         elif hasattr(input_features, "value"):
             dataframe, index_data = TabularDataObject._sdf_gptool_workflow(
                 input_features,
@@ -666,6 +756,7 @@ class AutoML(object):
                 index_field=None,
                 is_table_obj=True,
             )
+            dataframe_complete = True
         else:
             dataframe = input_features.copy()
 
@@ -678,61 +769,79 @@ class AutoML(object):
         continuous_variables = self._data._continuous_variables
 
         columns = dataframe.columns
-        feature_layer_columns = []
-        for column in columns:
-            column_name = column
-            categorical = False
-
-            if column_name in fields_needed:
-                if column_name not in continuous_variables:
-                    categorical = True
-            elif match_field_names and match_field_names.get(column_name):
-                if match_field_names.get(column_name) not in continuous_variables:
-                    categorical = True
-            else:
-                continue
-
-            feature_layer_columns.append((column_name, categorical))
-
-        raster_columns = []
-        if rasters:
-            for raster in rasters:
-                column_name = raster.name
+        if dataframe_complete:
+            processed_dataframe = dataframe
+        else:
+            feature_layer_columns = []
+            for column in columns:
+                column_name = column
                 categorical = False
+
                 if column_name in fields_needed:
                     if column_name not in continuous_variables:
                         categorical = True
                 elif match_field_names and match_field_names.get(column_name):
-                    column_name = match_field_names.get(column_name)
-                    if column_name not in continuous_variables:
+                    if match_field_names.get(column_name) not in continuous_variables:
                         categorical = True
                 else:
                     continue
 
-                raster_columns.append((raster, categorical))
+                feature_layer_columns.append((column_name, categorical))
 
-        with warnings.catch_warnings():
-            if not HAS_FASTAI:
-                _raise_fastai_import_error(import_exception=import_exception)
-            warnings.simplefilter("ignore", UserWarning)
-            (
-                processed_dataframe,
-                fields_mapping,
-            ) = TabularDataObject._prepare_dataframe_from_features(
-                input_features,
-                self._data._dependent_variable,
-                feature_layer_columns,
-                raster_columns,
-                datefield,
-                distance_feature_layers,
-            )
+            raster_columns = []
+            if rasters:
+                for raster in rasters:
+                    column_name = raster.name
+                    categorical = False
+                    if column_name in fields_needed:
+                        if column_name not in continuous_variables:
+                            categorical = True
+                    elif match_field_names and match_field_names.get(column_name):
+                        column_name = match_field_names.get(column_name)
+                        if column_name not in continuous_variables:
+                            categorical = True
+                    else:
+                        continue
+
+                    raster_columns.append((raster, categorical))
+
+            with warnings.catch_warnings():
+                if not HAS_FASTAI:
+                    _raise_fastai_import_error(import_exception=import_exception)
+                warnings.simplefilter("ignore", UserWarning)
+                (
+                    processed_dataframe,
+                    fields_mapping,
+                ) = TabularDataObject._prepare_dataframe_from_features(
+                    input_features,
+                    self._data._dependent_variable,
+                    feature_layer_columns,
+                    raster_columns,
+                    datefield,
+                    cell_sizes,
+                    distance_feature_layers,
+                )
 
         if match_field_names:
+            try:
+                list_of_train_fields = []
+                for key, value in match_field_names.items():
+                    if (not key == value) and (len(str(key)) > 0):
+                        list_of_train_fields.append(value)
+                processed_dataframe = processed_dataframe.drop(
+                    list_of_train_fields, axis=1, errors="ignore"
+                )
+            except:
+                pass
             processed_dataframe.rename(columns=match_field_names, inplace=True)
-
         for field in fields_needed:
             if field not in processed_dataframe.columns:
-                raise Exception(f"Field missing {field}")
+                msg = arcpy_localization_helper(
+                    "Data on which prediction in needed does not have the fields the model was trained on",
+                    260152,
+                    "ERROR",
+                )
+                exit()
 
         for column in processed_dataframe.columns:
             if column not in fields_needed:
@@ -749,6 +858,28 @@ class AutoML(object):
             return dataframe
 
         return dataframe.spatial.to_featurelayer(output_name, gis)
+
+    def _raster_sr(self, raster):
+        try:
+            return raster._engine_obj._raster.spatialReference
+        except:
+            try:
+                import arcpy
+
+                return arcpy.SpatialReference(raster.extent["spatialReference"]["wkid"])
+            except:
+                try:
+                    import arcpy
+
+                    return arcpy.SpatialReference(
+                        raster.extent["spatialReference"]["wkt"]
+                    )
+                except:
+                    msg = arcpy_localization_helper(
+                        "One or more input rasters do not have a valid spatial reference.",
+                        517,
+                        "ERROR",
+                    )
 
     def _predict_rasters(self, output_folder_path, rasters, match_field_names=None):
 
@@ -780,14 +911,8 @@ class AutoML(object):
             self._data._categorical_variables + self._data._continuous_variables
         )
 
-        try:
-            arcpy.env.outputCoordinateSystem = rasters[0].extent["spatialReference"][
-                "wkt"
-            ]
-        except:
-            arcpy.env.outputCoordinateSystem = rasters[0].extent["spatialReference"][
-                "wkid"
-            ]
+        cached_sr = arcpy.env.outputCoordinateSystem
+        arcpy.env.outputCoordinateSystem = self._raster_sr(rasters[0])
 
         xmin = rasters[0].extent["xmin"]
         xmax = rasters[0].extent["xmax"]
@@ -796,127 +921,109 @@ class AutoML(object):
         min_cell_size_x = rasters[0].mean_cell_width
         min_cell_size_y = rasters[0].mean_cell_height
 
-        default_sr = rasters[0].extent["spatialReference"]
+        default_sr = self._raster_sr(rasters[0])
 
         for raster in rasters:
-            point_upper = arcgis.geometry.Point(
-                {
-                    "x": raster.extent["xmin"],
-                    "y": raster.extent["ymax"],
-                    "sr": raster.extent["spatialReference"],
-                }
-            )
-            point_lower = arcgis.geometry.Point(
-                {
-                    "x": raster.extent["xmax"],
-                    "y": raster.extent["ymin"],
-                    "sr": raster.extent["spatialReference"],
-                }
-            )
-            cell_size = arcgis.geometry.Point(
-                {
-                    "x": raster.mean_cell_width,
-                    "y": raster.mean_cell_height,
-                    "sr": raster.extent["spatialReference"],
-                }
+            point_upper_left = arcpy.PointGeometry(
+                arcpy.Point(raster.extent["xmin"], raster.extent["ymax"]),
+                self._raster_sr(raster),
+            ).projectAs(default_sr)
+
+            point_lower_right = arcpy.PointGeometry(
+                arcpy.Point(raster.extent["xmax"], raster.extent["ymin"]),
+                self._raster_sr(raster),
+            ).projectAs(default_sr)
+
+            cell_extent = arcpy.Extent(
+                raster.extent["xmin"],
+                raster.extent["ymin"],
+                raster.extent["xmin"] + raster.mean_cell_width,
+                raster.extent["ymin"] + raster.mean_cell_height,
+                spatial_reference=self._raster_sr(raster),
+            ).projectAs(default_sr)
+
+            cx, cy = (
+                abs(cell_extent.XMax - cell_extent.XMin),
+                abs(cell_extent.YMax - cell_extent.YMin),
             )
 
-            points = arcgis.geometry.project(
-                [point_upper, point_lower, cell_size],
-                raster.extent["spatialReference"],
-                default_sr,
-            )
-            point_upper = points[0]
-            point_lower = points[1]
-            cell_size = points[2]
+            if xmin > point_upper_left.firstPoint.X:
+                xmin = point_upper_left.firstPoint.X
+            if ymax < point_upper_left.firstPoint.Y:
+                ymax = point_upper_left.firstPoint.Y
+            if xmax < point_lower_right.firstPoint.X:
+                xmax = point_lower_right.firstPoint.X
+            if ymin > point_lower_right.firstPoint.Y:
+                ymin = point_lower_right.firstPoint.Y
 
-            if xmin > point_upper.x:
-                xmin = point_upper.x
-            if ymax < point_upper.y:
-                ymax = point_upper.y
-            if xmax < point_lower.x:
-                xmax = point_lower.x
-            if ymin > point_lower.y:
-                ymin = point_lower.y
+            if min_cell_size_x < cx:
+                min_cell_size_x = cx
 
-            if min_cell_size_x > cell_size.x:
-                min_cell_size_x = cell_size.x
-
-            if min_cell_size_y > cell_size.y:
-                min_cell_size_y = cell_size.y
+            if min_cell_size_y < cy:
+                min_cell_size_y = cy
 
         max_raster_columns = int(abs(math.ceil((xmax - xmin) / min_cell_size_x)))
         max_raster_rows = int(abs(math.ceil((ymax - ymin) / min_cell_size_y)))
+        point_upper = arcpy.PointGeometry(arcpy.Point(xmin, ymax), default_sr)
+        point_lower = arcpy.PointGeometry(arcpy.Point(xmax, ymin), default_sr)
 
-        point_upper = arcgis.geometry.Point({"x": xmin, "y": ymax, "sr": default_sr})
-        cell_size = arcgis.geometry.Point(
-            {"x": min_cell_size_x, "y": min_cell_size_y, "sr": default_sr}
+        cell_extent = arcpy.Extent(
+            xmin,
+            ymin,
+            xmin + min_cell_size_x,
+            ymin + min_cell_size_y,
+            spatial_reference=default_sr,
         )
 
         raster_data = {}
         for raster in rasters:
             field_name = raster.name
-            point_upper_translated = arcgis.geometry.project(
-                [point_upper], default_sr, raster.extent["spatialReference"]
-            )[0]
-            cell_size_translated = arcgis.geometry.project(
-                [cell_size], default_sr, raster.extent["spatialReference"]
-            )[0]
-            if field_name in fields_needed:
-                raster_read = raster.read(
-                    origin_coordinate=(
-                        point_upper_translated.x,
-                        point_upper_translated.y,
-                    ),
-                    ncols=max_raster_columns,
-                    nrows=max_raster_rows,
-                    cell_size=(cell_size_translated.x, cell_size_translated.y),
-                )
-                for row in range(max_raster_rows):
-                    for column in range(max_raster_columns):
-                        values = raster_read[row][column]
-                        index = 0
-                        for value in values:
-                            key = field_name
-                            if index != 0:
-                                key = key + f"_{index}"
-                            if not raster_data.get(key):
-                                raster_data[key] = []
-                            index = index + 1
-                            raster_data[key].append(value)
-            elif match_field_names and match_field_names.get(raster.name):
-                field_name = match_field_names.get(raster.name)
-                raster_read = raster.read(
-                    origin_coordinate=(
-                        point_upper_translated.x,
-                        point_upper_translated.y,
-                    ),
-                    ncols=max_raster_columns,
-                    nrows=max_raster_rows,
-                    cell_size=(cell_size_translated.x, cell_size_translated.y),
-                )
-                for row in range(max_raster_rows):
-                    for column in range(max_raster_columns):
-                        values = raster_read[row][column]
-                        index = 0
-                        for value in values:
-                            key = field_name
-                            if index != 0:
-                                key = key + f"_{index}"
-                            if not raster_data.get(key):
-                                raster_data[key] = []
-                            index = index + 1
-                            raster_data[key].append(value)
-            else:
-                continue
+
+            point_upper_translated = point_upper.projectAs(self._raster_sr(raster))
+            cell_extent_translated = cell_extent.projectAs(self._raster_sr(raster))
+
+            if field_name not in fields_needed:
+                if match_field_names and match_field_names.get(raster.name):
+                    field_name = match_field_names.get(raster.name)
+
+            ccxx, ccyy = (
+                abs(cell_extent_translated.XMax - cell_extent_translated.XMin),
+                abs(cell_extent_translated.YMax - cell_extent_translated.YMin),
+            )
+
+            raster_read = raster.read(
+                origin_coordinate=(
+                    point_upper_translated.firstPoint.X,
+                    point_upper_translated.firstPoint.Y,
+                ),
+                ncols=max_raster_columns,
+                nrows=max_raster_rows,
+                cell_size=(ccxx, ccyy),
+            )
+
+            for row in range(max_raster_rows):
+                for column in range(max_raster_columns):
+                    values = raster_read[row][column]
+                    index = 0
+                    for value in values:
+                        key = field_name
+                        if index != 0:
+                            key = key + f"_{index}"
+                        if not raster_data.get(key):
+                            raster_data[key] = []
+                        index = index + 1
+                        raster_data[key].append(value)
 
         for field in fields_needed:
-            if (
-                field not in list(raster_data.keys())
-                and match_field_names
-                and match_field_names.get(field, None) is None
+            if (field not in list(raster_data.keys())) and (
+                match_field_names and match_field_names.get(field, None) is None
             ):
-                raise Exception(f"Field missing {field}")
+                msg = arcpy_localization_helper(
+                    "Data on which prediction is needed does not have the fields the model was trained on",
+                    260152,
+                    "ERROR",
+                )
+                exit()
 
         processed_data = []
 
@@ -935,9 +1042,24 @@ class AutoML(object):
 
         predictions = self._predict(processed_numpy)
 
-        predictions = np.array(
-            predictions.reshape([max_raster_rows, max_raster_columns]), dtype="float64"
-        )
+        if isinstance(predictions[0], str):
+            processed_df["predictions"] = predictions
+            le = preprocessing.LabelEncoder()
+            le.fit(processed_df["predictions"])
+            le_name_mapping = dict(zip(le.classes_, le.transform(le.classes_)))
+            processed_df["predictions"] = le.transform(processed_df["predictions"])
+
+            predictions = np.array(
+                processed_df["predictions"].values.reshape(
+                    [max_raster_rows, max_raster_columns]
+                ),
+                dtype=np.uint8,
+            )
+        else:
+            predictions = np.array(
+                predictions.reshape([max_raster_rows, max_raster_columns]),
+                dtype="float64",
+            )
 
         processed_raster = arcpy.NumPyArrayToRaster(
             predictions,
@@ -945,6 +1067,18 @@ class AutoML(object):
             x_cell_size=min_cell_size_x,
             y_cell_size=min_cell_size_y,
         )
+        if isinstance(predictions[0], str):
+            arcpy.management.BuildRasterAttributeTable(processed_raster)
+            class_map = le_name_mapping
+            "class_map=" + str(class_map)
+            arcpy.management.CalculateField(
+                processed_raster,
+                "Class",
+                expression="class_map.get(!Value!)",
+                expression_type="PYTHON3",
+                code_block="class_map=" + str(class_map),
+            )
         processed_raster.save(output_folder_path)
+        arcpy.env.outputCoordinateSystem = cached_sr
 
         return True

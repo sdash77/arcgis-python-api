@@ -194,6 +194,7 @@ class _DeepCloner:
 
             has_admin_info = (
                 layer._token
+                or layer._con.token
                 and layer.manager
                 and layer.manager.properties
                 and "adminLayerInfo" in layer.manager.properties
@@ -254,7 +255,7 @@ class _DeepCloner:
         from arcgis.gis.clone import clone_registry
 
         # if the item is in the clone_registry then use the item definition.
-        if item["type"] in clone_registry():
+        if isinstance(item, arcgis.gis.Item) and item["type"] in clone_registry():
             item_definition = self._get_item_definition(item)
             self._graph[item.id] = item_definition
         # if the item is a group find all the web maps that are shared with the group
@@ -1918,6 +1919,7 @@ class _ItemDefinition(CloneNode):
         self.owner = owner
         self.item_extent = item_extent
         self.created_items = []
+        self.metadata_xml = portal_item.metadata
 
     @property
     def data(self):
@@ -1943,13 +1945,21 @@ class _ItemDefinition(CloneNode):
             owner=self.owner,
             item_id=item_id,
         )
+        if self.metadata_xml:
+            new_item.metadata = self.metadata_xml
         self.created_items.append(new_item)
         self._clone_resources(new_item)
         return new_item
 
     def _clone_resources(self, new_item):
         """Add the resources to the new item"""
+
         if self.portal_item:
+            try:
+                if self.portal_item.metadata:
+                    new_item.update(metadata=self.portal_item.download_metadata())
+            except:
+                ...
             resources = self.portal_item.resources
             resource_list = resources.list()
             if len(resource_list) > 0:
@@ -2644,14 +2654,14 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 elif guid in self._clone_mapping["Item IDs"]:
                     name = name.replace(guid, self._clone_mapping["Item IDs"][guid])
                 else:
-                    new_guid = str(uuid.uuid4()).replace("-", "")
+                    new_guid = uuid.uuid4().hex[0:5]
                     name = name.replace(guid, new_guid)
 
             while True:
                 if target.content.is_service_name_available(name, "featureService"):
                     break
 
-                guid = str(uuid.uuid4()).replace("-", "")
+                guid = uuid.uuid4().hex[0:5]
                 ends_with_guid = re.findall("_[0-9A-F]{32}$", name, re.IGNORECASE)
                 if len(ends_with_guid) > 0:
                     name = name[: len(name) - 32] + guid
@@ -2659,7 +2669,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     name = "{0}_{1}".format(name, guid)
 
         else:
-            guid = str(uuid.uuid4()).replace("-", "")
+            guid = uuid.uuid4().hex[0:5]
             ends_with_guid = re.findall("_[0-9A-F]{32}$", name, re.IGNORECASE)
             if len(ends_with_guid) > 0:
                 name = name[: len(name) - 32] + guid

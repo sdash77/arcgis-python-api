@@ -2,7 +2,7 @@
 Connection Object that uses Python Requests
 
 Requires: requests, requests_toolbelt,
-Possible optional might be required: requests_ntlm, requests_kerberos, requests-oauthlib
+Possible optional might be required: requests_ntlm2, requests_kerberos, requests-oauthlib
 
 """
 from arcgis.auth.tools import LazyLoader
@@ -80,7 +80,7 @@ except ImportError:
 
 from arcgis.auth import EsriBasicAuth
 
-__version__ = "2.0.1"
+__version__ = "2.1.0"
 
 _DEFAULT_TOKEN = uuid.uuid4()
 _log = logging.getLogger(__name__)
@@ -519,12 +519,15 @@ class Connection(object):
                 referer=self._referer,
                 expiration=self._expiration,
                 verify_cert=self._verify_cert,
+                proxies=proxies,
             )
         elif self._auth.lower() == "builtin":
             if self._check_product() == "SERVER":
                 pauth = None
                 if self._portal_connection:
                     pauth = self._portal_connection._con._auth
+                if self._token_url is None:
+                    self._check_product()
                 self._session.auth = EsriGenTokenAuth(
                     token_url=self._token_url,
                     referer=self._referer,
@@ -538,6 +541,8 @@ class Connection(object):
                 )
             else:
                 if self._use_gen_token:
+                    if self._token_url is None:
+                        self._check_product()
                     self._session.auth = EsriGenTokenAuth(
                         token_url=self._token_url,
                         referer=self._referer,
@@ -838,8 +843,20 @@ class Connection(object):
             file_name = os.path.join(out_path, file_name)
             if os.path.isfile(file_name):
                 os.remove(file_name)
+            stream_size = 512 * 2
+            if "Content-Length" in resp.headers:
+                max_length = int(resp.headers["Content-Length"])
+                if max_length > stream_size * 2 and max_length < 1024 * 1024:
+                    stream_size = 1024 * 2
+                elif max_length > 5 * (1024 * 1024):
+                    stream_size = 5 * (1024 * 1024)  # 5 mb
+                elif max_length > (1024 * 1024):
+                    stream_size = 1024 * 1024  # 1 mb
+                else:
+                    stream_size = 512 * 2
+
             fp = stream.stream_response_to_file(
-                response=resp, path=file_name, chunksize=512 * 2
+                response=resp, path=file_name, chunksize=stream_size
             )
             return fp
 
@@ -1127,13 +1144,13 @@ class Connection(object):
             )
         except requests.exceptions.HTTPError as errh:
             raise requests.exceptions.HTTPError("Http Error: %s" % errh)
-        except requests.exceptions.RequestException as errRE:
-            raise requests.exceptions.RequestException(
-                "A general expection was raised: %s" % errRE
-            )
         except requests.exceptions.MissingSchema as errMS:
             raise requests.exceptions.MissingSchema(
                 "URL scheme must be provided: %s" % errMS
+            )
+        except requests.exceptions.RequestException as errRE:
+            raise requests.exceptions.RequestException(
+                "A general expection was raised: %s" % errRE
             )
         except Exception as e:
             raise Exception("A general error occurred: %s" % e)
@@ -1372,13 +1389,13 @@ class Connection(object):
             )
         except requests.exceptions.HTTPError as errh:
             raise requests.exceptions.HTTPError("Http Error: %s" % errh)
-        except requests.exceptions.RequestException as errRE:
-            raise requests.exceptions.RequestException(
-                "A general expection was raised: %s" % errRE
-            )
         except requests.exceptions.MissingSchema as errMS:
             raise requests.exceptions.MissingSchema(
                 "URL scheme must be provided: %s" % errMS
+            )
+        except requests.exceptions.RequestException as errRE:
+            raise requests.exceptions.RequestException(
+                "A general expection was raised: %s" % errRE
             )
         except Exception as e:
             raise Exception("A general error occurred: %s" % e)

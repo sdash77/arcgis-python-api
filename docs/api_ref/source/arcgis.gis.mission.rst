@@ -1,32 +1,32 @@
-arcgis\.gis\.mission module
+arcgis.gis.mission module
 ===========================
 
 .. automodule:: arcgis.gis.mission
 
 MissionServer
 ----------------
-.. autoclass:: arcgis.gis.mission.MissionServer
+.. autoclass:: arcgis.gis.mission._ms.MissionServer
     :members:
     :undoc-members:
     :show-inheritance:
 
 Mission
 ----------------
-.. autoclass:: arcgis.gis.mission.Mission
+.. autoclass:: arcgis.gis.mission.api.Mission
     :members:
     :undoc-members:
     :show-inheritance:
 
 MissionCatalog
 ----------------
-.. autoclass:: arcgis.gis.mission.MissionCatalog
+.. autoclass:: arcgis.gis.mission.api.MissionCatalog
     :members:
     :undoc-members:
     :show-inheritance:
 
 MissionJob
 ----------------
-.. autoclass:: arcgis.gis.mission.MissionJob
+.. autoclass:: arcgis.gis.mission.api.MissionJob
     :members:
     :undoc-members:
     :show-inheritance:

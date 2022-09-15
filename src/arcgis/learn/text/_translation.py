@@ -21,7 +21,7 @@ except Exception as e:
 
 class TextTranslator(InferenceOnlyModel):
     """
-    Creates a `TextTranslator` Object.
+    Creates a :class:`~arcgis.learn.text.TextTranslator` Object.
     Based on the Hugging Face transformers library
     To learn more about the available models for translation task,
     kindly visit:- https://huggingface.co/models?pipeline_tag=translation&search=Helsinki
@@ -54,7 +54,7 @@ class TextTranslator(InferenceOnlyModel):
                             model.
     =====================   ===========================================
 
-    :return: `TextTranslator` Object
+    :return: :class:`~arcgis.learn.text.TextTranslator` Object
     """
 
     #: supported transformer architectures

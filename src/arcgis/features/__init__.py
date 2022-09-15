@@ -28,6 +28,7 @@ from .layer import FeatureLayer, Table, FeatureLayerCollection
 from ._parcel import ParcelFabricManager
 from ._utility import UtilityNetworkManager
 from ._validation import ValidationManager
+from ._trace_configuration import TraceConfiguration
 from . import analyze_patterns
 from . import enrich_data
 from . import find_locations
@@ -49,6 +50,7 @@ __all__ = [
     "UtilityNetworkManager",
     "ValidationManager",
     "ParcelFabricManager",
+    "TraceConfiguration",
 ]
 try:
     from .geo import GeoAccessor, GeoSeriesAccessor

@@ -1,4 +1,5 @@
 from __future__ import annotations
+import os
 from typing import Optional, Union
 import uuid
 from enum import Enum
@@ -53,7 +54,7 @@ class StoryMap(object):
                         'Story Map'. If no item is passed, a new story is created and saved to
                         your active portal.
     ---------------     --------------------------------------------------------------------
-    gis                 Optional instance of GIS. If none provided the active gis is used.
+    gis                 Optional instance of :class:`~arcgis.gis.GIS` . If none provided the active gis is used.
     ===============     ====================================================================
     """
 
@@ -73,9 +74,9 @@ class StoryMap(object):
             self._gis = gis
         else:
             self._gis = gis
-        if gis._portal.is_logged_in is False:
+        if gis is None or gis._portal.is_logged_in is False:
             # check to see if user is authenticated
-            raise Exception("Must be logged into an Enterprise Account")
+            raise Exception("Must be logged into a Portal Account")
         if item and isinstance(item, str):
             # get item using the item id
             item = gis.content.get(item)
@@ -127,6 +128,8 @@ class StoryMap(object):
         else:
             # If no item was provided create a new story map
             self._create_new_storymap()
+        # Get the story url
+        self._url = self._get_url()
 
     # ----------------------------------------------------------------------
     def _create_new_storymap(self):
@@ -164,6 +167,8 @@ class StoryMap(object):
                 "smdraftresourceid:" + draft,
             ]
         )
+        # get default thumbnail for a new item
+        thumbnail = self._get_thumbnail()
         # set the item properties dict to add new item to active gis
         item_properties = {
             "title": title,
@@ -171,7 +176,9 @@ class StoryMap(object):
             "type": "StoryMap",
         }
         # add item to active gis and set properties
-        item = self._gis.content.add(item_properties=item_properties)
+        item = self._gis.content.add(
+            item_properties=item_properties, thumbnail=thumbnail
+        )
         # assign to story properties
         self._item = item
         self._itemid = item.itemid
@@ -189,7 +196,7 @@ class StoryMap(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return json.dumps(self._properties)
+        return self._url
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -199,6 +206,34 @@ class StoryMap(object):
     def _refresh(self):
         if self._item:
             self._properties = json.loads(self._item.get_data())
+
+    # ----------------------------------------------------------------------
+    def _get_url(self) -> str:
+        """
+        Private method to determine what the story url is. This is used to publish
+        and have the correct path set.
+        """
+        if self._gis._is_agol:
+            self._url = "https://storymaps.arcgis.com/stories/{storyid}".format(
+                storyid=self._itemid
+            )
+        else:
+            self._url = "https://{portal}/apps/storymaps/stories/{storyid}".format(
+                portal=self._gis.url, storyid=self._itemid
+            )
+        return self._url
+
+    # ----------------------------------------------------------------------
+    def _get_thumbnail(self) -> str:
+        """
+        Private method to get the default thumbnail path dependent on whether the
+        user is Online or on Enterprise.
+        """
+        if self._gis._is_agol:
+            thumbnail = "https://storymaps.arcgis.com/static/images/item-default-thumbnails/item.jpg"
+        else:
+            thumbnail = "https://{portal}/apps/storymaps/static/images/item-default-thumbnails/item.jpg"
+        return thumbnail
 
     # ----------------------------------------------------------------------
     def show(self, width: Optional[int] = None, height: Optional[int] = None):
@@ -296,6 +331,21 @@ class StoryMap(object):
         """
         Get main nodes in order of appearance in the story.
         """
+        # node_dict contains key-value pairs where the value is the class instance
+        node_dict = self._create_node_dict()
+        # make the value the string representation of the class
+        nodes = []
+        for node in node_dict:
+            nodes.append({k: str(node[k]) for k in node})
+        return nodes
+
+    # ----------------------------------------------------------------------
+    def _create_node_dict(self):
+        """
+        Method called by the nodes property and the get method. However, the nodes
+        property will transform the keys whereas the get method needs they keys
+        to be class instances.
+        """
         # get rood node id since it is story node id
         root_id = self._properties["root"]
         # get list of children from story node
@@ -305,6 +355,7 @@ class StoryMap(object):
         node_order = []
         # for each node assign correct class type to be accessed if needed by user
         for child in children:
+            # get only the main nodes and not the subnodes to be returned
             if child in nodes:
                 node = self._assign_node_class(child)
                 node_order.append({child: node})
@@ -349,8 +400,8 @@ class StoryMap(object):
                             If none specified, list of all nodes returned.
 
 
-                                ``Values: "image" | "video" | "audio" | "embed" | "webmap" | "text" |
-                                "button" | "separator" | "expressmap" | "webscene" | "immersive"``
+                            Values: `image` | `video` | `audio` | `embed` | `webmap` | `text` |
+                            `button` | `separator` | `expressmap` | `webscene` | `immersive`
         ===============     ====================================================================
 
         :return:
@@ -375,13 +426,18 @@ class StoryMap(object):
         """
         spec_type = []
         node_id = node
-
+        if node_id and node_id not in self.properties["nodes"]:
+            raise ValueError(
+                "This node value is not in the story. "
+                + "Please check that you have entered the correct node id. "
+                + "To see all main nodes and their ids use the nodes property."
+            )
         if type is None and node_id is None:
             # return all nodes in order
             return self.nodes
         elif node_id is not None:
             # return a specific node
-            all_nodes = self.nodes
+            all_nodes = self._create_node_dict()
             # find the node in the list and return it
             for node in all_nodes:
                 id = list(node.keys())[0]
@@ -389,7 +445,7 @@ class StoryMap(object):
                     return list(node.values())[0]
         else:
             # return all nodes of a certain type
-            all_nodes = self.nodes
+            all_nodes = self._create_node_dict()
             for node in all_nodes:
                 keyword = list(node.values())[0]
                 if isinstance(keyword, str):
@@ -434,7 +490,7 @@ class StoryMap(object):
         ---------------     --------------------------------------------------------------------
         by_line             Optional string. Crediting the author(s).
         ---------------     --------------------------------------------------------------------
-        image               Optional Image object. The cover image for the story cover.
+        image               Optional :class:`~arcgis.apps.storymap.story_content.Image` object. The cover image for the story cover.
         ===============     ====================================================================
 
         :return: Dictionary representation of the story cover node.
@@ -556,7 +612,7 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     def theme(self, theme: Union[Themes, str] = Themes.SUMMIT):
         """
-        Each story has a theme node in it's resources. This method can be used to change the theme.
+        Each story has a theme node in its resources. This method can be used to change the theme.
         To add a custom theme to your story, pass in the item_id for the item of type Story Map Theme.
 
         ===============     ====================================================================
@@ -565,7 +621,7 @@ class StoryMap(object):
         theme               Required Themes Style or custom theme item id.
                             The theme to set the story to.
 
-                            ``Values: SUMMIT | TIDAL | MESA | RIDGELINE | SLATE | OBSIDIAN | "<item_id>"``
+                            Values: `SUMMIT` | `TIDAL` | `MESA` | `RIDGELINE` | `SLATE` | `OBSIDIAN` | `<item_id>`
         ===============     ====================================================================
 
         .. code-block:: python
@@ -746,14 +802,14 @@ class StoryMap(object):
         ---------------     --------------------------------------------------------------------
         display             Optional String. How the item will be displayed in the story map.
 
-                                For Image, Video, Audio, or Map object.
-                                Values: "small" | "wide" | "full" | "float"
+                            For Image, Video, Audio, or Map object.
+                            Values: "small" | "wide" | "full" | "float"
 
-                                For Gallery:
-                                Values: "jigsaw" | "square-dynamic"
+                            For Gallery:
+                            Values: "jigsaw" | "square-dynamic"
 
-                                For Embed:
-                                Values: "card" | "inline"
+                            For Embed:
+                            Values: "card" | "inline"
         ---------------     --------------------------------------------------------------------
         position            Optional Integer. Indicates the position in which the content will be
                             added. To see all node positions use the ``node`` property.
@@ -780,7 +836,7 @@ class StoryMap(object):
 
         """
         if content and content.node in self._properties["nodes"]:
-            raise Exception("This node already exists. Please try updating instead.")
+            content.node = "n-" + uuid.uuid4().hex[0:6]
 
         # Node id included in all content except separator so create node id for that
         node_id = content.node if content is not None else "n-" + uuid.uuid4().hex[0:6]
@@ -898,7 +954,7 @@ class StoryMap(object):
                             current access is kept. This is used when `publish` parameter is set
                             to True.
 
-                            ``Values: "private" | "org" | "public" ``
+                            Values: `private` | `org` | `public`
         ---------------     --------------------------------------------------------------------
         publish             Optional boolean. If True, the story is saved and also published.
                             Default is false so story is saved with unpublished changes.
@@ -915,6 +971,18 @@ class StoryMap(object):
             ):
                 self._remove_resource(file=resource["resource"])
 
+        # Add meta settings and change push meta so title doesn't get overwritten on publish at any point.
+        if title:
+            root = self._properties["root"]
+            if "metaSettings" not in self._properties["nodes"][root]["data"]:
+                self._properties["nodes"][root]["data"]["metaSettings"] = {
+                    "title": None
+                }
+            self._properties["nodes"][root]["data"]["metaSettings"]["title"] = title
+            self._properties["nodes"][root]["config"][
+                "shouldPushMetaToAGOItemDetails"
+            ] = False
+
         # Add new draft with time in milliseconds
         draft = "draft_" + str(int(time.time() * 1000)) + ".json"
         self._add_resource(
@@ -922,8 +990,8 @@ class StoryMap(object):
         )
 
         # Find type keywords to use based on whether to publish or not
+        # PUBLISH MODE
         if publish is True:
-            # Publish mode
             # Remove old publish item
             for resource in self._resources:
                 if (
@@ -969,13 +1037,14 @@ class StoryMap(object):
             p = {
                 "typeKeywords": list(set(keywords + new_keywords)),
                 "text": json.dumps(self._properties),
+                "url": self._url,
             }
             if title:
                 p["title"] = title
             if tags:
                 p["tags"] = tags
 
-            # find and set access
+            # Find and set access
             sharing = access if access is not None else self._item.access
             p["access"] = sharing
 
@@ -993,21 +1062,11 @@ class StoryMap(object):
                 self._gis._con._session.auth
                 and self._gis._con._session.auth.token is not None
             ):
-                params = {"f": "json", "token": self._gis._con._session.auth.token}
-                # Get url
-                if self._gis._is_agol:
-                    self._url = (
-                        "https://storymaps.arcgis.com/stories/{storyid}/publish".format(
-                            storyid=self._itemid
-                        )
-                    )
-                else:
-                    self._url = "https://{portal}/apps/storymaps/stories/{storyid}/publish".format(
-                        portal=self._gis.url, storyid=self._itemid
-                    )
-
                 # Make a call to the StoryMaps publish endpoint
-                self._gis._con.post(path=self._url, params=params)
+                self._gis._con.post(
+                    path=self._url + "/publish",
+                    params={"f": "json", "token": self._gis._con._session.auth.token},
+                )
         else:
             # Set the type keywords
             keywords = self._item.typeKeywords
@@ -1054,7 +1113,6 @@ class StoryMap(object):
                 p["tags"] = tags
             # access does not change when only saving
             p["access"] = self._item.access
-
             self._item.update(item_properties=p)
 
         self._item = self._gis.content.get(self._itemid)
@@ -1118,7 +1176,7 @@ class StoryMap(object):
         return clone_story.save()
 
     # ----------------------------------------------------------------------
-    def _delete(self, node_id, resource_id=None):
+    def _delete(self, node_id):
         # Check if node is in story
         if node_id not in self._properties["nodes"]:
             return False
@@ -1143,12 +1201,6 @@ class StoryMap(object):
                     # iterate through children to see if node is part of it
                     if child == node_id:
                         self._properties["nodes"][node]["children"].remove(node_id)
-
-        # Remove from resources dictionary
-        # Note: not all keys are in resources
-        resource = self._properties["resources"].pop(resource_id, None)
-        if resource is not None and "resourceId" in resource["data"]:
-            self._remove_resource(resource["data"]["resourceId"])
 
         return True
 
@@ -1263,5 +1315,5 @@ class StoryMap(object):
                 node = subtype
         else:
             # if not of type story content then just return name of type
-            node = node_type
+            node = node_type.capitalize()
         return node

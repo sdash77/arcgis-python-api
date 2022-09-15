@@ -247,9 +247,9 @@ yet.
    * Italics
      * dostring:    \`Italics\` 
      * api ref output:    *Italics*
-   * Box with red lettering
-     * docstring:    The \`\`as\_dict\`\` property
-     * api ref output:    ![red_string output](./source/_static/images/api_ref_style_guide/red_string.png)
+   * Highlighted string with a box
+     * docstring:    The \`\`GIS\`\` class
+       * api ref output:    ![highlighted_string output](./source/_static/images/api_ref_style_guide/highlighted_string.png)
 2. **Notes**
    * Use the note directive to start the docstring:
      * .. note::
@@ -282,7 +282,7 @@ yet.
    * Cross-references should be used when appropriate for return values, in docstring summary lines and descriptions, as well as in parameter tables.
      * reference a `Class`:
        * **Docstring syntax**
-         * :class:\`\~arcgis.features.FeatureLayerCollection\`
+         * :class:\`\~arcgis.gis._impl.APIKeyManager\`
          
          ![full docstring](./source/_static/images/api_ref_style_guide/class_string.png)
 
@@ -307,7 +307,7 @@ yet.
            ![xref func output](./source/_static/images/api_ref_style_guide/func_output.png)
        * _:meth:_
          * **Docstring syntax**
-           * :meth:\`arcgis.mapping.symbol.display_colormaps\`
+           * :meth:\`arcgis.raster.analytics.is_supported\`
            ![meth attr docstring](./source/_static/images/api_ref_style_guide/meth_string.png)
          * **Documentation Output**
 
@@ -332,7 +332,7 @@ yet.
     ![table output](./source/_static/images/api_ref_style_guide/table_output.png)
         
 7.  **Code Block**
-  * Use the code block directive to insert code snippets, either within parameter tables to illustrate parameter options, or after a blank line following return directives.
+  * Use the code block directive to insert code snippets, either within parameter tables to illustrate parameter options, or after a docstring
   * **Docstring Syntax**   .. code-block:: python
     * Renders as a code snippet similar to the core Python library documentation.
     * Start actual code lines a user will type with the \>\>\> prompt, which will render highlighting for Python reserved words \(the snippet looks more like it is actual code rather than a snippet in a docstring\)

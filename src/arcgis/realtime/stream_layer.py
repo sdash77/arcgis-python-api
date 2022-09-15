@@ -13,7 +13,7 @@ from urllib.parse import urlencode
 
 class StreamLayer(Layer):
     """
-    arcgis.realtime.StreamLayer allows Python scripts to subscribe to the feature data streamed from the GIS, using ArcGIS
+    Allows Python scripts to subscribe to the feature data streamed from the GIS, using ArcGIS
     GeoEvent Server or ArcGIS Velocity, or to broadcast updates and alerts. This class can be used to perform continuous processing and
     analysis on streaming data as it is received.
     """
@@ -59,12 +59,24 @@ class StreamLayer(Layer):
     def subscribe(self, on_features, on_open=None, on_disconnect=None, on_error=None):
         """
         Allows Python scripts to subscribe to the feature data streamed from the GIS using ArcGIS
-        GeoEvent Server or ArcGIS Velocity. Subscribing to the streamed data can be used to perform continuous processing and analysis
-        of real-time data as it is received.
-        :param on_features: callback function that is called every time features are streamed to the client.
-        :param on_open: callback function called when the connection to the streaming server is created.
-        :param on_disconnect: callback function called when the connection to the streaming server is closed.
-        :param on_error: callback function called if the connection recieves an error.
+        GeoEvent Server or ArcGIS Velocity. Subscribing to the streamed data can be used to perform continuous processing and
+        analysis of real-time data as it is received.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        on_features         callback function that is called every time features are streamed
+                            to the client.
+        ---------------     --------------------------------------------------------------------
+        on_open             callback function called when the connection to the streaming server
+                            is created.
+        ---------------     --------------------------------------------------------------------
+        on_disconnect       callback function called when the connection to the streaming server
+                            is closed.
+        ---------------     --------------------------------------------------------------------
+        on_error            callback function called if the connection recieves an error.
+        ===============     ====================================================================
+
         """
         try:
             import sys

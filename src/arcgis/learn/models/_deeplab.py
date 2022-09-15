@@ -1,10 +1,8 @@
-import os, json, tempfile
+import json
 from pathlib import Path
 from ._codetemplate import image_classifier_prf
-from ._arcgis_model import _raise_fastai_import_error
 from functools import partial
 from ._arcgis_model import ArcGISModel
-import types
 import logging
 
 logger = logging.getLogger()
@@ -12,26 +10,22 @@ logger = logging.getLogger()
 try:
     from fastai.basic_train import Learner
     from ._arcgis_model import (
-        SaveModelCallback,
         _resnet_family,
         _vgg_family,
         _densenet_family,
         _set_ddp_multigpu,
         _isnotebook,
     )
-    from ._unet_utils import is_no_color, predict_batch, show_results_multispectral
+    from ._timm_utils import filter_timm_models
+    from ._unet_utils import is_no_color, show_results_multispectral
     import torch
     from torch import nn
     import torch.nn.functional as F
     from torchvision import models
-    from ._unet_utils import LabelCallback
     from ._arcgis_model import _EmptyData, _change_tail
-    from fastai.vision import to_device
-    from fastai.callbacks.hooks import hook_output, model_sizes
     from torchvision.models._utils import IntermediateLayerGetter
     from collections import OrderedDict
     import numpy as np
-    from fastai.callbacks import EarlyStoppingCallback
     from fastai.torch_core import split_model_idx
     from .._utils.classified_tiles import per_class_metrics
     from fastai.vision import flatten_model
@@ -51,7 +45,7 @@ try:
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
     from ._psp_utils import accuracy
     from ._PointRend import PointRendSemSegHead, PointRend_target_transform
-    from .._utils.env import _IS_ARCGISPRONOTEBOOK
+    from .._utils.env import is_arcgispronotebook
     import matplotlib.pyplot as plt
 
     HAS_FASTAI = True
@@ -190,20 +184,21 @@ def _create_deeplab(
 class DeepLab(ArcGISModel):
     """
     Model architecture from https://arxiv.org/abs/1706.05587.
-    Creates a ``DeepLab`` Image Segmentation/ Pixel Classification model,
+    Creates a :class:`~arcgis.learn.DeepLab` Image Segmentation/ Pixel Classification model,
     based on https://github.com/pytorch/vision/tree/master/torchvision/models/segmentation.
 
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    data                    Required fastai Databunch. Returned data object from
-                            ``prepare_data`` function.
+    data                    Required fastai Databunch. Returned data object from function.
     ---------------------   -------------------------------------------
-    backbone                Optional function. Backbone CNN model to be used for
-                            creating the base of the `DeepLab`, which
+    backbone                Optional string. Backbone convolutional neural network
+                            model used for feature extraction, which
                             is `resnet101` by default since it is pretrained in
-                            torchvision. It supports the ResNet,
-                            DenseNet, and VGG families.
+                            torchvision.
+                            Supported backbones: ResNet, DenseNet, VGG family and
+                            specified Timm models(experimental support) from
+                            :func:`~arcgis.learn.DeepLab.backbones`.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -239,10 +234,11 @@ class DeepLab(ArcGISModel):
                             Default: 0
     ---------------------   -------------------------------------------
     dice_loss_average       Optional str.
-                            micro: Micro dice coefficient will be used for loss
-                            calculation.
-                            macro: Macro dice coefficient will be used for loss
-                            calculation.
+
+                            * micro: Micro dice coefficient will be used for loss calculation.
+
+                            * macro: Macro dice coefficient will be used for loss calculation.
+
                             A macro-average will compute the metric independently
                             for each class and then take the average (hence treating
                             all classes equally), whereas a micro-average will
@@ -262,7 +258,7 @@ class DeepLab(ArcGISModel):
                             at the cost of memory consumption. Default: False
     =====================   ===========================================
 
-    :return: ``DeepLab`` Object
+    :return: :class:`~arcgis.learn.DeepLab` Object
     """
 
     def __init__(
@@ -289,7 +285,7 @@ class DeepLab(ArcGISModel):
                 f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
             )
 
-        super().__init__(data, backbone, **kwargs)
+        super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
 
         self._pointrend = pointrend
 
@@ -323,7 +319,10 @@ class DeepLab(ArcGISModel):
         self.dice_loss_average = kwargs.get("dice_loss_average", "micro")
 
         self._code = image_classifier_prf
-        if self._backbone.__name__ == "resnet101":
+        if (
+            self._backbone.__name__ == "resnet101"
+            and "timm" not in self._backbone.__module__
+        ):
             model = _create_deeplab(
                 data.chip_size,
                 data.c,
@@ -411,12 +410,30 @@ class DeepLab(ArcGISModel):
 
     @property
     def supported_backbones(self):
-        """Supported torchvision backbones for this model."""
+        """Supported list of backbones for this model."""
+        return DeepLab._supported_backbones()
+
+    @staticmethod
+    def backbones():
+        """Supported list of backbones for this model."""
         return DeepLab._supported_backbones()
 
     @staticmethod
     def _supported_backbones():
-        return [*_resnet_family, *_densenet_family, *_vgg_family]
+        timm_models = filter_timm_models(
+            [
+                "*dpn*",
+                "*inception*",
+                "*nasnet*",
+                "*repvgg*",
+                "*resnetblur*",
+                "*selecsls*",
+                "*tresnet*",
+                "*hrnet*",
+            ]
+        )
+        timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
+        return [*_resnet_family, *_densenet_family, *_vgg_family] + timm_backbones
 
     @property
     def supported_datasets(self):
@@ -430,7 +447,7 @@ class DeepLab(ArcGISModel):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a ``DeepLab`` semantic segmentation object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.DeepLab` semantic segmentation object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -439,12 +456,12 @@ class DeepLab(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from ``prepare_data`` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data`  function or None for
                                 inferencing.
 
         =====================   ===========================================
 
-        :return: `DeepLab` Object
+        :return: :class:`~arcgis.learn.DeepLab` Object
         """
 
         emd_path = _get_emd_path(emd_path)
@@ -581,19 +598,16 @@ class DeepLab(ArcGISModel):
 
     def _freeze(self):
         "Freezes the pretrained backbone."
-        if self._backbone.__name__ == "resnet101":
-            idx = 68
-        else:
-            for idx, i in enumerate(flatten_model(self.learn.model)):
-                if isinstance(i, (nn.BatchNorm2d)):
-                    continue
-                if hasattr(i, "dilation"):
-                    dilation = i.dilation
-                    dilation = dilation[0] if isinstance(dilation, tuple) else dilation
-                    if dilation > 1:
-                        break
-                for p in i.parameters():
-                    p.requires_grad = False
+        for idx, i in enumerate(flatten_model(self.learn.model.backbone)):
+            if isinstance(i, (nn.BatchNorm2d)):
+                continue
+            if hasattr(i, "dilation"):
+                dilation = i.dilation
+                dilation = dilation[0] if isinstance(dilation, tuple) else dilation
+                if dilation > 1:
+                    break
+            for p in i.parameters():
+                p.requires_grad = False
 
         self.learn.layer_groups = split_model_idx(
             self.learn.model, [idx]
@@ -622,7 +636,7 @@ class DeepLab(ArcGISModel):
         self.learn.show_results(
             rows=rows, ignore_mapped_class=self._ignore_mapped_class, **kwargs
         )
-        if _IS_ARCGISPRONOTEBOOK:
+        if is_arcgispronotebook():
             plt.show()
 
     def _show_results_multispectral(

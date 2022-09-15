@@ -42,13 +42,13 @@ class ServicesDirectory(BaseServer):
     url                       string required. The web address to the ArcGIS Server administration
                               end point.
 
-                              Example: https://mysite.com/arcgis
+                              Example: ``https://mysite.com/arcgis``
 
                               The URL should be formatted as follows:
                               <scheme>://<host>:<port (optional)>/<web adapter>
     ---------------------     --------------------------------------------------------------------
     baseurl                   optional string, the root URL to a site.
-                              Example: https://mysite.com/arcgis
+                              Example: ``https://mysite.com/arcgis``
     ---------------------     --------------------------------------------------------------------
     tokenurl                  optional string. Used when a site if federated or when the token
                               URL differs from the site's baseurl.  If a site is federated, the
@@ -106,11 +106,14 @@ class ServicesDirectory(BaseServer):
         key_file: str = None,
         cert_file: str = None,
         verify_cert: bool = False,
+        proxy: dict = None,
         **kwargs,
     ):
         """Constructor"""
         super(ServicesDirectory, self)
         profile = kwargs.pop("profile", None)
+        if str(url).endswith("/"):
+            url = url[:-1]
         if profile:
             # pm = self._pm
             url, username, password, key_file, cert_file, client_id = self._profile_mgr(
@@ -166,6 +169,7 @@ class ServicesDirectory(BaseServer):
                 portal_connection=self._portal_connection,
                 verify_cert=verify_cert,
                 product="SERVER",
+                proxy=proxy,
                 **kwargs,
             )
         self._gis = kwargs.pop("gis", None)
@@ -227,11 +231,11 @@ class ServicesDirectory(BaseServer):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<%s at %s>" % (type(self).__name__, self.url)
+        return "< %s @ %s >" % (type(self).__name__, self.url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<%s at %s>" % (type(self).__name__, self.url)
+        return "< %s @ %s >" % (type(self).__name__, self.url)
 
     # ----------------------------------------------------------------------
     def report(self, as_html: bool = True, folder: Optional[str] = None):

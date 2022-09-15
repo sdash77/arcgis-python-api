@@ -33,11 +33,11 @@ class PasswordPolicy(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -121,6 +121,10 @@ class Security(BasePortalAdmin):
     def enterpriseusers(self):
         """
         provides access into managing enterprise users
+
+        :return:
+            :class:`~arcgis.gis.admin.EnterpriseUsers` object
+
         """
         if self._eu is None:
             url = "%s/users" % self._url
@@ -130,7 +134,13 @@ class Security(BasePortalAdmin):
     # ----------------------------------------------------------------------
     @property
     def groups(self):
-        """provides access to managing Enterprise Groups with Portal"""
+        """
+        provides access to managing Enterprise Groups with Portal
+
+        :return:
+            :class:`~arcgis.gis.admin.EnterpriseGroups` object
+
+        """
         if self._eg is None:
             url = "%s/groups" % self._url
             self._eg = EnterpriseGroups(url=url, gis=self._gis)
@@ -181,6 +191,11 @@ class Security(BasePortalAdmin):
         The OAuth resource contains a set of operations that update the
         OAuth2-specific properties of registered applications in Portal for
         ArcGIS.
+
+
+        :return:
+            :class:`~arcgis.gis.admin.OAuth` object
+
         """
         if self._oauth is None:
             url = "%s/oauth" % self._url
@@ -235,7 +250,7 @@ class Security(BasePortalAdmin):
         the format (.*).domain.com to allow access to all machines within a
         specified domain.
 
-        *example value*
+        *Example Value*
           {
            "disableServicesDirectory":false,
            "enableAutomaticAccountCreation":true,
@@ -346,6 +361,10 @@ class Security(BasePortalAdmin):
         """
         Provides access to managing and updating SSL Certificates on a
         Portal site.
+
+        :return:
+            :class:`~arcgis.gis.admin.SSLCertificates` object
+
         """
         if self._ssl is None:
             url = "%s/sslCertificates" % self._url
@@ -467,7 +486,9 @@ class SSLCertificates(BasePortalAdmin):
         self._init()
 
     # ----------------------------------------------------------------------
-    def update(self, alias: str, protocols: str, cipher_suites: str):
+    def update(
+        self, alias: str, protocols: str, cipher_suites: str, HSTS: bool = False
+    ):
         """
         Use this operation to configure the web server certificate, SSL
         protocols, and cipher suites used by the portal.
@@ -494,6 +515,8 @@ class SSLCertificates(BasePortalAdmin):
                                             - TLS_RSA_WITH_3DES_EDE_CBC_SHA
                                         By default, all of the above options are enabled. Values must be
                                         comma separated.
+        ---------------------------     --------------------------------------------------------------------
+        HSTS                            Optional Boolean. A Boolean value that indicates whether HTTP Strict Transport Security (HSTS) is being used by the portal.
         ===========================     ====================================================================
 
         :return: Dictionary indicating 'success' or 'error'
@@ -501,11 +524,13 @@ class SSLCertificates(BasePortalAdmin):
         """
         self._certs = None
         url = "%s/update" % self._url
+
         params = {
             "f": "json",
             "webServerCertificateAlias": alias,
             "sslProtocols": protocols,
             "cipherSuites": cipher_suites,
+            "HSTSEnabled": HSTS,
         }
         return self._con.post(path=url, postdata=params)
 
@@ -595,9 +620,14 @@ class SSLCertificates(BasePortalAdmin):
             # Need to capture this because method only returns HTML
             # Ignore decoding errors
             self._refresh()
-            return True
-        except:
-            return False
+        except Exception as e:
+            ...
+        return any(
+            [
+                cert.properties.aliasName.lower() == alias.lower()
+                for cert in self.list(True)
+            ]
+        )
 
     # ----------------------------------------------------------------------
     def import_certificate(self, certificate: str, alias: str, norestart: bool = False):
@@ -660,6 +690,7 @@ class SSLCertificates(BasePortalAdmin):
                 postdata=params,
                 files=files,
             )
+            print(res)
         except HTTPError as error:
             if error.code == "408" or error.code == 408:
                 return True
@@ -713,7 +744,7 @@ class SSLCertificates(BasePortalAdmin):
         ===========================     ====================================================================
 
         :return:
-            List of SSLCertificate objects
+            List of :class: arcgis.gis.admin.SSLCertificate objects
 
         .. code-block:: python
 
@@ -742,7 +773,7 @@ class SSLCertificates(BasePortalAdmin):
             self._refresh()
             for cert in self.properties.sslCertificates:
                 url = "%s/%s" % (self._url, cert)
-                certs.append(SSLCertificate(url=url, gis=self._gis))
+                certs.append(SSLCertificate(url=url, gis=self._gis, mgr=self))
                 del cert
             self._certs = certs
         return self._certs
@@ -758,7 +789,8 @@ class SSLCertificates(BasePortalAdmin):
         alias_name                      Required string. The common name of the certificate.
         ===========================     ====================================================================
 
-        :return: SSLCertificate Object
+        :return:
+            :class: `~arcgis.gis.admin.SSLCertificate` object
 
         .. code-block:: python
 
@@ -807,6 +839,7 @@ class SSLCertificate(BasePortalAdmin):
     _gis = None
     _con = None
     _url = None
+    _mgr = None
     # ----------------------------------------------------------------------
     def __init__(self, url, gis=None, **kwargs):
         """Constructor"""
@@ -821,6 +854,7 @@ class SSLCertificate(BasePortalAdmin):
             raise ValueError("connection must be of type GIS or Connection")
         if initialize:
             self._init(self._gis)
+        self._mgr = kwargs.pop("mgr", None)
 
     # ----------------------------------------------------------------------
     def generate_csr(self):
@@ -871,15 +905,17 @@ class SSLCertificate(BasePortalAdmin):
         """
         import json
 
+        name = self.properties.aliasName.lower()
         params = {"f": "json"}
         url = "%s/delete" % self._url
         try:
-            self._con.post(path=url, postdata=params)
-            return True
-        except json.JSONDecodeError:
+            self._con.post_multipart(path=url, postdata=params)
             return True
         except:
-            return False
+            ...
+        return not name in [
+            cert.properties.aliasName.lower() for cert in self._mgr.list(True)
+        ]
 
     # ----------------------------------------------------------------------
     def import_signed_certificate(self, file_path: str):

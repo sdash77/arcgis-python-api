@@ -253,6 +253,11 @@ class ArcGISMSImage(Image):
                     x = (x - min_values) / (max_values - min_values + 1e-04)
                 else:
                     x = x / div
+
+                # Remove data values which are outside our data range.
+                # Data Range is as read from EMD.
+                # Handles No data values.
+                x.clamp_(0, 1)
         return cls(x)
 
 
@@ -624,7 +629,7 @@ def load_model(emd_path, data=None):
 
     with open(_emd_path) as f:
         emd = json.load(f)
-    model_name = emd["ModelName"]
+    model_name = "".join(char for char in emd["ModelName"] if char.isalnum())
     model_cls = getattr(models, model_name, None)
 
     if model_cls is None:

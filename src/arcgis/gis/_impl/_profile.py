@@ -128,15 +128,11 @@ class ServerProfileManager(object):
 
             if self._keyring_version() >= [23]:
 
-                password = keyring.get_credential(
-                    "arcgis_python_api_profile_passwords", profile
-                )
+                password = keyring.get_credential(self._profile_name, profile)
 
                 password = getattr(password, "password", None)
             else:
-                password = keyring.get_password(
-                    "arcgis_python_api_profile_passwords", profile
-                )
+                password = keyring.get_password(self._profile_name, profile)
         else:
             password = None
             _log.warn(self._get_keyring_failure_message())
@@ -719,7 +715,14 @@ class ProfileManager(object):
         if self._keyring_version() >= [23, 0, 0]:
             supported_keyrings = [type(r) for r in keyring.backend.get_all_keyring()]
         else:
-
+            try:
+                import keyring.backends.OS_X
+                import keyring.backends.kwallet
+                import keyring.backends.chainer
+                import keyring.backends.Windows
+                import keyring.backends.SecretService
+            except Exception as keyringex:
+                print(f"Error importing keyring {str(keyringex)}")
             supported_keyrings = [
                 keyring.backends.OS_X.Keyring,
                 keyring.backends.SecretService.Keyring,

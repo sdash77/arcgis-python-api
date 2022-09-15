@@ -33,10 +33,10 @@ class ImageCaptioner(ArcGISModel):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object
-                            from `prepare_data` function.
+                            from :meth:`~arcgis.learn.prepare_data` function.
     ---------------------   -------------------------------------------
     backbone                Optional function. Backbone CNN model to be used
-                            for creating the encoder of the `ImageCaptioner`,
+                            for creating the encoder of the :class:`~arcgis.learn.ImageCaptioner` ,
                             which is `resnet34` by default. It supports
                             the ResNet family of backbones.
     ---------------------   -------------------------------------------
@@ -54,26 +54,28 @@ class ImageCaptioner(ArcGISModel):
                             `teacher_forcing`, `dropout` and
                             `pretrained_embeddings`.
 
-                              Default values:
-                                decoder_params={
-                                                    'embed_size':100,
-                                                    'hidden_size':100,
-                                                    'attention_size':100,
-                                                    'teacher_forcing':1,
-                                                    'dropout':0.1,
-                                                    'pretrained_emb':False
-                                                }
+                            Default values:
 
-                              Parameter Explanation
-                                - 'embed_size': Size of embedding to be used during training.
-                                - 'hidden_size': Size of hidden layer.
-                                - 'attention_size': Size of intermediate attention layer.
-                                - 'teacher_forcing': Probability of teacher forcing.
-                                - 'dropout': Dropout probability.
-                                - 'pretrained_emb': If true, it will use fasttext embeddings.
+                                | decoder_params={
+                                |                     'embed_size':100,
+                                |                     'hidden_size':100,
+                                |                     'attention_size':100,
+                                |                     'teacher_forcing':1,
+                                |                     'dropout':0.1,
+                                |                     'pretrained_emb':False
+                                |                 }
+
+                            Parameter Explanation:
+
+                            - 'embed_size': Size of embedding to be used during training.
+                            - 'hidden_size': Size of hidden layer.
+                            - 'attention_size': Size of intermediate attention layer.
+                            - 'teacher_forcing': Probability of teacher forcing.
+                            - 'dropout': Dropout probability.
+                            - 'pretrained_emb': If true, it will use fasttext embeddings.
     =====================   ===========================================
 
-    :return: `ImageCaptioner` Object
+    :return: :class:`~arcgis.learn.ImageCaptioner`  Object
     """
 
     def __init__(self, data, backbone=None, pretrained_path=None, **kwargs):
@@ -120,11 +122,11 @@ class ImageCaptioner(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Optional fastai Databunch. Returned
-                                data object from `prepare_data` function or
+                                data object from :meth:`~arcgis.learn.prepare_data` function or
                                 None for inferencing.
         =====================   ===========================================
 
-        :return: `ImageCaptioner` Object
+        :return: :class:`~arcgis.learn.ImageCaptioner`  Object
         """
 
         from fastai.text.transform import Vocab
@@ -303,7 +305,7 @@ class ImageCaptioner(ArcGISModel):
         ---------------------   -------------------------------------------
         framework               Optional string. Defines the framework of the
                                 model.
-                                (Only supported by ``SingleShotDetector``.)
+                                (Only supported by :class:`~arcgis.learn.SingleShotDetector`.)
                                 If framework used is ``TF-ONNX``,
                                 ``batch_size`` can be passed as an optional
                                 keyword argument.
@@ -313,7 +315,7 @@ class ImageCaptioner(ArcGISModel):
         publish                 Optional boolean. Publishes the DLPK as an
                                 item.
         ---------------------   -------------------------------------------
-        gis                     Optional GIS Object. Used for publishing the
+        gis                     Optional :class:`~arcgis.gis.GIS`  Object. Used for publishing the
                                 item.
                                 If not specified then active gis user is taken.
         ---------------------   -------------------------------------------

@@ -13,8 +13,9 @@ from parameterized import parameterized
 from fastai.vision.learner import ClassificationInterpretation
 import random
 import string
+import glob
 from sys import platform
-from arcgis.learn import classify_pixels, detect_objects, classify_objects
+from arcgis.learn import classify_pixels, detect_objects, classify_objects, ImageryModel
 
 import_exception = None
 
@@ -37,6 +38,7 @@ module_skip = False
 parameter = []
 parameter_fl = []
 parameter_df = []
+# parameter_autodl = []
 parameter_text = []
 authorization_data = {}
 check_ms = False
@@ -56,7 +58,7 @@ else:
         data_folder,
         setuposenviron,
         data_folder_ms,
-        data_inference_only,
+        data_inference_only
     )
     from arcgis.learn import prepare_data, prepare_tabulardata, prepare_textdata
     from datetime import datetime
@@ -99,6 +101,8 @@ accuracy_values = {
         "mmdetection": 0,
         "mlmodel": 0,
         "automl": 0,
+        "maxdeeplab":0,
+        "detreg":0,
     }
 }
 
@@ -108,9 +112,9 @@ success_stat = {
         "total": 0,
         "pass": 0,
         "fail": 0,
-        "od_total": 5,
+        "od_total": 6,
         "od": 0,
-        "pc_total": 10,
+        "pc_total": 11,
         "pc": 0,
         "co_total": 1,
         "co": 0,
@@ -255,6 +259,49 @@ def CommonTestUsingDF(
         os.path.join(data_folder_path, data_path, f"{model_test}/{model_test}.emd")
     )
 
+# def CommonTestAutoDL(
+#     model_name,
+#     datapath,
+#     datapath_ms,
+#     model,
+#     model_test,
+#     prepare_data_rgb,
+#     prepare_data_ms,
+#     network,
+#     time,
+# ):
+#     data = prepare_data(**prepare_data_rgb)
+#     model_object = model(data, total_time_limit=1)
+#     model_object.fit()
+#     best_model_path = os.path.join(data_folder, datapath, 'models', '*AutoDL_'+model_object.best_model+'*', '*emd')
+#     emd_path = glob.glob(best_model_path)[0]
+#     img_model = ImageryModel()
+#     img_model.load(emd_path, data)
+#     img_model.fit()
+#     fine_tuned_model = os.path.join(data_folder, datapath, 'models', 'fine_tuned_model')
+#     img_model.save(fine_tuned_model)
+
+# def CommonTestAutoDLMS(
+#     model_name,
+#     datapath,
+#     datapath_ms,
+#     model,
+#     model_test,
+#     prepare_data_rgb,
+#     prepare_data_ms,
+#     network,
+#     time,
+# ):
+#     data = prepare_data(**prepare_data_ms)
+#     model_object = model(data, total_time_limit=1)
+#     model_object.fit()
+#     best_model_path = os.path.join(data_folder_ms, datapath_ms, 'models', '*AutoDL_'+model_object.best_model+'*', '*emd')
+#     emd_path = glob.glob(best_model_path)[0]
+#     img_model = ImageryModel()
+#     img_model.load(emd_path, data)
+#     img_model.fit()
+#     fine_tuned_model = os.path.join(data_folder_ms, datapath_ms, 'models', 'fine_tuned_model')
+#     img_model.save(fine_tuned_model)
 
 def CommonTestUsingFL(
     query,
@@ -457,6 +504,8 @@ def commonTestCases(
                 result = float(model_object.compute_metrics()["SSIM"])
             elif regression_parameter == "f1_score":
                 result = model_object.f1_score()
+            elif regression_parameter == "panoptic_quality":
+                result = model_object.panoptic_quality()
             elif regression_parameter == "compute_metrics":
                 if model_test == "siammask_test":
                     result = float(model_object.compute_metrics()["mean_IOU"])
@@ -836,7 +885,7 @@ class TestTraining(unittest.TestCase):
             success_stat["attributes"]["pass"] = success_stat["attributes"]["pass"] + 1
             if test_name == "ms":
                 pass
-            elif test_name in ["ssd", "rn", "fasterrcnn", "yolov3", "maskrcnn"]:
+            elif test_name in ["ssd", "rn", "fasterrcnn", "yolov3", "maskrcnn", "detreg"]:
                 success_stat["attributes"]["od"] = success_stat["attributes"]["od"] + 1
             elif test_name in [
                 "unet",
@@ -849,6 +898,7 @@ class TestTraining(unittest.TestCase):
                 "bdcnedgedetector",
                 "changedetection",
                 "mtre",
+                "maxdeeplab"
             ]:
                 success_stat["attributes"]["pc"] = success_stat["attributes"]["pc"] + 1
             elif test_name in ["fc"]:
@@ -1014,16 +1064,17 @@ class TestTraining(unittest.TestCase):
         data_folder_path,
     ):
         CommonTestUsingDF(
-            query,
-            model_type,
-            prepare_tabular_data,
-            regression_parameter,
-            regression_test_score,
-            model_name,
-            data_path,
-            model_test,
-            data_folder_path,
-        )
+                query,
+                model_type,
+                prepare_tabular_data,
+                regression_parameter,
+                regression_test_score,
+                model_name,
+                data_path,
+                model_test,
+                data_folder_path,
+            )
+
 
     @classmethod
     def tearDownClass(cls):

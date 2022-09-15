@@ -53,7 +53,7 @@ THE SOFTWARE.
 # import necessary modules
 import numpy as np
 import torch
-from torch import nn, LongTensor
+from torch import nn, LongTensor, Tensor
 from collections import defaultdict
 import warnings
 
@@ -203,7 +203,7 @@ class YOLOv3_Model(nn.Module):
         super().__init__()
         self.module_list = create_yolov3_modules(config_model, ignore_thre)
 
-    def forward(self, x, targets=None):
+    def forward(self, x, targets=torch.empty((0,), dtype=torch.float32)):
         """
         Forward path of YOLOv3.
         Args:
@@ -217,20 +217,31 @@ class YOLOv3_Model(nn.Module):
             test:
                 output (torch.Tensor): concatenated detection results.
         """
-
-        train = targets is not None
+        if not torch.jit.is_scripting():
+            dummy = torch.empty((0,), dtype=torch.float32).to(targets.device)
+            if torch.equal(targets, dummy):
+                targets = None
+            train = targets is not None
+        else:
+            train = False
         output = []
         output_train = []
-        self.loss_dict = defaultdict(float)
+        if not torch.jit.is_scripting():
+            self.loss_dict = defaultdict(float)
         route_layers = []
         for i, module in enumerate(self.module_list):
             # yolo layers
             if i in [14, 22, 28]:
-                if train:
-                    x, y, *loss_dict = module(x, targets)
-                    for name, loss in zip(["xy", "wh", "conf", "cls", "l2"], loss_dict):
-                        self.loss_dict[name] += loss
-                    output_train.append(y)
+                if not torch.jit.is_scripting():
+                    if train:
+                        x, y, *loss_dict = module(x, targets)
+                        for name, loss in zip(
+                            ["xy", "wh", "conf", "cls", "l2"], loss_dict
+                        ):
+                            self.loss_dict[name] += loss
+                        output_train.append(y)
+                    else:
+                        x = module(x)
                 else:
                     x = module(x)
                 output.append(x)
@@ -249,7 +260,7 @@ class YOLOv3_Model(nn.Module):
             if i == 24:
                 x = torch.cat((x, route_layers[0]), 1)
 
-        if train:
+        if train and not torch.jit.is_scripting():
             return torch.cat(output_train, 1), sum(output)
         else:
             return torch.cat(output, 1)
@@ -284,11 +295,11 @@ class YOLOLayer(nn.Module):
         self.bce_loss = nn.BCELoss(reduction="sum")
         self.stride = strides[layer_no]
         self.all_anchors_grid = [
-            (w / self.stride, h / self.stride) for w, h in self.anchors
+            [w / self.stride, h / self.stride] for w, h in self.anchors
         ]
         self.masked_anchors = [self.all_anchors_grid[i] for i in self.anch_mask]
-        self.ref_anchors = np.zeros((len(self.all_anchors_grid), 4))
-        self.ref_anchors[:, 2:] = np.array(self.all_anchors_grid)
+        self.ref_anchors = torch.zeros((len(self.all_anchors_grid), 4))  # TODO
+        self.ref_anchors[:, 2:] = torch.FloatTensor(self.all_anchors_grid)  # TODO
         self.ref_anchors = torch.FloatTensor(self.ref_anchors)
         self.conv = nn.Conv2d(
             in_channels=in_ch,
@@ -298,7 +309,17 @@ class YOLOLayer(nn.Module):
             padding=0,
         )
 
-    def forward(self, xin, labels=None):
+    def _apply_sigmoid(self, output, n_ch: int):
+        indices = [0, 1]
+        for i in range(4, n_ch):
+            indices.append(i)  # TODO:torch
+
+        # logistic activation for xy, obj, cls #TODO
+        output[:, :, :, :, indices] = torch.sigmoid(output[:, :, :, :, indices])
+
+        return output
+
+    def forward(self, xin, labels=torch.empty((0,), dtype=torch.float32)):
         """
         In this
         Args:
@@ -321,202 +342,269 @@ class YOLOLayer(nn.Module):
             loss_cls (torch.Tensor): classification loss - calculated by BCE for each class.
             loss_l2 (torch.Tensor): total l2 loss - only for logging.
         """
-
+        if not torch.jit.is_scripting():
+            dummy = torch.empty((0,), dtype=torch.float32).to(labels.device)
+            if torch.equal(labels, dummy):
+                labels = None
         output = self.conv(xin)
 
         batchsize = output.shape[0]
         fsize = output.shape[2]
         n_ch = 5 + self.n_classes
-
-        dtype = torch.cuda.FloatTensor if xin.is_cuda else torch.FloatTensor
+        if not torch.jit.is_scripting():
+            dtype = torch.cuda.FloatTensor if xin.is_cuda else torch.FloatTensor
 
         output = output.view(batchsize, self.n_anchors, n_ch, fsize, fsize)
         output = output.permute(0, 1, 3, 4, 2)
 
         # logistic activation for xy, obj, cls
-        output[..., np.r_[:2, 4:n_ch]] = torch.sigmoid(output[..., np.r_[:2, 4:n_ch]])
-
-        # calculate pred - xywh obj cls
-        x_shift = dtype(
-            np.broadcast_to(np.arange(fsize, dtype=np.float32), output.shape[:4])
-        )
-        y_shift = dtype(
-            np.broadcast_to(
-                np.arange(fsize, dtype=np.float32).reshape(fsize, 1), output.shape[:4]
+        if not torch.jit.is_scripting():
+            output[..., np.r_[:2, 4:n_ch]] = torch.sigmoid(
+                output[..., np.r_[:2, 4:n_ch]]
             )
-        )
+        else:
+            output = self._apply_sigmoid(output, n_ch)
 
-        masked_anchors = np.array(self.masked_anchors)
-
-        w_anchors = dtype(
-            np.broadcast_to(
-                np.reshape(masked_anchors[:, 0], (1, self.n_anchors, 1, 1)),
-                output.shape[:4],
+        if torch.jit.is_scripting():
+            x_shift = (
+                torch.broadcast_to(
+                    torch.arange(fsize, dtype=torch.float32), output.shape[:4]
+                )
+                .detach()
+                .clone()
+                .float()
+                .to(xin.device)
             )
-        )
-        h_anchors = dtype(
-            np.broadcast_to(
-                np.reshape(masked_anchors[:, 1], (1, self.n_anchors, 1, 1)),
-                output.shape[:4],
+
+            y_shift = (
+                torch.broadcast_to(
+                    torch.arange(fsize, dtype=torch.float32).reshape(fsize, 1),
+                    output.shape[:4],
+                )
+                .detach()
+                .clone()
+                .float()
+                .to(xin.device)
             )
-        )
 
-        pred = output.clone().contiguous()
-        pred[..., 0] += x_shift
-        pred[..., 1] += y_shift
-        pred[..., 2] = torch.exp(pred[..., 2]) * w_anchors
-        pred[..., 3] = torch.exp(pred[..., 3]) * h_anchors
+            masked_anchors = torch.tensor(self.masked_anchors).clone().detach()  # TODO
+            w_anchors = (
+                torch.broadcast_to(
+                    torch.reshape(masked_anchors[:, 0], (1, self.n_anchors, 1, 1)),
+                    output.shape[:4],
+                )
+                .detach()
+                .clone()
+                .float()
+                .to(xin.device)
+            )
+            h_anchors = (
+                torch.broadcast_to(
+                    torch.reshape(masked_anchors[:, 1], (1, self.n_anchors, 1, 1)),
+                    output.shape[:4],
+                )
+                .detach()
+                .clone()
+                .float()
+                .to(xin.device)
+            )
 
-        # return the predictions when not training
-        if labels is None:
+            pred = output.clone().contiguous()
+            pred[..., 0] += x_shift
+            pred[..., 1] += y_shift
+            pred[..., 2] = torch.exp(pred[..., 2]) * w_anchors
+            pred[..., 3] = torch.exp(pred[..., 3]) * h_anchors
             pred[..., :4] *= self.stride  # Scale bbox coordinates to image size
-            return pred.view(batchsize, -1, n_ch).data
+            return pred.view(batchsize, -1, n_ch).data  # TODO: here
+        else:
+            # calculate pred - xywh obj cls
+            x_shift = dtype(
+                np.broadcast_to(np.arange(fsize, dtype=np.float32), output.shape[:4])
+            )
+            y_shift = dtype(
+                np.broadcast_to(
+                    np.arange(fsize, dtype=np.float32).reshape(fsize, 1),
+                    output.shape[:4],
+                )
+            )
 
-        pred_train = pred.clone()
-        pred_train[..., :4] *= self.stride
+            masked_anchors = np.array(self.masked_anchors)
 
-        pred = pred[..., :4].data
+            w_anchors = dtype(
+                np.broadcast_to(
+                    np.reshape(masked_anchors[:, 0], (1, self.n_anchors, 1, 1)),
+                    output.shape[:4],
+                )
+            )
+            h_anchors = dtype(
+                np.broadcast_to(
+                    np.reshape(masked_anchors[:, 1], (1, self.n_anchors, 1, 1)),
+                    output.shape[:4],
+                )
+            )
 
-        # target assignment
-        tgt_mask = torch.zeros(
-            batchsize, self.n_anchors, fsize, fsize, 4 + self.n_classes
-        ).type(dtype)
-        obj_mask = torch.ones(batchsize, self.n_anchors, fsize, fsize).type(dtype)
-        tgt_scale = torch.zeros(batchsize, self.n_anchors, fsize, fsize, 2).type(dtype)
+            pred = output.clone().contiguous()
+            pred[..., 0] += x_shift
+            pred[..., 1] += y_shift
+            pred[..., 2] = torch.exp(pred[..., 2]) * w_anchors
+            pred[..., 3] = torch.exp(pred[..., 3]) * h_anchors
 
-        target = torch.zeros(batchsize, self.n_anchors, fsize, fsize, n_ch).type(dtype)
+            # return the predictions when not training
+            if labels is None:
+                pred[..., :4] *= self.stride  # Scale bbox coordinates to image size
+                return pred.view(batchsize, -1, n_ch).data
 
-        labels = labels.cpu().data
-        # Rearrange the labels (dim=1) so that ground truths are ordered before paddings ([0,0,0,0,0])
-        labels = labels.flip(1)
-        # If there are no bboxes in the batch, create a zeros tensor with consistent shape
-        if labels.nelement() == 0:
-            labels = torch.zeros(batchsize, 1, 5)
+            pred_train = pred.clone()
+            pred_train[..., :4] *= self.stride
 
-        nlabel = (labels.sum(dim=2) > 0).sum(dim=1)  # number of objects
+            pred = pred[..., :4].data
 
-        # Convert to values normalized wrt grid cell size (or stride)
-        truth_x_all = labels[:, :, 1] * fsize
-        truth_y_all = labels[:, :, 2] * fsize
-        truth_w_all = labels[:, :, 3] * fsize
-        truth_h_all = labels[:, :, 4] * fsize
+            # target assignment
+            tgt_mask = torch.zeros(
+                batchsize, self.n_anchors, fsize, fsize, 4 + self.n_classes
+            ).type(dtype)
+            obj_mask = torch.ones(batchsize, self.n_anchors, fsize, fsize).type(dtype)
+            tgt_scale = torch.zeros(batchsize, self.n_anchors, fsize, fsize, 2).type(
+                dtype
+            )
 
-        # Find the grid loc of each object
-        truth_i_all = truth_x_all.to(torch.int16).numpy()
-        truth_j_all = truth_y_all.to(torch.int16).numpy()
+            target = torch.zeros(batchsize, self.n_anchors, fsize, fsize, n_ch).type(
+                dtype
+            )
 
-        for b in range(batchsize):
-            n = int(nlabel[b])  # number of objects in the image
-            if n == 0:
-                continue
+            labels = labels.cpu().data
+            # Rearrange the labels (dim=1) so that ground truths are ordered before paddings ([0,0,0,0,0])
+            labels = labels.flip(1)
+            # If there are no bboxes in the batch, create a zeros tensor with consistent shape
+            if labels.nelement() == 0:
+                labels = torch.zeros(batchsize, 1, 5)
 
-            truth_box = dtype(np.zeros((n, 4)))
-            truth_box[:n, 2] = truth_w_all[b, :n]  # w
-            truth_box[:n, 3] = truth_h_all[b, :n]  # h
-            truth_i = truth_i_all[b, :n]  # i loc in grid
-            truth_j = truth_j_all[b, :n]  # j loc in grid
+            nlabel = (labels.sum(dim=2) > 0).sum(dim=1)  # number of objects
 
-            # calculate iou between truth and reference anchors
-            anchor_ious_all = bboxes_iou(
-                truth_box.cpu(), self.ref_anchors
-            )  # shape: (n, 9) - n: #bboxes in the image, 9: #anchors
-            best_n_all = np.argmax(
-                anchor_ious_all, axis=1
-            )  # tensor shape: (n) - indices of best matched anchor box (0-8) for each bbox
-            best_n = (
-                best_n_all % 3
-            )  # tensor shape: (n) - indices from the anchor mask, values in (0, 1, 2)
-            # Only select the anchors if they are in the anch_mask for this layer, values in [(0,1,2), (3,4,5), (6,7,8)]
-            best_n_mask = (
-                (best_n_all == self.anch_mask[0])
-                | (best_n_all == self.anch_mask[1])
-                | (best_n_all == self.anch_mask[2])
-            )  # shape: (n) values in (0,1) - either matches one of the designated anchors or not
+            # Convert to values normalized wrt grid cell size (or stride)
+            truth_x_all = labels[:, :, 1] * fsize
+            truth_y_all = labels[:, :, 2] * fsize
+            truth_w_all = labels[:, :, 3] * fsize
+            truth_h_all = labels[:, :, 4] * fsize
 
-            truth_box[:n, 0] = truth_x_all[b, :n]
-            truth_box[:n, 1] = truth_y_all[b, :n]
+            # Find the grid loc of each object
+            truth_i_all = truth_x_all.to(torch.int16).numpy()
+            truth_j_all = truth_y_all.to(torch.int16).numpy()
 
-            # calculate iou between predictions and ground truth boxes
-            pred_ious = bboxes_iou(
-                pred[b].view(-1, 4), truth_box, xyxy=False
-            )  # shape: (ch*fsize*fsize, n)
-            pred_best_iou, _ = pred_ious.max(
-                dim=1
-            )  # Find the max ious values for each pred, shape: (ch*fsize*fsize)
-            pred_best_iou = (
-                pred_best_iou > self.ignore_thre
-            )  # Create a mask using the thresh
-            pred_best_iou = pred_best_iou.view(
-                pred[b].shape[:3]
-            )  # shape: (ch, fsize, fsize)
-            # set mask to zero (ignore) if pred matches truth
-            obj_mask[b] = 1 - pred_best_iou.int()  #
+            for b in range(batchsize):
+                n = int(nlabel[b])  # number of objects in the image
+                if n == 0:
+                    continue
 
-            # If none of the ground truth box matches the anchors for this layer, continue with next image
-            if sum(best_n_mask) == 0:
-                continue
+                truth_box = dtype(np.zeros((n, 4)))
+                truth_box[:n, 2] = truth_w_all[b, :n]  # w
+                truth_box[:n, 3] = truth_h_all[b, :n]  # h
+                truth_i = truth_i_all[b, :n]  # i loc in grid
+                truth_j = truth_j_all[b, :n]  # j loc in grid
 
-            # For every ground truth box
-            for ti in range(best_n.shape[0]):
-                if (
-                    best_n_mask[ti] == 1
-                ):  # if truth box matches one of the designated anchor
-                    i, j = truth_i[ti], truth_j[ti]
-                    a = best_n[ti]  # Index of matched anchor box, value in (0,1,2)
-                    obj_mask[b, a, j, i] = 1
-                    tgt_mask[b, a, j, i, :] = 1
-                    target[b, a, j, i, 0] = truth_x_all[b, ti] - truth_x_all[b, ti].to(
-                        torch.int16
-                    ).to(torch.float)
-                    target[b, a, j, i, 1] = truth_y_all[b, ti] - truth_y_all[b, ti].to(
-                        torch.int16
-                    ).to(torch.float)
-                    target[b, a, j, i, 2] = torch.log(
-                        truth_w_all[b, ti]
-                        / torch.Tensor(self.masked_anchors)[best_n[ti], 0]
-                        + 1e-16
-                    )
-                    target[b, a, j, i, 3] = torch.log(
-                        truth_h_all[b, ti]
-                        / torch.Tensor(self.masked_anchors)[best_n[ti], 1]
-                        + 1e-16
-                    )
-                    target[b, a, j, i, 4] = 1
-                    target[b, a, j, i, 4 + labels[b, ti, 0].to(torch.int16).numpy()] = 1
-                    tgt_scale[b, a, j, i, :] = torch.sqrt(
-                        2 - truth_w_all[b, ti] * truth_h_all[b, ti] / fsize / fsize
-                    )
+                # calculate iou between truth and reference anchors
+                anchor_ious_all = bboxes_iou(
+                    truth_box.cpu(), self.ref_anchors
+                )  # shape: (n, 9) - n: #bboxes in the image, 9: #anchors
+                best_n_all = np.argmax(
+                    anchor_ious_all, axis=1
+                )  # tensor shape: (n) - indices of best matched anchor box (0-8) for each bbox
+                best_n = (
+                    best_n_all % 3
+                )  # tensor shape: (n) - indices from the anchor mask, values in (0, 1, 2)
+                # Only select the anchors if they are in the anch_mask for this layer, values in [(0,1,2), (3,4,5), (6,7,8)]
+                best_n_mask = (
+                    (best_n_all == self.anch_mask[0])
+                    | (best_n_all == self.anch_mask[1])
+                    | (best_n_all == self.anch_mask[2])
+                )  # shape: (n) values in (0,1) - either matches one of the designated anchors or not
 
-        # loss calculation
+                truth_box[:n, 0] = truth_x_all[b, :n]
+                truth_box[:n, 1] = truth_y_all[b, :n]
 
-        output[..., 4] *= obj_mask
-        output[..., np.r_[0:4, 5:n_ch]] *= tgt_mask
-        output[..., 2:4] *= tgt_scale
+                # calculate iou between predictions and ground truth boxes
+                pred_ious = bboxes_iou(
+                    pred[b].view(-1, 4), truth_box, xyxy=False
+                )  # shape: (ch*fsize*fsize, n)
+                pred_best_iou, _ = pred_ious.max(
+                    dim=1
+                )  # Find the max ious values for each pred, shape: (ch*fsize*fsize)
+                pred_best_iou = (
+                    pred_best_iou > self.ignore_thre
+                )  # Create a mask using the thresh
+                pred_best_iou = pred_best_iou.view(
+                    pred[b].shape[:3]
+                )  # shape: (ch, fsize, fsize)
+                # set mask to zero (ignore) if pred matches truth
+                obj_mask[b] = 1 - pred_best_iou.int()  #
 
-        target[..., 4] *= obj_mask
-        target[..., np.r_[0:4, 5:n_ch]] *= tgt_mask
-        target[..., 2:4] *= tgt_scale
+                # If none of the ground truth box matches the anchors for this layer, continue with next image
+                if sum(best_n_mask) == 0:
+                    continue
 
-        bceloss = nn.BCELoss(
-            weight=tgt_scale * tgt_scale, reduction="sum"
-        )  # weighted BCEloss
-        loss_xy = bceloss(output[..., :2], target[..., :2])
-        loss_wh = self.l2_loss(output[..., 2:4], target[..., 2:4]) / 2
-        loss_obj = self.bce_loss(output[..., 4], target[..., 4])
-        loss_cls = self.bce_loss(output[..., 5:], target[..., 5:])
-        loss_l2 = self.l2_loss(output, target)
+                # For every ground truth box
+                for ti in range(best_n.shape[0]):
+                    if (
+                        best_n_mask[ti] == 1
+                    ):  # if truth box matches one of the designated anchor
+                        i, j = truth_i[ti], truth_j[ti]
+                        a = best_n[ti]  # Index of matched anchor box, value in (0,1,2)
+                        obj_mask[b, a, j, i] = 1
+                        tgt_mask[b, a, j, i, :] = 1
+                        target[b, a, j, i, 0] = truth_x_all[b, ti] - truth_x_all[
+                            b, ti
+                        ].to(torch.int16).to(torch.float)
+                        target[b, a, j, i, 1] = truth_y_all[b, ti] - truth_y_all[
+                            b, ti
+                        ].to(torch.int16).to(torch.float)
+                        target[b, a, j, i, 2] = torch.log(
+                            truth_w_all[b, ti]
+                            / torch.Tensor(self.masked_anchors)[best_n[ti], 0]
+                            + 1e-16
+                        )
+                        target[b, a, j, i, 3] = torch.log(
+                            truth_h_all[b, ti]
+                            / torch.Tensor(self.masked_anchors)[best_n[ti], 1]
+                            + 1e-16
+                        )
+                        target[b, a, j, i, 4] = 1
+                        target[
+                            b, a, j, i, 4 + labels[b, ti, 0].to(torch.int16).numpy()
+                        ] = 1
+                        tgt_scale[b, a, j, i, :] = torch.sqrt(
+                            2 - truth_w_all[b, ti] * truth_h_all[b, ti] / fsize / fsize
+                        )
 
-        loss = (loss_xy + loss_wh + loss_obj + loss_cls).to(torch.float)
+            # loss calculation
 
-        return (
-            loss,
-            pred_train.view(batchsize, -1, n_ch).data,
-            loss_xy,
-            loss_wh,
-            loss_obj,
-            loss_cls,
-            loss_l2,
-        )
+            output[..., 4] *= obj_mask
+            output[..., np.r_[0:4, 5:n_ch]] *= tgt_mask
+            output[..., 2:4] *= tgt_scale
+
+            target[..., 4] *= obj_mask
+            target[..., np.r_[0:4, 5:n_ch]] *= tgt_mask
+            target[..., 2:4] *= tgt_scale
+
+            bceloss = nn.BCELoss(
+                weight=tgt_scale * tgt_scale, reduction="sum"
+            )  # weighted BCEloss
+            loss_xy = bceloss(output[..., :2], target[..., :2])
+            loss_wh = self.l2_loss(output[..., 2:4], target[..., 2:4]) / 2
+            loss_obj = self.bce_loss(output[..., 4], target[..., 4])
+            loss_cls = self.bce_loss(output[..., 5:], target[..., 5:])
+            loss_l2 = self.l2_loss(output, target)
+
+            loss = (loss_xy + loss_wh + loss_obj + loss_cls).to(torch.float)
+
+            return (
+                loss,
+                pred_train.view(batchsize, -1, n_ch).data,
+                loss_xy,
+                loss_wh,
+                loss_obj,
+                loss_cls,
+                loss_l2,
+            )
 
 
 class YOLOv3_Loss(nn.Module):
@@ -579,6 +667,36 @@ def bboxes_iou(bboxes_a, bboxes_b, xyxy=True):
     return area_i / (area_a[:, None] + area_b - area_i)
 
 
+def nms_jit(bbox, thresh: float, score: Tensor):
+    if torch.numel(bbox) == 0:
+        return torch.zeros((0,), dtype=torch.int32)
+
+    order = torch.argsort(score, descending=True)
+    bbox = bbox[order]
+    bbox_area = torch.prod(bbox[:, 2:] - bbox[:, :2], dim=1)
+
+    selec = torch.zeros(bbox.shape[0], dtype=torch.bool)
+    for i, b in enumerate(bbox):
+        tl = torch.maximum(b[:2], bbox[selec, :2])
+        br = torch.minimum(b[2:], bbox[selec, 2:])
+        # print(tl, br, "\n")
+        area = (
+            (torch.prod(br - tl, dim=1) * torch.all((tl < br), dim=1))
+            .clone()
+            .detach()
+            .to(dtype=torch.float64)
+        )
+        iou = area / (bbox_area[i] + bbox_area[selec] - area)
+        if torch.any(iou >= thresh):
+            continue
+
+        selec[i] = True
+
+    selec = torch.where(selec)[0]
+    selec = order[selec]
+    return selec.long()
+
+
 def nms(bbox, thresh, score=None, limit=None):
     """Suppress bounding boxes according to their IoUs and confidence scores.
     Args:
@@ -631,7 +749,9 @@ def nms(bbox, thresh, score=None, limit=None):
     return selec.astype(np.int32)
 
 
-def postprocess(prediction, chip_size, conf_thre=0.7, nms_thre=0.45):
+def postprocess(
+    prediction, chip_size: int, conf_thre: float = 0.7, nms_thre: float = 0.45
+):
     """
     Postprocess the output of YOLO model,
     perform box transformation, specify the class for each detection,
@@ -658,15 +778,22 @@ def postprocess(prediction, chip_size, conf_thre=0.7, nms_thre=0.45):
     if len(prediction.shape) == 2:
         prediction.unsqueeze_(0)
 
-    # Convert bboxes from cthw to tlbr
-    box_corner = prediction.new(prediction.shape)
+    if not torch.jit.is_scripting():
+        box_corner = prediction.new(prediction.shape)
+    else:
+        box_corner = prediction.clone().detach()
     box_corner[:, :, 0] = prediction[:, :, 0] - prediction[:, :, 2] / 2
     box_corner[:, :, 1] = prediction[:, :, 1] - prediction[:, :, 3] / 2
     box_corner[:, :, 2] = prediction[:, :, 0] + prediction[:, :, 2] / 2
     box_corner[:, :, 3] = prediction[:, :, 1] + prediction[:, :, 3] / 2
     prediction[:, :, :4] = box_corner[:, :, :4]
 
-    output = [None for _ in range(len(prediction))]
+    if torch.jit.is_scripting():
+        dummy = torch.empty((len(prediction), 0, 0, 0)).float()
+        output = [dummy for _ in range(len(prediction))]
+    else:
+        output = [None for _ in range(len(prediction))]
+
     for i, image_pred in enumerate(prediction):
         # Filter out confidence scores below threshold
         class_pred = torch.max(image_pred[:, 5:], 1)
@@ -692,24 +819,47 @@ def postprocess(prediction, chip_size, conf_thre=0.7, nms_thre=0.45):
         )
 
         # Iterate through all predicted classes
-        unique_labels = detections[:, -1].cpu().unique()
-        if prediction.is_cuda:
-            unique_labels = unique_labels.cuda()
+        if not torch.jit.is_scripting():
+            unique_labels = detections[:, -1].cpu().unique()
+            if prediction.is_cuda:
+                unique_labels = unique_labels.cuda()
+        else:
+            unique_labels = torch.unique(detections[:, detections.shape[1] - 1])
+            unique_labels = unique_labels.to(prediction.device)
         for c in unique_labels:
             # Get the detections with the particular class
-            detections_class = detections[detections[:, -1] == c]
-            nms_in = detections_class.cpu().numpy()
-            nms_out_index = nms(
-                nms_in[:, :4], thresh=nms_thre, score=nms_in[:, 4] * nms_in[:, 5]
-            )
-            detections_class = detections_class[nms_out_index]
-            if output[i] is None:
-                output[i] = detections_class
+            detections_class = detections[
+                detections[:, -1] == c
+            ]  # TODO: remove negative index
+            if not torch.jit.is_scripting():
+                nms_in = detections_class.cpu().numpy()
+                nms_out_index = nms(
+                    nms_in[:, :4], thresh=nms_thre, score=nms_in[:, 4] * nms_in[:, 5]
+                )
             else:
-                output[i] = torch.cat((output[i], detections_class))
+                nms_in = detections_class.detach().clone()
+                nms_out_index = nms_jit(
+                    nms_in[:, :4], thresh=nms_thre, score=nms_in[:, 4] * nms_in[:, 5]
+                )
 
-    if output[0] is None:
-        return None  # when there is no detection
+            detections_class = detections_class[nms_out_index]
+            if torch.jit.is_scripting():
+                if output[i] is dummy:
+                    output[i] = detections_class
+                else:
+                    output[i] = torch.cat((output[i], detections_class))
+            else:
+                if output[i] is None:
+                    output[i] = detections_class
+                else:
+                    output[i] = torch.cat((output[i], detections_class))
+
+    if torch.jit.is_scripting():
+        if output[0] is dummy:
+            return dummy, dummy, dummy  # when there is no detection
+    else:
+        if output[0] is None:
+            return None  # when there is no detection
 
     bbox_scaled = torch.clamp(
         output[0][:, :4] / (chip_size - 1) * 2 - 1, min=-1, max=1

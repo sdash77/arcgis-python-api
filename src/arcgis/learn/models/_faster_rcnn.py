@@ -2,14 +2,16 @@ from pathlib import Path
 import json
 import warnings
 from ._model_extension import ModelExtension
-from ._arcgis_model import _EmptyData
 
 try:
     from fastai.vision import flatten_model, ImageList
-    from fastai.vision import imagenet_stats, normalize
+    from fastai.vision import imagenet_stats
     import torch
     from fastai.torch_core import split_model_idx
     from .._utils.pascal_voc_rectangles import ObjectDetectionCategoryList
+    from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
+    from ._arcgis_model import _resnet_family, _get_device
+    from ._timm_utils import filter_timm_models
     from .._utils.common import (
         get_multispectral_data_params_from_emd,
         _get_emd_path,
@@ -35,8 +37,6 @@ class MyFasterRCNN:
     try:
         import torch
         import torchvision
-        import pathlib
-        import os
         import fastai
 
         tvisver = [int(x) for x in torchvision.__version__.split(".")]
@@ -55,6 +55,14 @@ class MyFasterRCNN:
         (self.fasterrcnn_kwargs, kwargs,) = self.fastai.core.split_kwargs_by_func(
             kwargs, self.torchvision.models.detection.FasterRCNN.__init__
         )
+
+        if "timm" in backbone:
+            from arcgis.learn.models._timm_utils import timm_config, _get_feature_size
+
+            backbone_cut = timm_config(backbone)["cut"]
+        else:
+            backbone_cut = None
+
         if backbone is None:
             backbone = self.torchvision.models.resnet50
 
@@ -63,11 +71,17 @@ class MyFasterRCNN:
                 backbone = getattr(self.torchvision.models, backbone)
             elif hasattr(self.torchvision.models.detection, backbone):
                 backbone = getattr(self.torchvision.models.detection, backbone)
+            elif "timm:" in backbone:
+                import timm
+
+                bckbn = backbone.split(":")[1]
+                if hasattr(timm.models, bckbn):
+                    backbone = getattr(timm.models, bckbn)
         else:
             backbone = backbone
         pretrained_backbone = kwargs.get("pretrained_backbone", True)
         assert type(pretrained_backbone) == bool
-        if backbone.__name__ == "resnet50":
+        if backbone.__name__ == "resnet50" and "timm" not in backbone.__module__:
             model = self.torchvision.models.detection.fasterrcnn_resnet50_fpn(
                 pretrained=pretrained_backbone,
                 pretrained_backbone=False,
@@ -75,19 +89,11 @@ class MyFasterRCNN:
                 max_size=2 * data.chip_size,
                 **self.fasterrcnn_kwargs,
             )
-        elif backbone.__name__ in ["resnet18", "resnet34"]:
-            backbone_small = self.fastai.vision.learner.create_body(
-                backbone, pretrained=pretrained_backbone
-            )
-            backbone_small.out_channels = 512
-            model = self.torchvision.models.detection.FasterRCNN(
-                backbone_small,
-                91,
-                min_size=1.5 * data.chip_size,
-                max_size=2 * data.chip_size,
-                **self.fasterrcnn_kwargs,
-            )
-        else:
+
+        elif (
+            backbone.__name__ in ["resnet101", "resnet152"]
+            and "timm" not in backbone.__module__
+        ):
             backbone_fpn = (
                 self.torchvision.models.detection.backbone_utils.resnet_fpn_backbone(
                     backbone.__name__, pretrained=pretrained_backbone
@@ -95,6 +101,38 @@ class MyFasterRCNN:
             )
             model = self.torchvision.models.detection.FasterRCNN(
                 backbone_fpn,
+                91,
+                min_size=1.5 * data.chip_size,
+                max_size=2 * data.chip_size,
+                **self.fasterrcnn_kwargs,
+            )
+
+        else:
+            backbone_small = self.fastai.vision.learner.create_body(
+                backbone, pretrained_backbone, backbone_cut
+            )
+            if "timm" in backbone.__module__:
+                from arcgis.learn.models._maskrcnn import TimmFPNBackbone
+
+                try:
+                    backbone_small = TimmFPNBackbone(backbone_small, data.chip_size)
+                except:
+                    pass
+
+            if not hasattr(backbone_small, "out_channels"):
+                if "tresnet" in backbone.__module__:
+                    backbone_small.out_channels = _get_feature_size(
+                        backbone, backbone_cut
+                    )[-1][1]
+                else:
+                    backbone_small.out_channels = (
+                        self.fastai.callbacks.hooks.num_features_model(
+                            self.torch.nn.Sequential(*backbone_small.children())
+                        )
+                    )
+
+            model = self.torchvision.models.detection.FasterRCNN(
+                backbone_small,
                 91,
                 min_size=1.5 * data.chip_size,
                 max_size=2 * data.chip_size,
@@ -146,15 +184,18 @@ class MyFasterRCNN:
         # torchvision FasterRCNN model gives losses only on training mode that is why set your model in train mode
         # such that you can get losses for your validation datset as well after each epoch.
         train = kwargs.get("train")
+        learn.model.train()
         if train:
             self.model.roi_heads.train_val = False
+            self.model.rpn.train_val = False
             self.model.train_val = False
             self.model.transform.train_val = False
         else:
+            learn.model.backbone.eval()  # to get feature in eval mode for evaluation
             self.model.roi_heads.train_val = True
+            self.model.rpn.train_val = True
             self.model.train_val = True
             self.model.transform.train_val = True
-        learn.model.train()
 
         target_list = []
 
@@ -197,6 +238,11 @@ class MyFasterRCNN:
                 target
             )  # FasterRCNN require batches target in form of list of dictionary.
 
+        # handle batch size one in training
+        if model_input_batch.shape[0] < 2:
+            model_input_batch = self.torch.cat((model_input_batch, model_input_batch))
+            target_list.append(target_list[0])
+
         # FasterRCNN require model input with images and coresponding targets in training mode to return the losses so append
         # the targets in model input itself.
         model_input = [list(model_input_batch), target_list]
@@ -213,6 +259,7 @@ class MyFasterRCNN:
         xb - tensor with shape [N, C, H, W]
         """
         self.model.roi_heads.train_val = False
+        self.model.rpn.train_val = False
         self.model.train_val = False
         self.model.transform.train_val = False
         self.nms_thres = self.model.roi_heads.nms_thresh
@@ -236,6 +283,7 @@ class MyFasterRCNN:
     def transform_input_multispectral(self, xb, thresh=0.5, nms_overlap=0.1):
 
         self.model.roi_heads.train_val = False
+        self.model.rpn.train_val = False
         self.model.train_val = False
         self.model.transform.train_val = False
         self.nms_thres = self.model.roi_heads.nms_thresh
@@ -324,6 +372,8 @@ def forward_roi(self, features, proposals, image_shapes, targets=None):
             assert t["labels"].dtype == torch.int64, "target labels must of int64 type"
 
     if self.training:
+        if train_val:
+            original_prpsl = [p.clone() for p in proposals]
         (
             proposals,
             matched_idxs,
@@ -352,9 +402,17 @@ def forward_roi(self, features, proposals, image_shapes, targets=None):
         }
     if not self.training or train_val:
 
-        boxes, scores, labels = self.postprocess_detections(
-            class_logits, box_regression, proposals, image_shapes
-        )
+        if train_val:
+            box_features = self.box_roi_pool(features, original_prpsl, image_shapes)
+            box_features = self.box_head(box_features)
+            class_logits, box_regression = self.box_predictor(box_features)
+            boxes, scores, labels = self.postprocess_detections(
+                class_logits, box_regression, original_prpsl, image_shapes
+            )
+        else:
+            boxes, scores, labels = self.postprocess_detections(
+                class_logits, box_regression, proposals, image_shapes
+            )
         num_images = len(boxes)
         for i in range(num_images):
             result.append(
@@ -386,6 +444,28 @@ def postprocess_transform(self, result, image_shapes, original_image_sizes):
     return result
 
 
+def post_nms_top_n(self):
+
+    train_val = getattr(self, "train_val", False)
+
+    if train_val:
+        return self._post_nms_top_n["testing"]
+    elif self.training:
+        return self._post_nms_top_n["training"]
+    return self._post_nms_top_n["testing"]
+
+
+def pre_nms_top_n(self):
+
+    train_val = getattr(self, "train_val", False)
+
+    if train_val:
+        self._pre_nms_top_n["testing"]
+    elif self.training:
+        return self._pre_nms_top_n["training"]
+    return self._pre_nms_top_n["testing"]
+
+
 if HAS_FASTAI:
 
     def eager_outputs_modified(self, losses, detections):
@@ -409,13 +489,13 @@ class FasterRCNN(ModelExtension):
     **Argument**                    **Description**
     -----------------------------   ---------------------------------------------
     data                            Required fastai Databunch. Returned data object from
-                                    ``prepare_data`` function.
+                                    :meth:`~arcgis.learn.prepare_data`  function.
     -----------------------------   ---------------------------------------------
-    backbone                        Optional function. Backbone CNN model to be used for
-                                    creating the base of the `FasterRCNN`, which
+    backbone                        Optional string. Backbone convolutional neural network
+                                    model used for feature extraction, which
                                     is `resnet50` by default.
-                                    Compatible backbones: 'resnet18', 'resnet34',
-                                    'resnet50', 'resnet101', 'resnet152'
+                                    Supported backbones: ResNet family and specified Timm
+                                    models(experimental support) from :func:`~arcgis.learn.FasterRCNN.backbones`.
     -----------------------------   ---------------------------------------------
     pretrained_path                 Optional string. Path where pre-trained model is
                                     saved.
@@ -495,7 +575,9 @@ class FasterRCNN(ModelExtension):
                                     Default: 0.25
     =============================   =============================================
 
-    :return: ``FasterRCNN`` Object
+    :return:
+        :class:`~arcgis.learn.FasterRCNN` Object
+
     """
 
     def __init__(self, data, backbone="resnet50", pretrained_path=None, **kwargs):
@@ -509,10 +591,6 @@ class FasterRCNN(ModelExtension):
 
         super().__init__(data, MyFasterRCNN, backbone, pretrained_path, **kwargs)
 
-        idx = 27
-        if self._backbone.__name__ in ["resnet18", "resnet34"]:
-            idx = self._freeze()
-
         self.learn.model.roi_heads.forward = types.MethodType(
             forward_roi, self.learn.model.roi_heads
         )
@@ -522,7 +600,14 @@ class FasterRCNN(ModelExtension):
         self.learn.model.transform.postprocess = types.MethodType(
             postprocess_transform, self.learn.model.transform
         )
+        self.learn.model.rpn.post_nms_top_n = types.MethodType(
+            post_nms_top_n, self.learn.model.rpn
+        )
+        self.learn.model.rpn.pre_nms_top_n = types.MethodType(
+            pre_nms_top_n, self.learn.model.rpn
+        )
         self.learn.metrics = [AveragePrecision(self, data.c - 1)]
+        idx = self._freeze()
         self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
         self.learn.create_opt(lr=3e-3)
 
@@ -549,12 +634,19 @@ class FasterRCNN(ModelExtension):
 
     @property
     def supported_backbones(self):
-        """Supported torchvision backbones for this model."""
+        """Supported list of backbones for this model."""
+        return FasterRCNN._supported_backbones()
+
+    @staticmethod
+    def backbones():
+        """Supported list of backbones for this model."""
         return FasterRCNN._supported_backbones()
 
     @staticmethod
     def _supported_backbones():
-        return [*_resnet_family]
+        timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
+        timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
+        return [*_resnet_family] + timm_backbones
 
     @property
     def supported_datasets(self):
@@ -577,12 +669,13 @@ class FasterRCNN(ModelExtension):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from ``prepare_data`` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data`  function or None for
                                 inferencing.
 
         =====================   ===========================================
 
-        :return: `FasterRCNN` Object
+        :return:
+            :class:`~arcgis.learn.FasterRCNN` Object
         """
         emd_path = _get_emd_path(emd_path)
 

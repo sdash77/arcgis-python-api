@@ -8,7 +8,9 @@ import datetime as _dt
 class LogManager(object):
     """
     Logs are the records written by the various components of Notebook server.
-    You can query the logs and change various log settings.
+    You can query the logs and change various log settings. An object of this
+    class can be created using :attr:`~arcgis.gis.nb.NotebookServer.logs` property of the
+    :class:`~arcgis.gis.nb.NotebookServer` class
     """
 
     _url = None
@@ -36,11 +38,11 @@ class LogManager(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<LogManager @ {url}>".format(url=self._url)
+        return "< LogManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<LogManager @ {url}>".format(url=self._url)
+        return "< LogManager @ {url} >".format(url=self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -60,7 +62,7 @@ class LogManager(object):
         up disk space. However, it is not required that you invoke this operation because
         the server periodically purges old logs.
 
-        :return: boolean
+        :return: Boolean
 
         """
         params = {
@@ -134,10 +136,15 @@ class LogManager(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        start_time             Optional string. The most recent time to query.  Default is now.
+        start_time             Optional string/integer. The most recent time to query.  Default is now.
                                Time can be specified in milliseconds since UNIX epoch, or as an
-                               ArcGIS Server timestamp. For example { "startTime": "2011-08-01T15:17:20,123", ... },
-                               { "startTime": 1312237040123, ... }, respectively.
+                               ArcGIS Server timestamp.
+
+                               Example for string:
+                               "startTime": "2011-08-01T15:17:20"
+
+                               Example for integer:
+                               "startTime": 1312237040123
         ------------------     --------------------------------------------------------------------
         end_time               Optional string. The oldest time to include in the result set. You
                                can use this to limit the query to the last n minutes or hours as

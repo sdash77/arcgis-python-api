@@ -1,6 +1,6 @@
 import sys
 
-# sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
+# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import pandas as pd
 from arcgis.gis import GIS
 from arcgis.features import FeatureLayer
@@ -119,8 +119,10 @@ DATA = [
 class TestFeatureLayerGetEstimates(unittest.TestCase):
     """tests the get estimates property on HFL"""
 
-    def test_HFL_get_estimates_unsupported(self):
-        """tests the call on a HFL for the get estimates if the property is not supported"""
+    def test_HFL_get_estimates_new_layer(self):
+        """tests the call on a HFL for the get estimates if the property is not known to exist.
+        this will depend on the version of enterprise you are using. Estimates is supported
+        starting at 10.9.1"""
 
         for profile in PROFILES:
             print(profile)
@@ -130,7 +132,8 @@ class TestFeatureLayerGetEstimates(unittest.TestCase):
                 sdf = pd.DataFrame(data=DATA)
                 sdf.spatial.set_geometry("SHAPE")
                 item = gis.content.import_data(sdf)
-                assert item.layers[0].estimates == {}
+                # if unsupported, estimates returns an empty dict
+                assert item.layers[0].estimates == {} or item.layers[0].estimates
             except Exception as e:
                 raise e
             finally:

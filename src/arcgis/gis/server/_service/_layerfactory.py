@@ -10,6 +10,7 @@ from arcgis.gis import GIS
 from arcgis.features.layer import FeatureLayer, FeatureLayerCollection
 from arcgis.geocoding import Geocoder
 from arcgis.geoprocessing._tool import Toolbox
+from arcgis.geoprocessing import import_toolbox as _import_toolbox
 from arcgis._impl.tools import _GeometryService as GeometryService
 from arcgis.network import NetworkDataset
 from arcgis.gis import Layer
@@ -17,7 +18,7 @@ from arcgis.mapping import VectorTileLayer
 from arcgis.mapping import MapImageLayer, MapServiceLayer
 from arcgis.raster import ImageryLayer
 from arcgis.schematics import SchematicLayers
-from arcgis.mapping._types import SceneLayer
+from arcgis.mapping._scenelyrs import SceneLayer
 from ..._impl._con import Connection
 from ._geodataservice import GeoData
 
@@ -78,7 +79,10 @@ class ServiceFactory(type):
         elif base_name.lower() == "imageserver":
             return ImageryLayer(url=url, gis=server)
         elif base_name.lower() == "gpserver":
-            return Toolbox(url=url, gis=server)
+            from arcgis.geoprocessing import import_toolbox as _import_toolbox
+
+            res = _import_toolbox(url, server)
+            return res
         elif base_name.lower() == "geometryserver":
             return GeometryService(url=url, gis=server)
         elif base_name.lower() == "mobileserver":

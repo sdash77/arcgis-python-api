@@ -238,15 +238,29 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
                 pattern = re.compile("var oAuthInfo = ({.*?})", re.DOTALL)
 
             soup = lxml.html.fromstring(content)
+
+            def _load_oauth_info(js_object):
+                """converts the js oauth to dict"""
+                try:
+                    oauth_info = json.loads(js_object)
+                except:
+                    oauth_info = json.loads(js_object + "}")
+                return oauth_info
+
             for script in soup.xpath("//script/text()"):
                 script_code = str(script).strip()
                 matches = pattern.search(script_code)
                 if not matches is None:
                     js_object = matches.groups()[0]
                     try:
-                        oauth_info = json.loads(js_object)
-                    except:
-                        oauth_info = json.loads(js_object + "}")
+                        oauth_info = _load_oauth_info(js_object)
+                    except Exception:
+                        raise Exception(
+                            (
+                                "Could not login. Please validate your creden"
+                                "tials or make sure the security question is set on the user."
+                            )
+                        )
                     break
 
             parameters = {
@@ -307,7 +321,13 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
             # Recreate the request without the token
             #
             parsed = parse_url(r.url)
-            self._invalid_token_urls.add(parsed.netloc)
+            if parsed.port:
+                server_url = (
+                    f"{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path}"
+                )
+            else:
+                server_url = f"{parsed.scheme}://{parsed.netloc}/{parsed.path}"
+            self._invalid_token_urls.add(server_url)
             r.content
             r.raw.release_conn()
             r.request.headers.pop("X-Esri-Authorization", None)
@@ -323,7 +343,13 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
         if self._invalid_token_urls is None:
             self._invalid_token_urls = set()
         parsed = parse_url(r.url)
-        if not parsed.netloc in self._invalid_token_urls:
+        if parsed.port:
+            server_url = (
+                f"{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path}"
+            )
+        else:
+            server_url = f"{parsed.scheme}://{parsed.netloc}/{parsed.path}"
+        if not server_url in self._invalid_token_urls:
             r.register_hook("response", self.handle_40x)
             if self.legacy == False:
                 r.headers["X-Esri-Authorization"] = f"Bearer {self._oauth_token()}"

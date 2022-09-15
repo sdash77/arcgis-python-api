@@ -11,6 +11,7 @@ sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
 from integration.dino_utils.dino_configs import DinoConfigs
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_precondition_checks import PortalUtils
+
 sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 from configparser import ConfigParser
 import datetime
@@ -82,7 +83,7 @@ class Test_Item_portal_builtin(unittest.TestCase):
         )
         if cls.gis is None:
             cls.class_skip = True
-        
+
         _conf_reader2 = ConfigParser()
         _conf_reader2.read(DinoConfigs.root_init_file, "UTF-8")
 
@@ -3398,6 +3399,7 @@ class Test_Item_arcgis_kubernetes(unittest.TestCase):
 # TestModule
 def tearDownModule():
     print("**End GIS module Tests**")
+
 
 if __name__ == "__main__":
     unittest.main()
