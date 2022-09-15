@@ -32,7 +32,7 @@ def upload_imagery_to_agol_userstore(
     auto_renew: bool = True,
     upload_properties: Optional[dict] = None,
     *,
-    gis: Optional[GIS] = None
+    gis: Optional[GIS] = None,
 ):
     """
     Uploads file/files to the user's rasterstore on ArcGIS Online and returns the list of urls.
@@ -113,19 +113,21 @@ def upload_imagery_to_agol_userstore(
         gis=gis,
     )
 
-def publish_hosted_imagery_layer(input_data: list,
-                                 layer_configuration: str,
-                                 tiles_only: Optional[bool] = False,
-                                 raster_type_name: Optional[str] = None,
-                                 raster_type_params: Optional[dict[str, Any]] = None,
-                                 source_mosaic: Optional[str] = None,
-                                 output_name: Optional[str] = None,
-                                 context: Optional[dict[str, Any]] = None,
-                                 *,
-                                 gis: Optional[GIS] = None,
-                                 future: bool = False,
-                                 **kwargs,
-                                 ):
+
+def publish_hosted_imagery_layer(
+    input_data: list,
+    layer_configuration: str,
+    tiles_only: Optional[bool] = False,
+    raster_type_name: Optional[str] = None,
+    raster_type_params: Optional[dict[str, Any]] = None,
+    source_mosaic: Optional[str] = None,
+    output_name: Optional[str] = None,
+    context: Optional[dict[str, Any]] = None,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+    **kwargs,
+):
 
     """
     The function can create hosted imagery layers in ArcGIS Enterprise and ArcGIS Online 
@@ -328,7 +330,7 @@ def publish_hosted_imagery_layer(input_data: list,
             raster_type_name=raster_type_name,
             raster_type_params=raster_type_params,
             md_to_upload=source_mosaic,
-            tiles_only = tiles_only,
+            tiles_only=tiles_only,
             **kwargs,
         )
 
@@ -346,4 +348,5 @@ def publish_hosted_imagery_layer(input_data: list,
             context=context,
             gis=gis,
             future=future,
-            **kwargs)
+            **kwargs,
+        )
