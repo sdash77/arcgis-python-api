@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Any, Optional, Union, Dict
 from arcgis.gis import GIS
 from arcgis.raster import _util
 
@@ -119,10 +119,10 @@ def publish_hosted_imagery_layer(
     layer_configuration: str,
     tiles_only: Optional[bool] = False,
     raster_type_name: Optional[str] = None,
-    raster_type_params: Optional[dict[str, Any]] = None,
+    raster_type_params: Optional[Dict[str, Any]] = None,
     source_mosaic: Optional[str] = None,
     output_name: Optional[str] = None,
-    context: Optional[dict[str, Any]] = None,
+    context: Optional[Dict[str, Any]] = None,
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
@@ -316,11 +316,17 @@ def publish_hosted_imagery_layer(
     Imagery layer item
 
         """
+    from arcgis import env
+
+    if output_name is None:
+        from arcgis.raster._util import _id_generator
+
+        output_name = "layer" + "_" + _id_generator()
 
     if layer_configuration == "ONE_IMAGE":
         from arcgis.raster.analytics import copy_raster
 
-        gis = _arcgis.env.active_gis if gis is None else gis
+        gis = env.active_gis if gis is None else gis
         # url = gis.properties.helperServices.rasterAnalytics.url
         return gis._tools.rasteranalysis.copy_raster(
             input_raster=input_data,
@@ -337,7 +343,7 @@ def publish_hosted_imagery_layer(
     elif layer_configuration == "IMAGE_COLLECTION":
         from arcgis.raster.analytics import create_image_collection
 
-        gis = _arcgis.env.active_gis if gis is None else gis
+        gis = env.active_gis if gis is None else gis
         # url = gis.properties.helperServices.rasterAnalytics.url
         return gis._tools.rasteranalysis.create_image_collection(
             image_collection=output_name,
