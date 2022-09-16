@@ -1188,7 +1188,8 @@ class StoryMap(object):
 
         .. note::
             This method can take time depending on the number of resources. Each resource coming
-            from a file must be copied over.
+            from a file must be copied over and heavy files, such as videos or audio, can be time
+            consuming.
 
         ===============     ====================================================================
         **Argument**        **Description**
