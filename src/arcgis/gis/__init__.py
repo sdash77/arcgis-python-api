@@ -1204,7 +1204,8 @@ class GIS(object):
             ]
             tile_urls = [
                 _agoserver.AGOLServicesDirectory(
-                    f"https://{url}/tiles/{pid}/arcgis/rest/services", gis=self
+                    f"https://{url}/tiles/{pid}/arcgis/rest/services",
+                    gis=self,
                 )
                 for url in tile_urls
             ]
@@ -1214,7 +1215,7 @@ class GIS(object):
 
             info = self._registered_servers()
             servers = [
-                ServicesDirectory(server["url"], gis=self)
+                ServicesDirectory(server["url"], portal_connection=self._con, gis=self)
                 for server in info["servers"]
                 if server.get("serverRole", None) == "HOSTING_SERVER"
             ]
@@ -13875,7 +13876,7 @@ class Item(dict):
             >>> date_1 = dt.datetime(2022,7,31)
             >>> date_2 = dt.datetime.now(2022,8,12)
                 # Early value, later value
-            >>> result = flyr_item.usage(date_range (date_1, date_2))
+            >>> result = flyr_item.usage(date_range = (date_1, date_2))
             >>> result
                      Date  Usage
             0  2022-07-31      0

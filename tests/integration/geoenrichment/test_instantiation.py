@@ -1,8 +1,8 @@
+import unittest
 from typing import Optional
 
 from arcgis.gis import GIS
 from arcgis.geoenrichment import Country
-import pytest
 
 from .configtest import (
     skip_if_no_agol,
@@ -22,28 +22,35 @@ def create_country_test(iso3: str, gis: GIS, expectation, year: Optional[int] = 
         assert isinstance(cntry, Country)
 
 
-# including to ensure credentials correctly getting loaded from config and also ensure not lower level issues in GIS
-def test_create_gis():
-    gis = GIS(agol_url, username=agol_user, password=agol_pass)
-    assert isinstance(gis, GIS)
-    assert gis._con._auth != 'ANON'
+class TestInstantiation(unittest.TestCase):
+
+    # including to ensure credentials correctly getting loaded from config and also ensure not lower level issues in GIS
+    def test_create_gis(self):
+        gis = GIS(agol_url, username=agol_user, password=agol_pass)
+        assert isinstance(gis, GIS)
+        assert gis._con._auth != 'ANON'
+
+    @skip_if_no_local
+    def test_create_country_usa_local(self):
+        gis_pro_inst = gis_pro()
+        create_country_test('usa', gis=gis_pro_inst, expectation=does_not_raise())
+
+    @skip_if_no_local
+    def test_create_country_can_local(self):
+        gis_pro_inst = gis_pro()
+        create_country_test('can', gis=gis_pro_inst, expectation=does_not_raise())
+
+    @skip_if_no_agol
+    def test_create_country_usa_agol(self):
+        gis_agol_inst = gis_agol()
+        create_country_test('usa', gis=gis_agol_inst, expectation=does_not_raise())
+
+    @skip_if_no_agol
+    def test_create_country_can_agol(self):
+        gis_agol_inst = gis_agol()
+        create_country_test('can', gis=gis_agol_inst, expectation=does_not_raise())
 
 
-@skip_if_no_local
-def test_create_country_usa_local(gis_pro):
-    create_country_test('usa', gis=gis_pro, expectation=does_not_raise())
+if __name__ == "__main__":
 
-
-@skip_if_no_local
-def test_create_country_can_local(gis_pro):
-    create_country_test('can', gis=gis_pro, expectation=does_not_raise())
-
-
-@skip_if_no_agol
-def test_create_country_usa_agol(gis_agol):
-    create_country_test('usa', gis=gis_agol, expectation=does_not_raise())
-
-
-@skip_if_no_agol
-def test_create_country_can_agol(gis_agol):
-    create_country_test('can', gis=gis_agol, expectation=does_not_raise())
+    unittest.main()
