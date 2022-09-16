@@ -2848,7 +2848,9 @@ class GeoAccessor(object):
 
     # ----------------------------------------------------------------------
     @staticmethod
-    def from_xy(df, x_column, y_column, sr=4326, z_column=None, m_column=None):
+    def from_xy(
+        df, x_column, y_column, sr=4326, z_column=None, m_column=None, **kwargs
+    ):
         """
         The ``from_xy`` method converts a Pandas DataFrame into a Spatially Enabled DataFrame
         by providing the X/Y columns.
@@ -2870,6 +2872,14 @@ class GeoAccessor(object):
         m_column                Optional string.  The name of the M-value series
         ====================    =========================================================
 
+
+        ====================    =========================================================
+        **kwargs**              **Description**
+        --------------------    ---------------------------------------------------------
+        oid_field               Optional string. If the value is provided the OID field
+                                will not be converted from int64 to int32.
+        ====================    =========================================================
+
         :return: DataFrame
 
         """
@@ -2882,6 +2892,7 @@ class GeoAccessor(object):
             sr=sr,
             z_column=z_column,
             m_column=m_column,
+            oid_field=kwargs.pop("oid_field", None),
         )
 
     # ----------------------------------------------------------------------
