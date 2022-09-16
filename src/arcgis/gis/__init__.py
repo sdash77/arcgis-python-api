@@ -1204,7 +1204,8 @@ class GIS(object):
             ]
             tile_urls = [
                 _agoserver.AGOLServicesDirectory(
-                    f"https://{url}/tiles/{pid}/arcgis/rest/services", gis=self
+                    f"https://{url}/tiles/{pid}/arcgis/rest/services",
+                    gis=self,
                 )
                 for url in tile_urls
             ]
@@ -1214,7 +1215,7 @@ class GIS(object):
 
             info = self._registered_servers()
             servers = [
-                ServicesDirectory(server["url"], gis=self)
+                ServicesDirectory(server["url"], portal_connection=self._con, gis=self)
                 for server in info["servers"]
                 if server.get("serverRole", None) == "HOSTING_SERVER"
             ]
@@ -4030,7 +4031,9 @@ class UserManager(object):
                                records are arranged after they have been sorted. The allowed
                                values are: asc for ascending and desc for descending.
         ------------------     --------------------------------------------------------------------
-        as_dict                Optional Boolean. If True, the response comes back as a dictionary.
+        as_dict                Required Boolean. If True, the results comes back as a dictionary.
+                               The result of the method will always be a dictionary but the
+                               `results` key in the dictionary will be changed if set to False.
         ==================     ====================================================================
 
         :return:
@@ -6286,7 +6289,9 @@ class ContentManager(object):
                             each `count_fields`. The default value is None, and maximum size
                             allowed is 200.
         ----------------    ---------------------------------------------------------------
-        as_dict             Required Boolean. If True, the response comes back as a dictionary.
+        as_dict             Required Boolean. If True, the results comes back as a dictionary.
+                            The result of the method will always be a dictionary but the
+                            `results` key in the dictionary will be changed if set to False.
         ================    ===============================================================
 
         :return:
@@ -8759,7 +8764,9 @@ class Group(dict):
                             records are arranged after they have been sorted. The allowed
                             values are: asc for ascending and desc for descending.
         ----------------    ---------------------------------------------------------------
-        as_dict             Required Boolean. If True, the response comes back as a dictionary.
+        as_dict             Required Boolean. If True, the results comes back as a dictionary.
+                            The result of the method will always be a dictionary but the
+                            `results` key in the dictionary will be changed if set to False.
         ================    ===============================================================
 
         :return: List of :class:`~arcgis.gis.Item` objects
@@ -11760,7 +11767,11 @@ class Item(dict):
             and len(self._gis.notebook_server) > 0
         ):
             nbs = self._gis.notebook_server[0]
-            return nbs.notebooks.snapshots.list(self)
+            if self._gis._portal.is_arcgisonline == False:
+                return nbs.notebooks.snapshots.list(self)
+            elif self._gis._portal.is_arcgisonline:
+                sm = nbs.snaphots
+                return sm.list(self)
         return []
 
     # ----------------------------------------------------------------------
@@ -13556,9 +13567,6 @@ class Item(dict):
          culture            Optional string. Locale, country and language information.
          -----------------  ---------------------------------------------------------------------
          access             Optional string. Valid values are private, shared, org, or public.
-         -----------------  ---------------------------------------------------------------------
-         commentsEnabled    Optional boolean. Default is true, controls whether comments are allowed (true)
-                            or not allowed (false).
          =================  =====================================================================
 
 
@@ -13868,7 +13876,7 @@ class Item(dict):
             >>> date_1 = dt.datetime(2022,7,31)
             >>> date_2 = dt.datetime.now(2022,8,12)
                 # Early value, later value
-            >>> result = flyr_item.usage(date_range (date_1, date_2))
+            >>> result = flyr_item.usage(date_range = (date_1, date_2))
             >>> result
                      Date  Usage
             0  2022-07-31      0

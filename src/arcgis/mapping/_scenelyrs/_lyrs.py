@@ -36,7 +36,7 @@ class SceneLayerManager(_GISResource):
         The ``refresh`` operation refreshes a service, which clears the web
         server cache for the service.
         """
-        if self._source_type is "Scene Layer Package":
+        if self._source_type == "Scene Layer Package":
             url = self._url + "SceneServer/refresh"
             params = {"f": "json"}
 
@@ -66,7 +66,7 @@ class SceneLayerManager(_GISResource):
         :returns: dictionary indicating success or error
 
         """
-        if self._source_type is "Scene Layer Package":
+        if self._source_type == "Scene Layer Package":
             url = self._url + "/swap"
             params = {"f": "json", "targetServiceName": target_service_name}
             return self._con.post(url, params)
@@ -81,7 +81,7 @@ class SceneLayerManager(_GISResource):
         jobid run and redirects you to the Job Statistics page.
 
         """
-        if self._source_type is "Scene Layer Package":
+        if self._source_type == "Scene Layer Package":
             url = self._url + "/jobs"
             params = {"f": "json"}
             return self._con.get(url, params)
@@ -102,7 +102,7 @@ class SceneLayerManager(_GISResource):
         ===============     ====================================================
 
         """
-        if self._source_type is "Scene Layer Package":
+        if self._source_type == "Scene Layer Package":
             url = self._url + "/jobs/%s/cancel" % job_id
             params = {"f": "json"}
             return self._con.post(url, params)
@@ -114,7 +114,7 @@ class SceneLayerManager(_GISResource):
         Returns the job statistics for the given jobId
 
         """
-        if self._source_type is "Scene Layer Package":
+        if self._source_type == "Scene Layer Package":
             url = self._url + "/jobs/%s" % job_id
             params = {"f": "json"}
             return self._con.post(url, params)
@@ -140,7 +140,7 @@ class SceneLayerManager(_GISResource):
         :return:
            A boolean or dictionary
         """
-        if self._source_type is "Scene Layer Package":
+        if self._source_type == "Scene Layer Package":
             url = self._url + "/jobs/%s/rerun" % job_id
             params = {"f": "json", "rerun": code}
             return self._con.post(url, params)
@@ -163,7 +163,7 @@ class SceneLayerManager(_GISResource):
             A dictionary
 
         """
-        if self._source_type is "Scene Layer Package":
+        if self._source_type == "Scene Layer Package":
             params = {
                 "f": "json",
                 "sourceItemId": None,
@@ -212,7 +212,7 @@ class SceneLayerManager(_GISResource):
             A dictionary
 
         """
-        if self._source_type is "Scene Layer Package":
+        if self._source_type == "Scene Layer Package":
             params = {
                 "f": "json",
                 "sourceItemId": None,
@@ -245,7 +245,7 @@ class SceneLayerManager(_GISResource):
                                     Ex: [0,1,2]
         =====================       ====================================================
         """
-        if self._source_type is "Feature Service":
+        if self._source_type == "Feature Service":
             url = self._url + "/rebuildCache"
             params = {"f": "json", "layers": layers}
             return self._con.post(url, params)
@@ -269,7 +269,7 @@ class SceneLayerManager(_GISResource):
                                     Ex: [0,1,2]
         =====================       ====================================================
         """
-        if self._source_type is "Feature Service":
+        if self._source_type == "Feature Service":
             url = self._url + "/updateCache"
             params = {"f": "json", "layers": layers}
             return self._con.post(url, params)
@@ -292,7 +292,7 @@ class SceneLayerManager(_GISResource):
                                     Ex: [0,1,2]
         =====================       ====================================================
         """
-        if self._source_type is "Feature Service":
+        if self._source_type == "Feature Service":
             url = self._url + "/updateAttribute"
             params = {"f": "json", "layers": layers}
             return self._con.post(url, params)

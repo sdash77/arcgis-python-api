@@ -150,7 +150,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
         self._validate_kwargs(**kwargs)
         # if backbone is None:
         #    backbone = models.resnet34
-        super().__init__(data, backbone, **kwargs)
+        super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
         self._slice_lr = False  # Road models just have a single layer group due to which we cant slice the lr.
         predefined_mtl_model = None
         # Causes Divide by zero error in  fastai library

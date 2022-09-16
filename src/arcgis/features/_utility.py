@@ -66,6 +66,14 @@ class UtilityNetworkManager(object):
             self._property = PropertyMap({})
 
     # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return f"< Utility Network Server @ {self._url} >"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return f"< Utility Network Server @ {self._url} >"
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """returns the properties for the service"""
@@ -371,7 +379,7 @@ class UtilityNetworkManager(object):
         domain_name: str,
         tier_name: str,
         subnetwork_name: str,
-        trace_configuration: dict | None = None,
+        trace_configuration: dict | TraceConfiguration | None = None,
         export_acknowledgement: bool = False,
         result_type: str | None = None,
         result_types: list[dict] | None = None,
@@ -397,7 +405,7 @@ class UtilityNetworkManager(object):
         ------------------------------------        --------------------------------------------------------------------
         subnetwork_name                             Required String. The name of the subnetwork.
         ------------------------------------        --------------------------------------------------------------------
-        trace_configuration                         Optional Dictionary. Specifies the collection of trace
+        trace_configuration                         Optional Dictionary or TraceConfiguration object. Specifies the collection of trace
                                                     configuration parameters.
                                                     See: `Trace <https://developers.arcgis.com/rest/services-reference/enterprise/trace-utility-network-server-.htm#GUID-F0C932FD-B403-4223-9B00-E44D156C7DF9/>`_
         ------------------------------------        --------------------------------------------------------------------
@@ -436,6 +444,8 @@ class UtilityNetworkManager(object):
         """
 
         url = "%s/exportSubnetwork" % self._url
+        if isinstance(trace_configuration, TraceConfiguration):
+            trace_configuration = trace_configuration.to_dict()
         params = {
             "f": "json",
             "gdbVersion": self._version_name,
@@ -839,7 +849,7 @@ class UtilityNetworkManager(object):
         moment                                      Optional Epoch time in milliseconds. Specify if you do not want to
                                                     use the current moment.
         ------------------------------------        --------------------------------------------------------------------
-        types                                       Optional List of String(s). Specify teh association types to be queried.
+        types                                       Optional List of String(s). Specify the association types to be queried.
 
                                                     Values:
 
@@ -855,10 +865,13 @@ class UtilityNetworkManager(object):
                 "f": "json",
                 "gdbVersion": self._version_name,
                 "elements": elements,
-                "moment": moment,
-                "types": types if types is not None else ["all"],
                 "returnDeletes": return_deletes,
             }
+            if elements:
+                params["moment"] = moment
+            if types:
+                params["types"] = types
+
             return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
@@ -916,7 +929,7 @@ class UtilityNetworkManager(object):
         moment                                      Optional Epoch time in milliseconds. Specify if you do not want to
                                                     use the current moment.
         ------------------------------------        --------------------------------------------------------------------
-        type                                        Optional String. Specify teh association types to be queried.
+        type                                        Optional String. Specify the association types to be queried.
 
                                                     Values:
 
@@ -1013,6 +1026,7 @@ class UtilityNetworkManager(object):
                                                     locatability and synthesize the geometries.
 
                                                     .. code-block:: python
+
                                                         [{
                                                             "sourceId": <int>,
                                                             "globalIds" : [<guid>],
@@ -1121,6 +1135,14 @@ class TraceConfigurationsManager(object):
             self._version = None
             self._version_guid = None
             self._version_name = None
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return f"< Trace Configuration Manager @ {self._url} >"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return f"< Trace Configuration Manager @ {self._url} >"
 
     # ----------------------------------------------------------------------
     def list(self) -> dict:

@@ -1,6 +1,7 @@
 import asyncio
 from collections import namedtuple
 from copy import deepcopy
+from functools import lru_cache
 import json
 from pathlib import Path
 import re
@@ -14,7 +15,6 @@ from arcgis.geometry import Geometry, SpatialReference
 from arcgis.network.analysis import get_travel_modes
 from arcgis._impl.common._utils import _lazy_property as lazy_property
 import pandas as pd
-import requests
 
 from ._utils import (
     add_proximity_to_enrich_feature_list,
@@ -786,6 +786,7 @@ class BusinessAnalyst(object):
                 "iso3",
                 "data_source_id",
                 "country_id",
+                "hierarchies",
             ],
         )
 
@@ -797,7 +798,15 @@ class BusinessAnalyst(object):
 
         # organize the columns
         cntry_df = cntry_df[
-            ["iso2", "iso3", "name", "vintage", "country_id", "data_source_id"]
+            [
+                "iso2",
+                "iso3",
+                "name",
+                "vintage",
+                "country_id",
+                "data_source_id",
+                "hierarchies",
+            ]
         ]
 
         return cntry_df
@@ -839,6 +848,7 @@ class BusinessAnalyst(object):
                 "abbr3": "iso3",
                 "altName": "alt_name",
                 "defaultDatasetID": "default_dataset",
+                "hierarchies": "hierarchy",
             },
             inplace=True,
             axis=1,
@@ -851,10 +861,78 @@ class BusinessAnalyst(object):
             "datasets",
             "default_dataset",
             "continent",
+            "hierarchy",
         ]
         cntry_df = cntry_df[keep_cols]
 
+        # clean up column for hierarchies to only keep alias if simple
+        alias_names = []
+        for i, v in cntry_df["hierarchy"].items():
+            cntry_hier = []
+            for hier in v:
+                cntry_hier.append(hier["ID"])
+            alias_names.append(cntry_hier)
+        cntry_df["hierarchy"] = alias_names
+
         return cntry_df
+
+    def _get_hierarchies_df(self, country_string: str):
+        """Internal helper method to get the dataframe of hierarchies for each country"""
+        # make sure countries are available
+        ge_err_msg = (
+            "The provided GIS instance does not appear to have geoenrichment enabled and configured, "
+            "so no countries are available."
+        )
+        assert "geoenrichment" in self.source.properties.helperServices, ge_err_msg
+        assert isinstance(
+            self.source.properties.helperServices.geoenrichment["url"], str
+        ), ge_err_msg
+
+        # extract out the geoenrichment url
+        ge_url = self.source.properties.helperServices.geoenrichment["url"]
+        if self.source._is_hosted_nb_home:
+            res = self.source._private_service_url(ge_url)
+            ge_url = (
+                res["privateServiceUrl"]
+                if "privateServiceUrl" in res
+                else res["serviceUrl"]
+            )
+
+        # get a list of countries available on the Web GIS for enrichment
+        url = f"{ge_url}/Geoenrichment/Countries"
+        cntry_res = self.source._con.post(url, {"f": "json"})
+        cntry_dict = cntry_res["countries"]
+
+        # convert the dictionary to a dataframe
+        cntry_df = pd.DataFrame(cntry_dict)
+
+        # clean up some column names for consistency
+        cntry_df.rename(
+            {
+                "abbr3": "iso3",
+            },
+            inplace=True,
+            axis=1,
+        )
+        keep_cols = ["iso3", "hierarchies"]
+        cntry_df = cntry_df[keep_cols]
+
+        # Get dataframe for specific country we are working with
+        cntry_interest_df = cntry_df[cntry_df["iso3"] == country_string]
+        # Get only the hierarchy column value and create own dataframe from it
+        hierarchy_df = pd.DataFrame(cntry_interest_df.iloc[0]["hierarchies"])
+
+        keep_cols = [
+            "ID",
+            "alias",
+            "shortDescription",
+            "datasets",
+            "levelsInfo",
+            "variablesInfo",
+            "hasInterestingFactsStatistics",
+        ]
+        hierarchy_df = hierarchy_df[keep_cols]
+        return hierarchy_df
 
     def _standardize_country_str(self, country_string: str) -> str:
         """Internal helper method to standardize the input for iso3 identifier strings to ISO3."""
@@ -990,6 +1068,7 @@ class BusinessAnalyst(object):
 
         return ev
 
+    @lru_cache(maxsize=255)
     def _get_enrich_variables_gis(self, iso3: Optional[str] = None) -> pd.DataFrame:
         """Provide method to return enrich variables at both the BusinessAnalyst and AOI (Country) levels."""
         # construct the url with the option to simply not explicitly specify a iso3
@@ -1836,7 +1915,10 @@ class BusinessAnalyst(object):
 
         # if working with a specific country, add this to the payload
         if country is not None:
-            params["useData"] = json.dumps({"sourceCountry": country.properties.iso3})
+            hierarchy = kwargs.pop("hierarchy", country.properties.hierarchy[0])
+            params["useData"] = json.dumps(
+                {"sourceCountry": country.properties.iso3, "hierarchy": hierarchy}
+            )
 
         # get the maximum batch size to ensure is not less than best practices set above
         svc_lmt_url = f'{self.source.properties.helperServices("geoenrichment").url}/Geoenrichment/ServiceLimits'
@@ -1996,7 +2078,7 @@ class BusinessAnalyst(object):
 
         # bach request asynchronously
         enrich_res_df = run_async(
-            _get_enrich_rest, ge_url, req_param_lst, retrieve_geometry
+            _get_enrich_rest, ge_url, req_param_lst, retrieve_geometry, self.source
         )
 
         # clean up the response dataframe schema
@@ -2052,6 +2134,7 @@ class BusinessAnalyst(object):
 
         return enrich_df
 
+    @lru_cache(maxsize=255)
     def _standardize_enrich_column_name(
         self, column_name: str, country: Optional[Country] = None
     ):
@@ -2065,7 +2148,7 @@ class BusinessAnalyst(object):
 
 
 async def _get_enrich_rest(
-    ge_url: str, payload_lst: Iterable[dict], retrieve_geometry: bool
+    ge_url: str, payload_lst: Iterable[dict], retrieve_geometry: bool, source: GIS
 ) -> Awaitable[pd.DataFrame]:
     """Function enabling batching of enrich rest call asynchronously."""
     # variable for storing results
@@ -2078,35 +2161,21 @@ async def _get_enrich_rest(
         loop = asyncio.get_event_loop()
 
         # get a listener, a future object, and send request to the server
-        future = loop.run_in_executor(None, requests.post, ge_url, payload)
+        future = loop.run_in_executor(None, source._con.post, ge_url, payload)
 
         # hold short for response (but since using async, other requests get queued up)
         res = await future
 
-        # pluck out the JSON payload as a dictionary to work with
-        r_json = res.json()
-
         # ensure a valid result is received
-        if "error" in r_json:
-            err = r_json["error"]
+        if "error" in res["messages"]:
+            err = res["messages"]["error"]
             raise Exception(
                 "Error in enriching data using Business Analyst Enrich REST endpoint - Error "
                 f'Code {err["code"]}: {err["message"]}'
             )
 
-        if len(r_json["messages"]):
-            err_msg_lst = [
-                m for m in r_json["messages"] if m["type"] == "esriJobMessageTypeError"
-            ]
-            if len(err_msg_lst):
-                err = err_msg_lst[0]
-                raise Exception(
-                    "An error was encountered processing the request using the Business Analyst REST endpoint - "
-                    f"Error: {err['id']}: {err['description']}"
-                )
-
         # pull out the response feature set
-        fs = r_json["results"][0]["value"]["FeatureSet"]
+        fs = res["results"][0]["value"]["FeatureSet"]
         assert (
             len(fs) > 0
         ), "No results were returned. Please ensure you are using the correct country."

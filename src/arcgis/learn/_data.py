@@ -1396,6 +1396,22 @@ def prepare_data(
     :return: data object
 
     """
+    #
+    arcgis_init_kwargs = {
+        "path": path,
+        "class_mapping": class_mapping,
+        "chip_size": chip_size,
+        "val_split_pct": val_split_pct,
+        "batch_size": batch_size,
+        "transforms": transforms,
+        "collate_fn": collate_fn,
+        "seed": seed,
+        "dataset_type": dataset_type,
+        "resize_to": resize_to,
+        "working_dir": working_dir,
+        **kwargs,
+    }
+    #
     emd = {}
     height_width = []
     not_label_count = [0]
@@ -1413,6 +1429,9 @@ def prepare_data(
 
     if type(path) is str:
         path = Path(path)
+
+    if batch_size == None:
+        batch_size = 2
 
     databunch_kwargs = {"num_workers": 0} if sys.platform == "win32" else {}
     databunch_kwargs["bs"] = batch_size
@@ -2606,6 +2625,7 @@ def prepare_data(
             data.path = Path(os.path.abspath(working_dir))
         _prepare_working_dir(data.path)
 
+        data.arcgis_init_kwargs = arcgis_init_kwargs
         return data
 
     elif dataset_type == "ChangeDetection":
@@ -2614,7 +2634,7 @@ def prepare_data(
         kwargs.pop("rgb_bands", None)
         kwargs.pop("bands", None)
         kwargs.pop("norm_pct", None)
-        return prepare_change_detection_data(
+        data = prepare_change_detection_data(
             path,
             chip_size,
             batch_size,
@@ -2628,6 +2648,8 @@ def prepare_data(
             working_dir=working_dir,
             **kwargs,
         )
+        data.arcgis_init_kwargs = arcgis_init_kwargs
+        return data
 
     elif dataset_type == "CycleGAN":
         if _is_multispectral:
@@ -2650,6 +2672,7 @@ def prepare_data(
             if working_dir is not None:
                 data.path = Path(os.path.abspath(working_dir))
             data._temp_folder = _prepare_working_dir(data.path)
+            data.arcgis_init_kwargs = arcgis_init_kwargs
             return data
         data, batch_stats_a, batch_stats_b = prepare_data_ms_cyclegan(
             path, _is_multispectral, norm_pct, val_split_pct, seed, databunch_kwargs
@@ -2680,7 +2703,7 @@ def prepare_data(
             # data._norm_pct = norm_pct
             data._extract_bands = None
             data._do_normalize = False
-
+        data.arcgis_init_kwargs = arcgis_init_kwargs
         return data
     elif dataset_type == "WNet_cGAN":
         from osgeo import gdal
@@ -2734,6 +2757,7 @@ def prepare_data(
         if working_dir is not None:
             data.path = Path(os.path.abspath(working_dir))
         data._temp_folder = _prepare_working_dir(data.path)
+        data.arcgis_init_kwargs = arcgis_init_kwargs
         return data
     elif dataset_type == "ObjectTracking":
         from ._utils.object_tracking_data import (
@@ -2762,6 +2786,7 @@ def prepare_data(
         if working_dir is not None:
             data.path = Path(os.path.abspath(working_dir))
         data._temp_folder = _prepare_working_dir(data.path)
+        data.arcgis_init_kwargs = arcgis_init_kwargs
         return data
     else:
         raise NotImplementedError('Unknown dataset_type="{}".'.format(dataset_type))
@@ -3237,4 +3262,5 @@ def prepare_data(
     if has_esri_files:
         data._emd = emd
 
+    data.arcgis_init_kwargs = arcgis_init_kwargs
     return data

@@ -1,3 +1,4 @@
+import unittest
 from typing import Union, Iterable
 
 from arcgis.features import FeatureSet
@@ -101,47 +102,52 @@ in_memory_dict = {"features": [{"geometry": {"paths": [
 test_feature_set = FeatureSet.from_dict(in_memory_dict)
 
 
-@skip_if_no_agol
-def test_introduction_enrich_01_agol(usa_agol, expectation=does_not_raise()):
-    with expectation:
-        analysis_variables = [
-            'TOTPOP_CY',  # Population: Total Population (Esri)
-            'DIVINDX_CY',  # Diversity Index (Esri)
-            'AVGHHSZ_CY',  # Average Household Size (Esri)
-            'MEDAGE_CY',  # Age: Median Age (Esri)
-            'MEDHINC_CY',  # Income: Median Household Income (Esri)
-            'BACHDEG_CY',  # Education: Bachelor's Degree (Esri)
-        ]
+class TestLegacyGuide(unittest.TestCase):
 
-        usa = Country('US', gis=usa_agol._gis)
-        zip1 = usa.subgeographies.states['California'].zip5['90018']
-        zip2 = usa.subgeographies.states['California'].zip5['90023']
-        zip3 = usa.subgeographies.states['California'].zip5['90035']
+    def setUp(self):
+        self.usa_agol_inst = usa_agol()
 
-        enrich_res = usa.enrich([zip1, zip2, zip3], enrich_variables=analysis_variables)
+    @skip_if_no_agol
+    def test_introduction_enrich_01_agol(self, expectation=does_not_raise()):
+        with expectation:
+            analysis_variables = [
+                'TOTPOP_CY',  # Population: Total Population (Esri)
+                'DIVINDX_CY',  # Diversity Index (Esri)
+                'AVGHHSZ_CY',  # Average Household Size (Esri)
+                'MEDAGE_CY',  # Age: Median Age (Esri)
+                'MEDHINC_CY',  # Income: Median Household Income (Esri)
+                'BACHDEG_CY',  # Education: Bachelor's Degree (Esri)
+            ]
 
-        assert_enrich_results(enrich_res, usa)
+            usa = Country('US', gis=self.usa_agol_inst._gis)
+            zip1 = usa.subgeographies.states['California'].zip5['90018']
+            zip2 = usa.subgeographies.states['California'].zip5['90023']
+            zip3 = usa.subgeographies.states['California'].zip5['90035']
+
+            enrich_res = usa.enrich([zip1, zip2, zip3], enrich_variables=analysis_variables)
+
+            assert_enrich_results(enrich_res, usa)
+
+    @skip_if_no_agol
+    def test_enrich_single_address_agol(self, expectation=does_not_raise()):
+        with expectation:
+            enrich_res = self.usa_agol_inst.enrich(study_areas=["380 New York St Redlands CA 92373"], data_collections=['Age'])
+            assert_enrich_results(enrich_res, self.usa_agol_inst)
+
+    @skip_if_no_agol
+    def test_enrich_feature_set_direct_enrich_wrong_data_colleciton_agol(self):
+        from arcgis.geoenrichment import enrich
+        with self.assertRaises(AssertionError):
+            enrich_res = enrich(study_areas=[test_feature_set], data_collections=['Age'], gis=self.usa_agol_inst._gis)
+            assert_enrich_results(enrich_res, self.usa_agol_inst)
+
+    @skip_if_no_agol
+    def test_enrich_feature_set_data_collection_agol(self):
+        with does_not_raise():
+            enrich_res = self.usa_agol_inst.enrich(study_areas=[test_feature_set], data_collections=['Age'])
+            assert_enrich_results(enrich_res, self.usa_agol_inst)
 
 
-@skip_if_no_agol
-def test_enrich_single_address_agol(usa_agol, expectation=does_not_raise()):
-    with expectation:
-        enrich_res = usa_agol.enrich(study_areas=["380 New York St Redlands CA 92373"], data_collections=['Age'])
-        assert_enrich_results(enrich_res, usa_agol)
+if __name__ == "__main__":
 
-
-@skip_if_no_agol
-def test_enrich_feature_set_direct_enrich_wrong_data_colleciton_agol(usa_agol):
-    from arcgis.geoenrichment import enrich
-    try:
-        enrich_res = enrich(study_areas=[test_feature_set], data_collections=['Age'], gis=usa_agol._gis)
-        assert_enrich_results(enrich_res, usa_agol)
-    except AssertionError as e:
-        assert "data collections you requested is not available" in str(e)
-
-
-@skip_if_no_agol
-def test_enrich_feature_set_data_collection_agol(usa_agol):
-    with does_not_raise():
-        enrich_res = usa_agol.enrich(study_areas=[test_feature_set], data_collections=['Age'])
-        assert_enrich_results(enrich_res, usa_agol)
+    unittest.main()
