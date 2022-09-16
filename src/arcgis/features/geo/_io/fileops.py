@@ -229,7 +229,7 @@ def _from_xy(df, x_column, y_column, sr=None, z_column=None, m_column=None, **kw
     else:
         ags_geom[:] = v_func(df[x_column].values, df[y_column].values, sr)
     oid_fields = ["oid", "fid", "objectid"]
-    if oid_fields:
+    if oid_field:
         oid_fields.append(oid_field.lower())
     df = df.astype(
         {
