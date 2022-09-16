@@ -148,6 +148,7 @@ class ArcGISProAuth(AuthBase, SupportMultiAuth):
     # ----------------------------------------------------------------------
     def handle_40x(self, r, **kwargs):
         """Handles Case where token is invalid"""
+        parsed = parse_url(r.url)
         if parsed.port:
             server_url = (
                 f"{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path}"
