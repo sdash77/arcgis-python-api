@@ -9438,7 +9438,6 @@ class _ImageServerRaster(ImageryLayer, Raster):
         self._engine = _ImageServerRaster
         self._path = path
         self._do_not_hydrate = False
-        self._created_from_collection = False
         self._mdinfo = None
         self._extent = None
         self._extent_set = False
@@ -9549,10 +9548,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
 
     @property
     def multidimensional_info(self):
-        if self._created_from_collection is True:
-            mdinfo = self._mdinfo
-        else:
-            mdinfo = super().multidimensional_info
+        mdinfo = super().multidimensional_info
         if mdinfo is not None:
             for index, ele in enumerate(mdinfo["multidimensionalInfo"]["variables"]):
                 # if (ele['name'] == variable_name):
@@ -14777,10 +14773,6 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         from arcgis.raster.functions import _simple_collection
 
         lyr = _simple_collection(self, md_info)
-        # lyr._engine_obj._fnra["rasterFunctionArguments"].update({"MultidimensionalInfo":md_info})
-        # lyr._engine_obj._fn["rasterFunctionArguments"].update({"MultidimensionalInfo":md_info})
-        lyr._engine_obj._created_from_collection = True
-        lyr._engine_obj._mdinfo = {"multidimensionalInfo": md_info}
         return lyr
 
     def max(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
