@@ -1250,6 +1250,10 @@ class StoryMap(object):
                                 name = resource_dict["data"]["resourceId"]
                                 resource_file = self._item.resources.get(name)
                                 resource_files[name] = resource_file
+                            elif "itemId" in resource_dict["data"]:
+                                name = resource_dict["data"]["itemId"]
+                                resource_file = self._item.resources.get(name)
+                                resource_files[name] = resource_file
 
         # Begin populating dicts and list, assume there are children to begin with.
         while has_children is True:

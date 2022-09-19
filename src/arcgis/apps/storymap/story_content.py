@@ -3006,12 +3006,12 @@ class MapTour(object):
         """private method to gather all children of a map tour from places data"""
         children = [self.map]
         for place in self.places:
-            if place["contents"]:
+            if "children" in place and place["contents"]:
                 for content in place["contents"]:
                     children.append(content)
-            if place["media"]:
+            if "media" in place and place["media"]:
                 children.append(place["media"])
-            if place["title"]:
+            if "title" in place and place["title"]:
                 children.append(place["title"])
         return children
 
