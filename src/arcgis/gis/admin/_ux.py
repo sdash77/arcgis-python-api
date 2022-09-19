@@ -1,6 +1,6 @@
+from __future__ import annotations
 import os
 import json
-from typing import Optional
 from ._resources import PortalResourceManager
 
 ###########################################################################
@@ -31,9 +31,13 @@ class UX(object):
         :return: string
         """
         portal_resources = PortalResourceManager(self._gis)
-        res = json.loads(
-            open(portal_resources.get("localizedOrgProperties"), "r").read()
-        )
+        try:
+            res = json.loads(
+                open(portal_resources.get("localizedOrgProperties"), "r").read()
+            )
+        except:
+            # if summary has never been set for org then need to create the resource
+            self.summary = ""
         return res["default"]["description"]
 
     # ----------------------------------------------------------------------
@@ -58,9 +62,9 @@ class UX(object):
     # ----------------------------------------------------------------------
     def set_banner(
         self,
-        banner_file: Optional[str] = None,
+        banner_file: str | None = None,
         is_built_in: bool = False,
-        custom_html: Optional[str] = None,
+        custom_html: str | None = None,
     ):
         """
         Configure your home page by setting the organization's banner. You can choose one of the 5 built-in banners or
@@ -175,7 +179,7 @@ class UX(object):
         return update_result
 
     # ----------------------------------------------------------------------
-    def set_logo(self, logo_file: Optional[str] = None):
+    def set_logo(self, logo_file: str | None = None):
         """
         Configure your home page by setting the organization's logo image. For best results the logo file should be
         65 x 65 pixels in dimension.
@@ -256,7 +260,7 @@ class UX(object):
         download_path     required string. Folder path to download the logo file.
         ================  ===============================================================
 
-        :return: Path to downloaded logo file.
+        :return: Path to downloaded logo file. If None, then logo is not set and nothing was downloaded.
 
         """
         portal_resources = PortalResourceManager(self._gis)
@@ -357,7 +361,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @description.setter
-    def description(self, description: Optional[str] = None):
+    def description(self, description: str | None = None):
         """
         See main ``description`` property docstring
         """
@@ -446,7 +450,7 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     def set_background(
-        self, background_file: Optional[str] = None, is_built_in: bool = True
+        self, background_file: str | None = None, is_built_in: bool = True
     ):
         """
         Configure your home page by setting the organization's background image. You can choose no image, a built-in image
@@ -515,7 +519,7 @@ class UX(object):
         download_path       required string. Folder path to download the banner file.
         ================    =================================================================================
 
-        :return: Path to downloaded banner file.
+        :return: Path to downloaded banner file. If None, then banner is not set and nothing was downloaded.
 
         """
         # create a portal resource manager obj
@@ -528,14 +532,15 @@ class UX(object):
         ]
 
         # loop through and remove existing banner resource file
+        banner_path = None
         for banner in e_banner:
 
             try:
-                download_path = portal_resources.get(banner["key"], download_path)
+                banner_path = portal_resources.get(banner["key"], download_path)
 
             except:
                 continue
-        return download_path
+        return banner_path
 
     # ----------------------------------------------------------------------
     def get_background(self, download_path: str):
@@ -551,7 +556,7 @@ class UX(object):
         download_path     required string. Folder path to download the background file.
         ================  ===============================================================
 
-        :return: Path to downloaded background file.
+        :return: Path to downloaded background file. If None, then background is not set and nothing was downloaded.
         """
 
         # create a portal resource manager obj
@@ -564,14 +569,15 @@ class UX(object):
         ]
 
         # loop through and remove existing banner resource file
+        bckgrnd_path = None
         for background in e_background:
 
             try:
-                download_path = portal_resources.get(background["key"], download_path)
+                bckgrnd_path = portal_resources.get(background["key"], download_path)
 
             except:
                 continue
-        return download_path
+        return bckgrnd_path
 
     # ----------------------------------------------------------------------
     @property
