@@ -772,7 +772,7 @@ class BusinessAnalyst(object):
                 ds.CountryInfo.ISO3,
                 ds.DataSourceID,
                 ds.ID,
-                None
+                None,
             )
             for ds in ds_lst
         ]
