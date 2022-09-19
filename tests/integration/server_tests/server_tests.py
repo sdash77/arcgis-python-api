@@ -1,9 +1,10 @@
 """
 Tests Related to Server API Frame
 """
-import ssl
+import sys
 
-ssl._create_default_https_context = ssl._create_unverified_context
+sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
+
 import unittest
 import pandas as pd
 import os, shutil
@@ -18,8 +19,8 @@ URLS = [
     "http://sampleserver1.arcgisonline.com/ArcGIS/rest/services",  # 10.1
     "http://sampleserver2.arcgisonline.com/ArcGIS/rest/services",  # 9.31
     "http://sampleserver3.arcgisonline.com/ArcGIS/rest/services",  # 10.05
-    "http://sampleserver4.arcgisonline.com/ArcGIS/rest/services",  # 10.02
-    "https://sampleserver6.arcgisonline.com/arcgis/rest",  # 10.41
+    "http://sampleserver4.arcgisonline.com/ArcGIS/rest/services",  # 10.02, deprecated and offline
+    "https://sampleserver6.arcgisonline.com/arcgis/rest",  # 10.41, 10.91
     "https://pythonapi.playground.esri.com/server/rest/",  # 10.8
 ]
 import os
@@ -58,9 +59,13 @@ if AGOL_USERNAME and AGOL_PASSWORD:
     class ServerAGOLTest(unittest.TestCase):
         """test the AGOL Server functionality"""
 
-        def setUp(self):
-            self._gis = GIS(
-                url=AGOL_URL, username=AGOL_USERNAME, password=AGOL_PASSWORD
+        @classmethod
+        def setUpClass(cls):
+            cls._gis = GIS(
+                url=AGOL_URL,
+                username=AGOL_USERNAME,
+                password=AGOL_PASSWORD,
+                verify_cert=False,
             )
 
         # @unittest.SkipTest
@@ -187,13 +192,14 @@ class ServerPortalTest(unittest.TestCase):
         from arcgis.gis.server import Server
 
         s = Server(
-            url="https://pythonapi.playground.esri.com/portal",
+            url="https://pythonapi.playground.esri.com/server",
             gis=None,
-            username="admin",
-            password="esri.agp",
+            username=self._gis._username,  # "admin",
+            password=self._gis._password,  # "esri.agp",
             tokenurl="https://pythonapi.playground.esri.com/portal/sharing/rest/generateToken",
         )
         self.assertIsInstance(s, Server)
+        assert s.properties
 
     # @unittest.SkipTest
     def test_portal_get_server_manager(self):
@@ -231,31 +237,30 @@ class ServerCatalogCreationTests(unittest.TestCase):
         self._password = "esri.agp"
 
     # ----------------------------------------------------------------------
+    @unittest.skip("url broken")
     def test_931_catalog(self):
         """catalog 931"""
         url_931 = URLS[1]
         server = ServicesDirectory(url=url_931)
+        assert server.properties
         self.assertIsInstance(server, ServicesDirectory)
 
     # ----------------------------------------------------------------------
+    @unittest.skip("url broken")
     def test_101_catalog(self):
         """catalog 10.1 Anonymous"""
         url_101 = URLS[0]
         server = ServicesDirectory(url=url_101)
+        assert server.properties
         self.assertIsInstance(server, ServicesDirectory)
 
     # ----------------------------------------------------------------------
+    @unittest.skip("url broken")
     def test_1005_catalog(self):
         """catalog 10.05 Anonymous"""
         url_1005 = URLS[2]
         server = ServicesDirectory(url=url_1005)
-        self.assertIsInstance(server, ServicesDirectory)
-
-    # ----------------------------------------------------------------------
-    def test_1002_catalog(self):
-        """catalog 10.02 Anonymous"""
-        url_1002 = URLS[3]
-        server = ServicesDirectory(url=url_1002)
+        assert server.properties
         self.assertIsInstance(server, ServicesDirectory)
 
     # ----------------------------------------------------------------------
@@ -263,6 +268,7 @@ class ServerCatalogCreationTests(unittest.TestCase):
         """catalog 10.41"""
         url_1041 = URLS[4]
         server = ServicesDirectory(url=url_1041)
+        assert server.properties
         self.assertIsInstance(server, ServicesDirectory)
 
     # ----------------------------------------------------------------------
@@ -270,30 +276,35 @@ class ServerCatalogCreationTests(unittest.TestCase):
         """catalog 10.81"""
         url_1081 = URLS[5]
         server = ServicesDirectory(url=url_1081)
+        assert server.properties
         self.assertIsInstance(server, ServicesDirectory)
 
     # ----------------------------------------------------------------------
     def test_1081_catalog_token_login(self):
         """catalog 10.81"""
         url_1081 = URLS[5]
+        gis = GIS(profile='your_enterprise_profile')
         server = ServicesDirectory(
             url=url_1081,
-            username=self._username,
-            password=self._password,
+            username=gis._username,
+            password=gis._password,
             tokenurl="https://pythonapi.playground.esri.com/portal/sharing/rest/generateToken",
         )
+        assert server.properties
         self.assertIsInstance(server, ServicesDirectory)
 
     # ---------------------------------------------------------------------
     def test_1081_catalog_admin(self):
         """test getting the admin object to server from direct connection"""
         url_1081 = URLS[5]
+        gis = GIS(profile='your_enterprise_profile')
         server = ServicesDirectory(
             url=url_1081,
-            username=self._username,
-            password=self._password,
+            username=gis._username,
+            password=gis._password,
             tokenurl="https://pythonapi.playground.esri.com/portal/sharing/rest/generateToken",
         )
+        assert server.properties
         self.assertIsInstance(server.admin, Server)
 
     # ----------------------------------------------------------------------
@@ -301,6 +312,7 @@ class ServerCatalogCreationTests(unittest.TestCase):
         """catalog 10.81 Anonymous"""
         url_1081 = URLS[5]
         server = ServicesDirectory(url=url_1081)
+        assert server.properties
         self.assertIsInstance(server, ServicesDirectory)
 
 
@@ -312,9 +324,11 @@ class ServerPropertyTest(unittest.TestCase):
     """
 
     # ----------------------------------------------------------------------
-    def setUp(self):
-        self._username = "admin"
-        self._password = "esri.agp"
+    @classmethod
+    def setUpClass(cls):
+        cls._gis = GIS(profile='your_enterprise_profile')
+        cls._username = cls._gis._username
+        cls._password = cls._gis._password
 
     # ----------------------------------------------------------------------
     def test_content(self):
@@ -325,6 +339,7 @@ class ServerPropertyTest(unittest.TestCase):
         ).admin
 
         self.assertIsInstance(server, Server)
+        assert server.properties
 
     def test_data_storemanager(self):
         """catalog 10.81 data"""
@@ -401,9 +416,9 @@ class catalog_info_test(unittest.TestCase):
 
     # ----------------------------------------------------------------------
     def setUp(self):
-        self._username = "admin"
-        self._password = "esri.agp"
-        url_1081 = URLS[5]
+        self._username = "siteadmin"
+        self._password = "esri.agp2"
+        url_1081 = "https://rextapilnxsvr01.esri.com/server"
         self._server_auth = ServicesDirectory(
             url=url_1081, username=self._username, password=self._password
         ).admin
@@ -435,14 +450,16 @@ class server_logs_test(unittest.TestCase):
     """
 
     # ----------------------------------------------------------------------
-    def setUp(self):
-        self._username = "admin"
-        self._password = "esri.agp"
+    @classmethod
+    def setUpClass(cls):
+        cls._gis = GIS(profile='your_enterprise_profile')
+        cls._username = cls._gis._username
+        cls._password = cls._gis._password
         url_1081 = URLS[5]
-        self._server_auth = ServicesDirectory(
-            url=url_1081, username=self._username, password=self._password
+        cls._server_auth = ServicesDirectory(
+            url=url_1081, username=cls._username, password=cls._password
         ).admin
-        self._server_noauth = ServicesDirectory(url=URLS[0])
+        cls._server_noauth = ServicesDirectory(url=URLS[0])
 
     # -------- Auth Test ---------------------------------------------------
     def test_logs_auth(self):
@@ -463,13 +480,16 @@ class server_machines_test(unittest.TestCase):
     """
 
     # ----------------------------------------------------------------------
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
+        cls._gis = GIS(profile='your_enterprise_profile')
+        cls._username = cls._gis._username
+        cls._password = cls._gis._password
         url_1081 = URLS[5]
-        self._username = "admin"
-        self._password = "esri.agp"
-        self._server_auth = ServicesDirectory(
-            url=url_1081, username=self._username, password=self._password
+        cls._server_auth = ServicesDirectory(
+            url=url_1081, username=cls._username, password=cls._password
         ).admin
+        cls._server_noauth = ServicesDirectory(url=URLS[0])
 
     # -------- Auth Test ---------------------------------------------------
     def test_machines_auth(self):
@@ -500,14 +520,17 @@ class server_usagereports_test(unittest.TestCase):
     """
 
     # ----------------------------------------------------------------------
-    def setUp(self):
+    @classmethod
+    def setUpClass(cls):
+        cls._gis = GIS(profile='your_enterprise_profile')
+        cls._username = cls._gis._username
+        cls._password = cls._gis._password
         url_1081 = URLS[5]
-        self._username = "admin"
-        self._password = "esri.agp"
-        self._server_auth = ServicesDirectory(
-            url=url_1081, username=self._username, password=self._password
+        cls._server_auth = ServicesDirectory(
+            url=url_1081, username=cls._username, password=cls._password
         ).admin
-        self.usage = self._server_auth.usage
+        cls._server_noauth = ServicesDirectory(url=URLS[0])
+        cls.usage = cls._server_auth.usage
 
     # -------- Auth Test ---------------------------------------------------
     def test_reports(self):
@@ -538,11 +561,31 @@ class server_userandusers_test(unittest.TestCase):
     test server usage module
     """
 
+    """    import sys
+        
+        sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
+        
+        from arcgis.gis.server import ServicesDirectory
+        
+        if __name__ == "__main__":
+            sd = ServicesDirectory(
+                url="https://rextapilnxsvr01.esri.com/server",
+                username='siteadmin',
+                password='esri.agp2',
+                verify_cert=False,
+            )
+            start_time = 1663578082056
+            admin = sd.admin
+            lm = admin.logs
+            res = lm.query(start_time=start_time)
+            print('stop')
+    """
+
     # ----------------------------------------------------------------------
     def setUp(self):
-        url_1081 = URLS[5]
-        self._username = "admin"
-        self._password = "esri.agp"
+        url_1081 = "https://rextapilnxsvr01.esri.com/server"
+        self._username = "siteadmin"
+        self._password = "esri.agp2"
         self._server_auth = ServicesDirectory(
             url=url_1081, username=self._username, password=self._password
         ).admin
@@ -580,7 +623,7 @@ class server_userandusers_test(unittest.TestCase):
     # @unittest.SkipTest
     def test_me(self):
 
-        self.assertIsInstance(self.users.me, User)
+        self.assertIsInstance(self.users.me, (str, User))
 
     # @unittest.SkipTest
     def test_search(self):
