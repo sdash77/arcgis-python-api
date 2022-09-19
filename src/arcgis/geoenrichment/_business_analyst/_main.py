@@ -1,6 +1,7 @@
 import asyncio
 from collections import namedtuple
 from copy import deepcopy
+from functools import lru_cache
 import json
 from pathlib import Path
 import re
@@ -14,7 +15,6 @@ from arcgis.geometry import Geometry, SpatialReference
 from arcgis.network.analysis import get_travel_modes
 from arcgis._impl.common._utils import _lazy_property as lazy_property
 import pandas as pd
-import requests
 
 from ._utils import (
     add_proximity_to_enrich_feature_list,
@@ -772,6 +772,7 @@ class BusinessAnalyst(object):
                 ds.CountryInfo.ISO3,
                 ds.DataSourceID,
                 ds.ID,
+                None,
             )
             for ds in ds_lst
         ]
@@ -1068,6 +1069,7 @@ class BusinessAnalyst(object):
 
         return ev
 
+    @lru_cache(maxsize=255)
     def _get_enrich_variables_gis(self, iso3: Optional[str] = None) -> pd.DataFrame:
         """Provide method to return enrich variables at both the BusinessAnalyst and AOI (Country) levels."""
         # construct the url with the option to simply not explicitly specify a iso3
@@ -1576,12 +1578,6 @@ class BusinessAnalyst(object):
                     .reset_index(drop=True)
                 )
 
-            # let user know we are grabbing defaults
-            warn(
-                f"Using {len(enrich_variables.index)} enrich variables, key variables, as default "
-                f"since no enrich_variables were provided."
-            )
-
         # if a list of enrichment variables was provided, ensure they are valid
         if not isinstance(enrich_variables, pd.DataFrame):
 
@@ -2077,7 +2073,7 @@ class BusinessAnalyst(object):
 
         # bach request asynchronously
         enrich_res_df = run_async(
-            _get_enrich_rest, ge_url, req_param_lst, retrieve_geometry
+            _get_enrich_rest, ge_url, req_param_lst, retrieve_geometry, self.source
         )
 
         # clean up the response dataframe schema
@@ -2133,6 +2129,7 @@ class BusinessAnalyst(object):
 
         return enrich_df
 
+    @lru_cache(maxsize=255)
     def _standardize_enrich_column_name(
         self, column_name: str, country: Optional[Country] = None
     ):
@@ -2146,7 +2143,7 @@ class BusinessAnalyst(object):
 
 
 async def _get_enrich_rest(
-    ge_url: str, payload_lst: Iterable[dict], retrieve_geometry: bool
+    ge_url: str, payload_lst: Iterable[dict], retrieve_geometry: bool, source: GIS
 ) -> Awaitable[pd.DataFrame]:
     """Function enabling batching of enrich rest call asynchronously."""
     # variable for storing results
@@ -2159,35 +2156,21 @@ async def _get_enrich_rest(
         loop = asyncio.get_event_loop()
 
         # get a listener, a future object, and send request to the server
-        future = loop.run_in_executor(None, requests.post, ge_url, payload)
+        future = loop.run_in_executor(None, source._con.post, ge_url, payload)
 
         # hold short for response (but since using async, other requests get queued up)
         res = await future
 
-        # pluck out the JSON payload as a dictionary to work with
-        r_json = res.json()
-
         # ensure a valid result is received
-        if "error" in r_json:
-            err = r_json["error"]
+        if "error" in res["messages"]:
+            err = res["messages"]["error"]
             raise Exception(
                 "Error in enriching data using Business Analyst Enrich REST endpoint - Error "
                 f'Code {err["code"]}: {err["message"]}'
             )
 
-        if len(r_json["messages"]):
-            err_msg_lst = [
-                m for m in r_json["messages"] if m["type"] == "esriJobMessageTypeError"
-            ]
-            if len(err_msg_lst):
-                err = err_msg_lst[0]
-                raise Exception(
-                    "An error was encountered processing the request using the Business Analyst REST endpoint - "
-                    f"Error: {err['id']}: {err['description']}"
-                )
-
         # pull out the response feature set
-        fs = r_json["results"][0]["value"]["FeatureSet"]
+        fs = res["results"][0]["value"]["FeatureSet"]
         assert (
             len(fs) > 0
         ), "No results were returned. Please ensure you are using the correct country."
