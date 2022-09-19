@@ -112,6 +112,7 @@ class ServicesDirectory(BaseServer):
     ):
         """Constructor"""
         super(ServicesDirectory, self)
+        ags_file = kwargs.pop("ags_file", None)
         profile = kwargs.pop("profile", None)
         if str(url).endswith("/"):
             url = url[:-1]
@@ -120,8 +121,10 @@ class ServicesDirectory(BaseServer):
             url, username, password, key_file, cert_file, client_id = self._profile_mgr(
                 profile, url, username, password, cert_file, key_file, client_id=None
             )
-        if profile is None and url is None:
-            raise ValueError("A `url` must be given when a `profile` is not provided.")
+        if profile is None and url is None and ags_file is None:
+            raise ValueError(
+                "A `url` or 'ags_file' must be given when a `profile` is not provided."
+            )
         if url.lower().find("/rest") == -1 and url.endswith("/rest") == False:
             url = "%s/rest/services" % url
         if (
@@ -171,6 +174,7 @@ class ServicesDirectory(BaseServer):
                 verify_cert=verify_cert,
                 product="SERVER",
                 proxy=proxy,
+                ags_file=ags_file,
                 **kwargs,
             )
         self._gis = kwargs.pop("gis", None)
