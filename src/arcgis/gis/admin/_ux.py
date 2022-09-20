@@ -692,8 +692,8 @@ class UX(object):
         return banner_path
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
     @property
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
     def default_extent(self):
         """
         Get/Set the site's default extent
@@ -716,8 +716,8 @@ class UX(object):
         return self.map_settings.default_extent
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
     @default_extent.setter
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
     def default_extent(self, extent: dict):
         """
         See main ``default_extent`` property docstring
@@ -725,8 +725,8 @@ class UX(object):
         self.map_settings.default_extent = extent
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
     @property
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
     def default_basemap(self):
         """
         Get/Set the site's default basemap.
@@ -748,8 +748,8 @@ class UX(object):
         return self.map_settings.default_basemap
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
     @default_basemap.setter
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
     def default_basemap(self, value: str):
         """
         See main ``default_basemap`` property docstring
@@ -757,8 +757,8 @@ class UX(object):
         self.map_settings.default_basemap = value
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
     @property
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
     def vector_basemap(self):
         """
         Get/Set the default vector basemap
@@ -775,8 +775,8 @@ class UX(object):
         return self.map_settings.vector_basemap
 
     # ----------------------------------------------------------------------
-    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
     @vector_basemap.setter
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
     def vector_basemap(self, basemap: dict):
         """
         See main ``vector_basemap`` property docstring
