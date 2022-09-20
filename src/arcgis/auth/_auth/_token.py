@@ -12,6 +12,7 @@ from ..tools._lazy import LazyLoader
 from ..tools import parse_url
 from .._error import ArcGISLoginError
 
+warnings = LazyLoader("warnings")
 re = LazyLoader("re")
 json = LazyLoader("json")
 threading = LazyLoader("threading")
@@ -49,17 +50,20 @@ def _token_url_validator(
         proxies = dict(proxies)
     parsed_url = _parse_arcgis_url(url=url)
     token_url = None  # parsed_url + "/sharing/rest/generateToken"
-    for pt in parts:
-        try:
-            resp = session.get(
-                f"{parsed_url}{pt}?f=json", proxies=proxies, verify=verify
-            )  # need to include proxies, verify parameter
-            token_url = resp.json()["authInfo"]["tokenServicesUrl"]
-            if token_url:
-                break
-            del pt
-        except Exception as e:
-            pass
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        for pt in parts:
+            try:
+
+                resp = session.get(
+                    f"{parsed_url}{pt}?f=json", proxies=proxies, verify=verify
+                )  # need to include proxies, verify parameter
+                token_url = resp.json()["authInfo"]["tokenServicesUrl"]
+                if token_url:
+                    break
+                del pt
+            except Exception as e:
+                pass
     return token_url
 
 
@@ -194,11 +198,9 @@ class ArcGISServerAuth(AuthBase, SupportMultiAuth):
             self._invalid_token_urls = set()
         parsed = parse_url(r.url)
         if parsed.port:
-            server_url = (
-                f"{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path}"
-            )
+            server_url = f"{parsed.scheme}://{parsed.netloc}:{parsed.port}{parsed.path}"
         else:
-            server_url = f"{parsed.scheme}://{parsed.netloc}/{parsed.path}"
+            server_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
         if not server_url in self._invalid_token_urls:
             r.register_hook("response", self.handle_40x)
             if self.legacy == False:
@@ -881,19 +883,22 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
             self._session.verify = verify_cert
             self._session.allow_redirects = True
         if self.proxies:
-
-            token_url = _token_url_validator(
-                _parse_arcgis_url(token_url),
-                session=self._session,
-                verify=False,
-                proxies=frozenset(self.proxies.items()),
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                token_url = _token_url_validator(
+                    _parse_arcgis_url(token_url),
+                    session=self._session,
+                    verify=False,
+                    proxies=frozenset(self.proxies.items()),
+                )
         else:
-            token_url = _token_url_validator(
-                _parse_arcgis_url(token_url),
-                session=self._session,
-                verify=False,
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                token_url = _token_url_validator(
+                    _parse_arcgis_url(token_url),
+                    session=self._session,
+                    verify=False,
+                )
         self._thread_local = threading.local()
 
         self._expires_on = None
