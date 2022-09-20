@@ -57,7 +57,7 @@ class TestSetLineLabelPosition(unittest.TestCase):
             try:
                 res = parcel_fabric.set_line_label_position(parcel_line_features=source_parcels)
                 self.assertTrue(res["success"])
-                self.assertEqual(2, len(res["serviceEdits"]["updates"]))
+                self.assertEqual(2, len(res["serviceEdits"][0]["editedFeatures"]["updates"][0]))
             except Exception as ex:
                 print(ex)
 
@@ -104,10 +104,11 @@ class TestSetLineLabelPosition(unittest.TestCase):
                 ).to_dict()
 
                 label_positon = updated_lines.get("features")[0]
+                label_position = label_positon.get("attributes")["LabelPosition"]
                 self.assertEqual(
                     3,
-                    label_positon["LabelPosition"],
-                    f"Unexpected LabelPosition value. Expected 3, got {label_positon['LabelPosition']}",
+                    label_position,
+                    f"Unexpected LabelPosition value. Expected 3, got {label_positon}",
                 )
             except Exception as ex:
                 print(ex)
