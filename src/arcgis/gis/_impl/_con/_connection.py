@@ -176,8 +176,8 @@ class Connection(object):
         )  # For Federated Objects (Portal Connection)
         if self._ags_file and os.path.isfile(self._ags_file):
             res = arcpy.gp.getStandaloneServerToken(self._ags_file)
-            self._referer = res.pop('referer', 'http')
-            self._baseurl = res.pop('serverUrl', None)
+            self._referer = res.pop("referer", "http")
+            self._baseurl = res.pop("serverUrl", None)
             baseurl = self._baseurl
         elif isinstance(self._portal_connection, GIS):
             self._portal_connection = self._portal_connection._con
