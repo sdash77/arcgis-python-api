@@ -542,7 +542,10 @@ class TabularDataObject(object):
                 except:
                     dataframe[variable] = np.array(
                         labelEncoder.fit_transform(
-                            dataframe[variable].values.astype(str).to_numpy().reshape(-1, 1)
+                            dataframe[variable]
+                            .values.astype(str)
+                            .to_numpy()
+                            .reshape(-1, 1)
                         ),
                         dtype="int64",
                     )
@@ -926,12 +929,19 @@ class TabularDataObject(object):
             for variable, encoder in self._encoder_mapping.items():
                 try:
                     dataframe[variable] = np.array(
-                        encoder.fit_transform(dataframe[variable].values.astype(str).reshape(-1, 1)),
+                        encoder.fit_transform(
+                            dataframe[variable].values.astype(str).reshape(-1, 1)
+                        ),
                         dtype="int64",
                     )
                 except:
                     dataframe[variable] = np.array(
-                        encoder.fit_transform(dataframe[variable].values.astype(str).to_numpy().reshape(-1, 1)),
+                        encoder.fit_transform(
+                            dataframe[variable]
+                            .values.astype(str)
+                            .to_numpy()
+                            .reshape(-1, 1)
+                        ),
                         dtype="int64",
                     )
 
