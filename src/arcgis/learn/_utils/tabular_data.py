@@ -535,14 +535,14 @@ class TabularDataObject(object):
                 try:
                     dataframe[variable] = np.array(
                         labelEncoder.fit_transform(
-                            dataframe[variable].values.reshape(-1, 1)
+                            dataframe[variable].values.astype(str).reshape(-1, 1)
                         ),
                         dtype="int64",
                     )
                 except:
                     dataframe[variable] = np.array(
                         labelEncoder.fit_transform(
-                            dataframe[variable].values.to_numpy().reshape(-1, 1)
+                            dataframe[variable].values.astype(str).to_numpy().reshape(-1, 1)
                         ),
                         dtype="int64",
                     )
@@ -924,10 +924,16 @@ class TabularDataObject(object):
         # if hasattr(self,'_encoder_mapping'):
         if self._encoder_mapping:
             for variable, encoder in self._encoder_mapping.items():
-                dataframe[variable] = np.array(
-                    encoder.fit_transform(dataframe[variable].values.reshape(-1, 1)),
-                    dtype="int64",
-                )
+                try:
+                    dataframe[variable] = np.array(
+                        encoder.fit_transform(dataframe[variable].values.astype(str).reshape(-1, 1)),
+                        dtype="int64",
+                    )
+                except:
+                    dataframe[variable] = np.array(
+                        encoder.fit_transform(dataframe[variable].values.astype(str).to_numpy().reshape(-1, 1)),
+                        dtype="int64",
+                    )
 
         if fit:
             processed_data = _procs.fit_transform(dataframe)
