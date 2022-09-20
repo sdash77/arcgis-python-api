@@ -14,7 +14,7 @@ import os
 from .._utils.common import ArcGISMSImage
 from typing import Callable
 import warnings
-
+from .._utils.utils import check_imbalance
 from fastprogress.fastprogress import progress_bar
 
 
@@ -177,6 +177,20 @@ class ArcGISInstanceSegmentationItemList(ImageList):
 
     def open(self, fn):
         return ArcGISMSImage.open(fn, div=self._div, imagery_type=self._imagery_type)
+
+    def check_class_imbalance(
+        self, func: Callable, stratify=False, class_imbalance_pct=0.01
+    ):
+        try:
+            labelval = [(func(o)) for o in self.items]
+            total_sample = np.concatenate(labelval)
+            unique_sample = set(total_sample)
+
+            check_imbalance(total_sample, unique_sample, class_imbalance_pct, stratify)
+        except Exception as e:
+            warnings.warn(f"Unable to check for class imbalance [reason : {e}]")
+
+        return self
 
     def label_list_from_func(self, func: Callable):
         "Apply `func` to every input to get its label."
