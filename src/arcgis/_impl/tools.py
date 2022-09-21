@@ -13894,7 +13894,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 "ARGUMENT_MAX",
                 "ARGUMENT_MEDIAN",
                 "DURATION",
-                "ARGUMENT_VALUE"
+                "ARGUMENT_VALUE",
             ]
             if [element.lower() for element in statistics_type_allowed_values].count(
                 statistics_type.lower()
@@ -13918,7 +13918,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             comparison_type_allowed_values = [
                 "EQUAL_TO",
                 "GREATER_THAN",
-                "SMALLER_THAN"
+                "SMALLER_THAN",
             ]
             if [element.lower() for element in comparison_type_allowed_values].count(
                 comparison.lower()
@@ -13927,17 +13927,14 @@ class _RasterAnalysisTools(BaseAnalytics):
                     "comparison can only be one of the following: "
                     + str(comparison_type_allowed_values)
                 )
-            
+
             for element in comparison_type_allowed_values:
                 if comparison.upper() == element:
                     comparison_val = element
 
         occurrence_val = occurrence
         if occurrence is not None:
-            occurrence_type_allowed_values = [
-                "FIRST_OCCURRENCE",
-                "LAST_OCCURRENCE"
-            ]
+            occurrence_type_allowed_values = ["FIRST_OCCURRENCE", "LAST_OCCURRENCE"]
             if [element.lower() for element in occurrence_type_allowed_values].count(
                 occurrence.lower()
             ) <= 0:
@@ -13945,7 +13942,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                     "occurrence can only be one of the following: "
                     + str(occurrence_type_allowed_values)
                 )
-            
+
             for element in occurrence_type_allowed_values:
                 if occurrence.upper() == element:
                     occurrence_val = element
@@ -13955,19 +13952,17 @@ class _RasterAnalysisTools(BaseAnalytics):
         )
 
         # Get parameters of method from toolbox
-        arg_spec = inspect.getfullargspec(gis._tools.rasteranalysis._tbx.find_argument_statistics)
+        arg_spec = inspect.getfullargspec(
+            gis._tools.rasteranalysis._tbx.find_argument_statistics
+        )
         param_list = arg_spec.args
         param_set = set(param_list)
 
         # Send params by availability of params
         # Start by checking from params added latest
         if all(
-            param in param_set for param in
-            [
-                "argument_value",
-                "occurrence",
-                "comparison"
-            ]
+            param in param_set
+            for param in ["argument_value", "occurrence", "comparison"]
         ):
             gpjob = self._tbx.find_argument_statistics(
                 input_raster=input_raster,

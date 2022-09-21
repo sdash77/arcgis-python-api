@@ -6235,7 +6235,7 @@ def find_argument_statistics(
 
                                              - DURATION : The longest dimension duration for which the variable values fall between the minimum and maximum values.
 
-                                             - ARGUMENT_VALUE: The dimension value at which the specified variable value is reached will be extracted. 
+                                             - ARGUMENT_VALUE: The dimension value at which the specified variable value is reached will be extracted.
     ------------------------------------     --------------------------------------------------------------------
     min_value                                Optional Float. The minimum variable value to be used to extract the duration.
 
@@ -6315,10 +6315,10 @@ def find_argument_statistics(
 
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
-    argument_value                           Optional Integer. The value at which a comparison will be made to extract 
+    argument_value                           Optional Integer. The value at which a comparison will be made to extract
                                              the dimension value. This parameter is required when the statisticsType
                                              parameter is set to ARGUMENT_VALUE.
-                                             
+
                                              |
                                              .. note::
                                                     This parameter is currently only available on ArcGIS online.
