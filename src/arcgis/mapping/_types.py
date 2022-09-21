@@ -985,6 +985,126 @@ class WebMap(HasTraits, collections.OrderedDict):
         # endregion
         return new_layer
 
+    def update_drawing_info(
+        self,
+        layer: Union[dict, FeatureLayer],
+        label_info: list[dict] = None,
+        renderer: dict = None,
+        transparency: int = None,
+        show_labels: bool = None,
+    ):
+        """
+        Method to alter a WebMap layer's drawing info. Works for standalone layers and individual layers found
+        within group layers. Allows for a user to manually add their own renderers and label classes, toggle whether
+        the labels are visible, and control the transparency of a layer. Useful in tandem with the map widget,
+        allowing for style changes without opening the online map viewer.
+
+        .. note::
+            In order to save changes made through this method, call ``WebMap.update()`` or ``WebMap.save()``.
+
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        layer                   Required :class:`~arcgis.features.FeatureLayer` or Feature Layer
+                                dictionary. The existing WebMap layer to be changed.
+
+                                .. note::
+                                    In order for this method to work, the layer must be set to
+                                    have its properties stored in the web map, not the source layer.
+                                    This is the default setting, and can be confirmed or changed in
+                                    the online Map Viewer. (Layer properties -> information)
+        ------------------      --------------------------------------------------------------------
+        label_info              Optional list of dictionaries. Each dictionary in the list
+                                corresponds to a label class. Determines labeling conventions of the
+                                passed layer.
+        ------------------      --------------------------------------------------------------------
+        renderer                Optional dictonary. Can be manually constructed or the output of
+                                ``generate_renderer()``. Determines the layer style of the passed
+                                layer.
+        ------------------      --------------------------------------------------------------------
+        transparency            Optional int. Determines transparency/opacity of the layer on 0-100
+                                scale, with 0 being fully opaque and 100 being fully transparent.
+        ------------------      --------------------------------------------------------------------
+        show_labels             Optional boolean. Determines whether the layer labels are visible or
+                                not.
+        ==================      ====================================================================
+
+        *Hint:*
+
+        Accessing the layers of your Webmap allows you to view the current renderer and label info dictionaries,
+        allowing you to easily copy them and amend the desired details.
+
+        **Example**
+
+        .. code-block:: python
+
+            # Create Webmap from webmap item, choose a layer to edit
+            wm = WebMap(<wm_item_id>)
+            change_layer = wm.layers[0]
+
+            # Specify renderer dictionary and labeling info dictionary/dictionaries
+            rend = {
+                "type": "simple",
+                "symbol": {
+                    "type": "esriSLS",
+                    "color": [200, 50, 0, 250],
+                    "width": 1,
+                    "style": "esriSLSSolid"
+                }
+            }
+
+            label = [
+                {
+                    "labelExpression": "[llid]",
+                    "labelExpressionInfo": {"expression": "$feature[\"llid\"]"},
+                    "labelPlacement": "esriServerLinePlacementCenterAlong",
+                    "maxScale": 0,
+                    "minScale": 2311163,
+                    "repeatLabel": True,
+                    "symbol": {
+                        "type": "esriTS",
+                        "color": [0, 105, 0, 255],
+                        "font": {"family": "Arial", "size": 9.75},
+                        "horizontalAlignment": "center",
+                        "kerning": True,
+                        "haloColor": [211, 211, 211, 250],
+                        "haloSize": 1,
+                        "rotated": False,
+                        "text": "",
+                        "verticalAlignment": "baseline",
+                        "xoffset": 0,
+                        "yoffset": 0,
+                        "angle": 0
+                    }
+                }
+            ]
+
+            # Call the function. This automatically updates the Webmap info
+            wm.update_drawing_info(
+                change_layer,
+                label_info = label,
+                renderer = rend,
+                transparency = 40,
+                show_labels = True,
+            )
+        """
+
+        if "layerDefinition" not in layer:
+            layer["layerDefinition"] = {"drawingInfo": {}}
+        if "drawingInfo" not in layer["layerDefinition"]:
+            layer["layerDefinition"]["drawingInfo"] = {}
+        if show_labels is not None:
+            layer["showLabels"] = show_labels
+        if transparency is not None:
+            layer["opacity"] = 1 - transparency / 100
+        if label_info is not None:
+            layer["layerDefinition"]["drawingInfo"]["labelingInfo"] = label_info
+        if renderer is not None:
+            layer["layerDefinition"]["drawingInfo"]["renderer"] = renderer
+
+        copy_dict = dict(layer)
+        self.update_layer(copy_dict)
+
     def update_layer(self, layer: Union[dict, FeatureLayer]):
         """
         To update the layer dictionary for a layer in the map. For example, to update the renderer dictionary for a layer
@@ -1005,6 +1125,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         ==================      ====================================================================
 
         .. code-block:: python
+
             # Create Webmap from webmap item
             wm = WebMap(<wm_item_id>)
 
@@ -1023,12 +1144,26 @@ class WebMap(HasTraits, collections.OrderedDict):
             # Need to remove to re-create the layer view correctly
             layer = self._create_layer_definition(layer, None)
         # Find the layer to update based on the id of the layer passed in.
-        lyr_dict = self.get_layer(layer["itemId"])
-        # Get the index so we update the observable list at the correct position.
-        lyr_idx = self._webmapdict["operationalLayers"].index(lyr_dict)
+        lyr_dict = self.get_layer(layer_id=layer["id"])
 
-        # Update the observable list, this triggers webmap to render new layer.
-        self._webmapdict["operationalLayers"][lyr_idx] = layer
+        # Get the index so we update the observable list at the correct position.
+        # Once we have the index, update the observable list.
+        try:
+            lyr_idx = self._webmapdict["operationalLayers"].index(lyr_dict)
+            self._webmapdict["operationalLayers"][lyr_idx] = layer
+
+        # In case the layer is within a group layer
+        except ValueError:
+            # temp_dict = self._webmapdict
+            for item in self._webmapdict["operationalLayers"]:
+                if (item["layerType"] == "GroupLayer") and (lyr_dict in item["layers"]):
+                    grp_idx = self._webmapdict["operationalLayers"].index(item)
+                    lyr_idx = item["layers"].index(lyr_dict)
+                    # need to make a copy so observable list picks it up
+                    grp_copy = self._webmapdict["operationalLayers"][grp_idx]
+                    grp_copy["layers"][lyr_idx] = layer
+                    self._webmapdict["operationalLayers"][grp_idx] = grp_copy
+                    break
 
         # Update the layers property
         if "operationalLayers" in self._webmapdict:
@@ -1794,7 +1929,8 @@ class WebMap(HasTraits, collections.OrderedDict):
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         item_id                Optional string. Pass the item_id for the operational layer you are trying
-                               to reference in the ``WebMap``.
+                               to reference in the ``WebMap``. Note: Not recommended if using multiple
+                               layers from the same original item.
         ------------------     --------------------------------------------------------------------
         title                  Optional string. Pass the title for the operational layer you are trying
                                to reference in the ``WebMap``.
@@ -1809,12 +1945,21 @@ class WebMap(HasTraits, collections.OrderedDict):
             raise ValueError("Please pass at least one parameter into the function")
         if self.layers:
             for layer in self.layers:
+                # some layers may be group layers, so explore their layer array
+                if layer["layerType"] == "GroupLayer":
+                    for sublayer in layer["layers"]:
+                        if (
+                            (title == sublayer["title"])
+                            or (layer_id == sublayer["id"])
+                            or (item_id == sublayer["itemId"])
+                        ):
+                            return sublayer
                 # item id is optional in the webmap spec, so we need to try/except
                 try:
                     if (
                         (title == layer["title"])
                         or (layer_id == layer["id"])
-                        or (item_id == layer["itemId"])
+                        or (item_id == sublayer["itemId"])
                     ):
                         return layer
                 except Exception:
