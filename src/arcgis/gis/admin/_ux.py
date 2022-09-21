@@ -310,8 +310,23 @@ class UX(object):
                     "This parameter can only be set for Enterprise 10.8.1+."
                 )
             else:
+                culture = self._gis.properties["culture"]
+                if culture not in [
+                    "ar",
+                    "pt-BR",
+                    "fr",
+                    "de",
+                    "it",
+                    "ja",
+                    "ko",
+                    "pl",
+                    "ru",
+                    "zh-CN",
+                    "es-es",
+                ]:
+                    culture = "en"
                 self._gis.update_properties(
-                    {"helpBase": "https://enterprise.arcgis.com/"}
+                    {"helpBase": "https://enterprise.arcgis.com/{culture}"}
                 )
 
     # ----------------------------------------------------------------------
@@ -741,6 +756,34 @@ class UX(object):
         portal_properties["sharedTheme"] = shared_theme
         self._gis.update_properties({"portalProperties": portal_properties})
         return shared_theme
+
+    # ----------------------------------------------------------------------
+    @property
+    def gallery_group(self):
+        """
+        The gallery highlights your organization's content.
+        Choose a group whose content will be shown in the gallery.
+        To change the group, assign either an instance of Group or the group id.
+        Setting to None will revert to default.
+        """
+        return self._gis.properties["featuredItemsGroupQuery"]
+
+    # ----------------------------------------------------------------------
+    @gallery_group.setter
+    def gallery_group(self, group: Group | str | None):
+        if isinstance(group, Group):
+            group = "id:" + group.id
+        elif isinstance(group, str):
+            res = self._gis.groups.search(group)
+            if len(res) == 0:
+                raise ValueError(
+                    "The group id provided could not be found in your org."
+                )
+            else:
+                group = "id:" + group
+        self._gis.update_properties(
+            {"featuredItemsGroupQuery": group, "clearEmptyFields": True}
+        )
 
     # ----------------------------------------------------------------------
     @property
@@ -1501,8 +1544,9 @@ class MapSettings(object):
                 value = False
         elif group is None:
             value = True
-        self._gis.update_properties({"useVectorBasemaps": value})
-        self._gis.update_properties({"basemapGalleryGroupQuery": group})
+        self._gis.update_properties(
+            {"basemapGalleryGroupQuery": group, "useVectorBasemaps": value}
+        )
 
     # ----------------------------------------------------------------------
     @property
@@ -1600,8 +1644,9 @@ class MapSettings(object):
             else:
                 group = "id:" + group
 
-        self._gis.update_properties({"clearEmptyFields": True})
-        self._gis.update_properties({"templatesGroupQuery": group})
+        self._gis.update_properties(
+            {"templatesGroupQuery": group, "clearEmptyFields": True}
+        )
 
     # ----------------------------------------------------------------------
     def web_styles(
@@ -1676,5 +1721,6 @@ class MapSettings(object):
                 )
             else:
                 group = "id:" + group
-        self._gis.update_properties({"clearEmptyFields": True})
-        self._gis.update_properties({"analysisLayersGroupQuery": group})
+        self._gis.update_properties(
+            {"analysisLayersGroupQuery": group, "clearEmptyFields": True}
+        )
