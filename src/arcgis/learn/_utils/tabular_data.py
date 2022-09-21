@@ -173,9 +173,12 @@ class TabularDataObject(object):
                 except Exception as e:
                     warnings.warn(f"Unable to check for class imbalance [reason : {e}]")
                 if stratify:
-                    warnings.warn(
-                        f'We see a class imbalance in the dataset. The class(es) {",".join(imabalanced_class_list.keys())} doesnt have enough data points in your dataset.'
-                    )
+                    try:
+                        warnings.warn(
+                            f'We see a class imbalance in the dataset. The class(es) {",".join([str(key) for key in imabalanced_class_list.keys()])} doesnt have enough data points in your dataset.'
+                        )
+                    except:
+                        warnings.warn('We see a class imbalance in the dataset')
                     try:
                         from sklearn.model_selection import train_test_split
 

@@ -507,6 +507,10 @@ class AutoML(object):
         pickle.dump(explainer, open(filename, 'wb'))
 
     def _write_emd(self, path, base_file_name):
+        def convert(o):
+            import numpy
+            if isinstance(o, numpy.int64): return int(o)
+
         emd_file = os.path.join(path, base_file_name + ".emd")
         emd_params = {}
         emd_params["version"] = str(sklearn.__version__)
@@ -537,8 +541,8 @@ class AutoML(object):
             except:
                 emd_params['dependent_variable_unique'] = []
 
-        with open(emd_file, "w") as f:
-            f.write(json.dumps(emd_params, indent=4))
+        with open(emd_file, "w",encoding="utf-8") as f:
+            f.write(json.dumps(emd_params, indent=4,default=convert))
 
     @classmethod
     def from_model(cls, emd_path):
