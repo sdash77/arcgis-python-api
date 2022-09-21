@@ -104,11 +104,13 @@ class WorkflowManagerAdmin:
                 url,
                 params=params,
                 try_json=False,
-                add_token=False,
                 json_encode=False,
                 post_json=True,
+                is_geoevent=True
+
             )
-        )["itemId"]
+        )
+        return_obj = return_obj["itemId"]
         if "error" in return_obj:
             self._gis._con._handle_json_error(return_obj["error"], 0)
         elif "success" in return_obj:
@@ -134,7 +136,7 @@ class WorkflowManagerAdmin:
         url = "{base}/admin/{id}/upgrade".format(base=self._url, id=item.id)
         return_obj = json.loads(
             self._gis._con.post(
-                url, try_json=False, add_token=False, json_encode=False, post_json=True
+                url, try_json=False,   json_encode=False, post_json=True
             )
         )
         if "error" in return_obj:
@@ -163,7 +165,7 @@ class WorkflowManagerAdmin:
         url = "{base}/admin/{id}?".format(base=self._url, id=item.id)
 
         return_obj = json.loads(
-            self._gis._con.delete(url, add_token=False, try_json=False)
+            self._gis._con.delete(url,   try_json=False)
         )
         if "error" in return_obj:
             self._gis._con._handle_json_error(return_obj["error"], 0)
@@ -415,7 +417,7 @@ class JobManager:
             self._gis._con.post(
                 url,
                 filtered_object,
-                add_token=False,
+                 
                 post_json=True,
                 try_json=False,
                 json_encode=False,
@@ -681,7 +683,7 @@ class JobManager:
                 self._gis._con.put(
                     url,
                     {"location": location},
-                    add_token=False,
+                     
                     post_json=True,
                     try_json=False,
                     json_encode=False,
@@ -1052,7 +1054,7 @@ class WorkflowManager:
             self._gis._con.post(
                 url,
                 params,
-                add_token=False,
+                 
                 post_json=True,
                 try_json=False,
                 json_encode=False,
@@ -1211,7 +1213,7 @@ class WorkflowManager:
             self._gis._con.post(
                 url,
                 update_object,
-                add_token=False,
+                 
                 post_json=True,
                 try_json=False,
                 json_encode=False,
@@ -1767,7 +1769,7 @@ class LookUpTable(object):
             gis._con.put(
                 url,
                 put_dict,
-                add_token=False,
+                 
                 post_json=True,
                 try_json=False,
                 json_encode=False,
@@ -1785,7 +1787,7 @@ class LookUpTable(object):
         return return_obj
 
     def delete(gis, url):
-        return_obj = json.loads(gis._con.delete(url, add_token=False, try_json=False))
+        return_obj = json.loads(gis._con.delete(url,   try_json=False))
         if "error" in return_obj:
             gis._con._handle_json_error(return_obj["error"], 0)
         elif "success" in return_obj:
@@ -1913,7 +1915,7 @@ class SavedSearchesManager:
                 self._gis._con.post(
                     url,
                     post_dict,
-                    add_token=False,
+                     
                     post_json=True,
                     try_json=False,
                     json_encode=False,
@@ -1946,7 +1948,7 @@ class SavedSearchesManager:
             url = "{base}/searches/{searchid}".format(base=self._url, searchid=id)
 
             return_obj = json.loads(
-                self._gis._con.delete(url, add_token=False, try_json=False)
+                self._gis._con.delete(url,   try_json=False)
             )
 
             if "error" in return_obj:
@@ -2007,7 +2009,7 @@ class SavedSearchesManager:
                 self._gis._con.put(
                     url,
                     search,
-                    add_token=False,
+                     
                     post_json=True,
                     try_json=False,
                     json_encode=False,
@@ -2047,7 +2049,7 @@ class SavedSearchesManager:
                 self._gis._con.post(
                     url,
                     post_dict,
-                    add_token=False,
+                     
                     post_json=True,
                     try_json=False,
                     json_encode=False,
@@ -2165,7 +2167,7 @@ class Job(object):
             self._gis._con.post(
                 self._url,
                 post_dict,
-                add_token=False,
+                 
                 post_json=True,
                 try_json=False,
                 json_encode=False,
@@ -2182,7 +2184,7 @@ class Job(object):
             gis._con.post(
                 url,
                 search_object,
-                add_token=False,
+                 
                 post_json=True,
                 try_json=False,
                 json_encode=False,
@@ -2252,7 +2254,7 @@ class Job(object):
                 url,
                 params={"alias": alias, "folder": folder},
                 files={"attachment": attachment},
-                add_token=False,
+                 
                 try_json=False,
                 json_encode=False,
             )
@@ -2333,7 +2335,7 @@ class Job(object):
         return return_obj
 
     def delete_attachment(gis, url):
-        return_obj = json.loads(gis._con.delete(url, add_token=False, try_json=False))
+        return_obj = json.loads(gis._con.delete(url,   try_json=False))
         if "error" in return_obj:
             gis._con._handle_json_error(return_obj["error"], 0)
         elif "success" in return_obj:
@@ -2531,7 +2533,7 @@ class Job(object):
             self._gis._con.post(
                 url,
                 post_obj,
-                add_token=False,
+                 
                 post_json=True,
                 try_json=False,
                 json_encode=False,
@@ -2589,7 +2591,7 @@ class WMRole(object):
             gis._con.post(
                 url,
                 post_dict,
-                add_token=False,
+                 
                 post_json=True,
                 try_json=False,
                 json_encode=False,
@@ -2671,7 +2673,7 @@ class JobTemplate(object):
             gis._con.put(
                 url,
                 put_dict,
-                add_token=False,
+                 
                 post_json=True,
                 try_json=False,
                 json_encode=False,
@@ -2698,7 +2700,7 @@ class JobTemplate(object):
             gis._con.post(
                 url,
                 post_dict,
-                add_token=False,
+                 
                 post_json=True,
                 try_json=False,
                 json_encode=False,
@@ -2711,7 +2713,7 @@ class JobTemplate(object):
         return return_obj["jobTemplateId"]
 
     def delete(gis, url):
-        return_obj = json.loads(gis._con.delete(url, add_token=False, try_json=False))
+        return_obj = json.loads(gis._con.delete(url,   try_json=False))
         if "error" in return_obj:
             gis._con._handle_json_error(return_obj["error"], 0)
         elif "success" in return_obj:
@@ -2747,7 +2749,7 @@ class JobTemplate(object):
                 self._gis._con.post(
                     url,
                     post_dict,
-                    add_token=False,
+                     
                     post_json=True,
                     try_json=False,
                     json_encode=False,
@@ -2886,7 +2888,7 @@ class JobTemplate(object):
             self._gis._con.post(
                 url,
                 props,
-                add_token=False,
+                 
                 post_json=True,
                 try_json=False,
                 json_encode=False,
@@ -2983,7 +2985,7 @@ class JobDiagram(object):
             gis._con.post(
                 url,
                 post_dict,
-                add_token=False,
+                 
                 post_json=True,
                 try_json=False,
                 json_encode=False,
@@ -3011,7 +3013,7 @@ class JobDiagram(object):
             gis._con.post(
                 url,
                 post_object,
-                add_token=False,
+                 
                 post_json=True,
                 try_json=False,
                 json_encode=False,
@@ -3029,7 +3031,7 @@ class JobDiagram(object):
         return return_obj
 
     def delete(gis, url):
-        return_obj = json.loads(gis._con.delete(url, add_token=False, try_json=False))
+        return_obj = json.loads(gis._con.delete(url,   try_json=False))
         if "error" in return_obj:
             gis._con._handle_json_error(return_obj["error"], 0)
         elif "success" in return_obj:
