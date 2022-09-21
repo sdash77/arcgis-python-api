@@ -2773,6 +2773,8 @@ class UserManager(object):
                         for grp in settings["groups"]
                         if isinstance(grp, Group)
                     ] + [grp for grp in settings["groups"] if isinstance(grp, str)]
+                    if len(settings["groups"]) == 0:
+                        settings["groups"] = ""
                 if clear:
                     settings["clearEmptyFields"] = True
                 params.update(settings)
