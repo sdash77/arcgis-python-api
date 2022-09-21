@@ -156,11 +156,7 @@ class TestWorkflowManager(unittest.TestCase):
         portal_username = "creator2"
         portal_password = "portalaccount1"
 
-        gis = GIS(
-            url=portal_url,
-            username=portal_username,
-            password=portal_password
-        )
+        gis = GIS(url=portal_url, username=portal_username, password=portal_password)
         workflow_manager_admin = WorkflowManagerAdmin(gis)
 
         # Create Testing Workflow Item
@@ -169,9 +165,7 @@ class TestWorkflowManager(unittest.TestCase):
 
         # Act
         try:
-            workflow_item_id = workflow_manager_admin.create_item(
-                item_name
-            )
+            workflow_item_id = workflow_manager_admin.create_item(item_name)
 
             workflow_item = gis.content.get(workflow_item_id)
             workflow_manager = WorkflowManager(workflow_item)
