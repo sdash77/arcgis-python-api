@@ -30,6 +30,7 @@ from arcgis.raster._util import _set_context as _set_raster_context
 from arcgis._impl.common._utils import inspect_function_inputs
 from arcgis.geoprocessing._job import RAJob
 from functools import lru_cache
+import inspect
 
 _log = logging.getLogger(__name__)
 
@@ -13953,45 +13954,57 @@ class _RasterAnalysisTools(BaseAnalytics):
             output_name=output_name, task=task, output_properties=kwargs
         )
 
-        if self._current_version is not None:
-            current_version = self._current_version
-            if (current_version is not None) and current_version < 11:
-                gpjob = self._tbx.find_argument_statistics(
-                    input_raster=input_raster,
-                    output_name=output_raster,
-                    dimension=dimension,
-                    dimension_definition=dimension_definition_val,
-                    interval_keyword=interval_keyword_val,
-                    variables=variables,
-                    statistics_type=statistics_type_val,
-                    min_value=min_value,
-                    max_value=max_value,
-                    multiple_occurrence_value=multiple_occurrence_value,
-                    ignore_nodata=ignore_nodata,
-                    context=context,
-                    gis=self._gis,
-                    future=True,
-                )
-            else:
-                gpjob = self._tbx.find_argument_statistics(
-                    input_raster=input_raster,
-                    output_name=output_raster,
-                    dimension=dimension,
-                    dimension_definition=dimension_definition_val,
-                    interval_keyword=interval_keyword_val,
-                    variables=variables,
-                    statistics_type=statistics_type_val,
-                    min_value=min_value,
-                    max_value=max_value,
-                    multiple_occurrence_value=multiple_occurrence_value,
-                    ignore_nodata=ignore_nodata,
-                    context=context,
-                    argument_value=argument_value,
-                    comparison=comparison_val,
-                    occurrence=occurrence_val,
-                    gis=self._gis,
-                    future=True,
-                )
+        # Get parameters of method from toolbox
+        arg_spec = inspect.getfullargspec(gis._tools.rasteranalysis._tbx.find_argument_statistics)
+        param_list = arg_spec.args
+        param_set = set(param_list)
+
+        # Send params by availability of params
+        # Start by checking from params added latest
+        if all(
+            param in param_set for param in
+            [
+                "argument_value",
+                "occurrence",
+                "comparison"
+            ]
+        ):
+            gpjob = self._tbx.find_argument_statistics(
+                input_raster=input_raster,
+                output_name=output_raster,
+                dimension=dimension,
+                dimension_definition=dimension_definition_val,
+                interval_keyword=interval_keyword_val,
+                variables=variables,
+                statistics_type=statistics_type_val,
+                min_value=min_value,
+                max_value=max_value,
+                multiple_occurrence_value=multiple_occurrence_value,
+                ignore_nodata=ignore_nodata,
+                context=context,
+                argument_value=argument_value,
+                comparison=comparison_val,
+                occurrence=occurrence_val,
+                gis=self._gis,
+                future=True,
+            )
+        else:
+            gpjob = self._tbx.find_argument_statistics(
+                input_raster=input_raster,
+                output_name=output_raster,
+                dimension=dimension,
+                dimension_definition=dimension_definition_val,
+                interval_keyword=interval_keyword_val,
+                variables=variables,
+                statistics_type=statistics_type_val,
+                min_value=min_value,
+                max_value=max_value,
+                multiple_occurrence_value=multiple_occurrence_value,
+                ignore_nodata=ignore_nodata,
+                context=context,
+                gis=self._gis,
+                future=True,
+            )
 
         gpjob._is_ra = True
         gpjob._item_properties = True

@@ -6318,6 +6318,10 @@ def find_argument_statistics(
     argument_value                           Optional Integer. The value at which a comparison will be made to extract 
                                              the dimension value. This parameter is required when the statisticsType
                                              parameter is set to ARGUMENT_VALUE.
+                                             
+                                             |
+                                             .. note::
+                                                    This parameter is currently only available on ArcGIS online.
     ------------------------------------     --------------------------------------------------------------------
     comparison                               Optional String. Specifies the comparison type that will be used to
                                              extract the dimension value.
@@ -6327,6 +6331,9 @@ def find_argument_statistics(
                                              - GREATER_THAN : The extracted dimension is greater than the specified value.
 
                                              - SMALLER_THAN : The extracted dimension is smaller than the specified value.
+
+                                             .. note::
+                                                    This parameter is currently only available on ArcGIS online.
     ------------------------------------     --------------------------------------------------------------------
     occurrence                               Optional String. Specifies whether the value of the dimension will be returned the first
                                              time or last time the argument statistic is reached.
@@ -6334,6 +6341,9 @@ def find_argument_statistics(
                                              - FIRST_OCCURRENCE : The value of the dimension will be returned the first time the argument statistic is reached. This is the default.
 
                                              - LAST_OCCURRENCE : The value of the dimension will be returned the last time the argument statistic is reached.
+
+                                             .. note::
+                                                    This parameter is currently only available on ArcGIS online.
     ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional :class:`~arcgis.gis.GIS` object. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
