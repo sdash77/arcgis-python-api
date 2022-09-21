@@ -3,6 +3,7 @@ import os
 import json
 from arcgis._impl.common._deprecate import deprecated
 from arcgis.auth.tools import LazyLoader
+from arcgis.gis import Group
 
 _basemap_definitions = LazyLoader("arcgis.mapping._basemap_definitions")
 ###########################################################################
@@ -115,6 +116,59 @@ class UX(object):
         )
 
     # ----------------------------------------------------------------------
+    @property
+    def contact_link(self):
+        """
+        Get and set the contact link for the site.
+        """
+        if "links" in self._gis.properties["portalProperties"]:
+            return self._gis.properties["portalProperties"]["links"]
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    @contact_link.setter
+    def contact_link(self, url: str):
+        portal_properties = self._gis.properties["portalProperties"]
+        if url:
+            portal_properties["links"] = {"contactUs": {"url": {url}, "visible": True}}
+        else:
+            portal_properties["links"] = {"contactUs": {"url": "", "visible": False}}
+
+        return self._gis.update_properties({"portalProperties": portal_properties})
+
+    # ----------------------------------------------------------------------
+    @property
+    def admin_contacts(self):
+        """
+        An array of chosen administrators listed as points of contact whose
+        email addresses will be listed as points of contact in the automatic
+        email notifications sent to org members when they request password resets,
+        help with their user names, modifications to their accounts, or any issues
+        related to the allocation of credits to their accounts.
+        """
+        return self._gis.properties["contacts"]
+
+    # ----------------------------------------------------------------------
+    @admin_contacts.setter
+    def admin_contacts(self, users: list[str]):
+        admins = []
+        if users is None:
+            raise ValueError(
+                "Cannot set empty list as Administrative contacts. You must have at least one administrator in the list."
+            )
+        for user in users:
+            role = self._gis.users.search(user)[0].role
+            if role == "org_admin":
+                admins.append(user)
+        if len(admins) == 0:
+            raise ValueError(
+                "None of the usernames provided are org admins. Please provide org admins."
+            )
+        else:
+            self._gis.update_properties({"contacts": admins})
+
+    # ----------------------------------------------------------------------
     def set_informational_banner(
         self,
         text: str | None = None,
@@ -183,6 +237,34 @@ class UX(object):
         Get the informational banner dictionary from the org's setttings.
         """
         return self._gis.org_settings["informationalBanner"]
+
+    # ----------------------------------------------------------------------
+    @property
+    def help_source(self):
+        """
+        Toggle if the help source is turned on (True) or off (False).
+        It provides the base URL for your organization's help documentation.
+        """
+        if "helpBase" in self._gis.properties:
+            return self._gis.properties["helpBase"]
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    @help_source.setter
+    def help_source(self, enabled: bool):
+        if enabled is False:
+            # this will reset it to default based on language
+            self._gis.update_properties({"helpBase": ""})
+        else:
+            if self._gis._is_agol:
+                raise ValueError(
+                    "This parameter can only be set for Enterprise 10.8.1+."
+                )
+            else:
+                self._gis.update_properties(
+                    {"helpBase": "https://enterprise.arcgis.com/"}
+                )
 
     # ----------------------------------------------------------------------
     def set_logo(self, logo_file: str | None = None, show_logo: bool | None = None):
@@ -462,6 +544,155 @@ class UX(object):
         if not "featuredGroupsId" in self._gis.properties:
             content.pop("featuredGroupsId", None)
         self._gis.update_properties(content)
+
+    # ----------------------------------------------------------------------
+    def navigation_bar(
+        self,
+        gallery: str | None = None,
+        map: str | None = None,
+        scene: str | None = None,
+        groups: str | None = None,
+        search: str | None = None,
+    ):
+        """
+        Set the visibility of the content in the navigation bar. To get the current navigation
+        bar settings do not pass in any values for the parameters.
+
+        .. note::
+            The Home link is always visible to everyone. The Content link is always visible to members.
+            Member roles determine Organization link visibility.
+
+        ================    ===============================================================
+        **Argument**        **Description**
+        ----------------    ---------------------------------------------------------------
+        gallery             Optional string.
+                            Values: "all" | "members" | "noOne"
+        ----------------    ---------------------------------------------------------------
+        map                 Optional string.
+                            Values: "all" | "members" | "mapCreators"
+        ----------------    ---------------------------------------------------------------
+        scene               Optional string.
+                            Values: "all" | "members" | "sceneCreators"
+        ----------------    ---------------------------------------------------------------
+        groups              Optional string.
+                            Values: "all" | "members"
+        ----------------    ---------------------------------------------------------------
+        search              Optional string.
+                            Values: "all" | "members"
+        ================    ===============================================================
+
+        :return: Dictionary of the navigation bar and it's settings.
+        """
+        portal_properties = self._gis.properties["portalProperties"]
+        top_nav = {
+            "gallery": "all",
+            "map": "all",
+            "scene": "all",
+            "groups": "all",
+            "search": "all",
+        }
+        if "topNav" in portal_properties:
+            # get existing top nav settings
+            top_nav = portal_properties["topNav"]
+
+        # only change what is necessary
+        if gallery:
+            top_nav["gallery"] = gallery
+        if map:
+            top_nav["map"] = map
+        if scene:
+            top_nav["scene"] = scene
+        if groups:
+            top_nav["groups"] = groups
+        if search:
+            top_nav["search"] = search
+
+        portal_properties["topNav"] = top_nav
+        self._gis.update_properties({"portalProperties": portal_properties})
+        return top_nav
+
+    # ----------------------------------------------------------------------
+    def shared_theme(
+        self,
+        header: dict[str:str] | None = None,
+        button: dict[str:str] | None = None,
+        body: dict[str:str] | None = None,
+        logo: str | None = None,
+    ):
+        """
+        Use the shared theme to apply your organization's brand colors and
+        logo to information products created from ArcGIS Configurable Apps templates,
+        Web AppBuilder, and Enterprise Sites. To see the current settings, call the method with
+        no parameters passed in.
+
+        ================    ===============================================================
+        **Argument**        **Description**
+        ----------------    ---------------------------------------------------------------
+        header              Optional dict. Composed of two keys: "background" and "text" that
+                            determine the shared theme color for each of these keys. Color
+                            can be passed in a hexadecimal string.
+
+                            ex: header = {"background" : "#0d7bba", "text" : "#000000"}
+        ----------------    ---------------------------------------------------------------
+        button              Optional dict. Composed of two keys: "background" and "text" that
+                            determine the shared theme color for each of these keys.
+        ----------------    ---------------------------------------------------------------
+        body                Optional dict. Composed of three keys: "background", "text" and
+                            "link" that determine the shared theme color for each of these keys.
+        ----------------    ---------------------------------------------------------------
+        logo                Optional str. The file path to the image that will be uploaded
+                            as the shared theme logo.
+                            To remove the logo and not replace it then pass in: "REMOVE"
+        ================    ===============================================================
+
+        :return: Dictionary of the shared theme that is set on the org.
+        """
+        portal_properties = self._gis.properties["portalProperties"]
+        shared_theme = {
+            "header": {"background": "no-color", "text": "no-color"},
+            "button": {"background": "no-color", "text": "no-color"},
+            "body": {"background": "no-color", "text": "no-color", "link": "no-color"},
+            "logo": {"small": ""},
+        }
+        if "sharedTheme" in portal_properties:
+            shared_theme = portal_properties["sharedTheme"]
+        if header:
+            if "background" in header:
+                shared_theme["header"]["background"] = header["background"]
+            if "text" in header:
+                shared_theme["header"]["text"] = header["text"]
+        if button:
+            if "background" in button:
+                shared_theme["button"]["background"] = button["background"]
+            if "text" in button:
+                shared_theme["button"]["text"] = button["text"]
+        if body:
+            if "background" in body:
+                shared_theme["body"]["background"] = body["background"]
+            if "text" in body:
+                shared_theme["body"]["text"] = body["text"]
+            if "link" in body:
+                shared_theme["body"]["link"] = body["link"]
+            # find image extension
+        if logo is not None and os.path.isfile(logo):
+            # add item
+            item_props = {
+                "title": "Shared Theme Logo",
+                "description": "This image was uploaded for use as your organizations shared theme logo.",
+                "tags": ["SharedTheme", "Logo"],
+                "type": "Image",
+            }
+            im_item = self._gis.content.add(item_props, logo)
+            # share to everyone
+            im_item.share(everyone=True)
+            # set in shared_theme dict
+            shared_theme["logo"]["small"] = im_item.homepage + "/data"
+        if logo == "REMOVE":
+            shared_theme["logo"]["small"] = ""
+
+        portal_properties["sharedTheme"] = shared_theme
+        self._gis.update_properties({"portalProperties": portal_properties})
+        return shared_theme
 
     # ----------------------------------------------------------------------
     @property
@@ -1008,6 +1239,43 @@ class HomePageSettings(object):
         else:
             return None
 
+    # ----------------------------------------------------------------------
+    def set_contact_email(
+        self, email: str | None = None, show_email: bool | None = None
+    ):
+        """Set the email shown in the footer of the homepage and whether it is visible."""
+        if self._new_hp:
+            hp = json.loads(
+                open(self._portal_resources.get("home.page.json"), "r").read()
+            )
+            if email:
+                hp["footer"]["contact"] = email
+            if show_email:
+                hp["footer"]["showContact"] = show_email
+            params = {
+                "key": "home.page.json",
+                "text": hp,
+                "f": "json",
+            }
+            return self._portal_resources.add(
+                key="home.page.json", text=json.dumps(params["text"])
+            )
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    def get_contact_email(self):
+        """Get the email and whether it is shown from the footer of the homepage."""
+        if self._new_hp:
+            hp = json.loads(
+                open(self._portal_resources.get("home.page.json"), "r").read()
+            )
+            contact = {
+                "email": hp["footer"]["contact"],
+                "show_email": hp["footer"]["showContact"],
+            }
+            return contact
+
 
 ##############################################################################
 class MapSettings(object):
@@ -1112,6 +1380,22 @@ class MapSettings(object):
 
     # ----------------------------------------------------------------------
     @property
+    def use_vector_basemap(self):
+        """
+        If true, the organization uses the Esri vector basemaps in supported
+        ArcGIS apps and basemapGalleryGroupQuery will not be editable
+        and will be set to the default query.
+        """
+        return self._gis.properties["useVectorBasemaps"]
+
+    # ----------------------------------------------------------------------
+    @use_vector_basemap.setter
+    def use_vector_basemap(self, value: bool):
+        if value in [True, False]:
+            self._gis.update_properties({"useVectorBasemaps": value})
+
+    # ----------------------------------------------------------------------
+    @property
     def vector_basemap(self):
         """
         Get/Set the default vector basemap
@@ -1141,3 +1425,33 @@ class MapSettings(object):
         elif "baseMapLayers" in basemap:
             value["baseMapLayers"] = basemap["baseMapLayers"]
         return self._gis.update_properties({"defaultVectorBasemap": value})
+
+    # ----------------------------------------------------------------------
+    @property
+    def basemap_gallery_group(self):
+        """
+        Select the group whose web maps will be shown in the basemap gallery.
+        To change the group, assign either an instance of Group or the group id.
+        Setting to None will revert to default.
+        """
+        return self._gis.properties["basemapGalleryGroupQuery"]
+
+    # ----------------------------------------------------------------------
+    @basemap_gallery_group.setter
+    def basemap_gallery_group(self, group: Group | str | None):
+        if isinstance(group, Group):
+            group = "id:" + group.id
+            value = False
+        elif isinstance(group, str):
+            res = self._gis.groups.search(group)
+            if len(res) == 0:
+                raise ValueError(
+                    "The group id provided could not be found in your org."
+                )
+            else:
+                group = "id:" + group
+                value = False
+        elif group is None:
+            value = True
+        self._gis.update_properties({"useVectorBasemaps": value})
+        self._gis.update_properties({"basemapGalleryGroupQuery": group})
