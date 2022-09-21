@@ -5,7 +5,7 @@ from __future__ import annotations
 from typing import Optional, Union
 
 from arcgis._impl.common._utils import chunks
-from arcgis.mapping._utils import _get_list_value, _format_colors, _create_colormap
+from arcgis.mapping._utils import _get_list_value, _format_colors, create_colormap
 from arcgis.mapping.symbol import create_symbol, _cmap2rgb
 import numpy as np
 
@@ -662,13 +662,62 @@ def generate_heatmap(
     alpha: Optional[float] = 1,
     blur_radius: Optional[int] = 10,
     field: Optional[str] = None,
-    max_intensity: Optional[str] = 10,
-    min_intensity: Optional[str] = 0,
+    max_intensity: Optional[int] = 10,
+    min_intensity: Optional[int] = 0,
     ratio: Optional[float] = 0.01,
     stops: Optional[int] = 3,
     show_none: Optional[bool] = False,
 ):
+    """
+    
+    Generates a heatmap renderer. Used in ``spatial.plot()`` and ``generate_renderer()``.
 
+    ======================  =========================================================
+    **Argument**            **Description**
+    ----------------------  ---------------------------------------------------------
+    sdf_or_series           Optional Pandas Series. The spatial dataset to render.
+    ----------------------  ---------------------------------------------------------
+    colors                  Optional string/list/object. Color mapping. Can be array
+                            of RGB values, the string name of a colormap, the hex
+                            string of a color, or a palettable object. Defaults to
+                            'jet' colormap.
+    ----------------------  ---------------------------------------------------------
+    alpha                   Optional float. The 0 to 1 alpha value of the color used
+                            to render, if the input for 'colors' is a colorbrewer JS
+                            array or palettable object with no cstep (all other forms
+                            of color input have alpha accounted for in bytes form).
+                            Defaults to 1.
+    ----------------------  ---------------------------------------------------------
+    blur_radius             Optional int. The radius (in pixels) of the circle over 
+                            which the majority of each point's value is spread.
+                            Defaults to 10.
+    ----------------------  ---------------------------------------------------------
+    field                   Optional string. This is optional as this renderer can be 
+                            created if no field is specified. Each feature gets the 
+                            same value/importance/weight or with a field where each
+                            feature is weighted by the field's value.
+    ----------------------  ---------------------------------------------------------
+    max_intensity           Optional int. The pixel intensity value which is assigned
+                            the final color in the color ramp. Defaults to 10.
+    ----------------------  ---------------------------------------------------------
+    min_intensity           Optional int. The pixel intensity value which is assigned
+                            the initial color in the color ramp. Defaults to 0.
+    ----------------------  ---------------------------------------------------------
+    ratio                   Optional float. A number between 0-1. Describes what 
+                            portion along the gradient the colorStop is added. 
+                            Defaults to 0.01
+    ----------------------  ---------------------------------------------------------
+    stops                   Optional int. The amount of color stops created for the
+                            renderer. Default and minimum is 3.
+    ----------------------  ---------------------------------------------------------
+    show_none               Optional boolean. Determines the alpha value of the base 
+                            color for the heatmap. Setting this to ``True`` covers an
+                            entire map with the base color of the heatmap. Default is
+                            ``False``.
+    ======================  =========================================================
+
+    :return: A dictionary of the renderer.
+    """
     colors = _format_colors(colors, alpha)
     if sdf_or_series is None and field:
         raise ValueError(
@@ -754,6 +803,115 @@ def generate_unique(
     alpha: Optional[float] = 1,
     **symbol_args,
 ):
+    """
+    Generates a unique renderer. Define an attribute field using a ``field1`` argument.
+    Accepts symbol arguments used in ``mapping.symbol.create_symbol()``.
+    Used in ``spatial.plot()`` and ``generate_renderer()``.
+
+    ======================  =========================================================
+    **Argument**            **Description**
+    ----------------------  ---------------------------------------------------------
+    geometry_type           Required string. The allowed values are: ``Point``, ``Polyline``,
+                            ``Polygon``, or ``Raster``. This required parameter is used to
+                            help ensure the requested renderer is valid for the
+                            specific type of geometry.
+
+                            =============   ========================================
+                            **Geometry**    **Supported Renderer Types**
+                            -------------   ----------------------------------------
+                            Point           simple, unique, class breaks, heat map,
+                                            temporal
+                            -------------   ----------------------------------------
+                            Polyline        simple, unique, class break
+                            -------------   ----------------------------------------
+                            Polygon         simple, unique, class break, dot density
+                            -------------   ----------------------------------------
+                            Raster          stretched
+                            =============   ========================================
+
+                            The table above provides a quick summary based on the
+                            allowed renderer types based on the geometry.
+
+    ----------------------  ---------------------------------------------------------
+    sdf_or_series           Optional Pandas Series. The spatial dataset to render.
+    ----------------------  ---------------------------------------------------------
+    colors                  Optional string/list/object. Color mapping. Can be array
+                            of RGB values, the string name of a colormap, the hex
+                            string of a color, or a palettable object. Defaults to
+                            'jet' colormap.
+    ----------------------  ---------------------------------------------------------
+    alpha                   Optional float. The 0 to 1 alpha value of the color used
+                            to render, if the input for 'colors' is a colorbrewer JS
+                            array or palettable object with no cstep (all other forms
+                            of color input have alpha accounted for in bytes form).
+                            Defaults to 1.
+    ======================  =========================================================
+
+    ======================  =========================================================
+    **Optional Argument**   **Description**
+    ----------------------  ---------------------------------------------------------
+    background_fill_symbol  A symbol used for polygon features as a background if the
+                            renderer uses point symbols, e.g. for bivariate types &
+                            size rendering. Only applicable to polygon layers.
+                            PictureFillSymbols can also be used outside of the Map
+                            Viewer for Size and Predominance and Size renderers.
+    ----------------------  ---------------------------------------------------------
+    default_label           Default label for the default symbol used to draw
+                            unspecified values.
+    ----------------------  ---------------------------------------------------------
+    default_symbol          Symbol used when a value cannot be matched.
+    ----------------------  ---------------------------------------------------------
+    field1, field2, field3  Attribute field renderer uses to match values.
+    ----------------------  ---------------------------------------------------------
+    field_delimiter         String inserted between the values if multiple attribute
+                            fields are specified.
+    ----------------------  ---------------------------------------------------------
+    rotation_expression     A constant value or an expression that derives the angle
+                            of rotation based on a feature attribute value. When an
+                            attribute name is specified, it's enclosed in square
+                            brackets. Rotation is set using a visual variable of type
+                            rotation info with a specified field or value expression
+                            property.
+    ----------------------  ---------------------------------------------------------
+    rotation_type           String property which controls the origin and direction
+                            of rotation. If the rotation type is defined as
+                            arithmetic the symbol is rotated from East in a
+                            counter-clockwise direction where East is the 0 degree
+                            axis. If the rotation type is defined as geographic, the
+                            symbol is rotated from North in a clockwise direction
+                            where North is the 0 degree axis.
+                            Must be one of the following values:
+
+                            + arithmetic
+                            + geographic
+
+    ----------------------  ---------------------------------------------------------
+    arcade_expression       An Arcade expression evaluating to either a string or a
+                            number.
+    ----------------------  ---------------------------------------------------------
+    arcade_title            The title identifying and describing the associated
+                            Arcade expression as defined in the valueExpression
+                            property.
+    ----------------------  ---------------------------------------------------------
+    visual_variables        An array of objects used to set rendering properties.
+    ----------------------  ---------------------------------------------------------
+    unique_values           Optional list of dictionaries.  If you want to define the
+                            unique values listed in the renderer, specify the list
+                            using this variable.  The format of each unique value is
+                            as follows:
+
+
+                                | {
+                                |     "value" : <value>,
+                                |     "label" : <label value>,
+                                |     "description" : <optional text description>,
+                                |     "symbol" : {...symbol...}
+                                | }
+
+    ======================  =========================================================
+
+    :return: A dictionary of the renderer.
+    """
 
     if (
         "size_field" in symbol_args
@@ -928,6 +1086,130 @@ def generate_classbreaks(
     alpha: Optional[float] = 1,
     **symbol_args,
 ):
+    """
+    Generates a classbreaks renderer. Define the attribute field using a ``field`` argument.
+    Accepts symbol arguments used in ``mapping.symbol.create_symbol()``.
+    Used in ``spatial.plot()`` and ``generate_renderer()``.
+
+    ======================  =========================================================
+    **Argument**            **Description**
+    ----------------------  ---------------------------------------------------------
+    geometry_type           Required string. The allowed values are: ``Point``, ``Polyline``,
+                            ``Polygon``, or ``Raster``. This required parameter is used to
+                            help ensure the requested renderer is valid for the
+                            specific type of geometry.
+
+                            =============   ========================================
+                            **Geometry**    **Supported Renderer Types**
+                            -------------   ----------------------------------------
+                            Point           simple, unique, class breaks, heat map,
+                                            temporal
+                            -------------   ----------------------------------------
+                            Polyline        simple, unique, class break
+                            -------------   ----------------------------------------
+                            Polygon         simple, unique, class break, dot density
+                            -------------   ----------------------------------------
+                            Raster          stretched
+                            =============   ========================================
+
+                            The table above provides a quick summary based on the
+                            allowed renderer types based on the geometry.
+
+    ----------------------  ---------------------------------------------------------
+    sdf_or_series           Optional Pandas Series. The spatial dataset to render.
+    ----------------------  ---------------------------------------------------------
+    colors                  Optional string/list/object. Color mapping. Can be array
+                            of RGB values, the string name of a colormap, the hex
+                            string of a color, or a palettable object. Defaults to
+                            'jet' colormap.
+    ----------------------  ---------------------------------------------------------
+    alpha                   Optional float. The 0 to 1 alpha value of the color used
+                            to render, if the input for 'colors' is a colorbrewer JS
+                            array or palettable object with no cstep (all other forms
+                            of color input have alpha accounted for in bytes form).
+                            Defaults to 1.
+    ======================  =========================================================
+
+    ======================  =========================================================
+    **Optional Argument**   **Description**
+    ----------------------  ---------------------------------------------------------
+    background_fill_symbol  A symbol used for polygon features as a background if the
+                            renderer uses point symbols, e.g. for bivariate types &
+                            size rendering. Only applicable to polygon layers.
+                            PictureFillSymbols can also be used outside of the Map
+                            Viewer for Size and Predominance and Size renderers.
+    ----------------------  ---------------------------------------------------------
+    default_label           Default label for the default symbol used to draw
+                            unspecified values.
+    ----------------------  ---------------------------------------------------------
+    default_symbol          Symbol used when a value cannot be matched.
+    ----------------------  ---------------------------------------------------------
+    method                  Determines the classification method that was used to
+                            generate class breaks.
+
+                            Must be one of the following values:
+
+                            + esriClassifyDefinedInterval
+                            + esriClassifyEqualInterval
+                            + esriClassifyGeometricalInterval
+                            + esriClassifyNaturalBreaks
+                            + esriClassifyQuantile
+                            + esriClassifyStandardDeviation
+                            + esriClassifyManual
+
+    ----------------------  ---------------------------------------------------------
+    field                   Attribute field used for renderer.
+    ----------------------  ---------------------------------------------------------
+    min_value               The minimum numeric data value needed to begin class
+                            breaks.
+    ----------------------  ---------------------------------------------------------
+    normalization_field     Used when normalizationType is field. The string value
+                            indicating the attribute field by which the data value is
+                            normalized.
+    ----------------------  ---------------------------------------------------------
+    normalization_total     Used when normalizationType is percent-of-total, this
+                            number property contains the total of all data values.
+    ----------------------  ---------------------------------------------------------
+    normalization_type      Determine how the data was normalized.
+
+                            Must be one of the following values:
+
+                            + esriNormalizeByField
+                            + esriNormalizeByLog
+                            + esriNormalizeByPercentOfTotal
+    ----------------------  ---------------------------------------------------------
+    rotation_expression     A constant value or an expression that derives the angle
+                            of rotation based on a feature attribute value. When an
+                            attribute name is specified, it's enclosed in square
+                            brackets.
+    ----------------------  ---------------------------------------------------------
+    rotation_type           A string property which controls the origin and direction
+                            of rotation. If the rotation_type is defined as
+                            arithmetic, the symbol is rotated from East in a
+                            couter-clockwise direction where East is the 0 degree
+                            axis. If the rotationType is defined as geographic, the
+                            symbol is rotated from North in a clockwise direction
+                            where North is the 0 degree axis.
+
+                            Must be one of the following values:
+
+                            + arithmetic
+                            + geographic
+
+    ----------------------  ---------------------------------------------------------
+    arcade_expression       An Arcade expression evaluating to a number.
+    ----------------------  ---------------------------------------------------------
+    arcade_title            The title identifying and describing the associated
+                            Arcade expression as defined in the arcade_expression
+                            property.
+    ----------------------  ---------------------------------------------------------
+    visual_variables        An object used to set rendering options.
+    ======================  =========================================================
+
+    :return: A dictionary of the renderer.
+
+    """
+
     if (
         "size_field" in symbol_args
         or "ci_field" in symbol_args
@@ -954,7 +1236,7 @@ def generate_classbreaks(
     else:
         colors = _format_colors(colors, alpha)
         if isinstance(colors[0], list) and len(colors) > 1:
-            temp_map = _create_colormap(colors)
+            temp_map = create_colormap(colors)
         # possible outcomes are colormap, single rbg array, str colormap name
 
     try:
@@ -1058,6 +1340,126 @@ def generate_simple(
     alpha: Optional[float] = 1,
     **symbol_args,
 ):
+    """
+    Generates a simple renderer. Accepts certain symbol arguments used in ``mapping.symbol.create_symbol()``.
+    Used in ``spatial.plot()`` and ``generate_renderer()``.
+
+    ======================  =========================================================
+    **Argument**            **Description**
+    ----------------------  ---------------------------------------------------------
+    geometry_type           Required string. The allowed values are: ``Point``, ``Polyline``,
+                            ``Polygon``, or ``Raster``. This required parameter is used to
+                            help ensure the requested renderer is valid for the
+                            specific type of geometry.
+
+                            =============   ========================================
+                            **Geometry**    **Supported Renderer Types**
+                            -------------   ----------------------------------------
+                            Point           simple, unique, class breaks, heat map,
+                                            temporal
+                            -------------   ----------------------------------------
+                            Polyline        simple, unique, class break
+                            -------------   ----------------------------------------
+                            Polygon         simple, unique, class break, dot density
+                            -------------   ----------------------------------------
+                            Raster          stretched
+                            =============   ========================================
+
+                            The table above provides a quick summary based on the
+                            allowed renderer types based on the geometry.
+
+    ----------------------  ---------------------------------------------------------
+    sdf_or_series           Optional Pandas Series. The spatial dataset to render.
+    ----------------------  ---------------------------------------------------------
+    label                   Optional string. Name of the layer in the TOC/Legend.
+    ----------------------  ---------------------------------------------------------
+    colors                  Optional string/list/object. Color mapping. Can be array
+                            of RGB values, the string name of a colormap, the hex
+                            string of a color, or a palettable object. Defaults to
+                            'jet' colormap.
+    ----------------------  ---------------------------------------------------------
+    alpha                   Optional float. The 0 to 1 alpha value of the color used
+                            to render, if the input for 'colors' is a colorbrewer JS
+                            array or palettable object with no cstep (all other forms
+                            of color input have alpha accounted for in bytes form).
+                            Defaults to 1.
+    ======================  =========================================================
+
+
+    ======================  =========================================================
+    **Symbol Argument**     **Description**
+    ----------------------  ---------------------------------------------------------
+    symbol_type             Optional string. This is the type of symbol the user
+                            needs to create.  Valid inputs are: simple, picture, text,
+                            or carto.  The default is simple.
+    ----------------------  ---------------------------------------------------------
+    symbol_style            Optional string. This is the symbology used by the
+                            geometry.  For example 's' for a Line geometry is a solid
+                            line. And '-' is a dash line.
+
+                            **Point Symbols**
+
+                            + 'o' - Circle (default)
+                            + '+' - Cross
+                            + 'D' - Diamond
+                            + 's' - Square
+                            + 'x' - X
+
+                            **Polyline Symbols**
+
+                            + 's' - Solid (default)
+                            + '-' - Dash
+                            + '-.' - Dash Dot
+                            + '-..' - Dash Dot Dot
+                            + '.' - Dot
+                            + '--' - Long Dash
+                            + '--.' - Long Dash Dot
+                            + 'n' - Null
+                            + 's-' - Short Dash
+                            + 's-.' - Short Dash Dot
+                            + 's-..' - Short Dash Dot Dot
+                            + 's.' - Short Dot
+
+                            **Polygon Symbols**
+
+                            + 's' - Solid Fill (default)
+                            + '\' - Backward Diagonal
+                            + '/' - Forward Diagonal
+                            + '|' - Vertical Bar
+                            + '-' - Horizontal Bar
+                            + 'x' - Diagonal Cross
+                            + '+' - Cross
+    ----------------------  ---------------------------------------------------------
+    description             Description of the renderer.
+    ----------------------  ---------------------------------------------------------
+    cstep                   Int. If colors argument is the name of a colormap or a
+                            palettable object, the colorstep value for the colormap.
+                            Range is 0-255.
+    ----------------------  ---------------------------------------------------------
+    rotation_expression     A constant value or an expression that derives the angle
+                            of rotation based on a feature attribute value. When an
+                            attribute name is specified, it's enclosed in square
+                            brackets.
+    ----------------------  ---------------------------------------------------------
+    rotation_type           String value which controls the origin and direction of
+                            rotation on point features. If the rotationType is
+                            defined as arithmetic, the symbol is rotated from East in
+                            a counter-clockwise direction where East is the 0 degree
+                            axis. If the rotationType is defined as geographic, the
+                            symbol is rotated from North in a clockwise direction
+                            where North is the 0 degree axis.
+
+                            Must be one of the following values:
+
+                            + arithmetic
+                            + geographic
+
+    ----------------------  ---------------------------------------------------------
+    visual_variables        An array of objects used to set rendering properties.
+    ======================  =========================================================
+
+    :return: A dictionary of the renderer.
+    """
     if (
         "size_field" in symbol_args
         or "ci_field" in symbol_args
@@ -1812,7 +2214,7 @@ def generate_renderer(
         else:
             colors = _format_colors(colors, alpha)
             if isinstance(colors[0], list) and len(colors) > 1:
-                temp_map = _create_colormap(colors)
+                temp_map = create_colormap(colors)
             # possible outcomes are colormap, single rbg array, str colormap name
 
         try:

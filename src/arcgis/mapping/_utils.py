@@ -53,24 +53,6 @@ def _convert_colorbrewer(cb_list: list, alpha: float = 1):
     return new_list
 
 
-def _create_colormap(
-    color_list: list,
-    name: str = "temp_cmap",
-    bins: int = 256,
-):
-    from matplotlib.colors import LinearSegmentedColormap
-
-    if len(color_list) < 2:
-        raise ValueError("List must have multiple colors")
-
-    mpl_colors = []
-    for color in color_list:
-        conv = (color[0] / 255, color[1] / 255, color[2] / 255)
-        mpl_colors.append(conv)
-
-    return LinearSegmentedColormap.from_list(name, mpl_colors, bins)
-
-
 def _format_colors(colors, alpha, cstep=None):
     """
     Helper to format any form of color input into something usable by the
@@ -175,6 +157,45 @@ def _get_list_value(index, array):
     return array[index % len(array)]
 
 
+def create_colormap(
+    color_list: list,
+    name: str = "temp_cmap",
+    bins: int = 256,
+):
+    """
+    The ``create_colormap`` function is a simple function that allows a
+    user to make a matplotlib ``LinearSegmentedColormap`` object based on a
+    custom assortment of colors. Accepts a list of RGB/RGB + alpha arrays.
+    This function is great for visualizing potential color schemes to be used
+    in mapping.
+
+    ==================     ====================================================================
+    **Argument**           **Description**
+    ------------------     --------------------------------------------------------------------
+    color_list             Required list. List items must be of the format ``[R, G, B]``, where
+                           R, G, and B represent values from 0 to 255, or any other format
+                           where the first 3 values represent RGB values in bytes.
+    ------------------     --------------------------------------------------------------------
+    name                   Optional string. The name of the new colormap item. Defaults to
+                           "temp_cmap".
+    ------------------     --------------------------------------------------------------------
+    bins                   Optional int. The number of bins (or uniquely retrievable colors)
+                           the new colormap has. Defaults to 256.
+    ==================     ====================================================================
+    """
+    from matplotlib.colors import LinearSegmentedColormap
+
+    if len(color_list) < 2:
+        raise ValueError("List must have multiple colors")
+
+    mpl_colors = []
+    for color in color_list:
+        conv = (color[0] / 255, color[1] / 255, color[2] / 255)
+        mpl_colors.append(conv)
+
+    return LinearSegmentedColormap.from_list(name, mpl_colors, bins)
+
+
 def export_map(
     web_map_as_json: Optional[dict] = None,
     format: str = """PDF""",
@@ -203,7 +224,7 @@ def export_map(
                            for more information on structuring this JSON.
     ------------------     --------------------------------------------------------------------
     format                 Format (str). Optional parameter.  The format in which the map image
-                           for printing will be delivered. The following strings are accepted.
+                           for printing will be delivered. The following strings are accepted:
 
                            For example:
                                 PNG8
