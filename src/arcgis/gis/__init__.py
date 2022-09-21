@@ -2698,7 +2698,7 @@ class UserManager(object):
 
                           Example: `{"appBundles":[{"itemId": "99d7956c7e824ff4ab27422e2a26c2b7}]}`
         ----------------  -------------------------------------------------------------------------------
-        clear             Optional Bool. When true, any empty field will reset the value to null. 
+        clear             Optional Bool. When true, any empty field will reset the value to null.
         ================  ===============================================================================
 
         :return: Dictionary of the user settings
@@ -2716,7 +2716,7 @@ class UserManager(object):
         """
         See main ``user_settings`` property docstring
         """
-        clear = settings.pop('clear', None)
+        clear = settings.pop("clear", None)
         user_li_lu = {
             "creatorUT": "creatorUT",
             "creator": "creatorUT",
@@ -2774,7 +2774,7 @@ class UserManager(object):
                         if isinstance(grp, Group)
                     ] + [grp for grp in settings["groups"] if isinstance(grp, str)]
                 if clear:
-                    settings['clearEmptyFields'] = True
+                    settings["clearEmptyFields"] = True
                 params.update(settings)
                 res = self._gis._con.post(url, params)
                 if "success" in res and res["success"] == False:
