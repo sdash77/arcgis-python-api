@@ -6,6 +6,7 @@ from arcgis.auth.tools import LazyLoader
 from arcgis.gis import Group
 
 _basemap_definitions = LazyLoader("arcgis.mapping._basemap_definitions")
+
 ###########################################################################
 class UX(object):
     """Helper class for modifying common org settings. This class is not created by users directly. An instance of
@@ -116,6 +117,53 @@ class UX(object):
         )
 
     # ----------------------------------------------------------------------
+    def set_org_language(self, language: str, format: str | None = None):
+        """
+        Choose the default language for members of your organization. This
+        choice affects the user interface as well as the way time,
+        date, and numerical values appear. Individual members can customize
+        this choice on their settings page.
+
+        ================        ========================================================
+        **Argument**            **Description**
+        ----------------        --------------------------------------------------------
+        language                Required string. To see all available languages, use
+                                the `languages` property in the GIS class.
+        ----------------        --------------------------------------------------------
+        format                  Optional string. Determine the culture format to be
+                                used depending on the language. To see the culture formats
+                                available, use the `languages` property in the GIS class
+                                and look at the 'cultureFormats' key for each language.
+        ================        ========================================================
+
+        :return: True | False
+        """
+        languages = self._gis.languages
+        for lng in languages:
+            if lng["language"].lower() == language.lower():
+                culture = lng["culture"]
+                if "cultureFormats" in lng:
+                    if format:
+                        for clt_format in lng["cultureFormats"]:
+                            if clt_format["name"].lower() == format.lower():
+                                culture_format = clt_format["format"]
+                    else:
+                        culture_format = lng["cultureFormats"][0]["format"]
+                    # culture name includes format if available
+                    culture = culture + "-" + culture_format
+                    break
+                else:
+                    # default set when no other choices
+                    culture_format = "en"
+        return self._gis.update_properties(
+            {
+                "culture": culture,
+                "cultureFormat": culture_format,
+                "clearEmptyFields": True,
+            }
+        )
+
+    # ----------------------------------------------------------------------
     @property
     def contact_link(self):
         """
@@ -135,7 +183,7 @@ class UX(object):
         else:
             portal_properties["links"] = {"contactUs": {"url": "", "visible": False}}
 
-        return self._gis.update_properties({"portalProperties": portal_properties})
+        self._gis.update_properties({"portalProperties": portal_properties})
 
     # ----------------------------------------------------------------------
     @property
@@ -1455,3 +1503,178 @@ class MapSettings(object):
             value = True
         self._gis.update_properties({"useVectorBasemaps": value})
         self._gis.update_properties({"basemapGalleryGroupQuery": group})
+
+    # ----------------------------------------------------------------------
+    @property
+    def default_mapviewer(self):
+        """
+        Get/Set whether the org's default Map Viewer is MapViewerClassic or the
+        modern Map Viewer.
+
+        Values: "modern" | "classic"
+        """
+        if "mapViewer" in self._gis.properties["portalProperties"]:
+            return self._gis.properties["portalProperties"]["mapViewer"]
+
+    # ----------------------------------------------------------------------
+    @default_mapviewer.setter
+    def default_mapviewer(self, value: str):
+        if value not in ["modern", "classic"]:
+            raise ValueError("The two accepted values are 'modern' or 'classi'")
+
+        portal_properties = self._gis.properties["portalProperties"]
+        portal_properties["mapViewer"] = value
+        self._gis.update_properties({"portalProperties": portal_properties})
+
+    # ----------------------------------------------------------------------
+    @property
+    def units(self):
+        """
+        Get/Set the default map units. Either 'english' or 'metric'.
+        """
+        if "units" in self._gis.properties:
+            return self._gis.properties["units"]
+
+    # ----------------------------------------------------------------------
+    @units.setter
+    def units(self, value: str):
+        if value not in ["english", "classic"]:
+            raise ValueError("The two accepted values are 'english' and 'metric'")
+
+        self._gis.update_properties({"units": value})
+
+    # ----------------------------------------------------------------------
+    def bing_map(self, bing_key: str | None = None, share_public: bool | None = None):
+        """
+        Provide a Microsoft-supplied Bing Maps key to use Bing Maps in your portal's web maps.
+
+        Bing Map Key: https://www.bingmapsportal.com/
+
+        ======================      ==============================================
+        **Argument**                    **Description**
+        ----------------------      ----------------------------------------------
+        bing_key                    Optional str. The bing key to pass in.
+        ----------------------      ----------------------------------------------
+        share_public                Optional bool. If True, allows this Bing Maps
+                                    key to be used in maps shared publicly by organization members.
+        ======================      ==============================================
+
+        :return: True | False
+        """
+        res = False
+        if bing_key:
+            res = self._gis.update_properties({"bingKey": bing_key})
+
+        if share_public:
+            res = self._gis.update_properties({"canShareBingPublic": share_public})
+        return res
+
+    # ----------------------------------------------------------------------
+    @property
+    def config_apps_group(self):
+        """
+        ArcGIS Configurable Apps contain various settings users can configure
+        to create web apps. Map-based apps display one or more maps.
+        Choose which group contains the apps you want to use in the configurable apps
+        gallery.
+
+        Assign either an instance of Group class, a group id, or None to reset
+        to default.
+        """
+        if "templatesGroupQuery" in self._gis.properties:
+            return self._gis.properties["templatesGroupQuery"]
+        else:
+            return "Default"
+
+    # ----------------------------------------------------------------------
+    @config_apps_group.setter
+    def config_apps_group(self, group: Group | str | None):
+        if isinstance(group, Group):
+            group = "id:" + group.id
+        elif isinstance(group, str):
+            res = self._gis.groups.search(group)
+            if len(res) == 0:
+                raise ValueError(
+                    "The group id provided could not be found in your org."
+                )
+            else:
+                group = "id:" + group
+
+        self._gis.update_properties({"clearEmptyFields": True})
+        self._gis.update_properties({"templatesGroupQuery": group})
+
+    # ----------------------------------------------------------------------
+    def web_styles(
+        self,
+        group: Group | str | None = None,
+        two_dimensional_map: bool = False,
+        three_dimensional_map: bool = False,
+    ):
+        """
+        Web styles are collections of symbols stored in an item. Apps can
+        use web styles to symbolize point features with 2D or 3D symbols.
+        Select a group to be used in symbol galleries.
+
+        ======================      ==============================================
+        **Argument**                **Description**
+        ----------------------      ----------------------------------------------
+        group                       Optional str or Group. either an instance of Group class,
+                                    a group id, or None to reset to default.
+        ----------------------      ----------------------------------------------
+        two_dimensional_map         Optional bool. If True, the group will be assigned
+                                    to 2D Web Style.
+        ----------------------      ----------------------------------------------
+        three_dimensional_map       Optional bool. If True, the group will be assigned
+                                    to 3D Web Style.
+        ======================      ==============================================
+
+        """
+        if isinstance(group, Group):
+            group = "id:" + group.id
+        elif isinstance(group, str):
+            res = self._gis.groups.search(group)
+            if len(res) == 0:
+                raise ValueError(
+                    "The group id provided could not be found in your org."
+                )
+            else:
+                group = "id:" + group
+        if two_dimensional_map:
+            res = self._gis.update_properties({"2DStylesGroupQuery": group})
+        if three_dimensional_map:
+            res = self._gis.update_properties({"stylesGroupQuery": group})
+        return res
+
+    # ----------------------------------------------------------------------
+    @property
+    def analysis_layer_group(self):
+        """
+        Select the group whose layers will be shown in the Analysis Layer
+        gallery for the analysis tools. It is best practice to share feature
+        items that contain only a single layer with this group.
+        If your feature layer item contains multiple layers, save any of the
+        layers as an item and share it with the group.
+        """
+        if "analysisLayersGroupQuery" in self._gis.properties:
+            return self._gis.properties["analysisLayersGroupQuery"]
+        else:
+            return "Default"
+
+    # ----------------------------------------------------------------------
+    @analysis_layer_group.setter
+    def analysis_layer_group(
+        self,
+        group: Group | str | None = None,
+    ):
+        if isinstance(group, Group):
+            group = "id:" + group.id
+        elif isinstance(group, str):
+            res = self._gis.groups.search(group)
+            if len(res) == 0:
+                raise ValueError(
+                    "The group id provided could not be found in your org."
+                )
+            else:
+                group = "id:" + group
+        self._gis.update_properties({"clearEmptyFields": True})
+        self._gis.update_properties({"analysisLayersGroupQuery": group})
