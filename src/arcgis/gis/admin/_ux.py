@@ -217,79 +217,6 @@ class UX(object):
             self._gis.update_properties({"contacts": admins})
 
     # ----------------------------------------------------------------------
-    def set_informational_banner(
-        self,
-        text: str | None = None,
-        bg_color: str | None = None,
-        font_color: str | None = None,
-        enabled: bool | None = None,
-    ):
-        """
-        The informational banner that is shown at the top of your organization's page.
-
-        ================    ===============================================================
-        **Argument**        **Description**
-        ----------------    ---------------------------------------------------------------
-        text                Optional string. The text that the informational banner will display.
-                            To set an empty text use: ""
-        ----------------    ---------------------------------------------------------------
-        bg_color            Optional string. Specifies the background color for the
-                            informational banner. This property recognizes common color names
-                            (such as red or blue) and hexadecimal color values. While you
-                            are able to choose any color for this property, it is recommended
-                            that you choose a color that contrasts appropriately with the
-                            font_color, as a poor contrast will cause a warning to appear
-                            in the Security settings page of yourEnterprise portal
-                            alerting you to the insufficient contrast.
-        ----------------    ---------------------------------------------------------------
-        font_color          Optional string. Specifies the font color for the for the
-                            informational banner. This property recognizes common color
-                            names (such as red or blue) and hexadecimal color values.
-                            While you are able to choose any color for this property,
-                            it is recommended that you choose a color that contrasts
-                            appropriately with the bg_color, as a poor contrast will
-                            cause a warning to appear in the Security settings page of your
-                            Enterprise portal alerting you to the insufficient contrast.
-        ----------------    ---------------------------------------------------------------
-        enabled             Optional bool. Determine whether the informational banner is
-                            enabled (True) or disabled (False).
-        ================    ===============================================================
-
-        :return: True if updated, else False.
-        """
-        # if user wants to change one thing, keep other settings
-        current_info_banner = self._gis.org_settings["informationalBanner"]
-        if text is None:
-            text = current_info_banner["text"]
-        if bg_color is None:
-            bg_color = current_info_banner["bgColor"]
-        if font_color is None:
-            font_color = current_info_banner["fontColor"]
-        if enabled is None:
-            enabled = current_info_banner["enabled"]
-        informational_banner = {
-            "text": text,
-            "bgColor": bg_color,
-            "fontColor": font_color,
-            "enabled": enabled,
-        }
-
-        org_settings = self._gis.org_settings
-        org_settings["informationalBanner"] = informational_banner
-        self._gis.org_settings = org_settings
-        return True
-
-    # ----------------------------------------------------------------------
-    def get_informational_banner(self):
-        """
-        Get the informational banner dictionary from the org's setttings.
-        """
-        if "informationalBanner" in self._gis.org_settings:
-            return self._gis.org_settings["informationalBanner"]
-        else:
-            return None
-
-    # ----------------------------------------------------------------------
     @property
     def help_source(self):
         """
@@ -814,6 +741,15 @@ class UX(object):
         map settings such as comments, metadata, etc.
         """
         return ItemSettings(gis=self._gis)
+
+    # ----------------------------------------------------------------------
+    @property
+    def security_settings(self):
+        """
+        Get an instance of the SecuritySettings class to make edits to the org's default
+        map settings such as informational banner, password policy, etc.
+        """
+        return SecuritySettings(gis=self._gis)
 
     # ----------------------------------------------------------------------
     @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
@@ -1775,3 +1711,89 @@ class ItemSettings(object):
         See main ``enable_comments`` property docstring.
         """
         return self._gis.update_properties({"commentsEnabled": enable})
+
+
+#############################################################################
+class SecuritySettings(object):
+    """Helper class that can be called off of UX class using the 'security_settings' property.
+    Edit org item settings such as the informational banner, password policy, etc."""
+
+    # ----------------------------------------------------------------------
+    def __init__(self, gis):
+        """Creates helper object to manage portal home page, resources, update resources"""
+        self._gis = gis
+        self._portal = gis._portal
+        self._portal_resources = gis.admin.resources
+
+    # ----------------------------------------------------------------------
+    def set_informational_banner(
+        self,
+        text: str | None = None,
+        bg_color: str | None = None,
+        font_color: str | None = None,
+        enabled: bool | None = None,
+    ):
+        """
+        The informational banner that is shown at the top of your organization's page.
+
+        ================    ===============================================================
+        **Argument**        **Description**
+        ----------------    ---------------------------------------------------------------
+        text                Optional string. The text that the informational banner will display.
+                            To set an empty text use: ""
+        ----------------    ---------------------------------------------------------------
+        bg_color            Optional string. Specifies the background color for the
+                            informational banner. This property recognizes common color names
+                            (such as red or blue) and hexadecimal color values. While you
+                            are able to choose any color for this property, it is recommended
+                            that you choose a color that contrasts appropriately with the
+                            font_color, as a poor contrast will cause a warning to appear
+                            in the Security settings page of yourEnterprise portal
+                            alerting you to the insufficient contrast.
+        ----------------    ---------------------------------------------------------------
+        font_color          Optional string. Specifies the font color for the for the
+                            informational banner. This property recognizes common color
+                            names (such as red or blue) and hexadecimal color values.
+                            While you are able to choose any color for this property,
+                            it is recommended that you choose a color that contrasts
+                            appropriately with the bg_color, as a poor contrast will
+                            cause a warning to appear in the Security settings page of your
+                            Enterprise portal alerting you to the insufficient contrast.
+        ----------------    ---------------------------------------------------------------
+        enabled             Optional bool. Determine whether the informational banner is
+                            enabled (True) or disabled (False).
+        ================    ===============================================================
+
+        :return: True if updated, else False.
+        """
+        # if user wants to change one thing, keep other settings
+        current_info_banner = self._gis.org_settings["informationalBanner"]
+        if text is None:
+            text = current_info_banner["text"]
+        if bg_color is None:
+            bg_color = current_info_banner["bgColor"]
+        if font_color is None:
+            font_color = current_info_banner["fontColor"]
+        if enabled is None:
+            enabled = current_info_banner["enabled"]
+        informational_banner = {
+            "text": text,
+            "bgColor": bg_color,
+            "fontColor": font_color,
+            "enabled": enabled,
+        }
+
+        org_settings = self._gis.org_settings
+        org_settings["informationalBanner"] = informational_banner
+        self._gis.org_settings = org_settings
+        return True
+
+    # ----------------------------------------------------------------------
+    def get_informational_banner(self):
+        """
+        Get the informational banner dictionary from the org's setttings.
+        """
+        if "informationalBanner" in self._gis.org_settings:
+            return self._gis.org_settings["informationalBanner"]
+        else:
+            return None

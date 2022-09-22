@@ -7,7 +7,13 @@ import shutil
 import unittest
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
-from arcgis.gis.admin import UX, HomePageSettings, MapSettings, ItemSettings
+from arcgis.gis.admin import (
+    UX,
+    HomePageSettings,
+    MapSettings,
+    ItemSettings,
+    SecuritySettings,
+)
 import tempfile
 import requests
 
@@ -96,36 +102,6 @@ class Test_UXClass(unittest.TestCase):
             ux.description = "Python API Test"
             assert ux.description == "Python API Test"
             ux.description = desc
-
-    def test_informational_banner(self):
-        for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            ux = gis.admin.ux
-
-            # get current banner, or None
-            ib = ux.get_informational_banner()
-            try:
-                assert ib
-            except:
-                continue
-            # set informational banner
-            assert ux.set_informational_banner(
-                text="Test For Python API",
-                bg_color="white",
-                font_color="black",
-                enabled=True,
-            )
-            assert ux.get_informational_banner()["text"] == "Test For Python API"
-            # reset original banner
-            if ib:
-                assert ux.set_informational_banner(
-                    text=ib["text"],
-                    bg_color=ib["bgColor"],
-                    font_color=ib["fontColor"],
-                    enabled=ib["enabled"],
-                )
-            else:
-                assert ux.set_informational_banner(text=None, enabled=False)
 
     def test_logo(self):
         for profile in PROFILES:
@@ -386,6 +362,46 @@ class Test_ItemSettingsClass(unittest.TestCase):
             it_set.enable_comments = True
             assert it_set.enable_comments is True
             it_set.enable_comments = comments
+
+
+class Test_SecuritySettingsClass(unittest.TestCase):
+    """Tests Org Security Settings Class"""
+
+    def test_class_calls(self):
+        for profile in PROFILES:
+            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+            ss = gis.admin.ux.security_settings
+            assert isinstance(ss, SecuritySettings)
+
+    def test_informational_banner(self):
+        for profile in PROFILES:
+            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+            ss = gis.admin.ux.security_settings
+
+            # get current banner, or None
+            ib = ss.get_informational_banner()
+            try:
+                assert ib
+            except:
+                continue
+            # set informational banner
+            assert ss.set_informational_banner(
+                text="Test For Python API",
+                bg_color="white",
+                font_color="black",
+                enabled=True,
+            )
+            assert ss.get_informational_banner()["text"] == "Test For Python API"
+            # reset original banner
+            if ib:
+                assert ss.set_informational_banner(
+                    text=ib["text"],
+                    bg_color=ib["bgColor"],
+                    font_color=ib["fontColor"],
+                    enabled=ib["enabled"],
+                )
+            else:
+                assert ss.set_informational_banner(text=None, enabled=False)
 
 
 if __name__ == "__main__":
