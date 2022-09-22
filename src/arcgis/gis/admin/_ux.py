@@ -466,7 +466,7 @@ class UX(object):
 
         :return: True if enabled, False if disabled
         """
-        return self._gis.properties["commentsEnabled"]
+        return self.item_settings.enable_comments
 
     # ----------------------------------------------------------------------
     @enable_comments.setter
@@ -474,7 +474,7 @@ class UX(object):
         """
         See main ``enable_comments`` property docstring.
         """
-        return self._gis.update_properties({"commentsEnabled": enable})
+        self.item_settings.enable_comments = enable
 
     # ----------------------------------------------------------------------
     @property
@@ -805,6 +805,15 @@ class UX(object):
         map settings such as extent, basemap, etc.
         """
         return MapSettings(gis=self._gis)
+
+    # ----------------------------------------------------------------------
+    @property
+    def item_settings(self):
+        """
+        Get an instance of the ItemSettings class to make edits to the org's default
+        map settings such as comments, metadata, etc.
+        """
+        return ItemSettings(gis=self._gis)
 
     # ----------------------------------------------------------------------
     @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
@@ -1390,16 +1399,6 @@ class MapSettings(object):
         self._portal = gis._portal
         self._portal_resources = gis.admin.resources
 
-        # Determine if using old or new homepage
-        if "homePage" in gis.properties["portalProperties"]:
-            self._new_hp = (
-                True
-                if gis.properties["portalProperties"]["homePage"] == "modernOnly"
-                else False
-            )
-        else:
-            self._new_hp = False
-
     # ----------------------------------------------------------------------
     @property
     def default_extent(self):
@@ -1738,3 +1737,41 @@ class MapSettings(object):
         self._gis.update_properties(
             {"analysisLayersGroupQuery": group, "clearEmptyFields": True}
         )
+
+
+#############################################################################
+class ItemSettings(object):
+    """Helper class that can be called off of UX class using the 'item_settings' property.
+    Edit org item settings such as the enabling/disabling comments, metadata info, etc."""
+
+    # ----------------------------------------------------------------------
+    def __init__(self, gis):
+        """Creates helper object to manage portal home page, resources, update resources"""
+        self._gis = gis
+        self._portal = gis._portal
+        self._portal_resources = gis.admin.resources
+
+    # ----------------------------------------------------------------------
+    @property
+    def enable_comments(self):
+        """
+        Get/Set item commenting and comments.
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        enable            Optional boolean. If True, the comments for the site are turned
+                          on.  False will disable comments (default)
+        ================  ===============================================================
+
+        :return: True if enabled, False if disabled
+        """
+        return self._gis.properties["commentsEnabled"]
+
+    # ----------------------------------------------------------------------
+    @enable_comments.setter
+    def enable_comments(self, enable: bool = False):
+        """
+        See main ``enable_comments`` property docstring.
+        """
+        return self._gis.update_properties({"commentsEnabled": enable})

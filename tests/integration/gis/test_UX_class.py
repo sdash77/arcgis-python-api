@@ -7,7 +7,7 @@ import shutil
 import unittest
 from arcgis.auth.tools._util import detect_proxy
 from arcgis.gis import GIS
-from arcgis.gis.admin import UX, HomePageSettings, MapSettings
+from arcgis.gis.admin import UX, HomePageSettings, MapSettings, ItemSettings
 import tempfile
 import requests
 
@@ -82,13 +82,6 @@ class Test_UXClass(unittest.TestCase):
             ux.admin_contacts = [gis.users.me.username]
             assert ux.admin_contacts == [gis.users.me.username]
             ux.admin_contacts = contact
-
-            # enable comments property
-            comments = ux.enable_comments
-            assert comments in [True, False]
-            ux.enable_comments = True
-            assert ux.enable_comments is True
-            ux.enable_comments = comments
 
             # description visibility property
             visibility = ux.description_visibility
@@ -372,6 +365,27 @@ class Test_MapSettingsClass(unittest.TestCase):
             assert ms.bing_map(bing_key="abcde")
             assert ms.bing_map()["key"] == "abcde"
             ms.bing_map(bing_key=key["key"], share_public=key["public"])
+
+
+class Test_ItemSettingsClass(unittest.TestCase):
+    """Tests Org Item Settings Class"""
+
+    def test_class_calls(self):
+        for profile in PROFILES:
+            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+            it_set = gis.admin.ux.item_settings
+            assert isinstance(it_set, ItemSettings)
+
+    def test_propeties(self):
+        for profile in PROFILES:
+            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+            it_set = gis.admin.ux.item_settings
+            # enable comments property
+            comments = it_set.enable_comments
+            assert comments in [True, False]
+            it_set.enable_comments = True
+            assert it_set.enable_comments is True
+            it_set.enable_comments = comments
 
 
 if __name__ == "__main__":
