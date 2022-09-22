@@ -669,7 +669,7 @@ def generate_heatmap(
     show_none: Optional[bool] = False,
 ):
     """
-    
+
     Generates a heatmap renderer. Used in ``spatial.plot()`` and ``generate_renderer()``.
 
     ======================  =========================================================
@@ -688,12 +688,12 @@ def generate_heatmap(
                             of color input have alpha accounted for in bytes form).
                             Defaults to 1.
     ----------------------  ---------------------------------------------------------
-    blur_radius             Optional int. The radius (in pixels) of the circle over 
+    blur_radius             Optional int. The radius (in pixels) of the circle over
                             which the majority of each point's value is spread.
                             Defaults to 10.
     ----------------------  ---------------------------------------------------------
-    field                   Optional string. This is optional as this renderer can be 
-                            created if no field is specified. Each feature gets the 
+    field                   Optional string. This is optional as this renderer can be
+                            created if no field is specified. Each feature gets the
                             same value/importance/weight or with a field where each
                             feature is weighted by the field's value.
     ----------------------  ---------------------------------------------------------
@@ -703,14 +703,14 @@ def generate_heatmap(
     min_intensity           Optional int. The pixel intensity value which is assigned
                             the initial color in the color ramp. Defaults to 0.
     ----------------------  ---------------------------------------------------------
-    ratio                   Optional float. A number between 0-1. Describes what 
-                            portion along the gradient the colorStop is added. 
+    ratio                   Optional float. A number between 0-1. Describes what
+                            portion along the gradient the colorStop is added.
                             Defaults to 0.01
     ----------------------  ---------------------------------------------------------
     stops                   Optional int. The amount of color stops created for the
                             renderer. Default and minimum is 3.
     ----------------------  ---------------------------------------------------------
-    show_none               Optional boolean. Determines the alpha value of the base 
+    show_none               Optional boolean. Determines the alpha value of the base
                             color for the heatmap. Setting this to ``True`` covers an
                             entire map with the base color of the heatmap. Default is
                             ``False``.
@@ -1932,220 +1932,44 @@ def generate_renderer(
     elif render_type == "d" and geometry_type != "polygon":
         raise Exception("Dot Density is only supported by polygons")
     if render_type == "s":
-        symbol = symbol_args.pop("symbol", None)
-        if symbol is None:
-            symbol = create_symbol(
-                geometry_type=geometry_type.lower(),
-                symbol_type=symbol_args.pop("symbol_type", None),
-                symbol_style=symbol_args.pop("symbol_style", None),
-                colors=colors[0],
-                **symbol_args,
-            )
-        renderer = {
-            "type": "simple",
-            "label": label,
-            "description": symbol_args.pop("description", ""),
-            "rotationExpression": symbol_args.pop("rotation_expression", ""),
-            "rotationType": symbol_args.pop("rotation_type", "arithmetic"),
-            "visualVariables": symbol_args.pop("visual_variables", vv),
-            "symbol": symbol,
-        }
+        renderer = generate_simple(
+            geometry_type=geometry_type,
+            sdf_or_series=sdf_or_series,
+            label=label,
+            symbol_type=symbol_args.pop("symbol_type", None),
+            symbol_style=symbol_args.pop("symbol_style", None),
+            colors=colors,
+            alpha=alpha,
+            visual_variables=vv,
+            **symbol_args,
+        )
         return renderer
     elif render_type.lower() == "h":
-        colors = _format_colors(colors, alpha)
-        if sdf_or_series is None and "field" in symbol_args:
-            raise ValueError(
-                "sdf_or_series must be a Pandas' Series"
-                + " or Pandas DataFrame for this type of renderer"
-            )
-
-        field = symbol_args.pop("field", None)
-        maxPixelIntensity = symbol_args.pop("max_intensity", 10)
-        minPixelIntensity = symbol_args.pop("min_intensity", 0)
-        show_none = symbol_args.pop("show_none", False)
-
-        # check if user specified exact RGB colorstops in 'colors'
-        colorStops = []
-        if all([isinstance(i, list) for i in colors]) and len(colors) > 2:
-            if not show_none:
-                colors[0][-1] = 0
-            ratios = np.linspace(0, 1, len(colors)).tolist()
-            for idx in range(0, len(colors)):
-                colorStops.append(
-                    {
-                        "ratio": ratios[idx],
-                        "color": colors[idx],
-                    }
-                )
-
-        # check if user specified colormaps as colorstops in 'colors'
-        # uses base color from each map
-        elif all([isinstance(i, str) for i in colors]) and len(colors) > 2:
-            if show_none:
-                calpha = alpha
-            else:
-                calpha = 0
-            ratios = np.linspace(0, 1, len(colors)).tolist()
-            colorStops.append(
-                {
-                    "ratio": ratios[0],
-                    "color": _cmap2rgb(colors=colors[0], step=0, alpha=calpha),
-                }
-            )
-            for idx in range(1, len(colors)):
-                colorStops.append(
-                    {
-                        "ratio": ratios[idx],
-                        "color": _cmap2rgb(colors=colors[idx], step=0, alpha=alpha),
-                    }
-                )
-
-        else:
-            stops = symbol_args.pop("stops", 3)
-            ratio = symbol_args.pop("ratio", 0.01)
-            r = 0
-            if stops < 3:
-                stops = 3
-            ratios = np.linspace(0, 1, num=stops)
-            for idx, cstep in enumerate(
-                np.linspace(0, 255, num=stops, dtype=np.int).tolist()
-            ):
-                if r == 0 and show_none == True:
-                    calpha = alpha
-                elif r == 0 and show_none == False:
-                    calpha = 0
-                else:
-                    calpha = alpha
-
-                colorStops.append(
-                    {
-                        "ratio": ratios[idx],
-                        "color": _cmap2rgb(colors=colors[0], step=cstep, alpha=calpha),
-                    }
-                )
-                r += ratio
-                del cstep
-        renderer = {
-            "type": "heatmap",
-            "field": field,
-            "blurRadius": symbol_args.pop("blur_radius", 10),
-            "maxPixelIntensity": maxPixelIntensity,
-            "minPixelIntensity": minPixelIntensity,
-            "colorStops": colorStops,
-        }
+        renderer = generate_heatmap(
+            sdf_or_series=sdf_or_series,
+            colors=colors,
+            alpha=alpha,
+            blur_radius=symbol_args.pop("blur_radius", 10),
+            field=symbol_args.pop("field", None),
+            max_intensity=symbol_args.pop("max_intensity", 10),
+            min_intensity=symbol_args.pop("min_intensity", 0),
+            ratio=symbol_args.pop("ratio", 0.01),
+            stops=symbol_args.pop("stops", 3),
+            show_none=symbol_args.pop("show_none", False),
+        )
         return renderer
     elif render_type in ["u", "p"] and "field1" in symbol_args:
-        if not hasattr(colors, "mpl_colormap"):
-            colors = _format_colors(colors, alpha)
-        if sdf_or_series is None:
-            raise ValueError(
-                "sdf_or_series must be a Pandas' Series"
-                + " or Pandas DataFrame for this type of renderer"
-            )
-        st = symbol_args.pop("symbol_type", None)
-        ss = symbol_args.pop("symbol_style", None)
-        default_symbol = symbol_args.pop("default_symbol", None)
-        if default_symbol is None:
-            if isinstance(colors, (list, tuple)):
-                ccmap = colors[0]
-            else:
-                ccmap = colors
-            default_symbol = create_symbol(
-                geometry_type=geometry_type.lower(),
-                symbol_type=st,
-                symbol_style=ss,
-                colors=ccmap,
-                **symbol_args,
-            )
-        field1 = symbol_args.pop("field1", None)
-        if field1 is None:
-            raise ValueError(
-                "You must provide a single field name to use unique value renderer as field1='columnname'"
-            )
-        field2 = symbol_args.pop("field2", None)
-        field3 = symbol_args.pop("field2", None)
-        fields = [field1]
-        if field2 is not None:
-            fields.append(field2)
-        if field3 is not None:
-            fields.append(field3)
-        if isinstance(fields, str):
-            fields = [fields]
-        field_delimiter = symbol_args.pop("field_delimiter", ",")
-        rotation_expression = symbol_args.pop("rotation_expression", None)
-        rotation_type = symbol_args.pop("rotation_type", "arithmetic")
-
-        renderer = {
-            "type": "uniqueValue",
-            "defaultLabel": symbol_args.pop("default_label", "Other"),
-            "defaultSymbol": default_symbol,
-            "fieldDelimiter": field_delimiter,
-            "rotationExpression": rotation_expression,
-            "rotationType": rotation_type,
-            "valueExpression": symbol_args.pop("arcade_expression", None),
-            "valueExpressionTitle": symbol_args.pop("arcade_title", None),
-            "visualVariables": symbol_args.pop("visual_variables", vv),
-        }
-        unique_values = symbol_args.pop("unique_values", None)
-        if unique_values is None:
-            c = 1
-            for f in fields:
-                renderer["field%s" % c] = f
-                c += 1
-            if len(fields) == 1:
-                try:
-                    uvals = list(sdf_or_series[fields[0]].unique())
-                except:
-                    uvals = sdf_or_series[fields[0]].unique().tolist()
-            else:
-                uvals = (
-                    sdf_or_series.groupby(fields)
-                    .size()
-                    .reset_index()
-                    .rename(columns={0: "count"})
-                    .drop(columns="count")
-                    .tolist()
-                )
-                uvals2 = []
-                for r in uvals:
-                    row = []
-                    for i in r:
-                        row.append(str(i))
-                    uvals2.append(",".join(row))
-                    del r
-                uvals = uvals2
-                if len(uvals) > 255:
-                    uvals = uvals[:255]
-            unique_values = []
-
-            steps = np.linspace(0, 255, len(uvals), dtype=np.int)
-
-            for idx, uval in enumerate(uvals):
-                if hasattr(colors, "mpl_colormap"):
-                    temp_map = colors.mpl_colormap
-                    color_tuple = temp_map(steps[idx], bytes=True)
-                    color = [int(i) for i in color_tuple]
-                elif isinstance(colors[0], str):
-                    color = _cmap2rgb(colors[0], steps[idx], alpha)
-                elif isinstance(colors[0], list):
-                    color = _get_list_value(idx, colors)
-                unique_values.append(
-                    {
-                        "value": uval,
-                        "label": uval,
-                        "description": "",
-                        "symbol": create_symbol(
-                            geometry_type=geometry_type.lower(),
-                            symbol_type=st,
-                            symbol_style=ss,
-                            colors=color,
-                            **symbol_args,
-                        ),
-                    }
-                )
-            renderer["uniqueValueInfos"] = unique_values
-        else:
-            renderer["uniqueValueInfos"] = unique_values
+        renderer = generate_unique(
+            geometry_type=geometry_type,
+            sdf_or_series=sdf_or_series,
+            symbol_type=symbol_args.pop("symbol_type", None),
+            symbol_style=symbol_args.pop("symbol_style", None),
+            colors=colors,
+            alpha=alpha,
+            visual_variables=vv,
+            **symbol_args,
+        )
+        return renderer
     elif (
         render_type in ["u-a", "u"]
         and "field1" not in symbol_args
@@ -2199,115 +2023,16 @@ def generate_renderer(
             "attributeField": symbol_args.pop("attribute_field", None),
         }
     elif render_type == "c":
-        if sdf_or_series is None:
-            raise ValueError(
-                "sdf_or_series must be a Pandas' Series"
-                + " or Pandas DataFrame for this type of renderer"
-            )
-        class_count = symbol_args.pop(
-            "class_count", 3
-        )  # number of classess for class break
-
-        temp_map = None
-        if hasattr(colors, "mpl_colormap"):
-            temp_map = colors.mpl_colormap
-        else:
-            colors = _format_colors(colors, alpha)
-            if isinstance(colors[0], list) and len(colors) > 1:
-                temp_map = create_colormap(colors)
-            # possible outcomes are colormap, single rbg array, str colormap name
-
-        try:
-            if hasattr(sdf_or_series, "geometry_type"):
-                gt = sdf_or_series.geometry_type
-            elif (
-                hasattr(sdf_or_series, "spatial")
-                and sdf_or_series.spatial.name
-                and hasattr(sdf_or_series.spatial, "geometry_type")
-            ):
-                gt = sdf_or_series.spatial.geometry_type[0]
-        except:
-            raise Exception(
-                "geometry_type not found, please ensure DataFrame is spatially enabled."
-            )
-        renderer = {
-            "type": "classBreaks",
-            "valueExpression": symbol_args.pop("arcade_expression", None),
-            "valueExpressionTitle": symbol_args.pop("arcade_title", None),
-            "visualVariables": symbol_args.pop("visual_variables", vv),
-            "rotationType": symbol_args.pop("rotation_type", "arithmetic"),
-            "rotationExpression": symbol_args.pop("rotation_expression", None),
-            "normalizationType": symbol_args.pop("normalization_type", None),
-            "normalizationTotal": symbol_args.pop("normalization_total", None),
-            "normalizationField": symbol_args.pop("normalization_field", None),
-            "minValue": symbol_args.pop("min_value", 0),
-            "field": symbol_args.pop("field"),
-            "defaultSymbol": symbol_args.pop(
-                "default_symbol",
-                create_symbol(
-                    geometry_type=gt, colors=_format_colors(colors, alpha)[0]
-                ),
-            ),
-            "defaultLabel": symbol_args.pop("default_label", "Other"),
-            "classificationMethod": symbol_args.pop("method", None),
-            "classBreakInfos": [],
-            "backgroundFillSymbol": symbol_args.pop("background_fill_symbol", None),
-        }
-        minValue = sdf_or_series[renderer["field"]].min()
-        maxValue = sdf_or_series[renderer["field"]].max()
-
-        def pairwise(iterable, fillvalue=999):
-            "s -> (s0,s1), (s1,s2), (s2, s3), ..."
-            import itertools
-
-            a, b = itertools.tee(iterable)
-            next(b, fillvalue)
-            return itertools.zip_longest(a, b)
-
-        # calculate the class breaks from column data
-        cbs = []
-        breaks = np.linspace(minValue, maxValue, num=class_count + 1).tolist()
-        steps = np.linspace(0, 255, len(breaks), dtype=np.int)
-        ss = symbol_args.pop("symbol_style", None)
-        st = symbol_args.pop("symbol_type", None)
-        import sys
-
-        for idx, pair in enumerate(pairwise(breaks, fillvalue=sys.maxsize)):
-            gt = None
-            if pair[1] is None:
-                break
-            if hasattr(sdf_or_series, "geometry_type"):
-                gt = sdf_or_series.geometry_type
-            elif (
-                hasattr(sdf_or_series, "spatial")
-                and sdf_or_series.spatial.name
-                and hasattr(sdf_or_series.spatial, "geometry_type")
-            ):
-                gt = sdf_or_series.spatial.geometry_type[0]
-            if temp_map:
-                color_tuple = temp_map(steps[idx], bytes=True)
-                color = [int(i) for i in color_tuple]
-            else:
-                color = colors[0]
-            cbs.append(
-                {
-                    "classMaxValue": pair[1] or pair[0],
-                    "label": "%s - %s" % (pair[0], pair[1] or pair[0]),
-                    "description": "%s - %s" % (pair[0], pair[1] or pair[0]),
-                    "symbol": create_symbol(
-                        geometry_type=gt,
-                        symbol_style=ss,
-                        symbol_type=st,
-                        colors=color,
-                        cstep=steps[idx],
-                        **symbol_args,
-                    ),
-                }
-            )
-            del pair
-        renderer["classBreakInfos"] = cbs
-        for key in [k for k, v in renderer.items() if v is None]:
-            del renderer[key]
+        renderer = generate_classbreaks(
+            geometry_type=geometry_type,
+            sdf_or_series=sdf_or_series,
+            symbol_type=symbol_args.pop("symbol_type", None),
+            symbol_style=symbol_args.pop("symbol_style", None),
+            colors=colors,
+            alpha=alpha,
+            visual_variables=vv,
+            **symbol_args,
+        )
         return renderer
     elif render_type == "str":
         renderer = {

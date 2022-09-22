@@ -213,7 +213,6 @@ def plot(
             label=name,
             symbol_type=symbol_type,
             symbol_style=symbol_style,
-            render_type=renderer_type,
             colors=colors,
             alpha=alpha,
             **kwargs,
@@ -247,10 +246,8 @@ def plot(
             r = generate_classbreaks(
                 geometry_type=kwargs.pop("geometry_type", gt[0].lower()),
                 sdf_or_series=df,
-                label=name,
                 symbol_type=symbol_type,
                 symbol_style=symbol_style,
-                render_type=renderer_type,
                 colors=colors,
                 alpha=alpha,
                 **kwargs,
