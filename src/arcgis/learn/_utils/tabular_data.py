@@ -178,7 +178,7 @@ class TabularDataObject(object):
                             f'We see a class imbalance in the dataset. The class(es) {",".join([str(key) for key in imabalanced_class_list.keys()])} doesnt have enough data points in your dataset.'
                         )
                     except:
-                        warnings.warn('We see a class imbalance in the dataset')
+                        warnings.warn("We see a class imbalance in the dataset")
                     try:
                         from sklearn.model_selection import train_test_split
 
@@ -545,7 +545,10 @@ class TabularDataObject(object):
                 except:
                     dataframe[variable] = np.array(
                         labelEncoder.fit_transform(
-                            dataframe[variable].values.astype(str).to_numpy().reshape(-1, 1)
+                            dataframe[variable]
+                            .values.astype(str)
+                            .to_numpy()
+                            .reshape(-1, 1)
                         ),
                         dtype="int64",
                     )
@@ -929,12 +932,19 @@ class TabularDataObject(object):
             for variable, encoder in self._encoder_mapping.items():
                 try:
                     dataframe[variable] = np.array(
-                        encoder.fit_transform(dataframe[variable].values.astype(str).reshape(-1, 1)),
+                        encoder.fit_transform(
+                            dataframe[variable].values.astype(str).reshape(-1, 1)
+                        ),
                         dtype="int64",
                     )
                 except:
                     dataframe[variable] = np.array(
-                        encoder.fit_transform(dataframe[variable].values.astype(str).to_numpy().reshape(-1, 1)),
+                        encoder.fit_transform(
+                            dataframe[variable]
+                            .values.astype(str)
+                            .to_numpy()
+                            .reshape(-1, 1)
+                        ),
                         dtype="int64",
                     )
 
