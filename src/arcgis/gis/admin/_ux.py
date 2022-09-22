@@ -27,6 +27,7 @@ class UX(object):
             self._new_hp = (
                 True
                 if gis.properties["portalProperties"]["homePage"] == "modernOnly"
+                or gis.properties["portalProperties"]["homePage"] == "modern"
                 else False
             )
         else:
@@ -277,76 +278,7 @@ class UX(object):
 
         :return: True | False
         """
-
-        # Add resource file
-
-        from pathlib import Path
-
-        key_val = ""
-        # find image extension
-        if logo_file is not None and os.path.isfile(logo_file):
-
-            fpath = Path(logo_file)
-            f_splits = fpath.name.split(".")
-            if len(f_splits) > 1 and f_splits[1] == "png":
-                key_val = "thumbnail.png"
-            elif len(f_splits) > 1 and f_splits[1] == "jpg":
-                key_val = "thumbnail.jpg"
-            elif len(f_splits) > 1 and f_splits[1] == "gif":
-                key_val = "thumbnail.gif"
-
-            self._portal_resources.add(key_val, logo_file)
-        elif logo_file is None:
-            if "thumbnail" in dict(self._gis.properties):
-                resource = self._gis.properties["thumbnail"]
-                if resource and len(resource) > 0:
-                    self._portal_resources.delete(resource)
-                key_val = ""
-        else:
-            for ext in [".png", ".jpg", ".gif"]:
-                try:
-                    self._portal_resources.delete("thumbnail" + ext)
-                except:
-                    continue
-            key_val = None
-
-        if self._new_hp is False:
-            # Update the portal self with these banner values
-            if logo_file is not None:
-                return self._gis.update_properties({"thumbnail": key_val})
-            else:
-                rp = self._gis.properties["rotatorPanels"]
-                for idx, r in enumerate(rp):
-                    if r["id"].lower() == "banner-2":
-                        r["innerHTML"] = (
-                            "<img src='images/banner-2.jpg' style='-webkit-border-radius:0 0 10px 10px;"
-                            + " -moz-border-radius:0 0 10px 10px; -o-border-radius:0 0 10px 10px; border-radius:0 0 10px 10px;"
-                            + " margin-top:0; width:960px; height:180px;'/><div style='position:absolute; bottom:80px; left:80px;"
-                            + " max-height:65px; width:660px; margin:0;'><span style='position:absolute; bottom:0; "
-                            "margin-bottom:0; line-height:normal; "
-                            + "font-family:HelveticaNeue,Verdana; font-weight:600; font-size:32px; "
-                            "color:#369;'>{}</span></div>".format(
-                                self._gis.properties.name
-                            )
-                        )
-                return self._gis.update_properties(
-                    {"clearEmptyFields": True, "thumbnail": "", "rotatorPanels": rp}
-                )
-        elif self._new_hp:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
-            if show_logo:
-                hp["header"]["showLogo"] = show_logo
-            hp["header"]["logo"] = key_val
-            params = {
-                "key": "home.page.json",
-                "text": hp,
-                "f": "json",
-            }
-            return self._portal_resources.add(
-                key="home.page.json", text=json.dumps(params["text"])
-            )
+        return self.homepage_settings.set_logo(logo_file=logo_file, show_logo=show_logo)
 
     # ----------------------------------------------------------------------
     def get_logo(self, download_path: str):
@@ -362,21 +294,7 @@ class UX(object):
         :return: Path to downloaded logo file. If None, then logo is not set and nothing was downloaded.
 
         """
-        if self._new_hp is False:
-            props = self._gis.properties
-            if "thumbnail" in props:
-                resource = props["thumbnail"]
-        else:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
-            resource = hp["header"]["logo"]
-        if resource is not None and len(str(resource)) > 0:
-            output = self._portal_resources.get(
-                resource_name=resource, download_path=download_path
-            )
-            return output
-        return None
+        return self.homepage_settings.get_logo(download_path=download_path)
 
     # ----------------------------------------------------------------------
     @property
@@ -1073,6 +991,7 @@ class HomePageSettings(object):
             self._new_hp = (
                 True
                 if gis.properties["portalProperties"]["homePage"] == "modernOnly"
+                or gis.properties["portalProperties"]["homePage"] == "modern"
                 else False
             )
         else:
@@ -1219,6 +1138,125 @@ class HomePageSettings(object):
                 )
 
         return bckgrnd_path
+
+    # ----------------------------------------------------------------------
+    def set_logo(self, logo_file: str | None = None, show_logo: bool | None = None):
+        """
+        Configure your home page by setting the organization's logo image. For best results the logo file should be
+        65 x 65 pixels in dimension.
+
+        For more information, refer to http://server.arcgis.com/en/portal/latest/administer/windows/configure-general.htm
+
+        ================    ===============================================================
+        **Argument**        **Description**
+        ----------------    ---------------------------------------------------------------
+        logo_file           Optional string. Specify path to image file. If None, existing thumbnail is removed.
+        ----------------    ---------------------------------------------------------------
+        show_logo           Optional bool. Specify whether the logo is visible on the homepage or not.
+        ================    ===============================================================
+
+        :return: True | False
+        """
+
+        # Add resource file
+
+        from pathlib import Path
+
+        key_val = ""
+        # find image extension
+        if logo_file is not None and os.path.isfile(logo_file):
+
+            fpath = Path(logo_file)
+            f_splits = fpath.name.split(".")
+            if len(f_splits) > 1 and f_splits[1] == "png":
+                key_val = "thumbnail.png"
+            elif len(f_splits) > 1 and f_splits[1] == "jpg":
+                key_val = "thumbnail.jpg"
+            elif len(f_splits) > 1 and f_splits[1] == "gif":
+                key_val = "thumbnail.gif"
+
+            self._portal_resources.add(key_val, logo_file)
+        elif logo_file is None:
+            if "thumbnail" in dict(self._gis.properties):
+                resource = self._gis.properties["thumbnail"]
+                if resource and len(resource) > 0:
+                    self._portal_resources.delete(resource)
+                key_val = ""
+        else:
+            for ext in [".png", ".jpg", ".gif"]:
+                try:
+                    self._portal_resources.delete("thumbnail" + ext)
+                except:
+                    continue
+            key_val = None
+
+        if self._new_hp is False:
+            # Update the portal self with these banner values
+            if logo_file is not None:
+                return self._gis.update_properties({"thumbnail": key_val})
+            else:
+                rp = self._gis.properties["rotatorPanels"]
+                for idx, r in enumerate(rp):
+                    if r["id"].lower() == "banner-2":
+                        r["innerHTML"] = (
+                            "<img src='images/banner-2.jpg' style='-webkit-border-radius:0 0 10px 10px;"
+                            + " -moz-border-radius:0 0 10px 10px; -o-border-radius:0 0 10px 10px; border-radius:0 0 10px 10px;"
+                            + " margin-top:0; width:960px; height:180px;'/><div style='position:absolute; bottom:80px; left:80px;"
+                            + " max-height:65px; width:660px; margin:0;'><span style='position:absolute; bottom:0; "
+                            "margin-bottom:0; line-height:normal; "
+                            + "font-family:HelveticaNeue,Verdana; font-weight:600; font-size:32px; "
+                            "color:#369;'>{}</span></div>".format(
+                                self._gis.properties.name
+                            )
+                        )
+                return self._gis.update_properties(
+                    {"clearEmptyFields": True, "thumbnail": "", "rotatorPanels": rp}
+                )
+        elif self._new_hp:
+            hp = json.loads(
+                open(self._portal_resources.get("home.page.json"), "r").read()
+            )
+            if show_logo:
+                hp["header"]["showLogo"] = show_logo
+            hp["header"]["logo"] = key_val
+            params = {
+                "key": "home.page.json",
+                "text": hp,
+                "f": "json",
+            }
+            return self._portal_resources.add(
+                key="home.page.json", text=json.dumps(params["text"])
+            )
+
+    # ----------------------------------------------------------------------
+    def get_logo(self, download_path: str):
+        """
+        Get your organization's logo/thumbnail. You can use the `set_logo()` method to set an image as your logo.
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        download_path     required string. Folder path to download the logo file.
+        ================  ===============================================================
+
+        :return: Path to downloaded logo file. If None, then logo is not set and nothing was downloaded.
+
+        """
+        if self._new_hp is False:
+            props = self._gis.properties
+            if "thumbnail" in props:
+                resource = props["thumbnail"]
+        else:
+            hp = json.loads(
+                open(self._portal_resources.get("home.page.json"), "r").read()
+            )
+            resource = hp["header"]["logo"]
+        if resource is not None and len(str(resource)) > 0:
+            output = self._portal_resources.get(
+                resource_name=resource, download_path=download_path
+            )
+            return output
+        return None
 
     # ----------------------------------------------------------------------
     def set_title(
