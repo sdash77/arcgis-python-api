@@ -284,7 +284,10 @@ class UX(object):
         """
         Get the informational banner dictionary from the org's setttings.
         """
-        return self._gis.org_settings["informationalBanner"]
+        if "informationalBanner" in self._gis.org_settings:
+            return self._gis.org_settings["informationalBanner"]
+        else:
+            return None
 
     # ----------------------------------------------------------------------
     @property
@@ -1321,12 +1324,19 @@ class HomePageSettings(object):
     def get_title(self):
         """
         Get the title displayed on the homepage if show title is set to True.
+
+        :return: Dict or None if using old homepage
         """
         if self._new_hp:
             hp = json.loads(
                 open(self._portal_resources.get("home.page.json"), "r").read()
             )
-            return hp["header"]["title"]
+            title = {
+                "title": hp["header"]["title"],
+                "show_title": hp["header"]["showTitle"],
+                "color": hp["header"]["titleColor"],
+            }
+            return title
         else:
             return None
 
@@ -1603,15 +1613,19 @@ class MapSettings(object):
                                     key to be used in maps shared publicly by organization members.
         ======================      ==============================================
 
-        :return: True | False
+        :return: Dictionary containing the bing key and whether is is publicly shared
         """
-        res = False
         if bing_key:
-            res = self._gis.update_properties({"bingKey": bing_key})
-
+            self._gis.update_properties({"bingKey": bing_key})
         if share_public:
-            res = self._gis.update_properties({"canShareBingPublic": share_public})
-        return res
+            self._gis.update_properties({"canShareBingPublic": share_public})
+        bing_dict = {
+            "key": self._gis.properties["bingKey"]
+            if "bingKey" in self._gis.properties
+            else None,
+            "public": self._gis.properties["canShareBingPublic"],
+        }
+        return bing_dict
 
     # ----------------------------------------------------------------------
     @property
