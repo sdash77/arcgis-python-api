@@ -772,6 +772,7 @@ class BusinessAnalyst(object):
                 ds.CountryInfo.ISO3,
                 ds.DataSourceID,
                 ds.ID,
+                None,
             )
             for ds in ds_lst
         ]
@@ -1576,12 +1577,6 @@ class BusinessAnalyst(object):
                     .drop_duplicates("name")
                     .reset_index(drop=True)
                 )
-
-            # let user know we are grabbing defaults
-            warn(
-                f"Using {len(enrich_variables.index)} enrich variables, key variables, as default "
-                f"since no enrich_variables were provided."
-            )
 
         # if a list of enrichment variables was provided, ensure they are valid
         if not isinstance(enrich_variables, pd.DataFrame):

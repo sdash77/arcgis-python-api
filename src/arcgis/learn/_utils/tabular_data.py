@@ -160,13 +160,28 @@ class TabularDataObject(object):
         if tabular_data._dependent_variable:
             random.seed(seed)
             if tabular_data._is_classification():
+                dependent_variable_column = tabular_data._dataframe[
+                    tabular_data._dependent_variable
+                ]
+                try:
+                    total_val = len(dependent_variable_column.values)
+                    unique_rows = dependent_variable_column.value_counts()
+                    imabalanced_class_list = {}
+                    for row, count in unique_rows.items():
+                        if count < total_val * 0.01:
+                            imabalanced_class_list[row] = count
+                except Exception as e:
+                    warnings.warn(f"Unable to check for class imbalance [reason : {e}]")
                 if stratify:
+                    try:
+                        warnings.warn(
+                            f'We see a class imbalance in the dataset. The class(es) {",".join([str(key) for key in imabalanced_class_list.keys()])} doesnt have enough data points in your dataset.'
+                        )
+                    except:
+                        warnings.warn("We see a class imbalance in the dataset")
                     try:
                         from sklearn.model_selection import train_test_split
 
-                        dependent_variable_column = tabular_data._dataframe[
-                            tabular_data._dependent_variable
-                        ]
                         if (
                             len(set(dependent_variable_column.values))
                             > len(dependent_variable_column.values) * val_split_pct
@@ -209,6 +224,9 @@ class TabularDataObject(object):
                             random_state=seed,
                         ).index.to_list()
                 else:
+                    warnings.warn(
+                        f'We see a class imbalance in the dataset. The class(es) {",".join(imabalanced_class_list.keys())} doesnt have enough data points in your dataset. Although, class imbalance cannot be overcome easily, adding the parameter stratify = True will to a certain extent help get over this problem.'
+                    )
                     validation_indexes = tabular_data._dataframe.sample(
                         n=round(val_split_pct * len(tabular_data._dataframe)),
                         replace=False,
@@ -520,14 +538,17 @@ class TabularDataObject(object):
                 try:
                     dataframe[variable] = np.array(
                         labelEncoder.fit_transform(
-                            dataframe[variable].values.reshape(-1, 1)
+                            dataframe[variable].values.astype(str).reshape(-1, 1)
                         ),
                         dtype="int64",
                     )
                 except:
                     dataframe[variable] = np.array(
                         labelEncoder.fit_transform(
-                            dataframe[variable].values.to_numpy().reshape(-1, 1)
+                            dataframe[variable]
+                            .values.astype(str)
+                            .to_numpy()
+                            .reshape(-1, 1)
                         ),
                         dtype="int64",
                     )
@@ -909,10 +930,23 @@ class TabularDataObject(object):
         # if hasattr(self,'_encoder_mapping'):
         if self._encoder_mapping:
             for variable, encoder in self._encoder_mapping.items():
-                dataframe[variable] = np.array(
-                    encoder.fit_transform(dataframe[variable].values.reshape(-1, 1)),
-                    dtype="int64",
-                )
+                try:
+                    dataframe[variable] = np.array(
+                        encoder.fit_transform(
+                            dataframe[variable].values.astype(str).reshape(-1, 1)
+                        ),
+                        dtype="int64",
+                    )
+                except:
+                    dataframe[variable] = np.array(
+                        encoder.fit_transform(
+                            dataframe[variable]
+                            .values.astype(str)
+                            .to_numpy()
+                            .reshape(-1, 1)
+                        ),
+                        dtype="int64",
+                    )
 
         if fit:
             processed_data = _procs.fit_transform(dataframe)
