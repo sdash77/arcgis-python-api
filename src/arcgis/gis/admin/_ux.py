@@ -1126,17 +1126,20 @@ class HomePageSettings(object):
                     )
 
                 except:
-                    continue
-        else:
-            hp = json.loads(
-                open(self._portal_resources.get("home.page.json"), "r").read()
-            )
-            background = hp["header"]["coverImg"]
-            if background:
-                bckgrnd_path = self._portal_resources.get(
-                    background["key"], download_path
-                )
-
+                    if self._new_hp:
+                        # see if named something else
+                        hp = json.loads(
+                            open(
+                                self._portal_resources.get("home.page.json"), "r"
+                            ).read()
+                        )
+                        background = hp["header"]["coverImg"]
+                        if background:
+                            bckgrnd_path = self._portal_resources.get(
+                                background["key"], download_path
+                            )
+                    else:
+                        continue
         return bckgrnd_path
 
     # ----------------------------------------------------------------------
@@ -1190,29 +1193,8 @@ class HomePageSettings(object):
                     continue
             key_val = None
 
-        if self._new_hp is False:
-            # Update the portal self with these banner values
-            if logo_file is not None:
-                return self._gis.update_properties({"thumbnail": key_val})
-            else:
-                rp = self._gis.properties["rotatorPanels"]
-                for idx, r in enumerate(rp):
-                    if r["id"].lower() == "banner-2":
-                        r["innerHTML"] = (
-                            "<img src='images/banner-2.jpg' style='-webkit-border-radius:0 0 10px 10px;"
-                            + " -moz-border-radius:0 0 10px 10px; -o-border-radius:0 0 10px 10px; border-radius:0 0 10px 10px;"
-                            + " margin-top:0; width:960px; height:180px;'/><div style='position:absolute; bottom:80px; left:80px;"
-                            + " max-height:65px; width:660px; margin:0;'><span style='position:absolute; bottom:0; "
-                            "margin-bottom:0; line-height:normal; "
-                            + "font-family:HelveticaNeue,Verdana; font-weight:600; font-size:32px; "
-                            "color:#369;'>{}</span></div>".format(
-                                self._gis.properties.name
-                            )
-                        )
-                return self._gis.update_properties(
-                    {"clearEmptyFields": True, "thumbnail": "", "rotatorPanels": rp}
-                )
-        elif self._new_hp:
+        # extra step for new homepage editor
+        if self._new_hp:
             hp = json.loads(
                 open(self._portal_resources.get("home.page.json"), "r").read()
             )
@@ -1224,8 +1206,28 @@ class HomePageSettings(object):
                 "text": hp,
                 "f": "json",
             }
-            return self._portal_resources.add(
+            self._portal_resources.add(
                 key="home.page.json", text=json.dumps(params["text"])
+            )
+
+        # Update the portal self with these banner values (need to run for Enterprise < 11)
+        if logo_file is not None:
+            return self._gis.update_properties({"thumbnail": key_val})
+        else:
+            rp = self._gis.properties["rotatorPanels"]
+            for idx, r in enumerate(rp):
+                if r["id"].lower() == "banner-2":
+                    r["innerHTML"] = (
+                        "<img src='images/banner-2.jpg' style='-webkit-border-radius:0 0 10px 10px;"
+                        + " -moz-border-radius:0 0 10px 10px; -o-border-radius:0 0 10px 10px; border-radius:0 0 10px 10px;"
+                        + " margin-top:0; width:960px; height:180px;'/><div style='position:absolute; bottom:80px; left:80px;"
+                        + " max-height:65px; width:660px; margin:0;'><span style='position:absolute; bottom:0; "
+                        "margin-bottom:0; line-height:normal; "
+                        + "font-family:HelveticaNeue,Verdana; font-weight:600; font-size:32px; "
+                        "color:#369;'>{}</span></div>".format(self._gis.properties.name)
+                    )
+            return self._gis.update_properties(
+                {"clearEmptyFields": True, "thumbnail": "", "rotatorPanels": rp}
             )
 
     # ----------------------------------------------------------------------
@@ -1507,8 +1509,14 @@ class MapSettings(object):
         Select the group whose web maps will be shown in the basemap gallery.
         To change the group, assign either an instance of Group or the group id.
         Setting to None will revert to default.
+
+        :return: A Group Class instance
         """
-        return self._gis.properties["basemapGalleryGroupQuery"]
+        group_id = self._gis.properties["basemapGalleryGroupQuery"]
+        try:
+            return self._gis.groups.search(group_id[3::])[0]
+        except:
+            return None
 
     # ----------------------------------------------------------------------
     @basemap_gallery_group.setter
@@ -1580,7 +1588,8 @@ class MapSettings(object):
         ======================      ==============================================
         **Argument**                    **Description**
         ----------------------      ----------------------------------------------
-        bing_key                    Optional str. The bing key to pass in.
+        bing_key                    Optional str. The bing key to pass in. To remove
+                                    pass in "REMOVE".
         ----------------------      ----------------------------------------------
         share_public                Optional bool. If True, allows this Bing Maps
                                     key to be used in maps shared publicly by organization members.
@@ -1589,6 +1598,8 @@ class MapSettings(object):
         :return: Dictionary containing the bing key and whether is is publicly shared
         """
         if bing_key:
+            if bing_key == "REMOVE":
+                bing_key = None
             self._gis.update_properties({"bingKey": bing_key})
         if share_public:
             self._gis.update_properties({"canShareBingPublic": share_public})
@@ -1805,7 +1816,15 @@ class SecuritySettings(object):
         :return: True if updated, else False.
         """
         # if user wants to change one thing, keep other settings
-        current_info_banner = self._gis.org_settings["informationalBanner"]
+        if "informationalBanner" in self._gis.org_settings:
+            current_info_banner = self._gis.org_settings["informationalBanner"]
+        else:
+            current_info_banner = {
+                "text": "",
+                "bgColor": "white",
+                "fontColor": "black",
+                "enabled": False,
+            }
         if text is None:
             text = current_info_banner["text"]
         if bg_color is None:

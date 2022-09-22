@@ -340,7 +340,7 @@ class Test_MapSettingsClass(unittest.TestCase):
             assert key
             assert ms.bing_map(bing_key="abcde")
             assert ms.bing_map()["key"] == "abcde"
-            ms.bing_map(bing_key=key["key"], share_public=key["public"])
+            ms.bing_map(bing_key="REMOVE")
 
 
 class Test_ItemSettingsClass(unittest.TestCase):
