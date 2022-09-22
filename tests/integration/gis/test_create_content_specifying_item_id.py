@@ -4,7 +4,6 @@ import uuid
 import datetime
 import tempfile
 import unittest
-import pytest
 import pandas as pd
 from arcgis.geometry import Geometry
 from arcgis.features import GeoAccessor, GeoSeriesAccessor

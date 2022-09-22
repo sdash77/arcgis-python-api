@@ -1,6 +1,5 @@
 import unittest
 from unittest.mock import MagicMock, Mock
-import pytest
 from arcgis.gis import GIS, Item
 from arcgis import env
 from arcgis.mapping import WebMap
