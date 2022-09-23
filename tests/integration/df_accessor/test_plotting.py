@@ -1,9 +1,10 @@
-import pytest
 import os, sys
 
 # sys.path.append(r"D:\SVN\git_hub\ArcGIS\geo_public")
 import shutil
 import tempfile
+import unittest
+
 from arcgis.features.geo import GeoAccessor, GeoSeriesAccessor
 from arcgis.geometry import Geometry
 import pandas as pd
@@ -39,11 +40,14 @@ geoms = [
 attr = [["a", 1.2, 1]] * 5
 
 
-def test_plot():
-    df = pd.DataFrame(data=attr, columns=["A", "B", "C"])
-    df.spatial.set_geometry(geoms)
-    assert df.spatial.plot(map_widget=wm)
+class TestPlotting(unittest.TestCase):
+
+    def test_plot(self):
+        df = pd.DataFrame(data=attr, columns=["A", "B", "C"])
+        df.spatial.set_geometry(geoms)
+        assert df.spatial.plot(map_widget=wm)
 
 
 if __name__ == "__main__":
-    test_plot()
+
+    unittest.main()

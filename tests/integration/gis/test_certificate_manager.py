@@ -4,7 +4,6 @@
 # -------------------------------------------------------------------------------
 import sys
 import unittest
-import pytest
 
 
 class TestCertificateMgr(unittest.TestCase):

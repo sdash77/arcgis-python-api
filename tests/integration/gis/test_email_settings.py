@@ -1,7 +1,6 @@
 import sys
 import os
 import unittest
-import pytest
 
 import arcgis
 

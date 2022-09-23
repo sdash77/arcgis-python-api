@@ -4,7 +4,6 @@ from arcgis.gis import GIS
 import os
 import sys
 import unittest
-import pytest
 import pandas as pd
 from arcgis.gis import GIS
 from arcgis.mapping.ogc import WMTSLayer

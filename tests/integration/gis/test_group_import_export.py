@@ -3,7 +3,6 @@ import sys
 # sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_issue_3989\src")
 import os
 import unittest
-import pytest
 
 import arcgis
 

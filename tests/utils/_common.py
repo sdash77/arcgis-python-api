@@ -6,8 +6,6 @@ import logging
 
 log = logging.getLogger("__main__")
 
-import pytest
-
 GEOSAURUS_ROOT_DIR = os.path.abspath(
     os.path.join(os.path.dirname(__file__), "..", "..")
 )
@@ -112,7 +110,7 @@ def setup_env():
     run_shell_command(" ".join(widget_enable_cmd))
 
 
-def run_pytest_on(
+def run_unittest_on(
     paths,
     output_xml_path,
     output_coverage_dir=False,
@@ -120,57 +118,59 @@ def run_pytest_on(
     max_fail=9999999999999999,
     throw_exc_on_fail=False,
 ):
-    def _assemble_pytest_args(
+    def _assemble_unittest_args(
         paths,
         output_xml_path,
         output_coverage_dir,
         block_network_access,
         surround_paths_with_quotes=False,
     ):
-        pytest_args = []
+        unittest_args = []
         if surround_paths_with_quotes:
-            pytest_args += [f'"{sys.executable}"', "-m", "pytest", "-vv", "-x"] + list(
+            unittest_args += [f'"{sys.executable}"', "-m", "nose", "-v", "-x"] + list(
                 f'"{x}"' for x in paths
             )
         else:
-            pytest_args += [sys.executable, "-m", "pytest", "-vv", "-x"] + paths
-        pytest_args += [f"--junit-xml={output_xml_path}", f"--maxfail={max_fail}"]
+            unittest_args += [sys.executable, "-m", "nose", "-v", "-x"] + paths
+        unittest_args += ["--with-xunit", f"--xunit-file={output_xml_path}"]
+        """
         if block_network_access:
-            pytest_args += [
+            unittest_args += [
                 "--blockage",
             ]
+        """
         if output_coverage_dir:
-            pytest_args += [
-                f"--cov={GEOSAURUS_SRC_ARCGIS_DIR}",
-                f"--cov-report=html:{output_coverage_dir}",
+            unittest_args += [
+                "--with-coverage", "--cover-html",
+                f"--cover-html-dir={output_coverage_dir}"
             ]
-        return pytest_args
+        return unittest_args
 
     # ------------------------------------------------------------------------
     if not throw_exc_on_fail:
-        pytest_args = _assemble_pytest_args(
+        unittest_args = _assemble_unittest_args(
             paths,
             output_xml_path,
             output_coverage_dir,
             block_network_access,
             surround_paths_with_quotes=False,
         )
-        with Popen(pytest_args, cwd=TESTS_DIR, stderr=PIPE) as p:
+        with Popen(unittest_args, cwd=TESTS_DIR, stderr=PIPE) as p:
             for line in p.stderr:
                 print(str(line.decode("utf-8")), end="")
     else:
-        pytest_args = _assemble_pytest_args(
+        unittest_args = _assemble_unittest_args(
             paths,
             output_xml_path,
             output_coverage_dir,
             block_network_access,
             surround_paths_with_quotes=True,
         )
-        run_shell_command(" ".join(pytest_args))
+        run_shell_command(" ".join(unittest_args))
 
 
-def _run_pytest_subprocess(pytest_args):
-    args = [sys.executable, "-m", "pytest"] + pytest_args
+def _run_test_subprocess(unittest_args):
+    args = [sys.executable, "-m", "unittest"] + unittest_args
     log.debug(f"Running Popen({args},...")
     with Popen(args, cwd=TESTS_DIR, stderr=PIPE) as p:
         for line in p.stderr:

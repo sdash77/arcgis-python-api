@@ -764,3 +764,139 @@ def plot_histograms(
     if "subplotpars" not in plot_properties:
         _plt.subplots_adjust(hspace=0.5)
     _plt.show()
+
+
+def spectral_profile(
+    raster,
+    points: list[Point] = [],
+    show_values: bool = False,
+    plot_properties: dict[str, Any] = {},
+):
+
+    """
+    Spectral profile charts allow you to select areas of interest or ground features on the image and review the spectral information of all bands in a chart format.
+
+    The x-axis of the spectral profile displays the band names
+
+    The y-axis of the spectral profile displays the spectral values.
+
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    raster                                   Required Imagery Layer object.
+    ------------------------------------     --------------------------------------------------------------------
+    points                                   Required list of point Geometry objects.
+    ------------------------------------     --------------------------------------------------------------------
+    show_values                              Optional bool. Default False.
+                                             Set this parameter to True to display the values at each point in the line graph.
+    ------------------------------------     --------------------------------------------------------------------
+    plot_properties                          Optional dict. This parameter can be used to set the figure
+                                             properties. These are the matplotlib.pyplot.figure() parameters and values
+                                             specified in dict format.
+
+                                             eg: {"figsize":(15,15)}
+    ====================================     ====================================================================
+
+    :return:
+        None
+
+    """
+
+    if not isinstance(points, list):
+        points = [points]
+
+    num_lines = len(points)
+    y = [[] for i in range(0, num_lines)]
+    x = [[] for i in range(0, num_lines)]
+    # x_var = raster.properties.timeInfo['startTimeField']
+
+    res = []
+    t1 = []
+    d1 = []
+    xx = []
+    yy = []
+    band_names_list = []
+    key_props = raster.key_properties()
+
+    if "BandProperties" in key_props:
+        band_properties = key_props["BandProperties"]
+    for ele in band_properties:
+        if "BandName" in ele.keys():
+            band_names_list.append(ele["BandName"])
+
+    if len(band_names_list) == 0:
+        if "bandNames" in raster.properties:
+            band_names_list = raster.properties.bandNames
+
+    if len(band_names_list) == 0:
+
+        def create_band_names(val):
+            val = "Band_" + str(val)
+            return val
+
+        if "bandCount" in raster.properties:
+            band_count = raster.properties.bandCount
+            band_names_list = list(
+                map(create_band_names, range(1, len(band_count) + 1))
+            )
+
+    for index, point in enumerate(points):
+        res = raster.get_samples(
+            geometry=point,
+            return_first_value_only=False,
+            out_fields="*",
+        )
+        values = res[0]["value"]
+        vals = [int(s) for s in values.split(" ")]
+
+        x = band_names_list
+        y = vals
+        if len(x) != len(y):
+            x = x[0 : len(y)]
+
+        t1.append(
+            {
+                "y": y,
+                "x": x,
+                "point": index,
+            }
+        )
+
+    if plot_properties is None:
+        plot_properties = {}
+    if len(plot_properties) == 0 or (
+        len(plot_properties) > 0 and "figsize" not in plot_properties.keys()
+    ):
+        plot_properties.update({"figsize": (15, 15)})
+    if plot_properties is not None and isinstance(plot_properties, dict):
+        # {"figsize":(20,10),"dpi":100,"facecolor":"yellow","edgecolor":"blue","linewidth":10.0,"frameon":False}
+        _plt.figure(**plot_properties)
+    _plt.xlabel("Band Name")
+    _plt.ylabel("Value")
+
+    title_string = "Spectral Profile"
+
+    _plt.title(title_string)
+
+    color = iter(_cm.rainbow(_np.linspace(0, 1, len(t1))))
+    for i in range(0, len(t1)):
+        label_string = "Location " + str(t1[i]["point"])
+        c = next(color)
+        _plt.plot(t1[i]["x"], t1[i]["y"], c=c, label=label_string)
+        _plt.scatter(t1[i]["x"], t1[i]["y"], c=[c])
+        _plt.legend(loc="upper left")
+
+        if show_values:
+            for x, y in zip(t1[i]["x"], t1[i]["y"]):
+                label = "{:.2f}".format(y)
+                _plt.annotate(
+                    label,  # this is the text
+                    (x, y),  # this is the point to label
+                    textcoords="offset points",  # how to position the text
+                    xytext=(10, 5),  # distance from text to points (x,y)
+                    ha="center",
+                )
+    _plt.xticks(rotation=25)
+    _plt.show()
+    # plt.legend()

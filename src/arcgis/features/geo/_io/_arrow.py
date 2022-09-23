@@ -17,7 +17,7 @@ _logging = logging.getLogger()
 
 _HASARCPY, _HASSHAPELY = _check_geometry_engine()
 
-_METADATA_VERSION = "0.1.0"
+_METADATA_VERSION = "0.4.0"
 # reference: https://github.com/geopandas/geo-arrow-spec
 
 # Metadata structure:
@@ -26,7 +26,9 @@ _METADATA_VERSION = "0.1.0"
 #         "columns": {
 #             "<name>": {
 #                 "crs": "<WKT or None: REQUIRED>",
-#                 "encoding": "WKB"
+#                 "encoding": "WKB",
+#                 "geometry_tye" : "<OGC Types>",
+#                 "bbox" : [xmin, ymin, xmax, ymax]
 #             }
 #         },
 #         "creator": {
@@ -50,7 +52,14 @@ def _create_metadata(df):
     -------
     dict
     """
-
+    _gt_lu = {
+        "point": "Point",
+        "polyline": "MultiLineString",
+        "polygon": "MultiPolygon",
+        "multipoint": "MultiPoint",
+        "unknown": "Unknown",
+        "extent": "Unknown",
+    }
     # Construct metadata for each geometry
     column_metadata = {}
     for col in df.columns[df.dtypes == "geometry"]:
@@ -60,10 +69,14 @@ def _create_metadata(df):
             sr = SpatialReference(df.spatial.sr).as_arcpy.exportToString()
         else:
             sr = f"ESPG:{df.spatial.sr.get('wkid', 4326)}"
+        gt = [_gt_lu[g.lower()] for g in df.spatial.geometry_type]
+        if len(gt) == 1:
+            gt = gt[0]
         column_metadata[col] = {
             "crs": sr,  # df.spatial.sr[0],#series.crs.to_wkt() if series.crs else None,
             "encoding": "WKB",
             "bbox": df.spatial.full_extent,
+            "geometry_type": gt,
         }
 
     return {
@@ -178,19 +191,6 @@ def _sedf_to_arrow(df, index=None):
     """
     from pyarrow import Table
 
-    _logging.warning(
-        "this is an initial implementation of Parquet/Feather file support and "
-        "associated metadata.  This is tracking version 0.1.0 of the metadata "
-        "specification at "
-        "https://github.com/geopandas/geo-arrow-spec\n\n"
-        "This metadata specification does not yet make stability promises.  "
-        "We do not yet recommend using this in a production setting unless you "
-        "are able to rewrite your Parquet/Feather files.\n\n"
-        "To further ignore this warning, you can do: \n"
-        "import warnings; warnings.filterwarnings('ignore', "
-        "message='.*initial implementation of Parquet.*')"
-    )
-
     _validate_dataframe(df)
 
     # create geo metadata before altering incoming data frame
@@ -227,11 +227,6 @@ def _to_parquet(
     specification at:
     https://github.com/geopandas/geo-arrow-spec
 
-    This metadata specification does not yet make stability promises.  As such,
-    we do not yet recommend using this in a production setting unless you are
-    able to rewrite your Parquet files.
-
-
     .. versionadded:: 1.9
 
     Parameters
@@ -265,10 +260,6 @@ def _to_feather(df, path, index=None, compression=None, **kwargs) -> str:
     associated metadata.  This is tracking version 0.1.0 of the metadata
     specification at:
     https://github.com/geopandas/geo-arrow-spec
-
-    This metadata specification does not yet make stability promises.  As such,
-    we do not yet recommend using this in a production setting unless you are
-    able to rewrite your Feather files.
 
     .. versionadded:: 1.9
 
