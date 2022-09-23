@@ -391,7 +391,9 @@ class Test_SecuritySettingsClass(unittest.TestCase):
             ss = gis.admin.ux.security_settings
 
             assert ss.enable_https in [True, False]
-            assert ss.anonymous_access
+            assert isinstance(ss.anonymous_access, dict)
+            assert isinstance(ss.allowed_origins, list)
+            assert isinstance(ss.allowed_redirect_uris, list)
             assert ss.enable_update_user_profile in [True, False]
             assert ss.share_public in [True, False]
             assert ss.show_social_media in [True, False]
@@ -440,6 +442,77 @@ class Test_SecuritySettingsClass(unittest.TestCase):
             assert ss.get_password_policy()["minUpper"] == 1
             # reset
             assert ss.update_password_policy(min_length=8, include_uppercase=False)
+
+    def test_org_access_notice(self):
+        for profile in PROFILES:
+            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+            ss = gis.admin.ux.security_settings
+
+            orig = ss.get_org_access_notice()
+            try:
+                assert orig
+            except:
+                assert orig is None
+
+            # Set a test notice
+            assert ss.get_org_access_notice(
+                "TEST FOR UX MODULE", "TEST FOR UX MODULE", "okOnly"
+            )
+            if orig:
+                assert ss.get_org_access_notice(
+                    orig["title"], orig["text"], orig["buttons"]
+                )
+            else:
+                assert ss.get_org_access_notice()
+
+    def test_anonymous_access_notice(self):
+        for profile in PROFILES:
+            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+            ss = gis.admin.ux.security_settings
+
+            orig = ss.get_anonymous_access_notice()
+            try:
+                assert orig
+            except:
+                assert orig is None
+
+            # Set a test notice
+            assert ss.set_anonymous_access_notice(
+                "TEST FOR UX MODULE", "TEST FOR UX MODULE", "okOnly"
+            )
+            if orig:
+                assert ss.set_anonymous_access_notice(
+                    orig["title"], orig["text"], orig["buttons"]
+                )
+            else:
+                assert ss.set_anonymous_access_notice()
+
+    def test_mfa(self):
+        for profile in PROFILES:
+            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+            ss = gis.admin.ux.security_settings
+
+            orig = ss.get_multifactor_authentication()
+            assert isinstance(orig, dict)
+
+            # set to true and add admins
+            admins = []
+            users = gis.users.search()
+            for user in users:
+                if user.role == "org_admin":
+                    admins.append(user.username)
+                if len(admins) == 2:
+                    break
+
+            assert ss.set_multifactor_authentication(admins, enabled=True)
+            assert ss.get_multifactor_authentication()["admins"]
+            # reset
+            if "admins" in orig:
+                assert ss.set_multifactor_authentication(
+                    orig["admins"], orig["enabled"]
+                )
+            else:
+                assert ss.set_multifactor_authentication(enabled=False)
 
 
 if __name__ == "__main__":

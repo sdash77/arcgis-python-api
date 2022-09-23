@@ -1605,7 +1605,9 @@ class MapSettings(object):
                                     pass in "REMOVE".
         ----------------------      ----------------------------------------------
         share_public                Optional bool. If True, allows this Bing Maps
-                                    key to be used in maps shared publicly by organization members.
+                                    key to be used in maps shared publicly by
+                                    organization members.
+                                    This requires the access of the portal to be set as public.
         ======================      ==============================================
 
         :return: Dictionary containing the bing key and whether is is publicly shared
@@ -2148,3 +2150,241 @@ class SecuritySettings(object):
         return self._gis._con.post(url, params)
 
     # ----------------------------------------------------------------------
+    @property
+    def allowed_origins(self):
+        """
+        Get/Set the list of allowed origins.
+
+        Allowed Origins limit the web application domains that can connect
+        via Cross-Origin Resource Sharing (CORS) to the ArcGIS REST API.
+
+        Can set a list of up to 100 web application domains to restrict CORS access to the REST API.
+        """
+        return self._gis.properties["allowedOrigins"]
+
+    # ----------------------------------------------------------------------
+    @allowed_origins.setter
+    def allowed_origins(self, allowed_origins: list[str]):
+        self._gis.update_properties({"allowedOrigins": allowed_origins})
+
+    # ----------------------------------------------------------------------
+    @property
+    def allowed_redirect_uris(self):
+        """
+        Configure a list of portals with which you want to share secure content.
+        This will allow members of your organization to use their enterprise logins
+        to access the secure content when viewing it from these portals.
+
+        Set a list of allowed redirect URIs which represent portal instances that
+        you share secure content with. This will allow your organization users
+        to be able to use enterprise logins to access the secured content
+        through web applications hosted on these portals.
+        """
+        return self._gis.properties["allowedRedirectUris"]
+
+    # ----------------------------------------------------------------------
+    @allowed_redirect_uris.setter
+    def allowed_redirect_uris(self, uris: list[str]):
+        self._gis.update_properties({"allowedRedirectUris": uris})
+
+    # ----------------------------------------------------------------------
+    @property
+    def trusted_servers(self):
+        """
+        Configure the list of trusted servers you wish your organization to
+        send credentials to when working with services secured with web-tier authentication.
+
+        Set a list of trusted servers that clients can send credentials to when
+        making Cross-Origin Resource Sharing (CORS) requests to access web-tier secured services.
+        """
+        return self._gis.properties["authorizedCrossOriginDomains"]
+
+    # ----------------------------------------------------------------------
+    @trusted_servers.setter
+    def truster_servers(self, servers: list):
+        self._gis.properties({"authorizedCrossOriginDomains": servers})
+
+    # ----------------------------------------------------------------------
+    def set_org_access_notice(
+        self,
+        title: str | None = None,
+        text: str | None = None,
+        button_type: str | None = None,
+    ):
+        """
+        Provide a notice of terms to be displayed to organization members
+        after they have signed in. Members can proceed only if they accept
+        the terms of the notice. They will not be prompted again till the
+        next time they sign in.
+
+        ======================      ====================================================
+        **Argument**                **Description**
+        ----------------------      ----------------------------------------------------
+        title                       Optional string. The title to set the for the notice.
+                                    If None then notice will be disabled.
+        ----------------------      ----------------------------------------------------
+        text                        Optional string. The text body to set for the notice.
+                                    If None then notice will be disabled.
+        ----------------------      ----------------------------------------------------
+        button_type                 Optional string. The button types the users will see
+                                    for the notice. Default is an accept and decline button.
+
+                                    Values: "acceptAndDecline" | "okOnly"
+        ======================      ====================================================
+
+        :return: True | False
+        """
+        org_settings = self._gis.org_settings
+        if button_type is None:
+            button_type = "acceptAndDecline"
+        notice = {"title": title, "text": text, "buttons": button_type}
+        if title and text:
+            notice["enabled"] = True
+        else:
+            notice["enabled"] = False
+
+        org_settings["authenticatedAccessNotice"] = notice
+        org_settings["clearEmptyFields"] = True
+        self._gis.org_settings = org_settings
+        return True
+
+    # ----------------------------------------------------------------------
+    def get_org_access_notice(self):
+        """
+        Get the provided notice of terms to be displayed to organization members
+        after they have signed in. Members can proceed only if they accept
+        the terms of the notice. They will not be prompted again till the
+        next time they sign in.
+
+        :return: The dict representation of the notice or if none set then None.
+        """
+        org_settings = self._gis.org_settings
+
+        if "authenticatedAccessNotice" in org_settings:
+            return org_settings["authenticatedAccessNotice"]
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    def set_anonymous_access_notice(
+        self,
+        title: str | None = None,
+        text: str | None = None,
+        button_type: str | None = None,
+    ):
+        """
+        Provide a notice of terms to be displayed to all users who access your
+        organization. Users can proceed only if they accept the terms of the
+        notice. They will not be prompted again for the remainder of the
+        browser session. If you set both types of access notices, an
+        organization member will see two notices.
+
+        ======================      ====================================================
+        **Argument**                **Description**
+        ----------------------      ----------------------------------------------------
+        title                       Optional string. The title to set the for the notice.
+                                    If None then notice will be disabled.
+        ----------------------      ----------------------------------------------------
+        text                        Optional string. The text body to set for the notice.
+                                    If None then notice will be disabled.
+        ----------------------      ----------------------------------------------------
+        button_type                 Optional string. The button types the users will see
+                                    for the notice. Default is an accept and decline button.
+
+                                    Values: "acceptAndDecline" | "okOnly"
+        ======================      ====================================================
+
+        :return: True | False
+        """
+        org_settings = self._gis.org_settings
+        if button_type is None:
+            button_type = "acceptAndDecline"
+        notice = {"title": title, "text": text, "buttons": button_type}
+        if title and text:
+            notice["enabled"] = True
+        else:
+            notice["enabled"] = False
+
+        org_settings["anonymousAccessNotice"] = notice
+        org_settings["clearEmptyFields"] = True
+        self._gis.org_settings = org_settings
+        return True
+
+    # ----------------------------------------------------------------------
+    def get_anonymous_access_notice(self):
+        """
+        Get the provided notice of terms to be displayed to all users who
+        access your organization. Users can proceed only if they accept the
+        terms of the notice. They will not be prompted again for the remainder
+        of the browser session. If you set both types of access notices,
+        an organization member will see two notices.
+
+        :return: The dict representation of the notice or if none set then None.
+        """
+        org_settings = self._gis.org_settings
+
+        if "anonymousAccessNotice" in org_settings:
+            return org_settings["anonymousAccessNotice"]
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    def set_multifactor_authentication(
+        self, admins: list[str] | None = None, enabled: bool = False
+    ):
+        """
+        Multifactor authentication provides all members with ArcGIS accounts
+        in your organization with an extra level of security by requesting
+        an additional verification code at the time of login.
+
+        =========================       ==================================================
+        **Argument**                    **Description**
+        -------------------------       --------------------------------------------------
+        admins                          Optional list of strings. Designate at least two
+                                        administrators who will receive email requests
+                                        to troubleshoot members' multifactor
+                                        authentication issues. Provide a list of at least
+                                        two admin usernames.
+        -------------------------       --------------------------------------------------
+        enabled                         Optional bool. Allow members to choose whether to
+                                        set up multifactor authentication for
+                                        their individual accounts. Default is False.
+        =========================       ==================================================
+
+        :return: True | False
+        """
+        # Run some checks
+        if enabled is True:
+            admins_ok = []
+            if admins is None:
+                raise ValueError(
+                    "Cannot set empty list as Administrative contacts. You must have at least two administrators in the list."
+                )
+            for ad in admins:
+                role = self._gis.users.search(ad)[0].role
+                if role == "org_admin":
+                    admins_ok.append(ad)
+            if len(admins_ok) < 2:
+                raise ValueError(
+                    "None of the usernames provided are org admins. Please provide at least 2 org admins."
+                )
+            else:
+                admins = admins_ok
+        # perform update
+
+        return self._gis.update_properties({"mfaEnabled": enabled, "mfaAdmins": admins})
+
+    # ----------------------------------------------------------------------
+    def get_multifactor_authentication(self):
+        """
+        See if multifactor authentication is set and who are the admins that
+        are set as points of contact.
+
+        :return: dict
+        """
+        mfa = {}
+        if "mfaEnabled" in self._gis.properties:
+            mfa["enabled"] = self._gis.properties["mfaEnabled"]
+        if "mfaAdmins" in self._gis.properties:
+            mfa["admins"] = self._gis.properties["mfaAdmins"]
+        return mfa
