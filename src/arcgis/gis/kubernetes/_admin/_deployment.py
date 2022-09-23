@@ -132,9 +132,6 @@ class DeploymentProperty:
         }
         return self._con.post(url, params).get("status", "failed") == "success"
 
-    def refresh(self):
-        
-
 
 class DeploymentManager(_BaseKube):
     """

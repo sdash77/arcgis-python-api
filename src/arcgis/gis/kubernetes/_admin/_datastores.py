@@ -247,9 +247,8 @@ class DataStores(_BaseKube):
             return DataStore(url, self._gis, self)
         elif "jobsUrl" in res:
             from arcgis.gis.kubernetes._admin._jobs import Job
-            return Job(url=res['JobsUrl'], gis=self._gis)
-        else:
-            return None
+
+            return Job(url=res["JobsUrl"], gis=self._gis)
         else:
             return res
 
@@ -298,9 +297,9 @@ class DataStores(_BaseKube):
         """
         params = {"item": item, "f": "json"}
         if options:
-            params['options'] = options
+            params["options"] = options
         if sync:
-            params['async'] = sync
+            params["async"] = sync
         url = self._url + "/registerItem"
         return self._con.post(path=url, postdata=params)
 
