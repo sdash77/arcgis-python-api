@@ -6316,7 +6316,7 @@ def find_argument_statistics(
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
     argument_value                           Optional Integer. The value at which a comparison will be made to extract
-                                             the dimension value. This parameter is required when the statisticsType
+                                             the dimension value. This parameter is required when the statistics_type
                                              parameter is set to ARGUMENT_VALUE.
 
                                              |
