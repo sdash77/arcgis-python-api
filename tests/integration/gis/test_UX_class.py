@@ -163,12 +163,12 @@ class Test_UXClass(unittest.TestCase):
             except:
                 assert gall_grp == ""
             # set new group
-            group_id = gis.groups.search()[0].id
+            group_id = gis.groups.search()[10].id
             ux.gallery_group = group_id
-            assert ux.gallery_group == "id:" + group_id
+            assert ux.gallery_group == gis.groups.search()[10]
             # reset
             if gall_grp:
-                ux.gallery_group = gall_grp[3::]
+                ux.gallery_group = gall_grp.id
             else:
                 ux.gallery_group = gall_grp
 
@@ -288,11 +288,11 @@ class Test_MapSettingsClass(unittest.TestCase):
             # basemap gallery group
             bsmap_gall_group = ms.basemap_gallery_group
             assert bsmap_gall_group
-            group_id = gis.groups.search()[0].id
+            group_id = gis.groups.search()[10].id
             ms.basemap_gallery_group = group_id
-            assert ms.basemap_gallery_group == "id:" + group_id
+            assert ms.basemap_gallery_group == gis.groups.search()[10]
             if bsmap_gall_group:
-                ms.basemap_gallery_group = bsmap_gall_group[3::]
+                ms.basemap_gallery_group = bsmap_gall_group.id
             else:
                 ms.basemap_gallery_group = bsmap_gall_group
 
@@ -307,11 +307,11 @@ class Test_MapSettingsClass(unittest.TestCase):
             # config apps group
             config_apps_group = ms.config_apps_group
             assert config_apps_group
-            group_id = gis.groups.search()[0].id
+            group_id = gis.groups.search()[10].id
             ms.config_apps_group = group_id
-            assert ms.config_apps_group == "id:" + group_id
+            assert ms.config_apps_group == gis.groups.search()[10]
             if config_apps_group:
-                ms.config_apps_group = gis.groups.search(config_apps_group[3::])[0]
+                ms.config_apps_group = config_apps_group.id
             else:
                 ms.config_apps_group = config_apps_group
 
@@ -321,13 +321,11 @@ class Test_MapSettingsClass(unittest.TestCase):
                 assert analysis_layer_group
             except:
                 assert analysis_layer_group == ""
-            group_id = gis.groups.search()[0].id
+            group_id = gis.groups.search()[10].id
             ms.analysis_layer_group = group_id
-            assert ms.analysis_layer_group == "id:" + group_id
+            assert ms.analysis_layer_group == gis.groups.search()[10]
             if len(analysis_layer_group) > 0:
-                ms.analysis_layer_group = gis.groups.search(analysis_layer_group[3::])[
-                    0
-                ]
+                ms.analysis_layer_group = gis.groups.search(analysis_layer_group.id)[0]
             else:
                 ms.analysis_layer_group = analysis_layer_group
 
@@ -363,6 +361,20 @@ class Test_ItemSettingsClass(unittest.TestCase):
             assert it_set.enable_comments is True
             it_set.enable_comments = comments
 
+            # enable metadata edit
+            edit = it_set.enable_metadata_edit
+            assert edit
+            it_set.enable_metadata_edit = False
+            assert it_set.enable_metadata_edit is False
+            it_set.enable_metadata_edit = edit
+
+            # metadata format
+            frmt = it_set.metadata_format
+            assert frmt
+            it_set.metadata_format = "inspire"
+            assert it_set.metadata_format == "inspire"
+            it_set.metadata_format = frmt
+
 
 class Test_SecuritySettingsClass(unittest.TestCase):
     """Tests Org Security Settings Class"""
@@ -372,6 +384,17 @@ class Test_SecuritySettingsClass(unittest.TestCase):
             gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
             ss = gis.admin.ux.security_settings
             assert isinstance(ss, SecuritySettings)
+
+    def test_properties(self):
+        for profile in PROFILES:
+            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+            ss = gis.admin.ux.security_settings
+
+            assert ss.enable_https in [True, False]
+            assert ss.anonymous_access
+            assert ss.enable_update_user_profile in [True, False]
+            assert ss.share_public in [True, False]
+            assert ss.show_social_media in [True, False]
 
     def test_informational_banner(self):
         for profile in PROFILES:
@@ -402,6 +425,21 @@ class Test_SecuritySettingsClass(unittest.TestCase):
                 )
             else:
                 assert ss.set_informational_banner(text=None, enabled=False)
+
+    def test_password_policy(self):
+        for profile in PROFILES:
+            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+            ss = gis.admin.ux.security_settings
+
+            # get password policy
+            assert ss.get_password_policy()
+
+            # change some settings
+            assert ss.update_password_policy(min_length=10, include_uppercase=True)
+            assert ss.get_password_policy()["minLength"] == 10
+            assert ss.get_password_policy()["minUpper"] == 1
+            # reset
+            assert ss.update_password_policy(min_length=8, include_uppercase=False)
 
 
 if __name__ == "__main__":

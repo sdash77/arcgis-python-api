@@ -298,31 +298,6 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @property
-    def enable_comments(self):
-        """
-        Get/Set item commenting and comments.
-
-        ================  ===============================================================
-        **Argument**      **Description**
-        ----------------  ---------------------------------------------------------------
-        enable            Optional boolean. If True, the comments for the site are turned
-                          on.  False will disable comments (default)
-        ================  ===============================================================
-
-        :return: True if enabled, False if disabled
-        """
-        return self.item_settings.enable_comments
-
-    # ----------------------------------------------------------------------
-    @enable_comments.setter
-    def enable_comments(self, enable: bool = False):
-        """
-        See main ``enable_comments`` property docstring.
-        """
-        self.item_settings.enable_comments = enable
-
-    # ----------------------------------------------------------------------
-    @property
     def description_visibility(self):
         """
         Get/Set the site's description visibility
@@ -551,7 +526,7 @@ class UX(object):
         body                Optional dict. Composed of three keys: "background", "text" and
                             "link" that determine the shared theme color for each of these keys.
         ----------------    ---------------------------------------------------------------
-        logo                Optional str. The file path to the image that will be uploaded
+        logo                Optional str. The file path or link to the image that will be uploaded
                             as the shared theme logo.
                             To remove the logo and not replace it then pass in: "REMOVE"
         ================    ===============================================================
@@ -598,8 +573,11 @@ class UX(object):
             im_item.share(everyone=True)
             # set in shared_theme dict
             shared_theme["logo"]["small"] = im_item.homepage + "/data"
-        if logo == "REMOVE":
-            shared_theme["logo"]["small"] = ""
+        elif logo == "REMOVE":
+            shared_theme["logo"] = {"small": "", "link": ""}
+        elif logo is not None:
+            # case where logo is a url link
+            shared_theme["logo"]["link"] = logo
 
         portal_properties["sharedTheme"] = shared_theme
         self._gis.update_properties({"portalProperties": portal_properties})
@@ -613,8 +591,15 @@ class UX(object):
         Choose a group whose content will be shown in the gallery.
         To change the group, assign either an instance of Group or the group id.
         Setting to None will revert to default.
+
+        :return: An instance of Group if a group is set, else the default or None
         """
-        return self._gis.properties["featuredItemsGroupQuery"]
+        group = self._gis.properties["featuredItemsGroupQuery"]
+        if "id:" in group:
+            # must use [3::] to slice string since format of: "id:123abc"
+            return self._gis.groups.search(group[3::])[0]
+        else:
+            return group
 
     # ----------------------------------------------------------------------
     @gallery_group.setter
@@ -668,6 +653,33 @@ class UX(object):
         map settings such as informational banner, password policy, etc.
         """
         return SecuritySettings(gis=self._gis)
+
+    # ----------------------------------------------------------------------
+    @property
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    def enable_comments(self):
+        """
+        Get/Set item commenting and comments.
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        enable            Optional boolean. If True, the comments for the site are turned
+                          on.  False will disable comments (default)
+        ================  ===============================================================
+
+        :return: True if enabled, False if disabled
+        """
+        return self.item_settings.enable_comments
+
+    # ----------------------------------------------------------------------
+    @enable_comments.setter
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
+    def enable_comments(self, enable: bool = False):
+        """
+        See main ``enable_comments`` property docstring.
+        """
+        self.item_settings.enable_comments = enable
 
     # ----------------------------------------------------------------------
     @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
@@ -1510,13 +1522,14 @@ class MapSettings(object):
         To change the group, assign either an instance of Group or the group id.
         Setting to None will revert to default.
 
-        :return: A Group Class instance
+        :return: An instance of Group if a group is set, else the default or None
         """
-        group_id = self._gis.properties["basemapGalleryGroupQuery"]
-        try:
-            return self._gis.groups.search(group_id[3::])[0]
-        except:
-            return None
+        group = self._gis.properties["basemapGalleryGroupQuery"]
+        if "id:" in group:
+            # must use [3::] to slice string since format of: "id:123abc"
+            return self._gis.groups.search(group[3::])[0]
+        else:
+            return group
 
     # ----------------------------------------------------------------------
     @basemap_gallery_group.setter
@@ -1622,9 +1635,16 @@ class MapSettings(object):
 
         Assign either an instance of Group class, a group id, or None to reset
         to default.
+
+        :return: An instance of group if a group is set, else the default or None
         """
         if "templatesGroupQuery" in self._gis.properties:
-            return self._gis.properties["templatesGroupQuery"]
+            group = self._gis.properties["templatesGroupQuery"]
+            if "id:" in group:
+                # must use [3::] to slice string since format of: "id:123abc"
+                return self._gis.groups.search(group[3::])[0]
+            else:
+                return group
         else:
             return "Default"
 
@@ -1671,6 +1691,7 @@ class MapSettings(object):
                                     to 3D Web Style.
         ======================      ==============================================
 
+        :return: dict indicating the group(s) set for the 2D and 3D styles
         """
         if isinstance(group, Group):
             group = "id:" + group.id
@@ -1686,7 +1707,12 @@ class MapSettings(object):
             res = self._gis.update_properties({"2DStylesGroupQuery": group})
         if three_dimensional_map:
             res = self._gis.update_properties({"stylesGroupQuery": group})
-        return res
+        return {
+            "2DStyles": self._gis.properties[
+                "2DStylesGroupQuery",
+                "3DStyles" : self._gis.properties["stylesGroupQuery"],
+            ]
+        }
 
     # ----------------------------------------------------------------------
     @property
@@ -1697,9 +1723,16 @@ class MapSettings(object):
         items that contain only a single layer with this group.
         If your feature layer item contains multiple layers, save any of the
         layers as an item and share it with the group.
+
+        :return: If set, an instance of Group else the default or None
         """
         if "analysisLayersGroupQuery" in self._gis.properties:
-            return self._gis.properties["analysisLayersGroupQuery"]
+            group = self._gis.properties["analysisLayersGroupQuery"]
+            if "id:" in group:
+                # must use [3::] to slice string since format of: "id:123abc"
+                return self._gis.groups.search(group[3::])[0]
+            else:
+                return group
         else:
             return "Default"
 
@@ -1759,7 +1792,53 @@ class ItemSettings(object):
         """
         See main ``enable_comments`` property docstring.
         """
-        return self._gis.update_properties({"commentsEnabled": enable})
+        self._gis.update_properties({"commentsEnabled": enable})
+
+    # ----------------------------------------------------------------------
+    @property
+    def enable_metadata_edit(self):
+        """
+        Get/Set item metadata editable ability.
+
+        ================  ===============================================================
+        **Argument**      **Description**
+        ----------------  ---------------------------------------------------------------
+        enable            Optional boolean. If True, the editing of metadata on items is turned
+                          on (default). False will disable metadata editing on items.
+        ================  ===============================================================
+        """
+        return self._gis.properties["metadataEditable"]
+
+    # ----------------------------------------------------------------------
+    @enable_metadata_edit.setter
+    def enable_metadata_edit(self, enable: bool):
+        self._gis.update_properties({"metadataEditable": enable})
+
+    # ----------------------------------------------------------------------
+    @property
+    def metadata_format(self):
+        """
+        Get/Set the metadata format used
+
+        Values: 'arcgis' | 'fgdc' | 'inspire' | 'iso19139' | 'iso19139-3.2' | 'iso19115'
+        """
+        return self._gis.properties["metadataFormats"][0]
+
+    # ----------------------------------------------------------------------
+    @metadata_format.setter
+    def metadata_format(self, format):
+        if format not in [
+            "arcgis",
+            "fgdc",
+            "inspire",
+            "iso19139",
+            "iso19139-3.2",
+            "iso19115",
+        ]:
+            raise ValueError("Format assigned is not an acceptable format.")
+        if self.enable_metadata_edit is not True:
+            self.enable_metadata_editable = True
+        self._gis.update_properties({"metadataFormats": format})
 
 
 #############################################################################
@@ -1813,7 +1892,7 @@ class SecuritySettings(object):
                             enabled (True) or disabled (False).
         ================    ===============================================================
 
-        :return: True if updated, else False.
+        :return: True if succeeded
         """
         # if user wants to change one thing, keep other settings
         if "informationalBanner" in self._gis.org_settings:
@@ -1825,32 +1904,247 @@ class SecuritySettings(object):
                 "fontColor": "black",
                 "enabled": False,
             }
-        if text is None:
-            text = current_info_banner["text"]
-        if bg_color is None:
-            bg_color = current_info_banner["bgColor"]
-        if font_color is None:
-            font_color = current_info_banner["fontColor"]
-        if enabled is None:
-            enabled = current_info_banner["enabled"]
+        # set new params if given
         informational_banner = {
-            "text": text,
-            "bgColor": bg_color,
-            "fontColor": font_color,
-            "enabled": enabled,
+            "text": text if text else current_info_banner["text"],
+            "bgColor": bg_color if bg_color else current_info_banner["bgColor"],
+            "fontColor": font_color if font_color else current_info_banner["fontColor"],
+            "enabled": enabled if enabled else current_info_banner["enabled"],
         }
 
+        # get all the org settings
         org_settings = self._gis.org_settings
+        # change the informational banner part
         org_settings["informationalBanner"] = informational_banner
+        # reset org settings
         self._gis.org_settings = org_settings
         return True
 
     # ----------------------------------------------------------------------
     def get_informational_banner(self):
         """
-        Get the informational banner dictionary from the org's setttings.
+        Get the informational banner dictionary from the org's settings.
+        If none set, return None
         """
         if "informationalBanner" in self._gis.org_settings:
             return self._gis.org_settings["informationalBanner"]
         else:
             return None
+
+    # ----------------------------------------------------------------------
+    @property
+    def enable_https(self):
+        """Allow access to the portal through HTTPS only (True)."""
+        return self._gis.properties["allSSL"]
+
+    # ----------------------------------------------------------------------
+    @enable_https.setter
+    def enable_https(self, enable: bool):
+        if enable in [True, False]:
+            self._gis.update_properties({"allSSL": enable})
+
+    # ----------------------------------------------------------------------
+    @property
+    def anonymous_access(self):
+        """Allow anonymous access to your Portal (True), or make private (False)"""
+        return self._gis.properties["access"]
+
+    # ----------------------------------------------------------------------
+    @anonymous_access.setter
+    def anonymous_access(self, access: bool):
+        if access is True:
+            access = "public"
+            bing = self._gis.properties["canShareBingPublic"]
+        elif access is False:
+            access = "private"
+            bing = False
+        self._gis.update_properties({"canShareBingPublic": bing, "access": access})
+
+    # ----------------------------------------------------------------------
+    @property
+    def enable_update_user_profile(self):
+        """Allow members to edit biographical information and who can see their profile."""
+        return self._gis.properties["updateUserProfileDisabled"]
+
+    # ----------------------------------------------------------------------
+    @enable_update_user_profile.setter
+    def enable_update_user_profile(self, enable: bool):
+        self._gis.update_properties({"updateUserProfileDisabled": enable})
+
+    # ----------------------------------------------------------------------
+    @property
+    def share_public(self):
+        """Members can share content publicly."""
+        return self._gis.properties["canSharePublic"]
+
+    # ----------------------------------------------------------------------
+    @share_public.setter
+    def share_public(self, enable: bool):
+        self._gis.update_properties({"canSharePublic": enable})
+
+    # ----------------------------------------------------------------------
+    @property
+    def show_social_media(self):
+        """
+        Show social media links on item and group pages.
+        """
+        if "showSocialMediaLinks" in self._gis.properties["portalProperties"]:
+            return self._gis.properties["portalProperties"]["showSocialMediaLinks"]
+        else:
+            return False
+
+    # ----------------------------------------------------------------------
+    @show_social_media.setter
+    def show_social_media(self, enable: bool):
+        pp = self._gis.properties["portalProperties"]
+        pp["showSocialMediaLinks"] = enable
+        self._gis.update_properties({"portalProperties": pp})
+
+    # ----------------------------------------------------------------------
+    def get_password_policy(self):
+        """
+        Get the password policy currently set for your org.
+        Returns a dictionary indicating the rules currently set as the policy.
+        """
+        url = self._portal.resturl + "/portals/self/securitypolicy"
+        params = {"f": "json"}
+        return self._gis._con.post(url, params)["passwordPolicy"]
+
+    # ----------------------------------------------------------------------
+    def update_password_policy(
+        self,
+        min_length: int | None = None,
+        include_uppercase: bool | None = None,
+        include_lowercase: bool | None = None,
+        include_letter: bool | None = None,
+        include_number: bool | None = None,
+        include_special_char: bool | None = None,
+        expires_in: int | None = None,
+        history_number: int | None = None,
+    ):
+        """
+        Set the password policy for members in your organization that have ArcGIS
+        accounts. Note that member passwords may not match their username. Weak
+        passwords will be rejected. You may set the following rules for
+        these passwords by turning them on (True) or off (False) and specifying a number
+        where requested.
+
+        =====================       ===============================================================
+        **Argument**                **Description**
+        ---------------------       ---------------------------------------------------------------
+        min_length                  Optional int. Password must contain at least the following
+                                    number of characters. Cannot set this under 8 characters.
+        ---------------------       ---------------------------------------------------------------
+        include_uppercase           Optional bool. Must contain at least one upper case letter (A-Z).
+        ---------------------       ---------------------------------------------------------------
+        include_lowercase           Optional bool. Must contain at least one lower case letter (a-z).
+        ---------------------       ---------------------------------------------------------------
+        include_letter              Optional bool. Must contain at least one letter (A-Z, a-z).
+        ---------------------       ---------------------------------------------------------------
+        include_number              Optional bool. Must contain at least one number (0-9).
+        ---------------------       ---------------------------------------------------------------
+        include_special_char        Optional bool. Must contain at least one special
+                                    (non-alphanumeric) character
+        ---------------------       ---------------------------------------------------------------
+        expires_in                  Optional int. Password expires after the specified number of days.
+                                    Value between 1 and 1095 days.
+                                    If value of 0 is passed in then it will disable this parameter.
+        ---------------------       ---------------------------------------------------------------
+        history_number              Optional int. Users cannot reuse the specified number of last passwords.
+                                    Password history may have a value between 1 and 24 passwords.
+                                    If value of 0 is passed in then it will disable this parameter.
+        =====================       ===============================================================
+
+
+        """
+        # Value checks before starting
+        if min_length and min_length < 8 and min_length > 1000:
+            return ValueError("The length of a password must be between 8 and 1000.")
+        if expires_in and expires_in > 1095:
+            return ValueError(
+                "The password expiration value must be between 1 and 1095 days to set, if 0 then will be turned off."
+            )
+        if history_number and history_number > 24:
+            return ValueError(
+                "The password history must have a value between 1 and 24 passwords, if 0 then will be turned off."
+            )
+
+        # set url
+        url = self._portal.resturl + "/portals/self/securitypolicy/update"
+
+        # get current settings, be careful not all settings are present
+        current_policy = self.get_password_policy()
+
+        policy = {
+            "f": "json",
+            "minLength": min_length if min_length else current_policy["minLength"],
+        }
+
+        # For all parameters, only need to set if True or value passed in.
+        # If current policy has it set and user specifies False, then need to remove.
+        # If None and does not exist in the current policy then can ignore.
+        # Include Uppercase
+        if include_uppercase is True:
+            policy["minUpper"] = 1
+        elif include_uppercase is False:
+            policy["minUpper"] = None
+        elif include_uppercase is None and "minUpper" in current_policy:
+            policy["minUpper"] = current_policy["minUpper"]
+        # Include Lowercase
+        if include_lowercase is True:
+            policy["minLower"] = 1
+        elif include_lowercase is False:
+            policy["minLower"] = None
+        elif include_lowercase is None and "minLower" in current_policy:
+            policy["minLower"] = current_policy["minLower"]
+        # Include Letter
+        if include_letter is True:
+            policy["minLetter"] = 1
+        elif include_letter is False:
+            policy["minLetter"] = None
+        elif include_letter is None and "minLetter" in current_policy:
+            policy["minLetter"] = current_policy["minLetter"]
+        # Include Number
+        if include_number is True:
+            policy["minDigit"] = 1
+        elif include_number is False:
+            policy["minDigit"] = None
+        elif include_number is None and "minDigit" in current_policy:
+            policy["minDigit"] = current_policy["minDigit"]
+        # Include Special Character
+        if include_special_char is True:
+            policy["minOther"] = 1
+        elif include_special_char is False:
+            policy["minOther"] = None
+        elif include_special_char is None and "minOther" in current_policy:
+            policy["minOther"] = current_policy["minOther"]
+        # Number Days Password Expires In
+        if expires_in:
+            if expires_in == 0:
+                policy["expirationInDays"] = None
+            else:
+                policy["expirationInDays"] = expires_in
+        elif "expirationInDays" in current_policy:
+            policy["expirationInDays"] = current_policy["expirationInDays"]
+        # Number Passwords In History
+        if history_number:
+            if history_number == 0:
+                policy["historySize"] = None
+            else:
+                policy["historySize"] = history_number
+        elif "historySize" in current_policy:
+            policy["historySize"] = current_policy["historySize"]
+
+        # send request
+        return self._gis._con.post(url, policy)
+
+    # ----------------------------------------------------------------------
+    def reset_password_policy(self):
+        """
+        Reset the password policy to base settings.
+        """
+        url = self._portal.resturl + "/portals/self/securitypolicy/reset"
+        params = {"f": "json"}
+        return self._gis._con.post(url, params)
+
+    # ----------------------------------------------------------------------
