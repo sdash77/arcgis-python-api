@@ -79,6 +79,23 @@ class Uploads(_BaseKube):
         return res
 
     # ----------------------------------------------------------------------
+    def download(self, item_id: str) -> str:
+        """
+        Downloads a previously uploaded file.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item_id             Required string. unique ID of the item
+        ===============     ====================================================================
+
+        :returns: str
+        """
+        url = self._url + "/%s/download" % item_id
+        params = {"f": "json"}
+        return self._con.get(url, params)
+
+    # ----------------------------------------------------------------------
     def item(self, item_id):
         """
         This resource represents an item that has been uploaded to the

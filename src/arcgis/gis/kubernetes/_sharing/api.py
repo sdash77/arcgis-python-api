@@ -1249,7 +1249,12 @@ class KbertnetesPy(object):
             username          string, name of user
             ================  ========================================================
         """
-        return self.con.post("community/users/" + username, self._postdata())
+        res = self.con.post("community/users/" + username, {'f': 'json'})
+        res2 = self.con.get(
+            "/community/self", {'f': 'json', "returnUserLicensedItems": True}
+        )
+        res2.update(res)
+        return res2
 
     # ----------------------------------------------------------------------
     def get_org_users(

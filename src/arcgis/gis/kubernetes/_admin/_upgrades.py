@@ -17,7 +17,10 @@ class UpgradeManager(_BaseKube):
     @property
     def version(self) -> Dict[str, Any]:
         """
-        Returns the Current Version of the software
+        Returns the current version for a deployment. When an patch or
+        release is installed, this resource will update to reflect the
+        information included in the update's version object as well as
+        the job messages recorded during the upgrade process.
         """
         url = f"{self._url}/currentVersion"
         params = {
