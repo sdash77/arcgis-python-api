@@ -1,10 +1,15 @@
+from __future__ import annotations
+
 try:
     import ujson as json
 except ImportError:
     import json
+import time
+import concurrent.futures
 from functools import lru_cache
 from arcgis._impl.common._mixins import PropertyMap
 from typing import Dict, Any, Optional, List
+from arcgis.gis import GIS
 
 ###########################################################################
 class KubeService(object):
@@ -411,7 +416,12 @@ class ServicesManager(object):
 
     # ----------------------------------------------------------------------
     def create_service(
-        self, service_json: dict = None, input_upload_id: str = None, folder: str = None
+        self,
+        service_json: dict = None,
+        *,
+        input_upload_id: str = None,
+        folder: str = None,
+        scaling_spec: dict = None,
     ) -> bool:
         """
         Creates a new GIS service in a folder (either the root or a sub-folder) by
@@ -425,6 +435,13 @@ class ServicesManager(object):
         folder              Optional String. The location to create the service in.  If the `folder`
                             if set on the `ServicesManager`, the `folder` parameter will override
                             the save location. The folder must exist before calling this method.
+        ---------------     --------------------------------------------------------------------
+        input_upload_id     Optional String. The upload ID for a service definition that
+                            contains information about service properties, capabilities, and the
+                            service type.
+        ---------------     --------------------------------------------------------------------
+        scaling_spec        Optional dict. The service scaling properties, represented as a JSON
+                            object. See: https://developers.arcgis.com/rest/enterprise-administration/enterprise/create-service.htm for more information.
         ===============     ====================================================================
 
         :return: Bool
@@ -440,10 +457,49 @@ class ServicesManager(object):
         else:
             url = f"{self._url}/createService"
         params = {"f": "json", "serviceJson": service_json}
+        if input_upload_id:
+            params["inputUploadId"] = input_upload_id
+
         res = self._con.post(url, params)
         if "status" in res:
             return res["status"] == "success"
         return res
+
+    # ----------------------------------------------------------------------
+    def _delete_services(self, services: list[dict[str, Any]]) -> bool:
+        """
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        services            Required list[dict[str, Any]]. A list of services, represented as a
+                            list of dictionaries containing the folders containing the services,
+                            the services' names, and the service types.
+                            Example
+                            ```{
+                               "folderName": "",
+                               "serviceName": "SampleWorldCities",
+                               "type": "MapServer"
+                              },
+                              {
+                               "folderName": "Planning",
+                               "serviceName": "FireHydrants",
+                               "type": "FeatureServer"
+                            }```
+
+        ---------------     --------------------------------------------------------------------
+        future              Optional Boolean.Indicates whether to process the operation in
+                            synchronous or asynchronous mode. The default value is False.
+                            When set to true, the operation returns a Future object that can be
+                            used as a request to retrieve the job status for the operation.
+        ===============     ====================================================================
+
+        :returns: bool | concurrent.futures.Future
+        """
+        url = self._url + "/deleteServices"
+        services = ",".join([json.dumps(service) for service in services])
+        params = {"f": "json", "services": services, "async": False}
+        res = self._con.post(url, params)
+        return res.get("success", False)
 
     # ----------------------------------------------------------------------
     def create_folder(self, folder: str) -> bool:
@@ -490,7 +546,21 @@ class ServicesManager(object):
             return False
 
     # ----------------------------------------------------------------------
-    def refresh_auto_deployment(self) -> bool:
+    def _status(self, url: str, gis: GIS) -> dict:
+        job = self._gis._con.get(url)
+        i = 0
+        while job["status"] == "EXECUTING":
+            job = self._gis._con.get(url)
+            time.sleep(i)
+            if i > 5:
+                i = 4
+            i += 1
+            if job["status"].lower() == "completed":
+                break
+        return job
+
+    # ----------------------------------------------------------------------
+    def refresh_auto_deployment(self, future: bool = True) -> bool:
         """
         This operation auto-deploys the System or Utility services if they failed to be deployed
         during site creation. This operation should only be performed if either the System or
@@ -500,15 +570,16 @@ class ServicesManager(object):
 
         """
         url = f"{self._url}/refreshAutodeployedServices"
-        params = {"f": "json"}
+        params = {"f": "json", "async": True}
         res = self._con.post(url, params)
-        if "status" in res:
-            return res["status"] == "success"
-        else:
-            return res
-
-    # ----------------------------------------------------------------------
-
-    # ----------------------------------------------------------------------
-    # ----------------------------------------------------------------------
-    # ----------------------------------------------------------------------
+        job_url = res.get("jobsUrl", None)
+        values = {"url": job_url, "gis": self._gis}
+        tp = concurrent.futures.ThreadPoolExecutor(1)
+        try:
+            future = tp.submit(fn=self._status, **values)
+        except:
+            future = tp.submit(self._status, **values)
+        tp.shutdown(False)
+        if future:
+            return future
+        return future.result()
