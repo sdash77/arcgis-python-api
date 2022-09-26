@@ -35,6 +35,20 @@ class KubeService(object):
         self._con = gis._con
 
     # ----------------------------------------------------------------------
+    def _status(self, url: str, gis: GIS) -> dict:
+        job = self._gis._con.get(url, {"f": "json"})
+        i = 0
+        while job["status"] == "EXECUTING":
+            job = self._gis._con.get(url, {"f": "json"})
+            time.sleep(i)
+            if i > 5:
+                i = 4
+            i += 1
+            if job["status"].lower() == "completed":
+                break
+        return job
+
+    # ----------------------------------------------------------------------
     def change_provier(self, provider: str) -> bool:
         """
         This operation is used to update an individual service to use either
@@ -161,12 +175,19 @@ class KubeService(object):
         """
         See main ``scaling`` property docstring
         """
+        future = True
         url = f"{self._url}/scaling/edit"
-        params = {
-            "f": "json",
-            "serviceScalingSpec": value,
-        }
-        return self._con.post(url, params)
+        params = {"f": "json", "serviceScalingSpec": value, "async": True}
+        res = self._con.post(url, params)
+        job_url = res.get("jobsUrl", None)
+        values = {"url": job_url, "gis": self._gis}
+        tp = concurrent.futures.ThreadPoolExecutor(1)
+        try:
+            future = tp.submit(fn=self._status, **values)
+        except:
+            future = tp.submit(self._status, **values)
+        tp.shutdown(False)
+        future.result()
 
     # ----------------------------------------------------------------------
     @property
@@ -547,10 +568,10 @@ class ServicesManager(object):
 
     # ----------------------------------------------------------------------
     def _status(self, url: str, gis: GIS) -> dict:
-        job = self._gis._con.get(url)
+        job = self._gis._con.get(url, {"f": "json"})
         i = 0
         while job["status"] == "EXECUTING":
-            job = self._gis._con.get(url)
+            job = self._gis._con.get(url, {"f": "json"})
             time.sleep(i)
             if i > 5:
                 i = 4
@@ -560,7 +581,7 @@ class ServicesManager(object):
         return job
 
     # ----------------------------------------------------------------------
-    def refresh_auto_deployment(self, future: bool = True) -> bool:
+    def refresh_auto_deployment(self, future: bool = False) -> bool:
         """
         This operation auto-deploys the System or Utility services if they failed to be deployed
         during site creation. This operation should only be performed if either the System or
