@@ -137,7 +137,7 @@ def enrich_geometry_list_test(enrich_src: Country, enrich_vars: Union[pd.DataFra
         assert all([[enrich_col in enrich_res_cols] for enrich_col in enrich_var_cols])
 
 
-class TestEnrich(unittest.TestCase):
+class TestEnrichLocal(unittest.TestCase):
 
     def setUp(self):
         self.usa_agol_inst = usa_agol()
@@ -236,6 +236,15 @@ class TestEnrich(unittest.TestCase):
         usa_local_inst = usa_local()
         usa_local_enrich_vars_inst = usa_local_enrich_vars()
         enrich_json_input_test(usa_local_inst, usa_local_enrich_vars_inst, self.assertRaises(ValueError))
+
+class TestEnrichOnline(unittest.TestCase):
+    def setUp(self):
+        self.usa_agol_inst = usa_agol()
+        self.usa_agol_enrich_vars_inst = usa_agol_enrich_vars()
+        self.polygon_df_inst = polygon_df()
+        self.line_df_inst = line_df()
+        self.point_df_inst = point_df()
+        self.stdgeo_srs_inst = stdgeo_srs()
 
     # ArcGIS Online
     @skip_if_no_agol
