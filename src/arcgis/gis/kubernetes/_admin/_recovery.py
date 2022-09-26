@@ -1,6 +1,8 @@
+from __future__ import annotations
 from arcgis.gis.kubernetes._admin._base import _BaseKube
 from arcgis.gis import GIS
 from typing import Dict, Any, Optional, List
+import datetime as _dt
 
 ###########################################################################
 class BackupStore(_BaseKube):
@@ -43,9 +45,21 @@ class Backup(_BaseKube):
 
         :return: Boolean. True if successful else False.
         """
-        url = "{self._url}/delete"
+        url = f"{self._url}/delete"
         params = {"f": "json"}
         return self._con.post(url, params).get("status") == "success"
+
+    # ---------------------------------------------------------------------
+    def validate(self) -> dict:
+        """
+        This operation ensures that the backup store is able to access the
+        object store and is ready for backup operations to be performed.
+
+        :returns: Dict
+        """
+        url = f"{self._url}/validate"
+        params = {"f": "json"}
+        return self._con.post(url, params)
 
     def restore(self, store_name: str, passcode: str) -> bool:
         """

@@ -102,6 +102,122 @@ class UpgradeManager(_BaseKube):
         }
         return self._con.post(url, params)
 
+    # ---------------------------------------------------------------------
+    def upgrades(
+        self,
+        version_manifest: str,
+        settings: dict,
+        manifest_file: str | None = None,
+    ):
+        """
+        The upgrade operation upgrades, through either a patch or a
+        release, an ArcGIS Enterprise on Kubernetes deployment to the
+        current version.
+
+        Before performing an upgrade, the unique ID associated with the
+        patch or release must be retrieved from the version manifest using
+        the available operation. The version manifest is a JSON array of
+        version objects that contain update-specific information, including
+        a JSON array of container objects that specify affected containers
+        and include their name, checksum, and image values.
+
+        Once the ID has been retrieved, you must also retrieve the required
+        upgrade settings that will be passed through as part of the upgrade
+        operation. Some settings will require user input before they can be
+        used during an upgrade. For more information about current upgrade
+        settings, see the Upgrade settings section below.
+
+        Once the upgrade job request has been submitted, the deployment
+        will either install a new patch on the base version or upgrade the
+        entire deployment to the latest release. While the job is running,
+        the upgrades resource will return detailed, real-time job messages
+        and status information. The upgrades resource's child operations
+        and resources will remain inaccessible for the duration of the
+        upgrade.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        version_manifest       Optional Dict[str, str]. The unique ID associated with a patch or
+                               release. You can get the version manifest ID for a patch or release
+                               from the JSON view of the available operation.
+        ------------------     --------------------------------------------------------------------
+        settings               Optional Dict[str, str]. A JSON object containing details for
+                               release upgrade settings. These settings, retrieved from the
+                               getUpgradeSettings operation, must be included in the request for
+                               the upgrade to be successful. Currently, the object supports the
+                               following three upgrade settings: updateToLatestPatch,
+                               licenseUpload, and volumesConfig. These settings are applicable to
+                               ArcGIS Enterprise on Kubernetes versions 11.0 and later.
+        ------------------     --------------------------------------------------------------------
+        manifest_file          Optional String. The file containing the version manifest.
+        ==================     ====================================================================
+
+        :return: Dict[str, Any]
+
+        """
+        url = f"{self._url}/upgrade"
+        params = {
+            "f": "json",
+            "versionManifest": version_manifest,
+            "upgradeSettings": settings,
+        }
+        files = {"licenseUpload": manifest_file}
+        if manifest_file:
+            return self._con.post(url, params, files=files)
+        else:
+            return self._con.post(url, params)
+
+    # ---------------------------------------------------------------------
+    def import_manifest(self, manifest: str) -> dict:
+        """
+        The importManifest operation allows organization administrators to
+        import the version manifest into a disconnected environment that
+        can be used to discover available updates and releases and upgrade
+        an ArcGIS Enterprise on Kubernetes deployment. The version manifest
+        must be downloaded from My Esri, which requires an initial internet
+        connection.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        manifest               Required String. The file containing the version manifest (.dat
+                               file), used to discover available updates or releases for an ArcGIS
+                               Enterprise on Kubernetes deployment.
+        ==================     ====================================================================
+
+        :returns: dict
+        """
+        url = f"{self._url}/importManifest"
+        params = {
+            "f": "json",
+        }
+        files = {"manifestFile": manifest}
+        return self._con.post_multipart(url, params, files=files)
+
+    # ---------------------------------------------------------------------
+
+    def upgrade_settings(self, upgrade_id: str) -> dict:
+        """
+        The getUpgradeSettings operation returns the required upgrade
+        settings, and their expected formats, needed for a specific
+        release, applicable to ArcGIS Enterprise on Kubernetes versions
+        11.0 and later. These settings must be passed through as values for
+        the upgradeSettings parameter to successfully upgrade an ArcGIS
+        Enterprise on Kubernetes deployment. Some upgrade settings may
+        require their value property to be modified before being submitted
+        as part of the upgrade operation. For example, when upgrading an
+        ArcGIS Enterprise on Kubernetes deployment from version 10.9.1 to
+        11.0, you will need to modify the value property for the
+        licenseUpload JSON object.
+        """
+        url = f"{self._url}/getUpgradeSettings"
+        params = {
+            "f": "json",
+            "upgradeId": upgrade_id,
+        }
+        return self._con.post(url, params)
+
     def available(self) -> Dict[str, List]:
         """
         This operation returns the version manifest, a cumulative list of
