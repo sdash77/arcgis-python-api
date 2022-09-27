@@ -2,7 +2,7 @@
 Connection Object that uses Python Requests
 
 Requires: requests, requests_toolbelt,
-Possible optional might be required: requests_ntlm2, requests_kerberos, requests-oauthlib
+Possible optional might be required: requests_kerberos, requests-oauthlib
 
 """
 from arcgis.auth.tools import LazyLoader

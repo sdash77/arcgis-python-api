@@ -29,11 +29,6 @@ try:
 except:
     HAS_KERBEROS = False
 
-try:
-    requests_ntlm2 = LazyLoader("requests_ntlm2", strict=True)
-    HAS_NTLM2 = True
-except:
-    HAS_NTLM2 = False
 
 requests = LazyLoader("requests")
 
@@ -73,28 +68,10 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
                 self.auth = requests_negotiate_sspi.HttpNegotiateAuth(
                     username=user, password=password, domain=domain
                 )
-            elif username and password:
-                send_cbt = kwargs.pop("send_cbt", True)
-                if HAS_NTLM2:
-
-                    ntlm_compatibility = kwargs.pop(
-                        "ntlm_compatibility",
-                        requests_ntlm2.NtlmCompatibility.NTLMv2_DEFAULT,
-                    )
-                    ntlm_strict_mode = kwargs.pop("ntlm_strict_mode", False)
-                    self.auth = requests_ntlm2.HttpNtlmAuth(
-                        username,
-                        password,
-                        send_cbt=send_cbt,
-                        ntlm_compatibility=ntlm_compatibility,
-                        ntlm_strict_mode=ntlm_strict_mode,
-                    )
-                else:
-                    self.auth = requests_ntlm2.HttpNtlmAuth(
-                        username, password, send_cbt=send_cbt
-                    )
             else:
-                raise ValueError("")
+                raise ValueError(
+                    "Could not login, please ensure requests_negotiate_sspi and requests_gssapi are installed."
+                )
         except ImportError:
             raise Exception(
                 "NTLM authentication requires requests_negotiate_sspi module."
