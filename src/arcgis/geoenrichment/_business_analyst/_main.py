@@ -1,21 +1,22 @@
 import asyncio
+import json
+import re
+import uuid
 from collections import namedtuple
 from copy import deepcopy
 from functools import lru_cache
-import json
 from pathlib import Path
-import re
 from typing import Union, Awaitable, Iterable, Optional
-import uuid
 from warnings import warn
 
-from arcgis.features import GeoAccessor, FeatureSet, FeatureCollection
-from arcgis.gis import GIS
-from arcgis.geometry import Geometry, SpatialReference
-from arcgis.network.analysis import get_travel_modes
-from arcgis._impl.common._utils import _lazy_property as lazy_property
 import pandas as pd
 
+from arcgis._impl.common._utils import _lazy_property as lazy_property
+from arcgis.features import GeoAccessor, FeatureSet
+from arcgis.geometry import Geometry, SpatialReference
+from arcgis.gis import GIS
+from arcgis.network.analysis import get_travel_modes
+from ._spatial import change_spatial_reference
 from ._utils import (
     add_proximity_to_enrich_feature_list,
     extract_from_kwargs,
@@ -31,7 +32,6 @@ from ._utils import (
     set_source,
     validate_network_travel_mode,
 )
-from ._spatial import change_spatial_reference
 
 __all__ = ["BusinessAnalyst", "Country"]
 
@@ -641,7 +641,7 @@ class Country(AOI):
         proximity_type: Optional[str] = None,
         proximity_value: Optional[Union[float, int]] = None,
         proximity_metric: Optional[str] = None,
-        output_spatial_reference: Union[int, dict, SpatialReference] = 4326,
+        output_spatial_reference: Union[int, dict, SpatialReference] = None,
         estimate_credits: bool = False,
         **kwargs,
     ) -> pd.DataFrame:
@@ -1400,52 +1400,60 @@ class BusinessAnalyst(object):
 
         return True
 
-    def _enrich_using_arrow(self,
-            in_sedf,
-            variables
-        ) -> pd.DataFrame:
+    def _enrich_using_arrow(self, in_sedf, variables) -> pd.DataFrame:
 
         # create a data frame with two columns: object id and shape in WKB
         df_input = pd.DataFrame()
 
-        df_input['OBJECTID'] = range(1, len(in_sedf) + 1)
+        df_input["OBJECTID"] = range(1, len(in_sedf) + 1)
         wkb_column = in_sedf[in_sedf.spatial.name].apply(lambda x: x.WKB)
-        df_input['SHAPE_WKB'] = wkb_column
+        df_input["SHAPE_WKB"] = wkb_column
 
         sr_wkt = in_sedf.spatial.sr.as_arcpy.exportToString()
 
         import pyarrow as pa
 
         # define schema, marking oid and geom fields
-        schema = pa.schema([
-            pa.field('OBJECTID', pa.int64(), metadata={"esri.oid": "esri.int64"}),
-            pa.field('SHAPE_WKB', pa.binary(),
-                     metadata={"ba_geom_format": "WKB", "ba_geometry": "True", "esri.sr_wkt": sr_wkt})
-        ])
+        schema = pa.schema(
+            [
+                pa.field("OBJECTID", pa.int64(), metadata={"esri.oid": "esri.int64"}),
+                pa.field(
+                    "SHAPE_WKB",
+                    pa.binary(),
+                    metadata={
+                        "ba_geom_format": "WKB",
+                        "ba_geometry": "True",
+                        "esri.sr_wkt": sr_wkt,
+                    },
+                ),
+            ]
+        )
 
         arrow_table = pa.Table.from_pandas(df_input, schema=schema)
 
         import arcpy._ba
+
         output_table = arcpy._ba.enrichArrowTable(arrow_table, variables, False)
 
         enrich_result_df = output_table.to_pandas()
 
         input_copy_df = in_sedf.copy()
-        input_copy_df['OBJECTID'] = range(1, len(in_sedf) + 1)
+        input_copy_df["OBJECTID"] = range(1, len(in_sedf) + 1)
 
         # join based on objectid
-        merged_df = input_copy_df.merge(enrich_result_df, on='OBJECTID')
-        merged_df.drop(['OBJECTID'], axis=1, inplace=True)
+        merged_df = input_copy_df.merge(enrich_result_df, on="OBJECTID")
+        merged_df.drop(["OBJECTID"], axis=1, inplace=True)
 
         # rearrange columns to move SHAPE to the last one
         orig_cols = merged_df.columns.tolist()
-        new_cols = [c for c in orig_cols if c != in_sedf.spatial.name] + [in_sedf.spatial.name]
+        new_cols = [c for c in orig_cols if c != in_sedf.spatial.name] + [
+            in_sedf.spatial.name
+        ]
         final_df = merged_df[new_cols]
 
         # return new SeDF based on final_df; shape column name is the same as before
         final_df.spatial.set_geometry(in_sedf.spatial.name)
         return final_df
-
 
     def enrich(
         self,
@@ -1455,7 +1463,7 @@ class BusinessAnalyst(object):
         proximity_value: Optional[Union[float, int]] = None,
         proximity_metric: Optional[str] = None,
         return_geometry: bool = True,
-        output_spatial_reference: Union[int, dict, SpatialReference] = 4326,
+        output_spatial_reference: Union[int, dict, SpatialReference] = None,
         estimate_credits: bool = False,
         **kwargs,
     ) -> pd.DataFrame:
@@ -1695,7 +1703,7 @@ class BusinessAnalyst(object):
         proximity_value: Union[float, int] = 1,
         proximity_metric: str = "Kilometers",
         return_geometry: bool = True,
-        output_spatial_reference: Union[int, dict, SpatialReference] = 4326,
+        output_spatial_reference: Union[int, dict, SpatialReference] = None,
         estimate_credits: bool = False,
         **kwargs,
     ) -> pd.DataFrame:
@@ -1831,11 +1839,9 @@ class BusinessAnalyst(object):
 
         # now, actually perform enrichment
         use_arrow = pro_at_least_version("3.1") and self._can_use_arrow(in_geo)
+
         if use_arrow:
-            enrich_res = self._enrich_using_arrow(
-                in_sedf=in_geo,
-                variables=evars
-            )
+            enrich_res = self._enrich_using_arrow(in_sedf=in_geo, variables=evars)
         else:
             enrich_res = arcpy.ba.EnrichLayer(
                 in_features=in_geo,
@@ -1857,7 +1863,13 @@ class BusinessAnalyst(object):
         )
 
         # convert the output to a spatially enabled dataframe if necessary (in 3.1 it's done in
-        enrich_df = enrich_res if use_arrow else GeoAccessor.from_featureclass(enrich_res)
+        enrich_df = (
+            enrich_res if use_arrow else GeoAccessor.from_featureclass(enrich_res)
+        )
+
+        if not use_arrow:
+            # in some cases from_featureclass returns a data frame that doesn't pass SEDF validation (enrich_df.spatial.validate)
+            enrich_df.spatial.set_geometry("SHAPE")
 
         # standardize columns to ensure results are as expected
         enrich_df.columns = [
@@ -1883,7 +1895,11 @@ class BusinessAnalyst(object):
         if return_geometry:
 
             # ensure the spatial reference is correct
-            enrich_df = change_spatial_reference(enrich_df, output_spatial_reference)
+
+            if output_spatial_reference:
+                enrich_df = change_spatial_reference(
+                    enrich_df, output_spatial_reference
+                )
 
             # removing unneeded columns - using inplace to preserve all spatial namespace properties
             enrich_df.drop(columns=drop_cols, inplace=True)
