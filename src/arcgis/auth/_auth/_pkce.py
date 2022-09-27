@@ -87,9 +87,9 @@ class PKCEOAuthHandler(BaseEsriAuth):
         else:
             raise Exception("Unable to generate oauth token")
         params = {
-            'oauth_state': oauth_state,
-            'username': username,
-            'password': password,
+            "oauth_state": oauth_state,
+            "username": username,
+            "password": password,
         }
         url = f"{self._url}/sharing/rest/oauth2/signin"
         response = self._session.post(
@@ -100,22 +100,22 @@ class PKCEOAuthHandler(BaseEsriAuth):
             allow_redirects=False,
         )
         if response.status_code == 302:
-            if 'Location' in response.headers:
+            if "Location" in response.headers:
                 oauth_code = (
-                    response.headers['Location'].split('code=')[1].split('&')[0]
+                    response.headers["Location"].split("code=")[1].split("&")[0]
                 )
 
             else:
-                raise Exception('Unable to generate oauth authorization code')
+                raise Exception("Unable to generate oauth authorization code")
         else:
-            raise Exception('Unable to generate oauth token\n{}'.format(response))
+            raise Exception("Unable to generate oauth token\n{}".format(response))
 
         params = {
-            'client_id': self._client_id,
-            'grant_type': 'authorization_code',
-            'redirect_uri': self._url,
-            'code_verifier': self._code_verifier,
-            'code': oauth_code,
+            "client_id": self._client_id,
+            "grant_type": "authorization_code",
+            "redirect_uri": self._url,
+            "code_verifier": self._code_verifier,
+            "code": oauth_code,
         }
         url = f"{self._url}/sharing/rest/oauth2/token"
 
@@ -129,15 +129,15 @@ class PKCEOAuthHandler(BaseEsriAuth):
         self._refresh_expires_in = _dt.datetime.now() + _dt.timedelta(
             seconds=(tokens.get("refresh_token_expires_in", 86300) / 60) - 300
         )
-        if 'error' in tokens.keys():
-            if 'message' in tokens['error']:
+        if "error" in tokens.keys():
+            if "message" in tokens["error"]:
                 raise Exception(
-                    'Error generating access token\n{}'.format(
-                        tokens['error']['message']
+                    "Error generating access token\n{}".format(
+                        tokens["error"]["message"]
                     )
                 )
             else:
-                raise Exception('Error generating access token')
+                raise Exception("Error generating access token")
 
         self._tokens = tokens
 
@@ -151,9 +151,9 @@ class PKCEOAuthHandler(BaseEsriAuth):
         if _dt.datetime.now() >= self._refresh_expires_in:
             self._signin(username=self._username, password=self._password)
         params = {
-            'client_id': self._client_id,
-            'grant_type': 'refresh_token',
-            'refresh_token': self._refresh_token_value,
+            "client_id": self._client_id,
+            "grant_type": "refresh_token",
+            "refresh_token": self._refresh_token_value,
         }
         url = f"{self._url}/sharing/rest/oauth2/token"
         response = self._session.post(
@@ -161,7 +161,7 @@ class PKCEOAuthHandler(BaseEsriAuth):
         )
         tokens = response.json()
         self._expires_in = _dt.datetime.now() + _dt.timedelta(
-            seconds=tokens.get('expires_in', 1800) - 300
+            seconds=tokens.get("expires_in", 1800) - 300
         )
         self._tokens.update(tokens)
 
@@ -263,4 +263,4 @@ class PKCEOAuthHandler(BaseEsriAuth):
             self._signin(username=self._username, password=self._password)
             return self.token
         else:
-            return self._tokens.get('access_token')
+            return self._tokens.get("access_token")
