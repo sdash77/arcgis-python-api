@@ -18,6 +18,47 @@ class BackupStore(_BaseKube):
         self._gis = gis
         self._con = gis._con
 
+    # ---------------------------------------------------------------------
+    def create(
+        self,
+        name: str,
+        passcode: str,
+        description: str | None = None,
+        retention_date: _dt.datetime | None = None,
+    ) -> dict:
+        """
+        Creates a backup that can be restored in the event of data loss,
+        data corruption, or deployment failures. Backups are stored in a
+        designated backup store.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        name                   Require string.
+        ------------------     --------------------------------------------------------------------
+        passcode               Required string.
+        ------------------     --------------------------------------------------------------------
+        description            Optional string.
+        ------------------     --------------------------------------------------------------------
+        retention_date         Optional datetime.datetime.
+        ==================     ====================================================================
+
+        :returns: dict
+        """
+        url = ""
+        params = {
+            "f": "json",
+            "name": name,
+            "passcode": passcode,
+        }
+
+    def update(self):
+        ...
+
+    def validate(self):
+        ...
+
+    # ---------------------------------------------------------------------
     def delete(self) -> bool:
         """Unregisters a backup store from the deploayment"""
         url = f"{self._url}/unregister"
