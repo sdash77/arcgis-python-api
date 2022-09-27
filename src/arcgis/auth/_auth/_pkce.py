@@ -12,7 +12,7 @@ from arcgis.auth.tools import parse_url
 from urllib.parse import parse_qs
 
 ###########################################################################
-class PKCEOAuthHandler(BaseEsriAuth):
+class EsriPKCEAuth(BaseEsriAuth):
     """Implements OAuth 2.0 PKCE Workflow"""
 
     _url = None

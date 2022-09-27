@@ -12,6 +12,7 @@ from ._auth import (
     EsriWindowsAuth,
     ArcGISProAuth,
     BaseEsriAuth,
+    EsriPKCEAuth,
 )
 from ._version import __version__
 
@@ -29,5 +30,6 @@ __all__ = [
     "EsriWindowsAuth",
     "ArcGISProAuth",
     "BaseEsriAuth",
+    "EsriPKCEAuth",
     "__version__",
 ]
