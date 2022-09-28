@@ -14207,13 +14207,12 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
             field_name=field_name, max_count=max_count
         )
 
-    def to_multidimensional_raster(self, variable_field_name, dimension_field_names):
-        return Raster(
-            self._raster_collection.toMultidimensionalRaster(
-                variable_field_name=variable_field_name,
-                dimension_field_names=dimension_field_names,
-            )
-        )
+    def get_field_values(self, field_name, max_count=0):
+        df = self._df
+        if max_count != 0:
+            return df[field_name].tolist()[0:max_count]
+        else:
+            return df[field_name].tolist()
 
     def max(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
         return Raster(
@@ -14345,7 +14344,7 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         value_geometries = []
         for index, field in enumerate(self.fields):
             try:
-                value = self.get_field_values(field)
+                value = self._raster_collection.getFieldValues(field)
                 if field == "Raster":
                     for i, ele in enumerate(value):
                         value_rasters.append(
@@ -14357,7 +14356,7 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
                         value_geometries.append(Geometry(ele.JSON))
                     data["Shape"] = value_geometries
                 else:
-                    data[field] = self.get_field_values(field)
+                    data[field] = self._raster_collection.getFieldValues(field)
             except:
                 continue
         return pd.DataFrame(data=data)
