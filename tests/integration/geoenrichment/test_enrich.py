@@ -63,8 +63,8 @@ def enrich_test(
         enrich_res_cols = list(enrich_res.columns)
         assert all([(enrich_col in enrich_res_cols) for enrich_col in enrich_var_cols])
 
-        # if input is data frame, also check that all source fields are still there
-        if isinstance(geom, pd.DataFrame):
+        # if input is data frame (except for std geo), also check that all source fields are still there
+        if isinstance(geom, pd.DataFrame) and not std_geo_lvl:
             input_columns = [c.lower() for c in geom.columns if c != geom.spatial.name]
             assert all(
                 [(input_col in enrich_res_cols) for input_col in input_columns]
