@@ -18,6 +18,8 @@ threading = LazyLoader("threading")
 _dt = LazyLoader("datetime")
 requests = LazyLoader("requests")
 requests_oauthlib = LazyLoader("requests_oauthlib")
+warnings = LazyLoader("warnings")
+
 _MSG = """
 
 You need to a security question by integer:
@@ -43,24 +45,26 @@ def _token_url_validator(
     url: str, session: "EsriSession", verify: bool = False, proxies: frozenset = None
 ) -> str:
     """validates the token url from the give URL"""
-    parts = ["/info", "/rest/info", "/sharing/rest/info"]
-    params = {"f": "json"}
-    if proxies:
-        proxies = dict(proxies)
-    parsed_url = _parse_arcgis_url(url=url)
-    token_url = None  # parsed_url + "/sharing/rest/generateToken"
-    for pt in parts:
-        try:
-            resp = session.get(
-                f"{parsed_url}{pt}?f=json", proxies=proxies, verify=verify
-            )  # need to include proxies, verify parameter
-            token_url = resp.json()["authInfo"]["tokenServicesUrl"]
-            if token_url:
-                break
-            del pt
-        except Exception as e:
-            pass
-    return token_url
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        parts = ["/info", "/rest/info", "/sharing/rest/info"]
+        params = {"f": "json"}
+        if proxies:
+            proxies = dict(proxies)
+        parsed_url = _parse_arcgis_url(url=url)
+        token_url = None  # parsed_url + "/sharing/rest/generateToken"
+        for pt in parts:
+            try:
+                resp = session.get(
+                    f"{parsed_url}{pt}?f=json", proxies=proxies, verify=verify
+                )  # need to include proxies, verify parameter
+                token_url = resp.json()["authInfo"]["tokenServicesUrl"]
+                if token_url:
+                    break
+                del pt
+            except Exception as e:
+                pass
+        return token_url
 
 
 # -------------------------------------------------------------------------

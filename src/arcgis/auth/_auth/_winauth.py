@@ -1,3 +1,4 @@
+from __future__ import annotations
 import platform
 from requests.auth import AuthBase
 from urllib.parse import parse_qs
@@ -181,7 +182,15 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
     _server_log = None
     _tokens = None
 
-    def __init__(self, referer: str = None, verify_cert: bool = True, **kwargs):
+    def __init__(
+        self,
+        referer: str | None = None,
+        verify_cert: bool = True,
+        *,
+        username: str | None = None,
+        password: str | None = None,
+        **kwargs,
+    ):
         """initializer"""
         if HAS_KERBEROS == False:
             raise ImportError(
@@ -199,11 +208,17 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
             self.referer = referer
 
         try:
-            import requests_kerberos
+            if username and password:
+                domain, username = username.split("\\")
+                self.auth = requests_kerberos.HTTPKerberosAuth(
+                    mutual_authentication=requests_kerberos.OPTIONAL,
+                    principal=f"{username}@{domain}:{password}",
+                )
+            else:
 
-            self.auth = requests_kerberos.HTTPKerberosAuth(
-                mutual_authentication=requests_kerberos.OPTIONAL
-            )
+                self.auth = requests_kerberos.HTTPKerberosAuth(
+                    mutual_authentication=requests_kerberos.OPTIONAL
+                )
         except ImportError:
             raise Exception(
                 "Kerberos authentication requires `requests_kerberos` module."

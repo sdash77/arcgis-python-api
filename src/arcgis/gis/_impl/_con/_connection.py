@@ -2,7 +2,7 @@
 Connection Object that uses Python Requests
 
 Requires: requests, requests_toolbelt,
-Possible optional might be required: requests_kerberos, requests-oauthlib
+Possible optional might be required: requests_ntlm2, requests_kerberos, requests-oauthlib
 
 """
 from arcgis.auth.tools import LazyLoader
@@ -242,6 +242,12 @@ class Connection(object):
             self._auth = "ANON"
         elif self._client_id:
             self._auth = "OAUTH"
+        elif (
+            (not username is None and not password is None)
+            and len(username.split("\\")) > 1
+            and "Negotiate" in auth_check
+        ):
+            self._auth = "KERBEROS"
         elif (not username is None and not password is None) and len(
             username.split("\\")
         ) > 1:
@@ -296,6 +302,7 @@ class Connection(object):
             "BASIC_REALM",
             "IWA",
             "NTLM",
+            "KERBEROS",
             "PKI",
         ]:
             self._session = self._portal_connection._session
@@ -584,6 +591,14 @@ class Connection(object):
                 password=self._password,
                 referer=self._referer,
                 verify_cert=self._verify_cert,
+            )
+        elif self._auth.lower() in ["kerberos"] and HAS_KERBEROS:
+            self._session.auth = EsriKerberosAuth(
+                proxies=self._proxy,
+                username=self._username,
+                password=self._password,
+                verify_cert=self._verify_cert,
+                legacy=False,
             )
         elif self._username and self._password and self._auth.lower() != "iwa":
             self._session.auth = GuessAuth(
