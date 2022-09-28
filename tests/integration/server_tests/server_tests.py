@@ -1,9 +1,10 @@
 """
 Tests Related to Server API Frame
 """
-import ssl
+import sys
 
-ssl._create_default_https_context = ssl._create_unverified_context
+sys.path.insert(0, r"c:\SVN\geosaurus_master\src")
+
 import unittest
 import pandas as pd
 import os, shutil
@@ -113,9 +114,13 @@ if AGOL_USERNAME and AGOL_PASSWORD:
     class ServerAGOLTest(unittest.TestCase):
         """test the AGOL Server functionality"""
 
-        def setUp(self):
-            self._gis = GIS(
-                url=AGOL_URL, username=AGOL_USERNAME, password=AGOL_PASSWORD
+        @classmethod
+        def setUpClass(cls):
+            cls._gis = GIS(
+                url=AGOL_URL,
+                username=AGOL_USERNAME,
+                password=AGOL_PASSWORD,
+                verify_cert=False,
             )
 
         # @unittest.SkipTest
@@ -303,27 +308,25 @@ class ServerCatalogCreationTests(unittest.TestCase):
         """catalog 931"""
         url_931 = URLS[1]
         server = ServicesDirectory(url=url_931)
+        assert server.properties
         self.assertIsInstance(server, ServicesDirectory)
 
     # ----------------------------------------------------------------------
+    @unittest.skip("url broken")
     def test_101_catalog(self):
         """catalog 10.1 Anonymous"""
         url_101 = URLS[0]
         server = ServicesDirectory(url=url_101)
+        assert server.properties
         self.assertIsInstance(server, ServicesDirectory)
 
     # ----------------------------------------------------------------------
+    @unittest.skip("url broken")
     def test_1005_catalog(self):
         """catalog 10.05 Anonymous"""
         url_1005 = URLS[2]
         server = ServicesDirectory(url=url_1005)
-        self.assertIsInstance(server, ServicesDirectory)
-
-    # ----------------------------------------------------------------------
-    def test_1002_catalog(self):
-        """catalog 10.02 Anonymous"""
-        url_1002 = URLS[3]
-        server = ServicesDirectory(url=url_1002)
+        assert server.properties
         self.assertIsInstance(server, ServicesDirectory)
 
     # ----------------------------------------------------------------------
@@ -331,6 +334,7 @@ class ServerCatalogCreationTests(unittest.TestCase):
         """catalog 10.41"""
         url_1041 = URLS[4]
         server = ServicesDirectory(url=url_1041)
+        assert server.properties
         self.assertIsInstance(server, ServicesDirectory)
 
     # ----------------------------------------------------------------------
@@ -686,7 +690,7 @@ class server_userandusers_test(unittest.TestCase):
                     url=ent["url"], username=ent["username"], password=ent["password"]
                 )
                 users = server.admin.users
-                self.assertIsInstance(users.me, str)
+                self.assertIsInstance(users.me, (str, User))
 
     # @unittest.SkipTest
     def test_search(self):

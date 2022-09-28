@@ -182,6 +182,11 @@ class Server(BaseServer):
     def __repr__(self) -> str:
         return "< %s @ %s >" % (type(self).__name__, self._url)
 
+    @property
+    def resouces(self) -> list:
+        """returns the list of resources available on the server administration endpoint."""
+        return self.properties.resources
+
     # ----------------------------------------------------------------------
     def publish_sd(
         self,
@@ -738,9 +743,9 @@ class Server(BaseServer):
     @property
     def _security(self) -> _security.Security:
         """Gets an object to work with the site security."""
-        if self.resources is None:
+        if self.properties is None:
             self._init()
-        if isinstance(self.resources, list) and "security" in self.resources:
+        if isinstance(self.properties.resources, list) and "security" in self.resources:
             url = self._url + "/security"
             return _security.Security(url=url, gis=self._con, initialize=True)
         else:

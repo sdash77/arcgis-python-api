@@ -4,7 +4,6 @@ Tests Related to Spatially Enabled Data Frame
 import sys
 import shutil
 import unittest
-import pytest
 import pandas as pd
 from arcgis.features import GeoSeriesAccessor, GeoAccessor
 from arcgis.features.geo import _is_geoenabled
@@ -29,7 +28,6 @@ from arcgis.features.geo._array import GeoArray
 from arcgis.gis.server._service import Service
 from arcgis.features import FeatureLayer
 import tempfile, uuid
-import pytest
 
 fs_urls = [
     "https://services.arcgis.com/P3ePLMYs2RVChkJx/ArcGIS/rest/services/World_Cities/FeatureServer/0",  # Point

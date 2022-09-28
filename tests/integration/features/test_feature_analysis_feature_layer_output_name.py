@@ -3,7 +3,6 @@ import sys
 import string
 import random
 import unittest
-import pytest
 import pandas as pd
 from arcgis.gis import GIS
 from arcgis.features.analysis import aggregate_points

@@ -44,7 +44,6 @@ try:
 except:
     _HAS_KEYRING = False
 
-# import pytest
 from arcgis.gis import GIS
 from arcgis.gis import ProfileManager
 
