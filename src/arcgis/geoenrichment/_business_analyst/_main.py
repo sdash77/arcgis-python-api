@@ -1405,7 +1405,9 @@ class BusinessAnalyst(object):
         # create a data frame with two columns: object id and shape in WKB
         df_input = pd.DataFrame()
 
-        df_input["OBJECTID"] = range(1, len(in_sedf) + 1)
+        # come up with index field that doesn't exist yet
+        oid_field_name = str(uuid.uuid4())
+        df_input[oid_field_name] = range(1, len(in_sedf) + 1)
         wkb_column = in_sedf[in_sedf.spatial.name].apply(lambda x: x.WKB)
         df_input["SHAPE_WKB"] = wkb_column
 
@@ -1416,7 +1418,9 @@ class BusinessAnalyst(object):
         # define schema, marking oid and geom fields
         schema = pa.schema(
             [
-                pa.field("OBJECTID", pa.int64(), metadata={"esri.oid": "esri.int64"}),
+                pa.field(
+                    oid_field_name, pa.int64(), metadata={"esri.oid": "esri.int64"}
+                ),
                 pa.field(
                     "SHAPE_WKB",
                     pa.binary(),
@@ -1438,11 +1442,16 @@ class BusinessAnalyst(object):
         enrich_result_df = output_table.to_pandas()
 
         input_copy_df = in_sedf.copy()
-        input_copy_df["OBJECTID"] = range(1, len(in_sedf) + 1)
+        input_copy_df[oid_field_name] = range(1, len(in_sedf) + 1)
+
+        # enrichArrowTable always outputs "OBJECTID" which represents the order of record in source
+        # we need to rename that field to avoid clashes
+        enrich_result_df.rename(columns={"OBJECTID": oid_field_name}, inplace=True)
+        enrich_result_df.drop(["ORIG_OID"], axis=1, inplace=True)
 
         # join based on objectid
-        merged_df = input_copy_df.merge(enrich_result_df, on="OBJECTID")
-        merged_df.drop(["OBJECTID"], axis=1, inplace=True)
+        merged_df = input_copy_df.merge(enrich_result_df, on=oid_field_name)
+        merged_df.drop([oid_field_name], axis=1, inplace=True)
 
         # rearrange columns to move SHAPE to the last one
         orig_cols = merged_df.columns.tolist()
