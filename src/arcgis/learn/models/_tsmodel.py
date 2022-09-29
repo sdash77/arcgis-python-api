@@ -209,8 +209,8 @@ class TimeSeriesModel(ArcGISModel):
             data._is_classification = _is_classification
             data._column_transforms_mapping = scaler
 
-            if index_field is not None:
-                data._index_field = index_field
+            # if index_field is not None:
+            data._index_field = index_field
 
             class_object = cls(
                 data,
