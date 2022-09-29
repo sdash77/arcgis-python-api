@@ -14,7 +14,7 @@ from ._io.fileops import (
     _sanitize_column_names,
     read_feather,
 )
-from ._io import _arrow
+
 from arcgis.auth.tools import LazyLoader
 
 os = LazyLoader("os")
@@ -2502,6 +2502,8 @@ class GeoAccessor(object):
         :returns: pyarrow.Table
 
         """
+        from ._io import _arrow
+
         _arrow._validate_dataframe(self._data)
         df = self._data
         # create geo metadata before altering incoming data frame
@@ -2533,6 +2535,8 @@ class GeoAccessor(object):
         :returns: pandas.DataFrame
 
         """
+        from ._io import _arrow
+
         return _arrow._arrow_to_sedf(table)
 
     # ----------------------------------------------------------------------
