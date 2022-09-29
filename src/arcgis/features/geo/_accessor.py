@@ -2485,7 +2485,7 @@ class GeoAccessor(object):
         return result
 
     # ----------------------------------------------------------------------
-    def to_arrow(self, index: bool = None) -> _pa.Table:
+    def to_arrow(self, index: bool = None) -> "pyarrow.Table":
         """
         Converts a Pandas DatFrome to an Arrow Table
 
@@ -2499,7 +2499,7 @@ class GeoAccessor(object):
                                output except `RangeIndex` which is stored as metadata only.
         ==================     ====================================================================
 
-        :returns: _pa.Table
+        :returns: pyarrow.Table
 
         """
         _arrow._validate_dataframe(self._data)
@@ -2519,7 +2519,7 @@ class GeoAccessor(object):
 
     # ----------------------------------------------------------------------
     @staticmethod
-    def from_arrow(table: _pa.Table) -> pd.DataFrame:
+    def from_arrow(table: "pyarrow.Table") -> pd.DataFrame:
         """
         Converts a Pandas DatFrome to an Arrow Table
 
