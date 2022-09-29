@@ -1733,7 +1733,7 @@ class ItemInformationManager(BaseServer):
 
         """
         url = "{base}/edit".format(base=self._url)
-        params = {"f": "json"}
+        params = {"f": "json", "serviceItemInfo": value}
         return self._con.post(url, params)
 
 
