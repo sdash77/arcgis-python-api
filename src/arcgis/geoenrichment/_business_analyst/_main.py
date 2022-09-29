@@ -1403,37 +1403,15 @@ class BusinessAnalyst(object):
     def _enrich_using_arrow(self, in_sedf, variables) -> pd.DataFrame:
 
         # create a data frame with two columns: object id and shape in WKB
-        df_input = pd.DataFrame()
+        df_input = in_sedf.copy()
+        df_input.spatial.set_geometry(in_sedf.spatial.name)
 
         # come up with index field that doesn't exist yet
         oid_field_name = str(uuid.uuid4())
         df_input[oid_field_name] = range(1, len(in_sedf) + 1)
-        wkb_column = in_sedf[in_sedf.spatial.name].apply(lambda x: x.WKB)
-        df_input["SHAPE_WKB"] = wkb_column
 
-        sr_wkt = in_sedf.spatial.sr.as_arcpy.exportToString()
-
-        import pyarrow as pa
-
-        # define schema, marking oid and geom fields
-        schema = pa.schema(
-            [
-                pa.field(
-                    oid_field_name, pa.int64(), metadata={"esri.oid": "esri.int64"}
-                ),
-                pa.field(
-                    "SHAPE_WKB",
-                    pa.binary(),
-                    metadata={
-                        "ba_geom_format": "WKB",
-                        "ba_geometry": "True",
-                        "esri.sr_wkt": sr_wkt,
-                    },
-                ),
-            ]
-        )
-
-        arrow_table = pa.Table.from_pandas(df_input, schema=schema)
+        geo_accessor = GeoAccessor(df_input)
+        arrow_table = geo_accessor.to_arrow()
 
         import arcpy._ba
 
@@ -1447,7 +1425,9 @@ class BusinessAnalyst(object):
         # enrichArrowTable always outputs "OBJECTID" which represents the order of record in source
         # we need to rename that field to avoid clashes
         enrich_result_df.rename(columns={"OBJECTID": oid_field_name}, inplace=True)
-        enrich_result_df.drop(["ORIG_OID"], axis=1, inplace=True)
+
+        if "ORIG_OID" in enrich_result_df:
+            enrich_result_df.drop(["ORIG_OID"], axis=1, inplace=True)
 
         # join based on objectid
         merged_df = input_copy_df.merge(enrich_result_df, on=oid_field_name)
