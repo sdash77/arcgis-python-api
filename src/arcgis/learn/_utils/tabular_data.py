@@ -173,12 +173,13 @@ class TabularDataObject(object):
                 except Exception as e:
                     warnings.warn(f"Unable to check for class imbalance [reason : {e}]")
                 if stratify:
-                    try:
-                        warnings.warn(
-                            f'We see a class imbalance in the dataset. The class(es) {",".join([str(key) for key in imabalanced_class_list.keys()])} doesnt have enough data points in your dataset.'
-                        )
-                    except:
-                        warnings.warn("We see a class imbalance in the dataset")
+                    if len(imabalanced_class_list) > 0:
+                        try:
+                            warnings.warn(
+                                f'We see a class imbalance in the dataset. The class(es) {",".join([str(key) for key in imabalanced_class_list.keys()])} does not have enough data points in your dataset.'
+                            )
+                        except:
+                            warnings.warn("We see a class imbalance in the dataset")
                     try:
                         from sklearn.model_selection import train_test_split
 
@@ -224,9 +225,13 @@ class TabularDataObject(object):
                             random_state=seed,
                         ).index.to_list()
                 else:
-                    warnings.warn(
-                        f'We see a class imbalance in the dataset. The class(es) {",".join(imabalanced_class_list.keys())} doesnt have enough data points in your dataset. Although, class imbalance cannot be overcome easily, adding the parameter stratify = True will to a certain extent help get over this problem.'
-                    )
+                    if len(imabalanced_class_list) > 0:
+                        try:
+                            warnings.warn(
+                                f'We see a class imbalance in the dataset. The class(es) {",".join([str(key) for key in imabalanced_class_list.keys()])} does not have enough data points in your dataset. Although, class imbalance cannot be overcome easily, adding the parameter stratify = True will to a certain extent help get over this problem.'
+                            )
+                        except:
+                            warnings.warn("We see a class imbalance in the dataset")
                     validation_indexes = tabular_data._dataframe.sample(
                         n=round(val_split_pct * len(tabular_data._dataframe)),
                         replace=False,
