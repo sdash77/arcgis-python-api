@@ -2487,7 +2487,7 @@ class GeoAccessor(object):
     # ----------------------------------------------------------------------
     def to_arrow(self, index: bool = None) -> "pyarrow.Table":
         """
-        Converts a Pandas DatFrome to an Arrow Table
+        Converts a Pandas DatFrame to an Arrow Table
 
         ==================     ====================================================================
         **Argument**           **Description**
