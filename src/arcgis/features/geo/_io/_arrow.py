@@ -195,11 +195,11 @@ def _sedf_to_arrow(df, index=None):
 
     # create geo metadata before altering incoming data frame
     geo_metadata = _create_metadata(df)
-    sname = df.spatial.name
 
-    geom_series = df[sname].geom.WKB
-    copy_geom = df["SHAPE"].copy()
-    df[sname] = geom_series
+    # sname = df.spatial.name
+    # geom_series = df[sname].geom.WKB
+    # copy_geom = df["SHAPE"].copy()
+    # df[sname] = geom_series
 
     table = Table.from_pandas(df, preserve_index=index)
 
@@ -208,7 +208,7 @@ def _sedf_to_arrow(df, index=None):
     metadata = table.schema.metadata
     metadata.update({b"geo": _encode_metadata(geo_metadata)})
     fin = table.replace_schema_metadata(metadata)
-    df[sname] = copy_geom
+    # df[sname] = copy_geom
     return fin
 
 

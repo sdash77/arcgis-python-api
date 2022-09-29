@@ -14,6 +14,7 @@ from ._io.fileops import (
     _sanitize_column_names,
     read_feather,
 )
+from ._io import _arrow
 from arcgis.auth.tools import LazyLoader
 
 os = LazyLoader("os")
@@ -29,7 +30,7 @@ _gis = LazyLoader("arcgis.gis")
 _geometry = LazyLoader("arcgis.geometry")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
 _isd = LazyLoader("arcgis._impl.common._isd")
-
+_pa = LazyLoader("pyarrow")
 
 _LOGGER = logging.getLogger(__name__)
 ############################################################################
@@ -2484,6 +2485,57 @@ class GeoAccessor(object):
         return result
 
     # ----------------------------------------------------------------------
+    def to_arrow(self, index: bool = None) -> _pa.Table:
+        """
+        Converts a Pandas DatFrome to an Arrow Table
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        index                  Optional Bool. If ``True``, always include the dataframe's
+                               index(es) as columns in the file output.
+                               If ``False``, the index(es) will not be written to the file.
+                               If ``None``, the index(ex) will be included as columns in the file
+                               output except `RangeIndex` which is stored as metadata only.
+        ==================     ====================================================================
+
+        :returns: _pa.Table
+
+        """
+        _arrow._validate_dataframe(self._data)
+        df = self._data
+        # create geo metadata before altering incoming data frame
+        geo_metadata = _arrow._create_metadata(df)
+        table = _pa.Table.from_pandas(df, preserve_index=index)
+
+        # Store geopandas specific file-level metadata
+        # This must be done AFTER creating the table or
+        # it is not persisted
+        metadata = table.schema.metadata
+        metadata.update({b"geo": _arrow._encode_metadata(geo_metadata)})
+        fin = table.replace_schema_metadata(metadata)
+
+        return fin
+
+    # ----------------------------------------------------------------------
+    @staticmethod
+    def from_arrow(table: _pa.Table) -> pd.DataFrame:
+        """
+        Converts a Pandas DatFrome to an Arrow Table
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        table                  Required pyarrow.Table. The Arrow Table to convert back into a
+                               spatially enabled dataframe.
+        ==================     ====================================================================
+
+        :returns: pandas.DataFrame
+
+        """
+        return _arrow._arrow_to_sedf(table)
+
+    # ----------------------------------------------------------------------
     def to_featureclass(
         self, location, overwrite=True, has_z=None, has_m=None, sanitize_columns=True
     ):
@@ -2595,7 +2647,7 @@ class GeoAccessor(object):
         Requires 'pyarrow'.
 
         WARNING: this is an initial implementation of Parquet file support and
-        associated metadata.  This is tracking version 0.1.0 of the metadata
+        associated metadata.  This is tracking version 0.4.0 of the metadata
         specification at:
         https://github.com/geopandas/geo-arrow-spec
 
