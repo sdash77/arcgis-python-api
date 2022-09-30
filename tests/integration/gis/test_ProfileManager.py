@@ -2,7 +2,6 @@
 import os
 import uuid
 import unittest
-import pytest
 from arcgis.gis import GIS
 from arcgis.gis._impl._profile import ProfileManager
 from arcgis.gis import login_profiles

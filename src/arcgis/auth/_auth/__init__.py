@@ -14,6 +14,7 @@ from ._token import (
 )  # legacy or for stand alone only
 from ._oauth import EsriOAuth2Auth
 from ._notebook import EsriNotebookAuth
+from ._pkce import EsriPKCEAuth
 
 __all__ = [
     "EsriAPIKeyAuth",
@@ -28,5 +29,5 @@ __all__ = [
     "ArcGISProAuth",
     "EsriWindowsAuth",
     "BaseEsriAuth",
-    "ArcGISServerAuth",
+    "EsriPKCEAuth",
 ]

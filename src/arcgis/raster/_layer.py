@@ -6295,7 +6295,7 @@ class ImageryLayer(Layer):
                                                  the values of dimension parameter other than the time dimension (dimension
                                                  name specified using dimension parameter)
         ------------------------------------     --------------------------------------------------------------------
-        show_values                              Optional bool. Default False.
+        show_values                              Optional boolean. Default False.
                                                  Set this parameter to True to display the values at each point in the line graph.
         ------------------------------------     --------------------------------------------------------------------
         trend_type                               Optional string. Default None.
@@ -6309,9 +6309,9 @@ class ImageryLayer(Layer):
 
                                                  This parameter is only included in the trend analysis for a harmonic regression.
         ------------------------------------     --------------------------------------------------------------------
-        plot_properties                          Optional dict. This parameter can be used to set the figure
-                                                 properties. These are the matplotlib.pyplot.figure() parameters and values
-                                                 specified in dict format.
+        plot_properties                          Optional dictionary. This parameter can be used to set the figure
+                                                 properties. These are the `matplotlib.pyplot.figure() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html#matplotlib-pyplot-figure>`_
+                                                 parameters and values specified in dictionary format.
 
                                                  eg: {"figsize":(15,15)}
         ====================================     ====================================================================
@@ -6684,7 +6684,7 @@ class ImageryLayer(Layer):
         plot_properties                 Optional dictionary. This parameter can be used to set the figure 
                                         properties. These are the
                                         `matplotlib.pyplot.figure() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html#matplotlib-pyplot-figure>`_
-                                        parameters and values specified in dict format.
+                                        parameters and values specified in dictionary format.
 
                                         Example:
                                          {"figsize":(15,15)}
@@ -6746,6 +6746,50 @@ class ImageryLayer(Layer):
             display_stats=display_stats,
             plot_properties=plot_properties,
             subplot_properties=subplot_properties,
+        )
+
+    def spectral_profile(
+        self,
+        points: list[Point] = [],
+        show_values: bool = False,
+        plot_properties: dict[str, Any] = {},
+    ):
+
+        """
+        The ``spectral_profile`` method can be used to create spectral profile charts.
+
+        Spectral profile charts allow you to select areas of interest or ground features on the image and review the spectral information of all bands in a chart format.
+
+        The x-axis of the spectral profile displays the band names
+
+        The y-axis of the spectral profile displays the spectral values.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        points                                   Required list of :class:`~arcgis.geometry.Point` objects.
+        ------------------------------------     --------------------------------------------------------------------
+        show_values                              Optional boolean. Default is False.
+                                                 Set this parameter to True to display the values at each point in the line graph.
+        ------------------------------------     --------------------------------------------------------------------
+        plot_properties                          Optional dictionary. This parameter can be used to set the figure
+                                                 properties. These are the `matplotlib.pyplot.figure() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html#matplotlib-pyplot-figure>`_
+                                                 parameters and values specified in dictionary format.
+
+                                                 eg: {"figsize":(15,15)}
+        ====================================     ====================================================================
+
+        :return:
+            None
+
+        """
+        from arcgis.raster._charts import spectral_profile
+
+        return spectral_profile(
+            self,
+            points=points,
+            show_values=show_values,
+            plot_properties=plot_properties,
         )
 
     def _repr_jpeg_(self):
@@ -8838,7 +8882,7 @@ class Raster:
         ----------------------------    --------------------------------------------------------------------
         plot_properties                 Optional dictionary. This parameter can be used to set the figure 
                                         properties. These are the `matplotlib.pyplot.figure() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html#matplotlib-pyplot-figure>`__ 
-                                        parameters and values specified in dict format.
+                                        parameters and values specified in dictionary format.
     
                                         Example:
                                             - {"figsize":(15,15)}
@@ -9438,7 +9482,6 @@ class _ImageServerRaster(ImageryLayer, Raster):
         self._engine = _ImageServerRaster
         self._path = path
         self._do_not_hydrate = False
-        self._created_from_collection = False
         self._mdinfo = None
         self._extent = None
         self._extent_set = False
@@ -9549,10 +9592,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
 
     @property
     def multidimensional_info(self):
-        if self._created_from_collection is True:
-            mdinfo = self._mdinfo
-        else:
-            mdinfo = super().multidimensional_info
+        mdinfo = super().multidimensional_info
         if mdinfo is not None:
             for index, ele in enumerate(mdinfo["multidimensionalInfo"]["variables"]):
                 # if (ele['name'] == variable_name):
@@ -14777,10 +14817,6 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         from arcgis.raster.functions import _simple_collection
 
         lyr = _simple_collection(self, md_info)
-        # lyr._engine_obj._fnra["rasterFunctionArguments"].update({"MultidimensionalInfo":md_info})
-        # lyr._engine_obj._fn["rasterFunctionArguments"].update({"MultidimensionalInfo":md_info})
-        lyr._engine_obj._created_from_collection = True
-        lyr._engine_obj._mdinfo = {"multidimensionalInfo": md_info}
         return lyr
 
     def max(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):

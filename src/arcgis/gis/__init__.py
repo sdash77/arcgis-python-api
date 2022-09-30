@@ -2697,6 +2697,8 @@ class UserManager(object):
         appBundles        List of dictionaries. An array of an app bundle's ID.
 
                           Example: `{"appBundles":[{"itemId": "99d7956c7e824ff4ab27422e2a26c2b7}]}`
+        ----------------  -------------------------------------------------------------------------------
+        clear             Optional Bool. When true, any empty field will reset the value to null.
         ================  ===============================================================================
 
         :return: Dictionary of the user settings
@@ -2714,6 +2716,7 @@ class UserManager(object):
         """
         See main ``user_settings`` property docstring
         """
+        clear = settings.pop("clear", None)
         user_li_lu = {
             "creatorUT": "creatorUT",
             "creator": "creatorUT",
@@ -2770,6 +2773,10 @@ class UserManager(object):
                         for grp in settings["groups"]
                         if isinstance(grp, Group)
                     ] + [grp for grp in settings["groups"] if isinstance(grp, str)]
+                    if len(settings["groups"]) == 0:
+                        settings["groups"] = ""
+                if clear:
+                    settings["clearEmptyFields"] = True
                 params.update(settings)
                 res = self._gis._con.post(url, params)
                 if "success" in res and res["success"] == False:
