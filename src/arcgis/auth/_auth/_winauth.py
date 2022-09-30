@@ -219,10 +219,18 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
             )
         self.proxies = kwargs.pop("proxies", None)
         self.legacy = kwargs.pop("legacy", False)
+
         self._server_log = {}
         self._tokens = {}
         self._token_url = None
         self.verify_cert = verify_cert
+
+        mutual_auth_lu = {
+            1: requests_kerberos.REQUIRED,
+            2: requests_kerberos.OPTIONAL,
+            3: requests_kerberos.DISABLED,
+        }
+        mutual_auth = mutual_auth_lu[kwargs.pop("mutual_authentication", 2)]
         if referer is None:
             self.referer = "http"
         else:
@@ -232,13 +240,14 @@ class EsriKerberosAuth(AuthBase, SupportMultiAuth):
             if username and password:
                 domain, username = username.split("\\")
                 self.auth = requests_kerberos.HTTPKerberosAuth(
-                    mutual_authentication=requests_kerberos.OPTIONAL,
+                    mutual_authentication=mutual_auth,
                     principal=f"{username}@{domain}:{password}",
+                    **kwargs,
                 )
             else:
 
                 self.auth = requests_kerberos.HTTPKerberosAuth(
-                    mutual_authentication=requests_kerberos.OPTIONAL
+                    mutual_authentication=mutual_auth, **kwargs
                 )
         except ImportError:
             raise Exception(

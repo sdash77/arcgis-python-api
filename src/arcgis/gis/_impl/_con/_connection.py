@@ -140,10 +140,11 @@ class Connection(object):
         legacy boolean. If True the token will be appended to the URL for GET and in the FORM POST.
         timeout:int=600
         use_gen_token = boolean - Uses the GenTokenAuth over EsriBuiltInAuth
-
+        security_kwargs = dict - a set of optional arguments for Kerberos Auth
         """
         from arcgis.gis import GIS
 
+        self._security_kwargs = kwargs.pop("security_kwargs", None)
         self._use_gen_token = kwargs.pop("use_gen_token", False)
         self._is_hosted_nb_home = kwargs.pop("is_hosted_nb_home", False)
         self._proxy = kwargs.pop("proxy", None)
@@ -241,7 +242,7 @@ class Connection(object):
         elif (
             (not username is None and not password is None)
             and len(username.split("\\")) > 1
-            and "Negotiate" in auth_check
+            and ("Negotiate" in auth_check or "Negotiate, NTLM" in auth_check)
         ):
             self._auth = "KERBEROS"
         elif (not username is None and not password is None) and len(
@@ -589,13 +590,23 @@ class Connection(object):
                 verify_cert=self._verify_cert,
             )
         elif self._auth.lower() in ["kerberos"] and HAS_KERBEROS:
-            self._session.auth = EsriKerberosAuth(
-                proxies=self._proxy,
-                username=self._username,
-                password=self._password,
-                verify_cert=self._verify_cert,
-                legacy=False,
-            )
+            if self._security_kwargs:
+                self._session.auth = EsriKerberosAuth(
+                    proxies=self._proxy,
+                    username=self._username,
+                    password=self._password,
+                    verify_cert=self._verify_cert,
+                    legacy=False,
+                    **self._security_kwargs,
+                )
+            else:
+                self._session.auth = EsriKerberosAuth(
+                    proxies=self._proxy,
+                    username=self._username,
+                    password=self._password,
+                    verify_cert=self._verify_cert,
+                    legacy=False,
+                )
         elif self._username and self._password and self._auth.lower() != "iwa":
             self._session.auth = GuessAuth(
                 username=self._username, password=self._password
