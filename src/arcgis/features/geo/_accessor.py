@@ -2523,7 +2523,7 @@ class GeoAccessor(object):
     @staticmethod
     def from_arrow(table: "pyarrow.Table") -> pd.DataFrame:
         """
-        Converts a Pandas DatFrome to an Arrow Table
+        Converts a Pandas DatFrame to an Arrow Table
 
         ==================     ====================================================================
         **Argument**           **Description**
