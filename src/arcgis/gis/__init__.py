@@ -382,7 +382,7 @@ class GIS(object):
         custom_adapter = kwargs.pop("adapter", None)
         self._expiration = kwargs.pop("expiration", None)
         security_kwargs = {
-            "mutual_authentication": kwargs.pop("override_hostname", None),
+            "mutual_authentication": kwargs.pop("mutual_authentication", None),
             "force_preemptive": kwargs.pop("force_preemptive", None),
             "hostname_override": kwargs.pop("hostname_override", None),
             "delegate": kwargs.pop("delegate", None),

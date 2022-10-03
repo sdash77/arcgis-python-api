@@ -235,6 +235,13 @@ class Connection(object):
             and self._portal_connection is None
             and self._client_id is None
             and str(baseurl).lower() != "pro"
+            and any(
+                [
+                    a in auth_check
+                    for a in ["Negotiate", "NTLM", "Negotiate, NTLM", "Basic", "basic"]
+                ]
+            )
+            == False
         ):
             self._auth = "ANON"
         elif self._client_id:
@@ -243,6 +250,10 @@ class Connection(object):
             (not username is None and not password is None)
             and len(username.split("\\")) > 1
             and ("Negotiate" in auth_check or "Negotiate, NTLM" in auth_check)
+        ):
+            self._auth = "KERBEROS"
+        elif (username is None and password is None) and (
+            "Negotiate" in auth_check or "Negotiate, NTLM" in auth_check
         ):
             self._auth = "KERBEROS"
         elif (not username is None and not password is None) and len(
@@ -606,6 +617,7 @@ class Connection(object):
                     password=self._password,
                     verify_cert=self._verify_cert,
                     legacy=False,
+                    **self._security_kwargs,
                 )
         elif self._username and self._password and self._auth.lower() != "iwa":
             self._session.auth = GuessAuth(
