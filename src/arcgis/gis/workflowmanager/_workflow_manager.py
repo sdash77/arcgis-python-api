@@ -101,11 +101,7 @@ class WorkflowManagerAdmin:
         params = {"name": name}
         return_obj = json.loads(
             self._gis._con.post(
-                url,
-                params=params,
-                try_json=False,
-                json_encode=False,
-                post_json=True
+                url, params=params, try_json=False, json_encode=False, post_json=True
             )
         )
         return_obj = return_obj["itemId"]

@@ -71,7 +71,7 @@ class TestWorkflowManager(unittest.TestCase):
             )
         except Exception as testException:
             assert True, (
-                    "Expected error returned during test: " + testException.__str__()
+                "Expected error returned during test: " + testException.__str__()
             )
 
     # endregion
@@ -97,7 +97,7 @@ class TestWorkflowManager(unittest.TestCase):
             self.connection.workflow_manager_admin.delete_item(fake_item)
         except Exception as testException:
             assert True, (
-                    "Expected error returned during test: " + testException.__str__()
+                "Expected error returned during test: " + testException.__str__()
             )
 
     # endregion
@@ -121,7 +121,7 @@ class TestWorkflowManager(unittest.TestCase):
             self.connection.workflow_manager_admin.upgrade_item(fake_item)
         except Exception as testException:
             assert True, (
-                    "Expected error returned during test: " + testException.__str__()
+                "Expected error returned during test: " + testException.__str__()
             )
 
     # endregion
@@ -162,8 +162,8 @@ class TestWorkflowManager(unittest.TestCase):
             password=portal_password,
             verify_cert=False,
             hostname_override=portal_url.replace("https://", "")
-                .replace(".ags", "")
-                .split("/")[0],
+            .replace(".ags", "")
+            .split("/")[0],
         )
         workflow_manager_admin = WorkflowManagerAdmin(gis)
 
