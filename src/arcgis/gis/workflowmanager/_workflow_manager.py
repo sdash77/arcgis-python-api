@@ -105,8 +105,7 @@ class WorkflowManagerAdmin:
                 params=params,
                 try_json=False,
                 json_encode=False,
-                post_json=True,
-                is_geoevent=True,
+                post_json=True
             )
         )
         return_obj = return_obj["itemId"]

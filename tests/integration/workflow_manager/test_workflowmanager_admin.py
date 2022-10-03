@@ -71,7 +71,7 @@ class TestWorkflowManager(unittest.TestCase):
             )
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
 
     # endregion
@@ -97,7 +97,7 @@ class TestWorkflowManager(unittest.TestCase):
             self.connection.workflow_manager_admin.delete_item(fake_item)
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
 
     # endregion
@@ -121,7 +121,7 @@ class TestWorkflowManager(unittest.TestCase):
             self.connection.workflow_manager_admin.upgrade_item(fake_item)
         except Exception as testException:
             assert True, (
-                "Expected error returned during test: " + testException.__str__()
+                    "Expected error returned during test: " + testException.__str__()
             )
 
     # endregion
@@ -153,10 +153,18 @@ class TestWorkflowManager(unittest.TestCase):
     def test_check_iwa_connection_returns_successfully(self):
         # Arrange
         portal_url = "https://rqawiniwa02pt.ags.esri.com/gis/home"
-        portal_username = "creator2"
+        portal_username = "avworld\\creator2"
         portal_password = "portalaccount1"
 
-        gis = GIS(url=portal_url, username=portal_username, password=portal_password)
+        gis = GIS(
+            url=portal_url,
+            username=portal_username,
+            password=portal_password,
+            verify_cert=False,
+            hostname_override=portal_url.replace("https://", "")
+                .replace(".ags", "")
+                .split("/")[0],
+        )
         workflow_manager_admin = WorkflowManagerAdmin(gis)
 
         # Create Testing Workflow Item
@@ -175,7 +183,7 @@ class TestWorkflowManager(unittest.TestCase):
 
             # Assertions
             self.assertIsInstance(roles, list, "Incorrect return type")
-            self.assertEqual(len(roles), 5, "Incorrect number of items downloaded")
+            self.assertEqual(len(roles), 4, "Incorrect number of items downloaded")
 
         except Exception as testException:
             print(
