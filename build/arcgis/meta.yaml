@@ -27,6 +27,7 @@ requirements:
   - pyshp >=2
   - requests >=2.27.1
   - requests-toolbelt
+  - requests_ntlm2
   - requests-kerberos
   - requests-oauthlib
   - requests-negotiate-sspi [win]

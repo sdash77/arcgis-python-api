@@ -89,7 +89,6 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
                     ntlm_compatibility=ntlm_compatibility,
                     ntlm_strict_mode=ntlm_strict_mode,
                 )
-                # self.auth = requests_ntlm2.HttpNtlmAuth(username=username, password=password)
             else:
                 raise ValueError(
                     "Could not login, please ensure requests_negotiate_sspi and requests_gssapi are installed."
