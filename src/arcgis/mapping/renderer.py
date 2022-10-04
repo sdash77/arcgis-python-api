@@ -7,7 +7,10 @@ from typing import Optional, Union
 from arcgis._impl.common._utils import chunks
 from arcgis.mapping._utils import _get_list_value, _format_colors, create_colormap
 from arcgis.mapping.symbol import create_symbol, _cmap2rgb
-import numpy as np
+from arcgis.auth.tools import LazyLoader
+import itertools
+
+np = LazyLoader("numpy")
 
 __all__ = ["generate_renderer"]
 
@@ -490,9 +493,13 @@ def _assemble_visual(
 ):
     """
     Helper function to put together a certain form of visual variables for
-    renderer functions. Less useful than visual_variables() but
-    necessary, for the time being, to ensure backwards compatibility for
-    users who may be using generate_renderer() with specific kwargs.
+    renderer functions.
+
+    Note: This was logic taken directly out of the old generate_renderer()
+    function so it didn't have to be repeated every time in the new, split
+    up renderer functions. This is just a temporary helper function that
+    will eventually be made obsolete by visual_variables(), but must exist
+    to ensure backwards compatibility for the time being.
     """
     vv = []
     if "size_field" in symbol_args:
@@ -1278,7 +1285,6 @@ def generate_classbreaks(
 
     def pairwise(iterable, fillvalue=999):
         "s -> (s0,s1), (s1,s2), (s2, s3), ..."
-        import itertools
 
         a, b = itertools.tee(iterable)
         next(b, fillvalue)

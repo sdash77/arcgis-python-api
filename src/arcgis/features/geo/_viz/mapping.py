@@ -12,7 +12,13 @@ from arcgis.mapping.renderer import (
     generate_unique,
 )
 from arcgis.mapping.symbol import create_symbol, display_colormaps, show_styles
-from arcgis.mapping.renderer import *
+from arcgis.mapping.renderer import (
+    generate_renderer,
+    generate_classbreaks,
+    generate_heatmap,
+    generate_simple,
+    generate_unique,
+)
 from arcgis.widgets import MapView
 
 CLASSIFICATIONS = {
