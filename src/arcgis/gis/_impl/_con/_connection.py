@@ -300,7 +300,9 @@ class Connection(object):
         ]:
             self._session = self._portal_connection._session
         else:
-            self._create_session()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self._create_session()
 
         #  Product Info
         if self._client_id:
@@ -308,7 +310,9 @@ class Connection(object):
         elif self._is_hosted_nb_home:
             self._product = "NOTEBOOK_SERVER"
         else:
-            self._product = self._check_product()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self._product = self._check_product()
         self._baseurl = self._validate_url(self._baseurl)
         self.baseurl = self._baseurl
 
