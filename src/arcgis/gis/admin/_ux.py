@@ -2388,3 +2388,449 @@ class SecuritySettings(object):
         if "mfaAdmins" in self._gis.properties:
             mfa["admins"] = self._gis.properties["mfaAdmins"]
         return mfa
+
+    # ----------------------------------------------------------------------
+    def set_email_settings(
+        self,
+        smtp_host: str,
+        smtp_port: int,
+        from_address: str,
+        from_address_label: str,
+        encryption_method: str = "SSL",
+        auth_required: bool = False,
+        username: str | None = None,
+        password: str | None = None,
+    ):
+        """
+        This operation allows you to configure email settings for your organization.
+        These settings will be used to send out email notifications from ArcGIS
+        Enterprise portal regarding password policy updates and license expirations.
+
+        .. note::
+            Not for ArcGIS Online.
+
+        =========================       ==================================================
+        **Argument**                    **Description**
+        -------------------------       --------------------------------------------------
+        smtp_host                       Requried string. The IP address, or the fully
+                                        qualified domain name (FDQN), of the SMTP Server.
+
+                                        Example: smtpServer=smtp.myorg.org
+        -------------------------       --------------------------------------------------
+        smtp_port                       Required integer. The port the SMTP Server will
+                                        communicate over. Some of the most common communication
+                                        ports are 25, 465, and 587.
+        -------------------------       --------------------------------------------------
+        from_address                    Required string. The email address that will be
+                                        used to send emails from the ArcGIS Enterprise portal.
+                                        It is recommended that the user associated with
+                                        this email address is listed under the Administrative
+                                        Contacts for your organization.
+        -------------------------       --------------------------------------------------
+        from_address_label              Required string. The label, or person, associated
+                                        with the fromEmailAddress. This information will be
+                                        displayed as the sender in the From line for
+                                        all email notifications.
+        -------------------------       --------------------------------------------------
+        encryption_method               Optional string. The encryption method for email
+                                        messages sent from ArcGIS Enterprise portal.
+
+                                        `Values: 'SSL' | 'TLS' | 'NONE'`
+        -------------------------       --------------------------------------------------
+        auth_required                   Optional bool. Specifies if authentication is
+                                        required (True) to connect with SMTP server specified
+                                        above. At 10.8.1, only basic authentication
+                                        (username and password) is supported.
+                                        The default is False.
+        -------------------------       --------------------------------------------------
+        username                        Optional string. If auth_required is True, this
+                                        specifies the username of a user who is authorized
+                                        to access the SMTP server. This field will be unable
+                                        to be defined if auth_required is False.
+        -------------------------       --------------------------------------------------
+        password                        Optional string. If auth_required is True, this
+                                        specifies the password associated the authorized
+                                        user specified above. This field will be unable to
+                                        be defined if auth_required is False.
+        =========================       ==================================================
+
+        :return: Dictionary indicating success or failure.
+        """
+        if self._gis._is_agol is True:
+            return None
+        url = self._portal.resturl + "portals/self/emailSettings/update"
+        params = {
+            "f": "json",
+            "smtpHost": smtp_host,
+            "smtpPort": smtp_port,
+            "fromAddress": from_address,
+            "fromAddressLabel": from_address_label,
+            "authRequired": auth_required,
+            "encryptionMethod": encryption_method,
+        }
+        if auth_required:
+            if username:
+                params["username"] = username
+            if password:
+                params["password"] = password
+
+        return self._gis._con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def get_email_settings(self):
+        """
+        This resource returns the email settings that have been configured
+        for your organization. These settings can be used to send out email
+        notifications from ArcGIS Enterprise portal about password policy
+        updates and user type, add-on, or organization capability license expirations.
+
+        :return: Dictionary of email settings, if None set then empty dict is returned.
+        """
+        if self._gis._is_agol is True:
+            return None
+        url = self._portal.resturl + "portals/self/emailSettings"
+        return self._gis._con.post(url, {"f": "json"})
+
+    # ----------------------------------------------------------------------
+    def delete_email_settings(self):
+        """
+        This operation deletes all previously configured email settings for
+        your organization. Once deleted, email notifications about password
+        policy changes and license expirations will no longer be received by
+        members listed under your Administrative Contacts.
+        As well, users will no longer be able to use their email to retrieve forgotten passwords.
+        """
+        if self._gis._is_agol is True:
+            return None
+        url = self._portal.resturl + "portals/self/emailSettings/delete"
+        return self._gis._con.post(url, {"f": "json"})
+
+    # ----------------------------------------------------------------------
+    def test_email_settings(self, mail_to: str):
+        """
+        This operation can be used once the email settings have been
+        configured using the set_email_settings operation to send a test
+        email via the SMTP server to ensure that the organization's email
+        settings have been properly configured. If successful, an email
+        will be sent out to the specified email address (mail_to).
+
+        =========================       ==================================================
+        **Argument**                    **Description**
+        -------------------------       --------------------------------------------------
+        mail_to                         Requried string. The email the test message will
+                                        be sent to.
+        =========================       ==================================================
+
+        :return: Dictionary result stating success and number of seconds to wait before rechecking.
+        """
+        if self._gis._is_agol is True:
+            return None
+        url = self._portal.resturl + "portals/self/emailSettings/test"
+        return self._gis._con.post(url, {"f": "json", "mailTo": mail_to})
+
+    # ----------------------------------------------------------------------
+    @property
+    def signin_settings(self):
+        """
+        Get the signin settings for the org.
+
+        :return: Dictionary response of the settings and their values
+        """
+        url = self._portal.resturl + "portals/self/signinSettings"
+        params = {"f": "json"}
+
+        return self._gis._con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def set_approved_apps(self, block_unapproved: bool = False):
+        """
+        Control which apps members are allowed to access without a
+        'Request for Permissions' prompt. Approved web apps can optionally be
+        made available to organization members in the App Launcher.
+
+        .. note::
+            Only available in ArcGIS Online
+
+        =========================       ==================================================
+        **Argument**                    **Description**
+        -------------------------       --------------------------------------------------
+        block_unapproved                Optional bool. Determine whether members can only
+                                        sign in to external apps that are approved. Default
+                                        is False.
+        =========================       ==================================================
+        """
+        if self._gis._is_agol is True:
+            url = self._portal.resturl + "portals/self/setSigninSettings"
+            params = {"f": "json", "blockUnapprovedThirdpartyApps": block_unapproved}
+
+            return self._gis._con.post(url, params)
+        else:
+            return False
+
+    # ----------------------------------------------------------------------
+    def set_blocked_apps(
+        self, block_beta_apps: bool = False, apps: list[str] | None = None
+    ):
+        """
+        Control which apps are blocked for all members in your organization
+        in order to comply with regulations, standards, and best practices.
+
+        .. note::
+            Only available in ArcGIS Online
+
+        =========================       ==================================================
+        **Argument**                    **Description**
+        -------------------------       --------------------------------------------------
+        block_beta_apps                 Optional bool. Block Esri apps while they are in beta.
+                                        Default is False.
+        =========================       ==================================================
+
+        :return: Json dictionary response indicating success or failure.
+        """
+        if self._gis._is_agol is True:
+            url = self._portal.resturl + "portals/self/setSigninSettings"
+            params = {
+                "f": "json",
+                "blockBetaApps": block_beta_apps,
+            }
+
+            return self._gis._con.post(url, params)
+        else:
+            return False
+
+    # ----------------------------------------------------------------------
+    def set_social_media_login(
+        self,
+        social_login: bool,
+        social_networks: list[str] | None = None,
+        social_network_order: list[str] | None = None,
+    ):
+        """
+        Customize the organization's sign in page so that members can sign in using any
+        of the methods below. The order they appear here will determine the order that
+        they appear in the sign in page.
+
+        =========================       ==================================================
+        **Argument**                    **Description**
+        -------------------------       --------------------------------------------------
+        social_login                    Required bool. Allow members to sign up and sign in
+                                        to your organization using their login from the
+                                        following social networks: Facebook, Google, Github, Apple
+        -------------------------       --------------------------------------------------
+        social_networks                 Optional list of strings. The social networks allowed to
+                                        use as sign in options for the org.
+
+                                        Options: Facebook, Google, Github, Apple
+        -------------------------       --------------------------------------------------
+        social_network_order            Optional list of strings. The order in which the
+                                        social network login options will appear on the
+                                        login page.
+
+                                        If none is set then current settings are used.
+        =========================       ==================================================
+
+        """
+        if self._gis._is_agol is True:
+            # Update if can sign in with social media
+            url = self._portal.resturl + "portals/self/update"
+            params = {
+                "f": "json",
+                "canSignInSocial": social_login,
+            }
+            res = self._gis._con.post(url, params)
+            # Update the social networks used
+            if social_login and social_networks:
+                url = self._portal.resturl + "portals/self/setSigninSettings"
+                signin_options = self.signin_settings
+                if "signinOptionsOrder" in signin_options:
+                    params = signin_options
+                    params["f"] = "json"
+                else:
+                    params = {
+                        "f": "json",
+                        "signinOptionsOrder": {
+                            "logins": ["arcgis", "social"],
+                            "social": ["facebook", "google", "github", "apple"],
+                        },
+                    }
+                # specify order if passed in
+                if social_network_order:
+                    params["social"] = social_network_order
+                res = self._gis._con.post(url, params)
+                # configure the social providers
+                for network in social_networks:
+                    networks = []
+                    if network.lower() in ["facebook", "google", "github", "apple"]:
+                        networks.append(network)
+                url = self._portal.resturl + "portals/self/socialProviders/configure"
+                params = {
+                    "f": "json",
+                    "providers": ",".join(networks).lower(),
+                    "signUpMode": "Invitation",
+                }
+                res = self._gis._con.post(url, params)
+            return res
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    def enable_arcgis_online_login(self, enable: bool):
+        """
+        Allow users to sign in with their ArcGIS login.
+        """
+        url = self._portal.resturl + "portals/self/update"
+        params = {"f": "json", "canSignInArcGIS": enable}
+
+        return self._gis._con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def register_idp(
+        self,
+        name: str,
+        metadata_file: str | None = None,
+        metadata_url: str | None = None,
+        binding_url: str | None = None,
+        post_binding_url: str | None = None,
+        logout_url: str | None = None,
+        entity_id: str | None = None,
+        signup_mode: str = "Invitation",
+        encryption_supported: bool = False,
+        support_signed_request: bool = False,
+        use_SHA256: bool = False,
+        support_logout_request: bool = False,
+        update_profile_at_signin: bool = False,
+        update_groups_at_signin: bool = False,
+    ):
+        """
+        Allows organization administrators to configure a new enterprise login.
+        Configuring enterprise login allows members of your organization to sign
+        in to your organization using the same logins they use to access your
+        enterprise information systems without creating additional logins.
+        ArcGIS Online and ArcGIS Enterprise are compliant with SAML 2.0 and integrate
+        with IDPs that support SAML 2 web single sign-on for securely exchanging
+        authentication and authorization data between your organization and ArcGIS Online
+        or ArcGIS Enterprise as a service provider (SP). An organization can be set up
+        using either a single IDP or a federation, but not both.
+
+        =========================       ==================================================
+        **Argument**                    **Description**
+        -------------------------       --------------------------------------------------
+        name                            Required string. The identity provider name.
+        -------------------------       --------------------------------------------------
+        metadata_file                   Optional string. Metadata file that contains information
+                                        about the IDP. One can also specify the settings
+                                        using metadata_url or binding_url and post_binding_url
+                                        parameters alternatively.
+        -------------------------       --------------------------------------------------
+        metadata_url                    Optional string. Metadata URL that returns information
+                                        about information about the IDP.
+        -------------------------       --------------------------------------------------
+        binding_url                     Optional string. The HTTP redirect binding IDP's
+                                        URL that your organization uses to allow a member
+                                        to sign in.
+        -------------------------       --------------------------------------------------
+        post_binding_url                Optional string. The HTTP POST binding IDP's URL
+                                        that your organization uses to allow a member to sign in.
+        -------------------------       --------------------------------------------------
+        logout_url                      Optional string. IDP URL used to sign out a signed-in
+                                        user (automatically set if the property is specified
+                                        in the IDP metadata file).
+        -------------------------       --------------------------------------------------
+        entity_id                       Optional string. Entity ID used to identify the
+                                        organization in IDP.
+        -------------------------       --------------------------------------------------
+        signup_mode                     Optional string. Specifies whether enterprise members
+                                        join the organization automatically or through an invitation.
+
+                                        `Values: 'Automatic' | 'Invitation'`
+        -------------------------       --------------------------------------------------
+        encryption_supported            Optional bool. If True, it indicates to the identity
+                                        provider that encrypted SAML assertion responses
+                                        are supported. The default is False.
+        -------------------------       --------------------------------------------------
+        support_signed_request          Optional bool. If True, the organization signs the
+                                        SAML authentication request sent to the IDP.
+                                        The default is False.
+        -------------------------       --------------------------------------------------
+        use_SHA256                      Optional bool. If True, the organization signs the
+                                        request using the SHA-256 hash function. This is
+                                        used when support_signed_request is True.
+                                        The default is False.
+        -------------------------       --------------------------------------------------
+        support_logout_request          Optional bool. If True, signing out of the organization
+                                        propagates logout of the IDP. The default is False.
+        -------------------------       --------------------------------------------------
+        update_profile_at_signin        Optional bool. If True, automatically syncs user
+                                        account information (that is, full name and email address)
+                                        stored in your organization with the information
+                                        received from the IDP. The default is False.
+        -------------------------       --------------------------------------------------
+        update_groups_at_signin         Optional bool. If True, enables SAML-based group
+                                        membership that allows organization members to link
+                                        specified SAML-based enterprise groups to your
+                                        organization's groups during group creation.
+                                        The default is False.
+        =========================       ==================================================
+
+        :return: Dictionary json response indicating success and IDP Id
+        """
+        url = self._portal.resturl + "portals/self/idp/register"
+        params = {
+            "f": "json",
+            "name": name,
+            "idpMetadataFile": metadata_file,
+            "idpMetadataUrl": metadata_url,
+            "bindingUrl": binding_url,
+            "postBindingUrl": post_binding_url,
+            "logoutUrl": logout_url,
+            "entityId": entity_id,
+            "signUpMode": signup_mode,
+            "encryptionSupported": encryption_supported,
+            "supportSignedRequest": support_signed_request,
+            "useSHA256": use_SHA256,
+            "supportsLogoutRequest": support_logout_request,
+            "updateProfileAtSignin": update_profile_at_signin,
+            "updateGroupsAtSignin": update_groups_at_signin,
+        }
+
+        return self._gis._con.post(url, params)
+
+    # ----------------------------------------------------------------------
+    def unregister_idp(self, idp: str):
+        """
+        The unregister IDP operation (POST only) allows organization
+        administrator to remove the enterprise login set up with a single identity provider.
+
+        ==================      =======================================
+        **Argument**            **Description**
+        ------------------      ---------------------------------------
+        idp                     The idp id to unregister.
+        ==================      =======================================
+
+        :return: Json dictionary response indicating success.
+        """
+        url = self._portal.resturl + "portals/self/idp/{idp}/register"
+        return self._gis._con.post(url, {"f": "json"})
+
+    # ----------------------------------------------------------------------
+    def get_idp(self, idp: str | None = None):
+        """
+        List organization identity federation information configured using a
+        single identity provider such as Active Directory Federation
+        Services (ADFS) 2.0 and later, Okta, NetIQ Access Manager 3.2
+        and later, OpenAM 10.1.0 and later, Shibboleth 3.2 and later, etc.
+
+        ==================      =======================================
+        **Argument**            **Description**
+        ------------------      ---------------------------------------
+        idp                     The idp to get. If none provided, all
+                                available are returned.
+        ==================      =======================================
+
+        :return: Json Dictionary response
+        """
+        if idp:
+            url = self._portal.resturl + "portals/self/idp/{idp}"
+        else:
+            url = self._portal.resturl + "portals/self/idp"
+        return self._gis._con.post(url, {"f": "json"})

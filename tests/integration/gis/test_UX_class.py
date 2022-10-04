@@ -391,7 +391,7 @@ class Test_SecuritySettingsClass(unittest.TestCase):
             ss = gis.admin.ux.security_settings
 
             assert ss.enable_https in [True, False]
-            assert isinstance(ss.anonymous_access, dict)
+            assert isinstance(ss.anonymous_access, str)
             assert isinstance(ss.allowed_origins, list)
             assert isinstance(ss.allowed_redirect_uris, list)
             assert ss.enable_update_user_profile in [True, False]
@@ -455,15 +455,15 @@ class Test_SecuritySettingsClass(unittest.TestCase):
                 assert orig is None
 
             # Set a test notice
-            assert ss.get_org_access_notice(
+            assert ss.set_org_access_notice(
                 "TEST FOR UX MODULE", "TEST FOR UX MODULE", "okOnly"
             )
             if orig:
-                assert ss.get_org_access_notice(
+                assert ss.set_org_access_notice(
                     orig["title"], orig["text"], orig["buttons"]
                 )
             else:
-                assert ss.get_org_access_notice()
+                assert ss.set_org_access_notice()
 
     def test_anonymous_access_notice(self):
         for profile in PROFILES:
@@ -513,6 +513,66 @@ class Test_SecuritySettingsClass(unittest.TestCase):
                 )
             else:
                 assert ss.set_multifactor_authentication(enabled=False)
+
+    def test_email_settings(self):
+        for profile in PROFILES:
+            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+            ss = gis.admin.ux.security_settings
+            if gis._is_agol is True:
+                continue
+            # get
+            assert ss.get_email_settings
+
+            assert ss.set_email_settings(
+                smtp_host="smtp.gmail.com", smtp_port=25, from_address="test@gmail.com"
+            )
+            assert ss.delete_email_settings()
+
+    def test_signin_settings(self):
+        for profile in PROFILES:
+            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+            ss = gis.admin.ux.security_settings
+
+            assert isinstance(ss.signin_settings, dict)
+
+    def test_apps(self):
+        for profile in PROFILES:
+            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+            ss = gis.admin.ux.security_settings
+            if gis._is_agol is False:
+                continue
+            assert ss.set_approved_apps(True)
+            assert ss.set_approved_apps(False)
+
+            assert ss.set_blocked_apps(True)
+            assert ss.set_blocked_apps(False)
+
+    def test_social_media_login(self):
+        for profile in PROFILES:
+            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+            ss = gis.admin.ux.security_settings
+
+            assert ss.set_social_media_login(False)
+            assert ss.signin_settings["signinOptionsOrder"]["logins"] == ["arcgis"]
+            assert ss.set_social_media_login(
+                True, ["facebook"], ["facebook", "github", "google", "apple"]
+            )
+            assert ss.signin_settings["signinOptionsOrder"]["social"] == [
+                "facebook",
+                "github",
+                "google",
+                "apple",
+            ]
+            assert ss.set_social_media_login(
+                True, ["facebook"], ["facebook", "google", "github", "apple"]
+            )
+
+    def test_idp(self):
+        for profile in PROFILES:
+            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+            ss = gis.admin.ux.security_settings
+
+            assert isinstance(ss.get_idp(), dict)
 
 
 if __name__ == "__main__":
