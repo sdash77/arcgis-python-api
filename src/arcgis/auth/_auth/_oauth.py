@@ -12,6 +12,7 @@ from ._schain import SupportMultiAuth
 from ..tools._lazy import LazyLoader
 from ..tools import parse_url
 
+warnings = LazyLoader("warnings")
 re = LazyLoader("re")
 json = LazyLoader("json")
 webbrowser = LazyLoader("webbrowser")
@@ -131,18 +132,19 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
             oauth.verify = False
             if self._proxies:
                 oauth.proxies = self._proxies
-
-            res = oauth.fetch_token(
-                token_url=tu,
-                username=self._username,
-                password=self._password,
-                client_id=self._client_id,
-                client_secret=self._client_secret,
-                include_client_id=True,
-                verify=False,
-                proxies=self._proxies,
-                expiration=26000,
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                res = oauth.fetch_token(
+                    token_url=tu,
+                    username=self._username,
+                    password=self._password,
+                    client_id=self._client_id,
+                    client_secret=self._client_secret,
+                    include_client_id=True,
+                    verify=False,
+                    proxies=self._proxies,
+                    expiration=26000,
+                )
             if "expires_in" in res:
                 self._create_time = _dt.datetime.fromtimestamp(
                     res["expires_at"]
