@@ -479,4 +479,18 @@ basemap_dict = {
             "url": "https://ibasemaps-api.arcgis.com/arcgis/rest/services/Elevation/World_Hillshade_Dark/MapServer",
         }
     ],
+    "arcgis-human-geography": [
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemapsdev-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:HumanGeography",
+            "title": "HumanGeography",
+        }
+    ],
+    "arcgis-human-geography-dark": [
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemapsdev-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:HumanGeographyDark",
+            "title": "HumanGeographyDark",
+        }
+    ],
 }

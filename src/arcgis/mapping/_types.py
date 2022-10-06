@@ -1876,6 +1876,8 @@ class WebMap(HasTraits, collections.OrderedDict):
             "arcgis-newspaper",
             "arcgis-hillshade-light",
             "arcgis-hillshade-dark",
+            "arcgis-human-geography",
+            "arcgis-human-geography-dark",
         ]
         return basemaps
 

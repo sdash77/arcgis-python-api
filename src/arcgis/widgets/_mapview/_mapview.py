@@ -892,6 +892,8 @@ class MapView(widgets.DOMWidget):
         "arcgis-newspaper",
         "arcgis-hillshade-light",
         "arcgis-hillshade-dark",
+        "arcgis-human-geography",
+        "arcgis-human-geography-dark",
     ]
 
     """
@@ -940,6 +942,8 @@ class MapView(widgets.DOMWidget):
     26. ArcGIS Newspaper
     27. ArcGIS Hillshade Light
     28. ArcGIS Hillshade Dark
+    29. ArcGIS Human Geography
+    30. ArcGIS Human Geography Dark
 
     """
     # End other properties that don't interact with the model
