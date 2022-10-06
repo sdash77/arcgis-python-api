@@ -1357,6 +1357,9 @@ class GIS(object):
                                See the `Understanding geocoders
                                <https://developers.arcgis.com/python/guide/understanding-geocoders/>`_
                                page in the ArcGIS API for Python guide for more information.
+        ------------------     --------------------------------------------------------------------
+        api_key                Optional string. The API Key to use for map purposes such as for
+                               arcgis basemaps.
         ==================     ====================================================================
 
 

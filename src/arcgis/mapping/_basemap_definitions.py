@@ -193,4 +193,290 @@ basemap_dict = {
             "opacity": 1,
         }
     ],
+    "arcgis-imagery": [
+        {
+            "layerType": "ArcGISTiledMapServiceLayer",
+            "showLegend": False,
+            "title": "World Imagery",
+            "url": "https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer",
+        },
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:Imagery:Labels",
+            "title": "Hybrid Reference Layer",
+            "isReference": True,
+        },
+    ],
+    "arcgis-imagery-standard": [
+        {
+            "layerType": "ArcGISTiledMapServiceLayer",
+            "showLegend": False,
+            "title": "World Imagery",
+            "url": "https://ibasemaps-api.arcgis.com/arcgis/rest/services/World_Imagery/MapServer",
+        }
+    ],
+    "arcgis-imagery-labels": [
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:Imagery:Labels",
+            "title": "Hybrid Reference Layer",
+            "isReference": True,
+        }
+    ],
+    "arcgis-light-gray": [
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:LightGray:Base",
+            "title": "Light Gray Canvas Base",
+        },
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:LightGray:Labels",
+            "title": "Light Gray Canvas Labels",
+            "isReference": True,
+        },
+    ],
+    "arcgis-dark-gray": [
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:DarkGray:Base",
+            "title": "Dark Gray Canvas Base",
+        },
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:DarkGray:Labels",
+            "title": "Dark Gray Canvas Labels",
+            "isReference": True,
+        },
+    ],
+    "arcgis-navigation": [
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:Navigation",
+            "title": "World Navigation Map",
+        }
+    ],
+    "arcgis-navigation-night": [
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:NavigationNight",
+            "title": "World Navigation Map (Dark Mode)",
+        }
+    ],
+    "arcgis-streets": [
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:Streets",
+            "title": "World Street Map",
+        }
+    ],
+    "arcgis-streets-night": [
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:StreetsNight",
+            "title": "World Street Map (Night)",
+        }
+    ],
+    "arcgis-streets-relief": [
+        {
+            "layerType": "ArcGISTiledMapServiceLayer",
+            "showLegend": False,
+            "title": "World Hillshade",
+            "url": "https://ibasemaps-api.arcgis.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer",
+        },
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:StreetsRelief:Base",
+            "title": "World Street Map (with Relief)",
+        },
+    ],
+    "arcgis-topographic": [
+        {
+            "layerType": "ArcGISTiledMapServiceLayer",
+            "showLegend": False,
+            "title": "World Hillshade",
+            "url": "https://ibasemaps-api.arcgis.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer",
+        },
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:Topographic:Base",
+            "title": "World Topographic Map",
+        },
+    ],
+    "arcgis-oceans": [
+        {
+            "layerType": "ArcGISTiledMapServiceLayer",
+            "showLegend": False,
+            "title": "World Ocean Base",
+            "url": "https://ibasemaps-api.arcgis.com/arcgis/rest/services/Ocean/World_Ocean_Base/MapServer",
+        },
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:Oceans:Labels",
+            "title": "World Ocean Reference",
+            "isReference": True,
+        },
+    ],
+    "osm-standard": [
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/OSM:Standard",
+            "title": "OpenStreetMap",
+        }
+    ],
+    "osm-standard-relief": [
+        {
+            "layerType": "ArcGISTiledMapServiceLayer",
+            "showLegend": False,
+            "title": "World Hillshade",
+            "url": "https://ibasemaps-api.arcgis.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer",
+        },
+        {
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/OSM:StandardRelief:Base",
+            "layerType": "VectorTileLayer",
+            "title": "OpenStreetMap Relief Base",
+        },
+    ],
+    "osm-streets": [
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/OSM:Streets",
+            "title": "OpenStreetMap (Streets)",
+        }
+    ],
+    "osm-streets-relief": [
+        {
+            "layerType": "ArcGISTiledMapServiceLayer",
+            "showLegend": False,
+            "title": "World Hillshade",
+            "url": "https://ibasemaps-api.arcgis.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer",
+        },
+        {
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/OSM:StreetsRelief:Base",
+            "layerType": "VectorTileLayer",
+            "title": "OpenStreetMap Relief Base",
+        },
+    ],
+    "osm-light-gray": [
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/OSM:LightGray:Base",
+            "title": "OSM (Light Gray Base)",
+        },
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/OSM:LightGray:Labels",
+            "title": "OSM (Light Gray Reference)",
+            "isReference": True,
+        },
+    ],
+    "osm-dark-gray": [
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/OSM:DarkGray:Base",
+            "title": "OSM (Dark Gray Base)",
+        },
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/OSM:DarkGray:Labels",
+            "title": "OSM (Dark Gray Reference)",
+            "isReference": True,
+        },
+    ],
+    "arcgis-terrain": [
+        {
+            "layerType": "ArcGISTiledMapServiceLayer",
+            "showLegend": False,
+            "title": "World Hillshade",
+            "url": "https://ibasemaps-api.arcgis.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer",
+        },
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:Terrain:Base",
+            "title": "World Terrain Base",
+        },
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:Terrain:Detail",
+            "title": "World Terrain Reference",
+            "isReference": True,
+        },
+    ],
+    "arcgis-community": [
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:Community",
+            "title": "Community",
+        }
+    ],
+    "arcgis-charted-territory": [
+        {
+            "layerType": "ArcGISTiledMapServiceLayer",
+            "showLegend": False,
+            "title": "World Hillshade",
+            "url": "https://ibasemaps-api.arcgis.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer",
+        },
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:ChartedTerritory:Base",
+            "title": "Charted Territory",
+        },
+    ],
+    "arcgis-colored-pencil": [
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:ColoredPencil",
+            "title": "Colored Pencil",
+        }
+    ],
+    "arcgis-nova": [
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:Nova",
+            "title": "Nova",
+        }
+    ],
+    "arcgis-modern-antique": [
+        {
+            "layerType": "ArcGISTiledMapServiceLayer",
+            "showLegend": False,
+            "title": "World Hillshade",
+            "url": "https://ibasemaps-api.arcgis.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer",
+        },
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:ModernAntique:Base",
+            "title": "Modern Antique",
+        },
+    ],
+    "arcgis-midcentury": [
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:Midcentury",
+            "title": "Mid-Century",
+        }
+    ],
+    "arcgis-newspaper": [
+        {
+            "layerType": "VectorTileLayer",
+            "styleUrl": "https://basemaps-api.arcgis.com/arcgis/rest/services/styles/ArcGIS:Newspaper",
+            "title": "Newspaper",
+        }
+    ],
+    "arcgis-hillshade-light": [
+        {
+            "layerType": "ArcGISTiledMapServiceLayer",
+            "showLegend": False,
+            "title": "World Hillshade",
+            "url": "https://ibasemaps-api.arcgis.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer",
+        }
+    ],
+    "arcgis-hillshade-dark": [
+        {
+            "layerType": "ArcGISTiledMapServiceLayer",
+            "showLegend": False,
+            "title": "World Hillshade (Dark)",
+            "url": "https://ibasemaps-api.arcgis.com/arcgis/rest/services/Elevation/World_Hillshade_Dark/MapServer",
+        }
+    ],
 }
