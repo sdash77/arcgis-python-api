@@ -23,7 +23,7 @@ def get_countries_test(src: GIS, expectation: object) -> None:
         assert len(res.index)
 
 
-def get_enrich_variables_test(cntry: Country, expectation: object) -> None:
+def get_enrich_variables_check(cntry: Country, expectation: object) -> None:
     with expectation:
         res = cntry.enrich_variables
         assert isinstance(res, pd.DataFrame)
@@ -48,7 +48,7 @@ class TestIntrospection(unittest.TestCase):
     @skip_if_no_local
     def test_get_enrich_variables_local(self):
         usa_local_inst = usa_local()
-        get_enrich_variables_test(usa_local_inst, does_not_raise())
+        get_enrich_variables_check(usa_local_inst, does_not_raise())
 
     @skip_if_no_local
     def test_get_country_levels_local(self):
@@ -64,7 +64,7 @@ class TestIntrospection(unittest.TestCase):
     @skip_if_no_agol
     def test_get_enrich_variables_agol(self):
         usa_agol_inst = usa_agol()
-        get_enrich_variables_test(usa_agol_inst, does_not_raise())
+        get_enrich_variables_check(usa_agol_inst, does_not_raise())
 
     @skip_if_no_agol
     def test_get_country_levels_agol(self):

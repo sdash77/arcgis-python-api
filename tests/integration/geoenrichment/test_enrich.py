@@ -24,10 +24,10 @@ from .configtest import (
 
 
 # root tests
-def enrich_test(enrich_src: Country, geom: Union[pd.DataFrame, pd.Series, Iterable],
-                enrich_vars: Union[pd.DataFrame, list], expectation: object, std_geo_lvl: Union[str, int] = None,
-                std_geo_id_col: str = None, prx_typ: str = None, prx_val: Union[int, float] = None,
-                prx_mtrc: str = None) -> None:
+def enrich_check(enrich_src: Country, geom: Union[pd.DataFrame, pd.Series, Iterable],
+                 enrich_vars: Union[pd.DataFrame, list], expectation: object, std_geo_lvl: Union[str, int] = None,
+                 std_geo_id_col: str = None, prx_typ: str = None, prx_val: Union[int, float] = None,
+                 prx_mtrc: str = None) -> None:
     with expectation:
 
         enrich_res = enrich_src.enrich(geom, enrich_vars, standard_geography_level=std_geo_lvl,
@@ -47,10 +47,10 @@ def enrich_test(enrich_src: Country, geom: Union[pd.DataFrame, pd.Series, Iterab
         assert all([[enrich_col in enrich_res_cols] for enrich_col in enrich_var_cols])
 
 
-def enrich_feature_set_test(enrich_src: Country, geom: Union[pd.DataFrame, FeatureSet],
-                enrich_vars: Union[pd.DataFrame, list], expectation: object, std_geo_lvl: Union[str, int] = None,
-                std_geo_id_col: str = None, prx_typ: str = None, prx_val: Union[int, float] = None,
-                prx_mtrc: str = None) -> None:
+def enrich_feature_set_check(enrich_src: Country, geom: Union[pd.DataFrame, FeatureSet],
+                             enrich_vars: Union[pd.DataFrame, list], expectation: object, std_geo_lvl: Union[str, int] = None,
+                             std_geo_id_col: str = None, prx_typ: str = None, prx_val: Union[int, float] = None,
+                             prx_mtrc: str = None) -> None:
     with expectation:
 
         if isinstance(geom, FeatureSet):
@@ -73,9 +73,9 @@ def enrich_feature_set_test(enrich_src: Country, geom: Union[pd.DataFrame, Featu
         assert all([[enrich_col in enrich_res_cols] for enrich_col in enrich_var_cols])
 
 
-def enrich_do_not_return_geom_test(enrich_src: Country, geom_df: pd.DataFrame,
-                                   enrich_vars: Union[pd.DataFrame, list], expectation: object,
-                                   std_geo_lvl: Union[str, int] = None, std_geo_id_col: str = None) -> None:
+def enrich_do_not_return_geom_check(enrich_src: Country, geom_df: pd.DataFrame,
+                                    enrich_vars: Union[pd.DataFrame, list], expectation: object,
+                                    std_geo_lvl: Union[str, int] = None, std_geo_id_col: str = None) -> None:
     with expectation:
 
         enrich_res = enrich_src.enrich(geom_df, enrich_vars, standard_geography_level=std_geo_lvl,
@@ -94,7 +94,7 @@ def enrich_do_not_return_geom_test(enrich_src: Country, geom_df: pd.DataFrame,
         assert all([[enrich_col in enrich_res_cols] for enrich_col in enrich_var_cols])
 
 
-def enrich_json_input_test(enrich_src: Country, enrich_vars: pd.DataFrame, expectation: object) -> None:
+def enrich_json_input_check(enrich_src: Country, enrich_vars: pd.DataFrame, expectation: object) -> None:
 
     with expectation:
 
@@ -118,8 +118,8 @@ def enrich_json_input_test(enrich_src: Country, enrich_vars: pd.DataFrame, expec
         assert all([[enrich_col in enrich_res_cols] for enrich_col in enrich_var_cols])
 
 
-def enrich_geometry_list_test(enrich_src: Country, enrich_vars: Union[pd.DataFrame, list],
-                              expectation: object = does_not_raise()) -> None:
+def enrich_geometry_list_check(enrich_src: Country, enrich_vars: Union[pd.DataFrame, list],
+                               expectation: object = does_not_raise()) -> None:
     with expectation:
         geom_lst = [
             Point({"x": -122.435, "y": 37.785, "spatialReference": {"wkid": 4326}}),
@@ -152,146 +152,146 @@ class TestEnrich(unittest.TestCase):
     def test_enrich_usa_poly_local(self):
         usa_local_inst = usa_local()
         usa_local_enrich_vars_inst = usa_local_enrich_vars()
-        enrich_test(usa_local_inst, self.polygon_df_inst, usa_local_enrich_vars_inst, does_not_raise())
+        enrich_check(usa_local_inst, self.polygon_df_inst, usa_local_enrich_vars_inst, does_not_raise())
 
     @skip_if_no_local
     def test_enrich_usa_line_implicit_local(self):
         usa_local_inst = usa_local()
         usa_local_enrich_vars_inst = usa_local_enrich_vars()
-        enrich_test(usa_local_inst, self.line_df_inst, usa_local_enrich_vars_inst, does_not_raise())
+        enrich_check(usa_local_inst, self.line_df_inst, usa_local_enrich_vars_inst, does_not_raise())
 
     @skip_if_no_local
     def test_enrich_usa_line_explicit_local(self):
         usa_local_inst = usa_local()
         usa_local_enrich_vars_inst = usa_local_enrich_vars()
-        enrich_test(usa_local_inst, self.line_df_inst, usa_local_enrich_vars_inst, self.assertRaises(AssertionError), prx_typ='driving_time')
+        enrich_check(usa_local_inst, self.line_df_inst, usa_local_enrich_vars_inst, self.assertRaises(AssertionError), prx_typ='driving_time')
 
     @skip_if_no_local
     def test_enrich_usa_point_straightline_implicit_local(self):
         usa_local_inst = usa_local()
         usa_local_enrich_vars_inst = usa_local_enrich_vars()
-        enrich_test(usa_local_inst, self.point_df_inst, usa_local_enrich_vars_inst, does_not_raise())
+        enrich_check(usa_local_inst, self.point_df_inst, usa_local_enrich_vars_inst, does_not_raise())
 
     @skip_if_no_local
     def test_enrich_usa_point_straightline_explicit_local(self):
         usa_local_inst = usa_local()
         usa_local_enrich_vars_inst = usa_local_enrich_vars()
-        enrich_test(usa_local_inst, self.point_df_inst, usa_local_enrich_vars_inst, does_not_raise(), prx_typ='straight_line')
+        enrich_check(usa_local_inst, self.point_df_inst, usa_local_enrich_vars_inst, does_not_raise(), prx_typ='straight_line')
 
     @skip_if_no_local
     def test_enrich_usa_point_drivedistance_local(self):
         usa_local_inst = usa_local()
         usa_local_enrich_vars_inst = usa_local_enrich_vars()
-        enrich_test(usa_local_inst, self.point_df_inst, usa_local_enrich_vars_inst, does_not_raise(), prx_typ='driving_distance', prx_val=10,
-                    prx_mtrc='miles')
+        enrich_check(usa_local_inst, self.point_df_inst, usa_local_enrich_vars_inst, does_not_raise(), prx_typ='driving_distance', prx_val=10,
+                     prx_mtrc='miles')
 
     @skip_if_no_local
     def test_enrich_usa_point_drivetime_local(self):
         usa_local_inst = usa_local()
         usa_local_enrich_vars_inst = usa_local_enrich_vars()
-        enrich_test(usa_local_inst, self.point_df_inst, usa_local_enrich_vars_inst, does_not_raise(), prx_typ='driving_time', prx_val=12,
-                    prx_mtrc='minutes')
+        enrich_check(usa_local_inst, self.point_df_inst, usa_local_enrich_vars_inst, does_not_raise(), prx_typ='driving_time', prx_val=12,
+                     prx_mtrc='minutes')
 
     @skip_if_no_local
     def test_enrich_usa_no_return_geomery_local(self):
         usa_local_inst = usa_local()
         usa_local_enrich_vars_inst = usa_local_enrich_vars()
-        enrich_do_not_return_geom_test(usa_local_inst, self.polygon_df_inst, usa_local_enrich_vars_inst, does_not_raise())
+        enrich_do_not_return_geom_check(usa_local_inst, self.polygon_df_inst, usa_local_enrich_vars_inst, does_not_raise())
 
     @skip_if_no_local
     def test_enrich_usa_stdgeo_srs_local(self):
         usa_local_inst = usa_local()
         usa_local_enrich_vars_inst = usa_local_enrich_vars()
-        enrich_test(usa_local_inst, self.stdgeo_srs_inst.iloc[:10], usa_local_enrich_vars_inst, does_not_raise(), std_geo_lvl='block_groups')
+        enrich_check(usa_local_inst, self.stdgeo_srs_inst.iloc[:10], usa_local_enrich_vars_inst, does_not_raise(), std_geo_lvl='block_groups')
 
     @skip_if_no_local
     def test_enrich_usa_stdgeo_srs_no_return_geom_local(self):
         usa_local_inst = usa_local()
         usa_local_enrich_vars_inst = usa_local_enrich_vars()
-        enrich_do_not_return_geom_test(usa_local_inst, self.stdgeo_srs_inst, usa_local_enrich_vars_inst, does_not_raise(),
-                                       std_geo_lvl='block_groups')
+        enrich_do_not_return_geom_check(usa_local_inst, self.stdgeo_srs_inst, usa_local_enrich_vars_inst, does_not_raise(),
+                                        std_geo_lvl='block_groups')
 
     @skip_if_no_local
     def test_enrich_usa_stdgeo_df_local(self):
         usa_local_inst = usa_local()
         usa_local_enrich_vars_inst = usa_local_enrich_vars()
         polygon_df_inst_dropped = self.polygon_df_inst.drop(columns='SHAPE')
-        enrich_test(usa_local_inst, polygon_df_inst_dropped, usa_local_enrich_vars_inst, does_not_raise(), std_geo_lvl='block_groups',
-                    std_geo_id_col='ID')
+        enrich_check(usa_local_inst, polygon_df_inst_dropped, usa_local_enrich_vars_inst, does_not_raise(), std_geo_lvl='block_groups',
+                     std_geo_id_col='ID')
 
     @skip_if_no_local
     def test_enrich_usa_variable_name_list_local(self):
         usa_local_inst = usa_local()
-        enrich_test(usa_local_inst, self.polygon_df_inst, ["populationtotals.TOTPOP_CY", "AtRisk.TOTPOP_CY"], does_not_raise())
+        enrich_check(usa_local_inst, self.polygon_df_inst, ["populationtotals.TOTPOP_CY", "AtRisk.TOTPOP_CY"], does_not_raise())
 
     @skip_if_no_local
     def test_enrich_usa_after_can_variable_name_list_local(self):
         import arcpy
         arcpy.env.baDataSource = "LOCAL;;CAN_ESRI_2021"
         usa_local_inst = usa_local()
-        enrich_test(usa_local_inst, self.polygon_df_inst, ["populationtotals.TOTPOP_CY", "AtRisk.TOTPOP_CY"], does_not_raise())
+        enrich_check(usa_local_inst, self.polygon_df_inst, ["populationtotals.TOTPOP_CY", "AtRisk.TOTPOP_CY"], does_not_raise())
 
     @skip_if_no_local
     def test_enrich_json_local(self):
         usa_local_inst = usa_local()
         usa_local_enrich_vars_inst = usa_local_enrich_vars()
-        enrich_json_input_test(usa_local_inst, usa_local_enrich_vars_inst, self.assertRaises(ValueError))
+        enrich_json_input_check(usa_local_inst, usa_local_enrich_vars_inst, self.assertRaises(ValueError))
 
     # ArcGIS Online
     @skip_if_no_agol
     def test_enrich_usa_stdgeo_srs_usa_agol(self):
-        enrich_test(self.usa_agol_inst, self.stdgeo_srs_inst, self.usa_agol_enrich_vars_inst, does_not_raise(), std_geo_lvl='block_groups')
+        enrich_check(self.usa_agol_inst, self.stdgeo_srs_inst, self.usa_agol_enrich_vars_inst, does_not_raise(), std_geo_lvl='block_groups')
 
     @skip_if_no_agol
     def test_enrich_usa_stdgeo_srs_no_return_geom_agol(self):
-        enrich_do_not_return_geom_test(self.usa_agol_inst, self.stdgeo_srs_inst, self.usa_agol_enrich_vars_inst, does_not_raise(),
-                                       std_geo_lvl='block_groups')
+        enrich_do_not_return_geom_check(self.usa_agol_inst, self.stdgeo_srs_inst, self.usa_agol_enrich_vars_inst, does_not_raise(),
+                                        std_geo_lvl='block_groups')
 
     @skip_if_no_agol
     def test_enrich_usa_stdgeo_df_agol(self):
         polygon_df_inst_dropped = self.polygon_df_inst.drop(columns='SHAPE')
-        enrich_test(self.usa_agol_inst, polygon_df_inst_dropped, self.usa_agol_enrich_vars_inst, does_not_raise(), std_geo_lvl='block_groups',
-                    std_geo_id_col='ID')
+        enrich_check(self.usa_agol_inst, polygon_df_inst_dropped, self.usa_agol_enrich_vars_inst, does_not_raise(), std_geo_lvl='block_groups',
+                     std_geo_id_col='ID')
 
     @skip_if_no_agol
     def test_enrich_usa_poly_singlebatch_agol(self):
         polygon_df_inst_sample = self.polygon_df_inst.iloc[:45]
         polygon_df_inst_sample.spatial.set_geometry('SHAPE')
-        enrich_test(self.usa_agol_inst, polygon_df_inst_sample, self.usa_agol_enrich_vars_inst, does_not_raise())
+        enrich_check(self.usa_agol_inst, polygon_df_inst_sample, self.usa_agol_enrich_vars_inst, does_not_raise())
 
     @skip_if_no_agol
     def test_enrich_usa_poly_agol(self):
-        enrich_test(self.usa_agol_inst, self.polygon_df_inst, self.usa_agol_enrich_vars_inst, does_not_raise())
+        enrich_check(self.usa_agol_inst, self.polygon_df_inst, self.usa_agol_enrich_vars_inst, does_not_raise())
 
     @skip_if_no_agol
     def test_enrich_feature_set_usa_poly_agol(self):
-        enrich_feature_set_test(self.usa_agol_inst, self.polygon_df_inst, self.usa_agol_enrich_vars_inst, does_not_raise())
+        enrich_feature_set_check(self.usa_agol_inst, self.polygon_df_inst, self.usa_agol_enrich_vars_inst, does_not_raise())
 
     @skip_if_no_agol
     def test_enrich_usa_line_agol(self):
-        enrich_test(self.usa_agol_inst, self.line_df_inst, self.usa_agol_enrich_vars_inst, does_not_raise())
+        enrich_check(self.usa_agol_inst, self.line_df_inst, self.usa_agol_enrich_vars_inst, does_not_raise())
 
     @skip_if_no_agol
     def test_enrich_usa_point_drivedistance_agol(self):
-        enrich_test(self.usa_agol_inst, self.point_df_inst, self.usa_agol_enrich_vars_inst, does_not_raise(), prx_typ='drive_distance',
-                    prx_val=10, prx_mtrc='miles')
+        enrich_check(self.usa_agol_inst, self.point_df_inst, self.usa_agol_enrich_vars_inst, does_not_raise(), prx_typ='drive_distance',
+                     prx_val=10, prx_mtrc='miles')
 
     @skip_if_no_agol
     def test_enrich_usa_point_drivetime_agol(self):
-        enrich_test(self.usa_agol_inst, self.point_df_inst, self.usa_agol_enrich_vars_inst, does_not_raise(), prx_typ='drive_time',
-                    prx_val=12, prx_mtrc='minutes')
+        enrich_check(self.usa_agol_inst, self.point_df_inst, self.usa_agol_enrich_vars_inst, does_not_raise(), prx_typ='drive_time',
+                     prx_val=12, prx_mtrc='minutes')
 
     @skip_if_no_agol
     def test_enrich_json_agol(self):
-        enrich_json_input_test(self.usa_agol_inst, self.usa_agol_enrich_vars_inst, does_not_raise())
+        enrich_json_input_check(self.usa_agol_inst, self.usa_agol_enrich_vars_inst, does_not_raise())
 
     @skip_if_no_agol
     def test_enrich_usa_variable_name_list_agol(self):
-        enrich_test(self.usa_agol_inst, self.polygon_df_inst, ["populationtotals.TOTPOP_CY", "AtRisk.TOTPOP_CY"], does_not_raise())
+        enrich_check(self.usa_agol_inst, self.polygon_df_inst, ["populationtotals.TOTPOP_CY", "AtRisk.TOTPOP_CY"], does_not_raise())
 
     @skip_if_no_agol
     def test_enrich_geometry_list_agol(self):
-        enrich_geometry_list_test(self.usa_agol_inst, self.usa_agol_enrich_vars_inst, does_not_raise())
+        enrich_geometry_list_check(self.usa_agol_inst, self.usa_agol_enrich_vars_inst, does_not_raise())
 
     @skip_if_no_agol
     def test_enrich_buffer_multiple_addresses_agol(self):
