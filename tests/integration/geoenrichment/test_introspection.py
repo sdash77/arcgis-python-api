@@ -16,7 +16,7 @@ from .configtest import (
 
 
 # root tests
-def get_countries_test(src: GIS, expectation: object) -> None:
+def get_countries_check(src: GIS, expectation: object) -> None:
     with expectation:
         res = get_countries(src)
         assert isinstance(res, pd.DataFrame)
@@ -43,7 +43,7 @@ class TestIntrospection(unittest.TestCase):
     @skip_if_no_local
     def test_get_countries_local(self):
         gis_pro_inst = gis_pro()
-        get_countries_test(gis_pro_inst, does_not_raise())
+        get_countries_check(gis_pro_inst, does_not_raise())
 
     @skip_if_no_local
     def test_get_enrich_variables_local(self):
@@ -59,7 +59,7 @@ class TestIntrospection(unittest.TestCase):
     @skip_if_no_agol
     def test_get_countries_agol(self):
         gis_agol_inst = gis_agol()
-        get_countries_test(gis_agol_inst, does_not_raise())
+        get_countries_check(gis_agol_inst, does_not_raise())
 
     @skip_if_no_agol
     def test_get_enrich_variables_agol(self):
