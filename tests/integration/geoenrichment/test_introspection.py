@@ -11,7 +11,7 @@ from .configtest import (
     gis_pro,
     gis_agol,
     usa_local,
-    usa_agol
+    usa_agol,
 )
 
 
