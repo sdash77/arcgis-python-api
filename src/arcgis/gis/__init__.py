@@ -5107,7 +5107,7 @@ class GroupManager(object):
             query, sort_field, sort_order, max_groups, outside_org, categories
         )
         for group in groups:
-            grouplist.append(Group(self._gis, group["id"], group))
+            grouplist.append(Group(self._gis, group["id"]))
         return grouplist
 
 
