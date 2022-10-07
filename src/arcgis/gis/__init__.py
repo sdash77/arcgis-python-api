@@ -5052,6 +5052,7 @@ class GroupManager(object):
         max_groups: int = 1000,
         outside_org: bool = False,
         categories: Optional[Union[list[str], str]] = None,
+        return_all_data: bool = False,
     ):
         """
         The ``search`` method searches for portal groups.
@@ -5090,6 +5091,11 @@ class GroupManager(object):
                           your org. Default is False, do not search ourside your org.
         ----------------  --------------------------------------------------------
         categories        Optional string or list. A string of category values.
+        ----------------  --------------------------------------------------------
+        return_all_data   Optional bool. If True then all the parameters for the groups
+                          searched will be returned. If False, then a subset of the data
+                          is returned to save time. Default is False. Setting to True
+                          can cause the search to take longer.
         ================  ========================================================
 
         :return:
@@ -5107,7 +5113,10 @@ class GroupManager(object):
             query, sort_field, sort_order, max_groups, outside_org, categories
         )
         for group in groups:
-            grouplist.append(Group(self._gis, group["id"]))
+            if return_all_data:
+                grouplist.append(Group(self._gis, group["id"]))
+            else:
+                grouplist.append(Group(self._gis, group["id"], group))
         return grouplist
 
 
