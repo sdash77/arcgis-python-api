@@ -445,7 +445,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             view: this.activeView,
             container: document.createElement("div"),
             mode: "time-window"});
-        this._time_slider.watch('values', (values) => {
+        this._time_slider.watch('timeExtent', (values) => {
             this.time_slider_values_changed(values);});
         this._legend = new Legend({
             view: this.activeView,
@@ -1339,20 +1339,20 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             if(timeSlider){
                 console.log("time mode changed");
                 var timeMode = this.model.get("time_mode");
-                var values = this._time_slider.values;
+                var values = this._time_slider.timeExtent;
                 this._time_slider.mode = timeMode;
                 if(values.length > 0){
                     if(timeMode === "instant"){
-                        this._time_slider.values = [values[0],];}
+                        this._time_slider.timeExtent = [values[0],];}
                     if(timeMode === "time-window"){
                         if(values.length == 1){
-                            this._time_slider.values = [
+                            this._time_slider.timeExtent = [
                                 values[0],
                                 values[0]];}}
                     if(timeMode === "cumulative-from-start"){
-                        this._time_slider.values = [values[0],];}
+                        this._time_slider.timeExtent = [values[0],];}
                     if(timeMode === "cumulative-from-end"){
-                        this._time_slider.values = [values[0],];}}}}
+                        this._time_slider.timeExtent = [values[0],];}}}}
         catch(err){
             this._displayErrorBox("Error while updating time mode");
             console.warn("Error while trying updating time mode"); console.warn(err);}
@@ -1400,11 +1400,11 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             console.log("start time changed");
             var startTimeStr = this.model.get("_writeonly_start_time");
             var startTime = new Date(startTimeStr);
-            if(this._time_slider.values.length == 1){
-                this._time_slider.values = [startTime,];}
-            if(this._time_slider.values.length == 2){
-                var endTime = this._time_slider.values[1];
-                this._time_slider.values = [startTime, endTime];}}
+            if(this._time_slider.timeExtent.length == 1){
+                this._time_slider.timeExtent = [startTime,];}
+            if (this._time_slider.timeExtent.length == 2){
+                var endTime = this._time_slider.timeExtent[1];
+                this._time_slider.timeExtent = [startTime, endTime];}}
         catch(err){
             this._displayErrorBox("Error while changing `start_time`");
             console.warn("Error while changing start_time");
@@ -1416,8 +1416,8 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             console.log("end time changed");
             var endTimeStr = this.model.get("_writeonly_end_time");
             var endTime = new Date(endTimeStr);
-            var startTime = this._time_slider.values[0];
-            this._time_slider.values = [startTime, endTime];}
+            var startTime = this._time_slider.timeExtent[0];
+            this._time_slider.timeExtent = [startTime, endTime];}
         catch(err){
             this._displayErrorBox("Error while changing `end_time`");
             console.warn("Error while changing `end_time`");
