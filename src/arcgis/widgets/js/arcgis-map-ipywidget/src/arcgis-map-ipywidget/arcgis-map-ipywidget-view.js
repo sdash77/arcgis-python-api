@@ -445,8 +445,8 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             view: this.activeView,
             container: document.createElement("div"),
             mode: "time-window"});
-        this._time_slider.watch('timeExtent', (values) => {
-            this.time_slider_values_changed(values);});
+        this._time_slider.watch('timeExtent', (timeExtent) => {
+            this.time_slider_values_changed(timeExtent);});
         this._legend = new Legend({
             view: this.activeView,
             layerInfos: []});
@@ -1358,12 +1358,14 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             console.warn("Error while trying updating time mode"); console.warn(err);}
     },
 
-    time_slider_values_changed: function(values){
-        if(values.length == 2){
-            this.model.set("_readonly_start_time", values[0].toISOString());
-            this.model.set("_readonly_end_time", values[1].toISOString());}
-        if(values.length == 1){
-            this.model.set("_readonly_start_time", values[0].toISOString());}
+    time_slider_values_changed: function (timeExtent) {
+        console.log(timeExtent);
+        if (timeExtent.length == 2){
+            this.model.set("_readonly_start_time", timeExtent[0].toISOString());
+            this.model.set("_readonly_end_time", timeExtent[1].toISOString());}
+
+        if (timeExtent.length == 1){
+            this.model.set("_readonly_start_time", timeExtent[0].toISOString());}
         this.model.save_changes();
     },
 

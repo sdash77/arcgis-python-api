@@ -2561,6 +2561,7 @@ class MapView(widgets.DOMWidget):
         If `time_mode` == `"time-window"`,
         represents the lower bound 'thumb' of the time slider. For all other
         `time_mode` values, ``start_time`` represents the single thumb on the time slider."""
+        print(self._readonly_start_time)
         date_as_iso = dateutil.parser.parse(self._readonly_start_time)
         date_local = date_as_iso.astimezone()
         return date_local
