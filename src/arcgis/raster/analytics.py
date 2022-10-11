@@ -9578,8 +9578,9 @@ def mosaic_image(
     **kwargs,
 ):
     """
-    Merges multiple existing raster datasets (image services) into an existing raster dataset. 
+    Merges multiple existing raster datasets into an existing raster dataset. 
     Function available in ArcGIS Image Server 10.9 and higher.
+    Supported only for Cloud Raster format based Imagery Layers.
 
     ====================================     ====================================================================
     **Argument**                             **Description**
@@ -9587,7 +9588,7 @@ def mosaic_image(
     input_rasters                             Required list of :class:`~arcgis.raster.ImageryLayer` objects.
                                               Single or multiple rasters which will be mosaicked to the target raster. 
     ------------------------------------     --------------------------------------------------------------------
-    target_raster                            Required :class:`~arcgis.raster.ImageryLayer` object. The raster to which the input_rasters will be added.
+    target_raster                            Required :class:`~arcgis.raster.ImageryLayer` object. The raster to which the input rasters will be added.
                                              This must be an existing raster dataset (cloud raster format (CRF) based image service).
     ------------------------------------     --------------------------------------------------------------------
     mosaic_operator                          Optional String. Specifies the method that will be used to mosaic overlapping areas.
