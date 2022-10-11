@@ -1339,33 +1339,33 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             if(timeSlider){
                 console.log("time mode changed");
                 var timeMode = this.model.get("time_mode");
-                var values = this._time_slider.timeExtent;
+                var timeExtent = this._time_slider.timeExtent;
                 this._time_slider.mode = timeMode;
-                if(values.length > 0){
+                if (timeExtent){
                     if(timeMode === "instant"){
-                        this._time_slider.timeExtent = [values[0],];}
+                        this._time_slider.timeExtent.start = timeExtent.start;}
                     if(timeMode === "time-window"){
                         if(values.length == 1){
-                            this._time_slider.timeExtent = [
-                                values[0],
-                                values[0]];}}
+                            this._time_slider.timeExtent.start = timeExtent.start;
+                            this._time_slider.timeExtent.end = timeExtent.end;
+                        }
+                    }
                     if(timeMode === "cumulative-from-start"){
-                        this._time_slider.timeExtent = [values[0],];}
+                        this._time_slider.timeExtent.start = timeExtent.start;}
                     if(timeMode === "cumulative-from-end"){
-                        this._time_slider.timeExtent = [values[0],];}}}}
+                        this._time_slider.timeExtent.start = timeExtent.start;}}}}
         catch(err){
             this._displayErrorBox("Error while updating time mode");
             console.warn("Error while trying updating time mode"); console.warn(err);}
     },
 
     time_slider_values_changed: function (timeExtent) {
-        console.log(timeExtent);
-        if (timeExtent.length == 2){
-            this.model.set("_readonly_start_time", timeExtent[0].toISOString());
-            this.model.set("_readonly_end_time", timeExtent[1].toISOString());}
-
-        if (timeExtent.length == 1){
-            this.model.set("_readonly_start_time", timeExtent[0].toISOString());}
+        if (timeExtent.start) {
+            this.model.set("_readonly_start_time", timeExtent.start.toISOString());
+        }
+        if (timeExtent.end) {
+            this.model.set("_readonly_end_time", timeExtent.end.toISOString());
+        }
         this.model.save_changes();
     },
 
@@ -1402,11 +1402,8 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             console.log("start time changed");
             var startTimeStr = this.model.get("_writeonly_start_time");
             var startTime = new Date(startTimeStr);
-            if(this._time_slider.timeExtent.length == 1){
-                this._time_slider.timeExtent = [startTime,];}
-            if (this._time_slider.timeExtent.length == 2){
-                var endTime = this._time_slider.timeExtent[1];
-                this._time_slider.timeExtent = [startTime, endTime];}}
+            this._time_slider.timeExtent.start = startTime;
+        }
         catch(err){
             this._displayErrorBox("Error while changing `start_time`");
             console.warn("Error while changing start_time");
@@ -1418,8 +1415,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             console.log("end time changed");
             var endTimeStr = this.model.get("_writeonly_end_time");
             var endTime = new Date(endTimeStr);
-            var startTime = this._time_slider.timeExtent[0];
-            this._time_slider.timeExtent = [startTime, endTime];}
+            this._time_slider.timeExtent.start = endTime;}
         catch(err){
             this._displayErrorBox("Error while changing `end_time`");
             console.warn("Error while changing `end_time`");
