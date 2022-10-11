@@ -27,9 +27,9 @@ requirements:
   - pyshp >=2
   - requests >=2.27.1
   - requests-toolbelt
+  - requests_ntlm2
   - requests-kerberos
   - requests-oauthlib
-  - requests_ntlm2
   - requests-negotiate-sspi [win]
   - pywin32-security [win]
   - lerc
@@ -58,7 +58,6 @@ requirements:
   - requests-toolbelt
   - requests-kerberos
   - requests-oauthlib
-  - requests_ntlm2
   - requests-negotiate-sspi [win]
   - pywin32-security [win]
   - lerc
