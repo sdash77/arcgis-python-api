@@ -19,6 +19,8 @@ threading = LazyLoader("threading")
 _dt = LazyLoader("datetime")
 requests = LazyLoader("requests")
 requests_oauthlib = LazyLoader("requests_oauthlib")
+warnings = LazyLoader("warnings")
+
 _MSG = """
 
 You need to a security question by integer:

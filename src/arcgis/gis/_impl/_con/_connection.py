@@ -1,9 +1,5 @@
 """
 Connection Object that uses Python Requests
-
-Requires: requests, requests_toolbelt,
-Possible optional might be required: requests_ntlm2, requests_kerberos, requests-oauthlib
-
 """
 from arcgis.auth.tools import LazyLoader
 from typing import Union
@@ -144,11 +140,12 @@ class Connection(object):
         legacy boolean. If True the token will be appended to the URL for GET and in the FORM POST.
         timeout:int=600
         use_gen_token = boolean - Uses the GenTokenAuth over EsriBuiltInAuth
-
+        security_kwargs = dict - a set of optional arguments for Kerberos Auth
         """
         from arcgis.gis import GIS
 
         self._ags_file = kwargs.pop("ags_file", None)
+        self._security_kwargs = kwargs.pop("security_kwargs", None)
         self._use_gen_token = kwargs.pop("use_gen_token", False)
         self._is_hosted_nb_home = kwargs.pop("is_hosted_nb_home", False)
         self._proxy = kwargs.pop("proxy", None)
@@ -246,10 +243,27 @@ class Connection(object):
             and self._portal_connection is None
             and self._client_id is None
             and str(baseurl).lower() != "pro"
+            and any(
+                [
+                    a in auth_check
+                    for a in ["Negotiate", "NTLM", "Negotiate, NTLM", "Basic", "basic"]
+                ]
+            )
+            == False
         ):
             self._auth = "ANON"
         elif self._client_id:
             self._auth = "OAUTH"
+        elif (
+            (not username is None and not password is None)
+            and len(username.split("\\")) > 1
+            and ("Negotiate" in auth_check or "Negotiate, NTLM" in auth_check)
+        ):
+            self._auth = "KERBEROS"
+        elif (username is None and password is None) and (
+            "Negotiate" in auth_check or "Negotiate, NTLM" in auth_check
+        ):
+            self._auth = "KERBEROS"
         elif (not username is None and not password is None) and len(
             username.split("\\")
         ) > 1:
@@ -304,6 +318,7 @@ class Connection(object):
             "BASIC_REALM",
             "IWA",
             "NTLM",
+            "KERBEROS",
             "PKI",
         ]:
             self._session = self._portal_connection._session
@@ -604,6 +619,25 @@ class Connection(object):
                 referer=self._referer,
                 verify_cert=self._verify_cert,
             )
+        elif self._auth.lower() in ["kerberos"] and HAS_KERBEROS:
+            if self._security_kwargs:
+                self._session.auth = EsriKerberosAuth(
+                    proxies=self._proxy,
+                    username=self._username,
+                    password=self._password,
+                    verify_cert=self._verify_cert,
+                    legacy=False,
+                    **self._security_kwargs,
+                )
+            else:
+                self._session.auth = EsriKerberosAuth(
+                    proxies=self._proxy,
+                    username=self._username,
+                    password=self._password,
+                    verify_cert=self._verify_cert,
+                    legacy=False,
+                    **self._security_kwargs,
+                )
         elif self._username and self._password and self._auth.lower() != "iwa":
             self._session.auth = GuessAuth(
                 username=self._username, password=self._password
