@@ -144,6 +144,7 @@ class Connection(object):
         """
         from arcgis.gis import GIS
 
+		self._ags_file = kwargs.pop("ags_file", None)
         self._security_kwargs = kwargs.pop("security_kwargs", None)
         self._use_gen_token = kwargs.pop("use_gen_token", False)
         self._is_hosted_nb_home = kwargs.pop("is_hosted_nb_home", False)
@@ -170,7 +171,12 @@ class Connection(object):
         self._portal_connection = kwargs.pop(
             "portal_connection", None
         )  # For Federated Objects (Portal Connection)
-        if isinstance(self._portal_connection, GIS):
+        if self._ags_file and os.path.isfile(self._ags_file):
+            res = arcpy.gp.getStandaloneServerToken(self._ags_file)
+            self._referer = res.pop("referer", "http")
+            self._baseurl = res.pop("serverUrl", None)
+            baseurl = self._baseurl
+        elif isinstance(self._portal_connection, GIS):
             self._portal_connection = self._portal_connection._con
 
         if (
@@ -221,6 +227,8 @@ class Connection(object):
             self._token = kwargs.pop("token", None)
             self._expiration = 10080
             self._referer = ""
+        elif self._ags_file:
+            self._auth = "AGS_AUTH"  # AGS AUTH
         elif "token" in kwargs and kwargs["token"]:
             self._auth = "USER_TOKEN"
             self._token = kwargs.pop("token", None)
@@ -315,7 +323,9 @@ class Connection(object):
         ]:
             self._session = self._portal_connection._session
         else:
-            self._create_session()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self._create_session()
 
         #  Product Info
         if self._client_id:
@@ -323,7 +333,9 @@ class Connection(object):
         elif self._is_hosted_nb_home:
             self._product = "NOTEBOOK_SERVER"
         else:
-            self._product = self._check_product()
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                self._product = self._check_product()
         self._baseurl = self._validate_url(self._baseurl)
         self.baseurl = self._baseurl
 
@@ -523,6 +535,13 @@ class Connection(object):
                 token=self._token,
                 referer=self._referer,
                 auth=GuessAuth(username=None, password=None),
+            )
+        elif self._auth.lower() == "ags_auth":
+            from arcgis.auth._auth import ArcGISServerAuth
+
+            self._session.auth = ArcGISServerAuth(
+                legacy=self.legacy,
+                ags_file=self._ags_file,
             )
         elif self._auth.lower() == "oauth":
             self._session.auth = EsriOAuth2Auth(

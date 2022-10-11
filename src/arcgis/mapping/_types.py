@@ -4428,7 +4428,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
                                             )
         """
         # Parameters depend on how the vector tile layer was published.
-        feature_service_pub = True if self._source_type is "FeatureServer" else False
+        feature_service_pub = True if self._source_type == "FeatureServer" else False
 
         params = {
             "f": "json",
@@ -4497,7 +4497,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
             <Dictionary>
         """
         # Parameters depend on how the vector tile layer was published.
-        feature_service_pub = True if self._source_type is "FeatureServer" else False
+        feature_service_pub = True if self._source_type == "FeatureServer" else False
 
         params = {"f": "json"}
         if feature_service_pub:

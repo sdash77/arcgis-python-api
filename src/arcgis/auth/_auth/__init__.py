@@ -10,6 +10,7 @@ from ._token import (
     EsriBuiltInAuth,
     EsriGenTokenAuth,
     ArcGISProAuth,
+    ArcGISServerAuth,
 )  # legacy or for stand alone only
 from ._oauth import EsriOAuth2Auth
 from ._notebook import EsriNotebookAuth
@@ -29,4 +30,5 @@ __all__ = [
     "EsriWindowsAuth",
     "BaseEsriAuth",
     "EsriPKCEAuth",
+    "ArcGISServerAuth",
 ]
