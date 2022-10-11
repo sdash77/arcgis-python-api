@@ -132,11 +132,35 @@ class ArcGISServerAuth(AuthBase, SupportMultiAuth):
         """obtains the login token"""
         return self._ags_token()
 
+    @lru_cache(maxsize=255)
+    def _read_ags_file(self, ags_file: str) -> dict[str, Any]:
+        """reads the ags file into cache"""
+        return self._arcpy.gp.getStandaloneServerToken(self._ags)
+
+    # ----------------------------------------------------------------------
+    @lru_cache(maxsize=255)
+    def _url(self, ags_file) -> str:
+        if self._arcpy:
+            resp = self._read_ags_file(self._ags)
+            return resp.get("serverUrl")
+        else:
+            raise Exception("ArcPy not found, please install arcpy")
+
+    # ----------------------------------------------------------------------
+    @property
+    def url(self) -> str:
+        """gets the token for various products"""
+        if self._arcpy:
+            return self._url(ags_file=self._ags)
+
+        else:
+            raise Exception("ArcPy not found, please install arcpy")
+
     # ----------------------------------------------------------------------
     def _ags_token(self):
         """gets the token for various products"""
         if self._arcpy:
-            resp = self._arcpy.gp.getStandaloneServerToken(self._ags)
+            resp = self._read_ags_file(self._ags)
             if resp:
                 if "referer" in resp:
                     self._referer = resp["referer"]
