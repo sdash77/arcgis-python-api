@@ -1,7 +1,9 @@
+from __future__ import annotations
 from cachetools import cached, TTLCache
 import lxml.html
 from urllib.parse import urlunparse, quote, parse_qsl, parse_qs
 from functools import lru_cache
+from typing import Any
 from getpass import getpass
 from requests.auth import AuthBase
 from requests_oauthlib import OAuth2Session
