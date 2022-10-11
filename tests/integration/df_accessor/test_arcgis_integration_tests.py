@@ -4,12 +4,13 @@ This collection of tests ensures that the functionality in the arcgis api works
 properly with the Spatially enabled DataFrame.
 
 """
-import pytest
 import os, sys
 
 # sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import shutil, datetime
 import tempfile
+import unittest
+
 from arcgis.gis import GIS
 from arcgis.features.geo._array import GeoArray, GeoType
 import arcgis.features.geo
@@ -131,75 +132,75 @@ _fs_dict = {
 }
 
 
-# -------------------------------------------------------------------------
-def test_content_import_data():
-    """
-    tests the content.import_data works with the spatially enabled dataframe.
-    """
-    try:
+class TestArcGISIntegrationTests(unittest.TestCase):
 
-        df = arcgis.features.geo.from_featureclass(filename=r"./world30.shp")
-        gis = GIS(username=USERNAME, password=PASSWORD)
-        item = gis.content.import_data(df)
-        assert item.type == "Feature Service"
-        assert len(item.layers) > 0
-        fgdb = item.related_items("Service2Data", direction="forward")[0]
-        item.delete()
-        fgdb.delete()
-    except:
-        pass
+    def test_content_import_data(self):
+        """
+        tests the content.import_data works with the spatially enabled dataframe.
+        """
+        try:
 
+            df = arcgis.features.GeoAccessor.from_featureclass(filename=r"./world30.shp")
+            gis = GIS(username=USERNAME, password=PASSWORD)
+            item = gis.content.import_data(df)
+            assert item.type == "Feature Service"
+            assert len(item.layers) > 0
+            fgdb = item.related_items("Service2Data", direction="forward")[0]
+            item.delete()
+            fgdb.delete()
+        except:
+            pass
 
-# -------------------------------------------------------------------------
-def test_featureset_df():
-    """tests the featurelayer.query method"""
-    from arcgis.features import FeatureSet
+    def test_featureset_df(self):
+        """tests the featurelayer.query method"""
+        from arcgis.features import FeatureSet
 
-    fs = FeatureSet.from_dict(_fs_dict)
-    df = fs.sdf
-    assert df.spatial._name == "SHAPE"
-    assert hasattr(df, "spatial")
-    assert hasattr(df.SHAPE, "geom")
+        fs = FeatureSet.from_dict(_fs_dict)
+        df = fs.sdf
+        assert df.spatial.name == "SHAPE"
+        assert hasattr(df, "spatial")
+        assert hasattr(df.SHAPE, "geom")
 
+    def test_gp(self):
+        from arcgis.features import FeatureSet
 
-# -------------------------------------------------------------------------
-def test_gp():
-    from arcgis.features import FeatureSet
+        gis = GIS()
+        fs = FeatureSet.from_dict(_fs_dict)
+        df = fs.sdf
+        from arcgis.geoprocessing import import_toolbox
 
-    gis = GIS()
-    fs = FeatureSet.from_dict(_fs_dict)
-    df = fs.sdf
-    from arcgis.geoprocessing import import_toolbox
+        vs = import_toolbox(
+            "http://sampleserver1.arcgisonline.com/ArcGIS/rest/services/Elevation/ESRI_Elevation_World/GPServer"
+        )
+        import arcgis
 
-    vs = import_toolbox(
-        "http://sampleserver1.arcgisonline.com/ArcGIS/rest/services/Elevation/ESRI_Elevation_World/GPServer"
-    )
-    import arcgis
-
-    arcgis.env.out_spatial_reference = 4326
-    res = vs.viewshed(
-        df, "5 Miles"
-    )  # "5 Miles" or LinearUnit(5, 'Miles') can be passed as input
-    assert isinstance(res, FeatureSet)
-    assert len(res) > 0
+        arcgis.env.out_spatial_reference = 4326
+        res = vs.viewshed(
+            df, "5 Miles"
+        )  # "5 Miles" or LinearUnit(5, 'Miles') can be passed as input
+        assert isinstance(res, FeatureSet)
+        assert len(res) > 0
 
 
 if __name__ == "__main__":
+
+    test_inst = TestArcGISIntegrationTests()
+
     print("Begin Integration Testing with Python API")
     if USERNAME and PASSWORD:
         print("################################################################")
         print("   Testing content.import_data")
-        test_content_import_data()
+        test_inst.test_content_import_data()
         print("   Testing content.import_data finished")
         print("################################################################")
 
     print("################################################################")
     print("   Testing FeatureSet.sdf")
-    test_featureset_df()
+    test_inst.test_featureset_df()
     print("   Testing FeatureSet.sdf finished")
 
     print("################################################################")
     print("   Testing GP")
-    test_gp()
+    test_inst.test_gp()
     print("   Testing GP finished")
     print("################################################################")

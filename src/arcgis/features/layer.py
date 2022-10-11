@@ -711,6 +711,371 @@ class FeatureLayer(Layer):
         return [feature.attributes[attribute] for feature in result.features]
 
     # ----------------------------------------------------------------------
+    def query_date_bins(
+        self,
+        bin_field: str | datetime,
+        bin_specs: dict,
+        out_statistics: list[dict[str, Any]],
+        time_filter: Optional[TimeFilter] = None,
+        geometry_filter: Optional[GeometryFilter | dict] = None,
+        bin_order: Optional[str] = None,
+        where: Optional[str] = None,
+        return_centroid: Optional[bool] = False,
+        in_sr: Optional[dict[str, Any] | int] = None,
+        out_sr: Optional[dict[str, Any] | int] = None,
+        spatial_rel: Optional[str] = None,
+        quantization_params: Optional[dict[str, Any]] = None,
+        result_offset: Optional[int] = None,
+        result_record_count: Optional[int] = None,
+        return_exceeded_limit_features: Optional[bool] = False,
+    ):
+        """
+        The ``query_date_bins`` operation is performed on a :class:`~arcgis.features.FeatureLayer`.
+        This operation returns a histogram of features divided into bins based on a date field.
+        The response can include statistical aggregations for each bin, such as a count or
+        sum, and may also include the aggregate geometries (in other words, centroid) for
+        point layers.
+
+        The parameters define the bins, the aggregate information returned, and the included
+        features. Bins are defined using the bin parameter. The ``out_statistics`` and
+        ``return_centroid`` parameters define the information each bin will provide. Included
+        features can be specified by providing a ``time`` extent, ``where`` condition, and a
+        spatial filter, similar to a query operation.
+
+        The contents of the ``bin_specs`` parameter provide flexibility for defining bin
+        boundaries. The ``bin_specs`` parameter's ``unit`` property defines the time width of each
+        bin, such as one year, quarter, month, day, or hour. Fixed bins can use multiple units for
+        these time widths. The ``result_offset`` property defines an offset within that time unit.
+        For example, if your bin unit is ``day``, and you want bin boundaries to go from noon to
+        noon on the next day, the offset would be 12 hours.
+
+        Features can be manipulated with the ``time_filter``, ``where``, and ``geometry_filter``
+        parameters. By default, the result will expand to fit the feature's earliest and latest
+        point of time. The ``time_filter`` parameter defines a fixed starting point and ending
+        point of the features based on the field used in binField. The ``where`` and
+        ``geometry_filter`` parameters allow additional filters to be put on the data.
+
+        This operation is only supported on feature services using a spatiotemporal data
+        store. As well, the service property ``supportsQueryDateBins`` must be set to true.
+
+        To use pagination with aggregated queries on hosted feature services in ArcGIS
+        Enterprise, the ``supportsPaginationOnAggregatedQueries`` property must be ``true`` on
+        the layer. Hosted feature services using a spatiotemporal data store do not currently
+        support pagination on aggregated queries.
+
+        ==============================     ====================================================================
+        **Argument**                       **Description**
+        ------------------------------     --------------------------------------------------------------------
+        bin_field                          Required String. The date field used to determine which bin each
+                                           feature falls into.
+        ------------------------------     --------------------------------------------------------------------
+        bin_specs                          Required Dict. A dictionary that describes the characteristics of
+                                           bins, such as the size of the bin and its starting position. The
+                                           size of each bin is determined by the number of time units denoted
+                                           by the ``number`` and ``unit`` properties.
+
+                                           The starting position of the bin is the earliest moment in the
+                                           specified unit. For example, each year begins at midnight of January
+                                           1. An offset inside the bin parameter can provide an offset to the
+                                           starting position of the bin. This can contain a positive or
+                                           negative integer value.
+
+                                           A bin can take two forms: either a calendar bin or a fixed bin. A
+                                           calendar bin is aware of calendar-specific adjustments, such as
+                                           daylight saving time and leap seconds. Fixed bins are, by contrast,
+                                           always a specific unit of measurement (for example, 60 seconds in a
+                                           minute, 24 hours in a day) regardless of where the date and time of
+                                           the bin starts. For this reason, some calendar-specific units are
+                                           only supported as calendar bins.
+
+                                           .. code-block:: python
+
+                                                # Calendar bin
+
+                                                >>> bin_specs= {"calendarBin":
+                                                                  {"unit": "year",
+                                                                    "timezone": "US/Arizona",
+                                                                    "offset": {
+                                                                        "number": 5,
+                                                                        "unit": "hour"}
+                                                                  }
+                                                               }
+
+                                                # Fixed bin
+
+                                                >>> bin_specs= {"fixedBin":
+                                                                 {
+                                                                  "number": 12,
+                                                                  "unit": "hour",
+                                                                  "offset": {
+                                                                    "number": 5,
+                                                                    "unit": "hour"}
+                                                                 }
+                                                               }
+        ------------------------------     --------------------------------------------------------------------
+        out_statistics                     Required List of Dicts. The definitions for one or more field-based
+                                           statistics to be calculated:
+
+                                           .. code-block:: python
+
+                                               {
+                                                "statisticType": "<count | sum | min | max | avg | stddev | var>",
+                                                "onStatisticField": "Field1",
+                                                "outStatisticFieldName": "Out_Field_Name1"
+                                               }
+        ------------------------------     --------------------------------------------------------------------
+        time_filter                        Optional list. The format is of [<startTime>, <endTime>] using
+                                           datetime.date, datetime.datetime or timestamp in milliseconds.
+        ------------------------------     --------------------------------------------------------------------
+        geometry_filter                    Optional from :attr:`~arcgis.geometry.filters`. Allows for the
+                                           information to be filtered on spatial relationship with another
+                                           geometry.
+        ------------------------------     --------------------------------------------------------------------
+        bin_order                          Optional String. Either "ASC" or "DESC". Determines whether results
+                                           are returned in ascending or descending order. Default is ascending.
+        ------------------------------     --------------------------------------------------------------------
+        where                              Optional String. A WHERE clause for the query filter. SQL '92 WHERE
+                                           clause syntax on the fields in the layer is supported for most data
+                                           sources.
+        ------------------------------     --------------------------------------------------------------------
+        return_centroid                    Optional Boolean. Returns the geometry centroid associated with all
+                                           the features in the bin. If true, the result includes the geometry
+                                           centroid. The default is false. This parameter is only supported on
+                                           point data.
+        ------------------------------     --------------------------------------------------------------------
+        in_sr                              Optional Integer. The WKID for the spatial reference of the input
+                                           geometry.
+        ------------------------------     --------------------------------------------------------------------
+        out_sr                             Optional Integer. The WKID for the spatial reference of the returned
+                                           geometry.
+        ------------------------------     --------------------------------------------------------------------
+        spatial_rel                        Optional String. The spatial relationship to be applied to the input
+                                           geometry while performing the query. The supported spatial
+                                           relationships include intersects, contains, envelop intersects,
+                                           within, and so on. The default spatial relationship is intersects
+                                           (``esriSpatialRelIntersects``). Other options are
+                                           ``esriSpatialRelContains``, ``esriSpatialRelCrosses``,
+                                           ``esriSpatialRelEnvelopeIntersects``,
+                                           ``esriSpatialRelIndexIntersects``, ``esriSpatialRelOverlaps``,
+                                           ``esriSpatialRelTouches``, and ``esriSpatialRelWithin``.
+        ------------------------------     --------------------------------------------------------------------
+        quantization_params                Optional Dict. Used to project the geometry onto a virtual grid,
+                                           likely representing pixels on the screen.
+
+                                           .. code-block:: python
+
+                                                # upperLeft origin position
+
+                                                {"mode": "view",
+                                                 "originPosition": "upperLeft",
+                                                 "tolerance": 1.0583354500042335,
+                                                 "extent": {
+                                                     "type": "extent",
+                                                     "xmin": -18341377.47954369,
+                                                     "ymin": 2979920.6113554947,
+                                                     "xmax": -7546517.393554582,
+                                                     "ymax": 11203512.89298139,
+                                                     "spatialReference": {
+                                                         "wkid": 102100,
+                                                         "latestWkid": 3857}
+                                                     }
+                                                 }
+
+                                                # lowerLeft origin position
+
+                                                {"mode": "view",
+                                                 "originPosition": "lowerLeft",
+                                                 "tolerance": 1.0583354500042335,
+                                                 "extent": {
+                                                    "type": "extent",
+                                                    "xmin": -18341377.47954369,
+                                                    "ymin": 2979920.6113554947,
+                                                    "xmax": -7546517.393554582,
+                                                    "ymax": 11203512.89298139,
+                                                    "spatialReference": {
+                                                        "wkid": 102100,
+                                                        "latestWkid": 3857}
+                                                    }
+                                                }
+
+                                           See `Quantization parameters JSON properties <https://developers.arcgis.com/rest/services-reference/enterprise/query-date-bins-fsl.htm>`_
+                                           for details on format of this parameter.
+
+                                           .. note::
+                                                This parameter only applies if the layer's
+                                                ``supportsCoordinateQuantization`` property is ``true``.
+        ------------------------------     --------------------------------------------------------------------
+        result_offset                      Optional Int. This parameter fetches query results by skipping the
+                                           specified number of records and starting from the next record. The
+                                           default is 0.
+
+                                           Note:
+                                                This parameter only applies if the layer's
+                                                ``supportsPagination`` property is ``true``.
+        ------------------------------     --------------------------------------------------------------------
+        result_record_count                Optional Int. This parameter fetches query results up to the value
+                                           specified. When ``result_offset`` is specified, but this parameter
+                                           is not, the map service defaults to the layer's ``maxRecordCount``
+                                           property. The maximum value for this parameter is the value of the
+                                           ``maxRecordCount`` property. The minimum value entered for this
+                                           parameter cannot be below 1.
+
+                                           Note:
+                                                This parameter only applies if the layer's
+                                                ``supportsPagination`` property is ``true``.
+        ------------------------------     --------------------------------------------------------------------
+        return_exceeded_limit_features     Optional Boolean. When set to ``True``, features are returned even
+                                           when the results include ``"exceededTransferLimit": true``. This
+                                           allows a client to find the resolution in which the transfer limit
+                                           is no longer exceeded withou making multiple calls. The default
+                                           value is ``False``.
+        ==============================     ====================================================================
+
+        :return:
+            A Dict containing the resulting features and fields.
+
+        .. code-block:: python
+
+            # Usage Example
+
+            >>> flyr_item = gis.content.search("*", "Feature Layer")[0]
+            >>> flyr = flyr_item.layers[0]
+
+            >>> qy_result = flyr.query_date_bins(bin_field="boundary",
+                                                 bin_specs={"calendarBin":
+                                                              {"unit":"day",
+                                                               "timezone": "America/Los_Angeles",
+                                                               "offset": {"number": 8,
+                                                                          "unit": "hour"}
+                                                              }
+                                                            },
+                                                 out_statistics=[{"statisticType": "count",
+                                                                  "onStatisticField": "objectid",
+                                                                  "outStatisticFieldName": "item_sold_count"},
+                                                                 {"statisticType": "avg",
+                                                                 "onStatisticField": "price",
+                                                                 "outStatisticFieldName": "avg_daily_revenue "}],
+                                                 time=[1609516800000, 1612195199999])
+            >>> qy_result
+               {
+                "features": [
+                  {
+                    "attributes": {
+                      "boundary": 1609516800000,
+                      "avg_daily_revenue": 300.40,
+                      "item_sold_count": 79
+                    }
+                  },
+                  {
+                    "attributes": {
+                      "boundary": 1612108800000,
+                      "avg_daily_revenue": null,
+                      "item_sold_count": 0
+                    }
+                  }
+                ],
+                "fields": [
+                  {
+                    "name": "boundary",
+                    "type": "esriFieldTypeDate"
+                  },
+                  {
+                    "name": "item_sold_count",
+                    "alias": "item_sold_count",
+                    "type": "esriFieldTypeInteger"
+                  },
+                  {
+                    "name": "avg_daily_revenue",
+                    "alias": "avg_daily_revenue",
+                    "type": "esriFieldTypeDouble"
+                  }
+                ],
+                "exceededTransferLimit": false
+              }
+
+
+        """
+
+        qdb_url = self._url + "/queryDateBins"
+        params = {
+            "binField": bin_field,
+            "bin": bin_specs,
+            "f": "json",
+        }
+
+        layer_props = dict(self.properties)
+
+        if time_filter is None and self.time_filter:
+            params["time"] = self.time_filter
+        elif time_filter is not None:
+            if type(time_filter) is list:
+                starttime = _date_handler(time_filter[0])
+                endtime = _date_handler(time_filter[1])
+                if starttime is None:
+                    starttime = "null"
+                if endtime is None:
+                    endtime = "null"
+                params["time"] = "%s,%s" % (starttime, endtime)
+            elif isinstance(time_filter, dict):
+                for key, val in time_filter.items():
+                    params[key] = val
+            else:
+                params["time"] = _date_handler(time_filter)
+
+        if geometry_filter and isinstance(geometry_filter, GeometryFilter):
+            for key, val in geometry_filter.filter:
+                params[key] = val
+        elif geometry_filter and isinstance(geometry_filter, dict):
+            for key, val in geometry_filter.items():
+                params[key] = val
+
+        if bin_order:
+            params["binOrder"] = bin_order
+        if out_statistics:
+            params["outStatistics"] = out_statistics
+        if where:
+            params["where"] = where
+        if return_centroid:
+            params["returnCentroid"] = return_centroid
+        if in_sr:
+            params["inSR"] = in_sr
+        if out_sr:
+            params["outSR"] = out_sr
+        if spatial_rel:
+            if spatial_rel in layer_props["supportedSpatialRelationships"]:
+                params["spatialRel"] = spatial_rel
+            else:
+                print(
+                    "Designated spatial_rel not supported. Defaulting to esriSpacialRelIntersects..."
+                )
+        if quantization_params:
+            if layer_props["supportsCoordinatesQuantization"]:
+                params["quantizationParameters"] = quantization_params
+            else:
+                print(
+                    "Coordinate quantization is not enabled for this layer. Ignoring quantization_params..."
+                )
+        if result_offset:
+            if layer_props["advancedQueryCapabilities"]["supportsPagination"]:
+                params["resultOffset"] = result_offset
+            else:
+                print(
+                    "Query pagination is not enabled for this layer. Ignoring result_offset..."
+                )
+        if result_record_count:
+            if layer_props["advancedQueryCapabilities"]["supportsPagination"]:
+                params["resultRecordCount"] = result_record_count
+            else:
+                print(
+                    "Query pagination is not enabled for this layer. Ignoring result_record_count..."
+                )
+        if return_exceeded_limit_features:
+            params["returnExceededLimitedFeatures"] = return_exceeded_limit_features
+
+        result = self._con.post(qdb_url, params)
+        return result
+
+    # ----------------------------------------------------------------------
     def query_top_features(
         self,
         top_filter: Optional[dict[str, str]] = None,
@@ -1241,19 +1606,18 @@ class FeatureLayer(Layer):
                                             ]
 
 
-                                            Example:
-                                            [{
-                                                  "analyticType": "FIRST_VALUE",
-                                                  "onAnalyticField": "POP1990",
-                                                  "analyticParameters": {
-                                                      "orderBy": "POP1990",
-                                                      "partitionBy": "state_name"
-                                                  },
-                                                  "outAnalyticFieldName": "FirstValue"
-                                                }
-                                            ]
+                                            .. code-block:: python
 
+                                                #Usage Example:
 
+                                                >>> out_analytics =
+                                                        [{"analyticType": "FIRST_VALUE",
+                                                          "onAnalyticField": "POP1990",
+                                                          "analyticParameters": {
+                                                                                 "orderBy": "POP1990",
+                                                                                 "partitionBy": "state_name"
+                                                                                },
+                                                          "outAnalyticFieldName": "FirstValue"}]
         -------------------------------     --------------------------------------------------------------------
         where                               Optional string. The default is 1=1. The selection sql statement.
         -------------------------------     --------------------------------------------------------------------
@@ -1269,8 +1633,6 @@ class FeatureLayer(Layer):
         -------------------------------     --------------------------------------------------------------------
         out_sr                              Optional Integer. The WKID for the spatial reference of the returned
                                             geometry.
-        -------------------------------     --------------------------------------------------------------------
-        out_sr                              Optional Integer.  The output spatial reference `wkid`.
         -------------------------------     --------------------------------------------------------------------
         return_geometry                     Optional boolean. If true, geometry is returned with the query.
                                             Default is true.
@@ -2169,18 +2531,30 @@ class FeatureLayer(Layer):
         :return: Dictionary of the query results
 
         .. code-block:: python
-            # The query results will return the related records for each objectIds
-            # where TOWNSHIP is the outField and orderByField:
 
-            FeatureLayer.query_related_records(object_ids="7028,7029",
-                                               relationship_id="1",
-                                               out_fields="TOWNSHIP",
-                                               definition_expression="1=1",
-                                               order_by_fields="TOWNSHIP",
-                                               return_count_only=False,
-                                               return_geometry=False)
+            # Usage Example:
 
+            # Query returning the related records for a feature with objectid value of 2,
+            # returning the values in the 6 attribute fields defined in the `field_string`
+            # variable:
 
+            >>> field_string = "objectid,attribute,system_name,subsystem_name,class_name,water_regime_name"
+            >>> rel_records = feat_lyr.query_related_records(object_ids = "2",
+                                                             relationship_id = 0,
+                                                             out_fields = field_string,
+                                                             return_geometry=True)
+
+            >>> list(rel_records.keys())
+            ['fields', 'relatedRecordGroups']
+
+            >>> rel_records["relatedRecordGroups"]
+            [{'objectId': 2,
+              'relatedRecords': [{'attributes': {'objectid': 686,
+                 'attribute': 'L1UBHh',
+                 'system_name': 'Lacustrine',
+                 'subsystem_name': 'Limnetic',
+                 'class_name': 'Unconsolidated Bottom',
+                 'water_regime_name': 'Permanently Flooded'}}]}]
         """
         params = {
             "f": "json",
@@ -2248,7 +2622,7 @@ class FeatureLayer(Layer):
         upload_format: str = "featureCollection",
         source_table_name: Optional[str] = None,
         field_mappings: Optional[list[dict[str, str]]] = None,
-        edits: Optional[str] = None,
+        edits: Optional[dict] = None,
         source_info: Optional[dict] = None,
         upsert: bool = False,
         skip_updates: bool = False,
@@ -2300,7 +2674,7 @@ class FeatureLayer(Layer):
                                        field_mappings=[{"name" : "CountyID",
                                                        "sourceName" : "GEOID10"}]
         ------------------------   --------------------------------------------------------------------
-        edits                      Optional string. Only feature collection json is supported. Append
+        edits                      Optional dictionary. Only feature collection json is supported. Append
                                    supports all format through the upload_id or item_id.
         ------------------------   --------------------------------------------------------------------
         source_info                Optional dictionary. This is only needed when appending data from
@@ -2986,7 +3360,12 @@ class FeatureLayer(Layer):
             params["datumTransformation"] = datum_transformation
         if session_id and isinstance(session_id, str):
             params["sessionID"] = session_id
-        if "deletes" not in params and "updates" not in params and "adds" not in params:
+        if (
+            "deletes" not in params
+            and "updates" not in params
+            and "adds" not in params
+            and "attachments" not in params
+        ):
             print("Parameters not valid for edit_features")
             return None
         try:
@@ -4077,6 +4456,7 @@ class FeatureLayerCollection(_GISResource):
         data_format: str = "json",
         change_extent_grid_cell: Optional[str] = None,
         return_geometry_updates: Optional[bool] = None,
+        fields_to_compare: list | None = None,
     ):
         """
         A change tracking mechanism for applications. Applications can use ``extract_changes`` to
@@ -4226,6 +4606,14 @@ class FeatureLayerCollection(_GISResource):
                                              returned as false. When a layer has multiple rows with updates,
                                              only one needs to include a geometry changes for
                                              `hasGeometryUpdates` to be set as true.
+        --------------------------------     --------------------------------------------------------------------
+        fields_to_compare                    Optional List. Introduced at 11.0. This parameter allows you to
+                                             determine if any array of fields has been updated. The accepted
+                                             values for this parameter is a fields array that include the fields
+                                             you want to evaluate. The response includes a fieldUpdates array,
+                                             which includes rows that contain any updates made to the specified
+                                             fields. If no updates were made to any fields, the fieldUpdates
+                                             array is empty.
         ================================     ====================================================================
 
         :return:
@@ -4286,7 +4674,12 @@ class FeatureLayerCollection(_GISResource):
             "dataFormat": data_format,
             "layerServerGens": servergen,
             "changesExtentGridCell": change_extent_grid_cell,
+            "fieldsToCompare": None,
         }
+        if not fields_to_compare is None:
+            params["fieldsToCompare"] = {"fields": fields_to_compare}
+        else:
+            del params["fieldsToCompare"]
         if not return_geometry_updates is None:
             params["returnHasGeometryUpdates"] = return_geometry_updates
         res = self._con.post(url, params)

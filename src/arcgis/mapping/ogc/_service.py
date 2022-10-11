@@ -17,7 +17,7 @@ class OGCCollection:
     ----------------  -------------------------------------------------------------------------------
     url               Required String. The web address endpoint.
     ----------------  -------------------------------------------------------------------------------
-    gis               Optional GIS. The connection object.
+    gis               Optional :class:`~arcgis.gis.GIS`. The connection object.
     ================  ===============================================================================
 
     """
@@ -69,7 +69,7 @@ class OGCCollection:
         **kwargs,
     ) -> Union[Dict[str, Any], pd.DataFrame]:
         """
-        Queries the OGC Feature Service Layer and Returns back the information as a Spatially Enabled DataFrame.
+        Queries the :class:`~arcgis.mapping.ogc.OGCFeatureService` Layer and returns back the information as a Spatially Enabled DataFrame.
 
         ================  ===============================================================================
         **Argument**      **Description**
@@ -182,7 +182,7 @@ class OGCFeatureService:
     ----------------  -------------------------------------------------------------------------------
     url               Required String. The web address endpoint.
     ----------------  -------------------------------------------------------------------------------
-    gis               Optional GIS. The connection object.
+    gis               Optional :class:`~arcgis.gis.GIS`. The connection object.
     ================  ===============================================================================
 
     """
@@ -232,7 +232,7 @@ class OGCFeatureService:
         """
         Yields all the OGC Feature Service Layers within the service.
 
-        :return: Iterator[OGCCollection]
+        :return: Iterator[:class:`~arcgis.mapping.ogc.OGCCollection`]
         """
         url = f"{self._url}/collections"
         params = {"f": "json"}

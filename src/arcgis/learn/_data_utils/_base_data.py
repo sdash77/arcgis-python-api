@@ -85,7 +85,7 @@ class ArcgisData(object):
                                 to `False` no transformation will take place and
                                 `chip_size` parameter will also not take effect.
                                 If the dataset_type is 'PointCloud', use
-                                `Transform3d` class from `arcgis.learn`.
+                                :class:`~arcgis.learn.Transform3d` .
         ---------------------   -------------------------------------------
         collate_fn              Optional function. Passed to PyTorch to collate data
                                 into batches(usually default works).

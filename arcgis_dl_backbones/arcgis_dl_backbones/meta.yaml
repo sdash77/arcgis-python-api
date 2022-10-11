@@ -1,0 +1,26 @@
+{% set name = "arcgis_dl_backbones" %}
+{% set version = "2.0.1" %}
+
+package:
+  name: "{{ name|lower }}"
+  version: "{{ version }}"
+
+source:
+  path: ../src 
+
+build:
+  noarch: python
+  number: 0
+
+requirements:
+  build:
+    - pip
+    - python>=3
+    - arcgis_learn=2.0.1
+    - zlib
+  run:
+    - python
+
+
+about:
+  summary: Install torchvision backbones

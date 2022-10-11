@@ -11,6 +11,7 @@ package:
 requirements:
   build:
   - python
+  - pillow
   - cachetools
   - ujson >=3
   - setuptools
@@ -28,7 +29,7 @@ requirements:
   - requests-toolbelt
   - requests-kerberos
   - requests-oauthlib
-  - requests_ntlm
+  - requests_ntlm2
   - requests-negotiate-sspi [win]
   - pywin32-security [win]
   - lerc
@@ -40,6 +41,7 @@ requirements:
   - geomet
   run:
   - python
+  - pillow
   - six
   - cachetools
   - notebook
@@ -56,7 +58,7 @@ requirements:
   - requests-toolbelt
   - requests-kerberos
   - requests-oauthlib
-  - requests_ntlm
+  - requests_ntlm2
   - requests-negotiate-sspi [win]
   - pywin32-security [win]
   - lerc

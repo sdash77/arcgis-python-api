@@ -6,7 +6,7 @@ Raster data is made up of a grid of cells, where each cell or pixel can have a v
 for storing data that varies continuously, as in a satellite image, a surface of chemical concentrations, or
 an elevation surface.
 
-Use :meth:`arcgis.raster.analytics.is_supported` to check if raster analysis is supported in your GIS.
+Use :meth:`~arcgis.raster.analytics.is_supported` to check if raster analysis is supported in your GIS.
 """
 
 from ._layer import (

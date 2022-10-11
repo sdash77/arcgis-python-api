@@ -7,7 +7,9 @@ import concurrent.futures
 ########################################################################
 class NotebookManager(object):
     """
-    Provides access to managing a site's notebooks
+    Provides access to managing a site's notebooks. An object of this
+    class can be created using :attr:`~arcgis.gis.nb.NotebookServer.notebooks` property of the
+    :class:`~arcgis.gis.nb.NotebookServer` class
     """
 
     _url = None
@@ -143,9 +145,10 @@ class NotebookManager(object):
     ):
         """
 
-        The Execute Notebook operation allows administrators to remotely
-        run a notebook in their ArcGIS Notebook Server site. The notebook
-        specified in the operation will be run with all cells in order.
+        The Execute Notebook operation allows administrators and users with
+        the `Create and Edit Notebooks` privilege to remotely
+        run a notebook that they own.  The notebook pecified in the operation will be run with all
+        cells in order.
 
         Using this operation, you can schedule the execution of a notebook,
         either once or with a regular occurrence. This allows you to
@@ -154,10 +157,10 @@ class NotebookManager(object):
         a cron job to schedule the executeNotebook operation; on Windows
         machines, you can use the Task Scheduler app.
 
-        :Note: To run this operation, you must be logged in with an ArcGIS
-            Enterprise portal account. You cannot execute notebooks from
-            the ArcGIS Notebook Server primary site administrator
-            account.
+        .. note::
+            To run this operation in ArcGIS Enterprise, you must log in with
+            an Enterprise account. You cannot execute notebooks using the
+            ArcGIS Notebook Server primary site administrator account.
 
         You can specify parameters to be used in the notebook at execution
         time. If you've specified one or more parameters, they'll be
@@ -190,12 +193,26 @@ class NotebookManager(object):
                                 should be saved in the notebook for future use. The default is
                                 false.
         --------------------    --------------------------------------------------------------------
-        future                  Optional boolean. If True, a future object will be returned and the process
+        future                  Optional boolean. If True, a Job object will be returned and the process
                                 will not wait for the task to complete. The default is False, which means wait for results.
         ====================    ====================================================================
 
-        :return: Boolean else If ``future = True``,
-        then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
+        :return: Dict else If ``future = True``, then the result is
+                 a `concurrent.futures.Future <https://docs.python.org/3/library/concurrent.futures.html>`_ object.
+                 Call ``result()`` to get the response
+
+        .. code-block:: python
+
+            # Usage Example:
+
+            >>> from arcgis.gis import GIS
+            >>> gis = GIS("home")
+            >>> nb_server = gis.notebook_server[0]
+
+            >>> notebook_item = gis.content.get('<notebook_item_id>')
+
+            >>> nb_mgr = nb_server.notebooks
+            >>> nb_mgr.execute_notebook(notebook_item)
 
         """
         from arcgis.gis import Item
@@ -219,21 +236,27 @@ class NotebookManager(object):
             def _fn(url, params, nbs):
                 import time
 
-                resp = self._gis._con.post(url, params)
-                if "status" in resp and resp["status"] == "success":
-                    job_id = resp["jobId"]
-                    status = nbs.system.job_details(job_id)
+                start_job = self._gis._con.post(url, params)
+                if "jobUrl" in start_job:
+                    resp = self._gis._con.get(start_job["jobUrl"], {"f": "json"})
+                else:
+                    return start_job
+                if "status" in resp and resp["status"].lower() != "success":
+                    status = self._gis._con.get(start_job["jobUrl"], {"f": "json"})
                     i = 0
                     while status["status"].lower() != "completed":
-                        time.sleep(0.3)
+                        time.sleep(0.3 * i)
                         if status["status"].lower() == "failed":
                             return status
                         elif (
                             status["status"].lower().find("fail") > -1
                             or status["status"].lower().find("error") > -1
                         ):
-                            raise Exception(f"Job Fail {jobstatus}")
-                        status = nbs.system.job_details(job_id)
+                            raise Exception(f"Job Fail {status}")
+                        status = self._gis._con.get(start_job["jobUrl"], {"f": "json"})
+                        i += 1
+                        if i > 20:
+                            i = 20
                     return status
                 return resp
 
@@ -279,7 +302,7 @@ class NotebookManager(object):
         template_nb             Optional String. The start up template for the notebook.
         ==================      ====================================================================
 
-        :return: dict
+        :return: Dict
 
         """
         params = {
@@ -406,7 +429,7 @@ class Runtime(object):
         """
         Deletes the current runtime from the ArcGIS Notebook Server
 
-        :return: boolean
+        :return: Boolean
 
         """
         url = self._url + "/unregister"

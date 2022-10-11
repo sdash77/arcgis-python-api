@@ -1134,7 +1134,7 @@ def geocode_from_items(
                 }
             }
         else:
-            output_name = "Geocoded_Result_ %" % uid
+            output_name = "Geocoded_Result_ %s" % uid
             kwargs["output_name"] = {
                 "itemProperties": {
                     "title": "Geocoded Results %s" % output_name,
@@ -1500,7 +1500,7 @@ def batch_geocode(
     as_featureset: bool = False,
     match_out_of_range: bool = True,
     location_type: str = "street",
-    search_extent: Optional[Union[list[dict[str, Any], dict[str, Any]]]] = None,
+    search_extent: Optional[Union[list[dict[str, Any]], dict[str, Any]]] = None,
     lang_code: str = "EN",
     preferred_label_values: Optional[str] = None,
     out_fields: Optional[str] = None,
@@ -1646,7 +1646,7 @@ def suggest(
     distance: Optional[float] = None,
     category: Optional[str] = None,
     geocoder: Optional[Geocoder] = None,
-    search_extent: Optional[Union[list[dict[str, Any], dict[str, Any]]]] = None,
+    search_extent: Optional[Union[list[dict[str, Any]], dict[str, Any]]] = None,
     max_suggestions: int = 5,
     country_code: Optional[str] = None,
 ):

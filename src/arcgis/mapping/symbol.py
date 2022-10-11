@@ -437,7 +437,7 @@ def create_symbol(
     """
     The ``create_symbol`` method generates a Symbol from a given set of parameters.
 
-    ``creat_symbol`` creates either a ``Picture``, ``Text``, ``Cartographic``, or ``Simple Symbol``
+    ``create_symbol`` creates either a ``Picture``, ``Text``, ``Cartographic``, or ``Simple Symbol``
     based on a given set of parameters.
 
     .. note::
@@ -498,14 +498,9 @@ def create_symbol(
                              + 'x' - Diagonal Cross
                              + '+' - Cross
     -----------------------  ---------------------------------------------------------
-    colors                     optional string or list.  This is the color scheme a user
-                             can provide if the exact color is not needed, or a user
-                             can provide a list with the color defined as:
-                             [red, green blue, alpha]. The values red, green, blue are
-                             from 0-255 and alpha is a float value from 0 - 1.
-                             The default value is 'jet' color scheme.
+    colors                   Optional string or list.  This is the color scheme a user can provide if the exact color is not needed, or a user can provide a list with the color defined as: [red, green blue, alpha]. The values red, green, blue are from 0-255 and alpha is a float value from 0 - 1. The default value is 'jet' color scheme.
     -----------------------  ---------------------------------------------------------
-    cstep                    optional integer.  If provided, its the color location on
+    cstep                    optional integer.  If provided, it's the color location on
                              the color scheme.
     =======================  =========================================================
 
@@ -617,6 +612,7 @@ def create_symbol(
     **Argument**          **Description**
     --------------------  ---------------------------------------------------------
     font_decoration       The text decoration. Must be one of the following values:
+
                           - line-through
                           - underline
                           - none
@@ -626,12 +622,14 @@ def create_symbol(
     font_size             Optional float. The font size in points.
     --------------------  ---------------------------------------------------------
     font_style            Optional string. The text style.
+
                           - italic
                           - normal
                           - oblique
     --------------------  ---------------------------------------------------------
     font_weight           Optional string. The text weight.
                           Must be one of the following values:
+
                           - bold
                           - bolder
                           - lighter
@@ -649,6 +647,7 @@ def create_symbol(
     horizontal_alignment  optional string. One of the following string values
                           representing the horizontal alignment of the text.
                           Must be one of the following values:
+
                           - left
                           - right
                           - center
@@ -684,6 +683,7 @@ def create_symbol(
     vertical_alignment    Optional string. One of the following string values
                           representing the vertical alignment of the text.
                           Must be one of the following values:
+
                           - top
                           - bottom
                           - middle
@@ -723,6 +723,8 @@ def create_symbol(
 
     # Get color step, if not specified, pick a random value between 0 and 255.
     cstep = kwargs.pop("cstep", int(np.random.randint(0, 255)))
+    if cstep is None:
+        cstep = int(np.random.randint(0, 255))
     renderer_type = "simple"
 
     marker_size = kwargs.pop("marker_size", 8)

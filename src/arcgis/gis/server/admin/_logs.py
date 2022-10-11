@@ -1,3 +1,4 @@
+from __future__ import annotations
 from __future__ import absolute_import
 from __future__ import print_function
 import csv
@@ -166,18 +167,18 @@ class LogManager(BaseServer):
     # ----------------------------------------------------------------------
     def query(
         self,
-        start_time: Optional[str] = None,
-        end_time: Optional[str] = None,
+        start_time: int | datetime | None = None,
+        end_time: int | datetime | None = None,
         since_server_start: bool = False,
         level: str = "WARNING",
         services: str = "*",
         machines: str = "*",
         server: str = "*",
-        codes: Optional[str] = None,
-        process_IDs: Optional[str] = None,
+        codes: str | None = None,
+        process_IDs: str | None = None,
         export: bool = False,
         export_type: str = "CSV",
-        out_path: Optional[str] = None,
+        out_path: str | None = None,
         max_records_return: int = 5000,
     ):
         """
@@ -187,12 +188,15 @@ class LogManager(BaseServer):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        start_time             Optional String. The most recent time to query.  Default is now.
-                               Time can be specified in milliseconds since UNIX epoch, or as an
-                               ArcGIS Server timestamp. For example { "startTime": "2011-08-01T15:17:20,123", ... },
-                               { "startTime": 1312237040123, ... }, respectively.
+        start_time             Optional Integer or datetime. The most recent time to query.  Default is now.
+                               Time can be specified in milliseconds since UNIX epoch.
+
+
+                               Example for integer:
+                               start_time = 1312237040123
+
         ------------------     --------------------------------------------------------------------
-        end_time               Optional String. The oldest time to include in the result set. You
+        end_time               Optional String or datetime. The oldest time to include in the result set. You
                                can use this to limit the query to the last n minutes or hours as
                                needed.
 
@@ -259,11 +263,15 @@ class LogManager(BaseServer):
         max_records_return -= 5000
         url = "{url}/query".format(url=self._url)
         if start_time is not None and isinstance(start_time, datetime):
-            params["startTime"] = start_time.strftime("%Y-%m-%dT%H:%M:%S,%f")
+            params["startTime"] = int(start_time.timestamp() * 1000)
+        elif start_time:
+            params["startTime"] = start_time
         else:
-            params["startTime"] = datetime.now().strftime("%Y-%m-%dT%H:%M:%S,%f")
+            params["startTime"] = int(datetime.now().timestamp() * 1000)
         if end_time is not None and isinstance(end_time, datetime):
-            params["endTime"] = end_time.strftime("%Y-%m-%dT%H:%M:%S,%f")
+            params["endTime"] = int(end_time.timestamp() * 1000)
+        elif end_time and isinstance(end_time, int):
+            params["endTime"] = end_time
         if level.upper() in allowed_levels:
             params["level"] = level
         if server != "*":

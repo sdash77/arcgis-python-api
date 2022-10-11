@@ -31,7 +31,7 @@ except Exception as e:
 
 class TextSummarizer(InferenceOnlyModel):
     """
-    Creates a `TextSummarizer` Object.
+    Creates a :class:`~arcgis.learn.text.TextSummarizer` Object.
     Based on the Hugging Face transformers library
 
     =====================   ===========================================
@@ -62,7 +62,7 @@ class TextSummarizer(InferenceOnlyModel):
                             model.
     =====================   ===========================================
 
-    :return: `TextSummarizer` Object
+    :return: :class:`~arcgis.learn.text.TextSummarizer` Object
     """
 
     #: supported transformer architectures

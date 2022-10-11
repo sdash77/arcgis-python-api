@@ -28,7 +28,7 @@ except Exception as e:
 
 class FillMask(InferenceOnlyModel):
     """
-    Creates a `FillMask` Object.
+    Creates a :class:`~arcgis.learn.text.FillMask` Object.
     Based on the Hugging Face transformers library
 
     =====================   ===========================================
@@ -59,7 +59,7 @@ class FillMask(InferenceOnlyModel):
                             model.
     =====================   ===========================================
 
-    :return: `FillMask` Object
+    :return: :class:`~arcgis.learn.text.FillMask` Object
     """
 
     #: supported transformer architectures

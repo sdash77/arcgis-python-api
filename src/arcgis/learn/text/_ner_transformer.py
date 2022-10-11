@@ -948,7 +948,7 @@ class _TransformerEntityRecognizer(ArcGISModel):
                                 will plot the figure and return nothing.
         =====================   ===========================================
 
-        :return: matplotlib.figure.Figure
+        :return: `matplotlib.figure.Figure <https://matplotlib.org/stable/api/figure_api.html#matplotlib.figure.Figure>`_
         """
         self._check_requisites()
         import matplotlib.pyplot as plt
