@@ -1415,7 +1415,7 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             console.log("end time changed");
             var endTimeStr = this.model.get("_writeonly_end_time");
             var endTime = new Date(endTimeStr);
-            this._time_slider.timeExtent.start = endTime;}
+            this._time_slider.timeExtent.end = endTime;}
         catch(err){
             this._displayErrorBox("Error while changing `end_time`");
             console.warn("Error while changing `end_time`");
