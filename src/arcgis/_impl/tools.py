@@ -19053,6 +19053,48 @@ class _GeometryService(_GISService):
         else:
             return results
 
+# --------------------------------------------------------------------------
+    def _execute_by_chunk(self, url, params, number_executors, task_name, sr, future):
+        # create chunks and output the results
+        chunk = 6500
+        # gather all the geometries we will chunk
+        if task_name == "cut":
+            all_geometries = params["target"]["geometries"]
+            geom_type = params["target"]["geometryType"]
+            geom_param = "target"
+        else:
+            all_geometries = params["geometries"]["geometries"] if "geometries" in params else params["geometry"]["geometries"]
+            geom_type = params["geometries"]["geometryType"] if "geometries" in params else params["geometry"]["geometryType"]
+            geom_param = "geometries" if "geometries" in params else "geometry"
+        all_results = []
+        # loop until all chunks reached
+        for i in range(0, len(all_geometries), chunk):
+            geoms = all_geometries[i:i+chunk]
+            params[geom_param] = {"geometryType":geom_type, "geometries": geoms}            
+            executor = concurrent.futures.ThreadPoolExecutor(number_executors)
+            f1 = executor.submit(
+                self._con.post, **{"path": url, "postdata": params, "token": self._token}
+            )
+            if number_executors == 2:
+                f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
+                executor.shutdown(False)
+            job = GeometryJob(
+                future=f1 if number_executors == 1 else f2,
+                task_name=task_name,
+                jobid=None,
+                task_url=url,
+                notify=False,
+                gis=self._gis,
+                out_wkid=sr,
+            )
+            if future:
+                all_results.append(job)
+            else:
+                results = job.result()
+                for result in results:
+                    all_results.append(result)
+        return all_results
+        
     # ----------------------------------------------------------------------
     def auto_complete(self, polygons=None, polylines=None, sr=None, future=False):
         """
@@ -19187,25 +19229,8 @@ class _GeometryService(_GISService):
             params["bufferSR"] = bufferSR
         if outSR is not None:
             params["outSR"] = outSR
-        executor = concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
-        )
-        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": outSR})
-        executor.shutdown(False)
-        job = GeometryJob(
-            future=f2,
-            task_name="buffer",
-            jobid=None,
-            task_url=url,
-            notify=False,
-            gis=self._gis,
-            out_wkid=outSR or inSR,
-        )
-        if future:
-            return job
-        else:
-            return job.result()
+        sr = outSR or inSR
+        return self._execute_by_chunk(url, params, 2, "buffer", sr, future)
 
     # ----------------------------------------------------------------------
     def convex_hull(self, geometries, sr=None, future=False):
@@ -19246,26 +19271,7 @@ class _GeometryService(_GISService):
                 }
         else:
             return None
-
-        executor = concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
-        )
-        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
-        executor.shutdown(False)
-        job = GeometryJob(
-            future=f2,
-            task_name="convex_hull",
-            jobid=None,
-            task_url=url,
-            notify=False,
-            gis=self._gis,
-            out_wkid=sr,
-        )
-        if future:
-            return job
-        else:
-            return job.result()
+        return self._execute_by_chunk(url, params, 2, "convex_hull", sr, future)
 
     # ----------------------------------------------------------------------
     def cut(self, cutter, target, sr=None, future=False):
@@ -19317,25 +19323,8 @@ class _GeometryService(_GISService):
             AttributeError(
                 "You must provide at least 1 Polygon/Polyline geometry in a list"
             )
-        executor = concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
-        )
-        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
-        executor.shutdown(False)
-        job = GeometryJob(
-            future=f2,
-            task_name="cut",
-            jobid=None,
-            task_url=url,
-            notify=False,
-            gis=self._gis,
-            out_wkid=sr,
-        )
-        if future:
-            return job
-        else:
-            return job.result()
+        return self._execute_by_chunk(url, params, 2, "cut", sr, future)
+
 
     # ----------------------------------------------------------------------
     def densify(
@@ -19404,25 +19393,9 @@ class _GeometryService(_GISService):
                 template["geometryType"] = "esriGeometryPolygon"
             template["geometries"].append(g)
         params["geometries"] = template
-        executor = concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
-        )
-        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
-        executor.shutdown(False)
-        job = GeometryJob(
-            future=f2,
-            task_name="densify",
-            jobid=None,
-            task_url=url,
-            notify=False,
-            gis=self._gis,
-            out_wkid=sr,
-        )
-        if future:
-            return job
-        else:
-            return job.result()
+
+        return self._execute_by_chunk(url, params, 2, "densify", sr, future)
+
 
     # ----------------------------------------------------------------------
     def difference(self, geometries, sr, geometry, future=False):
@@ -19478,25 +19451,8 @@ class _GeometryService(_GISService):
             raise AttributeError("Invalid geometry type")
         geomTemplate["geometry"] = geometry
         params["geometry"] = geomTemplate
-        executor = concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
-        )
-        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
-        executor.shutdown(False)
-        job = GeometryJob(
-            future=f2,
-            task_name="difference",
-            jobid=None,
-            task_url=url,
-            notify=False,
-            gis=self._gis,
-            out_wkid=sr,
-        )
-        if future:
-            return job
-        else:
-            return job.result()
+
+        return self._execute_by_chunk(url, params, 2, "difference", sr, future)
 
     # ----------------------------------------------------------------------
     def distance(
@@ -19719,25 +19675,7 @@ class _GeometryService(_GISService):
             "maxDeviation": maxDeviation,
         }
         params["geometries"] = self.__geometryListToGeomTemplate(geometries=geometries)
-        executor = concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
-        )
-        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
-        executor.shutdown(False)
-        job = GeometryJob(
-            future=f2,
-            task_name="generalize",
-            jobid=None,
-            task_url=url,
-            notify=False,
-            gis=self._gis,
-            out_wkid=sr,
-        )
-        if future:
-            return job
-        else:
-            return job.result()
+        return self._execute_by_chunk(url, params, 2, "generalize", sr, future)
 
     # ----------------------------------------------------------------------
     def intersect(self, sr, geometries, geometry, future=False):
@@ -19766,25 +19704,7 @@ class _GeometryService(_GISService):
             "geometries": self.__geometryListToGeomTemplate(geometries=geometries),
             "geometry": self.__geometryToGeomTemplate(geometry=geometry),
         }
-        executor = concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
-        )
-        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
-        executor.shutdown(False)
-        job = GeometryJob(
-            future=f2,
-            task_name="intersect",
-            jobid=None,
-            task_url=url,
-            notify=False,
-            gis=self._gis,
-            out_wkid=sr,
-        )
-        if future:
-            return job
-        else:
-            return job.result()
+        return self._execute_by_chunk(url, params, 2, "intersect", sr, future)
 
     # ----------------------------------------------------------------------
     def label_points(self, sr, polygons, future=False):
@@ -19968,25 +19888,7 @@ class _GeometryService(_GISService):
             "bevelRatio": bevelRatio,
             "simplifyResult": json.dumps(simplifyResult),
         }
-        executor = concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
-        )
-        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
-        executor.shutdown(False)
-        job = GeometryJob(
-            future=f2,
-            task_name="offset",
-            jobid=None,
-            task_url=url,
-            notify=False,
-            gis=self._gis,
-            out_wkid=sr,
-        )
-        if future:
-            return job
-        else:
-            return job.result()
+        return self._execute_by_chunk(url, params, 2, "offset", sr, future)
 
     # ----------------------------------------------------------------------
     def project(
@@ -20030,25 +19932,9 @@ class _GeometryService(_GISService):
             "transformation": transformation,
             "transformFoward": transformFoward,
         }
-        executor = concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
-        )
-        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": outSR})
-        executor.shutdown(False)
-        job = GeometryJob(
-            future=f2,
-            task_name="project",
-            jobid=None,
-            task_url=url,
-            notify=False,
-            gis=self._gis,
-            out_wkid=outSR,
-        )
-        if future:
-            return job
-        else:
-            return job.result()
+        results = self._execute_by_chunk(url, params, 2, "project", outSR, future)
+        return results
+
 
     # ----------------------------------------------------------------------
     def relation(
@@ -20197,25 +20083,7 @@ class _GeometryService(_GISService):
             "sr": sr,
             "geometries": self.__geometryListToGeomTemplate(geometries=geometries),
         }
-        executor = concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
-        )
-        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
-        executor.shutdown(False)
-        job = GeometryJob(
-            future=f2,
-            task_name="simplify",
-            jobid=None,
-            task_url=url,
-            notify=False,
-            gis=self._gis,
-            out_wkid=sr,
-        )
-        if future:
-            return job
-        else:
-            return job.result()
+        return self._execute_by_chunk(url, params, 2, "simplify", sr, future)
 
     # ----------------------------------------------------------------------
     def to_geo_coordinate_string(
@@ -20404,25 +20272,7 @@ class _GeometryService(_GISService):
             "sr": sr,
             "geometries": self.__geometryListToGeomTemplate(geometries=geometries),
         }
-        executor = concurrent.futures.ThreadPoolExecutor(2)
-        f1 = executor.submit(
-            self._con.post, **{"path": url, "postdata": params, "token": self._token}
-        )
-        f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
-        executor.shutdown(False)
-        job = GeometryJob(
-            future=f2,
-            task_name="auto_complete",
-            jobid=None,
-            task_url=url,
-            notify=False,
-            gis=self._gis,
-            out_wkid=sr,
-        )
-        if future:
-            return job
-        else:
-            return job.result()
+        return self._execute_by_chunk(url, params, 2, "auto_complete", sr, future)
 
 
 ###########################################################################
