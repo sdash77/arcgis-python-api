@@ -143,7 +143,7 @@ class ArcGISServerAuth(AuthBase, SupportMultiAuth):
     @lru_cache(maxsize=255)
     def _url(self, ags_file) -> str:
         if self._arcpy:
-            resp = self._read_ags_file(self._ags)
+            resp = self._read_ags_file(ags_file)
             return resp.get("serverUrl")
         else:
             raise Exception("ArcPy not found, please install arcpy")
