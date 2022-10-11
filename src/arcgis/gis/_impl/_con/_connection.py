@@ -144,7 +144,7 @@ class Connection(object):
         """
         from arcgis.gis import GIS
 
-		self._ags_file = kwargs.pop("ags_file", None)
+        self._ags_file = kwargs.pop("ags_file", None)
         self._security_kwargs = kwargs.pop("security_kwargs", None)
         self._use_gen_token = kwargs.pop("use_gen_token", False)
         self._is_hosted_nb_home = kwargs.pop("is_hosted_nb_home", False)
