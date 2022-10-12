@@ -19088,7 +19088,7 @@ class _GeometryService(_GISService):
                 out_wkid=sr,
             )
             if future:
-                all_results.append(job)
+                return job
             else:
                 results = job.result()
                 for result in results:
@@ -20272,7 +20272,7 @@ class _GeometryService(_GISService):
             "sr": sr,
             "geometries": self.__geometryListToGeomTemplate(geometries=geometries),
         }
-        return self._execute_by_chunk(url, params, 2, "auto_complete", sr, future)
+        return self._execute_by_chunk(url, params, 2, "union", sr, future)
 
 
 ###########################################################################
