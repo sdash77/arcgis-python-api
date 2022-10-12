@@ -10,10 +10,12 @@ profiles = [
     None,
     "your_online_profile",
     "your_enterprise_profile",
+    "your_kubernetes_profile"
 ]
 profiles_no_anon = [
     "your_online_profile",
     "your_enterprise_profile",
+    "your_kubernetes_profile"
 ]
 
 if not "your_kubernetes_profile" in ProfileManager().list():
