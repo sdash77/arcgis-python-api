@@ -19075,35 +19075,35 @@ class _GeometryService(_GISService):
             )
             geom_param = "geometries" if "geometries" in params else "geometry"
         all_results = []
+        with concurrent.futures.ThreadPoolExecutor(number_executors) as executor:
         # loop until all chunks reached
-        for i in range(0, len(all_geometries), chunk):
-            geoms = all_geometries[i : i + chunk]
-            params[geom_param] = {"geometryType": geom_type, "geometries": geoms}
-            executor = concurrent.futures.ThreadPoolExecutor(number_executors)
-            f1 = executor.submit(
-                self._con.post,
-                **{"path": url, "postdata": params, "token": self._token},
-            )
-            if number_executors == 2:
-                f2 = executor.submit(
-                    self._process_results, **{"results": f1, "out_sr": sr}
+            for i in range(0, len(all_geometries), chunk):
+                geoms = all_geometries[i : i + chunk]
+                params[geom_param] = {"geometryType": geom_type, "geometries": geoms}
+                f1 = executor.submit(
+                    self._con.post,
+                    **{"path": url, "postdata": params, "token": self._token},
                 )
-                executor.shutdown(False)
-            job = GeometryJob(
-                future=f1 if number_executors == 1 else f2,
-                task_name=task_name,
-                jobid=None,
-                task_url=url,
-                notify=False,
-                gis=self._gis,
-                out_wkid=sr,
-            )
-            if future:
-                return job
-            else:
-                results = job.result()
-                for result in results:
-                    all_results.append(result)
+                if number_executors == 2:
+                    f2 = executor.submit(
+                        self._process_results, **{"results": f1, "out_sr": sr}
+                    )
+                    executor.shutdown(False)
+                job = GeometryJob(
+                    future=f1 if number_executors == 1 else f2,
+                    task_name=task_name,
+                    jobid=None,
+                    task_url=url,
+                    notify=False,
+                    gis=self._gis,
+                    out_wkid=sr,
+                )
+                if future:
+                    return job
+                else:
+                    results = job.result()
+                    for result in results:
+                        all_results.append(result)
         return all_results
 
     # ----------------------------------------------------------------------
@@ -19145,31 +19145,31 @@ class _GeometryService(_GISService):
             geom_param = "polylines"
         all_results = []
         chunk = 6500
+        with concurrent.futures.ThreadPoolExecutor(2) as executor:
         # loop until all chunks reached
-        for i in range(0, len(all_geometries), chunk):
-            geoms = all_geometries[i : i + chunk]
-            params[geom_param] = geoms
-            executor = concurrent.futures.ThreadPoolExecutor(2)
-            f1 = executor.submit(
-                self._con.post,
-                **{"path": url, "postdata": params, "token": self._token},
-            )
-            f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
-            executor.shutdown(False)
-            job = GeometryJob(
-                future=f2,
-                task_name="auto_complete",
-                jobid=None,
-                task_url=url,
-                notify=False,
-                gis=self._gis,
-            )
-            if future:
-                return job
-            else:
-                results = job.result()
-                for result in results:
-                    all_results.append(result)
+            for i in range(0, len(all_geometries), chunk):
+                geoms = all_geometries[i : i + chunk]
+                params[geom_param] = geoms
+                f1 = executor.submit(
+                    self._con.post,
+                    **{"path": url, "postdata": params, "token": self._token},
+                )
+                f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
+                executor.shutdown(False)
+                job = GeometryJob(
+                    future=f2,
+                    task_name="auto_complete",
+                    jobid=None,
+                    task_url=url,
+                    notify=False,
+                    gis=self._gis,
+                )
+                if future:
+                    return job
+                else:
+                    results = job.result()
+                    for result in results:
+                        all_results.append(result)
         return all_results
 
     # ----------------------------------------------------------------------
@@ -19761,30 +19761,30 @@ class _GeometryService(_GISService):
         )
         chunk = 6500
         all_results = []
-        # loop until all chunks reached
-        for i in range(0, len(all_geometries), chunk):
-            geoms = all_geometries[i : i + chunk]
-            params["polygons"] = geoms
-            executor = concurrent.futures.ThreadPoolExecutor(1)
-            f1 = executor.submit(
-                self._con.post,
-                **{"path": url, "postdata": params, "token": self._token},
-            )
-            job = GeometryJob(
-                future=f1,
-                task_name="label_points",
-                jobid=None,
-                task_url=url,
-                notify=False,
-                gis=self._gis,
-                out_wkid=sr,
-            )
-            if future:
-                return job
-            else:
-                results = job.result()
-                for result in results:
-                    all_results.append(result)
+        with concurrent.futures.ThreadPoolExecutor(1) as executor:
+            # loop until all chunks reached
+            for i in range(0, len(all_geometries), chunk):
+                geoms = all_geometries[i : i + chunk]
+                params["polygons"] = geoms
+                f1 = executor.submit(
+                    self._con.post,
+                    **{"path": url, "postdata": params, "token": self._token},
+                )
+                job = GeometryJob(
+                    future=f1,
+                    task_name="label_points",
+                    jobid=None,
+                    task_url=url,
+                    notify=False,
+                    gis=self._gis,
+                    out_wkid=sr,
+                )
+                if future:
+                    return job
+                else:
+                    results = job.result()
+                    for result in results:
+                        all_results.append(result)
         return all_results
 
     # ----------------------------------------------------------------------
@@ -19840,29 +19840,29 @@ class _GeometryService(_GISService):
         )
         chunk = 6500
         all_results = []
-        # loop until all chunks reached
-        for i in range(0, len(all_geometries), chunk):
-            geoms = all_geometries[i : i + chunk]
-            params["polylines"] = geoms
-            executor = concurrent.futures.ThreadPoolExecutor(1)
-            f1 = executor.submit(
-                self._con.post,
-                **{"path": url, "postdata": params, "token": self._token},
-            )
-            job = GeometryJob(
-                future=f1,
-                task_name="lengths",
-                jobid=None,
-                task_url=url,
-                notify=False,
-                gis=self._gis,
-            )
-            if future:
-                return job
-            else:
-                results = job.result()
-                for result in results:
-                    all_results.append(result)
+        with concurrent.futures.ThreadPoolExecutor(1) as executor:
+            # loop until all chunks reached
+            for i in range(0, len(all_geometries), chunk):
+                geoms = all_geometries[i : i + chunk]
+                params["polylines"] = geoms
+                f1 = executor.submit(
+                    self._con.post,
+                    **{"path": url, "postdata": params, "token": self._token},
+                )
+                job = GeometryJob(
+                    future=f1,
+                    task_name="lengths",
+                    jobid=None,
+                    task_url=url,
+                    notify=False,
+                    gis=self._gis,
+                )
+                if future:
+                    return job
+                else:
+                    results = job.result()
+                    for result in results:
+                        all_results.append(result)
         return all_results
 
     # ----------------------------------------------------------------------
@@ -20288,32 +20288,32 @@ class _GeometryService(_GISService):
         )
         chunk = 6500
         all_results = []
+        with concurrent.futures.ThreadPoolExecutor(2) as executor:
         # loop until all chunks reached
-        for i in range(0, len(all_geometries), chunk):
-            geoms = all_geometries[i : i + chunk]
-            params["polylines"] = geoms
-            executor = concurrent.futures.ThreadPoolExecutor(1)
-            f1 = executor.submit(
-                self._con.post,
-                **{"path": url, "postdata": params, "token": self._token},
-            )
-            f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
-            executor.shutdown(False)
-            job = GeometryJob(
-                future=f2,
-                task_name="trim_extend",
-                jobid=None,
-                task_url=url,
-                notify=False,
-                gis=self._gis,
-                out_wkid=sr,
-            )
-            if future:
-                return job
-            else:
-                results = job.result()
-                for result in results:
-                    all_results.append(result)
+            for i in range(0, len(all_geometries), chunk):
+                geoms = all_geometries[i : i + chunk]
+                params["polylines"] = geoms
+                f1 = executor.submit(
+                    self._con.post,
+                    **{"path": url, "postdata": params, "token": self._token},
+                )
+                f2 = executor.submit(self._process_results, **{"results": f1, "out_sr": sr})
+                executor.shutdown(False)
+                job = GeometryJob(
+                    future=f2,
+                    task_name="trim_extend",
+                    jobid=None,
+                    task_url=url,
+                    notify=False,
+                    gis=self._gis,
+                    out_wkid=sr,
+                )
+                if future:
+                    return job
+                else:
+                    results = job.result()
+                    for result in results:
+                        all_results.append(result)
         return all_results
 
     # ----------------------------------------------------------------------
