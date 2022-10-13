@@ -1313,7 +1313,7 @@ class StoryMap(object):
                 target_story._add_resource(file=value, resource_name=key)
             except:
                 # express map, image editor, other created files will be here
-                text=json.dumps(value)
+                text = json.dumps(value)
                 target_story._add_resource(resource_name=key, text=text)
 
         # Step 5: Add the node list to the story children
