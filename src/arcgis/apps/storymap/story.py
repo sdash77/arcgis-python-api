@@ -1251,7 +1251,7 @@ class StoryMap(object):
                                 resource_file = self._item.resources.get(name)
                                 resource_files[name] = resource_file
                             elif "itemId" in resource_dict["data"]:
-                                name = resource_dict["data"]["itemId"]
+                                name = "draft_" + resource_dict["data"]["itemId"]
                                 if name.endswith(".json"):
                                     resource_file = self._item.resources.get(name)
                                     resource_files[name] = resource_file
@@ -1309,7 +1309,12 @@ class StoryMap(object):
         for key, value in complete_resource_dict.items():
             target_story._properties["resources"][key] = value
         for key, value in resource_files.items():
-            target_story._add_resource(file=value, resource_name=key)
+            try:
+                target_story._add_resource(file=value, resource_name=key)
+            except:
+                # express map, image editor, other created files will be here
+                text=json.dumps(value)
+                target_story._add_resource(resource_name=key, text=text)
 
         # Step 5: Add the node list to the story children
         for main_node in original_nodes:
