@@ -19088,7 +19088,6 @@ class _GeometryService(_GISService):
                     f2 = executor.submit(
                         self._process_results, **{"results": f1, "out_sr": sr}
                     )
-                    executor.shutdown(False)
                 job = GeometryJob(
                     future=f1 if number_executors == 1 else f2,
                     task_name=task_name,
