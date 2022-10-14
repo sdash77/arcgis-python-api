@@ -1334,26 +1334,31 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
     },
 
     time_mode_changed: function(){
-        try{
+        try {
             var timeSlider = this.model.get("time_slider");
-            if(timeSlider){
+            if (timeSlider) {
                 console.log("time mode changed");
                 var timeMode = this.model.get("time_mode");
                 var timeExtent = this._time_slider.timeExtent;
                 this._time_slider.mode = timeMode;
-                if (timeExtent){
-                    if(timeMode === "instant"){
-                        this._time_slider.timeExtent.start = timeExtent.start;}
-                    if(timeMode === "time-window"){
-                        if(values.length == 1){
-                            this._time_slider.timeExtent.start = timeExtent.start;
-                            this._time_slider.timeExtent.end = timeExtent.end;
+                if (timeExtent) {
+                    if (timeMode === "instant") {
+                        this._time_slider.timeExtent = { start: timeExtent.start };
+                    }
+                    if (timeMode === "time-window") {
+                        if (timeExtent.end == null) {
+                            this._time_slider.timeExtent = { start: timeExtent.start, end: timeExtent.start};
                         }
                     }
-                    if(timeMode === "cumulative-from-start"){
-                        this._time_slider.timeExtent.start = timeExtent.start;}
-                    if(timeMode === "cumulative-from-end"){
-                        this._time_slider.timeExtent.start = timeExtent.start;}}}}
+                    if (timeMode === "cumulative-from-start") {
+                        this._time_slider.timeExtent = { end: timeExtent.start };
+                    }
+                    if (timeMode === "cumulative-from-end") {
+                        this._time_slider.timeExtent = { start: timeExtent.start };
+                    }
+                }
+            }
+        }
         catch(err){
             this._displayErrorBox("Error while updating time mode");
             console.warn("Error while trying updating time mode"); console.warn(err);}
