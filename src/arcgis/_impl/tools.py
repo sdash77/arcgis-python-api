@@ -19056,7 +19056,7 @@ class _GeometryService(_GISService):
     # --------------------------------------------------------------------------
     def _execute_by_chunk(self, url, params, number_executors, task_name, sr, future):
         # create chunks and output the results
-        chunk = 6500
+        chunk = 65000
         # gather all the geometries we will chunk
         if task_name == "cut":
             all_geometries = params["target"]["geometries"]
@@ -19143,7 +19143,7 @@ class _GeometryService(_GISService):
             all_geometries = polylines
             geom_param = "polylines"
         all_results = []
-        chunk = 6500
+        chunk = 65000
         with concurrent.futures.ThreadPoolExecutor(2) as executor:
             # loop until all chunks reached
             for i in range(0, len(all_geometries), chunk):
@@ -19759,7 +19759,7 @@ class _GeometryService(_GISService):
         all_geometries = self.__geomToStringArray(
             geometries=polygons, returnType="list"
         )
-        chunk = 6500
+        chunk = 65000
         all_results = []
         with concurrent.futures.ThreadPoolExecutor(1) as executor:
             # loop until all chunks reached
@@ -19838,7 +19838,7 @@ class _GeometryService(_GISService):
         all_geometries = self.__geomToStringArray(
             geometries=polylines, returnType="list"
         )
-        chunk = 6500
+        chunk = 65000
         all_results = []
         with concurrent.futures.ThreadPoolExecutor(1) as executor:
             # loop until all chunks reached
@@ -20286,7 +20286,7 @@ class _GeometryService(_GISService):
         all_geometries = self.__geomToStringArray(
             geometries=polylines, returnType="list"
         )
-        chunk = 6500
+        chunk = 65000
         all_results = []
         with concurrent.futures.ThreadPoolExecutor(2) as executor:
             # loop until all chunks reached
