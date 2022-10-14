@@ -1402,7 +1402,14 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             console.log("start time changed");
             var startTimeStr = this.model.get("_writeonly_start_time");
             var startTime = new Date(startTimeStr);
-            this._time_slider.timeExtent.start = startTime;
+            if (this._time_slider.timeExtent.start) {
+                this._time_slider.timeExtent = { start: startTime };
+            }
+            if ((this._time_slider.timeExtent.start) && (this._time_slider.timeExtent.end))
+            {
+                var endTime = this._time_slider.timeExtent.end;
+                this._time_slider.timeExtent = { start: startTime, end: endTime };
+            }
         }
         catch(err){
             this._displayErrorBox("Error while changing `start_time`");
@@ -1415,7 +1422,8 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
             console.log("end time changed");
             var endTimeStr = this.model.get("_writeonly_end_time");
             var endTime = new Date(endTimeStr);
-            this._time_slider.timeExtent.end = endTime;}
+            var startTime = this._time_slider.timeExtent.start;
+            this._time_slider.timeExtent = { start: startTime, end: endTime };}
         catch(err){
             this._displayErrorBox("Error while changing `end_time`");
             console.warn("Error while changing `end_time`");
