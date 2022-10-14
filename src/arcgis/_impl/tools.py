@@ -19156,7 +19156,6 @@ class _GeometryService(_GISService):
                 f2 = executor.submit(
                     self._process_results, **{"results": f1, "out_sr": sr}
                 )
-                executor.shutdown(False)
                 job = GeometryJob(
                     future=f2,
                     task_name="auto_complete",
@@ -20301,7 +20300,6 @@ class _GeometryService(_GISService):
                 f2 = executor.submit(
                     self._process_results, **{"results": f1, "out_sr": sr}
                 )
-                executor.shutdown(False)
                 job = GeometryJob(
                     future=f2,
                     task_name="trim_extend",
