@@ -30,7 +30,6 @@ from arcgis.raster._util import _set_context as _set_raster_context
 from arcgis._impl.common._utils import inspect_function_inputs
 from arcgis.geoprocessing._job import RAJob
 from functools import lru_cache
-import inspect
 
 _log = logging.getLogger(__name__)
 
