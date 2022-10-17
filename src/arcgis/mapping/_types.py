@@ -2361,6 +2361,9 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         :return: A float representing the height of the widget
         """
+        raise Warning(
+            "This property is no longer supported and does not operate on the resource."
+        )
         return self._height
 
     @height.setter
@@ -2388,6 +2391,9 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         :return: A float representing the width of the widget
         """
+        raise Warning(
+            "This property is no longer supported and does not operate on the resource."
+        )
         return self._width
 
     @width.setter
