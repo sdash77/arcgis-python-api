@@ -674,7 +674,7 @@ class UtilityNetworkManager(object):
                                                     parameters. See `trace` method to get parameters.
         ====================================        ====================================================================
 
-        :return: Boolean. True if successful else False.
+        :return: Dictionary of the JSON response.
 
         """
         url = "%s/updateSubnetwork" % self._url
