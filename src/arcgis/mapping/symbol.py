@@ -723,6 +723,8 @@ def create_symbol(
 
     # Get color step, if not specified, pick a random value between 0 and 255.
     cstep = kwargs.pop("cstep", int(np.random.randint(0, 255)))
+    if cstep is None:
+        cstep = int(np.random.randint(0, 255))
     renderer_type = "simple"
 
     marker_size = kwargs.pop("marker_size", 8)

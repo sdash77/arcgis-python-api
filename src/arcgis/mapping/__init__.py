@@ -41,9 +41,15 @@ from arcgis.mapping._msl import (
     MapTable,
     MapRasterLayer,
 )
-from ._utils import export_map, get_layout_templates
+from ._utils import export_map, get_layout_templates, create_colormap
 from .symbol import create_symbol, display_colormaps, show_styles
-from .renderer import generate_renderer
+from .renderer import (
+    generate_renderer,
+    generate_simple,
+    generate_classbreaks,
+    generate_heatmap,
+    generate_unique,
+)
 
 __all__ = [
     "WebMap",

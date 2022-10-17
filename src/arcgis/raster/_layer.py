@@ -1023,7 +1023,9 @@ class ImageryLayer(Layer):
         self._extent = value
 
     # ----------------------------------------------------------------------
-    def attribute_table(self, rendering_rule: Optional[str] = None):
+    def attribute_table(
+        self, rendering_rule: Optional[str] = None, as_df: bool = False
+    ):
         """
         The ``attribute_table`` method returns categorical mapping of pixel
         values (for example, a ``class``, ``group``, ``category``, or ``membership``).
@@ -1063,7 +1065,28 @@ class ImageryLayer(Layer):
                     del params["renderingRule"]
                     params["Raster"] = self._uri
 
-            return self._con.post(path=url, postdata=params, timeout=None)
+            rat = self._con.post(path=url, postdata=params, timeout=None)
+
+            if as_df:
+                import pandas as pd
+
+                if "features" in rat:
+                    df1 = pd.DataFrame(rat["features"])
+                    if "attributes" in df1.columns:
+                        attributes_list = df1["attributes"].tolist()
+                        rat_df = pd.DataFrame(attributes_list)
+                        rat_df = rat_df.style.set_properties(**{"text-align": "left"})
+                        rat_df = rat_df.set_table_styles(
+                            [dict(selector="th", props=[("text-align", "left")])]
+                        )
+                        return rat_df
+                    else:
+                        return None
+                else:
+                    return None
+            else:
+                return rat
+
         return None
 
     # ----------------------------------------------------------------------
@@ -3498,25 +3521,50 @@ class ImageryLayer(Layer):
 
         legend = self._con.post(path=url, postdata=params, timeout=None)
         if as_html is True:
-            legend_table = "<table>"
-            for legend_element in legend["layers"][0]["legend"]:
+            legend_type = legend["layers"][0]["legendType"]
+            if legend_type.lower() == "stretched":
+                table_and_cell_style = (
+                    "border:none!important; background-color: #ffffff;"
+                )
+                legend_table = (
+                    f"<table style='{table_and_cell_style} border-collapse: collapse;'>"
+                )
+                img_td_style = "text-align:left; vertical-align: top; position: relative; top: 10px; padding: 0px;"
+                label_td_style = (
+                    "text-align:left; padding: 0; position: relative; left: 7px; "
+                )
+            else:
+                legend_table = "<table>"
+
+            for idx, legend_element in enumerate(legend["layers"][0]["legend"]):
                 thumbnail = "data:{0};base64,{1}".format(
                     legend_element["contentType"], legend_element["imageData"]
                 )
                 width = legend_element["width"]
                 height = legend_element["height"]
-                imgtag = '<img src="{0}" width="{1}"  height="{2}" />'.format(
+                imgtag = "<img src='{0}' width='{1}' height='{2}' />".format(
                     thumbnail, width, height
                 )
+
+                if legend_type.lower() == "stretched":
+                    img_row = f"<tr style='padding: 0; position: relative; {'top: 3.5px;' if idx==0 else 'bottom: 0.5px;'}'><td style='{table_and_cell_style} {img_td_style}'>"
+                    label_row = f"</td><td style='{table_and_cell_style} {label_td_style} {'display: none' if idx==1 else ''}'>"
+                else:
+                    img_row = "<tr><td>"
+                    label_row = "</td><td style='text-align:left'>"
+
                 legend_table += (
-                    "<tr><td>"
+                    img_row
                     + imgtag
-                    + "</td><td>"
+                    + label_row
                     + legend_element["label"]
                     + "</td></tr>"
                 )
             legend_table += "</table>"
-            return legend_table
+
+            from IPython.display import HTML
+
+            return HTML(legend_table)
         else:
             return legend
 

@@ -469,7 +469,13 @@ class AutoML(object):
 
         for folder in required_model_folders:
             # copyfolder(folder,dest)
-            self.copy_and_overwrite(folder, save_model_path)
+            try:
+                self.copy_and_overwrite(folder, save_model_path)
+            except:
+                print(
+                    "It looks like the model has been already been saved once. Unable to save at a different location again"
+                )
+                return
 
         for file in files_required:
             abs_file_path = os.path.join(result_path, file)
