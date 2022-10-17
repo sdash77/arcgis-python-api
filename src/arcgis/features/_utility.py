@@ -1,7 +1,9 @@
 from __future__ import annotations
+from dataclasses import dataclass
 from typing import Any, Optional, Union
 from arcgis import env
 from arcgis._impl.common._mixins import PropertyMap
+from arcgis.features._trace_configuration import TraceConfiguration
 from arcgis._impl.common._deprecate import deprecated
 
 ########################################################################
@@ -43,8 +45,12 @@ class UtilityNetworkManager(object):
         self._url = url
         if version:
             self._version = version
-            self._version_guid = version._guid
             self._version_name = version.properties.versionName
+            if self._version_name in ["SDE.DEFAULT", "DBO.DEFAULT"]:
+                # fix due to locking issue
+                self._version_guid = None
+            else:
+                self._version_guid = version._guid
         else:
             self._version = None
             self._version_guid = None
@@ -60,6 +66,14 @@ class UtilityNetworkManager(object):
             self._property = PropertyMap({})
 
     # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return f"< Utility Network Server @ {self._url} >"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return f"< Utility Network Server @ {self._url} >"
+
+    # ----------------------------------------------------------------------
     @property
     def properties(self):
         """returns the properties for the service"""
@@ -73,7 +87,7 @@ class UtilityNetworkManager(object):
         locations: list[dict],
         trace_type: str,
         moment: int | None = None,
-        configuration: dict | None = None,
+        configuration: dict | TraceConfiguration | None = None,
         result_type: str | None = None,
         result_types: list[dict] | None = None,
     ) -> dict:
@@ -134,7 +148,8 @@ class UtilityNetworkManager(object):
 
                                 Example: moment = <Epoch time in milliseconds>
         --------------------    --------------------------------------------------
-        configuration           Optional dictionary. Specifies the collection of
+        configuration           Optional dictionary or TraceConfiguration object.
+                                Specifies the collection of
                                 trace configuration properties. Depending on the
                                 `trace_type`, some properties are required.
 
@@ -173,7 +188,8 @@ class UtilityNetworkManager(object):
 
         """
         url = "%s/trace" % self._url
-
+        if isinstance(configuration, TraceConfiguration):
+            configuration = configuration.to_dict()
         params = {
             "f": "json",
             "gdbVersion": self._version_name,
@@ -363,7 +379,7 @@ class UtilityNetworkManager(object):
         domain_name: str,
         tier_name: str,
         subnetwork_name: str,
-        trace_configuration: dict | None = None,
+        trace_configuration: dict | TraceConfiguration | None = None,
         export_acknowledgement: bool = False,
         result_type: str | None = None,
         result_types: list[dict] | None = None,
@@ -389,7 +405,7 @@ class UtilityNetworkManager(object):
         ------------------------------------        --------------------------------------------------------------------
         subnetwork_name                             Required String. The name of the subnetwork.
         ------------------------------------        --------------------------------------------------------------------
-        trace_configuration                         Optional Dictionary. Specifies the collection of trace
+        trace_configuration                         Optional Dictionary or TraceConfiguration object. Specifies the collection of trace
                                                     configuration parameters.
                                                     See: `Trace <https://developers.arcgis.com/rest/services-reference/enterprise/trace-utility-network-server-.htm#GUID-F0C932FD-B403-4223-9B00-E44D156C7DF9/>`_
         ------------------------------------        --------------------------------------------------------------------
@@ -428,6 +444,8 @@ class UtilityNetworkManager(object):
         """
 
         url = "%s/exportSubnetwork" % self._url
+        if isinstance(trace_configuration, TraceConfiguration):
+            trace_configuration = trace_configuration.to_dict()
         params = {
             "f": "json",
             "gdbVersion": self._version_name,
@@ -831,7 +849,7 @@ class UtilityNetworkManager(object):
         moment                                      Optional Epoch time in milliseconds. Specify if you do not want to
                                                     use the current moment.
         ------------------------------------        --------------------------------------------------------------------
-        types                                       Optional List of String(s). Specify teh association types to be queried.
+        types                                       Optional List of String(s). Specify the association types to be queried.
 
                                                     Values:
 
@@ -847,10 +865,13 @@ class UtilityNetworkManager(object):
                 "f": "json",
                 "gdbVersion": self._version_name,
                 "elements": elements,
-                "moment": moment,
-                "types": types if types is not None else ["all"],
                 "returnDeletes": return_deletes,
             }
+            if elements:
+                params["moment"] = moment
+            if types:
+                params["types"] = types
+
             return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
@@ -908,7 +929,7 @@ class UtilityNetworkManager(object):
         moment                                      Optional Epoch time in milliseconds. Specify if you do not want to
                                                     use the current moment.
         ------------------------------------        --------------------------------------------------------------------
-        type                                        Optional String. Specify teh association types to be queried.
+        type                                        Optional String. Specify the association types to be queried.
 
                                                     Values:
 
@@ -1005,6 +1026,7 @@ class UtilityNetworkManager(object):
                                                     locatability and synthesize the geometries.
 
                                                     .. code-block:: python
+
                                                         [{
                                                             "sourceId": <int>,
                                                             "globalIds" : [<guid>],
@@ -1115,6 +1137,14 @@ class TraceConfigurationsManager(object):
             self._version_name = None
 
     # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return f"< Trace Configuration Manager @ {self._url} >"
+
+    # ----------------------------------------------------------------------
+    def __repr__(self) -> str:
+        return f"< Trace Configuration Manager @ {self._url} >"
+
+    # ----------------------------------------------------------------------
     def list(self) -> dict:
         """
         List of all trace configurations in a service.
@@ -1125,44 +1155,39 @@ class TraceConfigurationsManager(object):
         return self._con.post(self._url, {"f": "json"})
 
     # ----------------------------------------------------------------------
-    def get(self, global_id: str) -> dict:
-        """
-        Get a specific trace configuration by passing its global id.
-
-        :return: A dictionary depicting the trace configuration if found, else None.
-        """
-        configs = self.query()
-        for config in configs["traceConfigurations"]:
-            if config["globalId"] == global_id:
-                return config
-
-    # ----------------------------------------------------------------------
     def query(
         self,
         global_ids: list[str] | None = None,
         creators: list[str] | None = None,
         tags: list[str] | None = None,
         names: list[str] | None = None,
+        as_trace_configuration_class: bool = False,
     ) -> dict:
         """
         The query operation returns all properties from one or more
         named trace configurations in a utility network.
 
-        ========================    ===========================================
-        **Argument**                **Description**
-        ------------------------    -------------------------------------------
-        global_ids                  Optional list of strings. Specify the global
-                                    IDs of the named trace configs to be queried.
-        ------------------------    -------------------------------------------
-        creators                    Optional list of strings. The creators of
-                                    the named trace configurations to be queried.
-        ------------------------    -------------------------------------------
-        tags                        Optional list of strings. The user tags of
-                                    the named trace configurations to be queried.
-        ------------------------    -------------------------------------------
-        names                       Optional list of strings. The names of the
-                                    named trace configurations to be queried.
-        ========================    ===========================================
+        ============================        ===========================================
+        **Argument**                        **Description**
+        ----------------------------        -------------------------------------------
+        global_ids                          Optional list of strings. Specify the global
+                                            IDs of the named trace configs to be queried.
+        ----------------------------        -------------------------------------------
+        creators                            Optional list of strings. The creators of
+                                            the named trace configurations to be queried.
+        ----------------------------        -------------------------------------------
+        tags                                Optional list of strings. The user tags of
+                                            the named trace configurations to be queried.
+        ----------------------------        -------------------------------------------
+        names                               Optional list of strings. The names of the
+                                            named trace configurations to be queried.
+        ----------------------------        -------------------------------------------
+        as_trace_configuration_class        Optional boolean. If True the list for
+                                            "traceCongifurations" in return will be a list
+                                            of TraceConfiguration class instances. If False,
+                                            the list will be a list of dictionaries of trace
+                                            configuration instances. The default is False.
+        ============================        ===========================================
 
         :return:
             A dictionary with two keys: {"traceConfigurations": list, "success": bool}
@@ -1176,7 +1201,14 @@ class TraceConfigurationsManager(object):
                 "tags": tags,
                 "names": names,
             }
-            return self._con.post(url, params)
+            res = self._con.post(url, params)
+            if as_trace_configuration_class:
+                trace_configs = []
+                for trace in res["traceConfigurations"]:
+                    trace = TraceConfiguration.from_config(trace)
+                    trace_configs.append(trace)
+                res["traceConfigurations"] = trace_configs
+            return res
 
     # ----------------------------------------------------------------------
     def delete(self, global_ids: list[str]) -> dict:
@@ -1200,7 +1232,7 @@ class TraceConfigurationsManager(object):
         self,
         name: str,
         trace_type: str,
-        trace_config: dict,
+        trace_config: dict | TraceConfiguration,
         description: str | None = None,
         result_types: list[dict] | None = None,
         tags: list[str] | None = None,
@@ -1230,7 +1262,8 @@ class TraceConfigurationsManager(object):
 
                                         "connected" | "subnetwork" | "upstream" | "subnetworkController" | "downstream" | "loops" | "shortenPath" | "isolation"
         ----------------------      -----------------------------------------------
-        trace_config                Required Dictionary. Specify the collection of
+        trace_config                Required Dictionary or TraceConfiguration object.
+                                    Specify the collection of
                                     altered trace configuration properties.
 
                                     See: `Properties <https://developers.arcgis.com/rest/services-reference/enterprise/trace-utility-network-server-.htm#GUID-F0C932FD-B403-4223-9B00-E44D156C7DF9/>`_
@@ -1258,6 +1291,8 @@ class TraceConfigurationsManager(object):
 
         :return: A dictionary with key "success" indicating True or False.
         """
+        if isinstance(trace_config, TraceConfiguration):
+            trace_config = trace_config.to_dict()
         if self._gis.version >= [9, 2]:
             url = "%s/create" % self._url
             params = {
@@ -1279,7 +1314,7 @@ class TraceConfigurationsManager(object):
         name: str | None = None,
         description: str | None = None,
         trace_type: str = "connected",
-        trace_config: dict | None = None,
+        trace_config: dict | TraceConfiguration | None = None,
         result_types: list[dict] | None = None,
         tags: list[str] | None = None,
     ) -> dict:
@@ -1313,7 +1348,8 @@ class TraceConfigurationsManager(object):
 
                                             "connected" | "subnetwork" | "upstream" | "subnetworkController" | "downstream" | "loops" | "shortenPath" | "isolation"
         ----------------------      -----------------------------------------------
-        trace_config                Optional Dictionary. Specify the collection of
+        trace_config                Optional Dictionary or instance of TraceConfiguration
+                                    class. Specify the collection of
                                     altered trace configuration properties.
 
                                     See: `Properties <https://developers.arcgis.com/rest/services-reference/enterprise/trace-utility-network-server-.htm#GUID-F0C932FD-B403-4223-9B00-E44D156C7DF9/>`_
@@ -1341,6 +1377,8 @@ class TraceConfigurationsManager(object):
 
         if self._gis.version >= [9, 2]:
             url = "%s/alter" % self._url
+            if isinstance(trace_config, TraceConfiguration):
+                trace_config = trace_config.to_dict()
             params = {
                 "f": "json",
                 "globalId": global_id,

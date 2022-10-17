@@ -1,6 +1,7 @@
+from __future__ import annotations
 import ssl
 import logging
-from typing import Optional
+from typing import Optional, Any
 from urllib.parse import urlparse
 from ._common import BaseServer
 from .._impl._con import Connection
@@ -111,6 +112,12 @@ class ServicesDirectory(BaseServer):
     ):
         """Constructor"""
         super(ServicesDirectory, self)
+        ags_file = kwargs.pop("ags_file", None)
+        if url is None and ags_file:
+            import arcpy
+
+            resp = arcpy.gp.getStandaloneServerToken(ags_file)
+            url = resp.get("serverUrl", None)
         profile = kwargs.pop("profile", None)
         if str(url).endswith("/"):
             url = url[:-1]
@@ -119,8 +126,10 @@ class ServicesDirectory(BaseServer):
             url, username, password, key_file, cert_file, client_id = self._profile_mgr(
                 profile, url, username, password, cert_file, key_file, client_id=None
             )
-        if profile is None and url is None:
-            raise ValueError("A `url` must be given when a `profile` is not provided.")
+        if profile is None and url is None and ags_file is None:
+            raise ValueError(
+                "A `url` or 'ags_file' must be given when a `profile` is not provided."
+            )
         if url.lower().find("/rest") == -1 and url.endswith("/rest") == False:
             url = "%s/rest/services" % url
         if (
@@ -170,6 +179,7 @@ class ServicesDirectory(BaseServer):
                 verify_cert=verify_cert,
                 product="SERVER",
                 proxy=proxy,
+                ags_file=ags_file,
                 **kwargs,
             )
         self._gis = kwargs.pop("gis", None)
@@ -292,7 +302,34 @@ class ServicesDirectory(BaseServer):
         return None
 
     # ----------------------------------------------------------------------
-    def list(self, folder: Optional[str] = None):
+    def footprints(self, folder: str | None = None, out_sr: dict | None = None) -> dict:
+        """
+        Returns the Services' extents for all services in a given folder.
+
+        =====================     ====================================================================
+        **Arguments**             **Description**
+        ---------------------     --------------------------------------------------------------------
+        folder                    Optional String. The name of the folder to examine for the footprints.
+        ---------------------     --------------------------------------------------------------------
+        out_sr                    Optional Integer.  The well-known ID of the spatial reference. The default is 4326.
+        =====================     ====================================================================
+
+        :returns: dict[str, Any]
+
+        """
+        params = {"f": "json", "option": "footprints"}
+        if out_sr:
+            params["outSR"] = out_sr
+        if folder and folder.lower() in [f.lower() for f in self.folders]:
+            url = f"{self._url}/{folder}"
+        elif folder is None:
+            url = self._url
+        return self._con.get(url, params)
+
+    # ----------------------------------------------------------------------
+    def list(
+        self, folder: Optional[str] = None, as_dict: bool = False
+    ) -> list | dict[str, Any]:
         """
         The ``list`` method returns a list of services at the given folder.
         The objects will vary in type according to the type of service. For
@@ -318,6 +355,8 @@ class ServicesDirectory(BaseServer):
             res = self._con.get(self._url, {"f": "json"})
         elif folder.lower() in [f.lower() for f in self.folders]:
             res = self._con.get("%s/%s" % (self._url, folder), {"f": "json"})
+        if as_dict:
+            return res
         if "services" in res:
             for s in res["services"]:
                 try:

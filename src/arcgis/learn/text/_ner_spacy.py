@@ -32,7 +32,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Requires data object returned from
-                            ``prepare_data`` function.
+                            :meth:`~arcgis.learn.prepare_data`  function.
     ---------------------   -------------------------------------------
     lang                    Optional string. Language-specific code,
                             named according to the language’s `ISO code <https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes>`_
@@ -545,7 +545,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates an EntityRecognizer from an Esri Model Definition (EMD) file.
+        Creates an :class:`~arcgis.learn.text.EntityRecognizer` from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -554,12 +554,12 @@ class _SpacyEntityRecognizer(ArcGISModel):
                                 file.
         ---------------------   -------------------------------------------
         data                    Required DatabunchNER object or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
 
         =====================   ===========================================
 
-        :return: `EntityRecognizer` Object
+        :return: :class:`~arcgis.learn.text.EntityRecognizer` Object
         """
         emd_path = Path(emd_path)
         ner = cls(data=data)
@@ -653,7 +653,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
         """
         Extracts the entities from [documents in the mentioned path or text_list].
 
-        Field defined as 'address_tag' in `prepare_data()` function's class mapping
+        Field defined as 'address_tag' in :meth:`~arcgis.learn.prepare_data`  function's class mapping
         attribute will be treated as a location. In cases where trained model extracts
         multiple locations from a single document, that document will be replicated
         for each location in the resulting dataframe.
@@ -845,7 +845,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
                                 will plot the figure and return nothing.
         =====================   ===========================================
 
-        :return: matplotlib.figure.Figure
+        :return: `matplotlib.figure.Figure <https://matplotlib.org/stable/api/figure_api.html#matplotlib.figure.Figure>`_
         """
         self._check_requisites()
 

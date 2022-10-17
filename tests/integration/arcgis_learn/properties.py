@@ -34,11 +34,12 @@ from arcgis.learn import (
     MLModel,
     MaXDeepLab,
     DETReg,
+    AutoDL
 )
 import json
 from arcgis.learn.text import EntityRecognizer, SequenceToSequence
 
-if os.environ["run_nightly"] == "1":
+if os.environ.get("run_nightly") == "1":
     data_folder = r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model_regression"
 else:
     data_folder = r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model"
@@ -1261,6 +1262,7 @@ data = {
         },
         "inferencing_image_server": {"input_raster": "pass", "context": "pass"},
     },
+
     "mlmodel": {
         "model_name": "mlmodel",
         "datapath": "automl_data",
@@ -1394,3 +1396,47 @@ data_inference_only = {
         "labels": [None],
     },
 }
+# from arcgis.learn import ImageryModel, AutoDL
+# import glob
+# data_autodl = {
+#     "autodl_object_det":{
+#         "model_name": "autodl_object_det",
+#         "datapath": "autodl_pascal_voc_rgb",
+#         "datapath_ms": "autodl_pascal_voc_ms",
+#         "model": AutoDL,
+#         "model_test": "autodl_object_det_test",
+#         "prepare_data": {
+#             "path": os.path.join(data_folder, "autodl_pascal_voc_rgb"),
+#             "batch_size": 2,
+#             "chip_size":256, 
+#             "class_mapping":{'1': 'pool'}
+#         },
+#         "prepare_data_ms": {
+#             "path": os.path.join(data_folder_ms, "autodl_pascal_voc_ms"),
+#             "batch_size": 2,
+#             "imagery_type": "multispectral",
+#             "chip_size":256, 
+#             "class_mapping":{'1': 'pool'}
+#         },
+#      "network": ['SingleShotDetector', 'RetinaNet', 'FasterRCNN', 'YOLOv3', 'MMDetection'],
+#      "time": 1  
+#     },
+#     "autodl_pixel_cls":{
+#         "model_name": "autodl_pixel_cls",
+#         "datapath": "autodl_classified_tiles_rgb_small",
+#         "datapath_ms": "autodl_classified_tiles_ms_small",
+#         "model": AutoDL,
+#         "model_test": "autodl_pixel_test",
+#         "prepare_data": {
+#             "path": os.path.join(data_folder, "autodl_classified_tiles_rgb_small"),
+#             "batch_size": 2,
+#             "chip_size":256},
+#         "prepare_data_ms": {
+#             "path": os.path.join(data_folder_ms, "autodl_classified_tiles_ms_small"),
+#             "batch_size": 2,
+#             "imagery_type": "multispectral",
+#             "chip_size":256},
+#      "network": ["DeepLab", "UnetClassifier", "PSPNetClassifier", "MMSegmentation"],
+#      "time": 1  
+#     },
+# }

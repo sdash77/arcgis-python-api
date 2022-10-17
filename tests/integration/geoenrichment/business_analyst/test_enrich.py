@@ -3,7 +3,6 @@ from typing import Union, Iterable
 from arcgis.geoenrichment._business_analyst import BusinessAnalyst, Country
 from arcgis.geoenrichment._business_analyst._utils import pep8ify
 import pandas as pd
-import pytest
 
 from .configtest import (
     does_not_raise,

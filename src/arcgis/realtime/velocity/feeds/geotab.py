@@ -21,45 +21,45 @@ class Geotab(_FeedTemplate, _HasTime, _HasGeometry):
     ==================        ====================================================================
     **Argument**              **Description**
     ------------------        --------------------------------------------------------------------
-    label                     str. Unique label for this feed instance.
+    label                     String. Unique label for this feed instance.
     ------------------        --------------------------------------------------------------------
-    description               str. Feed description.
+    description               String. Feed description.
     ------------------        --------------------------------------------------------------------
-    url                       str. The URL to authenticate Geotab.
+    url                       String. The URL to authenticate Geotab.
     ------------------        --------------------------------------------------------------------
-    database                  str. The name of the Geotab database providing data.
+    database                  String. The name of the Geotab database providing data.
     ------------------        --------------------------------------------------------------------
-    username                  str. Specify the username to authenticate Geotab.
+    username                  String. Specify the username to authenticate Geotab.
     ------------------        --------------------------------------------------------------------
-    password                  str. Specify the password to authenticate Geotab.
+    password                  String. Specify the password to authenticate Geotab.
     ==================        ====================================================================
 
     =====================     ==========================================================================================
     **Optional Argument**     **Description**
     =====================     ==========================================================================================
-    groups                    str. List of groups to include in the feature schema. Separate multiple values with a
+    groups                    String. List of groups to include in the feature schema. Separate multiple values with a
                               semi-colon (;).
     ---------------------     ------------------------------------------------------------------------------------------
-    diagnostics_ids           str. List of diagnostic IDs to include in the feature schema. Separate multiple values
+    diagnostics_ids           String. List of diagnostic IDs to include in the feature schema. Separate multiple values
                               with a semi-colon (;).
     ---------------------     ------------------------------------------------------------------------------------------
-    data_format               JsonFormat.
+    data_format               :class:`~arcgis.realtime.velocity.input.JsonFormat`.
                               An instance that contains the data format
                               configuration for this feed. Configure only allowed formats.
                               If this is not set right during initialization, a format will be
                               auto-detected and set from a sample of the incoming data. This sample
                               will be fetched from the configuration provided so far in the init.
     ---------------------     ------------------------------------------------------------------------------------------
-    track_id_field            str. Name of the field from the incoming data that should be set as
+    track_id_field            String. Name of the field from the incoming data that should be set as
                               track ID.
     ---------------------     ------------------------------------------------------------------------------------------
-    geometry                  Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry configuration
+    geometry                  [:class:`~arcgis.realtime.velocity.feeds.XYZGeometry`, :class:`~arcgis.realtime.velocity.feeds.SingleFieldGeometry`]. An instance of geometry configuration
                               that will be used to create geometry objects from the incoming data.
     ---------------------     ------------------------------------------------------------------------------------------
-    time                      Union[TimeInstant, TimeInterval]. An instance of time configuration that
+    time                      [:class:`~arcgis.realtime.velocity.feeds.TimeInstant`, :class:`~arcgis.realtime.velocity.feeds.TimeInterval`]. An instance of time configuration that
                               will be used to create time information from the incoming data.
     ---------------------     ------------------------------------------------------------------------------------------
-    run_interval              RunInterval. An instance of the scheduler configuration. The default is:
+    run_interval              :class:`~arcgis.realtime.velocity.feeds.RunInterval`. An instance of the scheduler configuration. The default is:
                               RunInterval(cron_expression="0 * * ? * * *", timezone="America/Los_Angeles")
     =====================     ==========================================================================================
 

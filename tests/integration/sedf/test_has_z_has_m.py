@@ -12,7 +12,6 @@ from arcgis.features import GeoAccessor, GeoSeriesAccessor
 from arcgis.geometry import Geometry
 
 import unittest
-import pytest
 
 SAMPLE_GEOMETRY_HASZ_HASM = {
     "hasZ": True,
@@ -109,8 +108,8 @@ class TestGeoAccessorSpatialHasMHasZ(unittest.TestCase):
         """tests the z/m mixture.  This should return False unless overwritten"""
         data = {"SHAPE": GEOMS, "OID": [1, 2, 3, 4]}
         sdf = pd.DataFrame(data)
-        assert sdf.spatial.has_z == False
-        assert sdf.spatial.has_m == False
+        assert sdf.spatial.has_z == True
+        assert sdf.spatial.has_m == True
 
 
 ###########################################################################

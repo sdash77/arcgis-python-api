@@ -594,12 +594,27 @@ _log = _logging.getLogger(__name__)
     listed_params = {}
     if (
         len(tbx.properties.tasks) < 4
-        or gis._portal.is_kubernetes
-        or isinstance(
-            gis._con._session.auth,
-            (arcgis.auth.EsriKerberosAuth, arcgis.auth.EsriWindowsAuth),
+        or (isinstance(gis, arcgis.gis.GIS) and gis._portal.is_kubernetes)
+        or (
+            isinstance(gis, arcgis.gis.GIS)
+            and isinstance(
+                gis._con._session.auth,
+                (arcgis.auth.EsriKerberosAuth, arcgis.auth.EsriWindowsAuth),
+            )
+        )
+        or (
+            hasattr(gis, "_session")
+            and isinstance(
+                gis._session.auth,
+                (arcgis.auth.EsriKerberosAuth, arcgis.auth.EsriWindowsAuth),
+            )
         )
     ):
+        for task in tbx.properties.tasks:
+            fn_src, choice_list, func_name = _generate_fn(task, tbx)
+            src_code += fn_src
+            listed_params[func_name] = choice_list
+    elif len(tbx.properties.tasks) < 4:
         for task in tbx.properties.tasks:
             fn_src, choice_list, func_name = _generate_fn(task, tbx)
             src_code += fn_src
@@ -611,7 +626,6 @@ _log = _logging.getLogger(__name__)
         with concurrent.futures.ThreadPoolExecutor(8) as executor:
 
             for task in tbx.properties.tasks:
-                # _generate_fn(task, tbx)
                 f = executor.submit(_generate_fn, **{"task": task, "tbx": tbx})
                 source.append(f)
         for fnsrc in source:
@@ -623,7 +637,12 @@ _log = _logging.getLogger(__name__)
     else:
         listed_params = PropertyMap(listed_params)
 
-    return _import_code(r"%s" % src_code, "name", verbose, choice_list=listed_params)
+    if isinstance(url_or_item, Item):
+        name = f"GPService @ {url_or_item.url}"
+        return _import_code(r"%s" % src_code, name, verbose, choice_list=listed_params)
+    else:
+        name = f"GPService @ {url_or_item}"
+        return _import_code(r"%s" % src_code, name, verbose, choice_list=listed_params)
     # print(src_code)
 
 

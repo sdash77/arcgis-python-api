@@ -251,7 +251,7 @@ class SingleShotDetector(ArcGISModel):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function.
+                            :meth:`~arcgis.learn.prepare_data` function.
     ---------------------   -------------------------------------------
     grids                   Required list. Grid sizes used for creating anchor
                             boxes.
@@ -293,7 +293,8 @@ class SingleShotDetector(ArcGISModel):
                             valid options are 'pytorch', 'tensorflow'
     =====================   ===========================================
 
-    :return: `SingleShotDetector` Object
+    :return:
+        :class:`~arcgis.learn.SingleShotDetector` Object
     """
 
     def __init__(
@@ -314,7 +315,8 @@ class SingleShotDetector(ArcGISModel):
         **kwargs,
     ):
 
-        super().__init__(data, backbone, **kwargs)
+        super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
+        data = self._data
 
         if pretrained_path is not None:
             backbone_pretrained = False
@@ -558,11 +560,12 @@ class SingleShotDetector(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `SingleShotDetector` Object
+        :return:
+            :class:`~arcgis.learn.SingleShotDetector` Object
         """
         return cls.from_emd(data, emd_path)
 
@@ -576,14 +579,14 @@ class SingleShotDetector(ArcGISModel):
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Esri Model Definition
                                 file.
         =====================   ===========================================
 
-        :return: `SingleShotDetector` Object
+        :return: :class:`~arcgis.learn.SingleShotDetector` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)

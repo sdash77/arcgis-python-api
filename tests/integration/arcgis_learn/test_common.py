@@ -13,8 +13,9 @@ from parameterized import parameterized
 from fastai.vision.learner import ClassificationInterpretation
 import random
 import string
+import glob
 from sys import platform
-from arcgis.learn import classify_pixels, detect_objects, classify_objects
+from arcgis.learn import classify_pixels, detect_objects, classify_objects, ImageryModel
 
 import_exception = None
 
@@ -22,7 +23,6 @@ try:
     import fastai
     import torch
     import torchvision
-    import pytest
 
     HAS_DEPS = True
     print(" ================= Modules Imported ==============")
@@ -37,6 +37,7 @@ module_skip = False
 parameter = []
 parameter_fl = []
 parameter_df = []
+# parameter_autodl = []
 parameter_text = []
 authorization_data = {}
 check_ms = False
@@ -56,7 +57,7 @@ else:
         data_folder,
         setuposenviron,
         data_folder_ms,
-        data_inference_only,
+        data_inference_only
     )
     from arcgis.learn import prepare_data, prepare_tabulardata, prepare_textdata
     from datetime import datetime
@@ -128,7 +129,7 @@ success_stat = {
 def setUpModule():
     global authorization_data
     authorization_data = setuposenviron()
-    if os.environ["run_nightly"] == "1":
+    if os.environ.get("run_nightly") == "1":
         accuracy_values["attributes"]["Date"] = convertdate(datetime.today())
     print("Setup completed successfully")
 
@@ -236,7 +237,7 @@ def CommonTestUsingDF(
     model_object.save(f"{os.path.join(data_folder_path, data_path, model_test)}")
     # Load from saved model.
 
-    if os.environ["run_nightly"] == "1":
+    if os.environ.get("run_nightly") == "1":
         print("Testing for accuracy with default backbone")
         global accuracy_values
         if regression_parameter == "automl_score":
@@ -257,6 +258,49 @@ def CommonTestUsingDF(
         os.path.join(data_folder_path, data_path, f"{model_test}/{model_test}.emd")
     )
 
+# def CommonTestAutoDL(
+#     model_name,
+#     datapath,
+#     datapath_ms,
+#     model,
+#     model_test,
+#     prepare_data_rgb,
+#     prepare_data_ms,
+#     network,
+#     time,
+# ):
+#     data = prepare_data(**prepare_data_rgb)
+#     model_object = model(data, total_time_limit=1)
+#     model_object.fit()
+#     best_model_path = os.path.join(data_folder, datapath, 'models', '*AutoDL_'+model_object.best_model+'*', '*emd')
+#     emd_path = glob.glob(best_model_path)[0]
+#     img_model = ImageryModel()
+#     img_model.load(emd_path, data)
+#     img_model.fit()
+#     fine_tuned_model = os.path.join(data_folder, datapath, 'models', 'fine_tuned_model')
+#     img_model.save(fine_tuned_model)
+
+# def CommonTestAutoDLMS(
+#     model_name,
+#     datapath,
+#     datapath_ms,
+#     model,
+#     model_test,
+#     prepare_data_rgb,
+#     prepare_data_ms,
+#     network,
+#     time,
+# ):
+#     data = prepare_data(**prepare_data_ms)
+#     model_object = model(data, total_time_limit=1)
+#     model_object.fit()
+#     best_model_path = os.path.join(data_folder_ms, datapath_ms, 'models', '*AutoDL_'+model_object.best_model+'*', '*emd')
+#     emd_path = glob.glob(best_model_path)[0]
+#     img_model = ImageryModel()
+#     img_model.load(emd_path, data)
+#     img_model.fit()
+#     fine_tuned_model = os.path.join(data_folder_ms, datapath_ms, 'models', 'fine_tuned_model')
+#     img_model.save(fine_tuned_model)
 
 def CommonTestUsingFL(
     query,
@@ -331,7 +375,7 @@ def CommonTestUsingFL(
             data,
         )
 
-    if os.environ["run_nightly"] == "1":
+    if os.environ.get("run_nightly") == "1":
         print("Testing for accuracy with default backbone")
         global accuracy_values
         if regression_parameter == "score":
@@ -341,7 +385,7 @@ def CommonTestUsingFL(
 
         accuracy_values["attributes"][model_name] = result
 
-    if os.environ["run_inference"] == "1":
+    if os.environ.get("run_inference") == "1":
         model_object.predict(feature_layer, output_layer_name="prediction_layer_rf")
 
     success_flag = True
@@ -418,7 +462,7 @@ def commonTestCases(
         model_save_path = model_object.save(f"{d_path}")
 
     # Check model with all supported backbones
-    if os.environ["run_backbones"] == "1":
+    if os.environ.get("run_backbones") == "1":
         print("Testing for all backbones")
         supported_backbones = model_object.supported_backbones
         for backbone in supported_backbones:
@@ -427,7 +471,7 @@ def commonTestCases(
             model_object.save(model_test + "_" + str(backbone))
             torch.cuda.empty_cache()
 
-    if os.environ["run_nightly"] == "1":
+    if os.environ.get("run_nightly") == "1":
         if not ms_flag:
             print("Testing for accuracy with default backbone")
             global accuracy_values
@@ -505,7 +549,7 @@ def commonTestCases(
             ), "Model accuracy is lower than the threshold value. Please check."
 
     ## Inferencing function here.
-    if os.environ["run_inference"] == "1" and ms_flag == False:
+    if os.environ.get("run_inference") == "1" and ms_flag == False:
         from arcpy.ia import (
             DetectObjectsUsingDeepLearning,
             ClassifyPixelsUsingDeepLearning,
@@ -1019,16 +1063,17 @@ class TestTraining(unittest.TestCase):
         data_folder_path,
     ):
         CommonTestUsingDF(
-            query,
-            model_type,
-            prepare_tabular_data,
-            regression_parameter,
-            regression_test_score,
-            model_name,
-            data_path,
-            model_test,
-            data_folder_path,
-        )
+                query,
+                model_type,
+                prepare_tabular_data,
+                regression_parameter,
+                regression_test_score,
+                model_name,
+                data_path,
+                model_test,
+                data_folder_path,
+            )
+
 
     @classmethod
     def tearDownClass(cls):
@@ -1051,7 +1096,7 @@ class TestTraining(unittest.TestCase):
 ## Remove all model directories
 def tearDownModule():
     torch.cuda.empty_cache()
-    if os.environ["run_nightly"] == "1":
+    if os.environ.get("run_nightly") == "1":
         print("Updating feature layer for accuracy dashboard\n")
         updateAccuracyResults()
         updateModelStats()

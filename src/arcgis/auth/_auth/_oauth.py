@@ -12,6 +12,7 @@ from ._schain import SupportMultiAuth
 from ..tools._lazy import LazyLoader
 from ..tools import parse_url
 
+warnings = LazyLoader("warnings")
 re = LazyLoader("re")
 json = LazyLoader("json")
 webbrowser = LazyLoader("webbrowser")
@@ -131,18 +132,19 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
             oauth.verify = False
             if self._proxies:
                 oauth.proxies = self._proxies
-
-            res = oauth.fetch_token(
-                token_url=tu,
-                username=self._username,
-                password=self._password,
-                client_id=self._client_id,
-                client_secret=self._client_secret,
-                include_client_id=True,
-                verify=False,
-                proxies=self._proxies,
-                expiration=26000,
-            )
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                res = oauth.fetch_token(
+                    token_url=tu,
+                    username=self._username,
+                    password=self._password,
+                    client_id=self._client_id,
+                    client_secret=self._client_secret,
+                    include_client_id=True,
+                    verify=False,
+                    proxies=self._proxies,
+                    expiration=26000,
+                )
             if "expires_in" in res:
                 self._create_time = _dt.datetime.fromtimestamp(
                     res["expires_at"]
@@ -321,7 +323,13 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
             # Recreate the request without the token
             #
             parsed = parse_url(r.url)
-            self._invalid_token_urls.add(parsed.netloc)
+            if parsed.port:
+                server_url = (
+                    f"{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path}"
+                )
+            else:
+                server_url = f"{parsed.scheme}://{parsed.netloc}/{parsed.path}"
+            self._invalid_token_urls.add(server_url)
             r.content
             r.raw.release_conn()
             r.request.headers.pop("X-Esri-Authorization", None)
@@ -337,7 +345,13 @@ class EsriOAuth2Auth(AuthBase, SupportMultiAuth):
         if self._invalid_token_urls is None:
             self._invalid_token_urls = set()
         parsed = parse_url(r.url)
-        if not parsed.netloc in self._invalid_token_urls:
+        if parsed.port:
+            server_url = (
+                f"{parsed.scheme}://{parsed.netloc}:{parsed.port}/{parsed.path}"
+            )
+        else:
+            server_url = f"{parsed.scheme}://{parsed.netloc}/{parsed.path}"
+        if not server_url in self._invalid_token_urls:
             r.register_hook("response", self.handle_40x)
             if self.legacy == False:
                 r.headers["X-Esri-Authorization"] = f"Bearer {self._oauth_token()}"

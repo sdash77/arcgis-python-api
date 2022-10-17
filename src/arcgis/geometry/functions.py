@@ -302,6 +302,7 @@ def buffer(
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean. If True, a future object will be returned and the process
                       will not wait for the task to complete. The default is False, which means wait for results.
+                      If setting future to True there is a limitation of 6500 geometries that can be processed in one call.
     ================  ===============================================================================
 
     :returns:
@@ -364,6 +365,7 @@ def convex_hull(
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean. If True, a future object will be returned and the process
                       will not wait for the task to complete. The default is False, which means wait for results.
+                      If setting future to True there is a limitation of 6500 geometries that can be processed in one call.
     ================  ===============================================================================
 
     :returns:
@@ -415,6 +417,7 @@ def cut(
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean. If True, a future object will be returned and the process
                       will not wait for the task to complete. The default is False, which means wait for results.
+                      If setting future to True there is a limitation of 6500 geometries that can be processed in one call.
     ================  ===============================================================================
 
     :returns:
@@ -476,6 +479,7 @@ def densify(
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean. If True, a future object will be returned and the process
                       will not wait for the task to complete. The default is False, which means wait for results.
+                      If setting future to True there is a limitation of 6500 geometries that can be processed in one call.
     ================  ===============================================================================
 
     :returns:
@@ -541,6 +545,7 @@ def difference(
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean. If True, a future object will be returned and the process
                       will not wait for the task to complete. The default is False, which means wait for results.
+                      If setting future to True there is a limitation of 6500 geometries that can be processed in one call.
     ================  ===============================================================================
 
     :returns:
@@ -805,6 +810,7 @@ def generalize(
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean. If True, a future object will be returned and the process
                       will not wait for the task to complete. The default is False, which means wait for results.
+                      If setting future to True there is a limitation of 6500 geometries that can be processed in one call.
     ================  ===============================================================================
 
     :returns:
@@ -854,6 +860,7 @@ def intersect(
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean. If True, a future object will be returned and the process
                       will not wait for the task to complete. The default is False, which means wait for results.
+                      If setting future to True there is a limitation of 6500 geometries that can be processed in one call.
     ================  ===============================================================================
 
     :returns:
@@ -1032,6 +1039,7 @@ def offset(
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean. If True, a future object will be returned and the process
                       will not wait for the task to complete. The default is False, which means wait for results.
+                      If setting future to True there is a limitation of 6500 geometries that can be processed in one call.
     ================  ===============================================================================
 
     :returns:
@@ -1110,6 +1118,7 @@ def project(
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean. If True, a future object will be returned and the process
                       will not wait for the task to complete. The default is False, which means wait for results.
+                      If setting future to True there is a limitation of 6500 geometries that can be processed in one call.
     ================  ===============================================================================
 
     :returns:
@@ -1265,6 +1274,7 @@ def simplify(
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean. If True, a future object will be returned and the process
                       will not wait for the task to complete. The default is False, which means wait for results.
+                      If setting future to True there is a limitation of 6500 geometries that can be processed in one call.
     ================  ===============================================================================
 
     :returns:
@@ -1492,6 +1502,7 @@ def union(
     ----------------  -------------------------------------------------------------------------------
     future            Optional boolean. If True, a future object will be returned and the process
                       will not wait for the task to complete. The default is False, which means wait for results.
+                      If setting future to True there is a limitation of 6500 geometries that can be processed in one call.
     ================  ===============================================================================
 
     :returns:

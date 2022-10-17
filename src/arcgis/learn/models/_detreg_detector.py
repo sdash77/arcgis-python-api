@@ -183,14 +183,14 @@ class CustomDetReg:
 class DETReg(ModelExtension):
     """
     Model architecture from https://arxiv.org/abs/2106.04550.
-    Creates a ``DETReg`` object detection model,
+    Creates a :class:`~arcgis.learn.DETReg` object detection model,
     based on https://github.com/amirbar/DETReg.
 
     =============================   =============================================
     **Argument**                    **Description**
     -----------------------------   ---------------------------------------------
     data                            Required fastai Databunch. Returned data object from
-                                    ``prepare_data`` function.
+                                    :meth:`~arcgis.learn.prepare_data`  function.
     -----------------------------   ---------------------------------------------
     backbone                        Optional string. Backbone convolutional neural network
                                     model used for feature extraction, which
@@ -201,7 +201,7 @@ class DETReg(ModelExtension):
                                     saved.
     =============================   =============================================
 
-    :return: ``DETReg`` Object
+    :return: :class:`~arcgis.learn.DETReg` Object
     """
 
     def __init__(self, data, backbone="resnet50", pretrained_path=None, **kwargs):
@@ -259,7 +259,7 @@ class DETReg(ModelExtension):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a ``DETReg`` object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.DETReg` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -268,12 +268,12 @@ class DETReg(ModelExtension):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from ``prepare_data`` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data`  function or None for
                                 inferencing.
 
         =====================   ===========================================
 
-        :return: `DETReg` Object
+        :return: :class:`~arcgis.learn.DETReg` Object
         """
         emd_path = _get_emd_path(emd_path)
 

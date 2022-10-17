@@ -6,7 +6,7 @@ import parcel_fabric_utils as pfutils
 
 
 class TestDeleteParcels(unittest.TestCase):
-    """Reassign parcels to a different record"""
+    """Delete parcels"""
 
     vms = None
     gis = None

@@ -54,7 +54,7 @@ class StoryMap(object):
                         'Story Map'. If no item is passed, a new story is created and saved to
                         your active portal.
     ---------------     --------------------------------------------------------------------
-    gis                 Optional instance of GIS. If none provided the active gis is used.
+    gis                 Optional instance of :class:`~arcgis.gis.GIS` . If none provided the active gis is used.
     ===============     ====================================================================
     """
 
@@ -400,8 +400,8 @@ class StoryMap(object):
                             If none specified, list of all nodes returned.
 
 
-                                ``Values: "image" | "video" | "audio" | "embed" | "webmap" | "text" |
-                                "button" | "separator" | "expressmap" | "webscene" | "immersive"``
+                            Values: `image` | `video` | `audio` | `embed` | `webmap` | `text` |
+                            `button` | `separator` | `expressmap` | `webscene` | `immersive`
         ===============     ====================================================================
 
         :return:
@@ -490,7 +490,7 @@ class StoryMap(object):
         ---------------     --------------------------------------------------------------------
         by_line             Optional string. Crediting the author(s).
         ---------------     --------------------------------------------------------------------
-        image               Optional Image object. The cover image for the story cover.
+        image               Optional :class:`~arcgis.apps.storymap.story_content.Image` object. The cover image for the story cover.
         ===============     ====================================================================
 
         :return: Dictionary representation of the story cover node.
@@ -612,7 +612,7 @@ class StoryMap(object):
     # ----------------------------------------------------------------------
     def theme(self, theme: Union[Themes, str] = Themes.SUMMIT):
         """
-        Each story has a theme node in it's resources. This method can be used to change the theme.
+        Each story has a theme node in its resources. This method can be used to change the theme.
         To add a custom theme to your story, pass in the item_id for the item of type Story Map Theme.
 
         ===============     ====================================================================
@@ -621,7 +621,7 @@ class StoryMap(object):
         theme               Required Themes Style or custom theme item id.
                             The theme to set the story to.
 
-                            ``Values: SUMMIT | TIDAL | MESA | RIDGELINE | SLATE | OBSIDIAN | "<item_id>"``
+                            Values: `SUMMIT` | `TIDAL` | `MESA` | `RIDGELINE` | `SLATE` | `OBSIDIAN` | `<item_id>`
         ===============     ====================================================================
 
         .. code-block:: python
@@ -802,14 +802,14 @@ class StoryMap(object):
         ---------------     --------------------------------------------------------------------
         display             Optional String. How the item will be displayed in the story map.
 
-                                For Image, Video, Audio, or Map object.
-                                Values: "small" | "wide" | "full" | "float"
+                            For Image, Video, Audio, or Map object.
+                            Values: "small" | "wide" | "full" | "float"
 
-                                For Gallery:
-                                Values: "jigsaw" | "square-dynamic"
+                            For Gallery:
+                            Values: "jigsaw" | "square-dynamic"
 
-                                For Embed:
-                                Values: "card" | "inline"
+                            For Embed:
+                            Values: "card" | "inline"
         ---------------     --------------------------------------------------------------------
         position            Optional Integer. Indicates the position in which the content will be
                             added. To see all node positions use the ``node`` property.
@@ -836,7 +836,7 @@ class StoryMap(object):
 
         """
         if content and content.node in self._properties["nodes"]:
-            raise Exception("This node already exists. Please try updating instead.")
+            content.node = "n-" + uuid.uuid4().hex[0:6]
 
         # Node id included in all content except separator so create node id for that
         node_id = content.node if content is not None else "n-" + uuid.uuid4().hex[0:6]
@@ -954,7 +954,7 @@ class StoryMap(object):
                             current access is kept. This is used when `publish` parameter is set
                             to True.
 
-                            ``Values: "private" | "org" | "public" ``
+                            Values: `private` | `org` | `public`
         ---------------     --------------------------------------------------------------------
         publish             Optional boolean. If True, the story is saved and also published.
                             Default is false so story is saved with unpublished changes.
@@ -1176,7 +1176,166 @@ class StoryMap(object):
         return clone_story.save()
 
     # ----------------------------------------------------------------------
-    def _delete(self, node_id, resource_id=None):
+    def copy_content(self, target_story: StoryMap, node_list: list):
+        """
+        Copy the content from one story to another. This will copy the content
+        indicated to the target story in the order they are provided. To change the
+        order once the nodes are copied, use the `move()` method on the target story.
+
+        .. note::
+            Do not forget to save the target story once you are done copying and making
+            any further edits.
+
+        .. note::
+            This method can take time depending on the number of resources. Each resource coming
+            from a file must be copied over.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        target_story        Required StoryMap instance. The target story that the content will be
+                            copied to.
+        ---------------     --------------------------------------------------------------------
+        node_list           Required list of strings. The list of node ids indicating the content
+                            that will be copied to the target story.
+        ===============     ====================================================================
+
+        :return:
+            True if all nodes have been successfully copied over.
+
+        """
+        # Step 1: Do Checks
+        # Check that nodes exist in original story (children of source story contain all of node_list)
+        story_children = self._properties["nodes"][self._properties["root"]]["children"]
+        check = all(node in story_children for node in node_list)
+        # Return an error if not all nodes are in the source story.
+        if check is False:
+            not_in_story = []
+            for node in node_list:
+                if node not in story_children:
+                    not_in_story.append(node)
+            raise ValueError(
+                "These nodes are not in the story: "
+                + str(not_in_story)
+                + ". Please check that the correct node ids are provided."
+            )
+
+        # Step 2: Create dictionaries for copying
+
+        # Create node dict of all nodes to add, resource dict, and complete node list
+        # Depending on node type, need to take different route to find all children
+        original_nodes = node_list
+        complete_node_list = []
+        complete_node_dict = {}
+        complete_resource_dict = {}
+        resource_files = {}
+        has_children = True
+
+        # internal method to add to correct places
+        def _add_to_dicts(node_add, comp_list, comp_node_dict, comp_res_dict):
+            comp_list.append(node_add)
+            node_dict = self._properties["nodes"][node_add]
+            comp_node_dict[node_add] = node_dict
+
+            # find the resource node to add associated with node
+            if "data" in node_dict:
+                for key, value in node_dict["data"].items():
+                    if isinstance(value, str):
+                        if "r-" in value:
+                            resource_node = value
+                            resource_dict = self._properties["resources"][resource_node]
+                            comp_res_dict[resource_node] = resource_dict
+                            if "resourceId" in resource_dict["data"]:
+                                name = resource_dict["data"]["resourceId"]
+                                resource_file = self._item.resources.get(name)
+                                resource_files[name] = resource_file
+
+        # Begin populating dicts and list, assume there are children to begin with.
+        while has_children is True:
+            # new list of nodes to check at next iteration
+            new_nodes = []
+            for node in node_list:
+                # add node info for copying
+                _add_to_dicts(
+                    node, complete_node_list, complete_node_dict, complete_resource_dict
+                )
+                # check type of node to see if need to find children
+                node_children = self._has_children(node)
+                # populate new list with next nodes to add
+                if node_children:
+                    for child in node_children:
+                        new_nodes.append(child)
+            # if list is not empty, keep going
+            if new_nodes:
+                has_children = True
+                node_list = new_nodes
+            # once list is empty, all children have been accounted for
+            else:
+                has_children = False
+
+        # Step 3: Make any changes before copying over
+        # existing target story node ids
+        target_story_nodes = list(target_story._properties["nodes"].keys())
+
+        if any(node in target_story_nodes for node in complete_node_list):
+            # find the node and change it everywhere
+            for node in complete_node_list:
+                if node in target_story_nodes:
+                    new_node = "n-" + uuid.uuid4().hex[0:6]
+                    # replace node with new node in all places
+                    # in the list passed in, if present
+                    original_nodes = [s.replace(node, new_node) for s in original_nodes]
+                    # in the dictionary of all nodes to copy
+                    for key, value in complete_node_dict.items():
+                        if key == node:
+                            # replace old node id with new node id in keys
+                            complete_node_dict[new_node] = complete_node_dict.pop(key)
+                        if "children" in value:
+                            # replace old node id with new node id if child of another node
+                            if node in value["children"]:
+                                complete_node_dict[key]["children"] = [
+                                    s.replace(node, new_node) for s in value["children"]
+                                ]
+
+        # Step 4: Copy nodes to target story
+        for key, value in complete_node_dict.items():
+            target_story._properties["nodes"][key] = value
+        for key, value in complete_resource_dict.items():
+            target_story._properties["resources"][key] = value
+        for key, value in resource_files.items():
+            target_story._add_resource(file=value, resource_name=key)
+
+        # Step 5: Add the node list to the story children
+        for main_node in original_nodes:
+            target_story._add_child(main_node)
+        return True
+
+    # ----------------------------------------------------------------------
+    def _has_children(self, node):
+        """
+        Check if node has children and return list of children else None.
+        """
+        node_class = self._assign_node_class(node)
+        if (
+            isinstance(node_class, Content.Sidecar)
+            or isinstance(node_class, Content.Gallery)
+            or isinstance(node_class, Content.Timeline)
+        ):
+            return self._properties["nodes"][node]["children"]
+        elif isinstance(node_class, str):
+            if (
+                "immersive" in node_class.lower()
+                or "credits" in node_class.lower()
+                or "event" in node_class.lower()
+            ):
+                return self._properties["nodes"][node]["children"]
+        elif isinstance(node_class, Content.Swipe):
+            return list(self._properties["nodes"][node]["data"]["contents"].values())
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
+    def _delete(self, node_id):
         # Check if node is in story
         if node_id not in self._properties["nodes"]:
             return False
@@ -1201,12 +1360,6 @@ class StoryMap(object):
                     # iterate through children to see if node is part of it
                     if child == node_id:
                         self._properties["nodes"][node]["children"].remove(node_id)
-
-        # Remove from resources dictionary
-        # Note: not all keys are in resources
-        resource = self._properties["resources"].pop(resource_id, None)
-        if resource is not None and "resourceId" in resource["data"]:
-            self._remove_resource(resource["data"]["resourceId"])
 
         return True
 

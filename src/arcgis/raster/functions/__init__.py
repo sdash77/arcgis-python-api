@@ -41,6 +41,7 @@ from .utility import (
     _input_rft,
     _find_object_ref,
     _python_variable_name,
+    _set_multidimensional_rules,
 )
 from arcgis.features.layer import FeatureLayer as _FeatureLayer
 from .._RasterInfo import RasterInfo
@@ -414,36 +415,6 @@ def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
         newlyr._engine_obj._extent_set = layer._extent_set
 
     return newlyr
-
-
-def _set_multidimensional_rules(function_chain=None, function_chain_ra=None):
-    match_variables = _arcgis.env.match_variables
-    union_dimension = _arcgis.env.union_dimension
-
-    if (match_variables is not None) and isinstance(match_variables, bool):
-        if (
-            function_chain is not None
-        ) and "MatchVariable" not in function_chain.keys():
-            function_chain["rasterFunctionArguments"]["MatchVariable"] = match_variables
-        if (
-            function_chain_ra is not None
-        ) and "MatchVariable" not in function_chain_ra.keys():
-            function_chain_ra["rasterFunctionArguments"][
-                "MatchVariable"
-            ] = match_variables
-    if (union_dimension is not None) and isinstance(union_dimension, bool):
-        if (
-            function_chain is not None
-        ) and "UnionDimension" not in function_chain.keys():
-            function_chain["rasterFunctionArguments"][
-                "UnionDimension"
-            ] = union_dimension
-        if (
-            function_chain_ra is not None
-        ) and "UnionDimension" not in function_chain.keys():
-            function_chain_ra["rasterFunctionArguments"][
-                "UnionDimension"
-            ] = union_dimension
 
 
 def arg_statistics(
@@ -10906,6 +10877,14 @@ def compute_change(
                                              - DIFFERENCE : The mathematical difference, or subtraction, between the pixel values in the input rasters will be calculated. This is the default.
                                              - RELATIVE_DIFFERENCE : The difference in pixel values, accounting for the magnitudes of the values being compared, will be calculated.
                                              - CATEGORICAL_DIFFERENCE : The difference between two categorical or thematic rasters will be calculated, where the output contains class transitions that occurred between the two rasters.
+                                             - SPECTRAL_EUCLIDEAN_DISTANCE : The Euclidean distance between two multiband rasters,
+                                                                             where each pixel is treated as a vector. Larger values
+                                                                             indicate more change between the images.
+                                             - SPECTRAL_ANGLE_DIFFERENCE : The spectral angle between two multiband rasters, where
+                                                                           each pixel is treated as a vector. Larger angles indicate
+                                                                           more change between the images.
+                                             - BAND_WITH_MOST_CHANGE : The band that accounts for the most change in each pixel between
+                                                                       two multiband rasters.
 
                                              Example:
 
@@ -10971,6 +10950,9 @@ def compute_change(
         "DIFFERENCE": 0,
         "RELATIVE_DIFFERENCE": 1,
         "CATEGORICAL_DIFFERENCE": 2,
+        "SPECTRAL_EUCLIDEAN_DISTANCE": 3,
+        "SPECTRAL_ANGLE_DIFFERENCE": 4,
+        "BAND_WITH_MOST_CHANGE": 5,
     }
 
     if isinstance(method, str):
@@ -10978,6 +10960,9 @@ def compute_change(
             "DIFFERENCE",
             "RELATIVE_DIFFERENCE",
             "CATEGORICAL_DIFFERENCE",
+            "SPECTRAL_EUCLIDEAN_DISTANCE",
+            "SPECTRAL_ANGLE_DIFFERENCE",
+            "BAND_WITH_MOST_CHANGE",
         ]
         if [element.upper() for element in method_allowed_values].count(
             method.upper()

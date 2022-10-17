@@ -2,26 +2,16 @@ import unittest
 import datetime
 import sys
 
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
+# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import pandas as pd
 from arcgis.features.layer import FeatureLayer
 from arcgis.gis import GIS, Item
 from arcgis.geometry import Geometry
 from arcgis.features.use_proximity import find_nearest
-from arcgis.gis import ProfileManager
+from config_tests import setup_profiles
 
-profile_list = ProfileManager().list()
-
-if not "ent11" in profile_list:
-    GIS(
-        url="https://gpportal.esri.com/portal/",
-        username="admin",
-        password="esri.agp",
-        profile="ent11",
-    )  # create enterprise 11 connection
-
-
-profiles = ["your_online_profile", "ent11"]
+profiles = ["online_test", "ent_test", "kube_test"]
+setup_profiles(profiles[0], profiles[1], profiles[2])
 
 
 class TestFindNearest(unittest.TestCase):

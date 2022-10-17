@@ -1,6 +1,5 @@
 import os
 import unittest
-import pytest
 
 from arcgis.gis import GIS
 

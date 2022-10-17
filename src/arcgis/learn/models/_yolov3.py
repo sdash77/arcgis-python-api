@@ -170,14 +170,14 @@ class YOLOv3(ArcGISModel):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function. YOLOv3 only supports image
+                            :meth:`~arcgis.learn.prepare_data` function. YOLOv3 only supports image
                             sizes in multiples of 32 (e.g. 256, 416, etc.)
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
     =====================   ===========================================
 
-    :return: `YOLOv3` Object
+    :return: :class:`~arcgis.learn.YOLOv3` Object
     """
 
     def __init__(self, data=None, pretrained_path=None, **kwargs):
@@ -191,7 +191,8 @@ class YOLOv3(ArcGISModel):
             data.remove_tfm(data.norm)
             data.norm, data.denorm = None, None
 
-        super().__init__(data)
+        super().__init__(data, pretrained_path=pretrained_path)
+        data = self._data
 
         # Creating a dummy class for the backbone because this model does not use a torchvision backbone
         class DarkNet53:
@@ -241,10 +242,10 @@ class YOLOv3(ArcGISModel):
                         "[INFO] Can't download and extract COCO pretrained weights for YOLOv3.\nProceeding without pretrained weights."
                     )
             if os.path.exists(weights_file):
-                parse_yolo_weights(self._model, weights_file)
-                from IPython.display import clear_output
+                from IPython.utils import io
 
-                clear_output()
+                with io.capture_output() as captured:
+                    parse_yolo_weights(self._model, weights_file)
 
         self._loss_f = YOLOv3_Loss()
         self.learn = Learner(data, self._model, loss_func=self._loss_f)
@@ -482,7 +483,6 @@ class YOLOv3(ArcGISModel):
         ---------------------   -------------------------------------------
         batch_size              Optional int. Batch size to be used
                                 during tiled inferencing. Deafult value 1.
-        ---------------------   -------------------------------------------
         =====================   ===========================================
 
         :return: 'List' of xmin, ymin, width, height of predicted bounding boxes on the given image
@@ -974,11 +974,11 @@ class YOLOv3(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `YOLOv3` Object
+        :return: :class:`~arcgis.learn.YOLOv3` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)

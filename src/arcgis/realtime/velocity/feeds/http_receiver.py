@@ -28,33 +28,40 @@ class HttpReceiver(_FeedTemplate, _HasTime, _HasGeometry):
     ====================      ======================================================================
     **Argument**              **Description**
     --------------------      ----------------------------------------------------------------------
-    label                     str. Unique label for this feed instance.
+    label                     String. Unique label for this feed instance.
     --------------------      ----------------------------------------------------------------------
-    description               str. Feed description.
+    description               String. Feed description.
     --------------------      ----------------------------------------------------------------------
-    authentication_type       str. Authentication type. Options: none or arcgis.
+    authentication_type       String. Authentication type.
+
+                              Options:
+
+                                none or arcgis.
     --------------------      ----------------------------------------------------------------------
-    sample_message            str. The sample content to auto-detect the data format. For example:
-                              "name,age\\nsam,23"
+    sample_message            String. The sample content to auto-detect the data format.
+
+                              For example:
+
+                                "name,age\\nsam,23"
     ====================      ======================================================================
 
     =====================     ====================================================================
-    **Optional Argument**           **Description**
+    **Optional Argument**     **Description**
     =====================     ====================================================================
-    data_format               Union[EsriJsonFormat, GeoJsonFormat, JsonFormat, DelimitedFormat, XMLFormat].
+    data_format               [:class:`~arcgis.realtime.velocity.input.EsriJsonFormat`, :class:`~arcgis.realtime.velocity.input.GeoJsonFormat`, :class:`~arcgis.realtime.velocity.input.DelimitedFormat`, :class:`~arcgis.realtime.velocity.input.JsonFormat`, :class:`~arcgis.realtime.velocity.input.XMLFormat`].
                               An instance that contains the data format
                               configuration for this feed. Configure only allowed formats.
                               If this is not set right during initialization, a format will be
                               auto-detected and set from a sample of the incoming data. This sample
                               will be fetched from the configuration provided so far in the init.
     ---------------------     --------------------------------------------------------------------
-    track_id_field            str. Name of the field from the incoming data that should be set as
+    track_id_field            String. Name of the field from the incoming data that should be set as
                               track ID.
     ---------------------     --------------------------------------------------------------------
-    geometry                  Union[XYZGeometry, SingleFieldGeometry]. An instance of geometry
+    geometry                  [:class:`~arcgis.realtime.velocity.feeds.XYZGeometry`, :class:`~arcgis.realtime.velocity.feeds.SingleFieldGeometry`]. An instance of geometry
                               configuration that will be used to create geometry objects from the incoming data.
     ---------------------     --------------------------------------------------------------------
-    time                      Union[TimeInstant, TimeInterval]. An instance of time configuration that
+    time                      [:class:`~arcgis.realtime.velocity.feeds.TimeInstant`, :class:`~arcgis.realtime.velocity.feeds.TimeInterval`]. An instance of time configuration that
                               will be used to create time information from the incoming data.
     =====================     ====================================================================
 
