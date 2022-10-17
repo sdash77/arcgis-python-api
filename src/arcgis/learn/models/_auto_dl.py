@@ -58,9 +58,11 @@ class ImageryModel(ArcGISModel):
         try:
             modelname = emd["ModelName"]
             self._modeltype = emd["ModelType"]
-            if "ModelFileConfigurationClass" in emd.keys():
-                mm_model = emd["Kwargs"]["model"]
-                is_mm = True
+            if "ModelFileConfigurationClass" in list(emd.keys()):
+                self._modelconfig = emd["ModelFileConfigurationClass"]
+                if self._modelconfig in ["MMDetectionConfig", "MMSegmentationConfig"]:
+                    mm_model = emd["Kwargs"]["model"]
+                    is_mm = True
         except Exception as e:
             print(e)
             raise Exception("Not a valid emd file")
@@ -409,33 +411,27 @@ class AutoDL:
     """
 
     def __init__(
-        self,
-        data=None,
-        total_time_limit=2,
-        mode="basic",
-        network=None,
-        verbose=True,
-        **kwargs
+        self, data=None, total_time_limit=2, mode="basic", network=None, verbose=True, **kwargs
     ):
 
-        if "max_batch_size" in kwargs:
-            self.batch_size = kwargs["max_batc_size"]
+        if 'max_batch_size' in kwargs:
+            self.batch_size = kwargs["max_batch_size"]
         else:
             self.batch_size = 64
 
-        if "save_evaluated_models" in kwargs:
-            self.save_evaluated_models = True
+        if 'save_evaluated_models' in kwargs:
+            self._save_evaluated_models = kwargs["save_evaluated_models"]
         else:
-            self.save_evaluated_models = False
+            self._save_evaluated_models = True
 
         if "output_folder" in kwargs:
-            self.output_path = kwargs["output_folder"]
+            self._output_path = kwargs["output_folder"]
             self._save_to_folder = True
         else:
             self._save_to_folder = False
 
         if verbose:
-            self.logger_dict = []
+            self._logger_dict = []
         self._data = data
         self.verbose = verbose
         algorithms = network
@@ -443,7 +439,7 @@ class AutoDL:
         self._max_image_set = 500
         self._max_epochs = 20
         self._remaining_time = 0
-        self.epoch_obj = {}
+        self._epoch_obj = {}
         self._all_algorithms = [
             "DeepLab",
             "UnetClassifier",
@@ -479,6 +475,7 @@ class AutoDL:
         self._average_precision_score_df = None
         self._mIOU_df = None
         self.best_model = None
+        self._best_backbone = None
         self._all_losses = {}
         self._max_accuracy = 0
         self._train_callback = train_callback
@@ -488,9 +485,7 @@ class AutoDL:
             "KITTI_rectangles",
         ]
         if total_time_limit < 0.25:
-            raise Exception(
-                "Total time limit should be greater than or equal to 0.25 hr"
-            )
+            raise Exception("Total time limit should be greater than or equal to 0.25 hr")
         total_time_limit = total_time_limit * 60
         self._training_mode = mode.lower()
         if self._training_mode == "perform":
@@ -586,34 +581,27 @@ class AutoDL:
         )
 
     def _get_max_epochs(self, total_time, required_time):
-        self._remaining_time = total_time - required_time
+        self._remaining_time = (total_time - required_time)
         model_stats = self._model_stats()
         model_epochs = 0
         for algo in self._algos:
             mt = model_stats[algo]["time"]
-            model_time_required = (
-                (mt // 60) * self._tiles_required
-            ) // self._max_image_set
+            model_time_required = ((mt//60) * self._tiles_required) // self._max_image_set
             time_ratio = (model_time_required / required_time) * 100
-            model_remaining_time = (time_ratio / 100) * self._remaining_time
-            model_epochs = int((20 * model_remaining_time) // model_time_required)
+            model_remaining_time = (time_ratio/ 100) * self._remaining_time
+            model_epochs = int((20* model_remaining_time) // model_time_required)
             break
 
         self._max_epochs += model_epochs
         return self._max_epochs
 
     def _train_model(
-        self,
-        model,
-        backbone=None,
-        epochs=20,
-        model_type="classification",
-        model_time=1600,
+        self, model, backbone=None, epochs=20, model_type="classification", model_time=1600
     ):
         """
         Train the AutoDL models.
         """
-        is_best = False
+        self._is_best = False
         start_time = time.time()
         if model_type == "classification":
             mm_model = "MMSegmentation"
@@ -624,48 +612,33 @@ class AutoDL:
                 date=dt.now().strftime("%d-%m-%Y %H:%M:%S"), network=model
             )
             print(log_msg)
-            self.logger_dict.append(log_msg)
+            self._logger_dict.append(log_msg)
 
         find_lr = False
         from ._autodl_utils import EvaluateBatchSize
-
         if not self._model_stats()[model]["is_mm"]:
-            evaluate_batchsize = EvaluateBatchSize(
-                model,
-                self._data.path,
-                self.batch_size,
-                dataset_type=self._data.dataset_type,
-            )
+            evaluate_batchsize = EvaluateBatchSize(model, self._data.path, self.batch_size,
+             dataset_type=self._data.dataset_type)
         else:
-            evaluate_batchsize = EvaluateBatchSize(
-                mm_model,
-                self._data.path,
-                self.batch_size,
-                dataset_type=self._data.dataset_type,
-                model_name=model,
-            )
-        evaluate_batchsize.start_thread(
-            "Thread Initiated for batch size: " + str(self.batch_size)
-        )
+            evaluate_batchsize = EvaluateBatchSize(mm_model, self._data.path, self.batch_size,
+             dataset_type=self._data.dataset_type, model_name= model)
+        evaluate_batchsize.start_thread("Thread Initiated for batch size: "+str(self.batch_size))
         batch_size, lr_val, self._data = evaluate_batchsize.wait_until()
         del evaluate_batchsize
 
         if batch_size == None or lr_val == None:
-            print(
-                "Error while calculating the batch size, preparing data with batch size 2"
-            )
+            print("Error while calculating the batch size, preparing data with batch size 2")
             find_lr = True
             batch_size = 2
-        self._data = prepare_data(
-            self._data.path, batch_size=2, dataset_type=self._data.dataset_type
-        )
+        self._data = prepare_data(self._data.path, batch_size=2, dataset_type=self._data.dataset_type)
 
         # if self.verbose:
         #     log_msg = "{date}: ===> {batch_size} ====> {lr_val}".format(
         #         date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),batch_size=batch_size, lr_val=lr_val
         #     )
         #     print(log_msg)
-        #     self.logger_dict.append(log_msg)
+        #     self._logger_dict.append(log_msg)
+
 
         if backbone is None:
             if not self._model_stats()[model]["is_mm"]:
@@ -679,21 +652,15 @@ class AutoDL:
             else:
                 if model == "CascadeRCNN":
                     setattr(
-                        self,
-                        model,
-                        getattr(ag.learn, mm_model)(self._data, model="Cascade_RCNN"),
+                        self, model, getattr(ag.learn, mm_model)(self._data, model="Cascade_RCNN")
                     )
                 elif model == "CascadeRPN":
                     setattr(
-                        self,
-                        model,
-                        getattr(ag.learn, mm_model)(self._data, model="Cascade_RPN"),
+                        self, model, getattr(ag.learn, mm_model)(self._data, model="Cascade_RPN")
                     )
                 else:
                     setattr(
-                        self,
-                        model,
-                        getattr(ag.learn, mm_model)(self._data, model=model.lower()),
+                        self, model, getattr(ag.learn, mm_model)(self._data, model=model.lower())
                     )
                 callbacks = [
                     self._train_callback(
@@ -716,21 +683,15 @@ class AutoDL:
             else:
                 if model == "CascadeRCNN":
                     setattr(
-                        self,
-                        model,
-                        getattr(ag.learn, mm_model)(self._data, model="cascade_rcnn"),
+                        self, model, getattr(ag.learn, mm_model)(self._data, model="cascade_rcnn")
                     )
                 elif model == "CascadeRPN":
                     setattr(
-                        self,
-                        model,
-                        getattr(ag.learn, mm_model)(self._data, model="cascade_rpn"),
+                        self, model, getattr(ag.learn, mm_model)(self._data, model="cascade_rpn")
                     )
                 else:
                     setattr(
-                        self,
-                        model,
-                        getattr(ag.learn, mm_model)(self._data, model=model.lower()),
+                        self, model, getattr(ag.learn, mm_model)(self._data, model=model.lower())
                     )
                 callbacks = [
                     self._train_callback(
@@ -739,20 +700,21 @@ class AutoDL:
                     )
                 ]
 
+
         if self.verbose:
             log_msg = "{date}: {network} initialized with {bk} backbone".format(
                 date=dt.now().strftime("%d-%m-%Y %H:%M:%S"), network=model, bk=backbone
             )
             print(log_msg)
-            self.logger_dict.append(log_msg)
+            self._logger_dict.append(log_msg)
             # log_msg = "{date}: Finding best learning rate for {network}".format(
             #     date=dt.now().strftime("%d-%m-%Y %H:%M:%S"), network=model
             # )
             # print(log_msg)
 
-            self.logger_dict.append(log_msg)
+            self._logger_dict.append(log_msg)
             # # clear_output(wait=True)
-            # all_logs = "\n".join(self.logger_dict)
+            # all_logs = "\n".join(self._logger_dict)
             # print(all_logs)
 
         if find_lr:
@@ -762,13 +724,13 @@ class AutoDL:
                 date=dt.now().strftime("%d-%m-%Y %H:%M:%S"), network=model, lr=lr_val
             )
             print(log_msg)
-            self.logger_dict.append(log_msg)
+            self._logger_dict.append(log_msg)
 
             log_msg = "{date}: Fitting {network}".format(
                 date=dt.now().strftime("%d-%m-%Y %H:%M:%S"), network=model
             )
             print(log_msg)
-            self.logger_dict.append(log_msg)
+            self._logger_dict.append(log_msg)
 
         try:
             _training_time_ = 0
@@ -776,22 +738,16 @@ class AutoDL:
                 clear_output(wait=True)
                 _start_time = time.time()
                 getattr(self, model).fit(
-                    int(epochs),
-                    lr=lr_val,
-                    early_stopping=True,
-                    callbacks=callbacks,
-                    checkpoint=False,
+                    int(epochs), lr=lr_val,early_stopping=True, callbacks=callbacks, checkpoint=False
                 )
                 _end_time = time.time()
                 _training_time_ = _end_time - _start_time
                 model_time -= _training_time_
-                epochs = int((model_time * epochs) // _training_time_)
+                epochs = int(( model_time * epochs) // _training_time_)
                 if model_time > _training_time_:
                     if self.verbose:
                         log_msg = "{date}: Time left for {epochs} more epochs, training the {model} again. ".format(
-                            date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
-                            epochs=epochs,
-                            model=model,
+                            date=dt.now().strftime("%d-%m-%Y %H:%M:%S"), epochs=epochs, model=model
                         )
                         print(log_msg)
                 else:
@@ -799,11 +755,11 @@ class AutoDL:
 
             if self.verbose:
                 clear_output(wait=True)
-                all_logs = "\n".join(self.logger_dict)
+                all_logs = "\n".join(self._logger_dict)
                 print(all_logs)
         except Exception as e:
             if self.verbose:
-                print("Error: ", e)
+                print("Error: ",e)
             else:
                 print("Error: ", e)
             end_time = time.time()
@@ -818,7 +774,7 @@ class AutoDL:
                 date=dt.now().strftime("%d-%m-%Y %H:%M:%S"), network=model
             )
             print(log_msg)
-            self.logger_dict.append(log_msg)
+            self._logger_dict.append(log_msg)
         end_time = time.time()
         # print(metrics)
         if self.verbose:
@@ -826,11 +782,11 @@ class AutoDL:
                 date=dt.now().strftime("%d-%m-%Y %H:%M:%S")
             )
             print(log_msg)
-            self.logger_dict.append(log_msg)
+            self._logger_dict.append(log_msg)
         metrics = getattr(self, model).learn.recorder.get_state()
         self._all_losses[model] = metrics["losses"]
         tot_sec = int(end_time - start_time)
-        self.m = metrics
+        # self.m = metrics
         #
         t = str(datetime.timedelta(seconds=tot_sec))
         torch.cuda.empty_cache()
@@ -848,7 +804,7 @@ class AutoDL:
                 ]
             )
             if accuracy >= self._max_accuracy:
-                is_best = True
+                self._is_best = True
                 self._max_accuracy = accuracy
             dice = np.array(metrics["metrics"])[-1][1]
             df = pd.DataFrame(
@@ -875,7 +831,7 @@ class AutoDL:
                 ]
             )
             if avg >= self._max_accuracy:
-                is_best = True
+                self._is_best = True
                 self._max_accuracy = avg
             df = pd.DataFrame(
                 {
@@ -894,12 +850,12 @@ class AutoDL:
                 date=dt.now().strftime("%d-%m-%Y %H:%M:%S"), network=model
             )
             print(log_msg)
-            self.logger_dict.append(log_msg)
+            self._logger_dict.append(log_msg)
             log_msg = "{date}: Exiting.".format(
                 date=dt.now().strftime("%d-%m-%Y %H:%M:%S")
             )
             print(log_msg)
-            self.logger_dict.append(log_msg)
+            self._logger_dict.append(log_msg)
 
         ## Save the model
         if self.verbose:
@@ -907,57 +863,42 @@ class AutoDL:
                 date=dt.now().strftime("%d-%m-%Y %H:%M:%S")
             )
             print(log_msg)
-            self.logger_dict.append(log_msg)
+            self._logger_dict.append(log_msg)
 
-        if self.save_evaluated_models:
+        # print(self._save_evaluated_models)
+        if self._save_evaluated_models:
             if self._save_to_folder:
-                getattr(self, model).save(
-                    self.output_path + os.sep + "AutoDL_" + str(model) + "_" + backbone
-                )
-            else:
-                getattr(self, model).save("AutoDL_" + str(model) + "_" + backbone)
-            if self.verbose:
-                log_msg = "{date}: model saved at {path}".format(
-                    date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
-                    path=os.path.join(
-                        self._data.path,
-                        "models",
-                        "AutoDL_" + str(model) + "_" + backbone,
-                    ),
-                )
-                print(log_msg)
-                self.logger_dict.append(log_msg)
-
-        if not self._model_stats()[model]["is_mm"]:
-            setattr(
-                self, model + "_backbones", getattr(self, model).supported_backbones
-            )
-        if is_best:
-            self.best_model = model
-            setattr(self, "BestPerformingModel", getattr(self, model))
-            if not self.save_evaluated_models:
-                if self._save_to_folder:
-                    getattr(self, model).save(
-                        self.output_path
-                        + os.sep
-                        + "AutoDL_"
-                        + str(model)
-                        + "_"
-                        + backbone
-                    )
-                else:
-                    getattr(self, model).save("AutoDL_" + str(model) + "_" + backbone)
+                getattr(self, model).save(self._output_path+ os.sep + "models" +os.sep+"AutoDL_" + str(model) + "_" + backbone)
                 if self.verbose:
                     log_msg = "{date}: model saved at {path}".format(
                         date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
                         path=os.path.join(
-                            self._data.path,
-                            "models",
-                            "AutoDL_" + str(model) + "_" + backbone,
+                            self._output_path, "models", "AutoDL_" + str(model) + "_" + backbone
                         ),
                     )
                     print(log_msg)
-                    self.logger_dict.append(log_msg)
+                    self._logger_dict.append(log_msg)
+            else:
+                getattr(self, model).save("AutoDL_" + str(model) + "_" + backbone)
+                if self.verbose:
+                    log_msg = "{date}: model saved at {path}".format(
+                        date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
+                        path=os.path.join(
+                            self._data.path, "models", "AutoDL_" + str(model) + "_" + backbone
+                        ),
+                    )
+                    print(log_msg)
+                    self._logger_dict.append(log_msg)
+
+        if self._is_best:
+            self.best_model = model
+            self._best_backbone = backbone
+            setattr(self, "BestPerformingModel", getattr(self, model))
+        
+        if not self._model_stats()[model]["is_mm"]:
+            setattr(
+                self, model + "_backbones", getattr(self, model).supported_backbones
+            )
 
         else:
             delattr(self, model)
@@ -969,7 +910,7 @@ class AutoDL:
                     bk=backbone,
                 )
                 print(log_msg)
-                self.logger_dict.append(log_msg)
+                self._logger_dict.append(log_msg)
         return tot_sec
 
     def fit(self, **kwargs):
@@ -977,7 +918,7 @@ class AutoDL:
         Train the selected networks for the specified number of epochs and using the
         specified learning rates
         """
-        self.logger_dict = []
+        self._logger_dict = []
         if self._model_type == "Classified_Tiles":
             m_type = "classification"
             self._train_df = pd.DataFrame(
@@ -1013,15 +954,15 @@ class AutoDL:
                 networks=" ".join(self._algos),
             )
             print(log_msg)
-            self.logger_dict.append(log_msg)
+            self._logger_dict.append(log_msg)
         for model in self._algos:
-            # self._max_epochs = int(self.epoch_obj[model])
+            # self._max_epochs = int(self._epoch_obj[model])
             if self.verbose:
                 log_msg = "{date}: Current network - {network}. ".format(
                     date=dt.now().strftime("%d-%m-%Y %H:%M:%S"), network=model
                 )
                 print(log_msg)
-                self.logger_dict.append(log_msg)
+                self._logger_dict.append(log_msg)
             model_time = self._model_stats()[model]["time"]
             model_time = (model_time * self._tiles_required) // self._max_image_set
             mt = str(datetime.timedelta(seconds=model_time))
@@ -1032,9 +973,9 @@ class AutoDL:
                     network_time=mt,
                 )
                 print(log_msg)
-                self.logger_dict.append(log_msg)
+                self._logger_dict.append(log_msg)
             if model_time > compare_time:
-                epochs = (self._max_epochs * compare_time) // model_time
+                epochs = int((self._max_epochs * compare_time) // model_time)
                 if epochs <= 0:
                     epochs = 0
                 if self.verbose:
@@ -1044,7 +985,7 @@ class AutoDL:
                         net_epochs=epochs,
                     )
                     print(log_msg)
-                    self.logger_dict.append(log_msg)
+                    self._logger_dict.append(log_msg)
             else:
                 epochs = self._max_epochs
                 if self.verbose:
@@ -1053,7 +994,7 @@ class AutoDL:
                         network=model,
                         net_epochs=epochs,
                     )
-                    self.logger_dict.append(log_msg)
+                    self._logger_dict.append(log_msg)
                     print(log_msg)
 
             if epochs <= 0:
@@ -1062,17 +1003,15 @@ class AutoDL:
                         date=dt.now().strftime("%d-%m-%Y %H:%M:%S"), network=model
                     )
                     print(log_msg)
-                    self.logger_dict.append(log_msg)
+                    self._logger_dict.append(log_msg)
                     log_msg = """{date}: Remaining networks will be skipped due to limited time, Stopping the training process.""".format(
                         date=dt.now().strftime("%d-%m-%Y %H:%M:%S")
                     )
                     print(log_msg)
-                    self.logger_dict.append(log_msg)
+                    self._logger_dict.append(log_msg)
                 break
 
-            tot_sec = self._train_model(
-                model, epochs=epochs, model_type=m_type, model_time=model_time
-            )
+            tot_sec = self._train_model(model, epochs=epochs, model_type=m_type, model_time=model_time)
             compare_time -= tot_sec
 
         if m_type == "classification":
@@ -1090,7 +1029,7 @@ class AutoDL:
                     date=dt.now().strftime("%d-%m-%Y %H:%M:%S")
                 )
                 print(log_msg)
-                self.logger_dict.append(log_msg)
+                self._logger_dict.append(log_msg)
             compare_time = self._time_in_sec
             top_models = list(self._train_df.head(2)["Model"])
             all_trained_models = list(self._train_df["Model"])
@@ -1102,7 +1041,7 @@ class AutoDL:
                     )
                 )
                 print(log_msg)
-                self.logger_dict.append(log_msg)
+                self._logger_dict.append(log_msg)
 
             counter = 0
             for model in all_trained_models:
@@ -1113,7 +1052,7 @@ class AutoDL:
                         date=dt.now().strftime("%d-%m-%Y %H:%M:%S"), network=model
                     )
                     print(log_msg)
-                    self.logger_dict.append(log_msg)
+                    self._logger_dict.append(log_msg)
                 model_time = self._model_stats()[model]["time"]
                 model_time = (model_time * self._tiles_required) // self._max_image_set
                 if self.verbose:
@@ -1123,9 +1062,9 @@ class AutoDL:
                         network_time=mt,
                     )
                     print(log_msg)
-                    self.logger_dict.append(log_msg)
+                    self._logger_dict.append(log_msg)
                 if model_time > compare_time:
-                    epochs = (self._max_epochs * compare_time) // model_time
+                    epochs = int((self._max_epochs * compare_time) // model_time)
                     if epochs <= 0:
                         epochs = 0
                     if self.verbose:
@@ -1135,7 +1074,7 @@ class AutoDL:
                             net_epochs=epochs,
                         )
                         print(log_msg)
-                        self.logger_dict.append(log_msg)
+                        self._logger_dict.append(log_msg)
                 else:
                     epochs = self._max_epochs
                     if self.verbose:
@@ -1144,7 +1083,7 @@ class AutoDL:
                             network=model,
                             net_epochs=epochs,
                         )
-                        self.logger_dict.append(log_msg)
+                        self._logger_dict.append(log_msg)
                         print(log_msg)
 
                 if epochs <= 0:
@@ -1153,12 +1092,12 @@ class AutoDL:
                             date=dt.now().strftime("%d-%m-%Y %H:%M:%S"), network=model
                         )
                         print(log_msg)
-                        self.logger_dict.append(log_msg)
+                        self._logger_dict.append(log_msg)
                         log_msg = """{date}: Remaining networks will be skipped due to limited time, Stopping the training process.""".format(
                             date=dt.now().strftime("%d-%m-%Y %H:%M:%S")
                         )
                         print(log_msg)
-                        self.logger_dict.append(log_msg)
+                        self._logger_dict.append(log_msg)
                     break
                 if self._model_stats()[model]["is_mm"]:
                     log_msg = """{date}: {model} does not have additional backbones, skipping.""".format(
@@ -1166,7 +1105,7 @@ class AutoDL:
                         model=model,
                     )
                     print(log_msg)
-                    self.logger_dict.append(log_msg)
+                    self._logger_dict.append(log_msg)
                     continue
 
                 all_bb = getattr(self, model + "_backbones")
@@ -1191,7 +1130,7 @@ class AutoDL:
                         )
                     )
                     print(log_msg)
-                    self.logger_dict.append(log_msg)
+                    self._logger_dict.append(log_msg)
                 all_bb = list(
                     self._train_df.loc[self._train_df["Model"] == model]["backbone"]
                 )
@@ -1200,20 +1139,42 @@ class AutoDL:
                         print("skipping backbone-", bb, "for model-", model)
                         continue
                     tot_sec = self._train_model(
-                        model,
-                        backbone=bb,
-                        epochs=epochs,
-                        model_type=m_type,
-                        model_time=model_time,
+                        model, backbone=bb, epochs=epochs, model_type=m_type,model_time=model_time
                     )
                     compare_time -= tot_sec
                 counter += 1
         if self.verbose:
-            log_msg = """{date}: Collating and evaluating model performances.""".format(
-                date=dt.now().strftime("%d-%m-%Y %H:%M:%S")
+            log_msg = (
+                """{date}: Collating and evaluating model performances.""".format(
+                    date=dt.now().strftime("%d-%m-%Y %H:%M:%S")
+                )
             )
             print(log_msg)
-            self.logger_dict.append(log_msg)
+            self._logger_dict.append(log_msg)
+        
+        if not self._save_evaluated_models:
+            if self._save_to_folder:
+                getattr(self, self.best_model).save(self._output_path+ os.sep + "models"+os.sep+"AutoDL_" + str(self.best_model) + "_" + self._best_backbone)
+                if self.verbose:
+                    log_msg = "{date}: Saving best performing model at {path}".format(
+                        date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
+                        path=os.path.join(
+                            self._output_path, "models", "AutoDL_" + str(self.best_model) + "_" + self._best_backbone
+                        ),
+                    )
+                    print(log_msg)
+                    self._logger_dict.append(log_msg)
+            else:
+                getattr(self, self.best_model).save("AutoDL_" + str(self.best_model) + "_" + self._best_backbone)
+                if self.verbose:
+                    log_msg = "{date}: Saving best performing model at {path}".format(
+                        date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
+                        path=os.path.join(
+                            self._output_path, "models", "AutoDL_" + str(self.best_model) + "_" + self._best_backbone
+                        ),
+                    )
+                    print(log_msg)
+                    self._logger_dict.append(log_msg)
         if m_type == "classification":
             self._train_df = self._train_df.sort_values(
                 "accuracy", ascending=False
@@ -1228,9 +1189,21 @@ class AutoDL:
                 date=dt.now().strftime("%d-%m-%Y %H:%M:%S")
             )
             print(log_msg)
-            self.logger_dict.append(log_msg)
+            self._logger_dict.append(log_msg)
 
-    def show_results(self, rows=5, **kwargs):
+        _all_executed_model = list(self._train_df["Model"])
+        
+        if self._save_to_folder:
+            getattr(self, self.best_model).save(self._output_path)
+
+        for ex_models in _all_executed_model:
+            try:
+                delattr(self, ex_models)
+                delattr(self, ex_models+"_backbones")
+            except AttributeError:
+                pass
+
+    def show_results(self, rows=5, threshold=0.25,**kwargs):
         """
         Shows sample results for the model.
 
@@ -1249,7 +1222,7 @@ class AutoDL:
         )
         plt.show(
             getattr(self, "BestPerformingModel").show_results(
-                rows=rows, thresh=1, **kwargs
+                rows=rows, thresh=threshold, **kwargs
             )
         )
         pass
@@ -1384,16 +1357,7 @@ class AutoDL:
         """
         Supported classification models.
         """
-        return [
-            "DeepLab",
-            "UnetClassifier",
-            "PSPNetClassifier",
-            "ANN",
-            "APCNeT",
-            "CCNeT",
-            "CGNeT",
-            "DeepLabV3",
-        ]
+        return ["DeepLab", "UnetClassifier", "PSPNetClassifier", "ANN", "APCNeT", "CCNeT", "CGNeT", "DeepLabV3"]
 
     def supported_detection_models(self):
         """
@@ -1409,7 +1373,7 @@ class AutoDL:
             "CARAFE",
             "CascadeRCNN",
             "CascadeRPN",
-            "DCN",
+            "DCN"
         ]
 
     def lr_find(self):
