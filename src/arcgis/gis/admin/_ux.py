@@ -528,7 +528,7 @@ class UX(object):
         ----------------    ---------------------------------------------------------------
         logo                Optional str. The file path or link to the image that will be uploaded
                             as the shared theme logo.
-                            To remove the logo and not replace it then pass in: "REMOVE"
+                            To remove the logo and not replace it then pass in: ""
         ================    ===============================================================
 
         :return: Dictionary of the shared theme that is set on the org.
@@ -573,14 +573,16 @@ class UX(object):
             im_item.share(everyone=True)
             # set in shared_theme dict
             shared_theme["logo"]["small"] = im_item.homepage + "/data"
-        elif logo == "REMOVE":
+        elif logo == "":
             shared_theme["logo"] = {"small": "", "link": ""}
         elif logo is not None:
             # case where logo is a url link
             shared_theme["logo"]["link"] = logo
 
         portal_properties["sharedTheme"] = shared_theme
-        self._gis.update_properties({"portalProperties": portal_properties})
+        self._gis.update_properties(
+            {"portalProperties": portal_properties, "clearEmptyFields": True}
+        )
         return shared_theme
 
     # ----------------------------------------------------------------------
@@ -1602,7 +1604,7 @@ class MapSettings(object):
         **Argument**                    **Description**
         ----------------------      ----------------------------------------------
         bing_key                    Optional str. The bing key to pass in. To remove
-                                    pass in "REMOVE".
+                                    pass in "".
         ----------------------      ----------------------------------------------
         share_public                Optional bool. If True, allows this Bing Maps
                                     key to be used in maps shared publicly by
@@ -1612,8 +1614,8 @@ class MapSettings(object):
 
         :return: Dictionary containing the bing key and whether is is publicly shared
         """
-        if bing_key:
-            if bing_key == "REMOVE":
+        if bing_key is not None:
+            if bing_key == "":
                 bing_key = None
             self._gis.update_properties({"bingKey": bing_key})
         if share_public:
