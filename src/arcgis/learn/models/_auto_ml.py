@@ -157,7 +157,9 @@ class AutoML(object):
                 "Neural Network",
             ]
         try:
-            algorithms = ['Random Trees' if x=='Random Forest' else x for x in algorithms] # To handle backward compatibility with RF
+            algorithms = [
+                "Random Trees" if x == "Random Forest" else x for x in algorithms
+            ]  # To handle backward compatibility with RF
         except:
             pass
 
@@ -426,7 +428,7 @@ class AutoML(object):
             "progress.json",
             "README.md",
             "drop_features.json",
-            "model_explainer.sav"
+            "model_explainer.sav",
         ]
         required_model_folders = []  # List of folders that are to be copied to new path
         base_file_name = os.path.basename(self._model._get_results_path())
@@ -467,7 +469,13 @@ class AutoML(object):
 
         for folder in required_model_folders:
             # copyfolder(folder,dest)
-            self.copy_and_overwrite(folder, save_model_path)
+            try:
+                self.copy_and_overwrite(folder, save_model_path)
+            except:
+                print(
+                    "It looks like the model has been already been saved once. Unable to save at a different location again"
+                )
+                return
 
         for file in files_required:
             abs_file_path = os.path.join(result_path, file)
@@ -493,7 +501,7 @@ class AutoML(object):
         return save_model_path
 
     def _save_explainer(self, path):
-        if self._model._get_ml_task() == 'regression':
+        if self._model._get_ml_task() == "regression":
             explainer = shap.KernelExplainer(
                 self._shap_predict, shap.sample(self._data._ml_data[0], 500)
             )
@@ -501,17 +509,23 @@ class AutoML(object):
             explainer = shap.KernelExplainer(
                 self._shap_predict,
                 shap.sample(self._data._ml_data[0], 500),
-                link="logit"
+                link="logit",
             )
-        filename = os.path.join(path, 'model_explainer.sav')
-        pickle.dump(explainer, open(filename, 'wb'))
+        filename = os.path.join(path, "model_explainer.sav")
+        pickle.dump(explainer, open(filename, "wb"))
 
     def _write_emd(self, path, base_file_name):
+        def convert(o):
+            import numpy
+
+            if isinstance(o, numpy.int64):
+                return int(o)
+
         emd_file = os.path.join(path, base_file_name + ".emd")
         emd_params = {}
         emd_params["version"] = str(sklearn.__version__)
         # if not self._data._is_unsupervised:
-        #emd_params["score"] = self.score()
+        # emd_params["score"] = self.score()
         emd_params["_is_classification"] = (
             "classification" if self._data._is_classification else "regression"
         )
@@ -530,15 +544,18 @@ class AutoML(object):
         if self._data._raster_field_variables:
             emd_params["_raster_field_variables"] = self._data._raster_field_variables
 
-        if self._model._get_ml_task() != 'regression':
+        if self._model._get_ml_task() != "regression":
             try:
-                emd_params['dependent_variable_unique'] = self._data._dataframe[
-                    self._data._dependent_variable].unique().tolist()
+                emd_params["dependent_variable_unique"] = (
+                    self._data._dataframe[self._data._dependent_variable]
+                    .unique()
+                    .tolist()
+                )
             except:
-                emd_params['dependent_variable_unique'] = []
+                emd_params["dependent_variable_unique"] = []
 
-        with open(emd_file, "w") as f:
-            f.write(json.dumps(emd_params, indent=4))
+        with open(emd_file, "w", encoding="utf-8") as f:
+            f.write(json.dumps(emd_params, indent=4, default=convert))
 
     @classmethod
     def from_model(cls, emd_path):
@@ -612,7 +629,7 @@ class AutoML(object):
         empty_data._is_classification = _is_classification
         if _is_classification:
             try:
-                empty_data.unique_var_list = emd['dependent_variable_unique']
+                empty_data.unique_var_list = emd["dependent_variable_unique"]
             except:
                 empty_data.unique_var_list = None
         empty_data._is_not_empty = False
@@ -621,7 +638,7 @@ class AutoML(object):
         try:
             empty_data.explainer_path = os.path.join(
                 os.path.dirname(emd_path),
-                'model_explainer.sav',
+                "model_explainer.sav",
             )
         except:
             empty_data.explainer_path = None
@@ -639,9 +656,9 @@ class AutoML(object):
         data_df = pd.DataFrame(
             data,
             columns=self._data._continuous_variables
-                    + self._data._categorical_variables,
+            + self._data._categorical_variables,
         )
-        if self._model._get_ml_task() == 'regression':
+        if self._model._get_ml_task() == "regression":
             return self._model.predict(data_df)
         else:
             return self._model.predict_proba(data_df)
@@ -650,7 +667,7 @@ class AutoML(object):
         data_df = pd.DataFrame(
             data,
             columns=self._data._continuous_variables
-                    + self._data._categorical_variables,
+            + self._data._categorical_variables,
         )
         return self._model.predict_all(data_df)
 
@@ -658,24 +675,24 @@ class AutoML(object):
         data_df = pd.DataFrame(
             data,
             columns=self._data._continuous_variables
-                    + self._data._categorical_variables,
+            + self._data._categorical_variables,
         )
         return self._model.predict_proba(data_df)
 
     def predict(
-            self,
-            input_features=None,
-            explanatory_rasters=None,
-            datefield=None,
-            distance_features=None,
-            output_layer_name="Prediction Layer",
-            gis=None,
-            prediction_type="features",
-            output_raster_path=None,
-            match_field_names=None,
-            cell_sizes=[3, 4, 5, 6, 7],
-            confidence=True,
-            get_local_explanations=False
+        self,
+        input_features=None,
+        explanatory_rasters=None,
+        datefield=None,
+        distance_features=None,
+        output_layer_name="Prediction Layer",
+        gis=None,
+        prediction_type="features",
+        output_raster_path=None,
+        match_field_names=None,
+        cell_sizes=[3, 4, 5, 6, 7],
+        confidence=True,
+        get_local_explanations=False,
     ):
         """
 
@@ -764,7 +781,7 @@ class AutoML(object):
                 match_field_names,
                 prediction_type,
                 confidence,
-                get_local_explanations
+                get_local_explanations,
             )
         else:
             if not rasters:
@@ -775,21 +792,23 @@ class AutoML(object):
                     "Please specify output_raster_folder_path to save the output."
                 )
 
-            return self._predict_rasters(output_raster_path, rasters, match_field_names,confidence)
+            return self._predict_rasters(
+                output_raster_path, rasters, match_field_names, confidence
+            )
 
     def _get_normalised_shap_values(self, processed_numpy):
         # try:
         filename_expl = self._data.explainer_path
-        load_explainer = pickle.load(open(filename_expl, 'rb'))
+        load_explainer = pickle.load(open(filename_expl, "rb"))
         with warnings.catch_warnings():
             warnings.simplefilter("ignore", UserWarning)
             shap_values = load_explainer.shap_values(processed_numpy, nsamples=100)
         shap_values_normalised = []
         if isinstance(shap_values, np.ndarray):
-            shap_values_normalised = normalize(shap_values, axis=1, norm='l1')
+            shap_values_normalised = normalize(shap_values, axis=1, norm="l1")
         else:
             for val in shap_values:
-                normed_matrix = normalize(val, axis=1, norm='l1')
+                normed_matrix = normalize(val, axis=1, norm="l1")
                 shap_values_normalised.append(normed_matrix)
         return shap_values_normalised
 
@@ -805,7 +824,7 @@ class AutoML(object):
         match_field_names=None,
         prediction_type="features",
         confidence=False,
-        get_local_explanations=False
+        get_local_explanations=False,
     ):
         dataframe_complete = False
         if isinstance(input_features, FeatureLayer):
@@ -960,11 +979,16 @@ class AutoML(object):
         if get_local_explanations:
             shap_values_normalised = self._get_normalised_shap_values(processed_numpy)
         shap_df = pd.DataFrame()
-        if confidence and self._model._ml_task in ['multiclass_classification', 'binary_classification']:
+        if confidence and self._model._ml_task in [
+            "multiclass_classification",
+            "binary_classification",
+        ]:
             dataframe["prediction_results"] = predictions
             try:
-                prediction_confidence = np.amax(self._predict_proba(processed_numpy), axis=1)
-                dataframe['prediction_confidence'] = prediction_confidence
+                prediction_confidence = np.amax(
+                    self._predict_proba(processed_numpy), axis=1
+                )
+                dataframe["prediction_confidence"] = prediction_confidence
             except:
                 pass
 
@@ -972,23 +996,31 @@ class AutoML(object):
                 try:
                     labels = self._data.unique_var_list
                     get_element_id = lambda x: labels.index(x)
-                    index_id = dataframe['prediction_results'].map(get_element_id)
+                    index_id = dataframe["prediction_results"].map(get_element_id)
 
                     list_for_df = []
                     for index_df, row in dataframe.iterrows():
                         index = index_id[index_df]
                         shap_val_list = shap_values_normalised[index][index_df]
                         list_for_df.append(shap_val_list)
-                    shap_df = pd.DataFrame(list_for_df,
-                                           columns=[i + '_imp' for i in processed_dataframe.columns.to_list()])
+                    shap_df = pd.DataFrame(
+                        list_for_df,
+                        columns=[
+                            i + "_imp" for i in processed_dataframe.columns.to_list()
+                        ],
+                    )
                 except:
                     pass
         else:
             dataframe["prediction_results"] = predictions
             if get_local_explanations:
                 try:
-                    shap_df = pd.DataFrame(shap_values_normalised,
-                                           columns=[i + '_imp' for i in processed_dataframe.columns.to_list()])
+                    shap_df = pd.DataFrame(
+                        shap_values_normalised,
+                        columns=[
+                            i + "_imp" for i in processed_dataframe.columns.to_list()
+                        ],
+                    )
                 except:
                     pass
         dataframe_merged = pd.concat([dataframe, shap_df.abs()], axis=1)
@@ -1020,7 +1052,9 @@ class AutoML(object):
                         "ERROR",
                     )
 
-    def _predict_rasters(self, output_folder_path, rasters, match_field_names=None,confidence=False):
+    def _predict_rasters(
+        self, output_folder_path, rasters, match_field_names=None, confidence=False
+    ):
 
         if not os.path.exists(os.path.dirname(output_folder_path)):
             raise Exception("Output directory doesn't exist")
@@ -1180,8 +1214,13 @@ class AutoML(object):
         processed_numpy = self._data._process_data(processed_df, fit=False)
 
         predictions = self._predict(processed_numpy)
-        if confidence and self._model._ml_task in ['multiclass_classification', 'binary_classification']:
-            prediction_confidence = np.amax(self._predict_proba(processed_numpy), axis=1)
+        if confidence and self._model._ml_task in [
+            "multiclass_classification",
+            "binary_classification",
+        ]:
+            prediction_confidence = np.amax(
+                self._predict_proba(processed_numpy), axis=1
+            )
 
         if isinstance(predictions[0], str):
             processed_df["predictions"] = predictions

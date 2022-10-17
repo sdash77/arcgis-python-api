@@ -4,7 +4,6 @@ import sys
 import os
 import sys
 import json
-import pytest
 import unittest
 import pandas as pd
 from arcgis.gis import GIS

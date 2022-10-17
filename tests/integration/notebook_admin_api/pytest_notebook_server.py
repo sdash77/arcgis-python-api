@@ -6,7 +6,6 @@ import os
 import sys
 import unittest
 
-import pytest
 from arcgis.gis import GIS
 from arcgis._impl.common._mixins import PropertyMap
 
@@ -18,7 +17,7 @@ from arcgis.gis.nb._security import SecurityManager  #
 from arcgis.gis.nb._system import SystemManager, WebAdaptor, WebAdaptorManager
 from arcgis.gis.nb._system import Container, DirectoryManager
 
-profiles = ["notebookdev"]
+profiles = ["datasciencedev"]
 
 ###########################################################################
 class TestNBLogManager(unittest.TestCase):
@@ -26,7 +25,6 @@ class TestNBLogManager(unittest.TestCase):
 
     _server = None
 
-    @pytest.fixture
     def _find_nb_server(self, gis):
         nbs = [
             server
@@ -90,7 +88,6 @@ class TestNBLogManager(unittest.TestCase):
 class TestNotebookServer(unittest.TestCase):
     """tests the base level to the notebook server"""
 
-    @pytest.fixture
     def _find_nb_server(self, gis):
         nbs = [
             server
@@ -132,7 +129,6 @@ class TestNBSecurityModule(unittest.TestCase):
     Tests the Security Module for the ArcGIS Notebook Server
     """
 
-    @pytest.fixture
     def _find_nb_server(self, gis):
         nbs = [
             server
@@ -174,7 +170,6 @@ class TestNBSecurityModule(unittest.TestCase):
 class TestNBMachineManager(unittest.TestCase):
     """tests the MachineManager methods"""
 
-    @pytest.fixture
     def _find_nb_server(self, gis):
         nbs = [
             server
@@ -305,7 +300,6 @@ class TestNBMachineManager(unittest.TestCase):
 class TestNBNotebookManager(unittest.TestCase):
     """Tests the Notebook Manager Class"""
 
-    @pytest.fixture
     def _find_nb_server(self, gis):
         nbs = [
             server
@@ -352,7 +346,6 @@ class TestNBNotebookManager(unittest.TestCase):
 class TestSystemManager(unittest.TestCase):
     """Tests the SystemManager Class"""
 
-    @pytest.fixture
     def _find_nb_server(self, gis):
         nbs = [
             server
@@ -404,7 +397,6 @@ class TestSystemManager(unittest.TestCase):
 class TestWebAdaptorManager(unittest.TestCase):
     """Tests the WebAdaptor, WebAdaptorManager Classes"""
 
-    @pytest.fixture
     def _find_nb_server(self, gis):
         nbs = [
             server
@@ -441,7 +433,6 @@ class TestWebAdaptorManager(unittest.TestCase):
 class TestDirectoryManager(unittest.TestCase):
     """Tests the DirectoryManager Classes"""
 
-    @pytest.fixture
     def _find_nb_server(self, gis):
         nbs = [
             server
@@ -477,3 +468,8 @@ class TestDirectoryManager(unittest.TestCase):
                 d = [d["id"] for d in sd.list() if d["name"] == "amazingdirtest"]
                 assert len(d) == 1
                 assert sd.unregister(d[0])
+
+
+if __name__ == "__main__":
+
+    unittest.main()

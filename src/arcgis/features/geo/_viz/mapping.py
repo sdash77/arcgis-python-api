@@ -5,8 +5,20 @@ import json
 from typing import Optional, Union
 import pandas as pd
 import arcgis
+from arcgis.mapping.renderer import (
+    generate_classbreaks,
+    generate_heatmap,
+    generate_simple,
+    generate_unique,
+)
 from arcgis.mapping.symbol import create_symbol, display_colormaps, show_styles
-from arcgis.mapping.renderer import generate_renderer
+from arcgis.mapping.renderer import (
+    generate_renderer,
+    generate_classbreaks,
+    generate_heatmap,
+    generate_simple,
+    generate_unique,
+)
 from arcgis.widgets import MapView
 
 CLASSIFICATIONS = {
@@ -45,7 +57,7 @@ def plot(
     symbol_type: Optional[str] = None,
     symbol_style: Optional[str] = None,
     col: Optional[Union[str, list]] = None,
-    colors: Optional[str] = "jet",
+    colors: Optional[Union[str, list, object]] = "jet",
     alpha: float = 1,
     **kwargs,
 ):
@@ -129,10 +141,11 @@ def plot(
     col                     Optional string/list. Field or fields used for heatmap,
                             class breaks, or unique renderers.
     ----------------------  ---------------------------------------------------------
-    colors                  Optional string. The color map to draw from in order to
-                            visualize the data.  The default cmap is 'jet'. To get a
-                            visual representation of the allowed color maps,use
-                            the **display_colormaps** method.
+    colors                  Optional string. The colormap, RGB array, or list of
+                            either that determines the symbol color(s) for the data.
+                            The default cmap is 'jet'. To get a visual representation
+                            of the allowed color maps, use the **display_colormaps**
+                            method.
     ----------------------  ---------------------------------------------------------
     alpha                   Optional float.  This is a value between 0 and 1 with 1
                             being the default value.  The alpha sets the transparancy
@@ -200,13 +213,12 @@ def plot(
         return
     elif renderer_type in [None, "s"]:
         renderer_type = "s"  # simple (default)
-        r = generate_renderer(
+        r = generate_simple(
             geometry_type=gt[0].lower(),
             sdf_or_series=df,
             label=name,
             symbol_type=symbol_type,
             symbol_style=symbol_style,
-            render_type=renderer_type,
             colors=colors,
             alpha=alpha,
             **kwargs,
@@ -226,44 +238,50 @@ def plot(
             for c in col:
                 kwargs["field%s" % idx] = c
                 idx += 1
+            r = generate_unique(
+                geometry_type=kwargs.pop("geometry_type", gt[0].lower()),
+                sdf_or_series=df,
+                symbol_type=symbol_type,
+                symbol_style=symbol_style,
+                colors=colors,
+                alpha=alpha,
+                **kwargs,
+            )
         elif renderer_type == "c":
             kwargs["field"] = col[0]
-        r = generate_renderer(
-            geometry_type=kwargs.pop("geometry_type", gt[0].lower()),
-            sdf_or_series=df,
-            label=name,
-            symbol_type=symbol_type,
-            symbol_style=symbol_style,
-            render_type=renderer_type,
-            colors=colors,
-            alpha=alpha,
-            **kwargs,
-        )
+            r = generate_classbreaks(
+                geometry_type=kwargs.pop("geometry_type", gt[0].lower()),
+                sdf_or_series=df,
+                symbol_type=symbol_type,
+                symbol_style=symbol_style,
+                colors=colors,
+                alpha=alpha,
+                **kwargs,
+            )
         fc.layer["layerDefinition"]["drawingInfo"]["renderer"] = r
     elif renderer_type in ["u", "u-a"]:
-        r = generate_renderer(
+        r = generate_unique(
             geometry_type=kwargs.pop("geometry_type", gt[0].lower()),
             sdf_or_series=df,
-            label=name,
             symbol_type=symbol_type,
             symbol_style=symbol_style,
-            render_type=renderer_type,
             colors=colors,
             alpha=alpha,
             **kwargs,
         )
         fc.layer["layerDefinition"]["drawingInfo"]["renderer"] = r
     elif renderer_type == "h":
-        r = generate_renderer(
-            geometry_type=kwargs.pop("geometry_type", gt[0].lower()),
+        r = generate_heatmap(
             sdf_or_series=df,
-            label=name,
-            symbol_type=symbol_type,
-            symbol_style=symbol_style,
-            render_type=renderer_type,
             colors=colors,
             alpha=alpha,
-            **kwargs,
+            blur_radius=kwargs.pop("blur_radius", 10),
+            field=kwargs.pop("field", None),
+            max_intensity=kwargs.pop("max_intensity", 10),
+            min_intensity=kwargs.pop("min_intensity", 0),
+            ratio=kwargs.pop("ratio", 0.01),
+            stops=kwargs.pop("stops", 3),
+            show_none=kwargs.pop("show_none", False),
         )
         fc.layer["layerDefinition"]["drawingInfo"]["renderer"] = r
     elif renderer_type == "str":

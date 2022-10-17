@@ -21,7 +21,7 @@ requests-oauthlib
 requests_toolbelt
 requests-ntlm2
 requests-negotiate-sspi;platform_system=="Windows"
-requests-kerberos;platform_system=="Windows"
+requests-kerberos
 winkerberos;platform_system=="Windows"
 requests-gssapi
 dask

@@ -5,7 +5,6 @@ import time
 import datetime
 import unittest
 
-import pytest
 from arcgis.gis import GIS, Item
 
 PROFILES = ["your_online_profile", "your_enterprise_profile"]

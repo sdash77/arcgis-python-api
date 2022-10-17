@@ -3,7 +3,6 @@ import sys
 
 # sys.path.insert(0, r"C:\SVN\geosaurus_master_kubernetes\src")
 import unittest
-import pytest
 import pandas as pd
 from pandas import Timestamp
 from arcgis.gis import GIS

@@ -230,6 +230,15 @@ class GeometryFactory(type):
                 geom["spatialReference"] = {"wkid": int(wkid.replace("SRID=", ""))}
                 return geom
             return _ujson.loads(arcpy.FromWKT(iterable).JSON)
+        else:
+            from geomet.wkt import loads as _wkt_loads
+            from geomet.esri import dumps as _esri_dumps
+
+            if "SRID=" in iterable:
+                wkid, iterable = iterable.split(";")
+                geom = _esri_dumps(_wkt_loads(iterable))
+                geom["spatialReference"] = {"wkid": int(wkid.replace("SRID=", ""))}
+                return geom
         return {}
 
     @staticmethod
