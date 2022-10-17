@@ -1939,6 +1939,9 @@ class BusinessAnalyst(object):
             "created with credentials, a user, with permissions to perform geoenrichment."
         )
 
+        if not output_spatial_reference:
+            output_spatial_reference = 4326 # for online tests default continues to be 4326
+
         # TODO: implement estimate credits
         if estimate_credits:
             raise NotImplementedError("estimate_credits not yet implemented")

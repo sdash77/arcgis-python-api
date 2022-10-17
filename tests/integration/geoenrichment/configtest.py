@@ -34,6 +34,8 @@ _agol_url, _agol_user, _agol_pass = (
     "Esr!3801",
 )
 
+abbreviated_test = True
+
 # use configfile if still not set
 if _agol_url is None and _agol_user is None and _agol_pass is None:
     config = ConfigParser()

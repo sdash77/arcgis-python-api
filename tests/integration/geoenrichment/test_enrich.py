@@ -22,6 +22,7 @@ from .configtest import (
     line_df,
     point_df,
     stdgeo_srs,
+    abbreviated_test
 )
 
 
@@ -63,12 +64,13 @@ def enrich_check(
         enrich_res_cols = list(enrich_res.columns)
         assert all([(enrich_col in enrich_res_cols) for enrich_col in enrich_var_cols])
 
-        # if input is data frame (except for std geo), also check that all source fields are still there
-        if isinstance(geom, pd.DataFrame) and not std_geo_lvl:
-            input_columns = [c.lower() for c in geom.columns if c != geom.spatial.name]
-            assert all(
-                [(input_col in enrich_res_cols) for input_col in input_columns]
-            ), ("Missing some of the " + " columns of input data frame")
+        if enrich_src == "local":
+            # if input is data frame (except for std geo), also check that all source fields are still there
+            if isinstance(geom, pd.DataFrame) and not std_geo_lvl:
+                input_columns = [c.lower() for c in geom.columns if c != geom.spatial.name]
+                assert all(
+                    [(input_col in enrich_res_cols) for input_col in input_columns]
+                ), ("Missing some of the " + " columns of input data frame")
 
         if output_spatial_reference:
             assert enrich_res.spatial.sr.wkid == output_spatial_reference
@@ -430,6 +432,23 @@ class TestEnrichOnline(unittest.TestCase):
         self.line_df_inst = line_df()
         self.point_df_inst = point_df()
         self.stdgeo_srs_inst = stdgeo_srs()
+
+        if abbreviated_test:
+            self.usa_agol_enrich_vars_inst = self.usa_agol_enrich_vars_inst.head(10)
+
+            shape_column = self.polygon_df_inst.spatial.name
+            self.polygon_df_inst = self.polygon_df_inst.head(20)
+            self.polygon_df_inst.spatial.set_geometry(shape_column)
+
+            shape_column = self.line_df_inst.spatial.name
+            self.line_df_inst = self.line_df_inst.head(10)
+            self.line_df_inst.spatial.set_geometry(shape_column)
+
+            shape_column = self.point_df_inst.spatial.name
+            self.point_df_inst = self.point_df_inst.head(10)
+            self.point_df_inst.spatial.set_geometry(shape_column)
+
+            self.stdgeo_srs_inst = self.stdgeo_srs_inst.head(10)
 
     # ArcGIS Online
     @skip_if_no_agol
