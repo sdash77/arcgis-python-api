@@ -1468,11 +1468,13 @@ class TabularDataObject(object):
         index_data = None
         if input_features is not None:
             if isinstance(input_features, FeatureLayer):
+                import pandas as pd
                 input_layer = input_features
                 out_sr = None
                 if cell_sizes and not rasters:
                     out_sr = 4326
-                sdf = input_features.query(out_sr=out_sr).sdf
+                #sdf = input_features.query(out_sr=out_sr).sdf
+                sdf = pd.DataFrame.spatial.from_layer(input_features)
 
             elif (
                 hasattr(input_features, "dataSource")
@@ -1572,12 +1574,15 @@ class TabularDataObject(object):
                     for shape in shape_objects_transformed:
                         shape["spatialReference"] = raster.extent["spatialReference"]
                         if isinstance(shape, arcgis.geometry._types.Point):
-                            raster_value = raster.read(
-                                origin_coordinate=(shape["x"], shape["y"]),
-                                ncols=1,
-                                nrows=1,
-                            )
-                            value = raster_value[0][0]
+                            try:
+                                raster_value = raster.read(
+                                    origin_coordinate=(shape["x"], shape["y"]),
+                                    ncols=1,
+                                    nrows=1,
+                                )
+                                value = raster_value[0][0]
+                            except:
+                                value = [0.0]
                         elif isinstance(shape, arcgis.geometry._types.Polygon):
                             xmin, ymin, xmax, ymax = shape.extent
                             start_x, start_y = (
