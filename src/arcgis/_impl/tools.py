@@ -5460,7 +5460,6 @@ class _FeatureAnalysisTools(BaseAnalytics):
             "spatial_relationship_distance_units": spatial_relationship_distance_units,
             "future": future,
             "join_type": join_type,
-            "gis": self._gis,
         }
         params = _inspect_function_inputs(self._tbx.join_features, **params)
         params["future"] = True
