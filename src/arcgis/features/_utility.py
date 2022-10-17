@@ -771,10 +771,7 @@ class UtilityNetworkManager(object):
         }
         if self._gis.version >= [9, 2]:
             params["validateSet"] = validate_set
-        if run_async == False:
-            return self._con.post(url, params)
-        else:
-            return self._con.post(url, params)
+        return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
     @deprecated(deprecated_in="2.1.0", removed_in=None, current_version="2.1.0")
