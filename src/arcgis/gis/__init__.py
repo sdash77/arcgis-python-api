@@ -5765,7 +5765,7 @@ class ContentManager(object):
                 filetype = "Geoprocessing Package"
             elif extn == ".GCPK":
                 filetype = "Locator Package"
-            elif extn == ".TPK":
+            elif extn in (".TPK", ".TPKX"):
                 filetype = "Tile Package"
             elif extn in (".MPK", ".MPKX"):
                 filetype = "Map Package"

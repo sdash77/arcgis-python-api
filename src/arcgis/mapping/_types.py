@@ -5315,7 +5315,7 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         Before executing this operation, you will need to make certain the following prerequisites are met:
 
         - Upload the TPK you wish to merge with the existing service, take note of its item ID.
-        - Make certain that the uploaded TPK item's tiling scheme matches with the service you wish to import into.
+        - Make certain that the uploaded TPK, TPKX item's tiling scheme matches with the service you wish to import into.
         - The source service LOD's should include all the LOD's that are part of the imported TPK item. For example, if the source service has tiles from levels 0 through 10, you can import tiles only within these levels and not above it.
 
 
@@ -5382,7 +5382,10 @@ class MapImageLayerManager(arcgis.gis._GISResource):
             params["sourceItemId"] = item.itemid
         else:
             raise ValueError("The `item` must be a string or Item")
-        url = self._url + "/importTiles"
+        if self._gis.version >= [10, 3]:
+            url = self._url + "/import"
+        else:
+            url = self._url + "/importTiles"
         res = self._con.post(url, params)
         return res
 
@@ -5451,7 +5454,11 @@ class MapImageLayerManager(arcgis.gis._GISResource):
             <Dictionary>
         """
         if self._gis._portal.is_arcgisonline:
-            url = "%s/updateTiles" % self._url
+            if self._gis.version >= [10, 3]:
+                url = "%s/update" % self._url
+            else:
+                url = "%s/updateTiles" % self._url
+
             params = {
                 "f": "json",
                 "mergeBundle": merge,
