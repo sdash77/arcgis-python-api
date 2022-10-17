@@ -689,7 +689,7 @@ class UtilityNetworkManager(object):
             "continueOnFailure": continue_on_failure,
             "traceConfiguration": trace_configuration,
         }
-        return self._con.post(url, params)["success"]
+        return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
     def validate_topology(
@@ -772,7 +772,7 @@ class UtilityNetworkManager(object):
         if self._gis.version >= [9, 2]:
             params["validateSet"] = validate_set
         if run_async == False:
-            return self._con.post(url, params)["success"]
+            return self._con.post(url, params)
         else:
             return self._con.post(url, params)
 
