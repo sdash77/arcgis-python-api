@@ -620,11 +620,11 @@ class DataStoreManager(BaseServer):
                 sd_url = f"{os.path.dirname(base_url)}/rest/services"
                 d = ServicesDirectory(
                     url=sd_url,
-                    portal_connection=self._con._portal_connection,
+                    portal_connection=self._con._portal_connection or self._con,
                 )
             elif isinstance(self._con, Connection):
                 sd_url = f"{os.path.dirname(base_url)}/rest/services"
-                d = ServicesDirectory(url=sd_url)
+                d = ServicesDirectory(url=sd_url, portal_connection=self._con)
                 d._con = self._con
 
             try:

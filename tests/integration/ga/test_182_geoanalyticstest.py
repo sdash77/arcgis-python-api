@@ -2,7 +2,6 @@ import os
 import sys
 
 import unittest
-import pytest
 import pandas as pd
 from pandas import Timestamp
 

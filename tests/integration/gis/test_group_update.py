@@ -5,7 +5,6 @@ import time
 import datetime
 import unittest
 import uuid
-import pytest
 from arcgis.gis import GIS, Item, Group, GroupManager
 
 PROFILES = ["your_online_profile", "your_enterprise_profile"]

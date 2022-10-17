@@ -265,7 +265,7 @@ class GeoArray(ExtensionArray):
         """converts the data to a pyarrow array"""
         import pyarrow
 
-        return pyarrow.array([d.EWKT for d in self.data if d], type=type)
+        return pyarrow.array([d.WKB for d in self.data if d], type=type)
 
     def _formatting_values_backport(self):
         return np.array(self._format_values(), dtype="object")

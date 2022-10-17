@@ -1,19 +1,25 @@
 import unittest
-import pytest
-from pytest_blockage import MockHttpCall
-from requests.exceptions import RequestException
+from unittest import mock
+import arcgis
 
 
-@unittest.SkipTest
-def test_network_access_fails():
-    """All unit tests should NOT connect to the network. Assert that trying
-    to connect to a GIS raises the `test_blockage` plugin's exception
-    """
-    from arcgis.gis import GIS
+class TestNetworkAccessFailsGIS(unittest.TestCase):
 
-    with pytest.raises(MockHttpCall):
-        gis = GIS()
-    with pytest.raises(MockHttpCall):
-        from arcgis.gis import GIS
+    @unittest.SkipTest
+    def test_network_access_fails(self):
+        """All unit tests should NOT connect to the network. Assert that trying
+        to connect to a GIS raises the `test_blockage` plugin's exception
+        """
+        requests_mock_inst = mock.patch(
+            'arcgis.gis',
+            mock.Mock(side_effect=RuntimeError(
+                'No connection here.'
+            ))
+        )
+        with requests_mock_inst:
+            gis1 = arcgis.gis.GIS()
+            gis2 = arcgis.gis.GIS("https://pythonapi.playground.esri.com")
 
-        gis = GIS("https://pythonapi.playground.esri.com")
+
+if __name__ == '__main__':
+    unittest.main()
