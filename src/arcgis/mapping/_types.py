@@ -321,7 +321,9 @@ class WebMap(HasTraits, collections.OrderedDict):
         return json.dumps(self, default=_utils._date_handler)
 
     def add_table(
-        self, table: _arcgis_features.Table, options: Optional[dict[str, Any]] = None
+        self,
+        table: _arcgis_features.Table,
+        options: Optional[dict[str, Any]] = None,
     ):
         """
         Adds the given Table to the ``WebMap``.
@@ -4023,7 +4025,9 @@ class OfflineMapAreaManager(object):
 
     # ----------------------------------------------------------------------
     def update(
-        self, offline_map_area_items: Optional[list] = None, future: bool = False
+        self,
+        offline_map_area_items: Optional[list] = None,
+        future: bool = False,
     ):
         """
         The ``update`` method refreshes existing map area packages associated with the list of ``Map Area`` items
@@ -5169,7 +5173,7 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         Before executing this operation, you will need to make certain the following prerequisites are met:
 
         - Upload the TPK you wish to merge with the existing service, take note of its item ID.
-        - Make certain that the uploaded TPK item's tiling scheme matches with the service you wish to import into.
+        - Make certain that the uploaded TPK, TPKX item's tiling scheme matches with the service you wish to import into.
         - The source service LOD's should include all the LOD's that are part of the imported TPK item. For example, if the source service has tiles from levels 0 through 10, you can import tiles only within these levels and not above it.
 
 
@@ -5236,7 +5240,10 @@ class MapImageLayerManager(arcgis.gis._GISResource):
             params["sourceItemId"] = item.itemid
         else:
             raise ValueError("The `item` must be a string or Item")
-        url = self._url + "/importTiles"
+        if self._gis.version >= [10, 3]:
+            url = self._url + "/import"
+        else:
+            url = self._url + "/importTiles"
         res = self._con.post(url, params)
         return res
 
@@ -5305,7 +5312,11 @@ class MapImageLayerManager(arcgis.gis._GISResource):
             <Dictionary>
         """
         if self._gis._portal.is_arcgisonline:
-            url = "%s/updateTiles" % self._url
+            if self._gis.version >= [10, 3]:
+                url = "%s/update" % self._url
+            else:
+                url = "%s/updateTiles" % self._url
+
             params = {
                 "f": "json",
                 "mergeBundle": merge,
@@ -5505,7 +5516,9 @@ class MapImageLayer(arcgis.gis.Layer):
         self._populate_layers()
         self._admin = None
         try:
-            from arcgis.gis.server._service._adminfactory import AdminServiceGen
+            from arcgis.gis.server._service._adminfactory import (
+                AdminServiceGen,
+            )
 
             self.service = AdminServiceGen(service=self, gis=gis)
         except:
@@ -6250,7 +6263,11 @@ class MapImageLayer(arcgis.gis.Layer):
 
     # ----------------------------------------------------------------------
     def generate_kml(
-        self, save_location: str, name: str, layers: str, options: str = "composite"
+        self,
+        save_location: str,
+        name: str,
+        layers: str,
+        options: str = "composite",
     ):
         """
         The ``generate_Kml`` operation is performed on a map service resource.
