@@ -139,7 +139,7 @@ class ParcelFabricManager(object):
         --------------------     --------------------------------------------------------------------
         moment                   Optional Integer. This should only be specified by the client when
                                  they do not want to use the current moment
-        
+
         --------------------     --------------------------------------------------------------------
         future                   Optional boolean. If `True`, the request is processed as an asynchronous
                                  job and a URL is returned that points a location displaying the status
@@ -341,7 +341,7 @@ class ParcelFabricManager(object):
                                     areas of the clipped parcels. The stated area of the clipped parcels
                                     will be calculated if the stated areas exist on the parent parcels
                                     being clipped.
-        
+
         -----------------------     --------------------------------------------------------------------
         future                      Optional boolean. If `True`, the request is processed as an asynchronous
                                     job and a URL is returned that points a location displaying the status
@@ -457,7 +457,7 @@ class ParcelFabricManager(object):
                                  calculating the stated area of the merged parcel. The stated area of
                                  the merged parcel will be calculated if the stated areas exist on
                                  the parcels being merged.
-        
+
         --------------------     --------------------------------------------------------------------
         future                   Optional boolean. If `True`, the request is processed as an asynchronous
                                  job and a URL is returned that points a location displaying the status
@@ -645,7 +645,7 @@ class ParcelFabricManager(object):
                                     default is the version current moment). This should only be
                                     specified by the client when they do not want to use the current
                                     moment.
-        
+
         -----------------------     --------------------------------------------------------------------
         future                      Optional boolean. If `True`, the request is processed as an asynchronous
                                     job and a URL is returned that points a location displaying the status
@@ -958,7 +958,7 @@ class ParcelFabricManager(object):
                                     default is the version current moment). This should only be
                                     specified by the client when they do not want to use the current
                                     moment.
-                    
+
         -----------------------     --------------------------------------------------------------------
         future                      Optional boolean. If `True`, the request is processed as an asynchronous
                                     job and a URL is returned that points a location displaying the status
@@ -1355,7 +1355,9 @@ class ParcelFabricManager(object):
 
     # ----------------------------------------------------------------------
     def reconstruct_from_seeds(
-        self, extent: Union[dict, Envelope], future: bool = False,
+        self,
+        extent: Union[dict, Envelope],
+        future: bool = False,
     ):
         """
         This operation constructs parcels from seeds enclosed by parcel lines in the specified extent. The tool reconstructs parcels regardless of the parcel
@@ -1515,7 +1517,9 @@ class ParcelFabricManager(object):
 
     # ----------------------------------------------------------------------
     def set_line_label_position(
-        self, parcel_line_features: list[dict[str, Any]], future: bool = False,
+        self,
+        parcel_line_features: list[dict[str, Any]],
+        future: bool = False,
     ):
         """
         The :meth:`~set_line_label_position` sets the label position of the line's COGO dimension to the
@@ -1568,7 +1572,7 @@ class ParcelFabricManager(object):
     # ----------------------------------------------------------------------
 
     def _validate_extent(self, extent: Union[dict, Envelope]):
-        """ Check for valid Extent object or None """
+        """Check for valid Extent object or None"""
         from arcgis.geometry import Envelope
 
         if isinstance(extent, (dict, Envelope)):
