@@ -1345,7 +1345,11 @@ class StoryMap(object):
                 or "event" in node_class.lower()
                 or "carousel" in node_class.lower()
             ):
-                return self._properties["nodes"][node]["children"]
+                return (
+                    self._properties["nodes"][node]["children"]
+                    if "children" in self._properties["nodes"][node]
+                    else None
+                )
         else:
             return None
 
