@@ -1043,6 +1043,21 @@ class GIS(object):
         return []
 
     @property
+    def symbol_service(self) -> arcgis.mapping._types.SymbolService | None:
+        """
+        Symbol service is an ArcGIS Server utility service that provides access
+        to operations to build and generate images for Esri symbols to be
+        consumed by internal and external web applications.
+
+        :return: A :class:`~arcgis.mapping._types.SymbolService` object or None
+
+        """
+        try:
+            return self._tools.symbol_service
+        except:
+            return None
+
+    @property
     def datastore(self):
         """
         The ``datastore`` property is the resource manager for GIS datastores.

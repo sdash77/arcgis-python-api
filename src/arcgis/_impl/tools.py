@@ -20445,6 +20445,7 @@ class _Tools(object):
         self._geoanalytics = None
         self._orthomapping = None
         self._packaging = None
+        self._symbolservice = None
 
     @lru_cache(maxsize=255)
     def _validate_url(self, url):
@@ -20454,6 +20455,26 @@ class _Tools(object):
         else:
             return res["serviceUrl"]
         return url
+
+    @property
+    @lru_cache(maxsize=255)
+    def symbol_service(self):
+        """the portal's symbol service if available and configured"""
+        if self._symbolservice is not None:
+            return self._symbolservice
+        try:
+            if self._gis._is_hosted_nb_home:
+                svcurl = self._validate_url(
+                    self._gis.properties["helperServices"]["symbols"]["url"]
+                )
+            else:
+                svcurl = self._gis.properties["helperServices"]["symbols"]["url"]
+            from arcgis.mapping._types import SymbolService
+
+            self._symbolservice = SymbolService(svcurl, self._gis)
+            return self._symbolservice
+        except KeyError:
+            return None
 
     @property
     @lru_cache(maxsize=255)
