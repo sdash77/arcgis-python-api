@@ -45,8 +45,17 @@ class Test_SymbolService(unittest.TestCase):
         assert self._gis.symbol_service.properties
 
     def test_generate_symbol(self):
+        import requests, tempfile, os
+
         ss = self._gis.symbol_service
-        res = ss.generate_symbol(r"c:/temp/batman.svg")
+
+        fp = os.path.join(tempfile.gettempdir(), "batman.svg")
+        r = requests.get(
+            "https://www.svgrepo.com/show/303233/batman-5-logo.svg"
+        )
+        with open(fp, 'w') as writer:
+            writer.write(r.text)
+        res = ss.generate_symbol(fp)
         assert res
         assert isinstance(res, dict)
 
