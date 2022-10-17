@@ -8720,7 +8720,7 @@ class Group(dict):
         # groupdict = self._portal.get_group(self.groupid)
         self._hydrated = False
         if groupdict:
-            self.__dict__.update(groupdict)
+            groupdict.update(self.__dict__)
             super(Group, self).update(groupdict)
 
     def _hydrate(self):
