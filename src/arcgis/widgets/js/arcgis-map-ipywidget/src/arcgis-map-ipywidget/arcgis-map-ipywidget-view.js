@@ -1343,18 +1343,36 @@ var ArcGISMapIPyWidgetView = widgets.DOMWidgetView.extend({
                 this._time_slider.mode = timeMode;
                 if (timeExtent) {
                     if (timeMode === "instant") {
-                        this._time_slider.timeExtent = { start: timeExtent.start };
+                        if (timeExtent.start == null && timeExtent.end !== null) {
+                            this._time_slider.timeExtent = { start: timeExtent.end, end: timeExtent.end };
+                        }
+                        else if (timeExtent.start !== null){
+                            this._time_slider.timeExtent = { start: timeExtent.start, end: timeExtent.start  };
+                        }
                     }
                     if (timeMode === "time-window") {
                         if (timeExtent.end == null) {
-                            this._time_slider.timeExtent = { start: timeExtent.start, end: timeExtent.start};
+                            this._time_slider.timeExtent = { start: timeExtent.start, end: timeExtent.start };
+                        }
+                        else {
+                            this._time_slider.timeExtent = { start: timeExtent.start, end: timeExtent.end };
                         }
                     }
                     if (timeMode === "cumulative-from-start") {
-                        this._time_slider.timeExtent = { end: timeExtent.start };
+                        if (timeExtent.end == null) {
+                            this._time_slider.timeExtent = {end: timeExtent.start };
+                        }
+                        else {
+                            this._time_slider.timeExtent = {end: timeExtent.end };
+                        }
                     }
                     if (timeMode === "cumulative-from-end") {
-                        this._time_slider.timeExtent = { start: timeExtent.start };
+                        if (timeExtent.start == null) {
+                            this._time_slider.timeExtent = { start: timeExtent.end };
+                        }
+                        else {
+                            this._time_slider.timeExtent = { start: timeExtent.start };
+                        }
                     }
                 }
             }
