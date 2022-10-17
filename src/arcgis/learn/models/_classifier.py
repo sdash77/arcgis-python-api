@@ -178,7 +178,8 @@ class FeatureClassifier(ArcGISModel):
             self._intialize_tensorflow(data, backbone, pretrained_path, mixup, kwargs)
         else:
 
-            super().__init__(data, backbone, **kwargs)
+            super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
+            data = self._data
 
             backbone_cut = None
             backbone_split = None

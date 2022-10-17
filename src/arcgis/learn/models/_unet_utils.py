@@ -22,6 +22,7 @@ from .._utils.common import (
 from .._utils.env import HAS_GDAL
 from .._utils.pixel_classification import analyze_pred_pixel_classification
 from .._utils.env import is_arcgispronotebook
+from .._utils.utils import check_imbalance
 import torch
 import warnings
 import PIL
@@ -361,6 +362,39 @@ class ArcGISSegmentationItemList(ImageList):
 
     def open(self, fn):
         return ArcGISMSImage.open(fn, div=self._div, imagery_type=self._imagery_type)
+
+    def check_class_imbalance(
+        self, func: Callable, class_mapping, stratify=False, class_imbalance_pct=0.01
+    ):
+        try:
+            labelval = [(func(o)) for o in self.items]
+            total_sample = np.concatenate(labelval)
+            total_sample = total_sample[total_sample != "0"]
+            unique_sample = set(total_sample)
+            imabalanced_class_list = []
+
+            for sample in unique_sample:
+                print(
+                    (total_sample == sample).sum(),
+                    len(total_sample) * class_imbalance_pct,
+                )
+                if (total_sample == sample).sum() < len(
+                    total_sample
+                ) * class_imbalance_pct:
+                    imabalanced_class_list.append(class_mapping[int(sample)])
+
+            if stratify == True and len(imabalanced_class_list) > 0:
+                warnings.warn(
+                    f'We see a class imbalance in the dataset. The class(es) {",".join(imabalanced_class_list)} doesnt have enough data points in your dataset.'
+                )
+            elif stratify == False and len(imabalanced_class_list) > 0:
+                warnings.warn(
+                    f'We see a class imbalance in the dataset. The class(es) {",".join(imabalanced_class_list)} doesnt have enough data points in your dataset. Although, class imbalance cannot be overcome easily, adding the parameter stratify = True will to a certain extent help get over this problem.'
+                )
+        except Exception as e:
+            warnings.warn(f"Unable to check for class imbalance [reason : {e}]")
+
+        return self
 
     def label_list_from_func(self, func: Callable):
         "Apply `func` to every input to get its label."

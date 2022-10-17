@@ -102,6 +102,7 @@ class Portal(object):
         **kwargs,
     ):
         """The Portal constructor. Requires URL and optionally username/password."""
+        self._security_kwargs = kwargs.pop("security_kwargs", None)
         self._use_gen_token = kwargs.pop("use_gen_token", False)
         url = url.strip()  # be permissive in accepting home app urls
         homepos = url.find("/home")
@@ -196,6 +197,7 @@ class Portal(object):
                     custom_adapter=custom_adapter,
                     is_hosted_nb_home=is_hosted_nb_home,
                     use_gen_token=self._use_gen_token,
+                    security_kwargs=self._security_kwargs,
                 )
             else:
                 if token == api_key:
@@ -224,6 +226,7 @@ class Portal(object):
                     custom_adapter=custom_adapter,
                     is_hosted_nb_home=is_hosted_nb_home,
                     use_gen_token=self._use_gen_token,
+                    security_kwargs=self._security_kwargs,
                 )
         # self.get_version(True)
         self.get_properties(True)
@@ -2753,13 +2756,13 @@ class Portal(object):
             a boolean if succeeded.
         """
         resp = self.con.post("content/users/" + owner, self._postdata())
-        if resp and "folders" in resp:
-            # Loop through each folder JSON object
-            for fldr in resp["folders"]:
-                if (
-                    fldr["title"].upper() == folder_name.upper()
-                ):  # Force both strings to upper case for comparison
-                    return fldr["id"]
+        result = [
+            f["id"]
+            for f in resp.get("folders", [])
+            if folder_name.lower() in [f["id"].lower(), f["title"].lower()]
+        ]
+        if len(result) > 0:
+            return result[0]
         return None  # no such folder found for this owner
 
     def _is_searching_public(self, scope):

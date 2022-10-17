@@ -9039,7 +9039,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 "itemProperties": {"itemId": output_service.itemid},
             }
         elif isinstance(output_name, arcgis.gis.Item):
-            output_service = None  # output_name
+            output_service = output_name
             output_raster = {"itemProperties": {"itemId": output_service.itemid}}
         else:
             raise TypeError("output_raster should be a string (service name) or Item")
@@ -16419,7 +16419,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         output_name: outputName (str). Required parameter.
 
         compute_change_method: computeChangeMethod (str). Optional parameter.
-           Choice list:DIFFERENCE,RELATIVE_DIFFERENCE,CATEGORICAL_DIFFERENCE
+           Choice list:DIFFERENCE,RELATIVE_DIFFERENCE,CATEGORICAL_DIFFERENCE, SPECTRAL_EUCLIDEAN_DISTANCE, SPECTRAL_ANGLE_DIFFERENCE, BAND_WITH_MOST_CHANGE
 
         from_classes: fromClasses (str). Optional parameter.
 

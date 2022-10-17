@@ -14,6 +14,7 @@ from ._io.fileops import (
     _sanitize_column_names,
     read_feather,
 )
+
 from arcgis.auth.tools import LazyLoader
 
 os = LazyLoader("os")
@@ -29,7 +30,7 @@ _gis = LazyLoader("arcgis.gis")
 _geometry = LazyLoader("arcgis.geometry")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
 _isd = LazyLoader("arcgis._impl.common._isd")
-
+_pa = LazyLoader("pyarrow")
 
 _LOGGER = logging.getLogger(__name__)
 ############################################################################
@@ -1608,7 +1609,15 @@ class GeoAccessor(object):
             raise ValueError(
                 "`how` is an invalid inputs of %s, but should be %s" % (op, allowed_ops)
             )
-        if self.sr != right_df.spatial.sr:
+        same_sr = False
+        if self.sr == right_df.spatial.sr:
+            same_sr = True
+        else:
+            # check for cases where there is latestWkid by iterating through values of sr
+            for value in self.sr.values():
+                if value in right_df.spatial.sr.values():
+                    same_sr = True
+        if same_sr is False:
             raise Exception("Difference Spatial References, aborting operation")
         index_left = "index_{}".format(left_tag)
         index_right = "index_{}".format(right_tag)
@@ -1752,12 +1761,21 @@ class GeoAccessor(object):
         ======================  =========================================================
         **Explicit Argument**   **Description**
         ----------------------  ---------------------------------------------------------
-        map_widget              optional ``WebMap`` object. This is the map to display the
-                                data on.
+        map_widget              optional ``WebMap`` object. This is the map to display
+                                the data on.
         ----------------------  ---------------------------------------------------------
-        palette                 optional string/dict.  Color mapping.  For simple renderer,
-                                just provide a string.  For more robust renderers like
-                                unique renderer, a dictionary can be given.
+        palette                 optional string/dict. Color mapping. Can also be listed
+                                as 'colors' or 'cmap'. For a simple renderer, just
+                                provide the string name of a colormap or a RGB + alpha
+                                int array. For a unique renderer, a list of colormaps can
+                                be provided. For heatmaps, a list of 3+ specific
+                                colorstops can be provided in the form of an array of RGB
+                                + alpha values or a list of colormaps, or the name of a
+                                single colormap can be provided.
+
+                                Accepts palettes exported from colorbrewer or imported
+                                from palettable as well. To get a list of built-in
+                                palettes, use the **display_colormaps** method.
         ----------------------  ---------------------------------------------------------
         renderer_type           optional string.  Determines the type of renderer to use
                                 for the provided dataset. The default is 's' which is for
@@ -1775,8 +1793,8 @@ class GeoAccessor(object):
                                         density or weighted values.
         ----------------------  ---------------------------------------------------------
         symbol_type             optional string. This is the type of symbol the user
-                                needs to create.  Valid inputs are: simple, picture, text,
-                                or carto.  The default is simple.
+                                needs to create.  Valid inputs are: simple, picture,
+                                text, or carto.  The default is simple.
         ----------------------  ---------------------------------------------------------
         symbol_type             optional string. This is the symbology used by the
                                 geometry.  For example 's' for a Line geometry is a solid
@@ -1821,21 +1839,16 @@ class GeoAccessor(object):
         col                     optional string/list. Field or fields used for heatmap,
                                 class breaks, or unique renderers.
         ----------------------  ---------------------------------------------------------
-        palette                optional string. The color map to draw from in order to
-                                visualize the data.  The default palette is 'jet'. To
-                                get a visual representation of the allowed color maps,
-                                use the **display_colormaps** method.
-        ----------------------  ---------------------------------------------------------
         alpha                   optional float.  This is a value between 0 and 1 with 1
-                                being the default value.  The alpha sets the transparancy
+                                being the default value.  The alpha sets the transparency
                                 of the renderer when applicable.
         ======================  =========================================================
 
-        ** Render Syntax **
+        **Render Syntax**
 
         The render syntax allows for users to fully customize symbolizing the data.
 
-        ** Simple Renderer**
+        **Simple Renderer**
 
         A simple renderer is a renderer that uses one symbol only.
 
@@ -1931,6 +1944,11 @@ class GeoAccessor(object):
         ----------------------  ---------------------------------------------------------
         ratio                   A number between 0-1. Describes what portion along the
                                 gradient the colorStop is added.
+        ----------------------  ---------------------------------------------------------
+        show_none               Boolean. Determines the alpha value of the base color for
+                                the heatmap. Setting this to ``True`` covers an entire
+                                map with the base color of the heatmap. Default is
+                                ``False``.
         ======================  =========================================================
 
         **Unique Renderer**
@@ -2476,6 +2494,61 @@ class GeoAccessor(object):
         return result
 
     # ----------------------------------------------------------------------
+    def to_arrow(self, index: bool = None) -> "pyarrow.Table":
+        """
+        Converts a Pandas DatFrame to an Arrow Table
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        index                  Optional Bool. If ``True``, always include the dataframe's
+                               index(es) as columns in the file output.
+                               If ``False``, the index(es) will not be written to the file.
+                               If ``None``, the index(ex) will be included as columns in the file
+                               output except `RangeIndex` which is stored as metadata only.
+        ==================     ====================================================================
+
+        :returns: pyarrow.Table
+
+        """
+        from ._io import _arrow
+
+        _arrow._validate_dataframe(self._data)
+        df = self._data
+        # create geo metadata before altering incoming data frame
+        geo_metadata = _arrow._create_metadata(df)
+        table = _pa.Table.from_pandas(df, preserve_index=index)
+
+        # Store geopandas specific file-level metadata
+        # This must be done AFTER creating the table or
+        # it is not persisted
+        metadata = table.schema.metadata
+        metadata.update({b"geo": _arrow._encode_metadata(geo_metadata)})
+        fin = table.replace_schema_metadata(metadata)
+
+        return fin
+
+    # ----------------------------------------------------------------------
+    @staticmethod
+    def from_arrow(table: "pyarrow.Table") -> pd.DataFrame:
+        """
+        Converts a Pandas DatFrame to an Arrow Table
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        table                  Required pyarrow.Table. The Arrow Table to convert back into a
+                               spatially enabled dataframe.
+        ==================     ====================================================================
+
+        :returns: pandas.DataFrame
+
+        """
+        from ._io import _arrow
+
+        return _arrow._arrow_to_sedf(table)
+
+    # ----------------------------------------------------------------------
     def to_featureclass(
         self, location, overwrite=True, has_z=None, has_m=None, sanitize_columns=True
     ):
@@ -2587,14 +2660,9 @@ class GeoAccessor(object):
         Requires 'pyarrow'.
 
         WARNING: this is an initial implementation of Parquet file support and
-        associated metadata.  This is tracking version 0.1.0 of the metadata
+        associated metadata.  This is tracking version 0.4.0 of the metadata
         specification at:
         https://github.com/geopandas/geo-arrow-spec
-
-        This metadata specification does not yet make stability promises.  As such,
-        we do not yet recommend using this in a production setting unless you are
-        able to rewrite your Parquet files.
-
 
         .. versionadded:: 2.1.0
 
@@ -2840,7 +2908,9 @@ class GeoAccessor(object):
 
     # ----------------------------------------------------------------------
     @staticmethod
-    def from_xy(df, x_column, y_column, sr=4326):
+    def from_xy(
+        df, x_column, y_column, sr=4326, z_column=None, m_column=None, **kwargs
+    ):
         """
         The ``from_xy`` method converts a Pandas DataFrame into a Spatially Enabled DataFrame
         by providing the X/Y columns.
@@ -2856,6 +2926,18 @@ class GeoAccessor(object):
         --------------------    ---------------------------------------------------------
         sr                      Optional int.  The wkid number of the spatial reference.
                                 4326 is the default value.
+        --------------------    ---------------------------------------------------------
+        z_column                Optional string.  The name of the Z-coordinate series
+        --------------------    ---------------------------------------------------------
+        m_column                Optional string.  The name of the M-value series
+        ====================    =========================================================
+
+
+        ====================    =========================================================
+        **kwargs**              **Description**
+        --------------------    ---------------------------------------------------------
+        oid_field               Optional string. If the value is provided the OID field
+                                will not be converted from int64 to int32.
         ====================    =========================================================
 
         :return: DataFrame
@@ -2863,7 +2945,15 @@ class GeoAccessor(object):
         """
         from ._io.fileops import _from_xy
 
-        return _from_xy(df=df, x_column=x_column, y_column=y_column, sr=sr)
+        return _from_xy(
+            df=df,
+            x_column=x_column,
+            y_column=y_column,
+            sr=sr,
+            z_column=z_column,
+            m_column=m_column,
+            oid_field=kwargs.pop("oid_field", None),
+        )
 
     # ----------------------------------------------------------------------
     @staticmethod
@@ -2937,6 +3027,15 @@ class GeoAccessor(object):
         ---------------------------     --------------------------------------------------------------------
         spatial_filter                  A `Geometry` object that will filter the results.  This requires
                                         `arcpy` to work.
+        ---------------------------     --------------------------------------------------------------------
+        sr                              A Spatial reference to project (or transform) output GeoDataFrame
+                                        to. This requires `arcpy` to work.
+        ---------------------------     --------------------------------------------------------------------
+        datum_transformation            Used in combination with 'sr' parameter. if the spatial reference of
+                                        output GeoDataFrame and input data do not share the same datum,
+                                        an appropriate datum transformation should be specified.
+                                        To Learn more see [Geographic datum transformations](https://pro.arcgis.com/en/pro-app/help/mapping/properties/geographic-coordinate-system-transformation.htm)
+                                        This requires `arcpy` to work.
         ===========================     ====================================================================
 
         **Optional Parameters are not supported for URL based resources**
@@ -3359,11 +3458,13 @@ class GeoAccessor(object):
                     ref = {"wkt": ref}
                 elif isinstance(ref, int):
                     ref = {"wkid": ref}
-                self._data[self.name].apply(
-                    lambda x: x.update({"spatialReference": ref})
-                    if pd.notnull(x)
-                    else None
-                )
+                if len(self._data[self.name]) > 0:
+
+                    self._data[self.name].apply(
+                        lambda x: x.update({"spatialReference": ref})
+                        if pd.notnull(x)
+                        else None
+                    )
 
     # ----------------------------------------------------------------------
     def to_featureset(self):
@@ -3764,7 +3865,7 @@ class GeoAccessor(object):
         :return:
             A boolean indicating `Z` values (True), or not (False)
         """
-        return self._data[self.name].geom.has_z.all()
+        return self._data[self.name].geom.has_z.any()
 
     # ----------------------------------------------------------------------
     @property
@@ -3775,7 +3876,7 @@ class GeoAccessor(object):
         :return:
             A boolean indicating `M` values (True), or not (False)
         """
-        return self._data[self.name].geom.has_m.all()
+        return self._data[self.name].geom.has_m.any()
 
     # ----------------------------------------------------------------------
     @property
