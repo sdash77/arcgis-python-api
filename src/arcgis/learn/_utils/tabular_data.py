@@ -1469,11 +1469,12 @@ class TabularDataObject(object):
         if input_features is not None:
             if isinstance(input_features, FeatureLayer):
                 import pandas as pd
+
                 input_layer = input_features
                 out_sr = None
                 if cell_sizes and not rasters:
                     out_sr = 4326
-                #sdf = input_features.query(out_sr=out_sr).sdf
+                # sdf = input_features.query(out_sr=out_sr).sdf
                 sdf = pd.DataFrame.spatial.from_layer(input_features)
 
             elif (
