@@ -473,7 +473,8 @@ class AutoML(object):
                 self.copy_and_overwrite(folder, save_model_path)
             except:
                 print(
-                    "It looks like the model has been already been saved once. Unable to save at a different location again")
+                    "It looks like the model has been already been saved once. Unable to save at a different location again"
+                )
                 return
 
         for file in files_required:
