@@ -16,15 +16,13 @@ def sleep_counter(start=1, mval=6):
             return mval
 
 
-def _status(
-    gis: GIS, url: str, params: dict[str, Any] | None = None
-) -> dict[str, Any]:
+def _status(gis: GIS, url: str, params: dict[str, Any] | None = None) -> dict[str, Any]:
     """Checks the status of a URL"""
     if params is None:
-        params = {'f': 'json'}
+        params = {"f": "json"}
     res = gis._con.get(res, params)
     i = 1
-    while res.get('status', 'completed').lower() != 'executing':
+    while res.get("status", "completed").lower() != "executing":
         res = gis._con.get(res, params)
         i += 1
         if i > 5:
@@ -65,10 +63,7 @@ class BackupStore(_BaseKube):
         """
         url: str = f"{self._url}/update"
         params: dict[str, Any] = {"f": "json", "settings": settings}
-        return (
-            self._gis._con.post(url, params).get("status", "failed")
-            == "success"
-        )
+        return self._gis._con.post(url, params).get("status", "failed") == "success"
 
     def validate(self) -> dict[str, Any]:
         """
@@ -83,9 +78,7 @@ class BackupStore(_BaseKube):
         """Unregisters a backup store from the deploayment"""
         url = f"{self._url}/unregister"
         params = {"f": "json"}
-        return (
-            self._con.post(url, params).get("status", "failed") == "success"
-        )
+        return self._con.post(url, params).get("status", "failed") == "success"
 
 
 class BackupStoresManager:
@@ -108,7 +101,7 @@ class BackupStoresManager:
 
         :returns: dict[str, Any]
         """
-        return self._gis._con.get(self._url, {'f': 'json'})
+        return self._gis._con.get(self._url, {"f": "json"})
 
     def register(
         self,
@@ -123,7 +116,7 @@ class BackupStoresManager:
         :returns: dict | concurrent.futures.Future
         """
         params = {
-            "f": 'json',
+            "f": "json",
             "storeName": name,
             "settings": settings,
             "isDefault": default,
