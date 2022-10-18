@@ -1234,27 +1234,45 @@ class StoryMap(object):
 
         # internal method to add to correct places
         def _add_to_dicts(node_add, comp_list, comp_node_dict, comp_res_dict):
+            # add to complete list of nodes
             comp_list.append(node_add)
+            # get the dictionary
             node_dict = self._properties["nodes"][node_add]
             comp_node_dict[node_add] = node_dict
 
             # find the resource node to add associated with node
             if "data" in node_dict:
-                for key, value in node_dict["data"].items():
-                    if isinstance(value, str):
-                        if "r-" in value:
-                            resource_node = value
-                            resource_dict = self._properties["resources"][resource_node]
-                            comp_res_dict[resource_node] = resource_dict
-                            if "resourceId" in resource_dict["data"]:
-                                name = resource_dict["data"]["resourceId"]
-                                resource_file = self._item.resources.get(name)
-                                resource_files[name] = resource_file
-                            elif "itemId" in resource_dict["data"]:
-                                name = "draft_" + resource_dict["data"]["itemId"]
-                                if name.endswith(".json"):
-                                    resource_file = self._item.resources.get(name)
-                                    resource_files[name] = resource_file
+                # iterate through values of dict to find any resources
+                for _, value in node_dict["data"].items():
+                    if isinstance(value, list):
+                        for im in value:
+                            # express maps keep their images in a list
+                            _add_to_resources(im, comp_res_dict)
+                    else:
+                        _add_to_resources(value, comp_res_dict)
+
+        def _add_to_resources(value, comp_res_dict):
+            if isinstance(value, str):
+                # check if value is a resource
+                if "r-" in value:
+                    resource_node = value
+                    # get the resource dict
+                    resource_dict = self._properties["resources"][resource_node]
+                    comp_res_dict[resource_node] = resource_dict
+                    if "resourceId" in resource_dict["data"]:
+                        # some nodes keep the resource under resourceId key
+                        name = resource_dict["data"]["resourceId"]
+                        # get the resource file to add to new story
+                        resource_file = self._item.resources.get(name)
+                        resource_files[name] = resource_file
+                    elif "itemId" in resource_dict["data"]:
+                        # express map keeps resource under itemId key
+                        if name.endswith(".json"):
+                            # need to add draft_ in front to be one-to-one with builder
+                            name = "draft_" + resource_dict["data"]["itemId"]
+                            # get the json file draft
+                            resource_file = self._item.resources.get(name)
+                            resource_files[name] = resource_file
 
         # Begin populating dicts and list, assume there are children to begin with.
         while has_children is True:
