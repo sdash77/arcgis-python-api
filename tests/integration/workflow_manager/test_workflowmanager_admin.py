@@ -1,14 +1,10 @@
 import unittest
+
+from arcgis.gis.workflowmanager import WorkflowManager, WorkflowManagerAdmin
+from arcgis.gis import GIS
 import datetime
 
-from arcgis.gis.workflowmanager import WorkflowManagerAdmin
-from src.arcgis.gis.workflowmanager import WorkflowManager, WorkflowManagerAdmin
-from src.arcgis.gis import GIS
-import datetime
-
-from tests.integration.workflow_manager.workflowmanager_setup import (
-    WorkflowManagerSetup,
-)
+import workflowmanager_setup
 
 
 ###########################################################################
@@ -20,7 +16,7 @@ class TestWorkflowManager(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.connection = WorkflowManagerSetup()
+        cls.connection = workflowmanager_setup.WorkflowManagerSetup()
 
     def setUp(self):
         print("Test: " + self._testMethodName)

@@ -1,9 +1,9 @@
-from src.arcgis.gis.workflowmanager import WorkflowManager, WorkflowManagerAdmin
-from src.arcgis.gis import GIS
 import datetime
 
-from tests.integration.dino_utils.dino_configs import DinoConfigs
+from integration.dino_utils.dino_configs import DinoConfigs
 from configparser import ConfigParser
+from arcgis.gis.workflowmanager import WorkflowManager, WorkflowManagerAdmin
+from arcgis.gis import GIS
 
 
 ###########################################################################
@@ -18,14 +18,14 @@ class WorkflowManagerSetup:
         Check if ArcGIS.com can be reached
         :return:
         """
-        custom_testing = False
+        custom_testing = True
 
         if custom_testing:
-            self.portal_url = "https://ps0010886.esri.com/portal"
+            self.portal_url = "https://ps0015914.esri.com/portal"
             self.portal_username = "admin"
-            self.portal_password = "..."
+            self.portal_password = "esri.agp"
             self.item_name = "Testing Item"
-            self.workflow_item_id = "45af313c6b054fea88c620afa46b0538"
+            self.workflow_item_id = "9d559ce2e246482ba8726413c25550b1"
 
             self._gis = GIS(
                 url=self.portal_url,
