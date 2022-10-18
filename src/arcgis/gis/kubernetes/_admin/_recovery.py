@@ -2,7 +2,89 @@ from __future__ import annotations
 from arcgis.gis.kubernetes._admin._base import _BaseKube
 from arcgis.gis import GIS
 from typing import Dict, Any, Optional, List
+import time
 import datetime as _dt
+import concurrent.futures
+
+
+def sleep_counter(start=1, mval=6):
+
+    while True:
+        if start < mval:
+            start += 1
+            yield start
+        else:
+            return mval
+
+
+def _status(
+    gis: GIS, url: str, params: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    """Checks the status of a URL"""
+    if params is None:
+        params = {'f': 'json'}
+    res = gis._con.get(res, params)
+    i = 1
+    while res.get('status', 'completed').lower() != 'executing':
+        res = gis._con.get(res, params)
+        i += 1
+        if i > 5:
+            i = 5
+        time.sleep(i)
+    return res
+
+
+class BackupStoresManager:
+    """
+    Manages the backup stores with the deployments
+    """
+
+    _url = None
+    _gis = None
+    _properties = None
+
+    def __init__(self, url: str, gis: GIS):
+        self._url = url
+        self._gis = gis
+
+    @property
+    def properties(self) -> dict[str, Any]:
+        """
+        returns the endpoint properties
+
+        :returns: dict[str, Any]
+        """
+        return self._gis._con.get(self._url, {'f': 'json'})
+
+    def register(
+        self,
+        name: str,
+        settings: dict[str, Any],
+        default: bool,
+        future: bool = False,
+    ) -> dict[str, Any] | concurrent.futures.Future:
+        """
+        The register operation registers a backup store. The backup store is created and managed by the deployment.
+
+        :returns: dict | concurrent.futures.Future
+        """
+        params = {
+            "f": 'json',
+            "storeName": name,
+            "settings": settings,
+            "isDefault": default,
+            "async": True,
+        }
+        url = f"{self._url}/register"
+        res = self._gis._con.post(url, params)
+        url = res.get("jobsUrl", None)
+        executor = concurrent.futures.ThreadPoolExecutor(1)
+        executor.shutdown(True)
+        return executor.submit(_status, **{"gis": self._gis, "url": url})
+
+    def list(self):
+        
+
 
 ###########################################################################
 class BackupStore(_BaseKube):
@@ -63,7 +145,9 @@ class BackupStore(_BaseKube):
         """Unregisters a backup store from the deploayment"""
         url = f"{self._url}/unregister"
         params = {"f": "json"}
-        return self._con.post(url, params).get("status", "failed") == "success"
+        return (
+            self._con.post(url, params).get("status", "failed") == "success"
+        )
 
 
 ###########################################################################
@@ -247,6 +331,16 @@ class RecoveryManager(_BaseKube):
             return self._con.get(url, params).get("status", {})
         except:
             return {}
+
+    @property
+    def backupstores(self) -> BackupStoresManager:
+        """
+        Manages the backup stores registered with the deployment
+
+        :returns: BackupStoresManager
+        """
+        url = "{self._url}/stores"
+        return BackupStoresManager(url, self._gis)
 
     @property
     def backups(self) -> List[Backup]:
