@@ -3,7 +3,7 @@ import os
 import json
 from arcgis._impl.common._deprecate import deprecated
 from arcgis.auth.tools import LazyLoader
-from arcgis.gis import Group
+from arcgis.gis import Group, User
 
 _basemap_definitions = LazyLoader("arcgis.mapping._basemap_definitions")
 
@@ -200,13 +200,15 @@ class UX(object):
 
     # ----------------------------------------------------------------------
     @admin_contacts.setter
-    def admin_contacts(self, users: list[str]):
+    def admin_contacts(self, users: list[User, str]):
         admins = []
         if users is None:
             raise ValueError(
                 "Cannot set empty list as Administrative contacts. You must have at least one administrator in the list."
             )
         for user in users:
+            if isinstance(user, User):
+                user = user.username
             role = self._gis.users.search(user)[0].role
             if role == "org_admin":
                 admins.append(user)
@@ -1913,7 +1915,9 @@ class SecuritySettings(object):
             "text": text if text else current_info_banner["text"],
             "bgColor": bg_color if bg_color else current_info_banner["bgColor"],
             "fontColor": font_color if font_color else current_info_banner["fontColor"],
-            "enabled": enabled if enabled else current_info_banner["enabled"],
+            "enabled": enabled
+            if enabled is not None
+            else current_info_banner["enabled"],
         }
 
         # get all the org settings
