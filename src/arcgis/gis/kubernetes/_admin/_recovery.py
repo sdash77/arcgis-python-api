@@ -3,7 +3,6 @@ from arcgis.gis.kubernetes._admin._base import _BaseKube
 from arcgis.gis import GIS
 from typing import Dict, Any, Optional, List
 import time
-import datetime as _dt
 import concurrent.futures
 
 
@@ -32,6 +31,61 @@ def _status(
             i = 5
         time.sleep(i)
     return res
+
+
+###########################################################################
+class BackupStore(_BaseKube):
+    """ """
+
+    _con = None
+    _gis = None
+    _url = None
+
+    def __init__(self, url: str, gis: GIS) -> None:
+        super()
+        self._url: str = url
+        self._gis: GIS = gis
+        self._con = gis._con
+
+    def update(self, settings: dict[str, Any]) -> bool:
+        """
+
+        Update only supports setting the backup store as the default store for your deployment {"default": true}.
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        settings               Required dict[str, Any]. A JSON object of backup store settings.
+                               At 10.9.1, the only supported setting is the default property.
+                               Setting the default property as true will mark the backup store as
+                               the default store for your deployment.
+        ==================     ====================================================================
+
+        :returns: bool
+        """
+        url: str = f"{self._url}/update"
+        params: dict[str, Any] = {"f": "json", "settings": settings}
+        return (
+            self._gis._con.post(url, params).get("status", "failed")
+            == "success"
+        )
+
+    def validate(self) -> dict[str, Any]:
+        """
+        This operation ensures that the backup store is able to access the object store and is ready for backup operations to be performed.
+        """
+        url: str = f"{self._url}/validate"
+        params: dict[str, Any] = {"f": "json"}
+        return self._gis._con.post(url, params)
+
+    # ---------------------------------------------------------------------
+    def delete(self) -> bool:
+        """Unregisters a backup store from the deploayment"""
+        url = f"{self._url}/unregister"
+        params = {"f": "json"}
+        return (
+            self._con.post(url, params).get("status", "failed") == "success"
+        )
 
 
 class BackupStoresManager:
@@ -83,71 +137,11 @@ class BackupStoresManager:
         return executor.submit(_status, **{"gis": self._gis, "url": url})
 
     def list(self):
-        
-
-
-###########################################################################
-class BackupStore(_BaseKube):
-    """ """
-
-    _con = None
-    _gis = None
-    _url = None
-
-    def __init__(self, url: str, gis: GIS) -> None:
-        super()
-        self._url = url
-        self._gis = gis
-        self._con = gis._con
-
-    # ---------------------------------------------------------------------
-    def create(
-        self,
-        name: str,
-        passcode: str,
-        description: str | None = None,
-        retention_date: _dt.datetime | None = None,
-    ) -> dict:
-        """
-        Creates a backup that can be restored in the event of data loss,
-        data corruption, or deployment failures. Backups are stored in a
-        designated backup store.
-
-        ==================     ====================================================================
-        **Argument**           **Description**
-        ------------------     --------------------------------------------------------------------
-        name                   Require string.
-        ------------------     --------------------------------------------------------------------
-        passcode               Required string.
-        ------------------     --------------------------------------------------------------------
-        description            Optional string.
-        ------------------     --------------------------------------------------------------------
-        retention_date         Optional datetime.datetime.
-        ==================     ====================================================================
-
-        :returns: dict
-        """
-        url = ""
-        params = {
-            "f": "json",
-            "name": name,
-            "passcode": passcode,
-        }
-
-    def update(self):
-        ...
-
-    def validate(self):
-        ...
-
-    # ---------------------------------------------------------------------
-    def delete(self) -> bool:
-        """Unregisters a backup store from the deploayment"""
-        url = f"{self._url}/unregister"
-        params = {"f": "json"}
-        return (
-            self._con.post(url, params).get("status", "failed") == "success"
-        )
+        """Returns a list of all the backup stores objects"""
+        return [
+            BackupStore(url=f"{self._url}/{bck['name']}", gis=self._gis)
+            for bck in self.properties.get("backupStores", [])
+        ]
 
 
 ###########################################################################
