@@ -2434,7 +2434,7 @@ class SecuritySettings(object):
                                         Contacts for your organization.
         -------------------------       --------------------------------------------------
         from_address_label              Required string. The label, or person, associated
-                                        with the fromEmailAddress. This information will be
+                                        with the from_email_address. This information will be
                                         displayed as the sender in the From line for
                                         all email notifications.
         -------------------------       --------------------------------------------------
@@ -2826,6 +2826,8 @@ class SecuritySettings(object):
         Services (ADFS) 2.0 and later, Okta, NetIQ Access Manager 3.2
         and later, OpenAM 10.1.0 and later, Shibboleth 3.2 and later, etc.
 
+        ArcGIS Online Only.
+
         ==================      =======================================
         **Argument**            **Description**
         ------------------      ---------------------------------------
@@ -2835,8 +2837,11 @@ class SecuritySettings(object):
 
         :return: Json Dictionary response
         """
-        if idp:
-            url = self._portal.resturl + "portals/self/idp/{idp}"
+        if self._gis._is_agol:
+            if idp:
+                url = self._portal.resturl + "portals/self/idp/{idp}"
+            else:
+                url = self._portal.resturl + "portals/self/idp"
+            return self._gis._con.post(url, {"f": "json"})
         else:
-            url = self._portal.resturl + "portals/self/idp"
-        return self._gis._con.post(url, {"f": "json"})
+            return None

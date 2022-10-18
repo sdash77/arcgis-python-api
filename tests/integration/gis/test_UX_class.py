@@ -46,131 +46,140 @@ class Test_UXClass(unittest.TestCase):
 
     def test_class_calls(self):
         for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            ux = gis.admin.ux
-            assert isinstance(ux, UX)
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+                ux = gis.admin.ux
+                assert isinstance(ux, UX)
 
     def test_properties(self):
         for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            ux = gis.admin.ux
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+                ux = gis.admin.ux
 
-            # name property
-            name = ux.name
-            assert name
-            ux.name = "Python API Test"
-            assert ux.name == "Python API Test"
-            ux.name = name
+                # name property
+                name = ux.name
+                assert name
+                ux.name = "Python API Test"
+                assert ux.name == "Python API Test"
+                ux.name = name
 
-            # summary property
-            summary = ux.summary
-            try:
-                assert summary
-            except:
-                continue
-            ux.summary = "Python API Test"
-            assert ux.summary == "Python API Test"
-            ux.summary = summary
+                # summary property
+                summary = ux.summary
+                try:
+                    assert summary
+                except:
+                    continue
+                ux.summary = "Python API Test"
+                assert ux.summary == "Python API Test"
+                ux.summary = summary
 
-            # contact link property
-            contact_link = ux.contact_link
-            try:
-                assert contact_link
-            except:
-                continue
-            ux.contact_link = "www.test_it.com"
-            assert ux.contact_link == "www.test_it.com"
-            ux.contact_link = contact_link
+                # contact link property
+                contact_link = ux.contact_link
+                try:
+                    assert contact_link
+                except:
+                    continue
+                ux.contact_link = "www.test_it.com"
+                assert ux.contact_link == "www.test_it.com"
+                ux.contact_link = contact_link
 
-            # admin contacts property
-            contact = ux.admin_contacts
-            assert contact
-            ux.admin_contacts = [gis.users.me.username]
-            assert ux.admin_contacts == [gis.users.me.username]
-            ux.admin_contacts = contact
+                # admin contacts property
+                contact = ux.admin_contacts
+                assert contact
+                ux.admin_contacts = [gis.users.me.username]
+                assert ux.admin_contacts == [gis.users.me.username]
+                ux.admin_contacts = contact
 
-            # description visibility property
-            visibility = ux.description_visibility
-            assert visibility
-            ux.description_visibility = False
-            assert ux.description_visibility is False
-            ux.description_visibility = visibility
+                # description visibility property
+                visibility = ux.description_visibility
+                assert visibility
+                ux.description_visibility = False
+                assert ux.description_visibility is False
+                ux.description_visibility = visibility
 
-            # description property
-            desc = ux.description
-            assert desc
-            ux.description = "Python API Test"
-            assert ux.description == "Python API Test"
-            ux.description = desc
+                # description property
+                desc = ux.description
+                assert desc
+                ux.description = "Python API Test"
+                assert ux.description == "Python API Test"
+                ux.description = desc
 
     def test_logo(self):
         for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            ux = gis.admin.ux
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+                ux = gis.admin.ux
 
-            # get orig logo, if none then None is returned
-            logo = ux.get_logo(tempfile.gettempdir())
-            try:
-                assert logo
-            except:
-                continue
-            # set logo
-            assert ux.set_logo(image_file.name, show_logo=True)
-            assert ux.get_logo(tempfile.gettempdir())
-            # set orig logo
-            assert ux.set_logo(logo)
+                # get orig logo, if none then None is returned
+                logo = ux.get_logo(tempfile.gettempdir())
+                try:
+                    assert logo
+                except:
+                    continue
+                # set logo
+                assert ux.set_logo(image_file.name, show_logo=True)
+                assert ux.get_logo(tempfile.gettempdir())
+                # set orig logo
+                assert ux.set_logo(logo)
 
     def test_shared_theme(self):
         for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            ux = gis.admin.ux
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+                ux = gis.admin.ux
 
-            # get orig shared theme, might be None
-            shared_theme = ux.shared_theme()
-            assert shared_theme
-            # set new theme props
-            new_theme = ux.shared_theme(
-                button={"background": "#0d7bba", "text": "#000000"}
-            )
-            assert new_theme["button"] == {"background": "#0d7bba", "text": "#000000"}
-            # reset original
-            assert ux.shared_theme(button=shared_theme["button"])
+                # get orig shared theme, might be None
+                shared_theme = ux.shared_theme()
+                assert shared_theme
+                # set new theme props
+                new_theme = ux.shared_theme(
+                    button={"background": "#0d7bba", "text": "#000000"}
+                )
+                assert new_theme["button"] == {
+                    "background": "#0d7bba",
+                    "text": "#000000",
+                }
+                # reset original
+                assert ux.shared_theme(button=shared_theme["button"])
 
     def test_navigation_bar(self):
         for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            ux = gis.admin.ux
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+                ux = gis.admin.ux
 
-            # get nav bar
-            nav_bar = ux.navigation_bar()
-            # set nav bar
-            new_bar = ux.navigation_bar(gallery="members", groups="members")
-            assert new_bar
-            # reset original
-            assert ux.navigation_bar(
-                gallery=nav_bar["gallery"], groups=nav_bar["groups"]
-            )
+                # get nav bar
+                nav_bar = ux.navigation_bar()
+                # set nav bar
+                new_bar = ux.navigation_bar(gallery="members", groups="members")
+                assert new_bar
+                # reset original
+                assert ux.navigation_bar(
+                    gallery=nav_bar["gallery"], groups=nav_bar["groups"]
+                )
 
     def test_gallery_group(self):
         for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            ux = gis.admin.ux
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+                ux = gis.admin.ux
 
-            # get gallery group
-            gall_grp = ux.gallery_group
-            try:
-                assert gall_grp
-            except:
-                assert gall_grp == ""
-            # set new group
-            group_id = gis.groups.search()[10].id
-            ux.gallery_group = group_id
-            assert ux.gallery_group == gis.groups.search()[10]
-            # reset
-            if gall_grp:
-                ux.gallery_group = gall_grp.id
-            else:
-                ux.gallery_group = gall_grp
+                # get gallery group
+                gall_grp = ux.gallery_group
+                try:
+                    assert gall_grp
+                except:
+                    assert gall_grp == ""
+                # set new group
+                group_id = gis.groups.search()[10].id
+                ux.gallery_group = group_id
+                assert ux.gallery_group == gis.groups.search()[10]
+                # reset
+                if gall_grp:
+                    ux.gallery_group = gall_grp.id
+                else:
+                    ux.gallery_group = gall_grp
 
 
 class Test_HomePageSettingsClass(unittest.TestCase):
@@ -178,67 +187,73 @@ class Test_HomePageSettingsClass(unittest.TestCase):
 
     def test_class_calls(self):
         for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            hps = gis.admin.ux.homepage_settings
-            assert isinstance(hps, HomePageSettings)
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+                hps = gis.admin.ux.homepage_settings
+                assert isinstance(hps, HomePageSettings)
 
     def test_background(self):
         for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            hps = gis.admin.ux.homepage_settings
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+                hps = gis.admin.ux.homepage_settings
 
-            # get background, if default then None will be returned
-            bck = hps.get_background(tempfile.gettempdir())
-            try:
-                assert bck
-            except:
-                continue
-            # set background to new image
-            assert hps.set_background(image_file.name)
-            # get background, this time there will be a file
-            assert hps.get_background(tempfile.gettempdir())
-            # reset original background
-            assert hps.set_background(bck)
+                # get background, if default then None will be returned
+                bck = hps.get_background(tempfile.gettempdir())
+                try:
+                    assert bck
+                except:
+                    continue
+                # set background to new image
+                assert hps.set_background(image_file.name)
+                # get background, this time there will be a file
+                assert hps.get_background(tempfile.gettempdir())
+                # reset original background
+                assert hps.set_background(bck)
 
     def test_title(self):
         for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            hps = gis.admin.ux.homepage_settings
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+                hps = gis.admin.ux.homepage_settings
 
-            # get title
-            orig_title = hps.get_title()
-            try:
-                assert orig_title["title"]
-            except:
-                continue
-            # set title
-            assert hps.set_title("Python API Test", show_title=True, color="#000000")
-            assert hps.get_title()["title"] == "Python API Test"
-            # reset original title
-            if orig_title:
-                assert hps.set_title(orig_title["title"])
-            else:
-                assert hps.set_title(orig_title)
+                # get title
+                orig_title = hps.get_title()
+                try:
+                    assert orig_title["title"]
+                except:
+                    continue
+                # set title
+                assert hps.set_title(
+                    "Python API Test", show_title=True, color="#000000"
+                )
+                assert hps.get_title()["title"] == "Python API Test"
+                # reset original title
+                if orig_title:
+                    assert hps.set_title(orig_title["title"])
+                else:
+                    assert hps.set_title(orig_title)
 
     def test_contact_email(self):
         for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            hps = gis.admin.ux.homepage_settings
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+                hps = gis.admin.ux.homepage_settings
 
-            # get contact email, if none then None is returned
-            cnt_email = hps.get_contact_email()
-            try:
-                assert cnt_email["email"]
-            except:
-                continue
-            # set contact email
-            assert hps.set_contact_email("test@esri.com", show_email=True)
-            assert hps.get_contact_email()["email"] == "test@esri.com"
-            # reset email
-            if cnt_email:
-                assert hps.set_contact_email(cnt_email["email"])
-            else:
-                assert hps.set_contact_email(cnt_email)
+                # get contact email, if none then None is returned
+                cnt_email = hps.get_contact_email()
+                try:
+                    assert cnt_email["email"]
+                except:
+                    continue
+                # set contact email
+                assert hps.set_contact_email("test@esri.com", show_email=True)
+                assert hps.get_contact_email()["email"] == "test@esri.com"
+                # reset email
+                if cnt_email:
+                    assert hps.set_contact_email(cnt_email["email"])
+                else:
+                    assert hps.set_contact_email(cnt_email)
 
 
 class Test_MapSettingsClass(unittest.TestCase):
@@ -246,99 +261,104 @@ class Test_MapSettingsClass(unittest.TestCase):
 
     def test_class_calls(self):
         for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            ms = gis.admin.ux.map_settings
-            assert isinstance(ms, MapSettings)
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+                ms = gis.admin.ux.map_settings
+                assert isinstance(ms, MapSettings)
 
     def test_propeties(self):
         for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            ms = gis.admin.ux.map_settings
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+                ms = gis.admin.ux.map_settings
 
-            # default extent
-            extent = ms.default_extent
-            assert extent
-            new_extent = {
-                "xmin": -13458971.714869041,
-                "ymin": 3612376.446092521,
-                "xmax": -12305256.512287628,
-                "ymax": 4354833.185272345,
-                "spatialReference": {"wkid": 102100},
-            }
-            ms.default_extent = new_extent
-            assert ms.default_extent == {
-                "xmin": -13458971.714869041,
-                "ymin": 3612376.446092521,
-                "xmax": -12305256.512287628,
-                "ymax": 4354833.185272345,
-                "spatialReference": {"wkid": 102100},
-            }
-            ms.default_extent = extent
+                # default extent
+                extent = ms.default_extent
+                assert extent
+                new_extent = {
+                    "xmin": -13458971.714869041,
+                    "ymin": 3612376.446092521,
+                    "xmax": -12305256.512287628,
+                    "ymax": 4354833.185272345,
+                    "spatialReference": {"wkid": 102100},
+                }
+                ms.default_extent = new_extent
+                assert ms.default_extent == {
+                    "xmin": -13458971.714869041,
+                    "ymin": 3612376.446092521,
+                    "xmax": -12305256.512287628,
+                    "ymax": 4354833.185272345,
+                    "spatialReference": {"wkid": 102100},
+                }
+                ms.default_extent = extent
 
-            # default basemap
-            df_bsmap = ms.default_basemap
-            assert df_bsmap
+                # default basemap
+                df_bsmap = ms.default_basemap
+                assert df_bsmap
 
-            # vector basemap
-            set_vb = ms.use_vector_basemap
-            assert set_vb in [True, False]
-            vbmap = ms.vector_basemap
-            assert vbmap
+                # vector basemap
+                set_vb = ms.use_vector_basemap
+                assert set_vb in [True, False]
+                vbmap = ms.vector_basemap
+                assert vbmap
 
-            # basemap gallery group
-            bsmap_gall_group = ms.basemap_gallery_group
-            assert bsmap_gall_group
-            group_id = gis.groups.search()[10].id
-            ms.basemap_gallery_group = group_id
-            assert ms.basemap_gallery_group == gis.groups.search()[10]
-            if bsmap_gall_group:
-                ms.basemap_gallery_group = bsmap_gall_group.id
-            else:
-                ms.basemap_gallery_group = bsmap_gall_group
+                # basemap gallery group
+                bsmap_gall_group = ms.basemap_gallery_group
+                assert bsmap_gall_group
+                group_id = gis.groups.search()[10].id
+                ms.basemap_gallery_group = group_id
+                assert ms.basemap_gallery_group == gis.groups.search()[10]
+                if bsmap_gall_group:
+                    ms.basemap_gallery_group = bsmap_gall_group.id
+                else:
+                    ms.basemap_gallery_group = bsmap_gall_group
 
-            # map viewer
-            mv = ms.default_mapviewer
-            assert mv
+                # map viewer
+                mv = ms.default_mapviewer
+                assert mv
 
-            # units
-            units = ms.units
-            assert units
+                # units
+                units = ms.units
+                assert units
 
-            # config apps group
-            config_apps_group = ms.config_apps_group
-            assert config_apps_group
-            group_id = gis.groups.search()[10].id
-            ms.config_apps_group = group_id
-            assert ms.config_apps_group == gis.groups.search()[10]
-            if config_apps_group:
-                ms.config_apps_group = config_apps_group.id
-            else:
-                ms.config_apps_group = config_apps_group
+                # config apps group
+                config_apps_group = ms.config_apps_group
+                assert config_apps_group
+                group_id = gis.groups.search()[10].id
+                ms.config_apps_group = group_id
+                assert ms.config_apps_group == gis.groups.search()[10]
+                if config_apps_group:
+                    ms.config_apps_group = config_apps_group.id
+                else:
+                    ms.config_apps_group = config_apps_group
 
-            # analysis group layer
-            analysis_layer_group = ms.analysis_layer_group
-            try:
-                assert analysis_layer_group
-            except:
-                assert analysis_layer_group == ""
-            group_id = gis.groups.search()[10].id
-            ms.analysis_layer_group = group_id
-            assert ms.analysis_layer_group == gis.groups.search()[10]
-            if len(analysis_layer_group) > 0:
-                ms.analysis_layer_group = gis.groups.search(analysis_layer_group.id)[0]
-            else:
-                ms.analysis_layer_group = analysis_layer_group
+                # analysis group layer
+                analysis_layer_group = ms.analysis_layer_group
+                try:
+                    assert analysis_layer_group
+                except:
+                    assert analysis_layer_group == ""
+                group_id = gis.groups.search()[10].id
+                ms.analysis_layer_group = group_id
+                assert ms.analysis_layer_group == gis.groups.search()[10]
+                if len(analysis_layer_group) > 0:
+                    ms.analysis_layer_group = gis.groups.search(
+                        analysis_layer_group.id
+                    )[0]
+                else:
+                    ms.analysis_layer_group = analysis_layer_group
 
     def test_bing_map(self):
         for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            ms = gis.admin.ux.map_settings
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+                ms = gis.admin.ux.map_settings
 
-            key = ms.bing_map()
-            assert key
-            assert ms.bing_map(bing_key="abcde")
-            assert ms.bing_map()["key"] == "abcde"
-            ms.bing_map(bing_key="REMOVE")
+                key = ms.bing_map()
+                assert key
+                assert ms.bing_map(bing_key="abcde")
+                assert ms.bing_map()["key"] == "abcde"
+                ms.bing_map(bing_key="REMOVE")
 
 
 class Test_ItemSettingsClass(unittest.TestCase):
@@ -346,34 +366,36 @@ class Test_ItemSettingsClass(unittest.TestCase):
 
     def test_class_calls(self):
         for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            it_set = gis.admin.ux.item_settings
-            assert isinstance(it_set, ItemSettings)
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+                it_set = gis.admin.ux.item_settings
+                assert isinstance(it_set, ItemSettings)
 
     def test_propeties(self):
         for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            it_set = gis.admin.ux.item_settings
-            # enable comments property
-            comments = it_set.enable_comments
-            assert comments in [True, False]
-            it_set.enable_comments = True
-            assert it_set.enable_comments is True
-            it_set.enable_comments = comments
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+                it_set = gis.admin.ux.item_settings
+                # enable comments property
+                comments = it_set.enable_comments
+                assert comments in [True, False]
+                it_set.enable_comments = True
+                assert it_set.enable_comments is True
+                it_set.enable_comments = comments
 
-            # enable metadata edit
-            edit = it_set.enable_metadata_edit
-            assert edit
-            it_set.enable_metadata_edit = False
-            assert it_set.enable_metadata_edit is False
-            it_set.enable_metadata_edit = edit
+                # enable metadata edit
+                edit = it_set.enable_metadata_edit
+                assert edit
+                it_set.enable_metadata_edit = False
+                assert it_set.enable_metadata_edit is False
+                it_set.enable_metadata_edit = edit
 
-            # metadata format
-            frmt = it_set.metadata_format
-            assert frmt
-            it_set.metadata_format = "inspire"
-            assert it_set.metadata_format == "inspire"
-            it_set.metadata_format = frmt
+                # metadata format
+                frmt = it_set.metadata_format
+                assert frmt
+                it_set.metadata_format = "inspire"
+                assert it_set.metadata_format == "inspire"
+                it_set.metadata_format = frmt
 
 
 class Test_SecuritySettingsClass(unittest.TestCase):
@@ -381,198 +403,220 @@ class Test_SecuritySettingsClass(unittest.TestCase):
 
     def test_class_calls(self):
         for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            ss = gis.admin.ux.security_settings
-            assert isinstance(ss, SecuritySettings)
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+                ss = gis.admin.ux.security_settings
+                assert isinstance(ss, SecuritySettings)
 
     def test_properties(self):
         for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            ss = gis.admin.ux.security_settings
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+                ss = gis.admin.ux.security_settings
 
-            assert ss.enable_https in [True, False]
-            assert isinstance(ss.anonymous_access, str)
-            assert isinstance(ss.allowed_origins, list)
-            assert isinstance(ss.allowed_redirect_uris, list)
-            assert ss.enable_update_user_profile in [True, False]
-            assert ss.share_public in [True, False]
-            assert ss.show_social_media in [True, False]
+                assert ss.enable_https in [True, False]
+                assert isinstance(ss.anonymous_access, str)
+                assert isinstance(ss.allowed_origins, list)
+                assert isinstance(ss.allowed_redirect_uris, list)
+                assert ss.enable_update_user_profile in [True, False]
+                assert ss.share_public in [True, False]
+                assert ss.show_social_media in [True, False]
 
     def test_informational_banner(self):
         for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            ss = gis.admin.ux.security_settings
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+                ss = gis.admin.ux.security_settings
 
-            # get current banner, or None
-            ib = ss.get_informational_banner()
-            try:
-                assert ib
-            except:
-                continue
-            # set informational banner
-            assert ss.set_informational_banner(
-                text="Test For Python API",
-                bg_color="white",
-                font_color="black",
-                enabled=True,
-            )
-            assert ss.get_informational_banner()["text"] == "Test For Python API"
-            # reset original banner
-            if ib:
+                # get current banner, or None
+                ib = ss.get_informational_banner()
+                try:
+                    assert ib
+                except:
+                    continue
+                # set informational banner
                 assert ss.set_informational_banner(
-                    text=ib["text"],
-                    bg_color=ib["bgColor"],
-                    font_color=ib["fontColor"],
-                    enabled=ib["enabled"],
+                    text="Test For Python API",
+                    bg_color="white",
+                    font_color="black",
+                    enabled=True,
                 )
-            else:
-                assert ss.set_informational_banner(text=None, enabled=False)
+                assert ss.get_informational_banner()["text"] == "Test For Python API"
+                # reset original banner
+                if ib:
+                    assert ss.set_informational_banner(
+                        text=ib["text"],
+                        bg_color=ib["bgColor"],
+                        font_color=ib["fontColor"],
+                        enabled=ib["enabled"],
+                    )
+                else:
+                    assert ss.set_informational_banner(text=None, enabled=False)
 
     def test_password_policy(self):
         for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            ss = gis.admin.ux.security_settings
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+                ss = gis.admin.ux.security_settings
 
-            # get password policy
-            assert ss.get_password_policy()
+                # get password policy
+                assert ss.get_password_policy()
 
-            # change some settings
-            assert ss.update_password_policy(min_length=10, include_uppercase=True)
-            assert ss.get_password_policy()["minLength"] == 10
-            assert ss.get_password_policy()["minUpper"] == 1
-            # reset
-            assert ss.update_password_policy(min_length=8, include_uppercase=False)
+                # change some settings
+                assert ss.update_password_policy(min_length=10, include_uppercase=True)
+                assert ss.get_password_policy()["minLength"] == 10
+                assert ss.get_password_policy()["minUpper"] == 1
+                # reset
+                assert ss.update_password_policy(min_length=8, include_uppercase=False)
 
     def test_org_access_notice(self):
         for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            ss = gis.admin.ux.security_settings
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+                ss = gis.admin.ux.security_settings
 
-            orig = ss.get_org_access_notice()
-            try:
-                assert orig
-            except:
-                assert orig is None
+                orig = ss.get_org_access_notice()
+                try:
+                    assert orig
+                except:
+                    assert orig is None
 
-            # Set a test notice
-            assert ss.set_org_access_notice(
-                "TEST FOR UX MODULE", "TEST FOR UX MODULE", "okOnly"
-            )
-            if orig:
+                # Set a test notice
                 assert ss.set_org_access_notice(
-                    orig["title"], orig["text"], orig["buttons"]
+                    "TEST FOR UX MODULE", "TEST FOR UX MODULE", "okOnly"
                 )
-            else:
-                assert ss.set_org_access_notice()
+                if orig:
+                    assert ss.set_org_access_notice(
+                        orig["title"], orig["text"], orig["buttons"]
+                    )
+                else:
+                    assert ss.set_org_access_notice()
 
     def test_anonymous_access_notice(self):
         for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            ss = gis.admin.ux.security_settings
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+                ss = gis.admin.ux.security_settings
 
-            orig = ss.get_anonymous_access_notice()
-            try:
-                assert orig
-            except:
-                assert orig is None
+                orig = ss.get_anonymous_access_notice()
+                try:
+                    assert orig
+                except:
+                    assert orig is None
 
-            # Set a test notice
-            assert ss.set_anonymous_access_notice(
-                "TEST FOR UX MODULE", "TEST FOR UX MODULE", "okOnly"
-            )
-            if orig:
+                # Set a test notice
                 assert ss.set_anonymous_access_notice(
-                    orig["title"], orig["text"], orig["buttons"]
+                    "TEST FOR UX MODULE", "TEST FOR UX MODULE", "okOnly"
                 )
-            else:
-                assert ss.set_anonymous_access_notice()
+                if orig:
+                    assert ss.set_anonymous_access_notice(
+                        orig["title"], orig["text"], orig["buttons"]
+                    )
+                else:
+                    assert ss.set_anonymous_access_notice()
 
     def test_mfa(self):
         for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            ss = gis.admin.ux.security_settings
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+                ss = gis.admin.ux.security_settings
 
-            orig = ss.get_multifactor_authentication()
-            assert isinstance(orig, dict)
+                orig = ss.get_multifactor_authentication()
+                assert isinstance(orig, dict)
 
-            # set to true and add admins
-            admins = []
-            users = gis.users.search()
-            for user in users:
-                if user.role == "org_admin":
-                    admins.append(user.username)
-                if len(admins) == 2:
-                    break
+                # set to true and add admins
+                admins = []
+                users = gis.users.search()
+                for user in users:
+                    if user.role == "org_admin":
+                        admins.append(user.username)
+                    if len(admins) == 2:
+                        break
 
-            assert ss.set_multifactor_authentication(admins, enabled=True)
-            assert ss.get_multifactor_authentication()["admins"]
-            # reset
-            if "admins" in orig:
-                assert ss.set_multifactor_authentication(
-                    orig["admins"], orig["enabled"]
-                )
-            else:
-                assert ss.set_multifactor_authentication(enabled=False)
+                assert ss.set_multifactor_authentication(admins, enabled=True)
+                assert ss.get_multifactor_authentication()["admins"]
+                # reset
+                if "admins" in orig and orig["admins"]:
+                    assert ss.set_multifactor_authentication(
+                        orig["admins"], orig["enabled"]
+                    )
+                else:
+                    assert ss.set_multifactor_authentication(enabled=False)
 
     def test_email_settings(self):
         for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            ss = gis.admin.ux.security_settings
-            if gis._is_agol is True:
-                continue
-            # get
-            assert ss.get_email_settings
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+                ss = gis.admin.ux.security_settings
+                if gis._is_agol is True:
+                    continue
+                # get
+                assert ss.get_email_settings
 
-            assert ss.set_email_settings(
-                smtp_host="smtp.gmail.com", smtp_port=25, from_address="test@gmail.com"
-            )
-            assert ss.delete_email_settings()
+                assert isinstance(
+                    ss.set_email_settings(
+                        smtp_host="smtp.gmail.com",
+                        smtp_port=25,
+                        from_address="test@gmail.com",
+                        from_address_label="test_admin",
+                    ),
+                    dict,
+                )
+                assert ss.delete_email_settings()
 
     def test_signin_settings(self):
         for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            ss = gis.admin.ux.security_settings
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+                ss = gis.admin.ux.security_settings
 
-            assert isinstance(ss.signin_settings, dict)
+                assert isinstance(ss.signin_settings, dict)
 
     def test_apps(self):
         for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            ss = gis.admin.ux.security_settings
-            if gis._is_agol is False:
-                continue
-            assert ss.set_approved_apps(True)
-            assert ss.set_approved_apps(False)
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+                ss = gis.admin.ux.security_settings
+                if gis._is_agol is False:
+                    continue
+                assert ss.set_approved_apps(True)
+                assert ss.set_approved_apps(False)
 
-            assert ss.set_blocked_apps(True)
-            assert ss.set_blocked_apps(False)
+                assert ss.set_blocked_apps(True)
+                assert ss.set_blocked_apps(False)
 
     def test_social_media_login(self):
         for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            ss = gis.admin.ux.security_settings
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+                ss = gis.admin.ux.security_settings
 
-            assert ss.set_social_media_login(False)
-            assert ss.signin_settings["signinOptionsOrder"]["logins"] == ["arcgis"]
-            assert ss.set_social_media_login(
-                True, ["facebook"], ["facebook", "github", "google", "apple"]
-            )
-            assert ss.signin_settings["signinOptionsOrder"]["social"] == [
-                "facebook",
-                "github",
-                "google",
-                "apple",
-            ]
-            assert ss.set_social_media_login(
-                True, ["facebook"], ["facebook", "google", "github", "apple"]
-            )
+                if gis._is_agol:
+                    assert ss.set_social_media_login(False)
+                    assert ss.signin_settings["signinOptionsOrder"]["logins"] == [
+                        "arcgis"
+                    ]
+                    assert ss.set_social_media_login(
+                        True, ["facebook"], ["facebook", "github", "google", "apple"]
+                    )
+                    assert ss.signin_settings["signinOptionsOrder"]["social"] == [
+                        "facebook",
+                        "github",
+                        "google",
+                        "apple",
+                    ]
+                    assert ss.set_social_media_login(
+                        True, ["facebook"], ["facebook", "google", "github", "apple"]
+                    )
 
     def test_idp(self):
         for profile in PROFILES:
-            gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
-            ss = gis.admin.ux.security_settings
+            with self.subTest(msg=profile):
+                gis = GIS(profile=profile, verify_cert=False, proxy=PROXIES)
+                ss = gis.admin.ux.security_settings
 
-            assert isinstance(ss.get_idp(), dict)
+                if gis._is_agol:
+                    assert isinstance(ss.get_idp(), dict)
 
 
 if __name__ == "__main__":
