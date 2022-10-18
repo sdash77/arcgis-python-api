@@ -593,9 +593,9 @@ class Test_SecuritySettingsClass(unittest.TestCase):
 
                 if gis._is_agol:
                     assert ss.set_social_media_login(False)
-                    assert ss.signin_settings["signinOptionsOrder"]["logins"] == [
-                        "arcgis"
-                    ]
+                    assert (
+                        "arcgis" in ss.signin_settings["signinOptionsOrder"]["logins"]
+                    )
                     assert ss.set_social_media_login(
                         True, ["facebook"], ["facebook", "github", "google", "apple"]
                     )

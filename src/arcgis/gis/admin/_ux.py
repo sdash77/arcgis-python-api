@@ -2378,7 +2378,9 @@ class SecuritySettings(object):
                 admins = admins_ok
         # perform update
 
-        return self._gis.update_properties({"mfaEnabled": enabled, "mfaAdmins": admins})
+        return self._gis.update_properties(
+            {"mfaEnabled": enabled, "mfaAdmins": admins, "clearEmptyFields": True}
+        )
 
     # ----------------------------------------------------------------------
     def get_multifactor_authentication(self):
@@ -2661,7 +2663,7 @@ class SecuritySettings(object):
                     }
                 # specify order if passed in
                 if social_network_order:
-                    params["social"] = social_network_order
+                    params["signinOptionsOrder"]["social"] = social_network_order
                 res = self._gis._con.post(url, params)
                 # configure the social providers
                 for network in social_networks:
