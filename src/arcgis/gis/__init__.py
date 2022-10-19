@@ -7257,15 +7257,16 @@ class ContentManager(object):
             has_pyshp = False
         if isinstance(df, FeatureSet):
             df = df.sdf
+        import random
+        import string
+
+        # determine if will be published as fl or table
         if has_arcpy == False and has_pyshp == False and _is_geoenabled(df):
             raise Exception(
                 "Spatially enabled DataFrame's must have either pyshp or"
                 + " arcpy available to use import_data"
             )
         elif _is_geoenabled(df):
-            import random
-            import string
-
             service_name = kwargs.pop("service_name", None)
             if service_name is None:
                 service_name = "a" + uuid4().hex[:7]
@@ -7492,52 +7493,43 @@ class ContentManager(object):
                 )
             return
         elif isinstance(df, pd.DataFrame) and "location_type" not in kwargs:
-            # CSV WORKFLOW
-            path = "content/features/analyze"
-            if kwargs.get("geocode_url", None):
-                geocode_url = kwargs.get("geocode_url")
-            else:
-                locators = [
-                    gc["url"]
-                    for gc in self._gis.properties.helperServices.geocode
-                    if gc.get("batch", False)
-                ]
-                if len(locators) == 0:
-                    raise Exception("No batch geocoding service found.")
-                geocode_url = locators[0]
-            postdata = {
-                "f": "pjson",
-                "text": df.to_csv(index_label="OBJECTID"),
-                "filetype": "csv",
-                "analyzeParameters": {
-                    "enableGlobalGeocoding": "true",
-                    "sourceLocale": "en-us",
-                    "sourceCountry": "",
-                    "sourceCountryHint": "",
-                    "geocodeServiceUrl": geocode_url,
+            # CSV WORKFLOW for publishing a Table
+            service_name = kwargs.pop("service_name", None)
+            if service_name is None:
+                service_name = "a" + uuid4().hex[:7]
+            title = kwargs.pop("title", uuid4().hex)
+            tags = kwargs.pop("tags", "CSV")
+
+            # Step 1: Add the csv as an item
+            temp_file = tempfile.gettempdir() + "\\%s%s.csv" % (
+                random.choice(string.ascii_lowercase),
+                uuid4().hex[:5],
+            )
+            with open(temp_file, "w") as my_csv:
+                df.to_csv(my_csv)
+                my_csv.close()
+            csv_item = self.add(
+                item_properties={
+                    "title": title,
+                    "type": "CSV",
+                    "tags": tags,
                 },
-            }
+                data=temp_file,
+                folder=folder,
+            )
+            shutil.rmtree(temp_file, ignore_errors=True)
 
-            if address_fields is not None:
-                postdata["analyzeParameters"]["locationType"] = "address"
+            # Step 2: Analyze the data
+            res = self._gis.content.analyze(item=csv_item)
 
-            res = self._portal.con.post(path, postdata)
-            if address_fields is not None:
-                res["publishParameters"].update({"addressFields": address_fields})
-
-            path = "content/features/generate"
-            postdata = {
-                "f": "pjson",
-                "text": df.to_csv(index_label="OBJECTID"),
-                "filetype": "csv",
-                "publishParameters": json.dumps(res["publishParameters"]),
-            }
-            if item_id:
-                postdata["itemIdToCreate"] = item_id
-            res = self._portal.con.post_multipart(path, postdata)
-
-            fc = FeatureCollection(res["featureCollection"]["layers"][0])
-            return fc
+            # Step 3: Publish the CSV as a Table
+            # publish the csv using the params from analyze
+            publish_parameters = res["publishParameters"]
+            publish_parameters["name"] = service_name
+            # This makes it a hosted table
+            publish_parameters["locationType"] = None
+            published_item = csv_item.publish(publish_parameters)
+            return published_item
         elif isinstance(df, pd.DataFrame) and "location_type" in kwargs:
             path = "content/features/analyze"
 
