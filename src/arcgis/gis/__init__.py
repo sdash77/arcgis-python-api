@@ -6711,8 +6711,9 @@ class ContentManager(object):
                 query += ' (type:"desktop application" NOT type:"desktop application template")'
             else:
                 query += ' (type:"' + item_type + '")'
-        if isinstance(categories, list):
-            categories = ",".join(categories)
+        if isinstance(categories, str):
+            categories = categories.split(",")
+
         if not outside_org:
             accountid = self._gis.properties.get("id")
             if accountid and query:
