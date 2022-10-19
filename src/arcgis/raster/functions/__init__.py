@@ -1970,10 +1970,6 @@ def clip(
         geom_dict = template_dict["rasterFunctionArguments"]["ClippingGeometry"]
 
         template_dict["rasterFunctionArguments"]["Extent"] = extent_envelope
-        if (geom_dict) and not isinstance(
-            Geometry(geom_dict), Envelope
-        ):  # for release after 2.0.1 remove this code that sets Extent to None
-            template_dict["rasterFunctionArguments"]["Extent"] = None
 
     except:
         pass
