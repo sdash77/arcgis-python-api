@@ -16,9 +16,9 @@ var getColorOrSizeProp = function(rendererOptions){
 
 var inferRenderer = function(renderer, rendererOptions, widget){
     return new Promise(function(resolve, reject) {
-        esriLoader.loadModules(["esri/renderers/smartMapping/creators/size",
-                                "esri/renderers/smartMapping/creators/color",
-                                "esri/renderers/smartMapping/creators/location",
+        esriLoader.loadModules(["esri/smartMapping/renderers/size",
+                                "esri/smartMapping/renderers/color",
+                                "esri/smartMapping/renderers/location",
                                 "esri/renderers/SimpleRenderer",
                                 "esri/renderers/UniqueValueRenderer",
                                 "esri/renderers/ClassBreaksRenderer",
