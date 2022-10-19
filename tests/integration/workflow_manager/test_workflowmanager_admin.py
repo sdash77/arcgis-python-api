@@ -1,11 +1,10 @@
 import unittest
+
+from arcgis.gis.workflowmanager import WorkflowManager, WorkflowManagerAdmin
+from arcgis.gis import GIS
 import datetime
 
-from arcgis.gis.workflowmanager import WorkflowManagerAdmin
-
-from tests.integration.workflow_manager.workflowmanager_setup import (
-    WorkflowManagerSetup,
-)
+import workflowmanager_setup
 
 
 ###########################################################################
@@ -17,7 +16,7 @@ class TestWorkflowManager(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.connection = WorkflowManagerSetup()
+        cls.connection = workflowmanager_setup.WorkflowManagerSetup()
 
     def setUp(self):
         print("Test: " + self._testMethodName)
@@ -142,6 +141,51 @@ class TestWorkflowManager(unittest.TestCase):
 
         # Assert
         self.assertTrue(actual, "Incorrect return type")
+
+    # endregion
+
+    # region IWA and PKI Connection issues
+
+    def test_check_iwa_connection_returns_successfully(self):
+        # Arrange
+        portal_url = "https://rqawiniwa02pt.ags.esri.com/gis/home"
+        portal_username = "avworld\\creator2"
+        portal_password = "portalaccount1"
+
+        gis = GIS(
+            url=portal_url,
+            username=portal_username,
+            password=portal_password,
+            verify_cert=False,
+            hostname_override=portal_url.replace("https://", "")
+            .replace(".ags", "")
+            .split("/")[0],
+        )
+        workflow_manager_admin = WorkflowManagerAdmin(gis)
+
+        # Create Testing Workflow Item
+
+        item_name = "Testing_Item_" + str(datetime.datetime.now())
+
+        # Act
+        try:
+            workflow_item_id = workflow_manager_admin.create_item(item_name)
+
+            workflow_item = gis.content.get(workflow_item_id)
+            workflow_manager = WorkflowManager(workflow_item)
+
+            # basic check using api that needs a token
+            roles = workflow_manager.wm_roles
+
+            # Assertions
+            self.assertIsInstance(roles, list, "Incorrect return type")
+            self.assertEqual(len(roles), 4, "Incorrect number of items downloaded")
+
+        except Exception as testException:
+            print(
+                "Error returned while creating Workflow Manager Item: "
+                + testException.__str__()
+            )
 
     # endregion
 
