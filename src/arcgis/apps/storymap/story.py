@@ -1266,6 +1266,7 @@ class StoryMap(object):
                         resource_file = self._item.resources.get(name)
                         resource_files[name] = resource_file
                     elif "itemId" in resource_dict["data"]:
+                        name = resource_dict["data"]["itemId"]
                         # express map keeps resource under itemId key
                         if name.endswith(".json"):
                             # need to add draft_ in front to be one-to-one with builder
