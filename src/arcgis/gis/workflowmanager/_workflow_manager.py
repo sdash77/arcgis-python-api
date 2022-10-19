@@ -516,7 +516,9 @@ class JobManager:
         """
         try:
             url = f"{self._url}/jobs/{id}"
-            job_dict = self._gis._con.get(url, {"extProps": get_ext_props, "holds": get_holds})
+            job_dict = self._gis._con.get(
+                url, {"extProps": get_ext_props, "holds": get_holds}
+            )
             return Job(job_dict, self._gis, self._url)
         except:
             self._handle_error(sys.exc_info())
