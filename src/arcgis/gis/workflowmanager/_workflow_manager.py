@@ -505,9 +505,9 @@ class JobManager:
         ---------------     --------------------------------------------------------------------
         id                  Required string. Job ID
         ---------------     --------------------------------------------------------------------
-        get_ext_props       Optional Boolean. If set to true will show the jobs extended properties.
+        get_ext_props       Optional Boolean. If set to false will not show the jobs extended properties.
         ---------------     --------------------------------------------------------------------
-        get_holds           Optional Boolean. If set to true will show the jobs holds.
+        get_holds           Optional Boolean. If set to false will not show the jobs holds.
         ===============     ====================================================================
 
         :return:
