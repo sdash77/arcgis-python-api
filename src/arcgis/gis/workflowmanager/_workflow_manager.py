@@ -376,7 +376,7 @@ class JobManager:
         ===================         ====================================================================
 
         :return:
-            List of newly create job ids
+            List of newly created job ids
 
         """
         location_obj = location
@@ -505,9 +505,9 @@ class JobManager:
         ---------------     --------------------------------------------------------------------
         id                  Required string. Job ID
         ---------------     --------------------------------------------------------------------
-        get_ext_props       Optional Boolean. If set to false will not show the jobs extended properties.
+        get_ext_props       Optional Boolean. If set to false the object will not include the jobs extended properties.
         ---------------     --------------------------------------------------------------------
-        get_holds           Optional Boolean. If set to false will not show the jobs holds.
+        get_holds           Optional Boolean. If set to false the object will not include the jobs holds.
         ===============     ====================================================================
 
         :return:
