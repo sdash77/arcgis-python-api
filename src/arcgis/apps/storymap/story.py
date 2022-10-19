@@ -1176,6 +1176,203 @@ class StoryMap(object):
         return clone_story.save()
 
     # ----------------------------------------------------------------------
+    def copy_content(self, target_story: StoryMap, node_list: list):
+        """
+        Copy the content from one story to another. This will copy the content
+        indicated to the target story in the order they are provided. To change the
+        order once the nodes are copied, use the `move()` method on the target story.
+
+        .. note::
+            Do not forget to save the target story once you are done copying and making
+            any further edits.
+
+        .. note::
+            This method can take time depending on the number of resources. Each resource coming
+            from a file must be copied over and heavy files, such as videos or audio, can be time
+            consuming.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        target_story        Required StoryMap instance. The target story that the content will be
+                            copied to.
+        ---------------     --------------------------------------------------------------------
+        node_list           Required list of strings. The list of node ids indicating the content
+                            that will be copied to the target story.
+        ===============     ====================================================================
+
+        :return:
+            True if all nodes have been successfully copied over.
+
+        """
+        # Step 1: Do Checks
+        # Check that nodes exist in original story (children of source story contain all of node_list)
+        story_children = self._properties["nodes"][self._properties["root"]]["children"]
+        check = all(node in story_children for node in node_list)
+        # Return an error if not all nodes are in the source story.
+        if check is False:
+            not_in_story = []
+            for node in node_list:
+                if node not in story_children:
+                    not_in_story.append(node)
+            raise ValueError(
+                "These nodes are not in the story: "
+                + str(not_in_story)
+                + ". Please check that the correct node ids are provided."
+            )
+
+        # Step 2: Create dictionaries for copying
+
+        # Create node dict of all nodes to add, resource dict, and complete node list
+        # Depending on node type, need to take different route to find all children
+        original_nodes = node_list
+        complete_node_list = []
+        complete_node_dict = {}
+        complete_resource_dict = {}
+        resource_files = {}
+        has_children = True
+
+        # internal method to add to correct places
+        def _add_to_dicts(node_add, comp_list, comp_node_dict, comp_res_dict):
+            # add to complete list of nodes
+            comp_list.append(node_add)
+            # get the dictionary
+            node_dict = self._properties["nodes"][node_add]
+            comp_node_dict[node_add] = node_dict
+
+            # find the resource node to add associated with node
+            if "data" in node_dict:
+                # iterate through values of dict to find any resources
+                for _, value in node_dict["data"].items():
+                    if isinstance(value, list):
+                        for im in value:
+                            # express maps keep their images in a list
+                            _add_to_resources(im, comp_res_dict)
+                    else:
+                        _add_to_resources(value, comp_res_dict)
+
+        def _add_to_resources(value, comp_res_dict):
+            if isinstance(value, str):
+                # check if value is a resource
+                if "r-" in value:
+                    resource_node = value
+                    # get the resource dict
+                    resource_dict = self._properties["resources"][resource_node]
+                    comp_res_dict[resource_node] = resource_dict
+                    if "resourceId" in resource_dict["data"]:
+                        # some nodes keep the resource under resourceId key
+                        name = resource_dict["data"]["resourceId"]
+                        # get the resource file to add to new story
+                        resource_file = self._item.resources.get(name)
+                        resource_files[name] = resource_file
+                    elif "itemId" in resource_dict["data"]:
+                        name = resource_dict["data"]["itemId"]
+                        # express map keeps resource under itemId key
+                        if name.endswith(".json"):
+                            # need to add draft_ in front to be one-to-one with builder
+                            name = "draft_" + resource_dict["data"]["itemId"]
+                            # get the json file draft
+                            resource_file = self._item.resources.get(name)
+                            resource_files[name] = resource_file
+
+        # Begin populating dicts and list, assume there are children to begin with.
+        while has_children is True:
+            # new list of nodes to check at next iteration
+            new_nodes = []
+            for node in node_list:
+                # add node info for copying
+                _add_to_dicts(
+                    node, complete_node_list, complete_node_dict, complete_resource_dict
+                )
+                # check type of node to see if need to find children
+                node_children = self._has_children(node)
+                # populate new list with next nodes to add
+                if node_children:
+                    for child in node_children:
+                        new_nodes.append(child)
+            # if list is not empty, keep going
+            if new_nodes:
+                has_children = True
+                node_list = new_nodes
+            # once list is empty, all children have been accounted for
+            else:
+                has_children = False
+
+        # Step 3: Make any changes before copying over
+        # existing target story node ids
+        target_story_nodes = list(target_story._properties["nodes"].keys())
+
+        if any(node in target_story_nodes for node in complete_node_list):
+            # find the node and change it everywhere
+            for node in complete_node_list:
+                if node in target_story_nodes:
+                    new_node = "n-" + uuid.uuid4().hex[0:6]
+                    # replace node with new node in all places
+                    # in the list passed in, if present
+                    original_nodes = [s.replace(node, new_node) for s in original_nodes]
+                    # in the dictionary of all nodes to copy
+                    for key, value in complete_node_dict.items():
+                        if key == node:
+                            # replace old node id with new node id in keys
+                            complete_node_dict[new_node] = complete_node_dict.pop(key)
+                        if "children" in value:
+                            # replace old node id with new node id if child of another node
+                            if node in value["children"]:
+                                complete_node_dict[key]["children"] = [
+                                    s.replace(node, new_node) for s in value["children"]
+                                ]
+
+        # Step 4: Copy nodes to target story
+        for key, value in complete_node_dict.items():
+            target_story._properties["nodes"][key] = value
+        for key, value in complete_resource_dict.items():
+            target_story._properties["resources"][key] = value
+        for key, value in resource_files.items():
+            try:
+                target_story._add_resource(file=value, resource_name=key)
+            except:
+                # express map, image editor, other created files will be here
+                text = json.dumps(value)
+                target_story._add_resource(resource_name=key, text=text)
+
+        # Step 5: Add the node list to the story children
+        for main_node in original_nodes:
+            target_story._add_child(main_node)
+        return True
+
+    # ----------------------------------------------------------------------
+    def _has_children(self, node):
+        """
+        Check if node has children and return list of children else None.
+        """
+        node_class = self._assign_node_class(node)
+        if (
+            isinstance(node_class, Content.Sidecar)
+            or isinstance(node_class, Content.Gallery)
+            or isinstance(node_class, Content.Timeline)
+        ):
+            return self._properties["nodes"][node]["children"]
+        elif isinstance(node_class, Content.Swipe):
+            return list(self._properties["nodes"][node]["data"]["contents"].values())
+        elif isinstance(node_class, Content.MapTour):
+            mt = self.get(node)
+            return mt._children
+        elif isinstance(node_class, str):
+            if (
+                "immersive" in node_class.lower()
+                or "credits" in node_class.lower()
+                or "event" in node_class.lower()
+                or "carousel" in node_class.lower()
+            ):
+                return (
+                    self._properties["nodes"][node]["children"]
+                    if "children" in self._properties["nodes"][node]
+                    else None
+                )
+        else:
+            return None
+
+    # ----------------------------------------------------------------------
     def _delete(self, node_id):
         # Check if node is in story
         if node_id not in self._properties["nodes"]:
@@ -1306,6 +1503,8 @@ class StoryMap(object):
             node = Content.Gallery(story=self, node_id=node_id)
         elif node_type == "timeline":
             node = Content.Timeline(self, node_id)
+        elif node_type == "tour":
+            node = Content.MapTour(self, node_id)
         elif node_type == "immersive":
             # immersive has subtype sidecar (more to add later)
             subtype = self._properties["nodes"][node_id]["data"]["type"]

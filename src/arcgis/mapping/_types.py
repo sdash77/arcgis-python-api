@@ -14,6 +14,7 @@ from arcgis.auth.tools import LazyLoader
 collections = LazyLoader("collections")
 json = LazyLoader("json")
 os = LazyLoader("os")
+pathlib = LazyLoader("pathlib")
 tempfile = LazyLoader("tempfile")
 time = LazyLoader("time")
 datetime = LazyLoader("datetime")
@@ -321,7 +322,9 @@ class WebMap(HasTraits, collections.OrderedDict):
         return json.dumps(self, default=_utils._date_handler)
 
     def add_table(
-        self, table: _arcgis_features.Table, options: Optional[dict[str, Any]] = None
+        self,
+        table: _arcgis_features.Table,
+        options: Optional[dict[str, Any]] = None,
     ):
         """
         Adds the given Table to the ``WebMap``.
@@ -985,6 +988,126 @@ class WebMap(HasTraits, collections.OrderedDict):
         # endregion
         return new_layer
 
+    def update_drawing_info(
+        self,
+        layer: Union[dict, FeatureLayer],
+        label_info: list[dict] = None,
+        renderer: dict = None,
+        transparency: int = None,
+        show_labels: bool = None,
+    ):
+        """
+        Method to alter a WebMap layer's drawing info. Works for standalone layers and individual layers found
+        within group layers. Allows for a user to manually add their own renderers and label classes, toggle whether
+        the labels are visible, and control the transparency of a layer. Useful in tandem with the map widget,
+        allowing for style changes without opening the online map viewer.
+
+        .. note::
+            In order to save changes made through this method, call ``WebMap.update()`` or ``WebMap.save()``.
+
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        layer                   Required :class:`~arcgis.features.FeatureLayer` or Feature Layer
+                                dictionary. The existing WebMap layer to be changed.
+
+                                .. note::
+                                    In order for this method to work, the layer must be set to
+                                    have its properties stored in the web map, not the source layer.
+                                    This is the default setting, and can be confirmed or changed in
+                                    the online Map Viewer. (Layer properties -> information)
+        ------------------      --------------------------------------------------------------------
+        label_info              Optional list of dictionaries. Each dictionary in the list
+                                corresponds to a label class. Determines labeling conventions of the
+                                passed layer.
+        ------------------      --------------------------------------------------------------------
+        renderer                Optional dictonary. Can be manually constructed or the output of
+                                ``generate_renderer()``. Determines the layer style of the passed
+                                layer.
+        ------------------      --------------------------------------------------------------------
+        transparency            Optional int. Determines transparency/opacity of the layer on 0-100
+                                scale, with 0 being fully opaque and 100 being fully transparent.
+        ------------------      --------------------------------------------------------------------
+        show_labels             Optional boolean. Determines whether the layer labels are visible or
+                                not.
+        ==================      ====================================================================
+
+        *Hint:*
+
+        Accessing the layers of your Webmap allows you to view the current renderer and label info dictionaries,
+        allowing you to easily copy them and amend the desired details.
+
+        **Example**
+
+        .. code-block:: python
+
+            # Create Webmap from webmap item, choose a layer to edit
+            wm = WebMap(<wm_item_id>)
+            change_layer = wm.layers[0]
+
+            # Specify renderer dictionary and labeling info dictionary/dictionaries
+            rend = {
+                "type": "simple",
+                "symbol": {
+                    "type": "esriSLS",
+                    "color": [200, 50, 0, 250],
+                    "width": 1,
+                    "style": "esriSLSSolid"
+                }
+            }
+
+            label = [
+                {
+                    "labelExpression": "[llid]",
+                    "labelExpressionInfo": {"expression": "$feature[\"llid\"]"},
+                    "labelPlacement": "esriServerLinePlacementCenterAlong",
+                    "maxScale": 0,
+                    "minScale": 2311163,
+                    "repeatLabel": True,
+                    "symbol": {
+                        "type": "esriTS",
+                        "color": [0, 105, 0, 255],
+                        "font": {"family": "Arial", "size": 9.75},
+                        "horizontalAlignment": "center",
+                        "kerning": True,
+                        "haloColor": [211, 211, 211, 250],
+                        "haloSize": 1,
+                        "rotated": False,
+                        "text": "",
+                        "verticalAlignment": "baseline",
+                        "xoffset": 0,
+                        "yoffset": 0,
+                        "angle": 0
+                    }
+                }
+            ]
+
+            # Call the function. This automatically updates the Webmap info
+            wm.update_drawing_info(
+                change_layer,
+                label_info = label,
+                renderer = rend,
+                transparency = 40,
+                show_labels = True,
+            )
+        """
+
+        if "layerDefinition" not in layer:
+            layer["layerDefinition"] = {"drawingInfo": {}}
+        if "drawingInfo" not in layer["layerDefinition"]:
+            layer["layerDefinition"]["drawingInfo"] = {}
+        if show_labels is not None:
+            layer["showLabels"] = show_labels
+        if transparency is not None:
+            layer["opacity"] = 1 - transparency / 100
+        if label_info is not None:
+            layer["layerDefinition"]["drawingInfo"]["labelingInfo"] = label_info
+        if renderer is not None:
+            layer["layerDefinition"]["drawingInfo"]["renderer"] = renderer
+
+        copy_dict = dict(layer)
+        self.update_layer(copy_dict)
+
     def update_layer(self, layer: Union[dict, FeatureLayer]):
         """
         To update the layer dictionary for a layer in the map. For example, to update the renderer dictionary for a layer
@@ -1005,6 +1128,7 @@ class WebMap(HasTraits, collections.OrderedDict):
         ==================      ====================================================================
 
         .. code-block:: python
+
             # Create Webmap from webmap item
             wm = WebMap(<wm_item_id>)
 
@@ -1023,12 +1147,26 @@ class WebMap(HasTraits, collections.OrderedDict):
             # Need to remove to re-create the layer view correctly
             layer = self._create_layer_definition(layer, None)
         # Find the layer to update based on the id of the layer passed in.
-        lyr_dict = self.get_layer(layer["itemId"])
-        # Get the index so we update the observable list at the correct position.
-        lyr_idx = self._webmapdict["operationalLayers"].index(lyr_dict)
+        lyr_dict = self.get_layer(layer_id=layer["id"])
 
-        # Update the observable list, this triggers webmap to render new layer.
-        self._webmapdict["operationalLayers"][lyr_idx] = layer
+        # Get the index so we update the observable list at the correct position.
+        # Once we have the index, update the observable list.
+        try:
+            lyr_idx = self._webmapdict["operationalLayers"].index(lyr_dict)
+            self._webmapdict["operationalLayers"][lyr_idx] = layer
+
+        # In case the layer is within a group layer
+        except ValueError:
+            # temp_dict = self._webmapdict
+            for item in self._webmapdict["operationalLayers"]:
+                if (item["layerType"] == "GroupLayer") and (lyr_dict in item["layers"]):
+                    grp_idx = self._webmapdict["operationalLayers"].index(item)
+                    lyr_idx = item["layers"].index(lyr_dict)
+                    # need to make a copy so observable list picks it up
+                    grp_copy = self._webmapdict["operationalLayers"][grp_idx]
+                    grp_copy["layers"][lyr_idx] = layer
+                    self._webmapdict["operationalLayers"][grp_idx] = grp_copy
+                    break
 
         # Update the layers property
         if "operationalLayers" in self._webmapdict:
@@ -1794,7 +1932,8 @@ class WebMap(HasTraits, collections.OrderedDict):
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         item_id                Optional string. Pass the item_id for the operational layer you are trying
-                               to reference in the ``WebMap``.
+                               to reference in the ``WebMap``. Note: Not recommended if using multiple
+                               layers from the same original item.
         ------------------     --------------------------------------------------------------------
         title                  Optional string. Pass the title for the operational layer you are trying
                                to reference in the ``WebMap``.
@@ -1809,12 +1948,21 @@ class WebMap(HasTraits, collections.OrderedDict):
             raise ValueError("Please pass at least one parameter into the function")
         if self.layers:
             for layer in self.layers:
+                # some layers may be group layers, so explore their layer array
+                if layer["layerType"] == "GroupLayer":
+                    for sublayer in layer["layers"]:
+                        if (
+                            (title == sublayer["title"])
+                            or (layer_id == sublayer["id"])
+                            or (item_id == sublayer["itemId"])
+                        ):
+                            return sublayer
                 # item id is optional in the webmap spec, so we need to try/except
                 try:
                     if (
                         (title == layer["title"])
                         or (layer_id == layer["id"])
-                        or (item_id == layer["itemId"])
+                        or (item_id == sublayer["itemId"])
                     ):
                         return layer
                 except Exception:
@@ -2213,6 +2361,9 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         :return: A float representing the height of the widget
         """
+        raise Warning(
+            "This property is no longer supported and does not operate on the resource."
+        )
         return self._height
 
     @height.setter
@@ -2240,6 +2391,9 @@ class WebMap(HasTraits, collections.OrderedDict):
 
         :return: A float representing the width of the widget
         """
+        raise Warning(
+            "This property is no longer supported and does not operate on the resource."
+        )
         return self._width
 
     @width.setter
@@ -3878,7 +4032,9 @@ class OfflineMapAreaManager(object):
 
     # ----------------------------------------------------------------------
     def update(
-        self, offline_map_area_items: Optional[list] = None, future: bool = False
+        self,
+        offline_map_area_items: Optional[list] = None,
+        future: bool = False,
     ):
         """
         The ``update`` method refreshes existing map area packages associated with the list of ``Map Area`` items
@@ -4283,7 +4439,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
                                             )
         """
         # Parameters depend on how the vector tile layer was published.
-        feature_service_pub = True if self._source_type is "FeatureServer" else False
+        feature_service_pub = True if self._source_type == "FeatureServer" else False
 
         params = {
             "f": "json",
@@ -4352,7 +4508,7 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
             <Dictionary>
         """
         # Parameters depend on how the vector tile layer was published.
-        feature_service_pub = True if self._source_type is "FeatureServer" else False
+        feature_service_pub = True if self._source_type == "FeatureServer" else False
 
         params = {"f": "json"}
         if feature_service_pub:
@@ -4526,6 +4682,141 @@ class VectorTileLayerManager(arcgis.gis._GISResource):
             url = self._url + "/delete"
             return self._con.post(url, params)
         return None
+
+
+###########################################################################
+class SymbolService:
+    """
+    Symbol service is an ArcGIS Server utility service that provides access
+    to operations to build and generate images for Esri symbols to be
+    consumed by internal and external web applications.
+    """
+
+    _url = None
+    _gis = None
+    _properties = None
+
+    def __init__(self, url: str, gis: arcgis.gis.GIS = None):
+        self._url = url
+        if gis is None:
+            gis = arcgis.env.active_gis
+        self._gis = gis
+
+    @property
+    def properties(self) -> dict[str, Any]:
+        """returns the service's properties"""
+        if self._properties is None:
+
+            self._properties = arcgis._impl.common._isd.InsensitiveDict(
+                self._gis._con.get(self._url, {"f": "json"})
+            )
+        return self._properties
+
+    def generate_symbol(self, svg: str) -> dict:
+        """converts an SVG Image to a CIM Compatible Image"""
+        url = f"{self._url}/generateSymbol"
+        params = {"f": "json"}
+        files = {"svgImage": svg}
+        return self._gis._con.post_multipart(url, params, files=files)
+
+    def generate_image(
+        self,
+        item: Item,
+        name: str | None = None,
+        dict_features: dict[str, Any] | None = None,
+        size: str = "200,200",
+        scale: float = 1,
+        anchor: bool = False,
+        image_format: str = "png",
+        dpi: int = 96,
+        file_path: str | pathlib.Path = None,
+    ) -> str:
+        """
+        Returns a single symbol based on a web style item.
+
+        ============================    ===================================================================================================================
+        **Argument**                    **Description**
+        ----------------------------    -------------------------------------------------------------------------------------------------------------------
+        item                            Required Item. The web style ArcGIS Enterprise portal item ID. The web style must belong to the same organization
+                                        the ArcGIS Server is federated to.
+        ----------------------------    -------------------------------------------------------------------------------------------------------------------
+        name                            Optional String. The web style ArcGIS Enterprise portal item ID. The web style must belong to the same organization
+                                        the ArcGIS Server is federated to.
+        ----------------------------    -------------------------------------------------------------------------------------------------------------------
+        dict_features                   Optional dict[str, Any]. The attributes and configuration key and value pairs for dictionary-based styles.
+        ----------------------------    -------------------------------------------------------------------------------------------------------------------
+        size                            Optional String. The size (width and height) of the exported image in pixels. If the size is not specified, the
+                                        image will be constrained by the requested symbol's size.
+        ----------------------------    -------------------------------------------------------------------------------------------------------------------
+        scale                           Optional Float. A value of 1.0 implies the symbol is not scaled. Setting the value to 1.5 scales the image to 50
+                                        percent more than the image's original size. Settings the value to 0.5 reduces the image's original size by 50
+                                        percent.
+                                        If both the size and scale parameters are specified, both changes will be honored; the symbol will be scaled to the
+                                        value set for scale and resized to the value set for the size parameter.
+        ----------------------------    -------------------------------------------------------------------------------------------------------------------
+        anchor                          Optional Bool. The symbol placement in the image. When set to true, the original symbol anchor point placement in
+                                        the image is honored. When set to false, the symbol is centered to the image. Having the image centered can be
+                                        useful if you want to preview the whole symbol without taking symbol offset or anchor points into account. The
+                                        default value is false.
+        ----------------------------    -------------------------------------------------------------------------------------------------------------------
+        image_format                    Optional String. The output image format. The default format is png. The allowed values are: png, png8, png24,
+                                        png32, jpg, bmp, gif, svg, and svgz.
+        ----------------------------    -------------------------------------------------------------------------------------------------------------------
+        dpi                             Optional Int. The device resolution of the exported image (dots per inch). If the dpi value is not specified, an
+                                        image with a default DPI of 96 will be exported.
+        ----------------------------    -------------------------------------------------------------------------------------------------------------------
+        file_path                       Optional String | pathlib.Path. The full save path with the file name to the save location.  The folder must exist.
+        ============================    ===================================================================================================================
+
+        :return: String
+
+        """
+        save_file_name: str = None
+        save_folder: str = None
+        if file_path:
+
+            save_folder, save_file_name = os.path.dirname(file_path), os.path.basename(
+                file_path
+            )
+        else:
+            save_folder, save_file_name = (
+                tempfile.gettempdir(),
+                f"symbol_file.{image_format}",
+            )
+        if name is None and dict_features is None:
+            raise ValueError("A name or dict_features must be provided.")
+        image_formats: list[str] = [
+            "png",
+            "png8",
+            "png24",
+            "png32",
+            "jpg",
+            "bmp",
+            "gif",
+            "svg",
+            "svgz",
+        ]
+        if image_format.lower() not in image_formats:
+            raise ValueError(f"Invalid image format: {image_format}")
+        params: dict[str, Any] = {
+            "webstyle": item.itemid,
+            "symbolName": name or "",
+            "dictionaryFeatures": dict_features or "",
+            "size": size,
+            "scaleFactor": scale,
+            "centerAnchorPoint": anchor,
+            "dpi": dpi,
+            "f": "image",
+            "imageFormat": image_format,
+        }
+        url: str = f"{self._url}/generateImage"
+        return self._gis._con.get(
+            url,
+            params,
+            try_json=False,
+            file_name=save_file_name,
+            out_folder=save_folder,
+        )
 
 
 ###########################################################################
@@ -5024,7 +5315,7 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         Before executing this operation, you will need to make certain the following prerequisites are met:
 
         - Upload the TPK you wish to merge with the existing service, take note of its item ID.
-        - Make certain that the uploaded TPK item's tiling scheme matches with the service you wish to import into.
+        - Make certain that the uploaded TPK, TPKX item's tiling scheme matches with the service you wish to import into.
         - The source service LOD's should include all the LOD's that are part of the imported TPK item. For example, if the source service has tiles from levels 0 through 10, you can import tiles only within these levels and not above it.
 
 
@@ -5091,7 +5382,10 @@ class MapImageLayerManager(arcgis.gis._GISResource):
             params["sourceItemId"] = item.itemid
         else:
             raise ValueError("The `item` must be a string or Item")
-        url = self._url + "/importTiles"
+        if self._gis.version >= [10, 3]:
+            url = self._url + "/import"
+        else:
+            url = self._url + "/importTiles"
         res = self._con.post(url, params)
         return res
 
@@ -5160,7 +5454,11 @@ class MapImageLayerManager(arcgis.gis._GISResource):
             <Dictionary>
         """
         if self._gis._portal.is_arcgisonline:
-            url = "%s/updateTiles" % self._url
+            if self._gis.version >= [10, 3]:
+                url = "%s/update" % self._url
+            else:
+                url = "%s/updateTiles" % self._url
+
             params = {
                 "f": "json",
                 "mergeBundle": merge,
@@ -5360,7 +5658,9 @@ class MapImageLayer(arcgis.gis.Layer):
         self._populate_layers()
         self._admin = None
         try:
-            from arcgis.gis.server._service._adminfactory import AdminServiceGen
+            from arcgis.gis.server._service._adminfactory import (
+                AdminServiceGen,
+            )
 
             self.service = AdminServiceGen(service=self, gis=gis)
         except:
@@ -6105,7 +6405,11 @@ class MapImageLayer(arcgis.gis.Layer):
 
     # ----------------------------------------------------------------------
     def generate_kml(
-        self, save_location: str, name: str, layers: str, options: str = "composite"
+        self,
+        save_location: str,
+        name: str,
+        layers: str,
+        options: str = "composite",
     ):
         """
         The ``generate_Kml`` operation is performed on a map service resource.

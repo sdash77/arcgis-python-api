@@ -1430,6 +1430,9 @@ def prepare_data(
     if type(path) is str:
         path = Path(path)
 
+    if batch_size == None:
+        batch_size = 2
+
     databunch_kwargs = {"num_workers": 0} if sys.platform == "win32" else {}
     databunch_kwargs["bs"] = batch_size
 
@@ -1878,6 +1881,7 @@ def prepare_data(
                 data = (
                     ArcGISInstanceSegmentationItemList.from_folder(path / "images")
                     .filter_by_func(remove_image_without_label)
+                    .check_class_imbalance(get_mask_label_value, stratify=True)
                     .label_list_from_func(get_mask_label_value)
                     .stratified_split_by_pct(val_split_pct, seed=seed)
                     .label_from_func(
@@ -1893,6 +1897,7 @@ def prepare_data(
                 data = (
                     ArcGISInstanceSegmentationItemList.from_folder(path / "images")
                     .filter_by_func(remove_image_without_label)
+                    .check_class_imbalance(get_mask_label_value, stratify=False)
                     .split_by_rand_pct(val_split_pct, seed=seed)
                     .label_from_func(
                         get_y_func,
@@ -1913,11 +1918,15 @@ def prepare_data(
                 src = ArcGISInstanceSegmentationItemList.from_df(images_df, "images")
                 src.items = images_df[images_df.columns[0]].values
                 if kwargs.get("stratify") == True:
-                    src = src.label_list_from_func(
-                        get_mask_label_value
-                    ).stratified_split_by_pct(val_split_pct, seed=seed)
+                    src = (
+                        src.check_class_imbalance(get_mask_label_value, stratify=True)
+                        .label_list_from_func(get_mask_label_value)
+                        .stratified_split_by_pct(val_split_pct, seed=seed)
+                    )
                 else:
-                    src = src.split_by_rand_pct(val_split_pct, seed=seed)
+                    src = src.check_class_imbalance(
+                        get_mask_label_value, stratify=False
+                    ).split_by_rand_pct(val_split_pct, seed=seed)
 
                 if len(images_df.columns) > 1:
                     src = src.label_from_df(
@@ -1973,6 +1982,7 @@ def prepare_data(
                     src = (
                         ArcGISInstanceSegmentationItemList(np.concatenate(imageslist))
                         .filter_by_func(remove_image_without_label)
+                        .check_class_imbalance(get_mask_label_value, stratify=True)
                         .label_list_from_func(get_mask_label_value)
                         .stratified_split_by_pct(val_split_pct, seed=seed)
                         .label_from_func(
@@ -1988,6 +1998,7 @@ def prepare_data(
                     src = (
                         ArcGISInstanceSegmentationItemList(np.concatenate(imageslist))
                         .filter_by_func(remove_image_without_label)
+                        .check_class_imbalance(get_mask_label_value, stratify=False)
                         .split_by_rand_pct(val_split_pct, seed=seed)
                         .label_from_func(
                             get_y_func,
@@ -2149,6 +2160,9 @@ def prepare_data(
                 data = (
                     ArcGISSegmentationItemList.from_folder(path / "images")
                     .filter_by_func(remove_image_without_label)
+                    .check_class_imbalance(
+                        get_label_pixels, class_mapping, stratify=True
+                    )
                     .label_list_from_func(get_label_pixels)
                     .stratified_split_by_pct(val_split_pct, seed=seed)
                     .label_from_func(
@@ -2162,6 +2176,9 @@ def prepare_data(
                 data = (
                     ArcGISSegmentationItemList.from_folder(path / "images")
                     .filter_by_func(remove_image_without_label)
+                    .check_class_imbalance(
+                        get_label_pixels, class_mapping, stratify=False
+                    )
                     .split_by_rand_pct(val_split_pct, seed=seed)
                     .label_from_func(
                         get_y_func,
@@ -2180,11 +2197,17 @@ def prepare_data(
                 src = ArcGISSegmentationItemList.from_df(images_df, "images")
                 src.items = images_df[images_df.columns[0]].values
                 if kwargs.get("stratify") == True:
-                    src = src.label_list_from_func(
-                        get_label_pixels
-                    ).stratified_split_by_pct(val_split_pct, seed=seed)
+                    src = (
+                        src.check_class_imbalance(
+                            get_label_pixels, class_mapping, stratify=True
+                        )
+                        .label_list_from_func(get_label_pixels)
+                        .stratified_split_by_pct(val_split_pct, seed=seed)
+                    )
                 else:
-                    src = src.split_by_rand_pct(val_split_pct, seed=seed)
+                    src = src.check_class_imbalance(
+                        get_label_pixels, class_mapping, stratify=False
+                    ).split_by_rand_pct(val_split_pct, seed=seed)
                 if len(images_df.columns) > 1:
                     src = src.label_from_df(
                         class_mapping=class_mapping,
@@ -2211,6 +2234,9 @@ def prepare_data(
                     src = (
                         ArcGISSegmentationItemList(np.concatenate(imageslist))
                         .filter_by_func(remove_image_without_label)
+                        .check_class_imbalance(
+                            get_label_pixels, class_mapping, stratify=True
+                        )
                         .label_list_from_func(get_label_pixels)
                         .stratified_split_by_pct(val_split_pct, seed=seed)
                         .label_from_func(
@@ -2224,6 +2250,9 @@ def prepare_data(
                     src = (
                         ArcGISSegmentationItemList(np.concatenate(imageslist))
                         .filter_by_func(remove_image_without_label)
+                        .check_class_imbalance(
+                            get_label_pixels, class_mapping, stratify=False
+                        )
                         .split_by_rand_pct(val_split_pct, seed=seed)
                         .label_from_func(
                             get_y_func,
@@ -2303,6 +2332,7 @@ def prepare_data(
                 data = (
                     ObjectDetectionItemList.from_folder(path / "images")
                     .filter_by_func(remove_image_without_label)
+                    .check_class_imbalance(get_y_func, stratify=True)
                     .label_list_from_func(get_label_value)
                     .stratified_split_by_pct(val_split_pct, seed=seed)
                     .label_from_func(get_y_func)
@@ -2311,6 +2341,7 @@ def prepare_data(
                 data = (
                     ObjectDetectionItemList.from_folder(path / "images")
                     .filter_by_func(remove_image_without_label)
+                    .check_class_imbalance(get_y_func, stratify=False)
                     .split_by_rand_pct(val_split_pct, seed=seed)
                     .label_from_func(get_y_func)
                 )
@@ -2320,14 +2351,17 @@ def prepare_data(
                 src.items = images_df[images_df.columns[0]].values
                 if kwargs.get("stratify") == True:
                     src = (
-                        src.label_list_from_func(get_label_value)
+                        src.check_class_imbalance(get_y_func, stratify=True)
+                        .label_list_from_func(get_label_value)
                         .stratified_split_by_pct(val_split_pct, seed=seed)
                         .label_from_func(get_y_func)
                     )
                 else:
-                    src = src.split_by_rand_pct(
-                        val_split_pct, seed=seed
-                    ).label_from_func(get_y_func)
+                    src = (
+                        src.check_class_imbalance(get_y_func, stratify=False)
+                        .split_by_rand_pct(val_split_pct, seed=seed)
+                        .label_from_func(get_y_func)
+                    )
             else:
                 # MultiFolder Training
                 imageslist = []
@@ -2341,6 +2375,7 @@ def prepare_data(
                     src = (
                         ObjectDetectionItemList(np.concatenate(imageslist))
                         .filter_by_func(remove_image_without_label)
+                        .check_class_imbalance(get_y_func, stratify=True)
                         .label_list_from_func(get_label_value)
                         .stratified_split_by_pct(val_split_pct, seed=seed)
                         .label_from_func(get_y_func)
@@ -2349,6 +2384,7 @@ def prepare_data(
                     src = (
                         ObjectDetectionItemList(np.concatenate(imageslist))
                         .filter_by_func(remove_image_without_label)
+                        .check_class_imbalance(get_y_func, stratify=False)
                         .split_by_rand_pct(val_split_pct, seed=seed)
                         .label_from_func(get_y_func)
                     )
@@ -2420,6 +2456,7 @@ def prepare_data(
             if dataset_type == "Labeled_Tiles" and kwargs.get("stratify") != False:
                 data = (
                     ArcGISImageList.from_folder(path / "images")
+                    .check_class_imbalance(get_y_func, stratify=True)
                     .label_list_from_func(get_y_func, val_split_pct)
                     .stratified_split_by_pct(val_split_pct, seed=seed)
                     .label_from_func(get_y_func)
@@ -2427,6 +2464,7 @@ def prepare_data(
             elif dataset_type == "Imagenet" and kwargs.get("stratify") == True:
                 data = (
                     ArcGISImageList.from_folder(path / "images")
+                    .check_class_imbalance(get_y_func, stratify=True)
                     .label_list_from_func(get_y_func, val_split_pct)
                     .stratified_split_by_pct(val_split_pct, seed=seed)
                     .label_from_func(get_y_func)
@@ -2434,6 +2472,7 @@ def prepare_data(
             else:
                 data = (
                     ArcGISImageList.from_folder(path / "images")
+                    .check_class_imbalance(get_y_func, stratify=False)
                     .split_by_rand_pct(val_split_pct, seed=seed)
                     .label_from_func(get_y_func)
                 )
@@ -2444,14 +2483,17 @@ def prepare_data(
                 src.items = images_df[images_df.columns[0]].values
                 if kwargs.get("stratify") == True:
                     src = (
-                        src.label_list_from_func(get_y_func, val_split_pct)
+                        src.check_class_imbalance(get_y_func, stratify=True)
+                        .label_list_from_func(get_y_func, val_split_pct)
                         .stratified_split_by_pct(val_split_pct, seed=seed)
                         .label_from_func(get_y_func)
                     )
                 else:
-                    src = src.split_by_rand_pct(
-                        val_split_pct, seed=seed
-                    ).label_from_func(get_y_func)
+                    src = (
+                        src.check_class_imbalance(get_y_func, stratify=False)
+                        .split_by_rand_pct(val_split_pct, seed=seed)
+                        .label_from_func(get_y_func)
+                    )
             else:
                 # MultiFolder Training
                 imageslist = []
@@ -2462,6 +2504,7 @@ def prepare_data(
                 if kwargs.get("stratify") != False:
                     src = (
                         ArcGISImageList(np.concatenate(imageslist))
+                        .check_class_imbalance(get_y_func, stratify=True)
                         .label_list_from_func(get_y_func, val_split_pct)
                         .stratified_split_by_pct(val_split_pct, seed=seed)
                         .label_from_func(get_y_func)
@@ -2469,6 +2512,7 @@ def prepare_data(
                 else:
                     src = (
                         ArcGISImageList(np.concatenate(imageslist))
+                        .check_class_imbalance(get_y_func, stratify=False)
                         .split_by_rand_pct(val_split_pct, seed=seed)
                         .label_from_func(get_y_func)
                     )

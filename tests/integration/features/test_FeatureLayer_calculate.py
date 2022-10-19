@@ -3,7 +3,6 @@ import sys
 import unittest
 import concurrent.futures
 
-import pytest
 
 # sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_fl_108_calculate\src")
 from arcgis.gis import GIS, ContentManager
@@ -90,3 +89,8 @@ class TestFeatureLayerCalculate(unittest.TestCase):
                 assert pitem.delete()
                 assert add_item.delete()
                 del gis
+
+
+if __name__ == "__main__":
+
+    unittest.main()

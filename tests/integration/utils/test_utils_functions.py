@@ -1,6 +1,5 @@
 import sys
 import unittest
-import pytest
 
 from arcgis._impl.common._utils import (
     create_uid,

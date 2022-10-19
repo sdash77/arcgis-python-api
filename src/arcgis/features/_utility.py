@@ -674,7 +674,7 @@ class UtilityNetworkManager(object):
                                                     parameters. See `trace` method to get parameters.
         ====================================        ====================================================================
 
-        :return: Boolean. True if successful else False.
+        :return: Dictionary of the JSON response.
 
         """
         url = "%s/updateSubnetwork" % self._url
@@ -689,7 +689,7 @@ class UtilityNetworkManager(object):
             "continueOnFailure": continue_on_failure,
             "traceConfiguration": trace_configuration,
         }
-        return self._con.post(url, params)["success"]
+        return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
     def validate_topology(
@@ -771,10 +771,7 @@ class UtilityNetworkManager(object):
         }
         if self._gis.version >= [9, 2]:
             params["validateSet"] = validate_set
-        if run_async == False:
-            return self._con.post(url, params)["success"]
-        else:
-            return self._con.post(url, params)
+        return self._con.post(url, params)
 
     # ----------------------------------------------------------------------
     @deprecated(deprecated_in="2.1.0", removed_in=None, current_version="2.1.0")

@@ -158,7 +158,7 @@ class NotebookManager(object):
         machines, you can use the Task Scheduler app.
 
         .. note::
-            To run this operation in ArcGIS Enterprise, you must log in with 
+            To run this operation in ArcGIS Enterprise, you must log in with
             an Enterprise account. You cannot execute notebooks using the
             ArcGIS Notebook Server primary site administrator account.
 
@@ -202,18 +202,18 @@ class NotebookManager(object):
                  Call ``result()`` to get the response
 
         .. code-block:: python
-        
+
             # Usage Example:
-            
+
             >>> from arcgis.gis import GIS
             >>> gis = GIS("home")
             >>> nb_server = gis.notebook_server[0]
-            
+
             >>> notebook_item = gis.content.get('<notebook_item_id>')
-            
+
             >>> nb_mgr = nb_server.notebooks
             >>> nb_mgr.execute_notebook(notebook_item)
-            
+
         """
         from arcgis.gis import Item
 
@@ -236,12 +236,16 @@ class NotebookManager(object):
             def _fn(url, params, nbs):
                 import time
 
-                resp = self._gis._con.post(url, params)
-                if "status" in resp and resp["status"] == "success":
-                    job_id = resp["jobId"]
-                    status = nbs.system.job_details(job_id)
+                start_job = self._gis._con.post(url, params)
+                if "jobUrl" in start_job:
+                    resp = self._gis._con.get(start_job["jobUrl"], {"f": "json"})
+                else:
+                    return start_job
+                if "status" in resp and resp["status"].lower() != "success":
+                    status = self._gis._con.get(start_job["jobUrl"], {"f": "json"})
+                    i = 0
                     while status["status"].lower() != "completed":
-                        time.sleep(0.3)
+                        time.sleep(0.3 * i)
                         if status["status"].lower() == "failed":
                             return status
                         elif (
@@ -249,7 +253,10 @@ class NotebookManager(object):
                             or status["status"].lower().find("error") > -1
                         ):
                             raise Exception(f"Job Fail {status}")
-                        status = nbs.system.job_details(job_id)
+                        status = self._gis._con.get(start_job["jobUrl"], {"f": "json"})
+                        i += 1
+                        if i > 20:
+                            i = 20
                     return status
                 return resp
 

@@ -1320,7 +1320,7 @@ class Service(BaseServer):
         return self._con.post(path=url, postdata=params)
 
     # ----------------------------------------------------------------------
-    def _service_manifest(self, file_type: str = "json") -> str:
+    def service_manifest(self, file_type: str = "json") -> str:
         """
         The service manifest resource documents the data and other
         resources that define the service origins and power the service.
@@ -1733,7 +1733,7 @@ class ItemInformationManager(BaseServer):
 
         """
         url = "{base}/edit".format(base=self._url)
-        params = {"f": "json"}
+        params = {"f": "json", "serviceItemInfo": value}
         return self._con.post(url, params)
 
 

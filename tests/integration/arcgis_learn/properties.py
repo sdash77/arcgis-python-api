@@ -39,7 +39,7 @@ from arcgis.learn import (
 import json
 from arcgis.learn.text import EntityRecognizer, SequenceToSequence
 
-if os.environ["run_nightly"] == "1":
+if os.environ.get("run_nightly") == "1":
     data_folder = r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model_regression"
 else:
     data_folder = r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model"

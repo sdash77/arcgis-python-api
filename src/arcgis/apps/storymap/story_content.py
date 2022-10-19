@@ -2958,3 +2958,107 @@ class Timeline(object):
             content._add_image(story=self._story)
         elif isinstance(content, Text):
             content._add_text(story=self._story)
+
+
+###############################################################################################################
+class MapTour(object):
+    """
+    Create a MapTour object from a pre-existing `maptour` node.
+
+    ===============     ====================================================================
+    **Argument**        **Description**
+    ---------------     --------------------------------------------------------------------
+    node_id             Required String. The node id for the map tour type.
+    ---------------     --------------------------------------------------------------------
+    story               Required :class:`~arcgis.apps.storymap.story.StoryMap` that the map tour belongs to.
+    ===============     ====================================================================
+
+    .. code-block:: python
+
+        >>> my_story.nodes #use to find map tour node id
+
+        # Method 1: Use the MapTour Class
+        >>> maptour = MapTour(my_story, <node_id>)
+
+        # Method 2: Use the get method in story
+        >>> maptour = my_story.get(node = <node_id>)
+    """
+
+    def __init__(self, story, node: str):
+        # Content must already exist in the story
+        # Map Tour is not an immersive node
+        self._story = story
+        self.node = node
+        self.map = story._properties["nodes"][node]["data"]["map"]
+        if story._properties["nodes"][node]["type"] != "tour":
+            raise Exception("This node is not of type tour.")
+        self._type = story._properties["nodes"][node]["data"]["type"]
+        self._subtype = story._properties["nodes"][node]["data"]["subtype"]
+        self._places = story._properties["nodes"][node]["data"]["places"]
+
+    # ----------------------------------------------------------------------
+    def __str__(self) -> str:
+        return "Map Tour"
+
+    # ----------------------------------------------------------------------
+    @property
+    def _children(self) -> list:
+        """private method to gather all children of a map tour from places data"""
+        children = [self.map]
+        for place in self.places:
+            if "children" in place and place["contents"]:
+                for content in place["contents"]:
+                    children.append(content)
+            if "media" in place and place["media"]:
+                children.append(place["media"])
+            if "title" in place and place["title"]:
+                children.append(place["title"])
+        return children
+
+    # ----------------------------------------------------------------------
+    @property
+    def style(self):
+        """Get the type and subtype of the map tour"""
+        return (
+            self._story._properties["nodes"][self.node]["data"]["type"]
+            + " - "
+            + self._story._properties["nodes"][self.node]["data"]["subtype"]
+        )
+
+    # ----------------------------------------------------------------------
+    @property
+    def places(self):
+        """
+        List all places on the map
+        """
+        return self._story._properties["nodes"][self.node]["data"]["places"]
+
+    # ----------------------------------------------------------------------
+    def get(self, node_id: str):
+        """
+        The get method is used to get the node that will be edited. Use `maptour.properties` to
+        find all nodes associated with the sidecar.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        node_id             Required String. The node id for the content that will be returned.
+        ===============     ====================================================================
+
+        :return: An class instance of the node type.
+
+        .. code-block:: python
+            # Find the nodes associated with the map tour
+            mt = story.get(<maptour_node_id>)
+            mt.places
+            >> returns places of the map tour
+
+            # Get a node associated with the map tour, in this example an image, and change the image
+            im = mt.get(<node_id>)
+            im.image = <new_image_path>
+
+            # Save the story to see changes applied in Story Map builder
+            story.save()
+
+        """
+        return self._story._assign_node_class(node_id)

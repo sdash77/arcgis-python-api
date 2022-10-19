@@ -56,6 +56,7 @@ class KbertnetesPy(object):
         **kwargs,
     ):
         """The Portal constructor. Requires URL and optionally username/password."""
+        self._security_kwargs = kwargs.pop("security_kwargs", None)
         client_secret = kwargs.get("client_secret", None)
         trust_env = kwargs.get("trust_env", None)
         self._timeout = kwargs.pop("timeout", 600)
@@ -148,6 +149,7 @@ class KbertnetesPy(object):
                     proxy=kwargs.get("proxy", None),
                     custom_adapter=custom_adapter,
                     use_gen_token=kwargs.get("use_gen_token", False),
+                    security_kwargs=self._security_kwargs,
                 )
             else:
                 if token == api_key:
@@ -175,6 +177,7 @@ class KbertnetesPy(object):
                     proxy=kwargs.get("proxy", None),
                     custom_adapter=custom_adapter,
                     use_gen_token=kwargs.get("use_gen_token", False),
+                    security_kwargs=self._security_kwargs,
                 )
         # self.get_version(True)
         self.get_properties(True)
