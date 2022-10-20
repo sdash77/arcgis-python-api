@@ -95,20 +95,16 @@ class WorkflowManagerAdmin:
             string (item_id)
         """
 
-        url = "{base}/admin/createWorkflowItem?token={token}&name={name}".format(
-            base=self._url, token=self._gis._con.token, name=name
+        url = "{base}/admin/createWorkflowItem?name={name}".format(
+            base=self._url, name=name
         )
         params = {"name": name}
         return_obj = json.loads(
             self._gis._con.post(
-                url,
-                params=params,
-                try_json=False,
-                add_token=False,
-                json_encode=False,
-                post_json=True,
+                url, params=params, try_json=False, json_encode=False, post_json=True
             )
-        )["itemId"]
+        )
+        return_obj = return_obj["itemId"]
         if "error" in return_obj:
             self._gis._con._handle_json_error(return_obj["error"], 0)
         elif "success" in return_obj:
@@ -131,13 +127,9 @@ class WorkflowManagerAdmin:
 
         """
 
-        url = "{base}/admin/{id}/upgrade?token={token}".format(
-            base=self._url, id=item.id, token=self._gis._con.token
-        )
+        url = "{base}/admin/{id}/upgrade".format(base=self._url, id=item.id)
         return_obj = json.loads(
-            self._gis._con.post(
-                url, try_json=False, add_token=False, json_encode=False, post_json=True
-            )
+            self._gis._con.post(url, try_json=False, json_encode=False, post_json=True)
         )
         if "error" in return_obj:
             self._gis._con._handle_json_error(return_obj["error"], 0)
@@ -162,13 +154,9 @@ class WorkflowManagerAdmin:
 
         """
 
-        url = "{base}/admin/{id}?token={token}".format(
-            base=self._url, id=item.id, token=self._gis._con.token
-        )
+        url = "{base}/admin/{id}?".format(base=self._url, id=item.id)
 
-        return_obj = json.loads(
-            self._gis._con.delete(url, add_token=False, try_json=False)
-        )
+        return_obj = json.loads(self._gis._con.delete(url, try_json=False))
         if "error" in return_obj:
             self._gis._con._handle_json_error(return_obj["error"], 0)
         elif "success" in return_obj:
@@ -190,9 +178,7 @@ class WorkflowManagerAdmin:
 
         """
 
-        url = "{base}/checkStatus?token={token}".format(
-            base=self._url, token=self._gis._con.token
-        )
+        url = "{base}/checkStatus".format(base=self._url)
 
         return_obj = self._gis._con.get(url)
         if "error" in return_obj:
@@ -299,9 +285,7 @@ class JobManager:
 
         """
         try:
-            url = "{base}/jobs/manage?token={token}".format(
-                base=self._url, token=self._gis._con.token
-            )
+            url = "{base}/jobs/manage".format(base=self._url)
             return Job.manage_jobs(self._gis, url, job_ids, "Close")
         except:
             self._handle_error(sys.exc_info())
@@ -321,13 +305,8 @@ class JobManager:
 
         """
         try:
-            url = "{base}/jobs/manage?token={token}".format(
-                base=self._url, token=self._gis._con.token
-            )
+            url = "{base}/jobs/manage".format(base=self._url)
             return Job.manage_jobs(self._gis, url, job_ids, "Reopen")
-            url = "{base}/jobs/manage?token={token}".format(
-                base=self._url, token=self._gis._con.token
-            )
         except:
             self._handle_error(sys.exc_info())
 
@@ -421,14 +400,13 @@ class JobManager:
         for key in job_object:
             if job_object[key] is not None:
                 filtered_object[key] = job_object[key]
-        url = "{base}/jobTemplates/{template}/job?token={token}".format(
-            base=self._url, template=template, token=self._gis._con.token
+        url = "{base}/jobTemplates/{template}/job".format(
+            base=self._url, template=template
         )
         return_obj = json.loads(
             self._gis._con.post(
                 url,
                 filtered_object,
-                add_token=False,
                 post_json=True,
                 try_json=False,
                 json_encode=False,
@@ -459,12 +437,11 @@ class JobManager:
         try:
             res = Job.delete_attachment(
                 self._gis,
-                "{base}/jobs/{jobId}/attachments/{attachmentId}?token={token}".format(
+                "{base}/jobs/{jobId}/attachments/{attachmentId}".format(
                     base=self._url,
                     jobId=job_id,
                     attachmentId=attachment_id,
                     item=self._item.id,
-                    token=self._gis._con.token,
                 ),
             )
             return res
@@ -489,7 +466,7 @@ class JobManager:
             return JobDiagram.get(
                 self._gis,
                 "{base}/jobs/{job}/diagram".format(base=self._url, job=id),
-                {"token": self._gis._con.token},
+                {},
             )
         except:
             self._handle_error(sys.exc_info())
@@ -512,9 +489,7 @@ class JobManager:
         """
         try:
             url = f"{self._url}/jobs/{id}"
-            job_dict = self._gis._con.get(
-                url, {"token": self._gis._con.token, "extProps": get_ext_props}
-            )
+            job_dict = self._gis._con.get(url, {"extProps": get_ext_props})
             return Job(job_dict, self._gis, self._url)
         except:
             self._handle_error(sys.exc_info())
@@ -564,9 +539,7 @@ class JobManager:
                 "sortFields": sort_by,
                 "fields": fields,
             }
-            url = "{base}/jobs/search?token={token}".format(
-                base=self._url, token=self._gis._con.token
-            )
+            url = "{base}/jobs/search".format(base=self._url)
             return Job.search(self._gis, url, search_object)
         except:
             self._handle_error(sys.exc_info())
@@ -616,9 +589,7 @@ class JobManager:
             current_job = self.get(job_id).__dict__
             for k in update_object.keys():
                 current_job[k] = update_object[k]
-            url = "{base}/jobs/{jobId}/update?token={token}".format(
-                base=self._url, jobId=job_id, token=self._gis._con.token
-            )
+            url = "{base}/jobs/{jobId}/update".format(base=self._url, jobId=job_id)
             new_job = Job(current_job, self._gis, url)
             # remove existing properties if not updating.
             if "extended_properties" not in update_object:
@@ -648,9 +619,7 @@ class JobManager:
 
         """
         try:
-            url = "{base}/jobs/manage?token={token}".format(
-                base=self._url, token=self._gis._con.token
-            )
+            url = "{base}/jobs/manage".format(base=self._url)
             return Job.manage_jobs(self._gis, url, job_ids, "Upgrade")
         except:
             self._handle_error(sys.exc_info())
@@ -673,11 +642,8 @@ class JobManager:
 
         """
         try:
-            url = "{base}/jobs/{jobId}/location?token={token}".format(
-                base=self._url,
-                jobId=job_id,
-                item=self._item,
-                token=self._gis._con.token,
+            url = "{base}/jobs/{jobId}/location".format(
+                base=self._url, jobId=job_id, item=self._item
             )
             location = {"geometryType": geometry.type}
             if geometry.type == "Polygon":
@@ -706,7 +672,6 @@ class JobManager:
                 self._gis._con.put(
                     url,
                     {"location": location},
-                    add_token=False,
                     post_json=True,
                     try_json=False,
                     json_encode=False,
@@ -740,9 +705,7 @@ class JobManager:
 
         """
         try:
-            url = "{base}/jobs/manage?token={token}".format(
-                base=self._url, token=self._gis._con.token
-            )
+            url = "{base}/jobs/manage".format(base=self._url)
             return Job.manage_jobs(self._gis, url, job_ids, "Delete")
         except:
             self._handle_error(sys.exc_info())
@@ -870,7 +833,7 @@ class WorkflowManager:
 
         :return: String
         """
-        url = f"{self._url}/evaluateArcade?token={self._gis._con.token}"
+        url = f"{self._url}/evaluateArcade"
         params = {
             "expression": expression,
             "contextType": context_type,
@@ -890,8 +853,7 @@ class WorkflowManager:
         """
         try:
             role_array = self._gis._con.get(
-                "{base}/community/roles".format(base=self._url),
-                params={"token": self._gis._con.token},
+                "{base}/community/roles".format(base=self._url)
             )["roles"]
             return_array = [WMRole(r) for r in role_array]
             return return_array
@@ -907,8 +869,7 @@ class WorkflowManager:
         """
         try:
             user_array = self._gis._con.get(
-                "{base}/community/users".format(base=self._url),
-                params={"token": self._gis._con.token},
+                "{base}/community/users".format(base=self._url)
             )["users"]
             return_array = [self.user(u["username"]) for u in user_array]
             return return_array
@@ -926,8 +887,7 @@ class WorkflowManager:
         """
         try:
             user_array = self._gis._con.get(
-                "{base}/community/users".format(base=self._url),
-                params={"token": self._gis._con.token},
+                "{base}/community/users".format(base=self._url)
             )["users"]
             return_array = [
                 self.user(u["username"]) for u in user_array if u["isAssignable"]
@@ -949,8 +909,7 @@ class WorkflowManager:
         """
         try:
             group_array = self._gis._con.get(
-                "{base}/community/groups".format(base=self._url),
-                params={"token": self._gis._con.token},
+                "{base}/community/groups".format(base=self._url)
             )["groups"]
             return_array = [
                 self.group(g["id"]) for g in group_array if g["isAssignable"]
@@ -969,10 +928,9 @@ class WorkflowManager:
 
         """
         try:
-            return self._gis._con.get(
-                "{base}/settings".format(base=self._url),
-                params={"token": self._gis._con.token},
-            )["settings"]
+            return self._gis._con.get("{base}/settings".format(base=self._url))[
+                "settings"
+            ]
         except:
             self._handle_error(sys.exc_info())
 
@@ -988,8 +946,7 @@ class WorkflowManager:
         """
         try:
             group_array = self._gis._con.get(
-                "{base}/community/groups".format(base=self._url),
-                params={"token": self._gis._con.token},
+                "{base}/community/groups".format(base=self._url)
             )["groups"]
             return_array = [self.group(g["id"]) for g in group_array]
             return return_array
@@ -1012,7 +969,7 @@ class WorkflowManager:
             `List <https://docs.python.org/3/library/stdtypes.html#list>`_
 
         """
-        params = {"token": self._gis._con.token}
+        params = {}
         if search_type is not None:
             params["searchType"] = search_type
 
@@ -1036,8 +993,7 @@ class WorkflowManager:
         """
         try:
             template_array = self._gis._con.get(
-                "{base}/jobTemplates".format(base=self._url),
-                params={"token": self._gis._con.token},
+                "{base}/jobTemplates".format(base=self._url)
             )["jobTemplates"]
             return_array = [
                 JobTemplate(t, self._gis, self._url) for t in template_array
@@ -1058,8 +1014,7 @@ class WorkflowManager:
         """
         try:
             diagram_array = self._gis._con.get(
-                "{base}/diagrams".format(base=self._url),
-                params={"token": self._gis._con.token},
+                "{base}/diagrams".format(base=self._url)
             )["diagrams"]
             return_array = [JobDiagram(d, self._gis, self._url) for d in diagram_array]
             return return_array
@@ -1081,15 +1036,12 @@ class WorkflowManager:
             success object
 
         """
-        url = "{base}/settings?token={token}".format(
-            base=self._url, token=self._gis._con.token
-        )
+        url = "{base}/settings".format(base=self._url)
         params = {"settings": props}
         return_obj = json.loads(
             self._gis._con.post(
                 url,
                 params,
-                add_token=False,
                 post_json=True,
                 try_json=False,
                 json_encode=False,
@@ -1121,7 +1073,7 @@ class WorkflowManager:
                 "{base}/community/roles/{role}".format(
                     base=self._url, role=urllib.parse.quote(name), item=self._item.id
                 ),
-                {"token": self._gis._con.token},
+                params={},
             )
         except:
             self._handle_error(sys.exc_info())
@@ -1146,7 +1098,7 @@ class WorkflowManager:
                 "{base}/jobTemplates/{jobTemplate}".format(
                     base=self._url, jobTemplate=id
                 ),
-                {"token": self._gis._con.token},
+                params={},
             )
         except:
             self._handle_error(sys.exc_info())
@@ -1168,11 +1120,8 @@ class WorkflowManager:
         try:
             res = JobTemplate.delete(
                 self._gis,
-                "{base}/jobTemplates/{jobTemplate}?token={token}".format(
-                    base=self._url,
-                    jobTemplate=id,
-                    item=self._item.id,
-                    token=self._gis._con.token,
+                "{base}/jobTemplates/{jobTemplate}".format(
+                    base=self._url, jobTemplate=id, item=self._item.id
                 ),
             )
             return res
@@ -1218,7 +1167,7 @@ class WorkflowManager:
                 "{base}/community/groups/{groupid}".format(
                     base=self._url, groupid=group_id, item=self._item.id
                 ),
-                {"token": self._gis._con.token},
+                params={},
             )
             arcgis_group = arcgis.gis.Group(self._gis, group_id)
             arcgis_group.roles = wmx_group.roles
@@ -1243,15 +1192,14 @@ class WorkflowManager:
             Boolean
 
         """
-        url = "{base}/community/groups/{groupid}?token={token}".format(
-            base=self._url, groupid=group_id, token=self._gis._con.token
+        url = "{base}/community/groups/{groupid}".format(
+            base=self._url, groupid=group_id
         )
 
         return_obj = json.loads(
             self._gis._con.post(
                 url,
                 update_object,
-                add_token=False,
                 post_json=True,
                 try_json=False,
                 json_encode=False,
@@ -1283,7 +1231,7 @@ class WorkflowManager:
             return JobDiagram.get(
                 self._gis,
                 "{base}/diagrams/{diagram}".format(base=self._url, diagram=id),
-                {"token": self._gis._con.token},
+                params={},
             )
         except:
             self._handle_error(sys.exc_info())
@@ -1310,7 +1258,7 @@ class WorkflowManager:
                 "{base}/diagrams/{diagram}/{diagramVersion}".format(
                     base=self._url, diagram=diagram_id, diagramVersion=version_id
                 ),
-                {"token": self._gis._con.token},
+                params={},
             )
         except:
             self._handle_error(sys.exc_info())
@@ -1334,9 +1282,7 @@ class WorkflowManager:
 
         """
         try:
-            url = "{base}/community/roles/{name}?token={token}".format(
-                base=self._url, name=name, token=self._gis._con.token
-            )
+            url = "{base}/community/roles/{name}".format(base=self._url, name=name)
             post_role = WMRole(
                 {"roleName": name, "description": description, "privileges": privileges}
             )
@@ -1425,9 +1371,7 @@ class WorkflowManager:
                 last_updated_date = datetime.datetime.now().strftime(
                     "%Y-%m-%dT%H:%M:%SZ"
                 )
-            url = "{base}/jobTemplates?token={token}".format(
-                base=self._url, token=self._gis._con.token
-            )
+            url = "{base}/jobTemplates".format(base=self._url)
 
             post_job_template = JobTemplate(
                 {
@@ -1472,11 +1416,10 @@ class WorkflowManager:
 
         """
         try:
-            url = "{base}/jobTemplates/{jobTemplate}?token={token}".format(
+            url = "{base}/jobTemplates/{jobTemplate}".format(
                 base=self._url,
                 jobTemplate=template["job_template_id"],
                 item=self._item.id,
-                token=self._gis._con.token,
             )
             template_object = JobTemplate(template)
             res = template_object.put(self._gis, url)
@@ -1523,9 +1466,7 @@ class WorkflowManager:
 
         """
         try:
-            url = "{base}/diagrams?token={token}".format(
-                base=self._url, token=self._gis._con.token
-            )
+            url = "{base}/diagrams".format(base=self._url)
 
             post_diagram = JobDiagram(
                 {
@@ -1563,8 +1504,8 @@ class WorkflowManager:
 
         """
         try:
-            url = "{base}/diagrams/{diagramid}?token={token}".format(
-                base=self._url, diagramid=body["diagram_id"], token=self._gis._con.token
+            url = "{base}/diagrams/{diagramid}".format(
+                base=self._url, diagramid=body["diagram_id"]
             )
             post_diagram = JobDiagram(
                 {
@@ -1611,9 +1552,7 @@ class WorkflowManager:
 
         """
         try:
-            url = "{base}/diagrams/{diagramid}?token={token}".format(
-                base=self._url, diagramid=id, token=self._gis._con.token
-            )
+            url = "{base}/diagrams/{diagramid}".format(base=self._url, diagramid=id)
             return JobDiagram.delete(self._gis, url)
         except:
             self._handle_error(sys.exc_info())
@@ -1635,11 +1574,8 @@ class WorkflowManager:
 
         """
         try:
-            url = "{base}/diagrams/{diagramid}/{diagramVersion}?token={token}".format(
-                base=self._url,
-                diagramid=diagram_id,
-                diagramVersion=version_id,
-                token=self._gis._con.token,
+            url = "{base}/diagrams/{diagramid}/{diagramVersion}".format(
+                base=self._url, diagramid=diagram_id, diagramVersion=version_id
             )
             return JobDiagram.delete(self._gis, url)
         except:
@@ -1670,9 +1606,7 @@ class WorkflowManager:
 
         """
 
-        url = "{base}/tableDefinitions?token={token}".format(
-            base=self._url, token=self._gis._con.token
-        )
+        url = "{base}/tableDefinitions".format(base=self._url)
 
         return_obj = self._gis._con.get(url)
         if "error" in return_obj:
@@ -1702,7 +1636,7 @@ class WorkflowManager:
                 "{base}/lookups/{lookupType}".format(
                     base=self._url, lookupType=lookup_type
                 ),
-                {"token": self._gis._con.token},
+                params={},
             )
         except:
             self._handle_error(sys.exc_info())
@@ -1724,11 +1658,8 @@ class WorkflowManager:
         try:
             res = LookUpTable.delete(
                 self._gis,
-                "{base}/lookups/{lookupType}?token={token}".format(
-                    base=self._url,
-                    lookupType=lookup_type,
-                    item=self._item.id,
-                    token=self._gis._con.token,
+                "{base}/lookups/{lookupType}".format(
+                    base=self._url, lookupType=lookup_type, item=self._item.id
                 ),
             )
             return res
@@ -1768,8 +1699,8 @@ class WorkflowManager:
             >> True  # returns true if created successfully
         """
         try:
-            url = "{base}/lookups/{lookupType}?token={token}".format(
-                base=self._url, lookupType=lookup_type, token=self._gis._con.token
+            url = "{base}/lookups/{lookupType}".format(
+                base=self._url, lookupType=lookup_type
             )
 
             post_lookup = LookUpTable({"lookups": lookups})
@@ -1803,7 +1734,7 @@ class LookUpTable(object):
         gis = object.__getattribute__(self, "_gis")
         url = object.__getattribute__(self, "_url")
         id = object.__getattribute__(self, "job_template_id")
-        full_object = gis._con.get(url, {"token": gis._con.token})
+        full_object = gis._con.get(url, {})
         try:
             setattr(self, _camelCase_to_underscore(item), full_object[item])
             return full_object[item]
@@ -1824,7 +1755,6 @@ class LookUpTable(object):
             gis._con.put(
                 url,
                 put_dict,
-                add_token=False,
                 post_json=True,
                 try_json=False,
                 json_encode=False,
@@ -1842,7 +1772,7 @@ class LookUpTable(object):
         return return_obj
 
     def delete(gis, url):
-        return_obj = json.loads(gis._con.delete(url, add_token=False, try_json=False))
+        return_obj = json.loads(gis._con.delete(url, try_json=False))
         if "error" in return_obj:
             gis._con._handle_json_error(return_obj["error"], 0)
         elif "success" in return_obj:
@@ -1955,9 +1885,7 @@ class SavedSearchesManager:
 
         """
         try:
-            url = "{base}/searches?token={token}".format(
-                base=self._url, id=search_id, token=self._gis._con.token
-            )
+            url = "{base}/searches".format(base=self._url, id=search_id)
             post_dict = {
                 "name": name,
                 "folder": folder,
@@ -1972,7 +1900,6 @@ class SavedSearchesManager:
                 self._gis._con.post(
                     url,
                     post_dict,
-                    add_token=False,
                     post_json=True,
                     try_json=False,
                     json_encode=False,
@@ -2002,13 +1929,9 @@ class SavedSearchesManager:
             Boolean
         """
         try:
-            url = "{base}/searches/{searchid}?token={token}".format(
-                base=self._url, searchid=id, token=self._gis._con.token
-            )
+            url = "{base}/searches/{searchid}".format(base=self._url, searchid=id)
 
-            return_obj = json.loads(
-                self._gis._con.delete(url, add_token=False, try_json=False)
-            )
+            return_obj = json.loads(self._gis._con.delete(url, try_json=False))
 
             if "error" in return_obj:
                 self._gis._con._handle_json_error(return_obj["error"], 0)
@@ -2061,14 +1984,13 @@ class SavedSearchesManager:
 
         """
         try:
-            url = "{base}/searches/{searchId}?token={token}".format(
-                base=self._url, searchId=search["searchId"], token=self._gis._con.token
+            url = "{base}/searches/{searchId}".format(
+                base=self._url, searchId=search["searchId"]
             )
             return_obj = json.loads(
                 self._gis._con.put(
                     url,
                     search,
-                    add_token=False,
                     post_json=True,
                     try_json=False,
                     json_encode=False,
@@ -2099,8 +2021,8 @@ class SavedSearchesManager:
             Boolean
         """
         try:
-            url = "{base}/searches/{searchId}/shareWith?token={token}".format(
-                base=self._url, searchId=search_id, token=self._gis._con.token
+            url = "{base}/searches/{searchId}/shareWith".format(
+                base=self._url, searchId=search_id
             )
             post_dict = {"groupIds": group_ids}
 
@@ -2108,7 +2030,6 @@ class SavedSearchesManager:
                 self._gis._con.post(
                     url,
                     post_dict,
-                    add_token=False,
                     post_json=True,
                     try_json=False,
                     json_encode=False,
@@ -2137,8 +2058,8 @@ class SavedSearchesManager:
 
         """
 
-        url = "{base}/searches/{searchId}/shareWith?token={token}".format(
-            base=self._url, searchId=search_id, token=self._gis._con.token
+        url = "{base}/searches/{searchId}/shareWith".format(
+            base=self._url, searchId=search_id
         )
 
         return_obj = self._gis._con.get(url)
@@ -2226,7 +2147,6 @@ class Job(object):
             self._gis._con.post(
                 self._url,
                 post_dict,
-                add_token=False,
                 post_json=True,
                 try_json=False,
                 json_encode=False,
@@ -2243,7 +2163,6 @@ class Job(object):
             gis._con.post(
                 url,
                 search_object,
-                add_token=False,
                 post_json=True,
                 try_json=False,
                 json_encode=False,
@@ -2278,9 +2197,7 @@ class Job(object):
         url = "{base}/jobs/{jobId}/attachments/{attachmentId}".format(
             base=self._url, jobId=self.job_id, attachmentId=attachment_id
         )
-        return_obj = self._gis._con.get(
-            url, {"token": self._gis._con.token}, try_json=False
-        )
+        return_obj = self._gis._con.get(url, {}, try_json=False)
         if "error" in return_obj:
             self._gis._con._handle_json_error(return_obj["error"], 0)
         elif "success" in return_obj:
@@ -2315,7 +2232,6 @@ class Job(object):
                 url,
                 params={"alias": alias, "folder": folder},
                 files={"attachment": attachment},
-                add_token=True,
                 try_json=False,
                 json_encode=False,
             )
@@ -2341,8 +2257,8 @@ class Job(object):
             `List <https://docs.python.org/3/library/stdtypes.html#list>`_ list of job attachments
 
         """
-        url = "{base}/jobs/{jobId}/attachmentslinked?token={token}".format(
-            base=self._url, jobId=self.job_id, token=self._gis._con.token
+        url = "{base}/jobs/{jobId}/attachmentslinked".format(
+            base=self._url, jobId=self.job_id
         )
 
         post_object = {"attachments": attachments}
@@ -2396,7 +2312,7 @@ class Job(object):
         return return_obj
 
     def delete_attachment(gis, url):
-        return_obj = json.loads(gis._con.delete(url, add_token=False, try_json=False))
+        return_obj = json.loads(gis._con.delete(url, try_json=False))
         if "error" in return_obj:
             gis._con._handle_json_error(return_obj["error"], 0)
         elif "success" in return_obj:
@@ -2430,11 +2346,10 @@ class Job(object):
 
         if step_id is None:
             step_id = self.currentSteps[0]["step_id"]
-        url = "{base}/jobs/{jobId}/{stepId}?token={token}".format(
+        url = "{base}/jobs/{jobId}/{stepId}".format(
             base=self._url,
             jobId=self.job_id,
             stepId=step_id,
-            token=self._gis._con.token,
         )
         post_object = {"assignedType": assigned_type, "assignedTo": assigned_to}
         return_obj = json.loads(
@@ -2472,9 +2387,7 @@ class Job(object):
 
         """
 
-        url = "{base}/jobs/{jobId}/action?token={token}".format(
-            base=self._url, jobId=self.job_id, token=self._gis._con.token
-        )
+        url = "{base}/jobs/{jobId}/action".format(base=self._url, jobId=self.job_id)
         post_object = {"type": "SetCurrentStep", "stepIds": [step_id]}
         return_obj = json.loads(
             self._gis._con.post(
@@ -2506,8 +2419,8 @@ class Job(object):
 
         """
 
-        url = "{base}/jobs/{jobId}/attachments?token={token}".format(
-            base=self._url, jobId=self.job_id, token=self._gis._con.token
+        url = "{base}/jobs/{jobId}/attachments".format(
+            base=self._url, jobId=self.job_id
         )
         return_obj = self._gis._con.get(url)
         return return_obj["attachments"]
@@ -2522,9 +2435,7 @@ class Job(object):
 
         """
 
-        url = "{base}/jobs/{jobId}/history?token={token}".format(
-            base=self._url, jobId=self.job_id, token=self._gis._con.token
-        )
+        url = "{base}/jobs/{jobId}/history".format(base=self._url, jobId=self.job_id)
         return_obj = self._gis._con.get(url)
         if "success" in return_obj:
             return return_obj["success"]
@@ -2548,7 +2459,7 @@ class Job(object):
             self._location = JobLocation.get(
                 self._gis,
                 "{base}/jobs/{job}/location".format(base=self._url, job=self.job_id),
-                {"token": self._gis._con.token},
+                {},
             )
         return self._location
 
@@ -2599,7 +2510,6 @@ class Job(object):
             self._gis._con.post(
                 url,
                 post_obj,
-                add_token=False,
                 post_json=True,
                 try_json=False,
                 json_encode=False,
@@ -2619,9 +2529,7 @@ class Job(object):
 
         """
 
-        url = "{base}/jobs/{jobId}/comments?token={token}".format(
-            base=self._url, jobId=self.job_id, token=self._gis._con.token
-        )
+        url = "{base}/jobs/{jobId}/comments".format(base=self._url, jobId=self.job_id)
         return_obj = self._gis._con.get(url)
         return return_obj["jobComments"]
 
@@ -2659,7 +2567,6 @@ class WMRole(object):
             gis._con.post(
                 url,
                 post_dict,
-                add_token=False,
                 post_json=True,
                 try_json=False,
                 json_encode=False,
@@ -2716,7 +2623,7 @@ class JobTemplate(object):
         gis = object.__getattribute__(self, "_gis")
         url = object.__getattribute__(self, "_url")
         id = object.__getattribute__(self, "job_template_id")
-        full_object = gis._con.get(url, {"token": gis._con.token})
+        full_object = gis._con.get(url, {})
         try:
             setattr(self, _camelCase_to_underscore(item), full_object[item])
             return full_object[item]
@@ -2741,7 +2648,6 @@ class JobTemplate(object):
             gis._con.put(
                 url,
                 put_dict,
-                add_token=False,
                 post_json=True,
                 try_json=False,
                 json_encode=False,
@@ -2768,7 +2674,6 @@ class JobTemplate(object):
             gis._con.post(
                 url,
                 post_dict,
-                add_token=False,
                 post_json=True,
                 try_json=False,
                 json_encode=False,
@@ -2781,7 +2686,7 @@ class JobTemplate(object):
         return return_obj["jobTemplateId"]
 
     def delete(gis, url):
-        return_obj = json.loads(gis._con.delete(url, add_token=False, try_json=False))
+        return_obj = json.loads(gis._con.delete(url, try_json=False))
         if "error" in return_obj:
             gis._con._handle_json_error(return_obj["error"], 0)
         elif "success" in return_obj:
@@ -2807,10 +2712,9 @@ class JobTemplate(object):
             boolean
         """
         try:
-            url = "{base}/shareWith?token={token}".format(
+            url = "{base}/shareWith".format(
                 base=self._url,
                 templateId=self.job_template_id,
-                token=self._gis._con.token,
             )
             post_dict = {"groupIds": group_ids}
 
@@ -2818,7 +2722,6 @@ class JobTemplate(object):
                 self._gis._con.post(
                     url,
                     post_dict,
-                    add_token=False,
                     post_json=True,
                     try_json=False,
                     json_encode=False,
@@ -2842,9 +2745,7 @@ class JobTemplate(object):
 
         """
 
-        url = "{base}/shareWith?token={token}".format(
-            base=self._url, templateId=self.job_template_id, token=self._gis._con.token
-        )
+        url = "{base}/shareWith".format(base=self._url, templateId=self.job_template_id)
         return_obj = self._gis._con.get(url)
 
         if "error" in return_obj:
@@ -2867,7 +2768,7 @@ class JobTemplate(object):
                 "{base}/automatedCreation".format(
                     base=self._url, jobTemplateId=self.job_template_id
                 ),
-                params={"token": self._gis._con.token},
+                params={},
             )
             return return_obj["automations"]
         except:
@@ -2894,7 +2795,7 @@ class JobTemplate(object):
                     jobTemplateId=self.job_template_id,
                     automationId=automation_id,
                 ),
-                params={"token": self._gis._con.token},
+                params={},
             )
             return return_obj
         except:
@@ -2951,17 +2852,14 @@ class JobTemplate(object):
             updates = []
 
         props = {"adds": adds, "updates": updates, "deletes": deletes}
-        url = "{base}/automatedCreation?token={token}".format(
-            base=self._url,
-            jobTemplateId=self.job_template_id,
-            token=self._gis._con.token,
+        url = "{base}/automatedCreation".format(
+            base=self._url, jobTemplateId=self.job_template_id
         )
 
         return_obj = json.loads(
             self._gis._con.post(
                 url,
                 props,
-                add_token=False,
                 post_json=True,
                 try_json=False,
                 json_encode=False,
@@ -3033,7 +2931,7 @@ class JobDiagram(object):
         gis = object.__getattribute__(self, "_gis")
         url = object.__getattribute__(self, "_url")
         id = object.__getattribute__(self, "diagram_id")
-        full_object = gis._con.get(url, {"token": gis._con.token})
+        full_object = gis._con.get(url, {})
         try:
             setattr(self, _camelCase_to_underscore(item), full_object[item])
             return full_object[item]
@@ -3058,7 +2956,6 @@ class JobDiagram(object):
             gis._con.post(
                 url,
                 post_dict,
-                add_token=False,
                 post_json=True,
                 try_json=False,
                 json_encode=False,
@@ -3086,7 +2983,6 @@ class JobDiagram(object):
             gis._con.post(
                 url,
                 post_object,
-                add_token=False,
                 post_json=True,
                 try_json=False,
                 json_encode=False,
@@ -3104,7 +3000,7 @@ class JobDiagram(object):
         return return_obj
 
     def delete(gis, url):
-        return_obj = json.loads(gis._con.delete(url, add_token=False, try_json=False))
+        return_obj = json.loads(gis._con.delete(url, try_json=False))
         if "error" in return_obj:
             gis._con._handle_json_error(return_obj["error"], 0)
         elif "success" in return_obj:

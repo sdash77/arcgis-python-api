@@ -1098,6 +1098,21 @@ class GIS(object):
         return []
 
     @property
+    def symbol_service(self) -> arcgis.mapping._types.SymbolService | None:
+        """
+        Symbol service is an ArcGIS Server utility service that provides access
+        to operations to build and generate images for Esri symbols to be
+        consumed by internal and external web applications.
+
+        :return: A :class:`~arcgis.mapping._types.SymbolService` object or None
+
+        """
+        try:
+            return self._tools.symbol_service
+        except:
+            return None
+
+    @property
     def datastore(self):
         """
         The ``datastore`` property is the resource manager for GIS datastores.
@@ -5750,7 +5765,7 @@ class ContentManager(object):
                 filetype = "Geoprocessing Package"
             elif extn == ".GCPK":
                 filetype = "Locator Package"
-            elif extn == ".TPK":
+            elif extn in (".TPK", ".TPKX"):
                 filetype = "Tile Package"
             elif extn in (".MPK", ".MPKX"):
                 filetype = "Map Package"
@@ -6696,8 +6711,9 @@ class ContentManager(object):
                 query += ' (type:"desktop application" NOT type:"desktop application template")'
             else:
                 query += ' (type:"' + item_type + '")'
-        if isinstance(categories, list):
-            categories = ",".join(categories)
+        if isinstance(categories, str):
+            categories = categories.split(",")
+
         if not outside_org:
             accountid = self._gis.properties.get("id")
             if accountid and query:
@@ -8705,7 +8721,7 @@ class Group(dict):
         # groupdict = self._portal.get_group(self.groupid)
         self._hydrated = False
         if groupdict:
-            self.__dict__.update(groupdict)
+            groupdict.update(self.__dict__)
             super(Group, self).update(groupdict)
 
     def _hydrate(self):
