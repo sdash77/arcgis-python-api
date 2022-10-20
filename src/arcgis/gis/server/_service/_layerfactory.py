@@ -82,6 +82,11 @@ class ServiceFactory(type):
             from arcgis.geoprocessing import import_toolbox as _import_toolbox
 
             res = _import_toolbox(url, server)
+            # handle backwards compatibility or having url property
+            try:
+                url = res.url
+            except:
+                res.url = res._url
             return res
         elif base_name.lower() == "geometryserver":
             return GeometryService(url=url, gis=server)
