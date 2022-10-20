@@ -2607,6 +2607,11 @@ class GeoAccessor(object):
         """
         The ``to_table`` method exports a geo enabled dataframe to a :class:`~arcgis.features.Table` object.
 
+        .. note::
+            Null integer values will be changed to 0 when using shapely instead
+            of ArcPy due to shapely conventions.
+            With ArcPy null integer values will remain null.
+
         ===========================     ====================================================================
         **Argument**                    **Description**
         ---------------------------     --------------------------------------------------------------------
@@ -2707,6 +2712,11 @@ class GeoAccessor(object):
         """
         The ``to_featurelayer`` method publishes a spatial dataframe to a new
         :class:`~arcgis.features.FeatureLayer` object.
+
+        .. note::
+            Null integer values will be changed to 0 when using shapely instead
+            of ArcPy due to shapely conventions.
+            With ArcPy null integer values will remain null.
 
         ===========================     ====================================================================
         **Argument**                    **Description**
@@ -3006,6 +3016,11 @@ class GeoAccessor(object):
         """
         The ``from_featureclass`` creates a Spatially enabled `pandas.DataFrame` from a
         :class:`~arcgis.features.Features` class.
+
+        .. note::
+            Null integer values will be changed to 0 when using shapely instead
+            of ArcPy due to shapely conventions.
+            With ArcPy null integer values will remain null.
 
         ===========================     ====================================================================
         **Argument**                    **Description**
