@@ -54,6 +54,7 @@ try:
     from .._video_utils import VideoUtils
     from .._utils.env import is_arcgispronotebook
     from .._utils.pascal_voc_rectangles import _reconstruct
+    from .._utils.utils import chips_to_batch
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
@@ -142,23 +143,6 @@ class YOLOv3Tracer(torch.nn.Module):
         out = self.model(inp)
         out_final = self._process_bboxes(out)
         return out_final
-
-
-def chips_to_batch(chips, model_height, model_width, batch_size=1):
-    dtype = np.float32
-    band_count = 3
-    if len(chips) != 0:
-        dtype = chips[0].dtype
-
-    batch = np.zeros(
-        shape=(batch_size, band_count, model_height, model_width),
-        dtype=dtype,
-    )
-    for b in range(batch_size):
-        if b < len(chips):
-            batch[b, :, :model_height, :model_height] = chips[b]
-
-    return batch
 
 
 # Yolov3 model
@@ -433,7 +417,7 @@ class YOLOv3(ArcGISModel):
         return_scores=True,
         visualize=False,
         resize=False,
-        **kwargs,
+        batch_size=1,
     ):
         """
         Predicts and displays the results of a trained model on a single image.
@@ -474,12 +458,6 @@ class YOLOv3(ArcGISModel):
                                 by applying the model on cropped sections of
                                 the image (of the same size as the model was
                                 trained on).
-        =====================   ===========================================
-
-        **kwargs**
-
-        =====================   ===========================================
-        **Argument**            **Description**
         ---------------------   -------------------------------------------
         batch_size              Optional int. Batch size to be used
                                 during tiled inferencing. Deafult value 1.
@@ -516,8 +494,6 @@ class YOLOv3(ArcGISModel):
                 image = cv2.resize(image, (self._data.resize_to, self._data.resize_to))
 
         height, width, _ = image.shape
-
-        batch_size = int(kwargs.get("batch_size", 1))
         tytx = self._data.chip_size
 
         if self._data.chip_size is not None:
