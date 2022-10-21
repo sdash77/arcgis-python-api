@@ -20,7 +20,8 @@ import zipfile
 import configparser
 from contextlib import contextmanager
 import functools
-
+import random
+import string
 from datetime import datetime
 import logging
 from typing import Any, Optional, Union
@@ -7257,8 +7258,6 @@ class ContentManager(object):
             has_pyshp = False
         if isinstance(df, FeatureSet):
             df = df.sdf
-        import random
-        import string
 
         # determine if will be published as fl or table
         if has_arcpy == False and has_pyshp == False and _is_geoenabled(df):
@@ -7404,8 +7403,6 @@ class ContentManager(object):
                 else:
                     return new_item
             elif has_pyshp:
-                import random
-                import string
 
                 name = "%s%s.shp" % (
                     random.choice(string.ascii_lowercase),
