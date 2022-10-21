@@ -7497,6 +7497,18 @@ class ContentManager(object):
             title = kwargs.pop("title", uuid4().hex)
             tags = kwargs.pop("tags", "CSV")
 
+            if kwargs.get("geocode_url", None):
+                geocode_url = kwargs.get("geocode_url")
+            else:
+                locators = [
+                    gc["url"]
+                    for gc in self._gis.properties.helperServices.geocode
+                    if gc.get("batch", False)
+                ]
+                if len(locators) == 0:
+                    raise Exception("No batch geocoding service found.")
+                geocode_url = locators[0]
+
             # Step 1: Add the csv as an item
             temp_file = tempfile.gettempdir() + "\\%s%s.csv" % (
                 random.choice(string.ascii_lowercase),
@@ -7539,10 +7551,7 @@ class ContentManager(object):
                     "sourceLocale": kwargs.pop("source_locale", "us-en"),
                     "sourceCountry": kwargs.pop("source_country", ""),
                     "sourceCountryHint": kwargs.pop("country_hint", ""),
-                    "geocodeServiceUrl": kwargs.pop(
-                        "geocode_url",
-                        geocode_url,
-                    ),
+                    "geocodeServiceUrl": geocode_url,
                 },
             }
             update_dict = {}
