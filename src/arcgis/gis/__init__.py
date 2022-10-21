@@ -7528,6 +7528,18 @@ class ContentManager(object):
             published_item = csv_item.publish(publish_parameters)
             return published_item
         elif isinstance(df, pd.DataFrame) and "location_type" in kwargs:
+            if kwargs.get("geocode_url", None):
+                geocode_url = kwargs.get("geocode_url")
+            else:
+                locators = [
+                    gc["url"]
+                    for gc in self._gis.properties.helperServices.geocode
+                    if gc.get("batch", False)
+                ]
+                if len(locators) == 0:
+                    raise Exception("No batch geocoding service found.")
+                geocode_url = locators[0]
+
             path = "content/features/analyze"
 
             postdata = {
@@ -7539,10 +7551,7 @@ class ContentManager(object):
                     "sourceLocale": kwargs.pop("source_locale", "us-en"),
                     "sourceCountry": kwargs.pop("source_country", ""),
                     "sourceCountryHint": kwargs.pop("country_hint", ""),
-                    "geocodeServiceUrl": kwargs.pop(
-                        "geocode_url",
-                        geocode_url,
-                    ),
+                    "geocodeServiceUrl": geocode_url,
                 },
             }
             update_dict = {}
