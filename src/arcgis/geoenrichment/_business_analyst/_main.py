@@ -641,7 +641,7 @@ class Country(AOI):
         proximity_type: Optional[str] = None,
         proximity_value: Optional[Union[float, int]] = None,
         proximity_metric: Optional[str] = None,
-        output_spatial_reference: Union[int, dict, SpatialReference] = None,
+        output_spatial_reference: Union[int, dict, SpatialReference] = 4326,
         estimate_credits: bool = False,
         **kwargs,
     ) -> pd.DataFrame:
@@ -1452,7 +1452,7 @@ class BusinessAnalyst(object):
         proximity_value: Optional[Union[float, int]] = None,
         proximity_metric: Optional[str] = None,
         return_geometry: bool = True,
-        output_spatial_reference: Union[int, dict, SpatialReference] = None,
+        output_spatial_reference: Union[int, dict, SpatialReference] = 4326,
         estimate_credits: bool = False,
         **kwargs,
     ) -> pd.DataFrame:
@@ -1692,7 +1692,7 @@ class BusinessAnalyst(object):
         proximity_value: Union[float, int] = 1,
         proximity_metric: str = "Kilometers",
         return_geometry: bool = True,
-        output_spatial_reference: Union[int, dict, SpatialReference] = None,
+        output_spatial_reference: Union[int, dict, SpatialReference] = 4326,
         estimate_credits: bool = False,
         **kwargs,
     ) -> pd.DataFrame:
@@ -1938,9 +1938,6 @@ class BusinessAnalyst(object):
             "Cannot enrich due to insufficient permissions. Please ensure the GIS object instance is "
             "created with credentials, a user, with permissions to perform geoenrichment."
         )
-
-        if not output_spatial_reference:
-            output_spatial_reference = 4326 # for online tests default continues to be 4326
 
         # TODO: implement estimate credits
         if estimate_credits:

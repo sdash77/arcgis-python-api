@@ -658,7 +658,7 @@ class Country(object):
         proximity_type: Optional[str] = None,
         proximity_value: Optional[Union[float, int]] = None,
         proximity_metric: Optional[str] = None,
-        output_spatial_reference: Union[int, dict, SpatialReference] = None,
+        output_spatial_reference: Union[int, dict, SpatialReference] = 4326,
         **kwargs,
     ):
         """
