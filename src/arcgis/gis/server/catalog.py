@@ -347,7 +347,7 @@ class ServicesDirectory(BaseServer):
             :class:`~arcgis.gis.nb.NotebookServer` objects, or the
             :class:`~arcgis.gis.server.ServiceManager.list` method of
             the :class:`~arcgis.gis.server.ServiceManager` class, which
-            returns a list of :class:`~arcgis.gis.server.Service` objects.
+            returns a list of :class:`~arcgis.gis.server.Service` objects and modules.
 
         """
         services = []
