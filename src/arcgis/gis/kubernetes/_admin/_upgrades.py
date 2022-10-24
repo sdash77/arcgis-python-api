@@ -1,3 +1,4 @@
+from __future__ import annotations
 from arcgis.gis.kubernetes._admin._base import _BaseKube
 from arcgis.gis import GIS
 from typing import Dict, Any, Optional, List
@@ -70,7 +71,9 @@ class UpgradeManager(_BaseKube):
         return self._con.post(url, params).get("updates", [])
 
     def rollback(
-        self, version: Dict[str, Any], settings: Optional[Dict[str, str]] = None
+        self,
+        version: Dict[str, Any],
+        settings: Optional[Dict[str, str]] = None,
     ) -> Dict[str, Any]:
         """
         This operation uninstalls a patch, removing the updates and fixes

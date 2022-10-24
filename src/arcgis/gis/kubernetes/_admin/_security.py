@@ -1,6 +1,7 @@
 """
 Contains the base class that all server object inherit from.
 """
+from __future__ import annotations
 from urllib.request import HTTPError
 from arcgis.gis import GIS
 from arcgis._impl.common._isd import InsensitiveDict
