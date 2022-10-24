@@ -1,11 +1,9 @@
 import unittest
 import datetime
-from tests.integration.workflow_manager.workflowmanager_setup import (
-    WorkflowManagerSetup,
-)
 import re
 from pprint import pprint
 from arcgis.geometry import Geometry
+import workflowmanager_setup
 
 
 ###########################################################################
@@ -17,7 +15,7 @@ class TestWorkflowManager(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.connection = WorkflowManagerSetup()
+        cls.connection = workflowmanager_setup.WorkflowManagerSetup()
 
     def setUp(self):
         print("Test: " + self._testMethodName)

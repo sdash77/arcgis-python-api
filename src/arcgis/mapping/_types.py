@@ -1,7 +1,7 @@
 from __future__ import absolute_import, annotations
 
 import logging
-from re import search
+from re import search, findall
 from uuid import uuid4
 from warnings import warn
 from contextlib import contextmanager
@@ -1851,6 +1851,36 @@ class WebMap(HasTraits, collections.OrderedDict):
             "streets-vector",
             "terrain",
             "topo-vector",
+            "arcgis-imagery",
+            "arcgis-imagery-standard",
+            "arcgis-imagery-labels",
+            "arcgis-light-gray",
+            "arcgis-dark-gray",
+            "arcgis-navigation",
+            "arcgis-navigation-night",
+            "arcgis-streets",
+            "arcgis-streets-night",
+            "arcgis-streets-relief",
+            "arcgis-topographic",
+            "arcgis-oceans",
+            "osm-standard",
+            "osm-standard-relief",
+            "osm-streets",
+            "osm-streets-relief",
+            "osm-light-gray",
+            "osm-dark-gray",
+            "arcgis-terrain",
+            "arcgis-community",
+            "arcgis-charted-territory",
+            "arcgis-colored-pencil",
+            "arcgis-nova",
+            "arcgis-modern-antique",
+            "arcgis-midcentury",
+            "arcgis-newspaper",
+            "arcgis-hillshade-light",
+            "arcgis-hillshade-dark",
+            "arcgis-human-geography",
+            "arcgis-human-geography-dark",
         ]
         return basemaps
 
@@ -3754,6 +3784,17 @@ class OfflineMapAreaManager(object):
                         layer0_obj = VectorTileLayer.fromitem(
                             self._gis.content.get(cached_layer.itemId)
                         )
+                    elif hasattr(cached_layer, "styleUrl") and getattr(
+                        cached_layer, "title"
+                    ) in ["OpenStreetMap"]:
+                        res = findall(
+                            r"[0-9a-f]{8}(?:[0-9a-f]{4}){3}[0-9a-f]{12}",
+                            cached_layer["styleUrl"],
+                        )
+                        if res:
+                            layer0_obj = VectorTileLayer.fromitem(
+                                self._gis.content.get(res[0])
+                            )
                 else:
                     layer0_obj = MapImageLayer(cached_layer.url, self._gis)
 
