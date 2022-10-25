@@ -13881,18 +13881,23 @@ class RasterCollection:
 
         return summary_dict
 
-    def add_field(self, field_name: str, field_values: list, context: Optional[dict[str, Any]] = None):
+    def add_field(
+        self,
+        field_name: str,
+        field_values: list,
+        context: Optional[dict[str, Any]] = None,
+    ):
         """
         Adds a new field to the raster collection and populate it with values.
 
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        field_name                               Required string. The name of the field to be added. 
+        field_name                               Required string. The name of the field to be added.
         ------------------------------------     --------------------------------------------------------------------
-        field_values                             Required list. The list of values associated with the field name. 
+        field_values                             Required list. The list of values associated with the field name.
                                                  The length of the list should match the number of items in the raster collection
-                                                 Providing only one value will set the same value for all rows. 
+                                                 Providing only one value will set the same value for all rows.
         ------------------------------------     --------------------------------------------------------------------
         context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
                                                  The default value for the context parameter would be the same as that of the
@@ -13919,8 +13924,9 @@ class RasterCollection:
             A new :class:`~arcgis.raster.RasterCollection` that has the new field added.
         """
 
-        return self._ras_coll_engine_obj.add_field(field_name, field_values, context=context)
-
+        return self._ras_coll_engine_obj.add_field(
+            field_name, field_values, context=context
+        )
 
     def group_by(self, field_name: str, context: Optional[dict[str, Any]] = None):
         """
@@ -13929,8 +13935,8 @@ class RasterCollection:
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        field_name                               Required string.The name of the field that is used to group the raster collection. 
-                                                 Items with the same field values will be grouped together. 
+        field_name                               Required string.The name of the field that is used to group the raster collection.
+                                                 Items with the same field values will be grouped together.
         ------------------------------------     --------------------------------------------------------------------
         context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
                                                  The default value for the context parameter would be the same as that of the
@@ -13954,8 +13960,8 @@ class RasterCollection:
         ====================================     ====================================================================
 
         :return:
-            A Dictionary. The dictionary that contains the grouped raster collections. The key of the dictionary is a 
-            field value of the field name that the grouping is based on. The value of the dictionary is a raster 
+            A Dictionary. The dictionary that contains the grouped raster collections. The key of the dictionary is a
+            field value of the field name that the grouping is based on. The value of the dictionary is a raster
             collection whose field name contains the same field value.
         """
 
@@ -14462,23 +14468,22 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
     def add_field(self, field_name, field_values, context=None):
         """
          Adds a new field to the raster collection and populate it with values.
-        :param field_name: Required string. The name of the field to be added. 
-        :param field_values: Required list. The list of values associated with the field name. 
+        :param field_name: Required string. The name of the field to be added.
+        :param field_values: Required list. The list of values associated with the field name.
                              The length of the list should match the number of items in the raster collection
-                             Providing only one value will set the same value for all rows. 
+                             Providing only one value will set the same value for all rows.
         :return: Collection that has the new field added.
         """
         if context is None:
             context = self._context
 
         if field_name in self.fields:
-            raise RuntimeError('Cannot add the field. The field name already exists.')
+            raise RuntimeError("Cannot add the field. The field name already exists.")
 
         newcollection = self._clone_raster_collection(context=context)
         newcollection._ras_coll_engine_obj._raster_collection = (
             self._raster_collection.addField(
-                field_name=field_name,
-                field_values=field_values
+                field_name=field_name, field_values=field_values
             )
         )
         newcollection._ras_coll_engine_obj._df = (
@@ -14489,27 +14494,29 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
     def group_by(self, field_name, context=None):
         """
          group_by method can be used to group the raster collection based on a field.
-        :param field_name: Required string.The name of the field that is used to group the raster collection. Items with the same field values will be grouped together. 
-        :return: Dictionary.The dictionary that contains the grouped raster collections. The key of the dictionary is a field value of the field name that the grouping is based on. 
+        :param field_name: Required string.The name of the field that is used to group the raster collection. Items with the same field values will be grouped together.
+        :return: Dictionary.The dictionary that contains the grouped raster collections. The key of the dictionary is a field value of the field name that the grouping is based on.
                  The value of the dictionary is a raster collection whose field name contains the same field value.
         """
         if context is None:
             context = self._context
 
         try:
-            grouped_output_arcpy = self._raster_collection.groupBy(field_name=field_name)
+            grouped_output_arcpy = self._raster_collection.groupBy(
+                field_name=field_name
+            )
             new_grouped_output = {}
             for item, value in grouped_output_arcpy.items():
                 newcollection = self._clone_raster_collection(context=context)
                 newcollection._ras_coll_engine_obj._raster_collection = value
                 newcollection._ras_coll_engine_obj._df = (
-                newcollection._ras_coll_engine_obj._as_df()
-            )
-                new_grouped_output.update({item:newcollection})
+                    newcollection._ras_coll_engine_obj._as_df()
+                )
+                new_grouped_output.update({item: newcollection})
             return new_grouped_output
 
         except:
-            raise RuntimeError('group_by failed with the field_name - '+field_name)
+            raise RuntimeError("group_by failed with the field_name - " + field_name)
 
     def _as_df(
         self, result_offset=None, result_record_count=None, return_all_records=False
@@ -15232,19 +15239,19 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
     def add_field(self, field_name, field_values, context=None):
         """
          Adds a new field to the raster collection and populate it with values.
-        :param field_name: Required string. The name of the field to be added. 
-        :param field_values: Required list. The list of values associated with the field name. 
+        :param field_name: Required string. The name of the field to be added.
+        :param field_values: Required list. The list of values associated with the field name.
                              The length of the list should match the number of items in the raster collection
-                             Providing only one value will set the same value for all rows. 
+                             Providing only one value will set the same value for all rows.
         :return: Collection that has the new field added.
         """
         if context is None:
             context = self._context
 
         if field_name in self.fields:
-            raise RuntimeError('Cannot add the field. The field name already exists.')
+            raise RuntimeError("Cannot add the field. The field name already exists.")
 
-        df=self._as_df()
+        df = self._as_df()
         new_df = df.copy()
 
         if not isinstance(field_values, list):
@@ -15252,22 +15259,24 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
 
         if self.count != len(field_values):
             if len(field_values) == 1:
-                field_values = field_values*self.count
-            else:                 
-                raise RuntimeError('Length of field_values does not match the raster collection count')
+                field_values = field_values * self.count
+            else:
+                raise RuntimeError(
+                    "Length of field_values does not match the raster collection count"
+                )
 
         try:
             new_df[field_name] = field_values
         except:
-            raise RuntimeError('Failed to add the field to the raster collection')
+            raise RuntimeError("Failed to add the field to the raster collection")
 
         return RasterCollection(new_df, context=context)
 
     def group_by(self, field_name, context=None):
         """
          group_by method can be used to group the raster collection based on a field.
-        :param field_name: Required string.The name of the field that is used to group the raster collection. Items with the same field values will be grouped together. 
-        :return: Dictionary.The dictionary that contains the grouped raster collections. The key of the dictionary is a field value of the field name that the grouping is based on. 
+        :param field_name: Required string.The name of the field that is used to group the raster collection. Items with the same field values will be grouped together.
+        :return: Dictionary.The dictionary that contains the grouped raster collections. The key of the dictionary is a field value of the field name that the grouping is based on.
                  The value of the dictionary is a raster collection whose field name contains the same field value.
         """
         if context is None:
@@ -15276,13 +15285,19 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         df = self._as_df()
         try:
             group_by_obj = df.groupby(field_name)
-            groups={}
+            groups = {}
 
-            for key,val in group_by_obj.groups.items():
-                groups.update({key:RasterCollection(group_by_obj.get_group(key), context=context)})
+            for key, val in group_by_obj.groups.items():
+                groups.update(
+                    {
+                        key: RasterCollection(
+                            group_by_obj.get_group(key), context=context
+                        )
+                    }
+                )
             return groups
         except:
-            raise RuntimeError('groupBy failed with the field_name - '+field_name)
+            raise RuntimeError("groupBy failed with the field_name - " + field_name)
 
     def _generate_raster_item_rft(self, raster_id):
         template_dict = {"rasterFunction": "RasterItem", "rasterFunctionArguments": {}}
@@ -16243,10 +16258,10 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
     def add_field(self, field_name, field_values, context=None):
         """
          Adds a new field to the raster collection and populate it with values.
-        :param field_name: Required string. The name of the field to be added. 
-        :param field_values: Required list. The list of values associated with the field name. 
+        :param field_name: Required string. The name of the field to be added.
+        :param field_values: Required list. The list of values associated with the field name.
                              The length of the list should match the number of items in the raster collection
-                             Providing only one value will set the same value for all rows. 
+                             Providing only one value will set the same value for all rows.
         :return: Collection that has the new field added.
         """
 
@@ -16254,9 +16269,9 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
             context = self._context
 
         if field_name in self.fields:
-            raise RuntimeError('Cannot add the field. The field name already exists.')
+            raise RuntimeError("Cannot add the field. The field name already exists.")
 
-        df=self._as_df()
+        df = self._as_df()
         new_df = df.copy()
 
         if not isinstance(field_values, list):
@@ -16264,22 +16279,24 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
 
         if self.count != len(field_values):
             if len(field_values) == 1:
-                field_values = field_values*self.count
-            else:                 
-                raise RuntimeError('Length of field_values does not match the raster collection count')
+                field_values = field_values * self.count
+            else:
+                raise RuntimeError(
+                    "Length of field_values does not match the raster collection count"
+                )
 
         try:
             new_df[field_name] = field_values
         except:
-            raise RuntimeError('Failed to add the field to the raster collection')
+            raise RuntimeError("Failed to add the field to the raster collection")
 
         return RasterCollection(new_df, context=context)
 
-    def group_by(self, field_name,  context=None):
+    def group_by(self, field_name, context=None):
         """
          group_by method can be used to group the raster collection based on a field.
-        :param field_name: Required string.The name of the field that is used to group the raster collection. Items with the same field values will be grouped together. 
-        :return: Dictionary.The dictionary that contains the grouped raster collections. The key of the dictionary is a field value of the field name that the grouping is based on. 
+        :param field_name: Required string.The name of the field that is used to group the raster collection. Items with the same field values will be grouped together.
+        :return: Dictionary.The dictionary that contains the grouped raster collections. The key of the dictionary is a field value of the field name that the grouping is based on.
                  The value of the dictionary is a raster collection whose field name contains the same field value.
         """
         if context is None:
@@ -16288,14 +16305,19 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
         df = self._as_df()
         try:
             group_by_obj = df.groupby(field_name)
-            groups={}
+            groups = {}
 
-            for key,val in group_by_obj.groups.items():
-                groups.update({key:RasterCollection(group_by_obj.get_group(key), context=context)})
+            for key, val in group_by_obj.groups.items():
+                groups.update(
+                    {
+                        key: RasterCollection(
+                            group_by_obj.get_group(key), context=context
+                        )
+                    }
+                )
             return groups
         except:
-            raise RuntimeError('groupBy failed with the field_name - '+field_name)
-
+            raise RuntimeError("groupBy failed with the field_name - " + field_name)
 
     def _as_df(
         self, result_offset=None, result_record_count=None, return_all_records=False
