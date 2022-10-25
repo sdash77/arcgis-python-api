@@ -37,7 +37,7 @@ def enrich_check(
     prx_typ: str = None,
     prx_val: Union[int, float] = None,
     prx_mtrc: str = None,
-    output_spatial_reference: int = None,
+    output_spatial_reference: int = 4326,
 ) -> None:
     with expectation:
 
@@ -433,6 +433,11 @@ class TestEnrichOnline(unittest.TestCase):
         self.point_df_inst = point_df()
         self.stdgeo_srs_inst = stdgeo_srs()
 
+        self.stdgeo_srs_inst_orig = self.stdgeo_srs_inst
+        self.point_df_inst_orig = self.point_df_inst
+        self.line_df_inst_orig = self.line_df_inst
+        self.polygon_df_inst_orig = self.polygon_df_inst
+
         if abbreviated_test:
             self.usa_agol_enrich_vars_inst = self.usa_agol_enrich_vars_inst.head(10)
 
@@ -449,6 +454,7 @@ class TestEnrichOnline(unittest.TestCase):
             self.point_df_inst.spatial.set_geometry(shape_column)
 
             self.stdgeo_srs_inst = self.stdgeo_srs_inst.head(10)
+
 
     # ArcGIS Online
     @skip_if_no_agol
@@ -485,7 +491,7 @@ class TestEnrichOnline(unittest.TestCase):
 
     @skip_if_no_agol
     def test_enrich_usa_poly_singlebatch_agol(self):
-        polygon_df_inst_sample = self.polygon_df_inst.iloc[:45]
+        polygon_df_inst_sample = self.polygon_df_inst_orig.iloc[:45]
         polygon_df_inst_sample.spatial.set_geometry("SHAPE")
         enrich_check(
             self.usa_agol_inst,
