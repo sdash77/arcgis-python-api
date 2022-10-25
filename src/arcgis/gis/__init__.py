@@ -7511,7 +7511,7 @@ class ContentManager(object):
             shutil.rmtree(temp_file, ignore_errors=True)
 
             # Step 2: Analyze the data
-            res = self._gis.content.analyze(item=csv_item)
+            res = self._gis.content.analyze(item=csv_item, file_type="csv")
 
             # Step 3: Publish the CSV as a Table
             # publish the csv using the params from analyze
