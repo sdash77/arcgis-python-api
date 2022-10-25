@@ -361,6 +361,26 @@ class _DeepCloner:
                     and "type" in layer
                     and layer["type"] == "Feature Collection"
                 ]
+                # check for group layers
+                for layer in webmap_json["operationalLayers"]:
+                    if "layers" in layer:
+                        featurelayer_services += [
+                            sublayer
+                            for sublayer in layer["layers"]
+                            if "layerType" in sublayer
+                            and sublayer["layerType"] == "ArcGISFeatureLayer"
+                            and "url" in sublayer
+                            and sublayer["url"] is not None
+                            and ("type" not in sublayer or sublayer["type"] != "Feature Collection")
+                        ]
+                        feature_collections += [
+                            sublayer
+                            for sublayer in layer["layers"]
+                            if "layerType" in sublayer
+                            and sublayer["layerType"] == "ArcGISFeatureLayer"
+                            and "type" in sublayer
+                            and sublayer["type"] == "Feature Collection"
+                        ]
             if "tables" in webmap_json:
                 featurelayer_services += [
                     table for table in webmap_json["tables"] if "url" in table
