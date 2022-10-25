@@ -13881,6 +13881,86 @@ class RasterCollection:
 
         return summary_dict
 
+    def add_field(self, field_name: str, field_values: list, context: Optional[dict[str, Any]] = None):
+        """
+        Adds a new field to the raster collection and populate it with values.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        field_name                               Required string. The name of the field to be added. 
+        ------------------------------------     --------------------------------------------------------------------
+        field_values                             Required list. The list of values associated with the field name. 
+                                                 The length of the list should match the number of items in the raster collection
+                                                 Providing only one value will set the same value for all rows. 
+        ------------------------------------     --------------------------------------------------------------------
+        context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
+                                                 The default value for the context parameter would be the same as that of the
+                                                 context settings applied to the parent collection.
+
+                                                 Currently available:
+
+                                                     -  query_boundary:
+                                                        This boolean value set to this option determines whether to add SHAPE field
+                                                        to the RasterCollection. The value in the SHAPE field represents the
+                                                        boundary/geometry of the raster. The query_boundary parameter is honoured
+                                                        only when the RasterCollection is created from a list of Rasters.
+
+                                                        - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+
+                                                        - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
+
+                                                        Example:
+
+                                                        {"query_boundary":True}
+        ====================================     ====================================================================
+
+        :return:
+            A new :class:`~arcgis.raster.RasterCollection` that has the new field added.
+        """
+
+        return self._ras_coll_engine_obj.add_field(field_name, field_values, context=context)
+
+
+    def group_by(self, field_name: str, context: Optional[dict[str, Any]] = None):
+        """
+        group_by method can be used to group the raster collection based on a field.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        field_name                               Required string.The name of the field that is used to group the raster collection. 
+                                                 Items with the same field values will be grouped together. 
+        ------------------------------------     --------------------------------------------------------------------
+        context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
+                                                 The default value for the context parameter would be the same as that of the
+                                                 context settings applied to the parent collection.
+
+                                                 Currently available:
+
+                                                     -  query_boundary:
+                                                        This boolean value set to this option determines whether to add SHAPE field
+                                                        to the RasterCollection. The value in the SHAPE field represents the
+                                                        boundary/geometry of the raster. The query_boundary parameter is honoured
+                                                        only when the RasterCollection is created from a list of Rasters.
+
+                                                        - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+
+                                                        - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
+
+                                                        Example:
+
+                                                        {"query_boundary":True}
+        ====================================     ====================================================================
+
+        :return:
+            A Dictionary. The dictionary that contains the grouped raster collections. The key of the dictionary is a 
+            field value of the field name that the grouping is based on. The value of the dictionary is a raster 
+            collection whose field name contains the same field value.
+        """
+
+        return self._ras_coll_engine_obj.group_by(field_name, context=context)
+
     def _as_df(
         self, result_offset=None, result_record_count=None, return_all_records=False
     ):
@@ -14378,6 +14458,58 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
             newcollection._ras_coll_engine_obj._as_df()
         )
         return newcollection
+
+    def add_field(self, field_name, field_values, context=None):
+        """
+         Adds a new field to the raster collection and populate it with values.
+        :param field_name: Required string. The name of the field to be added. 
+        :param field_values: Required list. The list of values associated with the field name. 
+                             The length of the list should match the number of items in the raster collection
+                             Providing only one value will set the same value for all rows. 
+        :return: Collection that has the new field added.
+        """
+        if context is None:
+            context = self._context
+
+        if field_name in self.fields:
+            raise RuntimeError('Cannot add the field. The field name already exists.')
+
+        newcollection = self._clone_raster_collection(context=context)
+        newcollection._ras_coll_engine_obj._raster_collection = (
+            self._raster_collection.addField(
+                field_name=field_name,
+                field_values=field_values
+            )
+        )
+        newcollection._ras_coll_engine_obj._df = (
+            newcollection._ras_coll_engine_obj._as_df()
+        )
+        return newcollection
+
+    def group_by(self, field_name, context=None):
+        """
+         group_by method can be used to group the raster collection based on a field.
+        :param field_name: Required string.The name of the field that is used to group the raster collection. Items with the same field values will be grouped together. 
+        :return: Dictionary.The dictionary that contains the grouped raster collections. The key of the dictionary is a field value of the field name that the grouping is based on. 
+                 The value of the dictionary is a raster collection whose field name contains the same field value.
+        """
+        if context is None:
+            context = self._context
+
+        try:
+            grouped_output_arcpy = self._raster_collection.groupBy(field_name=field_name)
+            new_grouped_output = {}
+            for item, value in grouped_output_arcpy.items():
+                newcollection = self._clone_raster_collection(context=context)
+                newcollection._ras_coll_engine_obj._raster_collection = value
+                newcollection._ras_coll_engine_obj._df = (
+                newcollection._ras_coll_engine_obj._as_df()
+            )
+                new_grouped_output.update({item:newcollection})
+            return new_grouped_output
+
+        except:
+            raise RuntimeError('group_by failed with the field_name - '+field_name)
 
     def _as_df(
         self, result_offset=None, result_record_count=None, return_all_records=False
@@ -15096,6 +15228,61 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         merged_collection.reset_index(drop=True, inplace=True)
 
         return RasterCollection(merged_collection)
+
+    def add_field(self, field_name, field_values, context=None):
+        """
+         Adds a new field to the raster collection and populate it with values.
+        :param field_name: Required string. The name of the field to be added. 
+        :param field_values: Required list. The list of values associated with the field name. 
+                             The length of the list should match the number of items in the raster collection
+                             Providing only one value will set the same value for all rows. 
+        :return: Collection that has the new field added.
+        """
+        if context is None:
+            context = self._context
+
+        if field_name in self.fields:
+            raise RuntimeError('Cannot add the field. The field name already exists.')
+
+        df=self._as_df()
+        new_df = df.copy()
+
+        if not isinstance(field_values, list):
+            field_values = [field_values]
+
+        if self.count != len(field_values):
+            if len(field_values) == 1:
+                field_values = field_values*self.count
+            else:                 
+                raise RuntimeError('Length of field_values does not match the raster collection count')
+
+        try:
+            new_df[field_name] = field_values
+        except:
+            raise RuntimeError('Failed to add the field to the raster collection')
+
+        return RasterCollection(new_df, context=context)
+
+    def group_by(self, field_name, context=None):
+        """
+         group_by method can be used to group the raster collection based on a field.
+        :param field_name: Required string.The name of the field that is used to group the raster collection. Items with the same field values will be grouped together. 
+        :return: Dictionary.The dictionary that contains the grouped raster collections. The key of the dictionary is a field value of the field name that the grouping is based on. 
+                 The value of the dictionary is a raster collection whose field name contains the same field value.
+        """
+        if context is None:
+            context = self._context
+
+        df = self._as_df()
+        try:
+            group_by_obj = df.groupby(field_name)
+            groups={}
+
+            for key,val in group_by_obj.groups.items():
+                groups.update({key:RasterCollection(group_by_obj.get_group(key), context=context)})
+            return groups
+        except:
+            raise RuntimeError('groupBy failed with the field_name - '+field_name)
 
     def _generate_raster_item_rft(self, raster_id):
         template_dict = {"rasterFunction": "RasterItem", "rasterFunctionArguments": {}}
@@ -16052,6 +16239,63 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
         merged_collection.reset_index(drop=True, inplace=True)
 
         return RasterCollection(merged_collection)
+
+    def add_field(self, field_name, field_values, context=None):
+        """
+         Adds a new field to the raster collection and populate it with values.
+        :param field_name: Required string. The name of the field to be added. 
+        :param field_values: Required list. The list of values associated with the field name. 
+                             The length of the list should match the number of items in the raster collection
+                             Providing only one value will set the same value for all rows. 
+        :return: Collection that has the new field added.
+        """
+
+        if context is None:
+            context = self._context
+
+        if field_name in self.fields:
+            raise RuntimeError('Cannot add the field. The field name already exists.')
+
+        df=self._as_df()
+        new_df = df.copy()
+
+        if not isinstance(field_values, list):
+            field_values = [field_values]
+
+        if self.count != len(field_values):
+            if len(field_values) == 1:
+                field_values = field_values*self.count
+            else:                 
+                raise RuntimeError('Length of field_values does not match the raster collection count')
+
+        try:
+            new_df[field_name] = field_values
+        except:
+            raise RuntimeError('Failed to add the field to the raster collection')
+
+        return RasterCollection(new_df, context=context)
+
+    def group_by(self, field_name,  context=None):
+        """
+         group_by method can be used to group the raster collection based on a field.
+        :param field_name: Required string.The name of the field that is used to group the raster collection. Items with the same field values will be grouped together. 
+        :return: Dictionary.The dictionary that contains the grouped raster collections. The key of the dictionary is a field value of the field name that the grouping is based on. 
+                 The value of the dictionary is a raster collection whose field name contains the same field value.
+        """
+        if context is None:
+            context = self._context
+
+        df = self._as_df()
+        try:
+            group_by_obj = df.groupby(field_name)
+            groups={}
+
+            for key,val in group_by_obj.groups.items():
+                groups.update({key:RasterCollection(group_by_obj.get_group(key), context=context)})
+            return groups
+        except:
+            raise RuntimeError('groupBy failed with the field_name - '+field_name)
+
 
     def _as_df(
         self, result_offset=None, result_record_count=None, return_all_records=False
