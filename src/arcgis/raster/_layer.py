@@ -13722,7 +13722,7 @@ class RasterCollection:
         """
         return self._ras_coll_engine_obj.map(func=func, context=context)
 
-    #def reduce(self, func, func_args={}):
+    # def reduce(self, func, func_args={}):
     #    """
     #    The ``reduce`` method composite all the images in the collection to a single image based on a reducer function.
 
@@ -13762,7 +13762,7 @@ class RasterCollection:
     #    """
     #    return self._ras_coll_engine_obj.reduce(func=func, func_args=func_args)
 
-    #def merge(self, collection2):
+    # def merge(self, collection2):
     #    """
     #    The ``merge`` method merges two image collections into one. The output has all the items that were in either collection.
 
@@ -13786,7 +13786,7 @@ class RasterCollection:
 
     #    return self._ras_coll_engine_obj.merge(collection2._ras_coll_engine_obj)
 
-    #def summarize_field(self, field_name, summary_type="ALL"):
+    # def summarize_field(self, field_name, summary_type="ALL"):
     #    """
     #    Summarizes a numeric field of the RasterCollection based on the specified summary_type
     #    :param field_name: str, the field name to be summarized
