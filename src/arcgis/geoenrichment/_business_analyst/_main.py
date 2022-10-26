@@ -1403,7 +1403,8 @@ class BusinessAnalyst(object):
     def _enrich_using_arrow(self, in_sedf, variables) -> pd.DataFrame:
 
         # create a data frame with two columns: object id and shape in WKB
-        df_input = in_sedf[[in_sedf.spatial.name]]
+        input_shape_series = in_sedf.loc[:, in_sedf.spatial.name]
+        df_input = pd.DataFrame({in_sedf.spatial.name: input_shape_series})
         df_input.spatial.set_geometry(in_sedf.spatial.name)
 
         # come up with index field that doesn't exist yet
