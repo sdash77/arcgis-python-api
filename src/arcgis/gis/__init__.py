@@ -19,7 +19,6 @@ import tempfile
 import warnings
 import zipfile
 from uuid import uuid4
-import pandas as pd
 import configparser
 from contextlib import contextmanager
 import functools
@@ -35,6 +34,10 @@ from arcgis.gis._impl import (
     ViewLayerDefParameter,
 )
 
+try:
+    import pandas as pd
+except:
+    pass
 try:
     import arcpy
 
