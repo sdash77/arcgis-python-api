@@ -1,3 +1,4 @@
+from __future__ import annotations
 from urllib.request import HTTPError
 from ._base import _BaseKube
 from arcgis.gis import GIS

@@ -45,7 +45,10 @@ You need to a security question by integer:
 # -------------------------------------------------------------------------
 @lru_cache(maxsize=255)
 def _token_url_validator(
-    url: str, session: "EsriSession", verify: bool = False, proxies: frozenset = None
+    url: str,
+    session: "EsriSession",
+    verify: bool = False,
+    proxies: frozenset = None,
 ) -> str:
     """validates the token url from the give URL"""
     parts = ["/info", "/rest/info", "/sharing/rest/info"]
@@ -60,7 +63,9 @@ def _token_url_validator(
             try:
 
                 resp = session.get(
-                    f"{parsed_url}{pt}?f=json", proxies=proxies, verify=verify
+                    f"{parsed_url}{pt}?f=json",
+                    proxies=proxies,
+                    verify=verify,
                 )  # need to include proxies, verify parameter
                 token_url = resp.json()["authInfo"]["tokenServicesUrl"]
                 if token_url:
@@ -137,7 +142,7 @@ class ArcGISServerAuth(AuthBase, SupportMultiAuth):
     @lru_cache(maxsize=255)
     def _read_ags_file(self, ags_file: str) -> dict[str, Any]:
         """reads the ags file into cache"""
-        return self._arcpy.gp.getStandaloneServerToken(self._ags)
+        return self._arcpy.gp.getStandaloneServerToken(self._ags) or {}
 
     # ----------------------------------------------------------------------
     @lru_cache(maxsize=255)
@@ -520,7 +525,11 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         auth_url, state = session.authorization_url(
             self._auth_url,
             expiration=self._expiration,
-            **{"allow_verification": "false", "style": "dark", "locale": "en-US"},
+            **{
+                "allow_verification": "false",
+                "style": "dark",
+                "locale": "en-US",
+            },
         )
         auth_response = requests.get(
             url=auth_url,
@@ -557,7 +566,10 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
             oauth_state = parse_qs(parsed.query)["oauth_state"][0]
 
             url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
-            params = {"oauth_state": oauth_state, "acceptTermsAndConditions": True}
+            params = {
+                "oauth_state": oauth_state,
+                "acceptTermsAndConditions": True,
+            }
             response = requests.post(
                 url,
                 params,
@@ -589,12 +601,18 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         authorization_url, state = self._oauth.authorization_url(
             self._auth_url,
             expiration=20160,
-            **{"allow_verification": "false", "style": "dark", "locale": "en-US"},
+            **{
+                "allow_verification": "false",
+                "style": "dark",
+                "locale": "en-US",
+            },
         )
         self._authorization_url = authorization_url
         self._state = state
         content = requests.get(
-            self._authorization_url, verify=self._verify_cert, proxies=self.proxies
+            self._authorization_url,
+            verify=self._verify_cert,
+            proxies=self.proxies,
         ).text
         oauth_info = None
         pattern = self._re_expressions["step-1a"]
@@ -659,7 +677,10 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
             parsed = parse_url(signin_resp.url)
             oauth_state = parse_qs(signin_resp.url.split("?")[-1])["oauth_state"][0]
             url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
-            params = {"oauth_state": oauth_state, "acceptTermsAndConditions": True}
+            params = {
+                "oauth_state": oauth_state,
+                "acceptTermsAndConditions": True,
+            }
             signin_resp = requests.post(
                 url,
                 params,
@@ -1074,7 +1095,14 @@ class EsriGenTokenAuth(AuthBase, SupportMultiAuth):
 
                     parsed = parse_url(prep.url)
                     url = urlunparse(
-                        (parsed.scheme, parsed.netloc, parsed.path, "", "", "")
+                        (
+                            parsed.scheme,
+                            parsed.netloc,
+                            parsed.path,
+                            "",
+                            "",
+                            "",
+                        )
                     )
                     kv = dict(parse_qsl(parsed.query))
                     kv.pop("token", None)

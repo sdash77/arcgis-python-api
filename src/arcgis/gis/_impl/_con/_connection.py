@@ -739,7 +739,7 @@ class Connection(object):
             self._create_session()
 
         try_json = kwargs.pop("try_json", True)
-        if try_json:
+        if try_json and isinstance(params, dict):
             params["f"] = "json"
         if params == {}:
             params = None
@@ -749,14 +749,16 @@ class Connection(object):
         else:
             out_path = kwargs.pop("out_path", tempfile.gettempdir())
         file_name = kwargs.pop("file_name", None)
-        if params and json_encode:
-            for k, v in copy.copy(params).items():
-                if isinstance(v, (tuple, dict, list, bool)):
-                    params[k] = json.dumps(v)
-                elif isinstance(v, PropertyMap):
-                    params[k] = json.dumps(dict(v))
-                elif isinstance(v, InsensitiveDict):
-                    params[k] = v.json
+        if isinstance(params, dict):
+            if params and json_encode:
+                for k, v in copy.copy(params).items():
+                    if isinstance(v, (tuple, dict, list, bool)):
+                        params[k] = json.dumps(v)
+                    elif isinstance(v, PropertyMap):
+                        params[k] = json.dumps(dict(v))
+                    elif isinstance(v, InsensitiveDict):
+                        params[k] = v.json
+
         try:
             if self._cert_file:
                 cert = (self._cert_file, self._key_file)
