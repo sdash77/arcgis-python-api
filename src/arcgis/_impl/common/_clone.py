@@ -343,6 +343,36 @@ class _DeepCloner:
             featurelayer_services = []
             feature_collections = []
 
+            def process_group(layer):
+                services = []
+                collections = []
+                services += [
+                    sublayer
+                    for sublayer in layer["layers"]
+                    if "layerType" in sublayer
+                    and sublayer["layerType"] == "ArcGISFeatureLayer"
+                    and "url" in sublayer
+                    and sublayer["url"] is not None
+                    and (
+                        "type" not in sublayer
+                        or sublayer["type"] != "Feature Collection"
+                    )
+                ]
+                collections += [
+                    sublayer
+                    for sublayer in layer["layers"]
+                    if "layerType" in sublayer
+                    and sublayer["layerType"] == "ArcGISFeatureLayer"
+                    and "type" in sublayer
+                    and sublayer["type"] == "Feature Collection"
+                ]
+                for sublayer in layer["layers"]:
+                    if "layers" in sublayer:
+                        res = process_group(sublayer)
+                        services += res[0]
+                        collections += res[1]
+                return [services, collections]
+
             if "operationalLayers" in webmap_json:
                 featurelayer_services += [
                     layer
@@ -364,23 +394,9 @@ class _DeepCloner:
                 # check for group layers
                 for layer in webmap_json["operationalLayers"]:
                     if "layers" in layer:
-                        featurelayer_services += [
-                            sublayer
-                            for sublayer in layer["layers"]
-                            if "layerType" in sublayer
-                            and sublayer["layerType"] == "ArcGISFeatureLayer"
-                            and "url" in sublayer
-                            and sublayer["url"] is not None
-                            and ("type" not in sublayer or sublayer["type"] != "Feature Collection")
-                        ]
-                        feature_collections += [
-                            sublayer
-                            for sublayer in layer["layers"]
-                            if "layerType" in sublayer
-                            and sublayer["layerType"] == "ArcGISFeatureLayer"
-                            and "type" in sublayer
-                            and sublayer["type"] == "Feature Collection"
-                        ]
+                        res = process_group(layer)
+                        featurelayer_services += res[0]
+                        feature_collections += res[1]
             if "tables" in webmap_json:
                 featurelayer_services += [
                     table for table in webmap_json["tables"] if "url" in table
