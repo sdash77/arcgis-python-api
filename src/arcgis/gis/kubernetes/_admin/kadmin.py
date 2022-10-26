@@ -1,3 +1,4 @@
+from __future__ import annotations
 from typing import Optional
 from urllib.request import HTTPError
 from arcgis._impl.common._isd import InsensitiveDict
