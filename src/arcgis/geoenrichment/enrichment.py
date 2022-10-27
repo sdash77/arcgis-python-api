@@ -1588,6 +1588,7 @@ def enrich(
     if isinstance(study_areas, list):
         first_geo = study_areas[0]
         for index, value in enumerate(study_areas):
+            cntry = None
             if isinstance(value, BufferStudyArea):
                 # returns a string
                 value = value.area
@@ -1606,6 +1607,13 @@ def enrich(
                     sa_to_country[cntry].append(value)
                 else:
                     sa_to_country[cntry] = [value]
+            elif isinstance(value, dict):
+                if "sourceCountry" in value["address"]:
+                    cntry = Country(value["address"]["sourceCountry"])
+                    if cntry in sa_to_country:
+                        sa_to_country[cntry].append(value)
+                    else:
+                        sa_to_country[cntry] = [value]
             if index == 0:
                 # if the first instance is a geocoded area, assign enrich_src
                 enrich_src = cntry
@@ -1669,6 +1677,7 @@ def enrich(
             enrich_res = pd.DataFrame()
             for country, sas in sa_to_country.items():
                 enrich_src = country
+                study_areas = sas
                 avail_data_coll = enrich_src.enrich_variables.data_collection.unique()
                 unavail_data_coll = [
                     dc for dc in data_collections if dc not in avail_data_coll
