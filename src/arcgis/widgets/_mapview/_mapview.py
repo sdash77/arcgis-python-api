@@ -2621,7 +2621,7 @@ class MapView(widgets.DOMWidget):
     _time_info = Dict({}).tag(sync=True)
 
     _writeonly_start_time = Datetime().tag(sync=True)
-    _writeonly_start_time.default_value= dt.datetime(1970, 1, 1)
+    _writeonly_start_time.default_value = dt.datetime(1970, 1, 1)
     _readonly_start_time = Unicode("").tag(sync=True)
     """JS can't send `Date` objects -- ISO string of time"""
 
@@ -2644,7 +2644,7 @@ class MapView(widgets.DOMWidget):
         self._writeonly_start_time = value
 
     _writeonly_end_time = Datetime().tag(sync=True)
-    _writeonly_end_time.default_value= dt.datetime(1970, 1, 1)
+    _writeonly_end_time.default_value = dt.datetime(1970, 1, 1)
     _readonly_end_time = Unicode("").tag(sync=True)
     """JS can't send `Date` objects -- ISO string of time"""
 
