@@ -27,6 +27,7 @@ try:
     from ._tsmodel_archs._FCN import _TSFCN
     from ._tsmodel_archs._LSTM import _TSLSTM
     from .._utils.TSData import To3dTensor, ToTensor
+    from .._utils.common import _get_emd_path
 
     _model_arch = {
         "inceptiontime": _TSInceptionTime,
@@ -86,18 +87,20 @@ class TimeSeriesModel(ArcGISModel):
                             Allowed "InceptionTime", "ResCNN",
                             "Resnet", "FCN"
     ---------------------   -------------------------------------------
+    location_var            Optional string. Location variable in case of
+                            NetCDF dataset.
+    ---------------------   -------------------------------------------
     ``**kwargs``            Optional kwargs.
     =====================   ===========================================
 
     :return: :class:`~arcgis.learn.TimeSeriesModel` Object
     """
 
-    def __init__(self, data, seq_len, model_arch="InceptionTime", **kwargs):
+    def __init__(self, data, seq_len, model_arch="InceptionTime", location_var=None, **kwargs):
 
         data_bunch = None
-
         if not data._is_empty:
-            data_bunch = data._time_series_bunch(seq_len)
+            data_bunch = data._time_series_bunch(seq_len, location_var)
 
         super().__init__(data, None)
 
@@ -164,7 +167,7 @@ class TimeSeriesModel(ArcGISModel):
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
 
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
 
