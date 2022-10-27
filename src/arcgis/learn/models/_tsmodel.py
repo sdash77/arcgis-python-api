@@ -96,7 +96,9 @@ class TimeSeriesModel(ArcGISModel):
     :return: :class:`~arcgis.learn.TimeSeriesModel` Object
     """
 
-    def __init__(self, data, seq_len, model_arch="InceptionTime", location_var=None, **kwargs):
+    def __init__(
+        self, data, seq_len, model_arch="InceptionTime", location_var=None, **kwargs
+    ):
 
         data_bunch = None
         if not data._is_empty:
