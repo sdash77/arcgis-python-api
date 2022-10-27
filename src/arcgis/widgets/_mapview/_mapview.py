@@ -2640,7 +2640,7 @@ class MapView(widgets.DOMWidget):
     def start_time(self, value):
         if not isinstance(value, dt.datetime):
             raise Exception("Value must be of type `datetime.datetime`")
-        self._writeonly_start_time = dt.datetime(1, 1, 1)
+        self._writeonly_start_time = dt.datetime(1970, 1, 1)
         self._writeonly_start_time = value
 
     _writeonly_end_time = Datetime().tag(sync=True)
@@ -2663,7 +2663,7 @@ class MapView(widgets.DOMWidget):
     def end_time(self, value):
         if not isinstance(value, dt.datetime):
             raise Exception("Value must be of type `datetime.datetime`")
-        self._writeonly_end_time = dt.datetime(1, 1, 1)
+        self._writeonly_end_time = dt.datetime(1970, 1, 1)
         self._writeonly_end_time = value
 
     def _update_time_extent_if_applicable(self, item):
