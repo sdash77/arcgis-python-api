@@ -859,11 +859,18 @@ class TabularDataObject(object):
             processed_dataframe = self._dataframe.copy()
 
         for k in processed_dataframe[location_var].unique():
-            loc_processed_dataframe = processed_dataframe[processed_dataframe[location_var]==k]
+            loc_processed_dataframe = processed_dataframe[
+                processed_dataframe[location_var] == k
+            ]
             loc_processed_dataframe.reset_index(inplace=True)
-            for i in range(len(loc_processed_dataframe[self._dependent_variable]) - seq_len):
+            for i in range(
+                len(loc_processed_dataframe[self._dependent_variable]) - seq_len
+            ):
                 for j in range(seq_len):
-                    if len(loc_processed_dataframe[self._dependent_variable]) > i + seq_len - 1:
+                    if (
+                        len(loc_processed_dataframe[self._dependent_variable])
+                        > i + seq_len - 1
+                    ):
                         df_columns[f"att{j + 1}"].append(
                             loc_processed_dataframe[self._dependent_variable][i + j]
                         )
