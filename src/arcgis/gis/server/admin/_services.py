@@ -167,7 +167,11 @@ class ServiceManager(BaseServer):
         if os.path.isdir(folder) == False:
             os.makedirs(folder)
         url = self._url + "/exportServices"
-        params = {"f": "json", "location": folder, "csrfPreventToken": self._con.token}
+        params = {
+            "f": "json",
+            "location": folder,
+            "csrfPreventToken": self._con.token,
+        }
         res = self._con.post(path=url, postdata=params)
         if "location" in res:
             return res["location"]
@@ -209,10 +213,15 @@ class ServiceManager(BaseServer):
             for s in json_dict["services"]:
                 from urllib.parse import quote, quote_plus, urlparse, urljoin
 
-                u_url = self._currentURL + "/%s.%s" % (s["serviceName"], s["type"])
+                u_url = self._currentURL + "/%s.%s" % (
+                    s["serviceName"],
+                    s["type"],
+                )
                 parsed = urlparse(u_url)
                 u_url = "{scheme}://{netloc}{path}".format(
-                    scheme=parsed.scheme, netloc=parsed.netloc, path=quote(parsed.path)
+                    scheme=parsed.scheme,
+                    netloc=parsed.netloc,
+                    path=quote(parsed.path),
                 )
                 self._services.append(Service(url=u_url, gis=self._con))
         return self._services
@@ -420,7 +429,11 @@ class ServiceManager(BaseServer):
             u_url = self._url + "/%s/%s" % (folder, "/permissions/add")
         else:
             u_url = self._url + "/permissions/add"
-        params = {"f": "json", "principal": principal, "isAllowed": is_allowed}
+        params = {
+            "f": "json",
+            "principal": principal,
+            "isAllowed": is_allowed,
+        }
         res = self._con.post(path=u_url, postdata=params)
         if "status" in res:
             return res["status"] == "success"
@@ -484,7 +497,11 @@ class ServiceManager(BaseServer):
 
         :return: Boolean
         """
-        params = {"f": "json", "folderName": folder_name, "description": description}
+        params = {
+            "f": "json",
+            "folderName": folder_name,
+            "description": description,
+        }
         u_url = self._url + "/createFolder"
         res = self._con.post(path=u_url, postdata=params)
         self._init()
@@ -539,7 +556,11 @@ class ServiceManager(BaseServer):
         if folder is None:
             u_url = self._url + "/%s.%s/delete" % (name, service_type)
         else:
-            u_url = self._url + "/%s/%s.%s/delete" % (folder, name, service_type)
+            u_url = self._url + "/%s/%s.%s/delete" % (
+                folder,
+                name,
+                service_type,
+            )
         params = {"f": "json"}
         res = self._con.post(path=u_url, postdata=params)
         if "status" in res:
@@ -559,7 +580,13 @@ class ServiceManager(BaseServer):
 
         :return: boolean
         """
-        items = ["description", "status", "instances", "iteminfo", "properties"]
+        items = [
+            "description",
+            "status",
+            "instances",
+            "iteminfo",
+            "properties",
+        ]
         if folder is None:
             u_url = self._url + "/report"
         else:
@@ -672,7 +699,11 @@ class ServiceManager(BaseServer):
 
     # ----------------------------------------------------------------------
     def _rename_service(
-        self, name: str, service_type: str, new_name: str, folder: Optional[str] = None
+        self,
+        name: str,
+        service_type: str,
+        new_name: str,
+        folder: Optional[str] = None,
     ) -> bool:
         """
         Renames a published AGS Service
@@ -1133,7 +1164,11 @@ class Service(BaseServer):
         :return: dict
 
         """
-        params = {"f": "json", "principal": principal, "permission": permission}
+        params = {
+            "f": "json",
+            "principal": principal,
+            "permission": permission,
+        }
         url = self._url + "/permissions/hasChildPermissionsConflict"
         return self._con.post(path=url, postdata=params)
 
@@ -1369,7 +1404,11 @@ class Service(BaseServer):
 
         """
         u_url = self._url + "/permissions/add"
-        params = {"f": "json", "principal": principal, "isAllowed": is_allowed}
+        params = {
+            "f": "json",
+            "principal": principal,
+            "isAllowed": is_allowed,
+        }
         res = self._con.post(path=u_url, postdata=params)
         if "status" in res:
             return res["status"] == "success"
@@ -1733,7 +1772,7 @@ class ItemInformationManager(BaseServer):
 
         """
         url = "{base}/edit".format(base=self._url)
-        params = {"f": "json"}
+        params = {"f": "json", "serviceItemInfo": value}
         return self._con.post(url, params)
 
 

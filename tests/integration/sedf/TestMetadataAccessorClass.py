@@ -6,7 +6,6 @@ This class holds the source information inside a spatially enabled dataframe.
 import os
 import sys
 import json
-import pytest
 import unittest
 import tempfile
 from arcgis.features.geo._tools._metadata import _Metadata

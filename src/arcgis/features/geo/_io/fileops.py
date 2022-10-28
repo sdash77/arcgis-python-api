@@ -163,11 +163,18 @@ def _geometry_to_geojson(geom):
 
 
 # --------------------------------------------------------------------------
-def _from_xy(df, x_column, y_column, sr=None, z_column=None, m_column=None):
+def _from_xy(df, x_column, y_column, sr=None, z_column=None, m_column=None, **kwargs):
     """
     Takes an X/Y Column and Creates a Point Geometry from it. Can handle Z
     and M Columns as well.
+
+    **kwargs**
+
+    :oid_field: - Optional String value that can be specified to preven the int64 from turning into int32.
+
+
     """
+    oid_field = kwargs.pop("oid_field", None)
     from arcgis.geometry import SpatialReference, Point
     from arcgis.features.geo._array import GeoArray
 
@@ -221,6 +228,16 @@ def _from_xy(df, x_column, y_column, sr=None, z_column=None, m_column=None):
         )
     else:
         ags_geom[:] = v_func(df[x_column].values, df[y_column].values, sr)
+    oid_fields = ["oid", "fid", "objectid"]
+    if oid_field:
+        oid_fields.append(oid_field.lower())
+    df = df.astype(
+        {
+            col: "int32"
+            for col in df.select_dtypes("int64").columns
+            if not col.lower() in oid_fields
+        }
+    )
     df["SHAPE"] = GeoArray(ags_geom)
     df.spatial.name
     for i in range(len(df)):
@@ -448,6 +465,11 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
     """
     Exports a geo enabled dataframe to a table.
 
+    .. note::
+        Null integer values will be changed to 0 when using shapely instead
+        of ArcPy due to shapely conventions.
+        With ArcPy null integer values will remain null.
+
     ===========================     ====================================================================
     **Argument**                    **Description**
     ---------------------------     --------------------------------------------------------------------
@@ -469,7 +491,7 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
     df = geo._data.copy()
     df[df.select_dtypes(np.number).columns.tolist()] = df[
         df.select_dtypes(np.number).columns.tolist()
-    ].replace(pd.NA, 0)
+    ].replace({pd.NA: None})
     df[df.select_dtypes(pd.StringDtype()).columns.tolist()] = df[
         df.select_dtypes(pd.StringDtype()).columns.tolist()
     ].replace(pd.NA, "")
@@ -853,6 +875,11 @@ def to_featureclass(
     """
     Exports the DataFrame to a Feature class.
 
+    .. note::
+        Null integer values will be changed to 0 when using shapely instead
+        of ArcPy due to shapely conventions.
+        With ArcPy null integer values will remain null.
+
     ===============     ====================================================
     **Argument**        **Description**
     ---------------     ----------------------------------------------------
@@ -914,7 +941,7 @@ def to_featureclass(
             col = str(col)
     df[df.select_dtypes(np.number).columns.tolist()] = df[
         df.select_dtypes(np.number).columns.tolist()
-    ].replace(pd.NA, 0)
+    ].replace({pd.NA: None})
     df[df.select_dtypes(pd.StringDtype()).columns.tolist()] = df[
         df.select_dtypes(pd.StringDtype()).columns.tolist()
     ].replace(pd.NA, "")

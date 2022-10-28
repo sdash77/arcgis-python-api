@@ -1,3 +1,4 @@
+from __future__ import annotations
 import datetime
 import json
 from arcgis.gis.kubernetes._admin._base import _BaseKube
@@ -353,5 +354,12 @@ class TaskManager(_BaseKube):
         """
         tm = TaskManager(self, self._gis)
         return tm.create_task(
-            item, cron, task_type, occurences, start_date, end_date, title, parameters
+            item,
+            cron,
+            task_type,
+            occurences,
+            start_date,
+            end_date,
+            title,
+            parameters,
         )

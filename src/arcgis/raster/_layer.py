@@ -1043,7 +1043,9 @@ class ImageryLayer(Layer):
         self._extent = value
 
     # ----------------------------------------------------------------------
-    def attribute_table(self, rendering_rule: Optional[str] = None):
+    def attribute_table(
+        self, rendering_rule: Optional[str] = None, as_df: bool = False
+    ):
         """
         The ``attribute_table`` method returns categorical mapping of pixel
         values (for example, a ``class``, ``group``, ``category``, or ``membership``).
@@ -1083,7 +1085,28 @@ class ImageryLayer(Layer):
                     del params["renderingRule"]
                     params["Raster"] = self._uri
 
-            return self._con.post(path=url, postdata=params, timeout=None)
+            rat = self._con.post(path=url, postdata=params, timeout=None)
+
+            if as_df:
+                import pandas as pd
+
+                if "features" in rat:
+                    df1 = pd.DataFrame(rat["features"])
+                    if "attributes" in df1.columns:
+                        attributes_list = df1["attributes"].tolist()
+                        rat_df = pd.DataFrame(attributes_list)
+                        rat_df = rat_df.style.set_properties(**{"text-align": "left"})
+                        rat_df = rat_df.set_table_styles(
+                            [dict(selector="th", props=[("text-align", "left")])]
+                        )
+                        return rat_df
+                    else:
+                        return None
+                else:
+                    return None
+            else:
+                return rat
+
         return None
 
     # ----------------------------------------------------------------------
@@ -1200,7 +1223,7 @@ class ImageryLayer(Layer):
     # ----------------------------------------------------------------------
     def identify(
         self,
-        geometry: Union[dict[str, Any], Polygon, Point],
+        geometry: Union[dict[str, Any], Polygon, Point, MultiPoint, Envelope],
         mosaic_rule: Optional[Union[str, dict]] = None,
         rendering_rules: Optional[Union[list[str], dict[str, Any]]] = None,
         pixel_size: Optional[Union[str, dict[str, int]]] = None,
@@ -1216,7 +1239,9 @@ class ImageryLayer(Layer):
 
         The ``identify`` method identifies the content of an image layer for a given location
         and a given mosaic rule. The location can be a :class:`~arcgis.geometry.Point` or a
-        :class:`~arcgis.geometry.Polygon`.
+        :class:`~arcgis.geometry.Polygon` or a
+        :class:`~arcgis.geometry.Envelope` or a
+        :class:`~arcgis.geometry.MultiPoint`
 
         .. note::
             The ``identify`` operation is supported by both mosaic dataset and
@@ -1237,12 +1262,13 @@ class ImageryLayer(Layer):
         ============================    ====================================================================
         **Arguments**                   **Description**
         ----------------------------    --------------------------------------------------------------------
-        geometry                        Required dictionary/Point/Polygon. A :class:`~arcgis.geometry.Geometry` that
+        geometry                        Required dictionary/Point/Polygon/MultiPoint/Envelope. A :class:`~arcgis.geometry.Geometry` that
                                         defines the location to be identified.
 
                                         .. note::
-                                            The location can be a point or polygon or envelope.
-                                            Support for envelope was added at 10.9.1.
+                                            The location can be a point or polygon or envelope or multipoint.
+                                              - Support for envelope was added at 10.9.1.
+                                              - Support for multipoint was added at 11.0.
         ----------------------------    --------------------------------------------------------------------
         mosaic_rule                     Optional string or dict. Specifies the mosaic rule when defining how
                                         individual images should be mosaicked. When a mosaic rule is not
@@ -1314,11 +1340,11 @@ class ImageryLayer(Layer):
         process_as_multidimensional     Optional boolean. Specifies whether to process the image service as a
                                         multidimensional image service.
 
-                                            - ``False`` - Pixel values of the specified rendering rules and mosaic
-                                            rule at the specified geometry will be returned. This is the
+                                            - ``False`` - Pixel values of the specified rendering rules and mosaic\
+                                            rule at the specified geometry will be returned. This is the\
                                             default.
-                                            - ``True`` - The image service is treated as a multidimensional raster,
-                                            and pixel values from all slices, along with additional properties
+                                            - ``True`` - The image service is treated as a multidimensional raster,\
+                                            and pixel values from all slices, along with additional properties\
                                             describing the slices, will be returned.
 
                                         .. note::
@@ -1351,7 +1377,7 @@ class ImageryLayer(Layer):
 
         url = "%s/identify" % self._url
         params = {"f": "json", "geometry": dict(geometry)}
-        from arcgis.geometry._types import Point, Polygon, Envelope
+        from arcgis.geometry._types import Point, Polygon, Envelope, MultiPoint
         from arcgis._impl.common._mixins import PropertyMap
 
         if isinstance(geometry, Point):
@@ -1360,9 +1386,13 @@ class ImageryLayer(Layer):
             params["geometryType"] = "esriGeometryPolygon"
         elif isinstance(geometry, (Envelope, PropertyMap)):
             params["geometryType"] = "esriGeometryEnvelope"
+        elif isinstance(geometry, MultiPoint):
+            params["geometryType"] = "esriGeometryMultipoint"
         elif isinstance(geometry, dict):
             if "x" in geometry:
                 params["geometryType"] = "esriGeometryPoint"
+            elif "points" in geometry:
+                params["geometryType"] = "esriGeometryMultipoint"
             elif "xmin" in geometry:
                 params["geometryType"] = "esriGeometryEnvelope"
             else:
@@ -2304,8 +2334,7 @@ class ImageryLayer(Layer):
                                         list of field names.
         ------------------------------  --------------------------------------------------------------------
         time_filter                     Optional datetime.date, datetime.datetime or timestamp in
-                                        milliseconds. The time instant or the time extent of the exported
-                                        image.
+                                        milliseconds. The time instant or the time extent to query.
 
                                         Syntax: time_filter=<timeInstant>
 
@@ -3311,7 +3340,7 @@ class ImageryLayer(Layer):
                                           - pixel_size='0.18,0.18'
         ----------------------------    --------------------------------------------------------------------
         time                            Optional datetime.date, datetime.datetime or timestamp string. The
-                                        time instant or the time extent of the exported image.
+                                        time instant or the time extent to compute statistics and histograms.
                                         Time instant specified as datetime.date, datetime.datetime or
                                         timestamp in milliseconds since epoch
                                         Syntax: time=<timeInstant>
@@ -3534,25 +3563,50 @@ class ImageryLayer(Layer):
 
         legend = self._con.post(path=url, postdata=params, timeout=None)
         if as_html is True:
-            legend_table = "<table>"
-            for legend_element in legend["layers"][0]["legend"]:
+            legend_type = legend["layers"][0]["legendType"]
+            if legend_type.lower() == "stretched":
+                table_and_cell_style = (
+                    "border:none!important; background-color: #ffffff;"
+                )
+                legend_table = (
+                    f"<table style='{table_and_cell_style} border-collapse: collapse;'>"
+                )
+                img_td_style = "text-align:left; vertical-align: top; position: relative; top: 10px; padding: 0px;"
+                label_td_style = (
+                    "text-align:left; padding: 0; position: relative; left: 7px; "
+                )
+            else:
+                legend_table = "<table>"
+
+            for idx, legend_element in enumerate(legend["layers"][0]["legend"]):
                 thumbnail = "data:{0};base64,{1}".format(
                     legend_element["contentType"], legend_element["imageData"]
                 )
                 width = legend_element["width"]
                 height = legend_element["height"]
-                imgtag = '<img src="{0}" width="{1}"  height="{2}" />'.format(
+                imgtag = "<img src='{0}' width='{1}' height='{2}' />".format(
                     thumbnail, width, height
                 )
+
+                if legend_type.lower() == "stretched":
+                    img_row = f"<tr style='padding: 0; position: relative; {'top: 3.5px;' if idx==0 else 'bottom: 0.5px;'}'><td style='{table_and_cell_style} {img_td_style}'>"
+                    label_row = f"</td><td style='{table_and_cell_style} {label_td_style} {'display: none' if idx==1 else ''}'>"
+                else:
+                    img_row = "<tr><td>"
+                    label_row = "</td><td style='text-align:left'>"
+
                 legend_table += (
-                    "<tr><td>"
+                    img_row
                     + imgtag
-                    + "</td><td>"
+                    + label_row
                     + legend_element["label"]
                     + "</td></tr>"
                 )
             legend_table += "</table>"
-            return legend_table
+
+            from IPython.display import HTML
+
+            return HTML(legend_table)
         else:
             return legend
 
@@ -3788,7 +3842,7 @@ class ImageryLayer(Layer):
                                           - pixel_size='0.18,0.18'
         ----------------------------    --------------------------------------------------------------------
         time                            Optional datetime.date, datetime.datetime or timestamp string. The
-                                        time instant or the time extent of the exported image.
+                                        time instant or the time extent to compute the histogram.
                                         Time instant specified as datetime.date, datetime.datetime or
                                         timestamp in milliseconds since epoch
                                         Syntax: time=<timeInstant>
@@ -3925,6 +3979,15 @@ class ImageryLayer(Layer):
         interpolation: Optional[str] = None,
         out_fields: Optional[str] = None,
         slice_id: Optional[int] = None,
+        time: Optional[
+            Union[
+                str,
+                list[datetime.date],
+                list[datetime.datetime],
+                datetime.date,
+                datetime.datetime,
+            ]
+        ] = None,
     ):
         """
         The ``get_samples`` operation is supported by both mosaic dataset and raster
@@ -4006,6 +4069,20 @@ class ImageryLayer(Layer):
         slice_id                 Optional integer. The slice ID of a multidimensional raster. The operation 
                                  will be performed for the specified slice.
                                  This parameter is available from 10.9 onwards.
+        -----------------------  -----------------------------------------------------------------------
+        time                     Optional datetime.date, datetime.datetime or timestamp string.
+                                 The time instant or time extent of the raster to be sampled.
+                                 Time instant specified as datetime.date, datetime.datetime or
+                                 timestamp in milliseconds since epoch
+                                 Syntax: time=<timeInstant>
+                                        
+                                 Time extent specified as list of [<startTime>, <endTime>]
+                                 For time extents one of <startTime> or <endTime> could be None. A
+                                 None value specified for start time or end time will represent
+                                 infinity for start or end time respectively.
+                                 Syntax: time=[<startTime>, <endTime>] ; specified as
+                                 datetime.date, datetime.datetime or timestamp
+                                 This parameter is available from 10.9 onwards.
         =======================  =======================================================================
 
         :return:
@@ -4023,8 +4100,17 @@ class ImageryLayer(Layer):
         if not isinstance(geometry, Geometry):
             geometry = Geometry(geometry)
 
+        geometry_type_value_list = [
+            "point",
+            "multipoint",
+            "polyline",
+            "polygon",
+            "envelope",
+        ]
         if geometry_type is None:
             geometry_type = "esriGeometry" + geometry.type
+        elif geometry_type.lower() in geometry_type_value_list:
+            geometry_type = "esriGeometry" + geometry_type.lower().capitalize()
 
         url = self._url + "/getSamples"
         params = {"f": "json", "geometry": geometry, "geometryType": geometry_type}
@@ -4047,6 +4133,12 @@ class ImageryLayer(Layer):
             params["outFields"] = out_fields
         if slice_id is not None:
             params["sliceId"] = slice_id
+
+        from ._util import _set_time_param
+
+        if time is not None:
+            params["time"] = _set_time_param(time)
+
         if self._datastore_raster:
             params["Raster"] = self._uri
 
@@ -4578,8 +4670,7 @@ class ImageryLayer(Layer):
                                         list of field names.
         ------------------------------  --------------------------------------------------------------------
         time_filter                     optional datetime.date, datetime.datetime or timestamp in
-                                        milliseconds. The time instant or the time extent of the exported
-                                        image.
+                                        milliseconds. The time instant or the time extent to compute mdim info.
 
                                         Syntax: time_filter=<timeInstant>
 
@@ -6313,7 +6404,7 @@ class ImageryLayer(Layer):
                                                  the values of dimension parameter other than the time dimension (dimension
                                                  name specified using dimension parameter)
         ------------------------------------     --------------------------------------------------------------------
-        show_values                              Optional bool. Default False.
+        show_values                              Optional boolean. Default False.
                                                  Set this parameter to True to display the values at each point in the line graph.
         ------------------------------------     --------------------------------------------------------------------
         trend_type                               Optional string. Default None.
@@ -6327,9 +6418,9 @@ class ImageryLayer(Layer):
 
                                                  This parameter is only included in the trend analysis for a harmonic regression.
         ------------------------------------     --------------------------------------------------------------------
-        plot_properties                          Optional dict. This parameter can be used to set the figure
-                                                 properties. These are the matplotlib.pyplot.figure() parameters and values
-                                                 specified in dict format.
+        plot_properties                          Optional dictionary. This parameter can be used to set the figure
+                                                 properties. These are the `matplotlib.pyplot.figure() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html#matplotlib-pyplot-figure>`_
+                                                 parameters and values specified in dictionary format.
 
                                                  eg: {"figsize":(15,15)}
         ====================================     ====================================================================
@@ -6668,7 +6759,7 @@ class ImageryLayer(Layer):
                                           - pixel_size='0.18,0.18'
         ----------------------------    --------------------------------------------------------------------
         time                            Optional datetime.date, datetime.datetime or timestamp string. The
-                                        time instant or the time extent of the exported image.
+                                        time instant or the time extent to compute statistics and histograms.
                                         Time instant specified as datetime.date, datetime.datetime or
                                         timestamp in milliseconds since epoch
                                         Syntax: time=<timeInstant>
@@ -6702,7 +6793,7 @@ class ImageryLayer(Layer):
         plot_properties                 Optional dictionary. This parameter can be used to set the figure 
                                         properties. These are the
                                         `matplotlib.pyplot.figure() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html#matplotlib-pyplot-figure>`_
-                                        parameters and values specified in dict format.
+                                        parameters and values specified in dictionary format.
 
                                         Example:
                                          {"figsize":(15,15)}
@@ -6759,6 +6850,50 @@ class ImageryLayer(Layer):
             display_stats=display_stats,
             plot_properties=plot_properties,
             subplot_properties=subplot_properties,
+        )
+
+    def spectral_profile(
+        self,
+        points: list[Point] = [],
+        show_values: bool = False,
+        plot_properties: dict[str, Any] = {},
+    ):
+
+        """
+        The ``spectral_profile`` method can be used to create spectral profile charts.
+
+        Spectral profile charts allow you to select areas of interest or ground features on the image and review the spectral information of all bands in a chart format.
+
+        The x-axis of the spectral profile displays the band names
+
+        The y-axis of the spectral profile displays the spectral values.
+
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        points                                   Required list of :class:`~arcgis.geometry.Point` objects.
+        ------------------------------------     --------------------------------------------------------------------
+        show_values                              Optional boolean. Default is False.
+                                                 Set this parameter to True to display the values at each point in the line graph.
+        ------------------------------------     --------------------------------------------------------------------
+        plot_properties                          Optional dictionary. This parameter can be used to set the figure
+                                                 properties. These are the `matplotlib.pyplot.figure() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html#matplotlib-pyplot-figure>`_
+                                                 parameters and values specified in dictionary format.
+
+                                                 eg: {"figsize":(15,15)}
+        ====================================     ====================================================================
+
+        :return:
+            None
+
+        """
+        from arcgis.raster._charts import spectral_profile
+
+        return spectral_profile(
+            self,
+            points=points,
+            show_values=show_values,
+            plot_properties=plot_properties,
         )
 
     def _repr_jpeg_(self):
@@ -8816,7 +8951,7 @@ class Raster:
                                         **Note:** This parameter is honoured if the raster uses "image_server" engine.
         ----------------------------    --------------------------------------------------------------------
         time                            Optional datetime.date, datetime.datetime or timestamp string. The
-                                        time instant or the time extent of the exported image.
+                                        time instant or the time extent to compute statistics and histograms.
                                         Time instant specified as datetime.date, datetime.datetime or
                                         timestamp in milliseconds since epoch
                                         Syntax: time=<timeInstant>
@@ -8851,7 +8986,7 @@ class Raster:
         ----------------------------    --------------------------------------------------------------------
         plot_properties                 Optional dictionary. This parameter can be used to set the figure 
                                         properties. These are the `matplotlib.pyplot.figure() <https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.figure.html#matplotlib-pyplot-figure>`__ 
-                                        parameters and values specified in dict format.
+                                        parameters and values specified in dictionary format.
     
                                         Example:
                                             - {"figsize":(15,15)}
@@ -9451,7 +9586,6 @@ class _ImageServerRaster(ImageryLayer, Raster):
         self._engine = _ImageServerRaster
         self._path = path
         self._do_not_hydrate = False
-        self._created_from_collection = False
         self._mdinfo = None
         self._extent = None
         self._extent_set = False
@@ -9562,10 +9696,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
 
     @property
     def multidimensional_info(self):
-        if self._created_from_collection is True:
-            mdinfo = self._mdinfo
-        else:
-            mdinfo = super().multidimensional_info
+        mdinfo = super().multidimensional_info
         if mdinfo is not None:
             for index, ele in enumerate(mdinfo["multidimensionalInfo"]["variables"]):
                 # if (ele['name'] == variable_name):
@@ -10284,7 +10415,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
                                         **Note:** This parameter is honoured if the raster uses "image_server" engine.
         ----------------------------    --------------------------------------------------------------------
         time                            Optional datetime.date, datetime.datetime or timestamp string. The
-                                        time instant or the time extent of the exported image.
+                                        time instant or the time extent to compute statistics and histograms. .
                                         Time instant specified as datetime.date, datetime.datetime or
                                         timestamp in milliseconds since epoch
                                         Syntax: time=<timeInstant>
@@ -11201,7 +11332,7 @@ class _ArcpyRaster(Raster, ImageryLayer):
                                         **Note:** This parameter is honoured if the raster uses "image_server" engine.
         ----------------------------    --------------------------------------------------------------------
         time                            optional datetime.date, datetime.datetime or timestamp string. The
-                                        time instant or the time extent of the exported image.
+                                        time instant or the time extent to compute statistics and histograms.
                                         Time instant specified as datetime.date, datetime.datetime or
                                         timestamp in milliseconds since epoch
                                         Syntax: time=<timeInstant>
@@ -13641,164 +13772,164 @@ class RasterCollection:
         """
         return self._ras_coll_engine_obj.map(func=func, context=context)
 
-    def reduce(self, func, func_args={}):
-        """
-        The ``reduce`` method composite all the images in the collection to a single image based on a reducer function.
+    # def reduce(self, func, func_args={}):
+    #    """
+    #    The ``reduce`` method composite all the images in the collection to a single image based on a reducer function.
 
-        ====================================     ====================================================================
-        **Argument**                             **Description**
-        ------------------------------------     --------------------------------------------------------------------
-        func                                     Required. The Python function to reduce the raster collection.
-                                                 The function should accept a list of rasters and return a single reduced raster
-        ------------------------------------     --------------------------------------------------------------------
-        func_args                                Optional dictionary. Additional paramters to be passed the reducer function.
-        ====================================     ====================================================================
+    #    ====================================     ====================================================================
+    #    **Argument**                             **Description**
+    #    ------------------------------------     --------------------------------------------------------------------
+    #    func                                     Required. The Python function to reduce the raster collection.
+    #                                             The function should accept a list of rasters and return a single reduced raster
+    #    ------------------------------------     --------------------------------------------------------------------
+    #    func_args                                Optional dictionary. Additional paramters to be passed the reducer function.
+    #    ====================================     ====================================================================
 
-        :return: a ``Raster`` object
+    #    :return: a ``Raster`` object
 
-        .. code-block:: python
+    #    .. code-block:: python
 
-            # Usage Example 1: This snippet reduces a raster collection based on a reducer function from arcgis.raster.functions module that can accept a list of rasters.
+    #        # Usage Example 1: This snippet reduces a raster collection based on a reducer function from arcgis.raster.functions module that can accept a list of rasters.
 
-            rc = RasterCollection("https://myserver/arcgis/rest/services/ImageServiceName/ImageServer")
-            from arcgis.raster.functions import max
-            max_raster = rc.reduce(func=max, func_args = {"cellsize_type":"MinOf"})
+    #        rc = RasterCollection("https://myserver/arcgis/rest/services/ImageServiceName/ImageServer")
+    #        from arcgis.raster.functions import max
+    #        max_raster = rc.reduce(func=max, func_args = {"cellsize_type":"MinOf"})
 
-            # Usage Example 2: This snippet reduces a raster collection based on a custom reducer function.
+    #        # Usage Example 2: This snippet reduces a raster collection based on a custom reducer function.
 
-            rc = RasterCollection("https://myserver/arcgis/rest/services/ImageServiceName/ImageServer")
+    #        rc = RasterCollection("https://myserver/arcgis/rest/services/ImageServiceName/ImageServer")
 
-            def skewness(ras_list):
-                from arcgis.raster.functions import mean, std, med
-                cs_mean = mean(ras_list, process_as_multiband=True)
-                cs_stddev  = std(ras_list, process_as_multiband=True)
-                cs_median = med(ras_list, process_as_multiband=True)
-                out_skewness = 3*(cs_mean - cs_median)/cs_stddev
-                return out_skewness
+    #        def skewness(ras_list):
+    #            from arcgis.raster.functions import mean, std, med
+    #            cs_mean = mean(ras_list, process_as_multiband=True)
+    #            cs_stddev  = std(ras_list, process_as_multiband=True)
+    #            cs_median = med(ras_list, process_as_multiband=True)
+    #            out_skewness = 3*(cs_mean - cs_median)/cs_stddev
+    #            return out_skewness
 
-            skewness = rc.reduce(func=skewness)
+    #        skewness = rc.reduce(func=skewness)
 
-        """
-        return self._ras_coll_engine_obj.reduce(func=func, func_args=func_args)
+    #    """
+    #    return self._ras_coll_engine_obj.reduce(func=func, func_args=func_args)
 
-    def merge(self, collection2):
-        """
-        The ``merge`` method merges two image collections into one. The output has all the items that were in either collection.
+    # def merge(self, collection2):
+    #    """
+    #    The ``merge`` method merges two image collections into one. The output has all the items that were in either collection.
 
-        ====================================     ====================================================================
-        **Argument**                             **Description**
-        ------------------------------------     --------------------------------------------------------------------
-        collection2                              RasterCollection object. The second collection to merge.
-        ====================================     ====================================================================
+    #    ====================================     ====================================================================
+    #    **Argument**                             **Description**
+    #    ------------------------------------     --------------------------------------------------------------------
+    #    collection2                              RasterCollection object. The second collection to merge.
+    #    ====================================     ====================================================================
 
-        :return: a new Collection that has all the items that were in either collection.
+    #    :return: a new Collection that has all the items that were in either collection.
 
-        .. code-block:: python
+    #    .. code-block:: python
 
-            # Usage Example 1: merges two image collections rc1 and rc2 into one.
+    #        # Usage Example 1: merges two image collections rc1 and rc2 into one.
 
-            rc1 = rc.filter_by_attribute("OBJECTID", "EQUALS", 1)
-            rc2 = rc.filter_by_attribute("OBJECTID", "EQUALS", 2)
-            new_rc = rc1.merge(rc2)
+    #        rc1 = rc.filter_by_attribute("OBJECTID", "EQUALS", 1)
+    #        rc2 = rc.filter_by_attribute("OBJECTID", "EQUALS", 2)
+    #        new_rc = rc1.merge(rc2)
 
-        """
+    #    """
 
-        return self._ras_coll_engine_obj.merge(collection2._ras_coll_engine_obj)
+    #    return self._ras_coll_engine_obj.merge(collection2._ras_coll_engine_obj)
 
-    def summarize_field(self, field_name, summary_type="ALL"):
-        """
-        Summarizes a numeric field of the RasterCollection based on the specified summary_type
-        :param field_name: str, the field name to be summarized
-        :param summary_type: str or list of str representing the summary type."COUNT", "COUNT_DISTINCT", "FIRST","HISTOGRAM", "MAX", "MEAN", "MIN",
-                        "PRODUCT", "SAMPLE_SD", "SAMPLE_VAR", "SUM", "TOTAL_SD", "TOTAL_VAR", "ALL".
-        :return: a dictionary with key being the summary type and the value being the summary value.
-        """
-        property_values = self.get_field_values(field_name)
-        summary_dict = {}
-        import numbers
+    # def summarize_field(self, field_name, summary_type="ALL"):
+    #    """
+    #    Summarizes a numeric field of the RasterCollection based on the specified summary_type
+    #    :param field_name: str, the field name to be summarized
+    #    :param summary_type: str or list of str representing the summary type."COUNT", "COUNT_DISTINCT", "FIRST","HISTOGRAM", "MAX", "MEAN", "MIN",
+    #                    "PRODUCT", "SAMPLE_SD", "SAMPLE_VAR", "SUM", "TOTAL_SD", "TOTAL_VAR", "ALL".
+    #    :return: a dictionary with key being the summary type and the value being the summary value.
+    #    """
+    #    property_values = self.get_field_values(field_name)
+    #    summary_dict = {}
+    #    import numbers
 
-        if not isinstance(summary_type, list):
-            summary_type = [summary_type]
+    #    if not isinstance(summary_type, list):
+    #        summary_type = [summary_type]
 
-        if "ALL" in map(str.upper, summary_type):
-            summary_type = [
-                "COUNT",
-                "COUNT_DISTINCT",
-                "FIRST",
-                "HISTOGRAM",
-                "MAX",
-                "MEAN",
-                "MIN",
-                "PRODUCT",
-                "SAMPLE_SD",
-                "SAMPLE_VAR",
-                "SUM",
-                "TOTAL_SD",
-                "TOTAL_VAR",
-            ]
+    #    if "ALL" in map(str.upper, summary_type):
+    #        summary_type = [
+    #            "COUNT",
+    #            "COUNT_DISTINCT",
+    #            "FIRST",
+    #            "HISTOGRAM",
+    #            "MAX",
+    #            "MEAN",
+    #            "MIN",
+    #            "PRODUCT",
+    #            "SAMPLE_SD",
+    #            "SAMPLE_VAR",
+    #            "SUM",
+    #            "TOTAL_SD",
+    #            "TOTAL_VAR",
+    #        ]
 
-        from operator import is_not
-        from functools import partial
+    #    from operator import is_not
+    #    from functools import partial
 
-        property_values_not_none = list(filter(partial(is_not, None), property_values))
+    #    property_values_not_none = list(filter(partial(is_not, None), property_values))
 
-        all_num = all(isinstance(x, numbers.Number) for x in property_values_not_none)
-        if not all_num:
-            raise RuntimeError("Only numeric fields can be summarized")
-        try:
-            for summary in summary_type:
-                val = None
-                summary = summary.lower()
-                if summary == "count":
-                    val = len(property_values_not_none)
+    #    all_num = all(isinstance(x, numbers.Number) for x in property_values_not_none)
+    #    if not all_num:
+    #        raise RuntimeError("Only numeric fields can be summarized")
+    #    try:
+    #        for summary in summary_type:
+    #            val = None
+    #            summary = summary.lower()
+    #            if summary == "count":
+    #                val = len(property_values_not_none)
 
-                elif summary == "count_distinct":
-                    val = len(np.unique(property_values_not_none))
+    #            elif summary == "count_distinct":
+    #                val = len(np.unique(property_values_not_none))
 
-                elif summary == "first":
-                    val = property_values_not_none[0]
+    #            elif summary == "first":
+    #                val = property_values_not_none[0]
 
-                elif summary == "histogram":
-                    unique, counts = np.unique(
-                        property_values_not_none, return_counts=True
-                    )
-                    val = dict(zip(unique, counts))
+    #            elif summary == "histogram":
+    #                unique, counts = np.unique(
+    #                    property_values_not_none, return_counts=True
+    #                )
+    #                val = dict(zip(unique, counts))
 
-                elif summary == "max":
-                    val = np.max(property_values_not_none)
+    #            elif summary == "max":
+    #                val = np.max(property_values_not_none)
 
-                elif summary == "mean":
-                    val = np.mean(property_values_not_none)
+    #            elif summary == "mean":
+    #                val = np.mean(property_values_not_none)
 
-                elif summary == "min":
-                    val = np.min(property_values_not_none)
+    #            elif summary == "min":
+    #                val = np.min(property_values_not_none)
 
-                elif summary == "product":
-                    val = np.prod(property_values_not_none)
+    #            elif summary == "product":
+    #                val = np.prod(property_values_not_none)
 
-                elif summary == "sample_sd":
-                    val = np.std(property_values_not_none, ddof=1)
+    #            elif summary == "sample_sd":
+    #                val = np.std(property_values_not_none, ddof=1)
 
-                elif summary == "sample_var":
-                    val = np.var(property_values_not_none, ddof=1)
+    #            elif summary == "sample_var":
+    #                val = np.var(property_values_not_none, ddof=1)
 
-                elif summary == "sum":
-                    val = np.sum(property_values_not_none)
+    #            elif summary == "sum":
+    #                val = np.sum(property_values_not_none)
 
-                elif summary == "total_sd":
-                    val = np.std(property_values_not_none)
+    #            elif summary == "total_sd":
+    #                val = np.std(property_values_not_none)
 
-                elif summary == "total_var":
-                    val = np.var(property_values_not_none)
+    #            elif summary == "total_var":
+    #                val = np.var(property_values_not_none)
 
-                else:
-                    raise ValueError("invalid summary_type value")
+    #            else:
+    #                raise ValueError("invalid summary_type value")
 
-                summary_dict.update({summary: val})
-        except:
-            raise RuntimeError("Failed to summarize the property")
+    #            summary_dict.update({summary: val})
+    #    except:
+    #        raise RuntimeError("Failed to summarize the property")
 
-        return summary_dict
+    #    return summary_dict
 
     def _as_df(
         self, result_offset=None, result_record_count=None, return_all_records=False
@@ -14784,10 +14915,6 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         from arcgis.raster.functions import _simple_collection
 
         lyr = _simple_collection(self, md_info)
-        # lyr._engine_obj._fnra["rasterFunctionArguments"].update({"MultidimensionalInfo":md_info})
-        # lyr._engine_obj._fn["rasterFunctionArguments"].update({"MultidimensionalInfo":md_info})
-        lyr._engine_obj._created_from_collection = True
-        lyr._engine_obj._mdinfo = {"multidimensionalInfo": md_info}
         return lyr
 
     def max(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):

@@ -4,7 +4,6 @@ sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8072\src")
 import copy
 import json
 import unittest
-import pytest
 from arcgis.gis import GIS, Item, User, Group, ProfileManager
 from arcgis._impl.common._utils import local_time_to_online
 import datetime

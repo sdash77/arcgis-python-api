@@ -2,7 +2,6 @@ import sys
 
 sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork\src")
 import unittest
-import pytest
 import pandas as pd
 from arcgis.features import GeoAccessor, GeoSeriesAccessor
 

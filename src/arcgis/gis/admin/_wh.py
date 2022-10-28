@@ -270,17 +270,47 @@ class WebhookManager(object):
         return None
 
     # ----------------------------------------------------------------------
-    def list(self):
+    def list(self) -> list:
         """Returns a list of WebHook objects"""
-        hooks = []
+        hooks: list[Webhook] = []
         self._properties = None
-        for wh in self.properties.webhooks:
-            try:
-                url = "%s/%s" % (self._url, wh["id"])
-                hooks.append(Webhook(url=url, gis=self._gis))
-            except:
-                pass
-        return hooks
+        if self._gis.version < [10, 3]:
+            for wh in self.properties.webhooks:
+                try:
+                    url = "%s/%s" % (self._url, wh["id"])
+                    hooks.append(Webhook(url=url, gis=self._gis))
+                except:
+                    pass
+            return hooks
+        else:
+            params: dict = {
+                "f": "json",
+                "start": 1,
+                "num": 25,
+                "sortField": None,
+                "sortOrder": None,
+            }
+            res: dict = self._con.get(self._url, params)
+            hooks.extend(
+                [
+                    Webhook(url, self._gis)
+                    for url in [
+                        "%s/%s" % (self._url, wh["id"]) for wh in res["webhooks"]
+                    ]
+                ]
+            )
+            while res["nextStart"] != -1:
+                params["start"] = res["nextStart"]
+                res: dict = self._con.get(self._url, params)
+                hooks.extend(
+                    [
+                        Webhook(url, self._gis)
+                        for url in [
+                            "%s/%s" % (self._url, wh["id"]) for wh in res["webhooks"]
+                        ]
+                    ]
+                )
+            return hooks
 
 
 ########################################################################

@@ -679,8 +679,6 @@ class _SpacyEntityRecognizer(ArcGISModel):
         """
 
         if self._trained:
-            df = pd.DataFrame(columns=["TEXT", "Filename"] + self.entities)
-
             if isinstance(text_list, list):
                 item_list = pd.Series(text_list)
 
@@ -719,11 +717,10 @@ class _SpacyEntityRecognizer(ArcGISModel):
             #     return logging.warning('Model\'s address tag does not match with any field in your data, one of the below steps could resolve your issue:\n\
             #         1. Set address tag to the address field in your data [your_model._address_tag=\'your_address_field\']\n\
             #         2. If your data does not have any address field set _has_address=False [your_model._has_address=False]')
-
+            data_list = []
             for i, item in progress_bar(
                 list(item_list.iteritems()), display=show_progress
             ):
-                df.loc[i] = None
                 doc = self._extract_entities_text(
                     item
                 )  # predicting entities using entity_extractor model
@@ -735,15 +732,15 @@ class _SpacyEntityRecognizer(ArcGISModel):
                     else:
                         tmp_ents[ent.label_].extend([ent.text])
 
-                df.loc[i]["TEXT"] = text
+                tmp_ents["TEXT"] = text
                 if isinstance(i, Iterable):  # For test documents
-                    df.loc[i]["Filename"] = i
+                    tmp_ents["Filename"] = i
                 else:  # for show_results()
-                    df.loc[i]["Filename"] = "Example_" + str(i)
+                    tmp_ents["Filename"] = "Example_" + str(i)
 
-                for label in tmp_ents.keys():
-                    df.loc[i][label] = tmp_ents[label]
+                data_list.append(tmp_ents)
 
+            df = pd.DataFrame(data_list, columns=["TEXT", "Filename"] + self.entities)
             df.fillna("", inplace=True)
             if self._has_address:
                 df = self._post_process_address_df(

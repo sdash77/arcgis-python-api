@@ -6173,6 +6173,9 @@ def find_argument_statistics(
     ignore_nodata: bool = True,
     output_name: Optional[str] = None,
     context: Optional[dict[str, Any]] = None,
+    argument_value: Optional[int] = None,
+    comparison: Optional[str] = "EQUAL_TO",
+    occurrence: Optional[str] = "FIRST_OCCURRENCE",
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
@@ -6231,6 +6234,8 @@ def find_argument_statistics(
                                              - ARGUMENT_MEDIAN : The dimension value at which the median variable value is reached will be extracted.
 
                                              - DURATION : The longest dimension duration for which the variable values fall between the minimum and maximum values.
+
+                                             - ARGUMENT_VALUE: The dimension value at which the specified variable value is reached will be extracted.
     ------------------------------------     --------------------------------------------------------------------
     min_value                                Optional Float. The minimum variable value to be used to extract the duration.
 
@@ -6310,6 +6315,36 @@ def find_argument_statistics(
 
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
+    argument_value                           Optional Integer. The value at which a comparison will be made to extract
+                                             the dimension value. This parameter is required when the statistics_type
+                                             parameter is set to ARGUMENT_VALUE.
+
+                                             |
+                                             .. note::
+                                                    This parameter is currently only available on ArcGIS online.
+    ------------------------------------     --------------------------------------------------------------------
+    comparison                               Optional String. Specifies the comparison type that will be used to
+                                             extract the dimension value.
+
+                                             - EQUAL_TO : The extracted dimension is equal to the specified value. This is the default.
+
+                                             - GREATER_THAN : The extracted dimension is greater than the specified value.
+
+                                             - SMALLER_THAN : The extracted dimension is smaller than the specified value.
+
+                                             .. note::
+                                                    This parameter is currently only available on ArcGIS online.
+    ------------------------------------     --------------------------------------------------------------------
+    occurrence                               Optional String. Specifies whether the value of the dimension will be returned the first
+                                             time or last time the argument statistic is reached.
+
+                                             - FIRST_OCCURRENCE : The value of the dimension will be returned the first time the argument statistic is reached. This is the default.
+
+                                             - LAST_OCCURRENCE : The value of the dimension will be returned the last time the argument statistic is reached.
+
+                                             .. note::
+                                                    This parameter is currently only available on ArcGIS online.
+    ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional :class:`~arcgis.gis.GIS` object. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
@@ -6383,6 +6418,9 @@ def find_argument_statistics(
         ignore_nodata=ignore_nodata,
         context=context,
         future=future,
+        argument_value=argument_value,
+        comparison=comparison,
+        occurrence=occurrence,
         **kwargs,
     )
 
@@ -9022,7 +9060,14 @@ def compute_change_raster(
                                              - DIFFERENCE - The mathematical difference, or subtraction, between the pixel values in the rasters will be calculated. This is the default.
                                              - RELATIVE_DIFFERENCE - The difference in pixel values, accounting for the quantities of the values being compared, will be calculated.
                                              - CATEGORICAL_DIFFERENCE  - The difference between two categorical or thematic rasters will be calculated in which the output contains class transitions that occurred between the two rasters.
-
+                                             - SPECTRAL_EUCLIDEAN_DISTANCE - The Euclidean distance between two multiband rasters,
+                                                                             where each pixel is treated as a vector. Larger values
+                                                                             indicate more change between the images.
+                                             - SPECTRAL_ANGLE_DIFFERENCE - The spectral angle between two multiband rasters, where
+                                                                           each pixel is treated as a vector. Larger angles indicate
+                                                                           more change between the images.
+                                             - BAND_WITH_MOST_CHANGE - The band that accounts for the most change in each pixel between
+                                                                       two multiband rasters.
                                              Example:
 
                                                 "DIFFERENCE"

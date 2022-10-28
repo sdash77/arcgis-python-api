@@ -236,12 +236,16 @@ class NotebookManager(object):
             def _fn(url, params, nbs):
                 import time
 
-                resp = self._gis._con.post(url, params)
-                if "status" in resp and resp["status"] == "success":
-                    job_id = resp["jobId"]
-                    status = nbs.system.job_details(job_id)
+                start_job = self._gis._con.post(url, params)
+                if "jobUrl" in start_job:
+                    resp = self._gis._con.get(start_job["jobUrl"], {"f": "json"})
+                else:
+                    return start_job
+                if "status" in resp and resp["status"].lower() != "success":
+                    status = self._gis._con.get(start_job["jobUrl"], {"f": "json"})
+                    i = 0
                     while status["status"].lower() != "completed":
-                        time.sleep(0.3)
+                        time.sleep(0.3 * i)
                         if status["status"].lower() == "failed":
                             return status
                         elif (
@@ -249,7 +253,10 @@ class NotebookManager(object):
                             or status["status"].lower().find("error") > -1
                         ):
                             raise Exception(f"Job Fail {status}")
-                        status = nbs.system.job_details(job_id)
+                        status = self._gis._con.get(start_job["jobUrl"], {"f": "json"})
+                        i += 1
+                        if i > 20:
+                            i = 20
                     return status
                 return resp
 

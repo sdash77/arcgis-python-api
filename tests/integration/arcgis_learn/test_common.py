@@ -23,7 +23,6 @@ try:
     import fastai
     import torch
     import torchvision
-    import pytest
 
     HAS_DEPS = True
     print(" ================= Modules Imported ==============")
@@ -130,7 +129,7 @@ success_stat = {
 def setUpModule():
     global authorization_data
     authorization_data = setuposenviron()
-    if os.environ["run_nightly"] == "1":
+    if os.environ.get("run_nightly") == "1":
         accuracy_values["attributes"]["Date"] = convertdate(datetime.today())
     print("Setup completed successfully")
 
@@ -238,7 +237,7 @@ def CommonTestUsingDF(
     model_object.save(f"{os.path.join(data_folder_path, data_path, model_test)}")
     # Load from saved model.
 
-    if os.environ["run_nightly"] == "1":
+    if os.environ.get("run_nightly") == "1":
         print("Testing for accuracy with default backbone")
         global accuracy_values
         if regression_parameter == "automl_score":
@@ -376,7 +375,7 @@ def CommonTestUsingFL(
             data,
         )
 
-    if os.environ["run_nightly"] == "1":
+    if os.environ.get("run_nightly") == "1":
         print("Testing for accuracy with default backbone")
         global accuracy_values
         if regression_parameter == "score":
@@ -386,7 +385,7 @@ def CommonTestUsingFL(
 
         accuracy_values["attributes"][model_name] = result
 
-    if os.environ["run_inference"] == "1":
+    if os.environ.get("run_inference") == "1":
         model_object.predict(feature_layer, output_layer_name="prediction_layer_rf")
 
     success_flag = True
@@ -463,7 +462,7 @@ def commonTestCases(
         model_save_path = model_object.save(f"{d_path}")
 
     # Check model with all supported backbones
-    if os.environ["run_backbones"] == "1":
+    if os.environ.get("run_backbones") == "1":
         print("Testing for all backbones")
         supported_backbones = model_object.supported_backbones
         for backbone in supported_backbones:
@@ -472,7 +471,7 @@ def commonTestCases(
             model_object.save(model_test + "_" + str(backbone))
             torch.cuda.empty_cache()
 
-    if os.environ["run_nightly"] == "1":
+    if os.environ.get("run_nightly") == "1":
         if not ms_flag:
             print("Testing for accuracy with default backbone")
             global accuracy_values
@@ -550,7 +549,7 @@ def commonTestCases(
             ), "Model accuracy is lower than the threshold value. Please check."
 
     ## Inferencing function here.
-    if os.environ["run_inference"] == "1" and ms_flag == False:
+    if os.environ.get("run_inference") == "1" and ms_flag == False:
         from arcpy.ia import (
             DetectObjectsUsingDeepLearning,
             ClassifyPixelsUsingDeepLearning,
@@ -1097,7 +1096,7 @@ class TestTraining(unittest.TestCase):
 ## Remove all model directories
 def tearDownModule():
     torch.cuda.empty_cache()
-    if os.environ["run_nightly"] == "1":
+    if os.environ.get("run_nightly") == "1":
         print("Updating feature layer for accuracy dashboard\n")
         updateAccuracyResults()
         updateModelStats()
