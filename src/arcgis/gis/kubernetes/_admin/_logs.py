@@ -1,3 +1,4 @@
+from __future__ import annotations
 import csv
 from datetime import datetime
 from arcgis.gis.kubernetes._admin._base import _BaseKube
@@ -297,7 +298,14 @@ class LogManager(_BaseKube):
 
         """
 
-        allowed_levels = ("SEVERE", "WARNING", "INFO", "FINE", "VERBOSE", "DEBUG")
+        allowed_levels = (
+            "SEVERE",
+            "WARNING",
+            "INFO",
+            "FINE",
+            "VERBOSE",
+            "DEBUG",
+        )
         params = {"f": "json", "num": num}
         params["start"] = 1
         url = "{url}/query".format(url=self._url)

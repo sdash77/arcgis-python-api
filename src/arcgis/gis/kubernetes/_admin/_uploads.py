@@ -1,3 +1,4 @@
+from __future__ import annotations
 from arcgis.gis.kubernetes._admin._base import _BaseKube
 from urllib.parse import urlparse
 from typing import Dict, Any, Optional, List
@@ -77,6 +78,23 @@ class Uploads(_BaseKube):
         if "status" in res:
             return res["status"] == "success"
         return res
+
+    # ----------------------------------------------------------------------
+    def download(self, item_id: str) -> str:
+        """
+        Downloads a previously uploaded file.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item_id             Required string. unique ID of the item
+        ===============     ====================================================================
+
+        :returns: str
+        """
+        url = self._url + "/%s/download" % item_id
+        params = {"f": "json"}
+        return self._con.get(url, params)
 
     # ----------------------------------------------------------------------
     def item(self, item_id):
