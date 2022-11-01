@@ -9069,14 +9069,17 @@ class _RasterAnalysisTools(BaseAnalytics):
         self, output_name, task, folder=None, output_properties=None
     ):
         gis = self._gis
-        ok = gis.content.is_service_name_available(output_name, "Image Service")
+
+        ok = gis.content.is_service_name_available(
+            output_name.replace(" ", "_"), "Image Service"
+        )
         if not ok:
             raise RuntimeError(
                 "An Image Service by this name already exists: " + output_name
             )
 
         create_parameters = {
-            "name": output_name,
+            "name": output_name.replace(" ", "_"),
             "description": "",
             "capabilities": "Image, Metadata",
             "properties": {"path": "@", "description": "", "copyright": ""},
@@ -9102,6 +9105,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             create_params=create_parameters,
             service_type="imageService",
             folder=folder,
+            item_properties={"title": output_name},
         )
         if output_service is None:
             raise RuntimeError("Unable to create service")
