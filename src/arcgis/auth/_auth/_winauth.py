@@ -68,26 +68,31 @@ class EsriWindowsAuth(AuthBase, SupportMultiAuth):
         try:
             if not username and not password and HAS_SSPI:
                 self.auth = requests_negotiate_sspi.HttpNegotiateAuth()
-            elif not username and not password and HAS_GSSAPI:
-                self.auth = requests_gssapi.HTTPSPNEGOAuth()
+            elif HAS_GSSAPI:
+                if not username or not password:
+                    self.auth = requests_gssapi.HTTPSPNEGOAuth()
+                else:
+                    try:
+                        import gssapi
+
+                        user = gssapi.Name(
+                            base=username, name_type=gssapi.NameType.user
+                        )
+                        bpass = password.encode("utf-8")
+                        creds = gssapi.raw.acquire_cred_with_password(
+                            user, bpass, usage="initiate"
+                        )
+                        creds = creds.creds
+                        self.auth = requests_gssapi.HTTPSPNEGOAuth(
+                            creds=creds,
+                            opportunistic_auth=True,
+                        )
+                    except:
+                        raise Exception("Please ensure gssapi is installed")
             elif username and password and HAS_SSPI:
                 domain, user = username.split("\\")
                 self.auth = requests_negotiate_sspi.HttpNegotiateAuth(
                     username=user, password=password, domain=domain
-                )
-            elif username and password and HAS_NTLM2:
-                send_cbt = kwargs.pop("send_cbt", True)
-                ntlm_compatibility = kwargs.pop(
-                    "ntlm_compatibility",
-                    requests_ntlm2.NtlmCompatibility.NTLMv2_DEFAULT,
-                )
-                ntlm_strict_mode = kwargs.pop("ntlm_strict_mode", False)
-                self.auth = requests_ntlm2.HttpNtlmAuth(
-                    username,
-                    password,
-                    send_cbt=send_cbt,
-                    ntlm_compatibility=ntlm_compatibility,
-                    ntlm_strict_mode=ntlm_strict_mode,
                 )
             else:
                 raise ValueError(
