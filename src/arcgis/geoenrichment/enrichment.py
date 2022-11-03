@@ -1612,9 +1612,11 @@ def enrich(
                     cntry = Country(value["address"]["sourceCountry"])
                 elif "sourceCountry" in value:
                     cntry = Country(value["sourceCountry"])
-                elif isinstance(value, Geometry):
+                elif isinstance(value, Geometry) or "geometry" in value:
                     if isinstance(value, Polyline) or isinstance(value, Polygon):
                         value = value.true_centroid
+                    elif "geometry" in value:
+                        value = value["geometry"]
                     # geocode the geom and extract the country
                     geocoded_area = reverse_geocode(value)
                     cntry = Country(geocoded_area["address"]["CountryCode"])
