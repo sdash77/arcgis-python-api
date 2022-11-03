@@ -2190,6 +2190,9 @@ class FeatureLayer(Layer):
             return self._query(url, params, raw=as_raw)
 
         params["returnCountOnly"] = True
+        # need to make edits to out fields if more than one to avoid server error. Split and use only first
+        out_fields = params["outFields"]
+        params["outFields"] = params["outFields"].split(",")[0]
         if where == "1=1":
             if "objectIdField" in self.properties:
                 params["where"] = f"{self.properties.objectIdField} > 0"
@@ -2201,7 +2204,8 @@ class FeatureLayer(Layer):
             max_records = self.properties["maxRecordCount"]
         else:
             max_records = 1000
-
+        # reassign to original
+        params["outFields"] = out_fields
         supports_pagination = True
         if (
             "advancedQueryCapabilities" not in self.properties
