@@ -30,26 +30,11 @@ from typing import List, Tuple
 from fastai.torch_core import data_collate
 import types
 from functools import partial
-from ._pointcnn_utils import find_k_neighbor, get_indices
+from ._pointcnn_utils import get_indices
+from .._utils.nearest_neighbors import knn_batch as knn_search
+from functools import partial
 
-
-def knn_search(support_pts, query_pts, k):
-    """
-    :param support_pts: points you have, B*N1*3
-    :param query_pts: points you want to know the neighbour index, B*N2*3
-    :param k: Number of neighbours in knn search
-    :return: neighbor_idx: neighboring points indexes, B*N2*k
-    """
-
-    _, N1, _ = support_pts.shape
-    B, N2, _ = query_pts.shape
-    _, neighbor_idx, _ = find_k_neighbor(
-        query_pts.contiguous(), support_pts.contiguous(), k, 1
-    )
-    neighbor_idx %= (
-        N1  # get indices in the range of N1 since indices comes in range of B*N1
-    )
-    return neighbor_idx.view(B, N2, k).contiguous()
+knn_search = partial(knn_search, omp=True)
 
 
 def input_dict(input_list, cfg):
@@ -61,13 +46,13 @@ def input_dict(input_list, cfg):
         inputs["xyz"].append(tmp.float())  # removed torch.from_numpy
     inputs["neigh_idx"] = []
     for tmp in input_list[num_layers : 2 * num_layers]:
-        inputs["neigh_idx"].append(tmp.long())
+        inputs["neigh_idx"].append(torch.from_numpy(tmp).long())
     inputs["sub_idx"] = []
     for tmp in input_list[2 * num_layers : 3 * num_layers]:
-        inputs["sub_idx"].append(tmp.long())
+        inputs["sub_idx"].append(torch.from_numpy(tmp).long())
     inputs["interp_idx"] = []
     for tmp in input_list[3 * num_layers : 4 * num_layers]:
-        inputs["interp_idx"].append(tmp.long())
+        inputs["interp_idx"].append(torch.from_numpy(tmp).long())
     inputs["features"] = input_list[4 * num_layers].transpose(1, 2).float()
 
     return inputs
@@ -123,9 +108,12 @@ def transform_data(input, target, sample_point_num, cfg, **kwargs):
         .view(batch, sample_point_num, num_features)
         .contiguous()
     )  ## batch, sample_point_num, num_features
-    target = (
-        target[indices[:, 0], indices[:, 1]].view(batch, sample_point_num).contiguous()
-    )  ## batch, sample_point_num
+    if target is not None:
+        target = (
+            target[indices[:, 0], indices[:, 1]]
+            .view(batch, sample_point_num)
+            .contiguous()
+        )  ## batch, sample_point_num
 
     return randlanet_input(input, cfg), target
 
@@ -183,7 +171,14 @@ class RandLANetSeg(nn.Module):
     def forward(self, end_points):
         # transform input for infrencing
         if not isinstance(end_points, dict):
-            end_points = randlanet_input(end_points, self.config)
+            device = end_points.device
+            end_points = randlanet_input(end_points.cpu(), self.config)
+            for key in end_points:
+                if type(end_points[key]) is list:
+                    for i in range(len(end_points[key])):
+                        end_points[key][i] = end_points[key][i].to(device)
+                else:
+                    end_points[key] = end_points[key].to(device)
 
         features = end_points["features"]  # Batch*channel*npoints
         features = self.fc0(features)
