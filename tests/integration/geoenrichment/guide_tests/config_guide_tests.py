@@ -33,24 +33,22 @@ local_ba_avail = local_business_analyst_avail()
 #          'extension with at least one country\'s data is installed')
 
 # create an active connection to ArcGIS Online and add to the source list if possible
-_agol_url, _agol_user, _agol_pass = (
-    "https://geosaurus.maps.arcgis.com",
-    "headless_testing",
-    "Esr!3801",
-)
-if _agol_url and _agol_user and _agol_pass:
-    agol = GIS(
+try:
+    agol = GIS(profile="your_online_profile")
+except:
+    _agol_url, _agol_user, _agol_pass = (
         "https://geosaurus.maps.arcgis.com",
-        username="headless_testing",
-        password="Esr!3801",
+        "headless_testing",
+        "Esr!3801",
     )
-    _src_lst.append(agol)
-    _src_nm_lst.append("agol")
-else:
-    warn(
-        "Cannot test ArcGIS Online because AGOL_URL, AGOL_USERNAME, and AGOL_PASSWORD are not in the environment "
-        "variables."
-    )
+    if _agol_url and _agol_user and _agol_pass:
+        agol = GIS(
+            "https://geosaurus.maps.arcgis.com",
+            username="headless_testing",
+            password="Esr!3801",
+        )
+_src_lst.append(agol)
+_src_nm_lst.append("agol")
 
 
 def source():

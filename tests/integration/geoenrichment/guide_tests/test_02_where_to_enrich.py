@@ -1,12 +1,15 @@
+import sys
+
+# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
+# sys.path.insert(1, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
+from arcgis import GIS
 
 from arcgis.features import GeoAccessor
-from arcgis.geoenrichment import Country, enrich, BufferStudyArea
-from arcgis.geoenrichment.enrichment import NamedArea
-from arcgis.gis import GIS
+from arcgis.geoenrichment import enrich
 import pandas as pd
 
-from .config_guide_tests import dir_data, source, usa_instance, local_ba_avail, agol
+from integration.geoenrichment.guide_tests.config_guide_tests import usa_instance
 
 
 class WhereToEnrichTest(unittest.TestCase):
@@ -17,7 +20,7 @@ class WhereToEnrichTest(unittest.TestCase):
     def test_data_collections(self):
         vars_df = self.usa_instance_inst.data_collections
         assert isinstance(vars_df, pd.DataFrame)
-        assert len(vars_df.index.unique()) > 140
+        assert len(vars_df.index.unique()) > 100
 
     def age_variables_df(self):
         age_df = self.usa_instance_inst.data_collections.loc["Age"]
@@ -28,17 +31,11 @@ class WhereToEnrichTest(unittest.TestCase):
         single_address = enrich(
             study_areas=["380 New York St Redlands CA 92373"],
             data_collections=["Age"],
-            gis=agol,
+            gis=GIS(profile="your_online_profile"),
         )
         assert isinstance(single_address, pd.DataFrame)
-        assert all(
-            [
-                var in single_address.columns
-                for var in age_variables_df_inst.analysisVariable.apply(
-                    lambda val: val.split(".")[1]
-                )
-            ]
-        )
+        assert single_address.iloc[0]["has_data"] == 1
+        assert single_address.iloc[0]["SHAPE"]
 
 
 if __name__ == "__main__":
