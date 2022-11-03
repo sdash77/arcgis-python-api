@@ -1784,6 +1784,10 @@ class FeatureLayer(Layer):
         out_fields                          Optional List of field names to return. Field names can be specified
                                             either as a List of field names or as a comma separated string.
                                             The default is "*", which returns all the fields.
+
+                                            .. note::
+                                                If specifying `return_count_only`, `return_id_only`, or `return_extent_only`
+                                                as True, do not specify this parameter in order to avoid errors.
         -------------------------------     --------------------------------------------------------------------
         object_ids                          Optional string. The object IDs of this layer or table to be queried.
                                             The object ID values should be a comma-separated string.
@@ -1861,6 +1865,10 @@ class FeatureLayer(Layer):
                                             or descending, respectively, following every field to control the
                                             ordering.
                                             example: STATE_NAME ASC, RACE DESC, GENDER
+
+                                            .. note::
+                                                If specifying `return_count_only`, `return_id_only`, or `return_extent_only`
+                                                as True, do not specify this parameter in order to avoid errors.
         -------------------------------     --------------------------------------------------------------------
         group_by_fields_for_statistics      Optional string. One or more field names on which the values need to
                                             be grouped for calculating the statistics.
@@ -2185,6 +2193,8 @@ class FeatureLayer(Layer):
                 del key, val
 
         if not return_all_records or "outStatistics" in params:
+            if "orderByFields" in params:
+                del params["orderByFields"]
             if as_df:
                 return self._query_df(url, params)
             return self._query(url, params, raw=as_raw)
@@ -5136,7 +5146,7 @@ class FeatureLayerCollection(_GISResource):
                                         transformation on each layer when the spatial reference used in
                                         geometry is different than the layer's spatial reference.
         -----------------------------   --------------------------------------------------------------------
-        time_reference_unknown_client   Setting timeReferenceUnknownClient as trueindicates that the client is                  capable of working with data values that are not in UTC. If its not set
+        time_reference_unknown_client   Setting timeReferenceUnknownClient as true indicates that the client is                  capable of working with data values that are not in UTC. If its not set
                                         to true, and the service layer's datesInUnknownTimeZone property is true,
                                         then an error is returned. The default is false
 
