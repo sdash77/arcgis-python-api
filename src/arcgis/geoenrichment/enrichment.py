@@ -1625,7 +1625,9 @@ def enrich(
             if index == 0:
                 # if the first instance is a geocoded area, assign enrich_src
                 enrich_src = cntry
-    if isinstance(study_areas, GeoAccessor):
+    if isinstance(study_areas, GeoAccessor) or isinstance(study_areas, pd.DataFrame):
+        if isinstance(study_areas, pd.DataFrame):
+            study_areas = study_areas.spatial
         first_geo = Point(
             {
                 "x": study_areas.true_centroid[0],
@@ -1637,6 +1639,7 @@ def enrich(
         cntry = Country(geocoded_area["address"]["CountryCode"])
         sa_to_country[cntry] = study_areas._data["SHAPE"].tolist()
         enrich_src = cntry
+        study_areas = study_areas._data
 
     # assign further properties if found
     if isinstance(first_geo, NamedArea):

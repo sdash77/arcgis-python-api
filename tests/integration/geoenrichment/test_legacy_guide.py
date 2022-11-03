@@ -7,6 +7,7 @@ from arcgis.features import FeatureSet
 from arcgis.geoenrichment import Country
 from arcgis.geoenrichment._business_analyst._utils import pep8ify
 import pandas as pd
+from arcgis.geoenrichment import enrich
 
 from integration.geoenrichment.configtest import (
     does_not_raise,
@@ -228,7 +229,7 @@ class TestLegacyGuide(unittest.TestCase):
 
         with self.assertRaises(AssertionError):
             enrich_res = enrich(
-                study_areas=[test_feature_set],
+                study_areas=test_feature_set.sdf,
                 data_collections=["Age"],
                 gis=self.usa_agol_inst._gis,
             )
@@ -237,10 +238,11 @@ class TestLegacyGuide(unittest.TestCase):
     @skip_if_no_agol
     def test_enrich_feature_set_data_collection_agol(self):
         with does_not_raise():
-            enrich_res = self.usa_agol_inst.enrich(
-                study_areas=[test_feature_set], data_collections=["Age"]
+            enrich_res = enrich(
+                study_areas=test_feature_set.sdf, data_collections=["Age"]
             )
-            assert_enrich_results(enrich_res, self.usa_agol_inst)
+            assert isinstance(enrich_res, pd.DataFrame)
+            assert enrich_res.iloc[0]["has_data"] == 1
 
 
 if __name__ == "__main__":
