@@ -4104,7 +4104,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                                                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online Only.
+                                                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online and ArcGIS Enterprise 11.1+.
 
                                                                                     .. code-block:: python
 
@@ -4149,7 +4149,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if aggregation_polygon_layer:
             aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
-        if self._gis._is_agol:
+        if self._gis.version > [10, 3] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -4555,7 +4555,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                                                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online.
+                                                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online and ArcGIS Enterprise 11.1+.
 
                                                                                 .. code-block:: python
 
@@ -4590,7 +4590,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if aggregation_polygon_layer:
             aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
-        if self._gis._is_agol:
+        if self._gis.version > [10, 3] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -4869,7 +4869,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                     - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                     - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online Only.
+                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online and ArcGIS Enterprise 11.1+.
 
                                         .. code-block:: python
 
@@ -4898,7 +4898,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "FindSimilarLocations"
         input_layer = self._feature_input(input_layer)
         search_layer = self._feature_input(search_layer)
-        if self._gis._is_agol:
+        if self._gis.version > [10, 3] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -6158,7 +6158,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online Only and Enterprise 11+.
+                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online and ArcGIS Enterprise 11+.
 
                                     .. code-block:: python
 
@@ -6189,7 +6189,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
         analysis_layer = self._feature_input(analysis_layer)
 
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version > [10, 1] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -9069,14 +9069,17 @@ class _RasterAnalysisTools(BaseAnalytics):
         self, output_name, task, folder=None, output_properties=None
     ):
         gis = self._gis
-        ok = gis.content.is_service_name_available(output_name, "Image Service")
+
+        ok = gis.content.is_service_name_available(
+            output_name.replace(" ", "_"), "Image Service"
+        )
         if not ok:
             raise RuntimeError(
                 "An Image Service by this name already exists: " + output_name
             )
 
         create_parameters = {
-            "name": output_name,
+            "name": output_name.replace(" ", "_"),
             "description": "",
             "capabilities": "Image, Metadata",
             "properties": {"path": "@", "description": "", "copyright": ""},
@@ -9102,6 +9105,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             create_params=create_parameters,
             service_type="imageService",
             folder=folder,
+            item_properties={"title": output_name},
         )
         if output_service is None:
             raise RuntimeError("Unable to create service")
