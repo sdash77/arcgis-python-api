@@ -1406,7 +1406,7 @@ class TestWorkflowManager(unittest.TestCase):
 
         except Exception as testException:
             self.assertTrue(
-                "Route Edits is not active" in str(testException),
+                "Route Edits state is not active" in str(testException),
                 "Incorrect Exception returned",
             )
 
