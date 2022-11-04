@@ -8904,7 +8904,10 @@ class _RasterAnalysisTools(BaseAnalytics):
 
                                 token = _generate_layer_token(input_layer, url)
                                 if token is not None:
-                                    url = input_param["url"] + "?token=" + token
+                                    if input_layer.type == "Feature Service":
+                                        input_param.update({"serviceToken": token})
+                                    else:
+                                        url = input_param["url"] + "?token=" + token
                                 input_param.update({"url": url})
                     except:
                         pass
