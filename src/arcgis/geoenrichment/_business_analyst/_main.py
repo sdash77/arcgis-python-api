@@ -1967,7 +1967,6 @@ class BusinessAnalyst(object):
         # start building out the package for enrich REST call
         params = {
             "f": "json",
-            "token": self.source._con.token,
             "analysisVariables": evars,
         }
 
