@@ -147,6 +147,7 @@ def publish_hosted_imagery_layer(
                                                  The input_data param can then be used to specify local raster dataset path(s) in the mosaic dataset.
     ------------------------------------     --------------------------------------------------------------------
     layer_configuration                      Required String.
+    
                                                 - ONE_IMAGE: Uses a single, processed image or mosaics multiple \
                                                 images into a single dataset to create one layer. \
                                                 This option supports all common image formats and satellite \
