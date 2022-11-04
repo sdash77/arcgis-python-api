@@ -30,7 +30,7 @@ class Pix2PixHD(ArcGISModel):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function.
+                            :meth:`~arcgis.learn.prepare_data` function.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -42,8 +42,9 @@ class Pix2PixHD(ArcGISModel):
     n_gen_filters           Optional int. Number of gen filters in first conv layer.
                             Default: 64
     ---------------------   -------------------------------------------
-    gen_network             Optional string. Selects model to use for generator.
-                            Default: "global"
+    gen_network             Optional string (global/local). Selects model to use for generator.
+                            Use global if gpu memory is less.
+                            Default: "local"
     ---------------------   -------------------------------------------
     n_downsample_global     Optional int. Number of downsampling layers in gen_network
                             Default: 4
@@ -89,11 +90,11 @@ class Pix2PixHD(ArcGISModel):
                             Default: 100 (not supported for 3 band imagery)
     =====================   ===========================================
 
-    :return: `Pix2PixHD` Object
+    :return: :class:`~arcgis.learn.Pix2PixHD` Object
     """
 
     def __init__(self, data, pretrained_path=None, *args, **kwargs):
-        super().__init__(data, pretrained_path=None, *args, **kwargs)
+        super().__init__(data, pretrained_path=pretrained_path, **kwargs)
         self._check_dataset_support(data)
         # input_nc=3, output_nc=3,
         self.kwargs = kwargs
@@ -159,7 +160,7 @@ class Pix2PixHD(ArcGISModel):
     def from_model(cls, emd_path, data=None):
 
         """
-        Creates a Pix2PixHD object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.Pix2PixHD` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -168,11 +169,11 @@ class Pix2PixHD(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `Pix2PixHD` Object
+        :return: :class:`~arcgis.learn.Pix2PixHD` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -191,6 +192,9 @@ class Pix2PixHD(ArcGISModel):
         chip_size = emd["ImageHeight"]
         norm_stats = emd.get("norm_stats")
         kwargs = emd.get("Kwargs", {})
+        if emd.get("ArcGISLearnVersion") < "2.0.1":
+            if "gen_network" not in kwargs:
+                kwargs["gen_network"] = "global"
 
         if data is None:
             data = _EmptyData(
@@ -219,6 +223,7 @@ class Pix2PixHD(ArcGISModel):
             data._is_empty = True
             data.resize_to = chip_size
             data.norm_stats = norm_stats
+            data.imagery_type = emd.get("ImageryType")
 
         return cls(data, **model_params, pretrained_path=str(model_file), **kwargs)
 

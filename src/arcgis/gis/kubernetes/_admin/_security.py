@@ -1,6 +1,7 @@
 """
 Contains the base class that all server object inherit from.
 """
+from __future__ import annotations
 from urllib.request import HTTPError
 from arcgis.gis import GIS
 from arcgis._impl.common._isd import InsensitiveDict
@@ -8,6 +9,12 @@ from typing import Dict, Any, Optional, List
 
 ###########################################################################
 class KubeSecurityCert(object):
+    """
+    The certificates resource provides access to child operations and
+    resources that can be used to manage all the security certificates
+    configured with an organization.
+    """
+
     _con = None
     _url = None
     _json_dict = None
@@ -42,11 +49,11 @@ class KubeSecurityCert(object):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -196,8 +203,10 @@ class KubeSecurityCert(object):
 ###########################################################################
 class KubeSecuritySAML(object):
     """
-    Returns the currently configured security information for the Ingress
-    controller.
+    The saml resource returns information about the SAML configuration for
+    an organization. If SAML is configured, the enabled property will
+    return as true and `identityCertificateName` will show the name of the
+    imported identity certificate.
     """
 
     _con = None
@@ -234,11 +243,11 @@ class KubeSecuritySAML(object):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -288,7 +297,7 @@ class KubeSecuritySAML(object):
         :return: dict
         """
         url = self.url + "/update"
-        params = {"f": "json", "ingressSecurityConfig": value}
+        params = {"f": "json", "samlSecurityConfig": value}
         res = self._con.post(url, params)
         if res.get("status", "failed") == "success":
             self._refresh()
@@ -297,8 +306,11 @@ class KubeSecuritySAML(object):
 ###########################################################################
 class KubeSecurityIngress(object):
     """
-    Returns the currently configured security information for the Ingress
-    controller.
+    The ingress resource returns the currently configured security
+    information for the Ingress controller. You can update ingress security
+    configuration properties using the update operation. The update
+    operation must be used when adding an imported wildcard certificate for
+    the Ingress controller.
     """
 
     _con = None
@@ -335,11 +347,11 @@ class KubeSecurityIngress(object):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -435,11 +447,11 @@ class KubeSecurityConfig(object):
 
     # ----------------------------------------------------------------------
     def __str__(self) -> str:
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self) -> str:
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     @property
@@ -584,11 +596,11 @@ class KubeSecurity(object):
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
-        return "<%s at %s>" % (type(self).__name__, self._url)
+        return "< %s @ %s >" % (type(self).__name__, self._url)
 
     # ----------------------------------------------------------------------
     @property

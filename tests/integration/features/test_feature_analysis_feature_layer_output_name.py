@@ -3,7 +3,6 @@ import sys
 import string
 import random
 import unittest
-import pytest
 import pandas as pd
 from arcgis.gis import GIS
 from arcgis.features.analysis import aggregate_points
@@ -21,7 +20,7 @@ class TestPassingDictionaries(unittest.TestCase):
         gis = GIS(
             "https://deldev.maps.arcgis.com",
             "demos_deldev",
-            "DelDevs12",
+            "DelDevs.1234",
             verify_cert=False,
         )
         point_item = gis.content.get("1923d4e74ac947dab4f8c94d2c2a7a9c")

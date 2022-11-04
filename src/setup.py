@@ -63,6 +63,7 @@ if conda_install_mode:
     dependencies = []
 else:
     dependencies = [
+        "pillow",
         "urllib3",
         "cachetools",
         "six",
@@ -83,14 +84,14 @@ else:
         'pywin32 >=223;platform_system=="Windows"',
         "pyshp >=2",
         "geomet",
-        "requests >=1.27.1",
+        "requests >=2.27.1",
         "requests-oauthlib",
         "requests_toolbelt",
-        "requests_ntlm",
         'requests-negotiate-sspi;platform_system=="Windows"',
         'requests-kerberos;platform_system=="Windows"',
         'winkerberos;platform_system=="Windows"',
         "requests-gssapi",
+        "dask",
     ]
 
 
@@ -221,18 +222,18 @@ data_files = [
 def get_version():
     """gets the version from environment variable or sets via manually setting"""
     MAJOR = "2"
-    MINOR = "0"
+    MINOR = "1"
     try:
         import os
 
         def __path(filename):
             return os.path.join(os.path.dirname(__file__), filename)
 
-        MICRO = "1"
+        MICRO = "0"
         if os.path.exists(__path("build.info")):
             MICRO = open(__path("build.info")).read().strip()
     except:
-        MICRO = "1"
+        MICRO = "0"
     return f"{MAJOR}.{MINOR}.{MICRO}"
 
 

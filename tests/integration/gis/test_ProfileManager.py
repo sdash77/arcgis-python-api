@@ -2,9 +2,9 @@
 import os
 import uuid
 import unittest
-import pytest
 from arcgis.gis import GIS
 from arcgis.gis._impl._profile import ProfileManager
+from arcgis.gis import login_profiles
 import pandas as pd
 
 PROFILES = ["your_online_profile", "your_enterprise_profile"]
@@ -18,14 +18,14 @@ class TestProfileManager(unittest.TestCase):
         """tests getting the manager"""
         for profile in PROFILES:
             gis = GIS(profile=profile, verify_cert=False)
-            assert isinstance(gis.profiles, ProfileManager)
+            assert isinstance(login_profiles, ProfileManager)
 
     def test_list(self):
         """tests list method"""
         for profile in PROFILES:
             gis = GIS(profile=profile, verify_cert=False)
-            assert isinstance(gis.profiles, ProfileManager)
-            pm = gis.profiles
+            assert isinstance(login_profiles, ProfileManager)
+            pm = login_profiles
             assert isinstance(pm.list(), list)
             assert isinstance(pm.list(as_df=True), pd.DataFrame)
 
@@ -33,8 +33,8 @@ class TestProfileManager(unittest.TestCase):
         """tests creating/deleting a profile"""
         for profile in PROFILES:
             gis = GIS(profile=profile, verify_cert=False)
-            assert isinstance(gis.profiles, ProfileManager)
-            pm = gis.profiles
+            assert isinstance(login_profiles, ProfileManager)
+            pm = login_profiles
             pm.create(
                 profile=DUMMY_PROFILE,
                 url=gis._url,
@@ -52,8 +52,8 @@ class TestProfileManager(unittest.TestCase):
         """tests the update logic"""
         for profile in PROFILES:
             gis = GIS(profile=profile, verify_cert=False)
-            assert isinstance(gis.profiles, ProfileManager)
-            pm = gis.profiles
+            assert isinstance(login_profiles, ProfileManager)
+            pm = login_profiles
             pm.create(
                 profile=DUMMY_PROFILE,
                 url=gis._url,
@@ -67,3 +67,7 @@ class TestProfileManager(unittest.TestCase):
             assert pm.get(profile=DUMMY_PROFILE)["url"] == "AFAKEVALUE"
             pm.delete(DUMMY_PROFILE)
             assert DUMMY_PROFILE not in pm.list()
+
+
+if __name__ == "__main__":
+    unittest.main()

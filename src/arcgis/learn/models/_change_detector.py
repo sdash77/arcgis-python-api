@@ -31,10 +31,10 @@ class ChangeDetector(ArcGISModel):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object
-                            from `prepare_data` function.
+                            from :meth:`~arcgis.learn.prepare_data`  function.
     ---------------------   -------------------------------------------
     backbone                Optional function. Backbone CNN model to be used
-                            for creating the encoder of the `ChangeDetector`,
+                            for creating the encoder of the :class:`~arcgis.learn.ConnectNet`,
                             which is `resnet18` by default. It supports
                             the ResNet family of backbones.
     ---------------------   -------------------------------------------
@@ -47,7 +47,7 @@ class ChangeDetector(ArcGISModel):
                             saved.
     =====================   ===========================================
 
-    :return: ``ChangeDetector`` object
+    :return: :class:`~arcgis.learn.ConnectNet` object
     """
 
     def __init__(
@@ -67,7 +67,7 @@ class ChangeDetector(ArcGISModel):
                 f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
             )
 
-        super().__init__(data, backbone)
+        super().__init__(data, backbone, pretrained_path=pretrained_path)
         backbone = self._backbone.__name__.lower()
         self.SA_type = attention_type
         self.learn = get_learner(self._data, backbone, self.SA_type)
@@ -118,11 +118,11 @@ class ChangeDetector(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Optional fastai Databunch. Returned
-                                data object from `prepare_data` function or
+                                data object from :meth:`~arcgis.learn.prepare_data`  function or
                                 None for inferencing.
         =====================   ===========================================
 
-        :return: ``ChangeDetector`` Object
+        :return: :class:`~arcgis.learn.ConnectNet` Object
         """
         emd_path = _get_emd_path(emd_path)
         emd_path = Path(emd_path)

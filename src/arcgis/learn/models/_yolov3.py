@@ -54,6 +54,7 @@ try:
     from .._video_utils import VideoUtils
     from .._utils.env import is_arcgispronotebook
     from .._utils.pascal_voc_rectangles import _reconstruct
+    from .._utils.utils import chips_to_batch
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
@@ -144,23 +145,6 @@ class YOLOv3Tracer(torch.nn.Module):
         return out_final
 
 
-def chips_to_batch(chips, model_height, model_width, batch_size=1):
-    dtype = np.float32
-    band_count = 3
-    if len(chips) != 0:
-        dtype = chips[0].dtype
-
-    batch = np.zeros(
-        shape=(batch_size, band_count, model_height, model_width),
-        dtype=dtype,
-    )
-    for b in range(batch_size):
-        if b < len(chips):
-            batch[b, :, :model_height, :model_height] = chips[b]
-
-    return batch
-
-
 # Yolov3 model
 class YOLOv3(ArcGISModel):
     """
@@ -170,13 +154,14 @@ class YOLOv3(ArcGISModel):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function.
+                            :meth:`~arcgis.learn.prepare_data` function. YOLOv3 only supports image
+                            sizes in multiples of 32 (e.g. 256, 416, etc.)
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
     =====================   ===========================================
 
-    :return: `YOLOv3` Object
+    :return: :class:`~arcgis.learn.YOLOv3` Object
     """
 
     def __init__(self, data=None, pretrained_path=None, **kwargs):
@@ -190,7 +175,8 @@ class YOLOv3(ArcGISModel):
             data.remove_tfm(data.norm)
             data.norm, data.denorm = None, None
 
-        super().__init__(data)
+        super().__init__(data, pretrained_path=pretrained_path)
+        data = self._data
 
         # Creating a dummy class for the backbone because this model does not use a torchvision backbone
         class DarkNet53:
@@ -240,10 +226,10 @@ class YOLOv3(ArcGISModel):
                         "[INFO] Can't download and extract COCO pretrained weights for YOLOv3.\nProceeding without pretrained weights."
                     )
             if os.path.exists(weights_file):
-                parse_yolo_weights(self._model, weights_file)
-                from IPython.display import clear_output
+                from IPython.utils import io
 
-                clear_output()
+                with io.capture_output() as captured:
+                    parse_yolo_weights(self._model, weights_file)
 
         self._loss_f = YOLOv3_Loss()
         self.learn = Learner(data, self._model, loss_func=self._loss_f)
@@ -431,7 +417,7 @@ class YOLOv3(ArcGISModel):
         return_scores=True,
         visualize=False,
         resize=False,
-        **kwargs,
+        batch_size=1,
     ):
         """
         Predicts and displays the results of a trained model on a single image.
@@ -472,16 +458,9 @@ class YOLOv3(ArcGISModel):
                                 by applying the model on cropped sections of
                                 the image (of the same size as the model was
                                 trained on).
-        =====================   ===========================================
-
-        **kwargs**
-
-        =====================   ===========================================
-        **Argument**            **Description**
         ---------------------   -------------------------------------------
         batch_size              Optional int. Batch size to be used
                                 during tiled inferencing. Deafult value 1.
-        ---------------------   -------------------------------------------
         =====================   ===========================================
 
         :return: 'List' of xmin, ymin, width, height of predicted bounding boxes on the given image
@@ -515,8 +494,6 @@ class YOLOv3(ArcGISModel):
                 image = cv2.resize(image, (self._data.resize_to, self._data.resize_to))
 
         height, width, _ = image.shape
-
-        batch_size = int(kwargs.get("batch_size", 1))
         tytx = self._data.chip_size
 
         if self._data.chip_size is not None:
@@ -973,11 +950,11 @@ class YOLOv3(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `YOLOv3` Object
+        :return: :class:`~arcgis.learn.YOLOv3` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)

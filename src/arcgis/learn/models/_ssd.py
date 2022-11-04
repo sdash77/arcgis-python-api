@@ -66,6 +66,8 @@ try:
     from fastprogress.fastprogress import progress_bar
     from .._utils.env import is_arcgispronotebook
     import matplotlib.pyplot as plt
+    from .._utils.utils import chips_to_batch
+    from .._utils.pascal_voc_rectangles import _reconstruct
 except Exception as e:
     import_exception = "\n".join(
         traceback.format_exception(type(e), e, e.__traceback__)
@@ -251,7 +253,7 @@ class SingleShotDetector(ArcGISModel):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function.
+                            :meth:`~arcgis.learn.prepare_data` function.
     ---------------------   -------------------------------------------
     grids                   Required list. Grid sizes used for creating anchor
                             boxes.
@@ -265,7 +267,7 @@ class SingleShotDetector(ArcGISModel):
                             model used for feature extraction, which
                             is `resnet34` by default.
                             Supported backbones: ResNet, DenseNet, VGG families
-                            and specified Timm models from
+                            and specified Timm models(experimental support) from
                             :func:`~arcgis.learn.SingleShotDetector.backbones`.
     ---------------------   -------------------------------------------
     dropout                 Optional float. Dropout probability. Increase it to
@@ -293,7 +295,8 @@ class SingleShotDetector(ArcGISModel):
                             valid options are 'pytorch', 'tensorflow'
     =====================   ===========================================
 
-    :return: `SingleShotDetector` Object
+    :return:
+        :class:`~arcgis.learn.SingleShotDetector` Object
     """
 
     def __init__(
@@ -314,7 +317,8 @@ class SingleShotDetector(ArcGISModel):
         **kwargs,
     ):
 
-        super().__init__(data, backbone, **kwargs)
+        super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
+        data = self._data
 
         if pretrained_path is not None:
             backbone_pretrained = False
@@ -437,7 +441,9 @@ class SingleShotDetector(ArcGISModel):
                 self._create_anchors(grids, zooms, ratios)
 
                 feature_sizes = _get_feature_size(
-                    self._backbone,
+                    self._orig_backbone
+                    if hasattr(self, "_orig_backbone")
+                    else self._backbone,
                     cut=backbone_cut,
                     chip_size=(data.chip_size, data.chip_size),
                 )
@@ -449,6 +455,7 @@ class SingleShotDetector(ArcGISModel):
                     grids[0] > 8
                     and abs(num_features - grids[0]) > 4
                     and backbone_name == "res"
+                    and "bit" not in self._backbone.__name__
                 ):
                     num_features = feature_sizes[-2][-1]
                     num_channels = feature_sizes[-2][1]
@@ -517,7 +524,7 @@ class SingleShotDetector(ArcGISModel):
     @staticmethod
     def _supported_backbones():
 
-        timm_models = filter_timm_models()
+        timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
 
         return [
@@ -555,11 +562,12 @@ class SingleShotDetector(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `SingleShotDetector` Object
+        :return:
+            :class:`~arcgis.learn.SingleShotDetector` Object
         """
         return cls.from_emd(data, emd_path)
 
@@ -573,14 +581,14 @@ class SingleShotDetector(ArcGISModel):
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Esri Model Definition
                                 file.
         =====================   ===========================================
 
-        :return: `SingleShotDetector` Object
+        :return: :class:`~arcgis.learn.SingleShotDetector` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -1160,6 +1168,48 @@ class SingleShotDetector(ArcGISModel):
             resize,
         )
 
+    def _predict_batch(self, images):
+        model = self.learn.model
+        model.eval()
+        model = model.to(self._device)
+        normed_batch_tensor = images.to(self._device)
+        predictions = model(normed_batch_tensor)
+        normed_batch_tensor.detach().cpu()
+        del normed_batch_tensor
+        return predictions
+
+    def _get_batched_predictions(self, chips, tytx, norm, batch_size=1):
+        data = []
+        data_counter = 0
+        final_class = []
+        final_bbox = []
+        for idx in range(len(chips)):
+            chip = chips[idx]
+            frame = np.moveaxis(
+                norm(cv2.cvtColor(chip["chip"], cv2.COLOR_BGR2RGB).astype(np.float32)),
+                -1,
+                0,
+            )
+            data.append(frame)
+            data_counter += 1
+            if data_counter % batch_size == 0 or idx == len(chips) - 1:
+                batch = chips_to_batch(data, tytx, tytx, batch_size)
+                batch_classes, batch_bboxes = self._predict_batch(
+                    torch.tensor(batch).float()
+                )
+                extra_chips = batch_size - len(data)
+                batch_output_class = (
+                    batch_classes[: (len(batch_classes) - extra_chips)].detach().cpu()
+                )
+                batch_output_bbox = (
+                    batch_bboxes[: (len(batch_bboxes) - extra_chips)].detach().cpu()
+                )
+                final_class.append(batch_output_class)
+                final_bbox.append(batch_output_bbox)
+                data = []
+                data_counter = 0
+        return torch.cat(final_class), torch.cat(final_bbox)
+
     def predict(
         self,
         image_path,
@@ -1168,6 +1218,7 @@ class SingleShotDetector(ArcGISModel):
         return_scores=False,
         visualize=False,
         resize=False,
+        batch_size=1,
     ):
 
         """
@@ -1205,6 +1256,9 @@ class SingleShotDetector(ArcGISModel):
                                 by applying the model on cropped sections of
                                 the image (of the same size as the model was
                                 trained on).
+        ---------------------   -------------------------------------------
+        batch_size              Optional int. Batch size to be used
+                                during tiled inferencing. Deafult value 1.
         =====================   ===========================================
 
         :return: 'List' of xmin, ymin, width, height of predicted bounding boxes on the given image
@@ -1231,6 +1285,7 @@ class SingleShotDetector(ArcGISModel):
 
         orig_height, orig_width, _ = image.shape
         orig_frame = image.copy()
+        tytx = self._data.chip_size
 
         if not self._data._is_multispectral:
             if (
@@ -1268,6 +1323,12 @@ class SingleShotDetector(ArcGISModel):
         if len(chips) == 1:
             include_pad_detections = True
 
+        imagenet_stats = ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+
+        mean = 255 * np.array(imagenet_stats[0], dtype=np.float32)
+        std = 255 * np.array(imagenet_stats[1], dtype=np.float32)
+        norm = lambda x: (x - mean) / std
+
         valid_tfms = self._data.valid_ds.tfms
         self._data.valid_ds.tfms = []
 
@@ -1278,40 +1339,35 @@ class SingleShotDetector(ArcGISModel):
         LabelList.__getitem__ = modified_getitem
 
         try:
-            for chip in chips:
-                if self._data._is_multispectral:
-                    t = torch.tensor(
-                        np.rollaxis(chip["chip"], -1, 0).astype(np.float32),
-                        dtype=torch.float32,
-                    )[None]
-                    scaled_t = self._data._min_max_scaler(t)[0]
-                    frame = Image(scaled_t[self._data._extract_bands])
-                else:
-                    frame = Image(
-                        pil2tensor(
-                            PIL.Image.fromarray(
-                                cv2.cvtColor(chip["chip"], cv2.COLOR_BGR2RGB)
-                            ),
-                            dtype=np.float32,
-                        ).div_(255)
-                    )
-                bbox = self.learn.predict(
-                    frame,
-                    thresh=threshold,
-                    nms_overlap=nms_overlap,
-                    ret_scores=True,
-                    model=self,
-                )[0]
-                if bbox:
+            pred_class, pred_bbox = self._get_batched_predictions(
+                chips, tytx, norm, batch_size
+            )
+
+            class dummy:
+                pass
+
+            dummy_x = dummy()
+            dummy_x.size = [tytx, tytx]
+
+            for chip_idx, (pc, pb) in enumerate(zip(pred_class, pred_bbox)):
+                pc = pc.detach().clone()
+                pb = pb.detach().clone()
+                pp_output = self._analyze_pred(
+                    pred=(pc, pb), thresh=threshold, nms_overlap=nms_overlap
+                )
+                bbox = _reconstruct(
+                    pp_output, dummy_x, pad_idx=0, classes=self._data.classes
+                )
+                if bbox is not None:
                     scores = bbox.scores
                     bboxes, lbls = bbox._compute_boxes()
                     bboxes.add_(1).mul_(
                         torch.tensor(
                             [
-                                chip["height"] / 2,
-                                chip["width"] / 2,
-                                chip["height"] / 2,
-                                chip["width"] / 2,
+                                chips[chip_idx]["height"] / 2,
+                                chips[chip_idx]["width"] / 2,
+                                chips[chip_idx]["height"] / 2,
+                                chips[chip_idx]["width"] / 2,
                             ]
                         )
                     ).long()
@@ -1324,10 +1380,10 @@ class SingleShotDetector(ArcGISModel):
                         data = bb2hw(bbox)
                         if include_pad_detections or not _exclude_detection(
                             (data[0], data[1], data[2], data[3]),
-                            chip["width"],
-                            chip["height"],
+                            chips[chip_idx]["width"],
+                            chips[chip_idx]["height"],
                         ):
-                            chip["predictions"].append(
+                            chips[chip_idx]["predictions"].append(
                                 {
                                     "xmin": data[0],
                                     "ymin": data[1],

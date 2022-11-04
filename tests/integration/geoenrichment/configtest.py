@@ -13,7 +13,7 @@ from arcgis.geoenrichment._business_analyst._utils import (
 )
 from arcgis.gis import GIS
 import pandas as pd
-import pytest
+import unittest
 
 __all__ = ['usa_local', 'usa_local_enrich_vars', 'usa_agol', 'usa_agol_enrich_vars',
            'polygon_df', 'line_df', 'point_df', 'stdgeo_srs']
@@ -29,19 +29,21 @@ if module_avail("dotenv"):
 
 # try to load from environment variables - will all be None if not set or loaded
 _agol_url, _agol_user, _agol_pass = (
-    os.getenv("AGOL_URL"),
-    os.getenv("AGOL_USERNAME"),
-    os.getenv("AGOL_PASSWORD"),
+    "https://geosaurus.maps.arcgis.com",
+    "headless_testing",
+    "Esr!3801",
 )
+
+abbreviated_test = True
 
 # use configfile if still not set
 if _agol_url is None and _agol_user is None and _agol_pass is None:
     config = ConfigParser()
     config.read(_dir_test_geoenrichment / 'config.ini')
     _agol_url, _agol_user, _agol_pass = (
-        config["AGOL"]["URL"],
-        config["AGOL"]["USERNAME"],
-        config["AGOL"]["PASSWORD"],
+        "https://geosaurus.maps.arcgis.com",
+        "headless_testing",
+        "Esr!3801",
     )
 
 
@@ -99,11 +101,11 @@ else:
     warn("Cannot test ArcGIS Online because cannot load URL and credentials from config.ini.")
 
 # way to flag tests in an environment without ArcGIS Pro
-skip_if_no_local = pytest.mark.skipif(local_ba_avail is not True,
+skip_if_no_local = unittest.skipIf(local_ba_avail is not True,
                                       reason='ArcGIS Pro with BA and data is not available.')
 
 # way to flag tests if ArcGIS Online connection not available
-skip_if_no_agol = pytest.mark.skipif(agol_avail is False,
+skip_if_no_agol = unittest.skipIf(agol_avail is False,
                                      reason='A connection to ArcGIS Online is not available.')
 
 
@@ -113,64 +115,57 @@ def does_not_raise():
     yield
 
 
-@pytest.fixture
 def usa_local():
     return Country('usa', gis=GIS('pro'))
 
 
-@pytest.fixture
-def usa_local_enrich_vars(usa_local):
-    return _get_filtered_enrich_variables(usa_local)
+def usa_local_enrich_vars():
+    usa_local_inst = usa_local()
+    return _get_filtered_enrich_variables(usa_local_inst)
 
 
-@pytest.fixture(scope='session')
 def gis_pro():
     gis = GIS('pro')
     return gis
 
 
-@pytest.fixture(scope='session')
-def gis_agol():
+def gis_agol()->GIS:
     gis = GIS(_agol_url, username=_agol_user, password=_agol_pass)
     return gis
 
 
-@pytest.fixture(scope='session')
-def usa_agol():
+def usa_agol()->GIS:
     gis = GIS(_agol_url, username=_agol_user, password=_agol_pass)
     return Country('usa', gis=gis)
 
 
-@pytest.fixture
-def usa_agol_enrich_vars(usa_agol):
-    return _get_filtered_enrich_variables(usa_agol)
+def usa_agol_enrich_vars():
+    usa_agol_inst = usa_agol()
+    return _get_filtered_enrich_variables(usa_agol_inst)
 
 
 # get path to testing data directory
 _dir_data = Path(__file__).parent / 'geoenrich_data'
 
 
-@pytest.fixture
 def polygon_df():
     df = pd.read_pickle(_dir_data / 'block_group_df.pkl')
     df.spatial.set_geometry('SHAPE')
     return df
 
 
-@pytest.fixture
-def stdgeo_srs(polygon_df):
-    bg_id_lst = polygon_df['ID']
+def stdgeo_srs():
+    polygon_df_inst = polygon_df()
+    bg_id_lst = polygon_df_inst['ID']
     return bg_id_lst
 
 
-@pytest.fixture
 def line_df():
     df = pd.read_pickle(_dir_data / 'lines_df.pkl')
     df.spatial.set_geometry('SHAPE')
     return df
 
 
-@pytest.fixture
 def point_df():
     df = pd.read_pickle(_dir_data / 'points_df.pkl')
     df.spatial.set_geometry('SHAPE')

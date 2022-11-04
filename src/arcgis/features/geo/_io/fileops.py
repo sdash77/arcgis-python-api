@@ -40,6 +40,57 @@ except:
     HASPYSHP = False
 
 _logging = logging.getLogger(__name__)
+
+
+def _fc2pandas_dtypes(describe: dict) -> dict:
+    """
+    returns a dtypes to cast the final dataframe to the proper datatypes (if possible).
+
+    :returns: Dict[str, Any]
+    """
+    if describe is None:
+        return None
+    if [float(i) for i in pd.__version__.split(".")] < [1, 0, 0]:
+        _lu_types = {
+            "OID": np.int64,
+            "SmallInteger": np.int32,
+            "Integer": np.int32,
+            "Single": float,
+            "Double": float,
+            "String": "<U",
+            "Blob": "O",
+            "Guid": "<U38",
+            "Raster": "O",
+            "Date": "<M8[us]",
+        }
+    else:
+        _lu_types = {
+            "OID": pd.Int64Dtype(),
+            "SmallInteger": pd.Int32Dtype(),
+            "Integer": pd.Int32Dtype(),
+            "Single": float,
+            "Double": float,
+            "String": pd.StringDtype(),
+            "Blob": "O",
+            "Guid": pd.StringDtype(),
+            "Raster": "O",
+            "Date": "<M8[us]",
+        }
+    dtypes = None
+    if "fields" in describe:
+        dtypes = {}
+        for field in describe["fields"]:
+            # if field.type.lower() in ["TEXT", "string"]:
+            #    dtypes[field.name] = f"{_lu_types['String']}{field.length}"
+            if field.type in _lu_types.keys():
+                dtypes[field.name] = _lu_types[field.type]
+            elif field.type.lower() == "geometry":
+                pass  # Skip value
+            else:
+                dtypes[field.name] = object
+    return dtypes
+
+
 # --------------------------------------------------------------------------
 def _infer_type(df, col):
     """
@@ -112,16 +163,31 @@ def _geometry_to_geojson(geom):
 
 
 # --------------------------------------------------------------------------
-def _from_xy(df, x_column, y_column, sr=None):
+def _from_xy(df, x_column, y_column, sr=None, z_column=None, m_column=None, **kwargs):
     """
-    Takes an X/Y Column and Creates a Point Geometry from it.
+    Takes an X/Y Column and Creates a Point Geometry from it. Can handle Z
+    and M Columns as well.
+
+    **kwargs**
+
+    :oid_field: - Optional String value that can be specified to preven the int64 from turning into int32.
+
+
     """
+    oid_field = kwargs.pop("oid_field", None)
     from arcgis.geometry import SpatialReference, Point
     from arcgis.features.geo._array import GeoArray
 
-    def _xy_to_geometry(x, y, sr):
+    def _xy_to_geometry(x, y, sr, z=None, m=None):
         """converts x/y coordinates to Point object"""
-        return Point({"spatialReference": sr, "x": x, "y": y})
+        if z and m:
+            return Point({"spatialReference": sr, "x": x, "y": y, "z": z, "m": m})
+        elif z and not m:
+            return Point({"spatialReference": sr, "x": x, "y": y, "z": z})
+        elif m and not z:
+            return Point({"spatialReference": sr, "x": x, "y": y, "m": m})
+        else:
+            return Point({"spatialReference": sr, "x": x, "y": y})
 
     if sr is None:
         sr = SpatialReference({"wkid": 4326})
@@ -135,11 +201,50 @@ def _from_xy(df, x_column, y_column, sr=None):
     geoms = []
     v_func = np.vectorize(_xy_to_geometry, otypes="O")
     ags_geom = np.empty(len(df), dtype="O")
-    ags_geom[:] = v_func(df[x_column].values, df[y_column].values, sr)
+
+    if z_column and m_column:
+        ags_geom[:] = v_func(
+            df[x_column].values,
+            df[y_column].values,
+            sr,
+            df[z_column].values,
+            df[m_column].values,
+        )
+    elif z_column and not m_column:
+        ags_geom[:] = v_func(
+            df[x_column].values,
+            df[y_column].values,
+            sr,
+            df[z_column].values,
+            None,
+        )
+    elif m_column and not z_column:
+        ags_geom[:] = v_func(
+            df[x_column].values,
+            df[y_column].values,
+            sr,
+            None,
+            df[m_column].values,
+        )
+    else:
+        ags_geom[:] = v_func(df[x_column].values, df[y_column].values, sr)
+    oid_fields = ["oid", "fid", "objectid"]
+    if oid_field:
+        oid_fields.append(oid_field.lower())
+    df = df.astype(
+        {
+            col: "int32"
+            for col in df.select_dtypes("int64").columns
+            if not col.lower() in oid_fields
+        }
+    )
     df["SHAPE"] = GeoArray(ags_geom)
     df.spatial.name
     for i in range(len(df)):
-        shape = df.loc[i]["SHAPE"]
+        try:
+            shape = df.iloc[i]["SHAPE"]
+        except:
+            shape = df.loc[i]["SHAPE"]
         if "EMPTY" in shape.WKT:
             df.iat[i, df.columns.get_loc("SHAPE")] = None
     return df
@@ -331,14 +436,18 @@ def from_table(filename, **kwargs):
     elif HASARCPY and filename.lower().endswith(".dbf"):
         import arcpy
 
-        scur = arcpy.da.SearchCursor(
+        with arcpy.da.SearchCursor(
             in_table=filename,
-            field_names=kwargs.pop("fields", None),
+            field_names=kwargs.pop("fields", "*"),
             where_clause=kwargs.pop("where", None),
-        )
-        array = scur._as_array()
-        del scur
-        return pd.DataFrame(data=array)
+        ) as scur:
+            array = [row for row in scur]
+            df = pd.DataFrame(array, columns=scur.fields)
+            try:
+                return df.convert_dtypes()
+            except:
+                return df
+        return None
     elif filename.lower().endswith(".dbf"):
         import shapefile
 
@@ -355,6 +464,11 @@ def from_table(filename, **kwargs):
 def to_table(geo, location, overwrite=True, sanitize_columns=False):
     """
     Exports a geo enabled dataframe to a table.
+
+    .. note::
+        Null integer values will be changed to 0 when using shapely instead
+        of ArcPy due to shapely conventions.
+        With ArcPy null integer values will remain null.
 
     ===========================     ====================================================================
     **Argument**                    **Description**
@@ -374,7 +488,13 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
     """
     out_location = os.path.dirname(location)
     fc_name = os.path.basename(location)
-    df = geo._data
+    df = geo._data.copy()
+    df[df.select_dtypes(np.number).columns.tolist()] = df[
+        df.select_dtypes(np.number).columns.tolist()
+    ].replace({pd.NA: None})
+    df[df.select_dtypes(pd.StringDtype()).columns.tolist()] = df[
+        df.select_dtypes(pd.StringDtype()).columns.tolist()
+    ].replace(pd.NA, "")
     old_column, old_index = None, None
     if sanitize_columns:
         old_column = df.columns.tolist()
@@ -409,7 +529,11 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
         #
         oidfld = arcpy.da.Describe(fc)["OIDFieldName"]
         for col in columns[:]:
-            if col.lower() in ["fid", "oid", "objectid"]:
+            if (col.lower() == oidfld.lower()) or (
+                col.lower() in ["fid", "oid", "objectid"] and location.endswith(".dbf")
+            ):
+                pass
+            elif col.lower() in ["fid", "oid", "objectid"]:
                 dtypes.append((col, np.int32))
             elif df[col].dtype.name == "datetime64[ns]":
                 dtypes.append((col, "<M8[us]"))
@@ -426,8 +550,23 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
                         dtypes.append((col, type(df[col][0])))
                     except:
                         dtypes.append((col, "<U254"))
+            elif df[col].dtype.name == "string":
+                try:
+                    u = type(df[col][df[col].first_valid_index()])
+                except:
+                    u = pd.unique(df[col].apply(type)).tolist()[0]
+                if issubclass(u, str):
+                    mlen = df[col].str.len().max()
+                    if int(mlen) == 0:
+                        mlen = 1
+                    dtypes.append((col, "<U%s" % int(mlen)))
+                else:
+                    try:
+                        dtypes.append((col, type(df[col][0])))
+                    except:
+                        dtypes.append((col, "<U254"))
             elif df[col].dtype.name == "int64":
-                dtypes.append((col, np.int64))
+                dtypes.append((col, np.float64))
             elif df[col].dtype.name == "bool":
                 dtypes.append((col, np.int32))
             else:
@@ -441,12 +580,12 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
         icols = [
             fld.name
             for fld in fields
-            if fld.type not in ["OID", "Geometry"] and fld.name in df.columns
+            if fld.type not in ["OID", "Geometry", "FID"] and fld.name in df.columns
         ]
         dfcols = [
             fld.name
             for fld in fields
-            if fld.type not in ["OID", "Geometry"] and fld.name in df.columns
+            if fld.type not in ["OID", "Geometry", "FID"] and fld.name in df.columns
         ]
         with arcpy.da.InsertCursor(fc, icols) as irows:
             for idx, row in df[dfcols].iterrows():
@@ -490,6 +629,15 @@ def from_featureclass(filename, **kwargs):
     ---------------------------     --------------------------------------------------------------------
     spatial_filter                  A `Geometry` object that will filter the results.  This requires
                                     `arcpy` to work.
+    ---------------------------     --------------------------------------------------------------------
+    sr                              A Spatial reference to project (or tranform) output GeoDataFrame to.
+                                    This requires `arcpy` to work.
+    ---------------------------     --------------------------------------------------------------------
+    datum_transformation            Used in combination with 'sr' parameter. if the spatial reference of
+                                    output GeoDataFrame and input data do not share the same datum,
+                                    an appropriate datum transformation should be specified.
+                                    To Learn more see [Geographic datum transformations](https://pro.arcgis.com/en/pro-app/help/mapping/properties/geographic-coordinate-system-transformation.htm)
+                                    This requires `arcpy` to work.
     ===========================     ====================================================================
 
     :return: pandas.core.frame.DataFrame
@@ -498,16 +646,23 @@ def from_featureclass(filename, **kwargs):
     from arcgis.geometry import _types
     import json
 
-    filename = _ensure_path_string(filename)
-    if not isinstance(filename, (str, Path, PurePath)):
-        raise ValueError(
-            f"filename must be a `str`, `Path`, or `PurePath`, not {type(filename)}"
-        )
-    if filename.find("http://") > -1 or filename.find("https://") > -1:
-        res = from_url(url=filename)
-        if len(res) == 1:
-            return res[0]
-        return res
+    if HASARCPY and (
+        isinstance(filename, (arcpy._mp.Layer))
+        or type(filename).__name__.find("arcpy") > -1
+    ):
+        filename = filename
+    else:
+
+        filename = _ensure_path_string(filename)
+        if not isinstance(filename, (str, Path, PurePath)):
+            raise ValueError(
+                f"filename must be a `str`, `Path`, or `PurePath`, not {type(filename)}"
+            )
+        if filename.find("http://") > -1 or filename.find("https://") > -1:
+            res = from_url(url=filename)
+            if len(res) == 1:
+                return res[0]
+            return res
     if HASARCPY:
         sql_clause = kwargs.pop("sql_clause", (None, None))
         where_clause = kwargs.pop("where_clause", None)
@@ -524,6 +679,7 @@ def from_featureclass(filename, **kwargs):
             desc = {"fields": desc.fields, "shapeType": desc.shapeType}
             area_field = getattr(desc, "areaFieldName", None)
             length_field = getattr(desc, "lengthFieldName", None)
+        pandas_dtypes = _fc2pandas_dtypes(desc)
 
         if spatial_filter:
             _sf_lu = {
@@ -568,6 +724,7 @@ def from_featureclass(filename, **kwargs):
             where_clause=where_clause,
             sql_clause=sql_clause,
             spatial_reference=sr,
+            datum_transformation=kwargs.get("datum_transformation", None),
         ) as rows:
             srows = []
             for row in rows:
@@ -603,7 +760,10 @@ def from_featureclass(filename, **kwargs):
         df.loc[none_q, "SHAPE"] = None
         df.spatial.set_geometry("SHAPE")
         df.spatial._meta.source = filename
-        return df
+        try:
+            return df.astype(pandas_dtypes)
+        except:
+            return df
     elif HASARCPY == False and HASPYSHP == True and filename.lower().find(".shp") > -1:
         geoms = []
         records = []
@@ -715,6 +875,11 @@ def to_featureclass(
     """
     Exports the DataFrame to a Feature class.
 
+    .. note::
+        Null integer values will be changed to 0 when using shapely instead
+        of ArcPy due to shapely conventions.
+        With ArcPy null integer values will remain null.
+
     ===============     ====================================================
     **Argument**        **Description**
     ---------------     ----------------------------------------------------
@@ -745,8 +910,9 @@ def to_featureclass(
 
     """
     out_location = os.path.dirname(location)
+
     fc_name = os.path.basename(location)
-    df = geo._data
+    df = geo._data.copy()
     old_idx = df.index
     df.reset_index(drop=True, inplace=True)
     if geo.name is None:
@@ -757,16 +923,28 @@ def to_featureclass(
         )
     # deep copy of original columns to reassign them in finally of arcpy statement
     original_columns = copy.deepcopy(df.columns.tolist())
+    geometry_name = geo.name or None
+    if geometry_name and geometry_name != "SHAPE":
+        new_columns = geo._data.columns.tolist()
+        new_columns[new_columns.index(geometry_name)] = "SHAPE"
+        df.columns = new_columns
+        df.spatial._name = "SHAPE"
     # sanitize
     if sanitize_columns:
         # logic
-        _sanitize_column_names(geo, inplace=True)
+        _sanitize_column_names(df.spatial, inplace=True)
 
     columns = df.columns.tolist()
     for col in columns[:]:
         if not isinstance(col, str):
             df.rename(columns={col: str(col)}, inplace=True)
             col = str(col)
+    df[df.select_dtypes(np.number).columns.tolist()] = df[
+        df.select_dtypes(np.number).columns.tolist()
+    ].replace({pd.NA: None})
+    df[df.select_dtypes(pd.StringDtype()).columns.tolist()] = df[
+        df.select_dtypes(pd.StringDtype()).columns.tolist()
+    ].replace(pd.NA, "")
 
     if HASARCPY:
         try:
@@ -783,10 +961,10 @@ def to_featureclass(
                     ("overwrite set to False, Cannot " "overwrite the table. ")
                 )
 
-            notnull = geo._data[geo._name].notnull()
-            idx = geo._data[geo._name][notnull].first_valid_index()
-            sr = geo._data[geo._name][idx]["spatialReference"]
-            gt = geo._data[geo._name][idx].geometry_type.upper()
+            notnull = df[df.spatial.name].notnull()
+            idx = df[df.spatial.name][notnull].first_valid_index()
+            sr = df[df.spatial.name][idx]["spatialReference"]
+            gt = df[df.spatial.name][idx].geometry_type.upper()
             null_geom = {
                 "point": pd.io.json.dumps(
                     {"x": None, "y": None, "spatialReference": sr}
@@ -795,7 +973,7 @@ def to_featureclass(
                 "polygon": pd.io.json.dumps({"rings": [], "spatialReference": sr}),
                 "multipoint": pd.io.json.dumps({"points": [], "spatialReference": sr}),
             }
-            sr = geo._data[geo._name][idx].spatial_reference.as_arcpy
+            sr = df[df.spatial.name][idx].spatial_reference.as_arcpy
             null_geom = null_geom[gt.lower()]
 
             if has_m == True:
@@ -843,7 +1021,7 @@ def to_featureclass(
                         except:
                             dtypes.append((col, "<U254"))
                 elif df[col].dtype.name == "int64":
-                    dtypes.append((col, np.int64))
+                    dtypes.append((col, np.float64))
                 elif df[col].dtype.name == "bool":
                     dtypes.append((col, np.int32))
                 else:
@@ -900,13 +1078,14 @@ def to_featureclass(
                             f"Could not insert the row because of error message: {e}. Recheck your data."
                         )
 
-                q = df[geo._name].isna()
+                q = df[df.spatial.name].isna()
                 df.loc[q, "SHAPE"] = null_geom  # set null values to proper JSON
                 np.apply_along_axis(_insert_row, 1, df[dfcols].values)
 
                 df.loc[q, "SHAPE"] = None  # reset null values
         except ValueError as ve:
             df.columns = original_columns
+            df.set_index(old_idx)
             fc = None
             raise
         except Exception as e:
@@ -916,6 +1095,7 @@ def to_featureclass(
             raise e
         finally:
             df.columns = original_columns
+            df.set_index(old_idx)
         return fc
     elif HASPYSHP:
         if fc_name.endswith(".shp") == False:
@@ -989,9 +1169,9 @@ def _pyshp_to_shapefile(df, out_path, out_name):
                         shpfile.field(name=c, size=255)
                     elif isinstance(df[c].loc[idx], (int)):
                         shpfile.field(name=c, fieldType="N", size=5)
-                    elif isinstance(df[c].loc[idx], (np.int, np.int32, np.int64)):
+                    elif isinstance(df[c].loc[idx], (np.int, np.int32)):
                         shpfile.field(name=c, fieldType="N", size=10)
-                    elif isinstance(df[c].loc[idx], (np.float, np.float64)):
+                    elif isinstance(df[c].loc[idx], (np.float, np.float64, np.int64)):
                         shpfile.field(name=c, fieldType="F", size=19, decimal=11)
                     elif (
                         isinstance(df[c].loc[idx], (datetime.datetime, np.datetime64))
@@ -1112,9 +1292,9 @@ def _pyshp2(df, out_path, out_name):
                         shpfile.field(name=c, size=255)
                     elif isinstance(df[c].loc[idx], (int)):
                         shpfile.field(name=c, fieldType="N", size=5)
-                    elif isinstance(df[c].loc[idx], (np.int, np.int32, np.int64)):
+                    elif isinstance(df[c].loc[idx], (np.int, np.int32)):
                         shpfile.field(name=c, fieldType="N", size=10)
-                    elif isinstance(df[c].loc[idx], (np.float, np.float64)):
+                    elif isinstance(df[c].loc[idx], (np.float, np.float64, np.int64)):
                         shpfile.field(name=c, fieldType="F", size=19, decimal=11)
                     elif (
                         isinstance(df[c].loc[idx], (datetime.datetime, np.datetime64))

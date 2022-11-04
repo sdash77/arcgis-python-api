@@ -53,6 +53,8 @@ try:
     from matplotlib import pyplot as plt
     import types
     from ._maskrcnn import grid_anchors
+    from .._utils.pascal_voc_rectangles import _reconstruct
+    from .._utils.utils import chips_to_batch
 
     HAS_FASTAI = True
 
@@ -68,31 +70,38 @@ except Exception:
 class ModelExtension(ArcGISModel):
     """
     Creates a ModelExtension object, to train the model for object detection, semantic segmentation, and edge detection.
+
     =====================   ============================================================
     **Argument**            **Description**
     ---------------------   ------------------------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            ``prepare_data`` function.
+                            :meth:`~arcgis.learn.prepare_data`  function.
     ---------------------   ------------------------------------------------------------
     model_conf              A class definition contains the following methods:
-                                * ``get_model(self, data, backbone=None, **kwargs)``: for model definition,
-                                * ``on_batch_begin(self, learn, model_input_batch, model_target_batch, **kwargs)``: for
-                                  feeding input to the model during training,
-                                * ``transform_input(self, xb)``: for feeding input to the model during
-                                  inferencing/validation,
-                                * ``transform_input_multispectral(self, xb)``: for feeding input to the
-                                  model during inferencing/validation in case of multispectral data,
-                                * ``loss(self, model_output, *model_target)``: to return loss value of the model, and
-                                * ``post_process(self, pred, nms_overlap, thres, chip_size, device)``: to post-process
-                                  the output of the object-detection model.
-                                * ``post_process(self, pred, thres)``: to post-process the output of the segmentation model.
+
+                            * ``get_model(self, data, backbone=None, **kwargs)``: for model definition,
+
+                            * ``on_batch_begin(self, learn, model_input_batch, model_target_batch, **kwargs)``: for feeding input to the model during training,
+
+                            * ``transform_input(self, xb)``: for feeding input to the model during inferencing/validation,
+
+                            * ``transform_input_multispectral(self, xb)``: for feeding input to the model during inferencing/validation in case of multispectral data,
+
+                            * ``loss(self, model_output, *model_target)``: to return loss value of the model
+
+                            * ``post_process(self, pred, nms_overlap, thres, chip_size, device)``: to post-process
+                              the output of the object-detection model.
+
+                            * ``post_process(self, pred, thres)``: to post-process the output of the segmentation model.
     ---------------------   ------------------------------------------------------------
     backbone                Optional function. If custom model requires any backbone.
     ---------------------   ------------------------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
     =====================   ============================================================
-    :return: ``ModelExtension`` Object
+
+    :return: :class:`~arcgis.learn.ModelExtension` Object
+
     """
 
     def __init__(self, data, model_conf, backbone=None, pretrained_path=None, **kwargs):
@@ -108,11 +117,9 @@ class ModelExtension(ArcGISModel):
         else:
             del kwargs["ArcGISLearnVersion"]
 
-        super().__init__(data, backbone, **kwargs)
-        if model_conf.__name__ == "CustomDetReg":
-            self._model_conf = model_conf(**kwargs)
-        else:
-            self._model_conf = model_conf()
+        super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
+        data = self._data
+        self._model_conf = model_conf()
         self._model_conf_class = model_conf
         self._backend = "pytorch"
         self._kwargs = kwargs
@@ -259,7 +266,8 @@ class ModelExtension(ArcGISModel):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a ``ModelExtension`` object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.ModelExtension` object from an Esri Model Definition (EMD) file.
+
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
@@ -267,10 +275,11 @@ class ModelExtension(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from ``prepare_data`` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data`  function or None for
                                 inferencing.
         =====================   ===========================================
-        :return: `ModelExtension` Object
+
+        :return: :class:`~arcgis.learn.ModelExtension` Object
         """
 
         emd_path = _get_emd_path(emd_path)
@@ -357,16 +366,14 @@ class ModelExtension(ArcGISModel):
                 data.K = emd["Kwargs"]["n_masks"]
                 data.instance_classes = emd["Kwargs"]["instance_classes"]
         data.resize_to = resize_to
-        if modelconfclass == "CustomDetReg":
-            mextnsn = cls(data, pretrained_path=str(model_file))
-        else:
-            mextnsn = cls(
-                data,
-                model_configuration,
-                backbone,
-                pretrained_path=str(model_file),
-                **kwargs,
-            )
+
+        mextnsn = cls(
+            data,
+            model_configuration,
+            backbone,
+            pretrained_path=str(model_file),
+            **kwargs,
+        )
 
         if not data_passed and dataset_type == "PASCAL_VOC_rectangles":
             mextnsn.learn.data.single_ds.classes = mextnsn._data.classes
@@ -443,14 +450,6 @@ class ModelExtension(ArcGISModel):
         elif self._data.dataset_type == "Panoptic_Segmentation":
             self.show_results = self._show_results_panoptic
             self.panoptic_quality = self._panoptic_quality
-
-        elif hasattr(self, "coco_data"):
-            self.show_results = self._model_conf._show_results
-            self.predict = self._model_conf.predict
-            self.lr_find = self._model_conf.lr_find
-            self.average_precision_score = (
-                self._model_conf.average_precision_score_detreg
-            )
 
         else:
             if self._is_multispectral:
@@ -723,17 +722,16 @@ class ModelExtension(ArcGISModel):
 
     def _predict_learn_modified(self, item, **kwargs):
         "Return predicted class, label and probabilities for `item`."
-        batch = self.learn.data.one_item(item)
+        batch = item
         transform_kwargs, kwargs = split_kwargs_by_func(
             kwargs, self._model_conf.transform_input
         )
         self.learn.model.eval()
         try:
             pred = self.learn.model(
-                self._model_conf.transform_input(batch[0], **transform_kwargs)
+                self._model_conf.transform_input(batch, **transform_kwargs)
             )
         except Exception as e:
-
             if getattr(self, "_is_fasterrcnn", False):
                 pred = []
                 for _ in range(batch[0].shape[0]):
@@ -747,17 +745,7 @@ class ModelExtension(ArcGISModel):
         ds = self.learn.data.single_ds
         analyze_kwargs, kwargs = split_kwargs_by_func(kwargs, ds.y.analyze_pred)
         pred = ds.y.analyze_pred(pred, **analyze_kwargs)
-        x = batch[0]
-        norm = getattr(self.learn.data, "norm", False)
-        if norm:
-            x = self.learn.data.denorm(x)
-        x = ds.x.reconstruct(grab_idx(x, 0))
-        y = (
-            ds.y.reconstruct(pred[0], x)
-            if has_arg(ds.y.reconstruct, "x")
-            else ds.y.reconstruct(pred[0])
-        )
-        return y
+        return pred
 
     def _average_precision_score(
         self, detect_thresh=0.2, iou_thresh=0.1, mean=False, show_progress=True
@@ -842,6 +830,57 @@ class ModelExtension(ArcGISModel):
         pq = compute_panoptic_quality(self, show_progress, **kwargs)
         return pq
 
+    def _get_batched_predictions(
+        self, chips, tytx, threshold, nms_overlap, normalize, batch_size=1
+    ):
+        data = []
+        data_counter = 0
+        final_output = []
+
+        for idx, chip in enumerate(chips):
+            frame = np.moveaxis(
+                normalize(
+                    cv2.cvtColor(chip["chip"], cv2.COLOR_BGR2RGB).astype(np.float32)
+                ),
+                -1,
+                0,
+            )
+            data.append(frame)
+            data_counter += 1
+            if data_counter % batch_size == 0 or idx == len(chips) - 1:
+                batch = chips_to_batch(data, tytx, tytx, batch_size)
+                extra_chips = batch_size - len(data)
+                batch_final = batch[: (len(batch) - extra_chips)]
+                predictions = self._predict_learn_modified(
+                    torch.tensor(batch_final).float().to(self._device),
+                    thresh=threshold,
+                    nms_overlap=nms_overlap,
+                    ret_scores=True,
+                    model=self,
+                )
+                ds = self.learn.data.single_ds
+                for e, prediction in enumerate(predictions):
+                    prediction = [
+                        prediction[0].detach().cpu(),
+                        prediction[1].detach().cpu(),
+                        prediction[2].detach().cpu(),
+                    ]
+                    batch_img = torch.tensor(batch_final[e])
+                    norm = getattr(self.learn.data, "norm", False)
+                    if norm:
+                        batch_img = self.learn.data.denorm(batch_img)
+                    x = ds.x.reconstruct(grab_idx(batch_img, 0))
+                    y = (
+                        ds.y.reconstruct(prediction, x)
+                        if has_arg(ds.y.reconstruct, "x")
+                        else ds.y.reconstruct(prediction)
+                    )
+                    final_output.append(y)
+                data = []
+                data_counter = 0
+
+        return final_output
+
     def _predict(
         self,
         image_path,
@@ -850,6 +889,7 @@ class ModelExtension(ArcGISModel):
         return_scores=False,
         visualize=False,
         resize=False,
+        batch_size=1,
     ):
 
         """
@@ -883,7 +923,12 @@ class ModelExtension(ArcGISModel):
                                 run in a sliding window fashion by applying the model on
                                 cropped sections of the image (of the same size as the
                                 model was trained on).
+        ---------------------   -------------------------------------------
+        batch_size              Optional int. Batch size to be used
+                                during tiled inferencing. Deafult value 1.
+        ---------------------   -------------------------------------------
         =====================   ===========================================
+
         :return:  Returns a tuple with predictions, labels and optionally confidence scores
                    if return_scores=True. The predicted bounding boxes are returned as a list
                    of lists containing the  xmin, ymin, width and height of each predicted
@@ -914,6 +959,7 @@ class ModelExtension(ArcGISModel):
                 image = cv2.resize(image, (self._data.resize_to, self._data.resize_to))
 
         height, width, _ = image.shape
+        tytx = self._data.chip_size
 
         if self._data.chip_size is not None:
             chips = _get_image_chips(image, self._data.chip_size)
@@ -933,6 +979,12 @@ class ModelExtension(ArcGISModel):
         if len(chips) == 1:
             include_pad_detections = True
 
+        imagenet_stats = ([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
+
+        mean = 255 * np.array(imagenet_stats[0], dtype=np.float32)
+        std = 255 * np.array(imagenet_stats[1], dtype=np.float32)
+        norm = lambda x: (x - mean) / std
+
         valid_tfms = self._data.valid_ds.tfms
         self._data.valid_ds.tfms = []
 
@@ -941,34 +993,21 @@ class ModelExtension(ArcGISModel):
 
         orig_getitem = LabelList.__getitem__
         LabelList.__getitem__ = modified_getitem
-
         try:
-            for chip in chips:
-                frame = Image(
-                    pil2tensor(
-                        PIL.Image.fromarray(
-                            cv2.cvtColor(chip["chip"], cv2.COLOR_BGR2RGB)
-                        ),
-                        dtype=np.float32,
-                    ).div_(255)
-                )
-                bbox = self._predict_learn_modified(
-                    frame,
-                    thresh=threshold,
-                    nms_overlap=nms_overlap,
-                    ret_scores=True,
-                    model=self,
-                )
+            prediction_data = self._get_batched_predictions(
+                chips, tytx, threshold, nms_overlap, norm, batch_size
+            )
+            for idx, bbox in enumerate(prediction_data):
                 if bbox:
                     scores = bbox.scores
                     bboxes, lbls = bbox._compute_boxes()
                     bboxes.add_(1).mul_(
                         torch.tensor(
                             [
-                                chip["height"] / 2,
-                                chip["width"] / 2,
-                                chip["height"] / 2,
-                                chip["width"] / 2,
+                                chips[idx]["height"] / 2,
+                                chips[idx]["width"] / 2,
+                                chips[idx]["height"] / 2,
+                                chips[idx]["width"] / 2,
                             ]
                         )
                     ).long()
@@ -981,10 +1020,10 @@ class ModelExtension(ArcGISModel):
                         data = bb2hw(bbox)
                         if include_pad_detections or not _exclude_detection(
                             (data[0], data[1], data[2], data[3]),
-                            chip["width"],
-                            chip["height"],
+                            chips[idx]["width"],
+                            chips[idx]["height"],
                         ):
-                            chip["predictions"].append(
+                            chips[idx]["predictions"].append(
                                 {
                                     "xmin": data[0],
                                     "ymin": data[1],

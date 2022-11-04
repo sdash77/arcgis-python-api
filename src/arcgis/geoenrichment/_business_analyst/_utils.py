@@ -5,9 +5,11 @@ import asyncio
 from functools import wraps, lru_cache
 import importlib
 from itertools import product
+import re
 import threading
 from typing import Any, AnyStr, Iterable, Optional, Tuple, Union
 
+from arcgis.features import FeatureSet
 from arcgis.gis import GIS, User
 from arcgis.geometry import Geometry, SpatialReference
 import numpy as np
@@ -243,7 +245,7 @@ def has_networkanalysis_gis(
             f'the list of network functions [{", ".join(ntwrk_fn_lst)}.'
         )
 
-    # privileges may no be available
+    # privileges may not be available
     _assert_privileges_access(user)
 
     # get the network analysis capabilities from the privileges
@@ -433,20 +435,73 @@ def validate_spatial_reference(
     return sr
 
 
+def is_dict_geometry(in_dict: dict) -> bool:
+    """Determine if input dictionary is a Geometry object."""
+    if (
+        ("x" in in_dict.keys() and "y" in in_dict.keys())
+        or ("points" in in_dict.keys())
+        or ("ringCurves" in in_dict.keys())
+        or ("rings" in in_dict.keys())
+        or ("paths" in in_dict.keys())
+        or ("pathCurves" in in_dict.keys())
+    ):
+        is_geometry = True
+    else:
+        is_geometry = False
+    return is_geometry
+
+
+def is_dict_featureset(in_dict: dict) -> bool:
+    """Determine if input dictionary is a FeatureSet."""
+    if isinstance(in_dict, dict):
+        is_featureset = "features" in in_dict.keys() and "fields" in in_dict.keys()
+    else:
+        is_featureset = False
+    return is_featureset
+
+
 def get_spatially_enabled_dataframe(
-    input_object: Union[pd.DataFrame, pd.Series, Geometry, Iterable, np.ndarray],
+    input_object: Union[
+        pd.DataFrame, pd.Series, Geometry, FeatureSet, Iterable, np.ndarray
+    ],
     spatial_column: str = "SHAPE",
 ) -> pd.DataFrame:
     """Garbage disposal taking variety of possible inputs and outputting, if possible, a Pandas Spatially Enabled
     DataFrame."""
-    # if just a geometry passed in, we need to get it into an iterable
-    if isinstance(input_object, Geometry):
+    # ensure only one FeatureSet getting passed in if an iterable is passed in
+    if isinstance(input_object, Iterable) and not isinstance(
+        input_object, pd.DataFrame
+    ):
+        if is_dict_featureset(input_object[0]) or isinstance(input_object, FeatureSet):
+            assert len(input_object) == 1, "Only one FeatureSet can be used for input"
+
+            # pop out the FeatureSet if this is passed in
+            if isinstance(input_object[0], FeatureSet):
+                input_object = input_object[0]
+
+    # check if is FeatureSet dict and convert to FeatureSet object if it is
+    if is_dict_featureset(input_object):
+        input_object = FeatureSet(input_object)
+
+    # if a FeatureSet, convert to spatially enabled data frame
+    if isinstance(input_object, FeatureSet):
+        input_object = input_object.sdf
+
+    # if just a single geometry passed in, we need to get it into a list
+    if isinstance(input_object, (Geometry, dict)):
         input_object = [input_object]
 
-    # now, if any type of iterable other than a series, make into a series
+    # if any type of iterable other than a series, make into a series
     if isinstance(input_object, (Iterable, np.ndarray)) and not isinstance(
         input_object, pd.DataFrame
     ):
+
+        # Geometry objects may be passed in as an iterable of dicts - convert to Geometry if this is the case
+        first_obj = input_object[0]
+        if isinstance(first_obj, dict):
+            if is_dict_geometry(first_obj):
+                input_object = [Geometry(obj) for obj in input_object]
+
         input_object = pd.Series(input_object)
 
     # at this juncture, the only real options are either a Series or DataFrame, so if Series, make into DataFrame
@@ -514,8 +569,6 @@ def get_top_codes(codes: Union[pd.Series, list, tuple], threshold: float = 0.5) 
 
 def pep8ify(name):
     """PEP8ify name"""
-    import re
-
     if name is None:
         res = None
     else:
@@ -556,16 +609,24 @@ def pro_at_least_version(version: str) -> bool:
 
     # variable to store status
     at_least = False
+    all_parts_equal = True  # until proven false
 
     # test all the parts of the input version against the current version
     for idx in range(0, max_len):
-
         # evaluate if the part and if greater, break and report status
         if v_lst[idx] > in_lst[idx]:
-            at_least = True
+            all_parts_equal = False
+            at_least = True  # current Pro version is more recent
             break
 
-    return at_least
+        if v_lst[idx] < in_lst[idx]:
+            all_parts_equal = False
+            at_least = False  # current Pro version is too old
+            break
+
+    return (
+        at_least | all_parts_equal
+    )  # if versions are equal, return true. Otherwise return at_least
 
 
 def extract_from_kwargs(paramater_key: str, kwargs: dict) -> Tuple[Any, dict]:
@@ -649,6 +710,7 @@ def add_proximity_to_enrich_feature(
     travel_mode: str = "straight_line",
     proximity_metric: Optional[str] = None,
     proximity_value: int = 1,
+    proximity_area_overlap: bool = True,
 ) -> dict:
     """Add proximity metrics onto a feature in a feature set for sending to the enrich REST endpoint."""
     # alias list to standardize the proximity_metric input
@@ -670,8 +732,12 @@ def add_proximity_to_enrich_feature(
                 break
 
     # if just doing a buffer, set the correct area type and set variable for travel mode type
+    if travel_mode is None:
+        travel_mode = "straight_line"
     if travel_mode == "straight_line":
-        feature["areaType"] = "RingBuffer"
+        feature["areaType"] = (
+            "RingBuffer" if proximity_area_overlap else "RingBufferBands"
+        )
         trvl_md_typ = "distance"
 
     # otherwise, doing a network type and need to figure out what the travel mode is
@@ -686,22 +752,17 @@ def add_proximity_to_enrich_feature(
             source.travel_modes["alias"] == travel_mode
         ].iloc[0]["impedance_category"]
 
+        # tack on polygon area overlap
+        if proximity_area_overlap:
+            feature["networkOptions"] = {"polygon_overlap_type": "Disks"}
+        else:
+            feature["networkOptions"] = {"polygon_overlap_type": "Rings"}
+
     # if no proximity metric provided, provide default based on travel mode, and also validate if provided
     if proximity_metric is None and trvl_md_typ == "distance":
         proximity_metric = "kilometers"
     elif proximity_metric is None and trvl_md_typ == "temporal":
         proximity_metric = "minutes"
-    elif trvl_md_typ == "temporal":
-        assert proximity_metric == "minutes", (
-            "If using a temporal network travel mode, you must use minutes as the "
-            "proximity_metric."
-        )
-    else:
-        assert proximity_metric == "miles" or proximity_metric == "kilometers", (
-            "If using a distance network mode, "
-            "you must use miles or kilometers as "
-            "the proximity_metric."
-        )
 
     # set the buffer units if now populated
     if proximity_metric is not None:
@@ -727,11 +788,17 @@ def add_proximity_to_enrich_feature_list(
     travel_mode: str = "straight_line",
     proximity_metric: Optional[str] = None,
     proximity_value: int = 1,
+    proximity_area_overlap: bool = True,
 ) -> list:
     """Add proxmity metrics to a FeatureSet for sending to the enrich REST endpoint."""
     prx_feat_lst = [
         add_proximity_to_enrich_feature(
-            source, f, travel_mode, proximity_metric, proximity_value
+            source,
+            f,
+            travel_mode,
+            proximity_metric,
+            proximity_value,
+            proximity_area_overlap,
         )
         for f in feature_list
     ]

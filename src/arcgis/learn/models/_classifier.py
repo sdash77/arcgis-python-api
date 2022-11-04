@@ -106,6 +106,17 @@ def _prediction_function(predictions):
     return max_prediction_class, max_prediction_value
 
 
+class FeatureClassifierTF(torch.nn.Module):
+    def __init__(self, head):
+        super(FeatureClassifierTF, self).__init__()
+        self._head = head
+
+    def forward(self, x):
+        x = self._head(x)
+        x = torch.nn.functional.softmax(x[0], dim=0)
+        return x
+
+
 class FeatureClassifier(ArcGISModel):
     """
     Creates an image classifier to classify the area occupied by a
@@ -115,13 +126,13 @@ class FeatureClassifier(ArcGISModel):
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            `prepare_data` function.
+                            :meth:`~arcgis.learn.prepare_data`  function.
     ---------------------   -------------------------------------------
     backbone                Optional string. Backbone convolutional neural network
                             model used for feature extraction, which is ``resnet34``
                             by default.
                             Supported backbones: ResNet family and specified Timm
-                            models from :func:`~arcgis.learn.FeatureClassifier.backbones`.
+                            models(experimental support) from :func:`~arcgis.learn.FeatureClassifier.backbones`.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -138,10 +149,10 @@ class FeatureClassifier(ArcGISModel):
     backend                 Optional string. Controls the backend framework to be used
                             for this model, which is 'pytorch' by default.
 
-                            valid options are 'pytorch', 'tensorflow'
+                            valid options are "``pytorch``", "``tensorflow``"
     =====================   ===========================================
 
-    :return: `FeatureClassifier` Object
+    :return: :class:`~arcgis.learn.FeatureClassifier` Object
     """
 
     def __init__(
@@ -167,7 +178,8 @@ class FeatureClassifier(ArcGISModel):
             self._intialize_tensorflow(data, backbone, pretrained_path, mixup, kwargs)
         else:
 
-            super().__init__(data, backbone, **kwargs)
+            super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
+            data = self._data
 
             backbone_cut = None
             backbone_split = None
@@ -283,7 +295,7 @@ class FeatureClassifier(ArcGISModel):
 
     @staticmethod
     def _supported_backbones():
-        timm_models = filter_timm_models()
+        timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         return [*_resnet_family, models.mobilenet_v2.__name__] + timm_backbones
 
@@ -342,8 +354,10 @@ class FeatureClassifier(ArcGISModel):
         ---------------------   -------------------------------------------
         img_path                Required. Path to the image file to make the
                                 predictions on.
+        ---------------------   -------------------------------------------
         visualize               Optional: Set this parameter to True to
                                 visualize the image being predicted.
+        ---------------------   -------------------------------------------
         gradcam                 Optional: Set this parameter to True to
                                 get gradcam visualization to help with
                                 explanability of the prediction. If set
@@ -390,51 +404,64 @@ class FeatureClassifier(ArcGISModel):
             import onnx
             import onnx_tf
             from onnx_tf.backend import prepare
-        device = torch.device("cpu")
-        torch_model = self.learn.model
-        torch_model = torch_model.eval()
+
+        model = self.learn.model
+        model.eval()
+        device = self._device
+        cpu = torch.device("cpu")
+        model.to(cpu)
+
         if hasattr(self._data, "chip_size"):
             chip_size = self._data.chip_size
             if not isinstance(chip_size, tuple):
                 chip_size = (chip_size, chip_size)
         num_input_channels = list(self.learn.model.parameters())[0].shape[1]
-        dummy_input = torch.randn(
-            [1, num_input_channels, chip_size[0], chip_size[1]]
-        ).to(device)
-        saved_path = self.learn.path / self.learn.model_dir / f"{name}.tflite"
-        saved_path_onnx = self.learn.path / self.learn.model_dir / f"{name}.onnx"
-        saved_path_pb = self.learn.path / self.learn.model_dir / f"{name}"
+        inp = torch.randn([1, num_input_channels, chip_size[0], chip_size[1]]).to(cpu)
+        inp_np = inp.detach().cpu().numpy()
+        base = f"{name}-base"
+        path_base_onnx = self.learn.path / self.learn.model_dir / f"{base}.onnx"
+        path_save_pb = self.learn.path / self.learn.model_dir / f"{name}-pb"
+
+        activated_model = FeatureClassifierTF(model)
+        activated_model.eval()
+        activated_model.to(cpu)
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             torch.onnx.export(
-                torch_model,
-                dummy_input,
-                saved_path_onnx,
+                model=activated_model,
+                args=inp,
+                f=path_base_onnx,
+                verbose=False,
                 export_params=True,
+                do_constant_folding=True,  # fold constant values for optimization
                 input_names=["input"],
                 output_names=["output"],
-                opset_version=11,
+                opset_version=12,
             )
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            arcgis_onnx = onnx.load(saved_path_onnx)
-            tf_onnx = prepare(arcgis_onnx, logging_level="ERROR")
-            tf_onnx.export_graph(str(saved_path_pb))
 
-        converter = tf.lite.TFLiteConverter.from_saved_model(str(saved_path_pb))
-        converter.experimental_new_converter = True
-        converter.optimizations = [tf.compat.v1.lite.Optimize.DEFAULT]
-        converter.target_ops = [
-            tf.lite.OpsSet.TFLITE_BUILTINS_INT8,
-            tf.lite.OpsSet.SELECT_TF_OPS,
-        ]
+            onnx_base_model = onnx.load(str(path_base_onnx))
+            tf_rep_base = prepare(onnx_base_model)
+            tf_rep_base.export_graph(str(path_save_pb))
+
+        model.to(device)
+
+        path_save_tflite = self.learn.path / self.learn.model_dir / f"{name}.tflite"
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
+            tf_model = tf.saved_model.load(str(path_save_pb))
+            infer = tf_model.signatures["serving_default"]
+            concrete_func = tf_model.signatures[
+                tf.saved_model.DEFAULT_SERVING_SIGNATURE_DEF_KEY
+            ]
+            converter = tf.lite.TFLiteConverter.from_concrete_functions([concrete_func])
             tflite_model = converter.convert()
-        with tf.io.gfile.GFile(saved_path, "wb") as f:
-            f.write(tflite_model)
 
-        return [saved_path, saved_path_onnx]
+            # Save the model
+            with open(path_save_tflite, "wb") as f:
+                f.write(tflite_model)
+
+        return [f"{name}.tflite", f"{name}-pb"]
 
     def _get_emd_params(self, save_inference_file):
         _emd_template = {}
@@ -493,11 +520,13 @@ class FeatureClassifier(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data`  function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `FeatureClassifier` Object
+        :return:
+            :class:`~arcgis.learn.FeatureClassifier` Object
+
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -684,7 +713,7 @@ class FeatureClassifier(ArcGISModel):
         **Argument**            **Description**
         ---------------------   -------------------------------------------
         num_examples            Number of hard examples to plot
-                                ``prepare_data`` function.
+                                :meth:`~arcgis.learn.prepare_data`  function.
         =====================   ===========================================
         """
         self._check_requisites()
@@ -773,7 +802,7 @@ class FeatureClassifier(ArcGISModel):
         ---------------------   -------------------------------------------
         feature_layer_name      Required String. The name of the feature layer used to publish.
         ---------------------   -------------------------------------------
-        gis                     Optional GIS Object, the GIS on which this tool runs. If not specified,
+        gis                     Optional :class:`~arcgis.gis.GIS`  Object, the GIS on which this tool runs. If not specified,
                                 the active GIS is used.
         ---------------------   -------------------------------------------
         prediction_field        Optional String. The field name to use to add predictions.
@@ -781,7 +810,7 @@ class FeatureClassifier(ArcGISModel):
         confidence_field        Optional String. The field name to use to add confidence.
         =====================   ===========================================
 
-        :return: `FeatureCollection` Object
+        :return: :class:`~arcgis.features.FeatureCollection` Object
         """
         return self._create_feature_layer(
             self._extract_images_geo_data(folder),
@@ -1061,7 +1090,7 @@ class FeatureClassifier(ArcGISModel):
     ):
 
         """
-        Deprecated in ArcGIS version 1.9.1 and later: Use the Classify Objects Using Deep Learning tool or arcgis.learn.classify_objects()
+        Deprecated in ArcGIS version 1.9.1 and later: Use the Classify Objects Using Deep Learning tool or :meth:`~arcgis.learn.classify_objects`
 
         Classifies the exported images and updates the feature layer with the prediction results in the ``output_label_field``.
         Works with RGB images only.
@@ -1069,7 +1098,7 @@ class FeatureClassifier(ArcGISModel):
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        feature_layer                            Required. Feature Layer for classification.
+        feature_layer                            Required. :class:`~arcgis.features.FeatureLayer` for classification.
         ------------------------------------     --------------------------------------------------------------------
         labeled_tiles_directory                  Required. Folder structure containing images and labels folder. The
                                                  chips should have been generated using the export training data tool in
@@ -1694,7 +1723,7 @@ class FeatureClassifier(ArcGISModel):
 
     @deprecated(
         deprecated_in="1.7.1",
-        details="Please use arcgis.learn.classify_objects() instead",
+        details="Please use :meth:`~arcgis.learn.classify_objects` instead",
     )
     def categorize_features(
         self,
@@ -1712,14 +1741,14 @@ class FeatureClassifier(ArcGISModel):
         """
         Categorizes each feature by classifying its attachments or an image of its geographical area (using the provided Imagery Layer)
         and updates the feature layer with the prediction results in the ``output_label_field``.
-        Deprecated, Use the Classify Objects Using Deep Learning tool or arcgis.learn.classify_objects()
+        Deprecated, Use the Classify Objects Using Deep Learning tool or :meth:`~arcgis.learn.classify_objects`
 
         ====================================     ====================================================================
         **Argument**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
-        feature_layer                            Required. Public Feature Layer or path of local feature class for classification with read, write, edit permissions.
+        feature_layer                            Required. Public :class:`~arcgis.features.FeatureLayer` or path of local feature class for classification with read, write, edit permissions.
         ------------------------------------     --------------------------------------------------------------------
-        raster                                   Optional. Imagery layer or path of local raster to be used for exporting image chips. (Requires arcpy)
+        raster                                   Optional. :class:`~arcgis.raster.ImageryLayer` or path of local raster to be used for exporting image chips. (Requires arcpy)
         ------------------------------------     --------------------------------------------------------------------
         class_value_field                        Required string. Output field to be added in the layer, containing class value of predictions.
         ------------------------------------     --------------------------------------------------------------------

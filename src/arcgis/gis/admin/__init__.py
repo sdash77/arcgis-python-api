@@ -13,14 +13,16 @@ from ._logs import Logs
 from ._license import LicenseManager, License, Bundle
 from ._livingatlas import LivingAtlas
 from ._machines import Machines, Machine
+from ._metadata import MetadataManager
 from ._security import EnterpriseGroups, EnterpriseUsers, OAuth
 from ._security import Security, SSLCertificate, SSLCertificates
 from ._site import Site
+from ._socialproviders import SocialProviders
 from ._system import Directory, Licenses, System, Indexer, EmailManager
 from ._system import PortalLicense
 from ._system import WebAdaptor, WebAdaptors
 from ._collaboration import Collaboration, CollaborationManager
-from ._ux import UX
+from ._ux import UX, MapSettings, HomePageSettings, ItemSettings, SecuritySettings
 from ._creditmanagement import CreditManager
 from ._security import PasswordPolicy
 from ._resources import PortalResourceManager

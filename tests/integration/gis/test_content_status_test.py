@@ -1,6 +1,5 @@
 import unittest
 from unittest.mock import MagicMock, Mock
-import pytest
 from arcgis.gis import GIS, Item
 from arcgis import env
 from arcgis.mapping import WebMap
@@ -30,7 +29,7 @@ class TestItemContentStatus(unittest.TestCase):
             if item:
                 assert isinstance(item, Item)
                 orig_status = item.content_status
-                for cs in ("authoritative", "deprecated", None):
+                for cs in ( "deprecated", None):
                     item.content_status = cs
                     if cs in ["authoritative", "deprecated"]:
                         assert item.content_status in [
@@ -75,7 +74,7 @@ class TestItemContentStatus(unittest.TestCase):
             if item:
                 assert isinstance(item, Item)
                 orig_status = item.content_status
-                for cs in ("authoritative", "deprecated", None):
+                for cs in ( "deprecated", None):
                     item.content_status = cs
                     if cs in ["authoritative", "deprecated"]:
                         assert item.content_status in [

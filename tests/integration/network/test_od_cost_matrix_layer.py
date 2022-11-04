@@ -2,7 +2,6 @@ import sys
 
 import unittest
 
-import pytest
 from arcgis.gis import GIS
 from arcgis.network import ODCostMatrixLayer, NAJob
 from arcgis._impl.common._isd import InsensitiveDict

@@ -19,6 +19,7 @@ def select(sdf, other):
 
     """
     ud = pd.Series([False] * len(sdf))
+    ud.index = sdf.index
     if isinstance(other, (Point, Polygon, Polyline, MultiPoint)):
         sindex = sdf.spatial.sindex()
         q1 = sindex.intersect(bbox=other.extent)

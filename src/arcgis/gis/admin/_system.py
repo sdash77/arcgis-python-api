@@ -347,6 +347,10 @@ class System(BasePortalAdmin):
         with your portal. You can configure the Web Adaptor by using its
         configuration web page or the command line utility provided with
         the installation.
+
+        :return:
+            :class:`~arcgis.gis.admin.WebAdaptors` object
+
         """
         url = "%s/webadaptors" % self._url
         return WebAdaptors(url=url, gis=self._con)
@@ -683,7 +687,7 @@ class WebAdaptors(BasePortalAdmin):
 
 
         :return:
-            List of Web Adaptor objects.  Typically, only 1 Web Adaptor will exist for a Portal
+            List of :class:`~arcgis.gis.admin.WebAdaptor` objects.  Typically, only 1 Web Adaptor will exist for a Portal
 
         """
 
@@ -1012,13 +1016,12 @@ class PortalLicense(BasePortalAdmin):
 
         :return: Boolean. True if successful else False.
 
-        **Sample Usage**
-
-        >>> gis.admin.system.licenses.update(info={ "hostname": "licensemanager.domain.com,backuplicensemanager.domain.com",
+        .. code-block:: python
+            **Sample Usage**
+            >>> gis.admin.system.licenses.update(info={ "hostname": "licensemanager.domain.com,backuplicensemanager.domain.com",
                                                     "port": 27000
                                                   })
-        True
-
+            True
 
         """
         params = {"f": "json", "licenseManagerInfo": info}

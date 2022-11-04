@@ -52,18 +52,18 @@ from .._utils.env import is_arcgispronotebook
 
 class DeepSort(ArcGISModel):
     """
-    Creates a DeepSort object.
+    Creates a :class:`~arcgis.learn.DeepSort` object.
 
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Fastai Databunch. Returned data object from
-                            `prepare_data` function with `dataset_type=Imagenet`.
+                            :meth:`~arcgis.learn.prepare_data` function with `dataset_type=Imagenet`.
                             Default value is None.
                             DeepSort only supports image size of (3, 128, 64)
     =====================   ===========================================
 
-    :return: `DeepSort` Object
+    :return: :class:`~arcgis.learn.DeepSort` Object
     """
 
     # TODO: kwargs description
@@ -260,11 +260,11 @@ class DeepSort(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `DeepSort` Object
+        :return: :class:`~arcgis.learn.DeepSort` Object
         """
 
         if not HAS_FASTAI:
@@ -327,7 +327,7 @@ class DeepSort(ArcGISModel):
 
     def update(self, frame, detections=None, labels=None, scores=None, **kwargs):
         """
-        Updates the DeepSort tracker.
+        Updates the :class:`~arcgis.learn.DeepSort` tracker.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -346,7 +346,7 @@ class DeepSort(ArcGISModel):
                                 corresponding to the detections.
         =====================   ===========================================
 
-        :return: Track list
+        :return: :class:`~arcgis.learn.Track` list
         """
         if detections is None:
             detections = []
@@ -415,7 +415,7 @@ class DeepSort(ArcGISModel):
 
     def init(self, frame, detections=None, labels=None, scores=None, **kwargs):
         """
-        Initializes the DeepSort tracker for inference.
+        Initializes the :class:`~arcgis.learn.DeepSort` tracker for inference.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -433,7 +433,7 @@ class DeepSort(ArcGISModel):
                                 corresponding to the detections.
         =====================   ===========================================
 
-        :return: Track list
+        :return: :class:`~arcgis.learn.Track` list
         """
         self.track_list = []
         self._update_interval = kwargs.get("update_interval", self._update_interval)

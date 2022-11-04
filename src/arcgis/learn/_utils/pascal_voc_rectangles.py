@@ -12,6 +12,7 @@ from .common import (
     dynamic_range_adjustment,
     image_batch_stretcher,
 )
+from .utils import check_imbalance
 from matplotlib import pyplot as plt
 from matplotlib import patheffects
 from fastai.basic_data import DatasetType
@@ -53,6 +54,19 @@ class ObjectDetectionItemList(ObjectItemList):
 
     def open(self, fn):
         return ArcGISMSImage.open(fn, div=self._div, imagery_type=self._imagery_type)
+
+    def check_class_imbalance(
+        self, func: Callable, stratify=False, class_imbalance_pct=0.01
+    ):
+        try:
+            labelval = [(func(o)[-1]) for o in self.items]
+            total_sample = np.concatenate(labelval)
+            unique_sample = set(total_sample)
+            check_imbalance(total_sample, unique_sample, class_imbalance_pct, stratify)
+        except Exception as e:
+            warnings.warn(f"Unable to check for class imbalance [reason : {e}]")
+
+        return self
 
     def label_list_from_func(self, func: Callable):
         "Apply `func` to every input to get its label."
@@ -261,11 +275,10 @@ def show_batch_pascal_voc_rectangles(
     # Get Batch
     x_batch, y_batch = get_nbatches(data_loader, math.ceil(n_items / self.batch_size))
     x_batch = torch.cat(x_batch)
+
     # Denormalize X
-    x_batch = (
-        self._scaled_std_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch)
-        * x_batch
-    ) + self._scaled_mean_values[self._extract_bands].view(1, -1, 1, 1).to(x_batch)
+    x_batch = denorm_x(x_batch, self)
+
     y_bboxes = []
     y_classes = []
     for yb in y_batch:

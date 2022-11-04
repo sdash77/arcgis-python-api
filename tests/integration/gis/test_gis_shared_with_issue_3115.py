@@ -1,5 +1,4 @@
 import unittest
-import pytest
 import datetime
 from arcgis.gis import GIS
 from arcgis.gis import Item, UserManager, User

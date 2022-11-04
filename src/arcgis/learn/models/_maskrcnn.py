@@ -1,4 +1,3 @@
-from turtle import back
 from ._arcgis_model import ArcGISModel
 from ._arcgis_model import _EmptyData, _change_tail
 
@@ -168,20 +167,20 @@ class MaskRCNNTracer(torch.nn.Module):
 class MaskRCNN(ArcGISModel):
     """
     Model architecture from https://arxiv.org/abs/1703.06870.
-    Creates a ``MaskRCNN`` Instance segmentation model,
+    Creates a :class:`~arcgis.learn.MaskRCNN` Instance segmentation model,
     based on https://github.com/pytorch/vision/blob/master/torchvision/models/detection/mask_rcnn.py.
 
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            ``prepare_data`` function.
+                            :meth:`~arcgis.learn.prepare_data`  function.
     ---------------------   -------------------------------------------
     backbone                Optional string. Backbone convolutional neural network
                             model used for feature extraction, which
                             is `resnet50` by default.
                             Supported backbones: ResNet family and specified Timm
-                            models from :func:`~arcgis.learn.MaskRCNN.backbones`.
+                            models(experimental support) from :func:`~arcgis.learn.MaskRCNN.backbones`.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
@@ -266,7 +265,8 @@ class MaskRCNN(ArcGISModel):
                                     Default: 0.25
     =============================   =============================================
 
-    :return: ``MaskRCNN`` Object
+    :return:
+        :class:`~arcgis.learn.MaskRCNN` Object
     """
 
     def __init__(
@@ -294,7 +294,7 @@ class MaskRCNN(ArcGISModel):
                 f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
             )
 
-        super().__init__(data, backbone, **kwargs)
+        super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
         if self._is_multispectral:
             self._backbone_ms = self._backbone
             self._backbone = self._orig_backbone
@@ -434,9 +434,7 @@ class MaskRCNN(ArcGISModel):
         self.learn.c_device = self._device
 
         # fixes for zero division error when slice is passed
-        idx = 27
-        if self._backbone.__name__ in ["resnet18", "resnet34"]:
-            idx = self._freeze()
+        idx = self._freeze()
         self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
         self.learn.create_opt(lr=3e-3)
 
@@ -485,7 +483,7 @@ class MaskRCNN(ArcGISModel):
 
     @staticmethod
     def _supported_backbones():
-        timm_models = filter_timm_models()
+        timm_models = filter_timm_models(["*repvgg*", "*tresnet*"])
         timm_backbones = list(map(lambda m: "timm:" + m, timm_models))
         return [*_resnet_family] + timm_backbones
 
@@ -501,7 +499,7 @@ class MaskRCNN(ArcGISModel):
     @classmethod
     def from_model(cls, emd_path, data=None, **kwargs):
         """
-        Creates a ``MaskRCNN`` Instance segmentation object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.MaskRCNN` Instance segmentation object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -510,12 +508,12 @@ class MaskRCNN(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from ``prepare_data`` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data`  function or None for
                                 inferencing.
 
         =====================   ===========================================
 
-        :return: `MaskRCNN` Object
+        :return: :class:`~arcgis.learn.MaskRCNN` Object
         """
 
         emd_path = _get_emd_path(emd_path)

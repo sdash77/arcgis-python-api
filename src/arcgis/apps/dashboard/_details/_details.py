@@ -6,18 +6,18 @@ from .._utils._basewidget import NoDataProperties
 
 class Details(_BaseWidget):
     """
-    Creates a dashboard Details widget.
+    Creates a dashboard Details element.
 
     =========================   ===========================================
     **Argument**                **Description**
     -------------------------   -------------------------------------------
-    item                        Required Portal Item object. Item object can
-                                be a Feature Layer or a MapWidget.
+    item                        Required Portal :class:`~arcgis.gis.Item` object. Item object should
+                                be a :class:`~arcgis.features.FeatureLayer` .
     -------------------------   -------------------------------------------
-    name                        Optional string. Name of the widget.
+    name                        Optional string. Name of the element.
     -------------------------   -------------------------------------------
-    layer                       Optional integer. Layer number when item is
-                                a mapwidget.
+    layer                       Optional integer. Layer index for the :class:`~arcgis.features.FeatureLayerCollection`
+                                item. Default value is 0
     -------------------------   -------------------------------------------
     title                       Optional string. Title of the widget.
     -------------------------   -------------------------------------------
@@ -26,6 +26,8 @@ class Details(_BaseWidget):
     max_features_displayed      Optional integer. Maximum number of features
                                 to display.
     =========================   ===========================================
+
+
     """
 
     def __init__(
@@ -38,8 +40,8 @@ class Details(_BaseWidget):
         max_features_displayed=50,
     ):
         super().__init__(name, title, description)
-        if item.type not in ["Feature Service", "mapWidget"]:
-            raise Exception("Please specify an item")
+        if item.type not in ["Feature Service"]:
+            raise Exception("Please provide Feature Service item")
 
         self.item = item
 
@@ -52,6 +54,7 @@ class Details(_BaseWidget):
         self._show_content = True
         self._show_media = True
         self._show_attachment = True
+        self._show_last_update = True
 
         self._no_data = NoDataProperties._nodata_init()
 
@@ -144,6 +147,20 @@ class Details(_BaseWidget):
         """
         self._show_attachment = bool(value)
 
+    @property
+    def show_last_update(self):
+        """
+        :return: True if show last update is enabled else False.
+        """
+        return self._show_last_update
+
+    @show_last_update.setter
+    def show_last_update(self, value):
+        """
+        Set true to show last update in the widget.
+        """
+        self._show_last_update = bool(value)
+
     def _convert_to_json(self):
         if self.item.type == "mapWidget":
             wlayer = self.item.layers[self.layer]
@@ -154,7 +171,7 @@ class Details(_BaseWidget):
             self._datasource = {
                 "type": "featureServiceDataSource",
                 "itemId": self.item.itemid,
-                "layerId": 0,
+                "layerId": self.layer,
                 "table": True,
             }
         json_data = {
@@ -168,7 +185,7 @@ class Details(_BaseWidget):
             "name": self.name,
             "caption": self.title,
             "description": self.description,
-            "showLastUpdate": True,
+            "showLastUpdate": self._show_last_update,
             "noDataVerticalAlignment": self._no_data._alignment,
             "showCaptionWhenNoData": self._no_data._show_title,
             "showDescriptionWhenNoData": self._no_data._show_description,

@@ -230,6 +230,15 @@ class GeometryFactory(type):
                 geom["spatialReference"] = {"wkid": int(wkid.replace("SRID=", ""))}
                 return geom
             return _ujson.loads(arcpy.FromWKT(iterable).JSON)
+        else:
+            from geomet.wkt import loads as _wkt_loads
+            from geomet.esri import dumps as _esri_dumps
+
+            if "SRID=" in iterable:
+                wkid, iterable = iterable.split(";")
+                geom = _esri_dumps(_wkt_loads(iterable))
+                geom["spatialReference"] = {"wkid": int(wkid.replace("SRID=", ""))}
+                return geom
         return {}
 
     @staticmethod
@@ -240,8 +249,9 @@ class GeometryFactory(type):
             gj["spatialReference"]["wkid"] = 4326
             return gj
         else:
+            sr = iterable.pop("sr", None)
             cls = _geojson_type_to_esri_type(iterable["type"])
-            return cls._from_geojson(iterable)
+            return cls._from_geojson(iterable, sr=sr)
 
     def __call__(cls, iterable=None, **kwargs):
         if iterable is None:
@@ -254,6 +264,7 @@ class GeometryFactory(type):
             elif hasattr(iterable, "JSON"):
                 iterable = _ujson.loads(getattr(iterable, "JSON"))
             elif "coordinates" in iterable:
+                iterable["sr"] = kwargs.pop("sr", None)
                 iterable = GeometryFactory._from_gj(iterable)
             elif hasattr(iterable, "exportToString"):
                 iterable = {"wkt": iterable.exportToString()}
@@ -890,7 +901,7 @@ class Geometry(BaseGeometry):
         """
         Creates a Python API Geometry object from a Shapely geometry object.
 
-        ..note::
+        .. note::
             Must have shapely installed
 
         =================   ====================================================================
@@ -1274,7 +1285,7 @@ class Geometry(BaseGeometry):
             A boolean indicating yes (True), or no (False)
 
         """
-        return self.get("hasZ", False)
+        return self.get("hasZ", False) | self.get("z", False)
 
     # ----------------------------------------------------------------------
     @property
@@ -1286,7 +1297,7 @@ class Geometry(BaseGeometry):
             A boolean indicating yes (True), or no (False)
 
         """
-        return self.get("hasM", False)
+        return self.get("hasM", False) | self.get("m", False)
 
     # ----------------------------------------------------------------------
     @property
@@ -1792,7 +1803,10 @@ class Geometry(BaseGeometry):
         if HASARCPY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
             return Geometry(self.as_arcpy.buffer(distance))
         elif HASSHAPELY and isinstance(self, (Point, Polygon, Polyline, MultiPoint)):
-            return Geometry(self.as_shapely.buffer(distance).__geo_interface__)
+            return Geometry(
+                self.as_shapely.buffer(distance).__geo_interface__,
+                sr=self.spatial_reference,
+            )
         return None
 
     # ----------------------------------------------------------------------
@@ -2338,7 +2352,7 @@ class Geometry(BaseGeometry):
         ===============     ====================================================================
 
         :return:
-            A `~arcgis.geometry.Geometry` object indicating an intersection, or None for no intersection
+            A :class:`~arcgis.geometry.Geometry` object indicating an intersection, or None for no intersection
 
         .. code-block:: python
 

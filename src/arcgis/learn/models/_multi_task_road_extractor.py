@@ -79,53 +79,53 @@ class MultiTaskRoadExtractor(ArcGISModel):
     and Multispectral Imagery.
     Implementation based on https://doi.org/10.1109/CVPR.2019.01063 .
 
-    =====================   ===========================================
+    =====================   =====================================================
     **Argument**            **Description**
-    ---------------------   -------------------------------------------
+    ---------------------   -----------------------------------------------------
     data                    Required fastai Databunch. Returned data object from
-                            ``prepare_data`` function.
-    ---------------------   -------------------------------------------
+                            :meth:`~arcgis.learn.prepare_data`  function.
+    ---------------------   -----------------------------------------------------
     backbone                Optional String. Backbone convolutional neural network
                             model used for feature extraction. If hourglass is chosen as
-                            the mtl_model (Architecture),then this parameter is
+                            the mtl_model (Architecture), then this parameter is
                             ignored as hourglass uses a special customised
                             architecture.
                             This parameter is used with `linknet` model.
                             Default: 'resnet34'
-
                             Supported backbones: ResNet family and specified Timm
-                            models from :func:`~arcgis.learn.MultiTaskRoadExtractor.backbones`.
-    ---------------------   -------------------------------------------
+                            models(experimental support) from :func:`~arcgis.learn.MultiTaskRoadExtractor.backbones`.
+    ---------------------   -----------------------------------------------------
     pretrained_path         Optional String. Path where a compatible pre-trained
                             model is saved. Accepts a Deep Learning Package
                             (DLPK) or Esri Model Definition(EMD) file.
-    =====================   ===========================================
+    =====================   =====================================================
 
     **kwargs**
 
     =============================   =============================================
     **Argument**                    **Description**
-    ---------------------   -------------------------------------------
-    mtl_model               Optional String. It is used to create model
-                            from linknet or hourglass based neural architectures.
-                            Supported: 'linknet', 'hourglass'.
-                            Default: 'hourglass'
+    -----------------------------   ---------------------------------------------
+    mtl_model                       Optional String. It is used to create model
+                                    from linknet or
+                                    hourglass based neural architectures.
+                                    Supported: 'linknet', 'hourglass'.
+                                    Default: 'hourglass'
     -----------------------------   ---------------------------------------------
     gaussian_thresh                 Optional float. Sets the gaussian threshold
                                     which allows to set the required road width.
                                     Range: 0.0 to 1.0
-                                    Default:0.76
+                                    Default: 0.76
     -----------------------------   ---------------------------------------------
     orient_bin_size                 Optional Int. Sets the bin size for
                                     orientation angles.
-                                    Default:20
+                                    Default: 20
     -----------------------------   ---------------------------------------------
     orient_theta                    Optional Int. Sets the width of orientation
                                     mask.
-                                    Default:8
+                                    Default: 8
     =============================   =============================================
 
-    :return: `MultiTaskRoadExtractor` Object
+    :return: :class:`~arcgis.learn.MultiTaskRoadExtractor` Object
     """
 
     def __init__(
@@ -150,7 +150,7 @@ class MultiTaskRoadExtractor(ArcGISModel):
         self._validate_kwargs(**kwargs)
         # if backbone is None:
         #    backbone = models.resnet34
-        super().__init__(data, backbone, **kwargs)
+        super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
         self._slice_lr = False  # Road models just have a single layer group due to which we cant slice the lr.
         predefined_mtl_model = None
         # Causes Divide by zero error in  fastai library
@@ -663,11 +663,11 @@ class MultiTaskRoadExtractor(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `Multi-Task Road Extractor` Object
+        :return: :class:`~arcgis.learn.MultiTaskRoadExtractor` Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)

@@ -4,7 +4,6 @@ import uuid
 import datetime
 import tempfile
 import unittest
-import pytest
 import pandas as pd
 from arcgis.geometry import Geometry
 from arcgis.features import GeoAccessor, GeoSeriesAccessor
@@ -263,8 +262,8 @@ class TestItemByItemId(unittest.TestCase):
                 item_id=myuid,
             )
         item1.delete()
-        if item2:
-            item2.delete()
+        # if item2:
+        #     item2.delete()
 
     # ----------------------------------------------------------------------
     def test_import_data_sedf(self):

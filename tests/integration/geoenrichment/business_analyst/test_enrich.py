@@ -3,254 +3,59 @@ from typing import Union, Iterable
 from arcgis.geoenrichment._business_analyst import BusinessAnalyst, Country
 from arcgis.geoenrichment._business_analyst._utils import pep8ify
 import pandas as pd
-import pytest
 
 from .configtest import (
     does_not_raise,
     skip_if_no_local,
     skip_if_no_agol,
+    gis_agol,
+    ba_agol,
     ba_local,
     usa_local,
-    usa_local_enrich_vars,
-    ba_agol,
     usa_agol,
-    usa_agol_enrich_vars,
-    universal_enrich_vars,
-    polygon_df,
-    line_df,
-    point_df,
-    stdgeo_srs,
+    usa_enrich_vars_local,
+    usa_enrich_vars_agol,
+    point_df
 )
 
 
-# root tests
-def enrich_test(enrich_src: Union[BusinessAnalyst, Country], geom: Union[pd.DataFrame, pd.Series, Iterable],
-                enrich_vars: Union[pd.DataFrame, pd.Series, Iterable], expectation: object,
-                std_geo_lvl: Union[str, int] = None, std_geo_id_col: str = None, prx_typ: str = None,
-                prx_val: Union[int, float] = None, prx_mtrc: str = None) -> None:
+def enrich_proximity_straight_line_area_overlap_test(usa: Country,
+                                                     point_df: pd.DataFrame,
+                                                     enrich_vars: pd.DataFrame,
+                                                     expectation: object = does_not_raise()) -> None:
     with expectation:
-        enrich_res = enrich_src.enrich(geom, enrich_vars, standard_geography_level=std_geo_lvl,
-                                       standard_geography_id_column=std_geo_id_col,
-                                       proximity_type=prx_typ,
-                                       proximity_value=prx_val,
-                                       proximity_metric=prx_mtrc)
+        enrich_res = usa.enrich(point_df,
+                                enrich_variables=enrich_vars,
+                                proximity_type='driving_time',
+                                proximity_value=[3, 5, 12],
+                                proximity_area_overlap=True
+                                )
         assert isinstance(enrich_res, pd.DataFrame)
-        assert enrich_res.spatial.validate()
-        if isinstance(enrich_vars, pd.DataFrame):
-            enrich_var_cols = [pep8ify(val) for val in enrich_vars['enrich_field_name']]
-            enrich_res_cols = list(enrich_res.columns)
-            assert all([[enrich_col in enrich_res_cols] for enrich_col in enrich_var_cols])
 
 
-def enrich_do_not_return_geom_test(enrich_src: Union[BusinessAnalyst, Country], geom_df: pd.DataFrame,
-                                   enrich_vars: pd.DataFrame, expectation: object,
-                                   std_geo_lvl: Union[str, int] = None, std_geo_id_col: str = None):
+def enrich_proximity_straight_line_area_no_overlap_test(usa: Country,
+                                                        point_df: pd.DataFrame,
+                                                        enrich_vars: pd.DataFrame,
+                                                        expectation: object = does_not_raise()) -> None:
     with expectation:
-        enrich_res = enrich_src.enrich(geom_df, enrich_vars, standard_geography_level=std_geo_lvl,
-                                       standard_geography_id_column=std_geo_id_col, return_geometry=False)
+        enrich_res = usa.enrich(point_df,
+                                enrich_variables=enrich_vars,
+                                proximity_type='driving_time',
+                                proximity_value=[3, 5, 12],
+                                proximity_area_overlap=False
+                                )
         assert isinstance(enrich_res, pd.DataFrame)
-        assert 'SHAPE' not in list(enrich_res.columns)
-        assert enrich_res.spatial.validate() is False
-        enrich_var_cols = [pep8ify(val) for val in enrich_vars['enrich_field_name']]
-        enrich_res_cols = list(enrich_res.columns)
-        assert all([[enrich_col in enrich_res_cols] for enrich_col in enrich_var_cols])
-
-
-def enrich_json_input_test(enrich_src: Union[BusinessAnalyst, Country],
-                           enrich_vars: pd.DataFrame, expectation: object):
-    with expectation:
-        geom = [
-            {"geometry": {
-                "rings": [
-                    [[-117.185412, 34.063170], [-122.81, 37.81], [-117.200570, 34.057196], [-117.185412, 34.063170]]
-                ],
-            "spatialReference": {"wkid": 4326}},
-            "attributes": {"id": "1", "name": "optional polygon area name"}
-            }
-        ]
-        enrich_res = enrich_src.enrich(geom, enrich_vars)
-        assert isinstance(enrich_res, pd.DataFrame)
-        enrich_var_cols = [pep8ify(val) for val in enrich_vars['enrich_field_name']]
-        enrich_res_cols = list(enrich_res.columns)
-        assert all([[enrich_col in enrich_res_cols] for enrich_col in enrich_var_cols])
-
-
-# local
-@skip_if_no_local
-def test_enrich_ba_poly_universal_local(ba_local, polygon_df, universal_enrich_vars):
-    enrich_test(ba_local, polygon_df, universal_enrich_vars, pytest.raises(Exception))
-
-
-@skip_if_no_local
-def test_enrich_usa_poly_local(usa_local, polygon_df, usa_local_enrich_vars):
-    enrich_test(usa_local, polygon_df, usa_local_enrich_vars, does_not_raise())
-
-
-@skip_if_no_local
-def test_enrich_usa_line_implicit_local(usa_local, line_df, usa_local_enrich_vars):
-    enrich_test(usa_local, line_df, usa_local_enrich_vars, does_not_raise())
-
-
-@skip_if_no_local
-def test_enrich_usa_line_explicit_local(usa_local, line_df, usa_local_enrich_vars):
-    enrich_test(usa_local, line_df, usa_local_enrich_vars, pytest.raises(AssertionError), prx_typ='driving_time')
-
-
-@skip_if_no_local
-def test_enrich_usa_point_straightline_implicit_local(usa_local, point_df, usa_local_enrich_vars):
-    enrich_test(usa_local, point_df, usa_local_enrich_vars, does_not_raise())
-
-
-@skip_if_no_local
-def test_enrich_usa_point_straightline_explicit_local(usa_local, point_df, usa_local_enrich_vars):
-    enrich_test(usa_local, point_df, usa_local_enrich_vars, does_not_raise(), prx_typ='straight_line')
-
-
-@skip_if_no_local
-def test_enrich_usa_point_drivedistance_local(usa_local, point_df, usa_local_enrich_vars):
-    enrich_test(usa_local, point_df, usa_local_enrich_vars, does_not_raise(), prx_typ='driving_distance', prx_val=10,
-                prx_mtrc='miles')
-
-
-@skip_if_no_local
-def test_enrich_usa_point_drivetime_local(usa_local, point_df, usa_local_enrich_vars):
-    enrich_test(usa_local, point_df, usa_local_enrich_vars, does_not_raise(), prx_typ='driving_time', prx_val=12,
-                prx_mtrc='minutes')
-
-
-@skip_if_no_local
-def test_enrich_usa_no_return_geomery_local(usa_local, polygon_df, usa_local_enrich_vars):
-    enrich_do_not_return_geom_test(usa_local, polygon_df, usa_local_enrich_vars, does_not_raise())
-
-
-@skip_if_no_local
-def test_enrich_usa_stdgeo_srs_local(usa_local, stdgeo_srs, usa_local_enrich_vars):
-    enrich_test(usa_local, stdgeo_srs.iloc[:10], usa_local_enrich_vars, does_not_raise(), std_geo_lvl='block_groups')
-
-
-@skip_if_no_local
-def test_enrich_usa_stdgeo_srs_no_return_geom_local(usa_local, stdgeo_srs, usa_local_enrich_vars):
-    enrich_do_not_return_geom_test(usa_local, stdgeo_srs, usa_local_enrich_vars, does_not_raise(),
-                                   std_geo_lvl='block_groups')
-
-
-@skip_if_no_local
-def test_enrich_usa_stdgeo_df_local(usa_local, polygon_df, usa_local_enrich_vars):
-    polygon_df = polygon_df.drop(columns='SHAPE')
-    enrich_test(usa_local, polygon_df, usa_local_enrich_vars, does_not_raise(), std_geo_lvl='block_groups',
-                std_geo_id_col='ID')
-
-
-@skip_if_no_local
-def test_enrich_json_local(usa_local, usa_local_enrich_vars):
-    enrich_json_input_test(usa_local, usa_local_enrich_vars, pytest.raises(ValueError))
-
-
-@skip_if_no_local
-def test_enrich_usa_poly_var_lst_local(usa_local, polygon_df):
-    evars = ['KeyUSFacts.MEDHINC_CY', 'KeyUSFacts.TOTPOP_CY', 'KeyUSFacts.TOTHH_CY']
-    enrich_test(usa_local, polygon_df, evars, does_not_raise())
-
-
-# ArcGIS Online
-@skip_if_no_agol
-def test_enrich_ba_poly_singlebatch_agol(ba_agol, polygon_df, universal_enrich_vars):
-    polygon_df = polygon_df.iloc[:10]
-    polygon_df.spatial.set_geometry('SHAPE')
-    enrich_test(ba_agol, polygon_df, universal_enrich_vars, does_not_raise())
 
 
 @skip_if_no_agol
-def test_enrich_ba_poly_agol(ba_agol, polygon_df, universal_enrich_vars):
-    enrich_test(ba_agol, polygon_df, universal_enrich_vars, does_not_raise())
+def test_enrich_proximity_straight_line_area_overlap_agol(usa_agol: Country,
+                                                          point_df: pd.DataFrame,
+                                                          usa_enrich_vars_agol: pd.DataFrame):
+    enrich_proximity_straight_line_area_overlap_test(usa_agol, point_df, usa_enrich_vars_agol)
 
 
 @skip_if_no_agol
-def test_enrich_ba_line_agol(ba_agol, line_df, usa_agol_enrich_vars):
-    enrich_test(ba_agol, line_df, usa_agol_enrich_vars, does_not_raise())
-
-
-@skip_if_no_agol
-def test_enrich_ba_point_agol(ba_agol, point_df, universal_enrich_vars):
-    enrich_test(ba_agol, point_df, universal_enrich_vars, does_not_raise())
-
-
-@skip_if_no_agol
-def test_enrich_ba_point_straightline_agol(ba_agol, point_df, universal_enrich_vars):
-    enrich_test(ba_agol, point_df, universal_enrich_vars, does_not_raise(), prx_typ='straight_line')
-
-
-@skip_if_no_agol
-def test_enrich_ba_point_drivedistance_agol(ba_agol, point_df, universal_enrich_vars):
-    enrich_test(ba_agol, point_df, universal_enrich_vars, does_not_raise(), prx_typ="driving_distance",
-                prx_val=10, prx_mtrc='miles')
-
-
-@skip_if_no_agol
-def test_enrich_ba_point_drivetime_agol(ba_agol, point_df, universal_enrich_vars):
-    enrich_test(ba_agol, point_df, universal_enrich_vars, does_not_raise(), prx_typ='driving_time', prx_val=12,
-                prx_mtrc='minutes')
-
-
-@skip_if_no_agol
-def test_enrich_usa_stdgeo_srs_usa_agol(usa_agol, stdgeo_srs, usa_agol_enrich_vars):
-    enrich_test(usa_agol, stdgeo_srs, usa_agol_enrich_vars, does_not_raise(), std_geo_lvl='block_groups')
-
-
-@skip_if_no_agol
-def test_enrich_usa_stdgeo_srs_no_return_geom_agol(usa_agol, stdgeo_srs, usa_agol_enrich_vars):
-    enrich_do_not_return_geom_test(usa_agol, stdgeo_srs, usa_agol_enrich_vars, does_not_raise(),
-                                   std_geo_lvl='block_groups')
-
-
-@skip_if_no_agol
-def test_enrich_usa_stdgeo_df_agol(usa_agol, polygon_df, usa_agol_enrich_vars):
-    polygon_df = polygon_df.drop(columns='SHAPE')
-    enrich_test(usa_agol, polygon_df, usa_agol_enrich_vars, does_not_raise(), std_geo_lvl='block_groups',
-                std_geo_id_col='ID')
-
-
-@skip_if_no_agol
-def test_enrich_usa_poly_singlebatch_agol(usa_agol, polygon_df, usa_agol_enrich_vars):
-    polygon_df = polygon_df.iloc[:45]
-    polygon_df.spatial.set_geometry('SHAPE')
-    enrich_test(usa_agol, polygon_df, usa_agol_enrich_vars, does_not_raise())
-
-
-@skip_if_no_agol
-def test_enrich_usa_poly_agol(usa_agol, polygon_df, usa_agol_enrich_vars):
-    enrich_test(usa_agol, polygon_df, usa_agol_enrich_vars, does_not_raise())
-
-
-@skip_if_no_agol
-def test_enrich_usa_line_agol(usa_agol, line_df, usa_agol_enrich_vars):
-    enrich_test(usa_agol, line_df, usa_agol_enrich_vars, does_not_raise())
-
-
-@skip_if_no_agol
-def test_enrich_usa_point_drivingdistance_wrong_proxiity_metric_agol(usa_agol, point_df, usa_agol_enrich_vars):
-    enrich_test(usa_agol, point_df, usa_agol_enrich_vars, pytest.raises(AssertionError), prx_typ='driving_distance',
-                prx_val=10, prx_mtrc='minutes')
-
-
-@skip_if_no_agol
-def test_enrich_usa_point_drivingtime_wrong_proximity_metric_agol(usa_agol, point_df, usa_agol_enrich_vars):
-    enrich_test(usa_agol, point_df, usa_agol_enrich_vars, pytest.raises(AssertionError), prx_typ='driving_time',
-                prx_val=12, prx_mtrc='kilometers')
-
-
-@skip_if_no_agol
-def test_enrich_usa_point_drivedistance_agol(usa_agol, point_df, usa_agol_enrich_vars):
-    enrich_test(usa_agol, point_df, usa_agol_enrich_vars, does_not_raise(), prx_typ='drive_distance',
-                prx_val=10, prx_mtrc='miles')
-
-
-@skip_if_no_agol
-def test_enrich_usa_point_drivetime_agol(usa_agol, point_df, usa_agol_enrich_vars):
-    enrich_test(usa_agol, point_df, usa_agol_enrich_vars, does_not_raise(), prx_typ='drive_time',
-                prx_val=12, prx_mtrc='minutes')
-
-
-@skip_if_no_agol
-def test_enrich_json_agol(usa_agol, polygon_df, usa_agol_enrich_vars):
-    enrich_json_input_test(usa_agol, usa_agol_enrich_vars, does_not_raise())
+def test_enrich_proximity_straight_line_area_no_overlap_agol(usa_agol: Country,
+                                                          point_df: pd.DataFrame,
+                                                          usa_enrich_vars_agol: pd.DataFrame):
+    enrich_proximity_straight_line_area_no_overlap_test(usa_agol, point_df, usa_enrich_vars_agol)

@@ -184,21 +184,20 @@ def _create_deeplab(
 class DeepLab(ArcGISModel):
     """
     Model architecture from https://arxiv.org/abs/1706.05587.
-    Creates a ``DeepLab`` Image Segmentation/ Pixel Classification model,
+    Creates a :class:`~arcgis.learn.DeepLab` Image Segmentation/ Pixel Classification model,
     based on https://github.com/pytorch/vision/tree/master/torchvision/models/segmentation.
 
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
-    data                    Required fastai Databunch. Returned data object from
-                            ``prepare_data`` function.
+    data                    Required fastai Databunch. Returned data object from function.
     ---------------------   -------------------------------------------
     backbone                Optional string. Backbone convolutional neural network
                             model used for feature extraction, which
                             is `resnet101` by default since it is pretrained in
                             torchvision.
                             Supported backbones: ResNet, DenseNet, VGG family and
-                            specified Timm models from
+                            specified Timm models(experimental support) from
                             :func:`~arcgis.learn.DeepLab.backbones`.
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
@@ -235,10 +234,11 @@ class DeepLab(ArcGISModel):
                             Default: 0
     ---------------------   -------------------------------------------
     dice_loss_average       Optional str.
-                            micro: Micro dice coefficient will be used for loss
-                            calculation.
-                            macro: Macro dice coefficient will be used for loss
-                            calculation.
+
+                            * micro: Micro dice coefficient will be used for loss calculation.
+
+                            * macro: Macro dice coefficient will be used for loss calculation.
+
                             A macro-average will compute the metric independently
                             for each class and then take the average (hence treating
                             all classes equally), whereas a micro-average will
@@ -258,7 +258,7 @@ class DeepLab(ArcGISModel):
                             at the cost of memory consumption. Default: False
     =====================   ===========================================
 
-    :return: ``DeepLab`` Object
+    :return: :class:`~arcgis.learn.DeepLab` Object
     """
 
     def __init__(
@@ -285,7 +285,7 @@ class DeepLab(ArcGISModel):
                 f"Enter only compatible backbones from {', '.join(self.supported_backbones)}"
             )
 
-        super().__init__(data, backbone, **kwargs)
+        super().__init__(data, backbone, pretrained_path=pretrained_path, **kwargs)
 
         self._pointrend = pointrend
 
@@ -447,7 +447,7 @@ class DeepLab(ArcGISModel):
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a ``DeepLab`` semantic segmentation object from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.DeepLab` semantic segmentation object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -456,12 +456,12 @@ class DeepLab(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from ``prepare_data`` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data`  function or None for
                                 inferencing.
 
         =====================   ===========================================
 
-        :return: `DeepLab` Object
+        :return: :class:`~arcgis.learn.DeepLab` Object
         """
 
         emd_path = _get_emd_path(emd_path)
@@ -598,19 +598,16 @@ class DeepLab(ArcGISModel):
 
     def _freeze(self):
         "Freezes the pretrained backbone."
-        if self._backbone.__name__ == "resnet101":
-            idx = 68
-        else:
-            for idx, i in enumerate(flatten_model(self.learn.model)):
-                if isinstance(i, (nn.BatchNorm2d)):
-                    continue
-                if hasattr(i, "dilation"):
-                    dilation = i.dilation
-                    dilation = dilation[0] if isinstance(dilation, tuple) else dilation
-                    if dilation > 1:
-                        break
-                for p in i.parameters():
-                    p.requires_grad = False
+        for idx, i in enumerate(flatten_model(self.learn.model.backbone)):
+            if isinstance(i, (nn.BatchNorm2d)):
+                continue
+            if hasattr(i, "dilation"):
+                dilation = i.dilation
+                dilation = dilation[0] if isinstance(dilation, tuple) else dilation
+                if dilation > 1:
+                    break
+            for p in i.parameters():
+                p.requires_grad = False
 
         self.learn.layer_groups = split_model_idx(
             self.learn.model, [idx]

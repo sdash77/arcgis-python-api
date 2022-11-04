@@ -1,12 +1,25 @@
-import pytest
+import unittest
 import urllib.request
-from pytest_blockage import MockHttpCall
+from unittest import mock
 
 
-def test_network_access_fails():
-    """All unit tests should NOT connect to the network. Assert that trying
-    to ping https://arcgis.com throws a MockHttpCall
-    """
-    with pytest.raises(MockHttpCall):
-        with urllib.request.urlopen("https://arcgis.com/") as response:
+class TestNetworkAccessFails(unittest.TestCase):
+
+    def test_network_access_fails(self):
+        """All unit tests should NOT connect to the network. Assert that trying
+        to ping https://arcgis.com throws a MockHttpCall
+        """
+        requests_mock_inst = mock.patch(
+            'urllib.request',
+            mock.Mock(side_effect=RuntimeError(
+                'No internet here.'
+            ))
+        )
+        with requests_mock_inst:
+            response = urllib.request.urlopen("https://arcgis.com/")
             html = response.read()
+            print(html)
+
+
+if __name__ == '__main__':
+    unittest.main()

@@ -46,6 +46,26 @@ def _darknet_split(m):
     return m[0][1][4]
 
 
+def _cspres_split(m):
+    return m[0][1][3]
+
+
+def _nfnet_split(m):
+    return m[0][1][-1]
+
+
+def _dpn_split(m):
+    return m[0][0][-2]
+
+
+def _esevovnet_split(m):
+    return m[0][1][-1]
+
+
+def _gernet_split(m):
+    return m[0][1][-2]
+
+
 def _modified_cut(m):
     def forward_modified(self, img):
         return self.forward_features(img)
@@ -75,6 +95,11 @@ timm_model_meta = {
     "nasnet": {"cut": _modified_cut, "split": _default_split},
     "selecsls": {"cut": _modified_cut, "split": _default_split},
     "tresnet": {"cut": _modified_cut, "split": _tresnet_split},
+    "cspres": {"cut": None, "split": _cspres_split},
+    "nfnet": {"cut": None, "split": _nfnet_split},
+    "dpn": {"cut": None, "split": _dpn_split},
+    "ese_vovnet": {"cut": None, "split": _esevovnet_split},
+    "gernet": {"cut": None, "split": _gernet_split},
 }
 
 

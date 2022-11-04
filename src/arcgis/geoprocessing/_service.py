@@ -25,6 +25,7 @@ _log = _logging.getLogger(__name__)
 def _input_string_params(spec, name_type, name_param, num_spaces=20):
     """creates the input strings for the lambda"""
     src_code = ""
+    optional_code = ""
     param_inputs = ""
     default_db = {}
     if len(spec) > 0:
@@ -38,21 +39,31 @@ def _input_string_params(spec, name_type, name_param, num_spaces=20):
             param_name, param_dval = param_name_dval
             param_type = name_type[param_name]
             if param_dval:
-                src_code += f"{param_name}=None"
+                optional_code += f"{param_name}=None,"
                 default_db[param_name] = param_dval
             else:
                 src_code += f"{param_name}"
             # src_code += _generate_param(name_param, param_dval, param_name, param_type)
             src_code += ","
+            if src_code.find(",,") > -1:
+                src_code = src_code.replace(",,", ",")
             param_inputs += f"{param_name}={param_name},"
         # src_code += ","
     src_code += ""
+    if src_code.endswith(",") and optional_code:
+        src_code += optional_code
+    elif src_code.endswith(",") == False and optional_code:
+        src_code += ","
+        src_code += optional_code
     return src_code, param_inputs, default_db
 
 
 ###########################################################################
 def _build_lambda(self, input_strings, param_inputs):
     """builds the lambda"""
+    if input_strings.startswith(","):
+        input_strings = input_strings[1:]
+
     return eval(
         f"lambda self, {input_strings}: self._run_tool({param_inputs})".replace(
             "\n", ""
@@ -74,21 +85,33 @@ class GPInfo:
 
     @property
     def item_info(self) -> dict:
-        """ """
+        """
+
+        :return: the service's item information
+
+        """
         url = f"{self._url}/iteminfo"
         params = {"f": "json"}
         return self._gis._con.get(url, params)
 
     @property
     def metadata(self) -> str:
-        """returns the service's metadata"""
+        """
+
+        :return: the service's metadata
+
+        """
         url = f"{self._url}/metadata"
 
         return self._gis._con.get(url, {}, try_json=False)
 
     @property
     def thumbnail(self) -> str:
-        """returns the service's thumbnail"""
+        """
+
+        :return: the service's thumbnail
+
+        """
         url = f"{self._url}/thumbnail"
         return self._gis._con.get(url, {}, try_json=False)
 
@@ -165,7 +188,7 @@ class GPTask:
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return f"<{self.__class__.__name__} @ {self._url}>"
+        return f"< {self.__class__.__name__} @ {self._url} >"
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -202,7 +225,7 @@ class GPTask:
         """
         Returns the Service's Properties
 
-        :return: dict
+        :return: Dictionary
         """
         if self._properties is None:
             params = {"f": "json"}
@@ -218,7 +241,7 @@ class GPTask:
         """
         Returns the URL to the documentation for the GP Task.
 
-        :return: str
+        :return: string
         """
         return self.properties.get("helpUrl", "")
 
@@ -228,7 +251,8 @@ class GPTask:
         Gets a parameter's default value.
 
 
-        :returns: object
+        :return: object
+
         """
         name = _camelCase_to_underscore(name=name)
         for param in self.properties["parameters"]:
@@ -243,7 +267,7 @@ class GPTask:
         """
         Name of the geoprocessing tasks
 
-        :returns: str
+        :return: string
 
         """
         return _camelCase_to_underscore(self.properties["name"])
@@ -255,7 +279,8 @@ class GPTask:
         """
         Returns a Map of Parameters with Choice Lists.
 
-        :return: dict
+        :return: Dictionary
+
         """
         if self._choice_list is None:
             self._choice_list = {}
@@ -295,7 +320,7 @@ class GPService:
 
     # ----------------------------------------------------------------------
     def __str__(self):
-        return f"<{self.__class__.__name__} @ {self._url}>"
+        return f"< {self.__class__.__name__} @ {self._url} >"
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -307,7 +332,7 @@ class GPService:
         """
         Returns the Service's Properties
 
-        :return: dict
+        :return: Dictionary
         """
         if self._properties is None:
 
@@ -320,7 +345,7 @@ class GPService:
     # ----------------------------------------------------------------------
     @property
     def tasks(self) -> list:
-        """returns the GP Tasks"""
+        """returns the :class:`GP Tasks <arcgis.geoprocessing.GPTask>`"""
         if self._tasks is None:
             self._tasks = [
                 GPTask(
@@ -343,6 +368,10 @@ class GPService:
     # ----------------------------------------------------------------------
     @property
     def info(self) -> GPInfo:
+        """
+        :return:
+            :class:`~arcgis.geoprocessing.GPInfo`
+        """
         if self._info is None:
             url = f"{self._url}/info"
             self._info = GPInfo(url, self._gis)

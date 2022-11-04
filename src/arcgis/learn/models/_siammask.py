@@ -64,7 +64,7 @@ class Track:
     mask                    Required numpy array. Mask for the tack
     =====================   ===========================================
 
-    :return: `Track` Object
+    :return: :class:`~arcgis.learn.Track` Object
     """
 
     def __init__(self, id, label, bbox, mask):
@@ -81,18 +81,18 @@ class Track:
 
 class SiamMask(ArcGISModel):
     """
-    Creates a SiamMask object.
+    Creates a :class:`~arcgis.learn.SiamMask` object.
 
     =====================   ===========================================
     **Argument**            **Description**
     ---------------------   -------------------------------------------
     data                    Optional fastai Databunch. Returned data object from
-                            `prepare_data` function with dataset_type as
+                            :meth:`~arcgis.learn.prepare_data` function with dataset_type as
                             'ObjectTracking' and data format as 'YouTube-VOS'.
                             Default value is None.
     =====================   ===========================================
 
-    :return: `SiamMask` Object
+    :return: :class:`~arcgis.learn.SiamMask` Object
     """
 
     def __init__(self, data=None, **kwargs):
@@ -191,15 +191,20 @@ class SiamMask(ArcGISModel):
     def _available_metrics():
         return ["valid_loss", "mIOU"]
 
+    @staticmethod
+    def _supported_backbones():
+        """Supported torchvision backbones for this model."""
+        return ["resnet50"]
+
     @property
     def supported_backbones(self):
         """Supported torchvision backbones for this model."""
-        return ["resnet50"]
+        return SiamMask._supported_backbones()
 
     @classmethod
     def from_model(cls, emd_path, data=None):
         """
-        Creates a SiamMask Object tracker from an Esri Model Definition (EMD) file.
+        Creates a :class:`~arcgis.learn.SiamMask` Object tracker from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
         **Argument**            **Description**
@@ -208,11 +213,11 @@ class SiamMask(ArcGISModel):
                                 (DLPK) or Esri Model Definition(EMD) file.
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
-                                object from `prepare_data` function or None for
+                                object from :meth:`~arcgis.learn.prepare_data` function or None for
                                 inferencing.
         =====================   ===========================================
 
-        :return: `SiamMask` Object
+        :return: :class:`~arcgis.learn.SiamMask` Object
         """
         emd_path = _get_emd_path(emd_path)
         emd_path = Path(emd_path)
@@ -282,7 +287,7 @@ class SiamMask(ArcGISModel):
                                 to the bounding boxes.
         =====================   ===========================================
 
-        :return: Track list
+        :return: :class:`~arcgis.learn.Track` list
         """
         if self._model is None:
             raise Exception("SiamMask model not loaded properly.")

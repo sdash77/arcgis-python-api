@@ -6,16 +6,16 @@ from arcgis.apps.tracker import LocationTrackingError
 
 class LocationTrackingManager:
     """
-    This manages Location Tracking for an organization.
-    It can be accessed from the gis as :py:attr:`~arcgis.gis.admin.location_tracking`
+    This manages Location Sharing for an organization.
+    It can be accessed from the gis as `location_tracking`
 
-    Additional information can be found here: https://doc.arcgis.com/en/tracker/help/configure-location-tracking.htm
+    Additional information can be found `here <https://doc.arcgis.com/en/tracker/help/configure-location-tracking.htm>`_
 
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
     gis                    Required :class:`~arcgis.gis.GIS`. The GIS to configure location
-                           tracking for.
+                           sharing for.
     ==================     ====================================================================
     """
 
@@ -50,6 +50,10 @@ class LocationTrackingManager:
         ):
             raise LocationTrackingError("Location Tracking is already enabled.")
 
+    @property
+    def _use_location_sharing(self):
+        return float(self._gis.properties.get("currentVersion", "0")) >= 10.1
+
     def enable(
         self,
         tracks_layer_shards: int = 6,
@@ -57,7 +61,7 @@ class LocationTrackingManager:
         tracks_layer_rolling_index_strategy: str = "Monthly",
     ):
         """
-        Enables location tracking for the organization.
+        Enables location sharing for the organization.
 
         ===================================       ===============================================================
         **Argument**                              **Description**
@@ -95,11 +99,14 @@ class LocationTrackingManager:
             raise ValueError(
                 f"'{tracks_layer_rolling_index_strategy}' is not supported for this version of Enterprise"
             )
+        folder_title = (
+            "Location Sharing" if self._use_location_sharing else "Location Tracking"
+        )
         for folder in self._gis.users.me.folders:
-            if folder["title"] == "Location Tracking":
+            if folder["title"] == folder_title:
                 break
         else:
-            self._gis.content.create_folder("Location Tracking")
+            self._gis.content.create_folder(folder_title)
         service_name = "location_tracking"
         if not self._gis.content.is_service_name_available(
             service_name, service_type="featureService"
@@ -131,8 +138,8 @@ class LocationTrackingManager:
                     }
                 },
             ],
-            "description": "Location Tracking Service",
-            "snippet": "Location Tracking Service",
+            "description": f"Location {'Sharing' if self._use_location_sharing else 'Tracking'} Service",
+            "snippet": f"Location {'Sharing' if self._use_location_sharing else 'Tracking'} Service",
         }
         # Use a longer rolling index strategy if 10.8.1 or later
         if float(self._gis.properties.get("currentVersion", "0")) > 7.3:
@@ -142,16 +149,16 @@ class LocationTrackingManager:
         item = self._gis.content.create_service(
             "location_tracking",
             create_params=create_params,
-            folder="Location Tracking",
+            folder=folder_title,
             service_type="locationTrackingService",
         )
         item.protect(True)
         item.update(
             {
-                "description": "The location tracking service stores the last known location of each mobile user, "
+                "description": f"The location {'Sharing' if self._use_location_sharing else 'Tracking'} service stores the last known location of each mobile user, "
                 "as well as full historical tracks of where the mobile user has been. It is part of an "
                 "organization-wide capability that is managed by an administrator.",
-                "snippet": "Location Tracking Service",
+                "snippet": f"Location {'Sharing' if self._use_location_sharing else 'Tracking'} Service",
             }
         )
         item.share(org=True)
@@ -162,7 +169,7 @@ class LocationTrackingManager:
 
     def pause(self):
         """
-        Pauses location tracking for the organization.
+        Pauses location sharing for the organization.
 
         :return: True if successful, False otherwise
         """
@@ -178,7 +185,7 @@ class LocationTrackingManager:
 
     def resume(self):
         """
-        Resumes location tracking for the organization after it was paused.
+        Resumes location sharing for the organization after it was paused.
 
         :return: True if successful, False otherwise
         """
@@ -194,9 +201,9 @@ class LocationTrackingManager:
 
     def disable(self):
         """
-        Disables location tracking for the organization.
+        Disables location sharing for the organization.
 
-        THIS WILL DELETE ALL LOCATION TRACKING VIEWS, SERVICES, AND DATA.
+        THIS WILL DELETE ALL LOCATION SHARING VIEWS, SERVICES, AND DATA.
 
         :return: True if successful, False otherwise
         """
@@ -234,8 +241,13 @@ class LocationTrackingManager:
             )
             == 0
         ):
+            folder_title = (
+                "Location Sharing"
+                if self._use_location_sharing
+                else "Location Tracking"
+            )
             for folder in self._gis.users.get(item.owner).folders:
-                if folder["title"] == "Location Tracking":
+                if folder["title"] == folder_title:
                     self._gis.content.delete_folder(folder["title"], owner=item.owner)
                     break
         return True
@@ -247,7 +259,7 @@ class LocationTrackingManager:
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        title                  Required :class:`String` The title of the Track View to create.
+        title                  Required String. The title of the Track View to create.
         ==================     ====================================================================
 
         :return: :class:`~arcgis.apps.tracker.TrackView`
@@ -261,7 +273,7 @@ class LocationTrackingManager:
                     break
         group = self._gis.groups.create(
             title,
-            "Location Tracking Group",
+            f"Location {'Sharing' if self._use_location_sharing else 'Tracking'} Group",
             is_view_only=True,
             is_invitation_only=True,
             access="private",
@@ -310,8 +322,8 @@ class LocationTrackingManager:
     @property
     def retention_period(self):
         """
-        The retention period of the Location Tracking Tracks Layer.
-        This is a positive integer whose units are defined by :py:attr:`~arcgis.gis.admin.location_tracking.retention_period_units`
+        The retention period of the Location Sharing Tracks Layer.
+        This is a positive integer whose units are defined by :attr:`~arcgis.apps.tracker.LocationTrackingManager.retention_period_units`
         """
         try:
             return int(
@@ -351,7 +363,7 @@ class LocationTrackingManager:
 
     @property
     def retention_period_units(self):
-        """The retention period units ("HOURS", "DAYS", "MONTHS", "YEARS") of the Location Tracking Tracks Layer"""
+        """The retention period units ("HOURS", "DAYS", "MONTHS", "YEARS") of the Location Sharing Tracks Layer"""
         try:
             return self.tracks_layer.manager.properties["adminLayerInfo"][
                 "tableMetadata"
@@ -413,7 +425,7 @@ class LocationTrackingManager:
 
     @_lazy_property
     def item(self):
-        """The Location Tracking :class:`~arcgis.gis.Item`"""
+        """The Location Sharing :class:`~arcgis.gis.Item`"""
         try:
             return self._gis.content.get(
                 self._gis.properties.helperServices["locationTracking"]["id"]
@@ -447,7 +459,7 @@ class LocationTrackingManager:
 
     @property
     def status(self):
-        """The status of location tracking ("disabled", "paused", "enabled")"""
+        """The status of location sharing ("disabled", "paused", "enabled")"""
         try:
             if "locationTracking" not in self._gis.properties.helperServices:
                 return "disabled"

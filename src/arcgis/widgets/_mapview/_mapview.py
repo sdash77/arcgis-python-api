@@ -3,25 +3,28 @@ The arcgis.widgets module provides components for visualizing GIS data and analy
 This module includes the MapView Jupyter notebook widget for visualizing maps and layers
 """
 import json
-import random
-import string
 import time
 import logging
 import base64
+from typing import Union
 import urllib.request
 from uuid import uuid4
 from collections import OrderedDict
-from urllib.parse import urlparse
 import os
-import shutil
 import datetime as dt
 import dateutil.parser
 import tempfile
 
+from arcgis.geometry import Point, Polygon, Polyline, MultiPoint, Geometry
+from arcgis.features import FeatureSet, Feature, FeatureCollection, FeatureLayer
+from arcgis.raster import ImageryLayer, Raster, _ImageServerRaster, _ArcpyRaster
+from arcgis.gis import Layer
+from arcgis.gis import Item
+
 import ipywidgets
 from ipywidgets import widgets
 from ipywidgets.embed import embed_minimal_html
-from traitlets import Unicode, Int, List, Bool, Dict, Tuple, Float, observe
+from traitlets import Unicode, List, Bool, Dict, Tuple, Float, observe
 
 Datetime = ipywidgets.trait_types.Datetime
 from IPython.display import display, HTML
@@ -31,6 +34,7 @@ from arcgis.widgets._mapview._loading_icon_str import _loading_icon_str
 from arcgis.widgets._mapview._raster import LocalRasterOverlayManager
 from arcgis.widgets._mapview._raster._numpy_utils import *
 from arcgis import __version__ as py_api_version
+from arcgis.auth._auth._schain import _MultiAuth, SupportMultiAuth
 import arcgis.mapping
 import arcgis
 
@@ -87,14 +91,6 @@ def _flatten_list(*unpacked_list):
 
 
 def _get_extent(item):
-    from arcgis.features import FeatureSet, Feature, FeatureCollection, FeatureLayer
-    from arcgis.raster import ImageryLayer, Raster, _ImageServerRaster, _ArcpyRaster
-    from arcgis.gis import Layer
-    from arcgis.gis import Item
-    from arcgis._impl.common._mixins import PropertyMap
-    from arcgis.mapping import MapImageLayer, VectorTileLayer
-    from pandas import DataFrame
-
     if isinstance(item, Raster):
         if isinstance(item._engine_obj, _ImageServerRaster):
             item = item._engine_obj
@@ -104,7 +100,7 @@ def _get_extent(item):
         return list(map(_get_extent, item.layers))
     elif isinstance(item, list):
         return list(map(_get_extent, item))
-    elif isinstance(item, DataFrame):
+    elif isinstance(item, pd.DataFrame):
         return _get_extent_of_dataframe(item)
     elif isinstance(item, FeatureSet):
         return _get_extent(item.sdf)
@@ -495,9 +491,16 @@ class MapView(widgets.DOMWidget):
     @basemap.setter
     def basemap(self, value):
         if value in self.basemaps:
+            if value.startswith("arcgis-"):
+                if self.gis is None or self.gis._portal.is_logged_in is False:
+                    raise ValueError(
+                        "This basemap requires you to be authenticated. Please login or try a different basemap."
+                    )
             self._basemap = value
+            self.webmap.basemap = value
         elif value in self.gallery_basemaps:
             self._basemap = value
+            self.webmap.basemap = value
         else:
             try:
                 self.webmap.basemap = value
@@ -511,9 +514,9 @@ class MapView(widgets.DOMWidget):
             except Exception:
                 raise RuntimeError("Basemap '{}' isn't valid".format(value))
 
-    _basemap = Unicode("topo").tag(sync=True)
-    """What basemap you would like to apply to the widget (‘topo’,
-    ‘national-geographic’, etc.). See `basemaps` for a full list
+    _basemap = Unicode("topo-vector").tag(sync=True)
+    """What basemap you would like to apply to the widget ('topo',
+    'national-geographic', etc.). See `basemaps` for a full list
     """
     mode = Unicode("2D").tag(sync=True)
     """The string that specifies whether the map displays in '2D' mode
@@ -849,44 +852,99 @@ class MapView(widgets.DOMWidget):
     # end how we store layers
 
     basemaps = [
-        "dark-gray",
         "dark-gray-vector",
-        "gray",
         "gray-vector",
         "hybrid",
-        "national-geographic",
         "oceans",
         "osm",
         "satellite",
-        "streets",
         "streets-navigation-vector",
         "streets-night-vector",
         "streets-relief-vector",
         "streets-vector",
         "terrain",
-        "topo",
         "topo-vector",
+        "arcgis-imagery",
+        "arcgis-imagery-standard",
+        "arcgis-imagery-labels",
+        "arcgis-light-gray",
+        "arcgis-dark-gray",
+        "arcgis-navigation",
+        "arcgis-navigation-night",
+        "arcgis-streets",
+        "arcgis-streets-night",
+        "arcgis-streets-relief",
+        "arcgis-topographic",
+        "arcgis-oceans",
+        "osm-standard",
+        "osm-standard-relief",
+        "osm-streets",
+        "osm-streets-relief",
+        "osm-light-gray",
+        "osm-dark-gray",
+        "arcgis-terrain",
+        "arcgis-community",
+        "arcgis-charted-territory",
+        "arcgis-colored-pencil",
+        "arcgis-nova",
+        "arcgis-modern-antique",
+        "arcgis-midcentury",
+        "arcgis-newspaper",
+        "arcgis-hillshade-light",
+        "arcgis-hillshade-dark",
+        "arcgis-human-geography",
+        "arcgis-human-geography-dark",
     ]
+
     """
     The ``basemaps`` layers are a list of possible basemaps to set :attr:`~arcgis.widgets.MapView.basemap` with:
     
-    1. Dark Grey
-    2. Dark Grey Vector
-    3. Gray
-    4. Gray Vector
-    5. Hybrid
-    6. National Geographic
-    7. Oceans
-    8. OSM
-    9. Satellite
-    10. Streets
-    11. Streets Navigation Vector
-    12. Streets Night Vector
-    13. Streets Relief Vector
-    14. Streets Vector
-    15. Terrain
-    16. Topo
-    17. Topographic Vector
+    1. Dark Grey Vector
+    2. Gray Vector
+    3. Hybrid
+    4. Oceans
+    5. OSM
+    6. Satellite
+    7. Streets Navigation Vector
+    8. Streets Night Vector
+    9. Streets Relief Vector
+    10. Streets Vector
+    11. Terrain
+    12. Topographic Vector
+
+    There are basemap layers available if you are authenticated or provide an api key.
+
+    1. ArcGIS Imagery
+    2. ArcGIS Imagery Standard
+    3. ArcGIS Imagery Labels
+    4. ArcGIS Light Gray
+    5. ArcGIS Dark Gray
+    6. ArcGIS Navigation
+    7. ArcGIS Navigation Night
+    8. ArcGIS Streets
+    9. ArcGIS Streets Night
+    10. ArcGIS Streets Relief
+    11. ArcGIS Topographic
+    12. ArcGIS Oceans
+    13. ArcGIS Standard
+    14. ArcGIS Standard Relief
+    15. ArcGIS Streets
+    16. ArcGIS Streets Relief
+    17. ArcGIS Open Street Map Light Gray
+    18. ArcGIS Open Street Map Dark Gray
+    19. ArcGIS Terrain
+    20. ArcGIS Community
+    21. ArcGIS Charted Territory
+    22. ArcGIS Colored Pencil
+    23. ArcGIS Nova
+    24. ArcGIS Modern Antique
+    25. ArcGIS Midcentury
+    26. ArcGIS Newspaper
+    27. ArcGIS Hillshade Light
+    28. ArcGIS Hillshade Dark
+    29. ArcGIS Human Geography
+    30. ArcGIS Human Geography Dark
+
     """
     # End other properties that don't interact with the model
 
@@ -1205,6 +1263,20 @@ class MapView(widgets.DOMWidget):
         if self.gis._portal.con.token:
             self._portal_token = str(self.gis._portal.con.token)
             self._auth_mode = "tokenBased"
+        elif isinstance(
+            self.gis._con._session.auth, (_MultiAuth, SupportMultiAuth)
+        ) and hasattr(self.gis._con._session.auth, "authentication_modes"):
+            tokens = [
+                auth.token
+                for auth in self.gis._con._session.auth.authentication_modes
+                if hasattr(auth, "token")
+            ]
+            if len(tokens) > 0:
+
+                self._portal_token = str(tokens[0])
+                self._auth_mode = "tokenBased"
+            else:
+                self._auth_mode = "anonymous"
         else:
             self._auth_mode = "anonymous"
 
@@ -1253,10 +1325,23 @@ class MapView(widgets.DOMWidget):
             self._gallery_basemaps = {}
             self._gallery_basemaps = copy_gallery
         elif (
-            "defaultBasemap" in self.gis.org_settings
+            self.gis.org_settings is not None
+            and "defaultBasemap" in self.gis.org_settings
             and self.gis.org_settings["defaultBasemap"]
         ):
             self._gallery_basemaps["default"] = self.gis.org_settings["defaultBasemap"]
+            self._basemap = "default"
+            # Add to text property so default is recorded
+            self._default_webscene_text_property["baseMap"] = self._gallery_basemaps[
+                "default"
+            ]
+            # You need to re-write this dict to trigger the JS side change
+            copy_gallery = dict(self._gallery_basemaps)
+            self._gallery_basemaps = {}
+            self._gallery_basemaps = copy_gallery
+        else:
+            # Enterprise 10.7.1 workflow
+            self._gallery_basemaps["default"] = self.gis.properties["defaultBasemap"]
             self._basemap = "default"
             # Add to text property so default is recorded
             self._default_webscene_text_property["baseMap"] = self._gallery_basemaps[
@@ -1287,7 +1372,6 @@ class MapView(widgets.DOMWidget):
             return is_good_range(conn.code)
 
     def _check_if_webmap(self, item):
-        from arcgis.gis import Item
         from arcgis.mapping import WebMap
 
         if isinstance(item, Item) and (item.type.lower() == "web map"):
@@ -1298,7 +1382,6 @@ class MapView(widgets.DOMWidget):
                 self.extent = item.item.extent
 
     def _check_if_webscene(self, item):
-        from arcgis.gis import Item
 
         if isinstance(item, Item):
             if item.type.lower() == "web scene":
@@ -1425,14 +1508,8 @@ class MapView(widgets.DOMWidget):
         self.webmap.add_layer(item, webmap_options)
 
     def _add_layer_to_widget(self, item, options):
-        from arcgis.features import FeatureSet, Feature, FeatureCollection, FeatureLayer
-        from arcgis.raster import ImageryLayer, Raster, _ImageServerRaster, _ArcpyRaster
-        from arcgis.gis import Layer
-        from arcgis.gis import Item
-        from arcgis._impl.common._mixins import PropertyMap
         from arcgis.mapping import MapImageLayer, VectorTileLayer
         from arcgis.mapping.ogc._base import BaseOGC
-        from pandas import DataFrame
 
         self._update_time_extent_if_applicable(item)
 
@@ -1459,9 +1536,6 @@ class MapView(widgets.DOMWidget):
                 log.warning("No 'layers' in Item: will not be added to map")
         elif isinstance(item, Layer):
             self._add_layer_to_webmap(item, options)
-            # TODO: Expand this to separate out Layer types on Python side
-            # (i.e., do what was done for ImageryLayer for all major Layers)
-            # 'No type' layer just means that we'll figure it out at JS time
             _lyr = _make_jsonable_dict(item._lyr_json)
             if ("type" in _lyr and _lyr["type"] == "MapImageLayer") and (
                 "TilesOnly" in item.properties.capabilities
@@ -1475,13 +1549,13 @@ class MapView(widgets.DOMWidget):
             else:
                 _lyr["options"] = options
             _lyr["_hashFromPython"] = self._get_hash(item)
-            self._add_notype_layer(item, _lyr)
-        elif isinstance(item, DataFrame):
+            self._add_notype_layer(item, _lyr, True)
+        elif isinstance(item, pd.DataFrame):
             if hasattr(item, "spatial"):
                 self.add_layer(item.spatial.to_featureset())
             else:
                 raise Exception(
-                    "Could not add DataFrame to map it is not a spatially enabled DataFrame"
+                    "Could not add DataFrame to map it is not a Spatially Enabled DataFrame"
                 )
         elif isinstance(item, FeatureSet):
             fset_symbol = options["symbol"] if options and "symbol" in options else None
@@ -1516,12 +1590,12 @@ class MapView(widgets.DOMWidget):
             finally:
                 if not added_successful:
                     item["_hashFromPython"] = self._get_hash(item)
-                    self._add_notype_layer(item, item)
+                    self._add_notype_layer(item, item, True)
         elif isinstance(item, BaseOGC):
             self._add_layer_to_webmap(item, options)
             _lyr = _make_jsonable_dict(item._lyr_json)
             _lyr["_hashFromPython"] = self._get_hash(item)
-            self._add_notype_layer(item, _lyr)
+            self._add_notype_layer(item, _lyr, True)
         elif _is_iterable(item):
             # If it's any iterable not previously checked, attempt to infer
             if "layers" in item:
@@ -1533,14 +1607,63 @@ class MapView(widgets.DOMWidget):
         else:
             raise RuntimeError("Cannot infer layer: will not be added to map")
 
-    def _add_notype_layer(self, item, lyr_json):
+    def _add_notype_layer(self, item, lyr_json, new):
         # Add the original item to the hashed layers
-        self._add_to_hashed_layers(item)
+        if new is True:
+            self._add_to_hashed_layers(item)
         # but draw the json representation
+        else:
+            # remove old representation otherwise both will appear on map
+            # applied for update layer
+            layers = list(self._draw_these_notype_layers_on_widget_load)
+            for layer in layers:
+                if layer["_hashFromPython"] == lyr_json["_hashFromPython"]:
+                    layers.remove(layer)
+            self._draw_these_notype_layers_on_widget_load = tuple(layers)
         self._draw_these_notype_layers_on_widget_load += (lyr_json,)
         if self.ready:
             self._add_this_notype_layer = {}
             self._add_this_notype_layer = lyr_json
+
+    def update_layer(self, layer: Union[dict, FeatureLayer]):
+        """
+        To update the layer dictionary for a layer in the map. For example, to update the renderer dictionary for a layer
+        and have it by dynamically changed on the mapview.
+
+        ==================      ====================================================================
+        **Argument**            **Description**
+        ------------------      --------------------------------------------------------------------
+        layer                   Required Feature Layer or Feature Layer dictionary.
+                                The existing mapview layer with updated properties.
+                                In order to get a layer on the mapview, use the ``layers`` method and
+                                assign the output to a value. Make edits on the this value and pass
+                                it in as a dict to update the rendering on the map.
+
+                                .. warning::
+                                    If the itemId of the feature layer is changed, this will not work.
+        ==================      ====================================================================
+
+        .. code-block:: python
+            # Create a mapview and add layer
+            map1 = gis.map("Oregon")
+            map1.add_layer(<fl_to_add>)
+
+            # Get a layer and edit the color
+            fl = map1.layers[0]
+            fl.renderer.symbol.color = [0, 204, 204, 255]
+
+            # Update the layer to see it render on map
+            map1.update_layer(fl)
+
+            # Save with the updates
+            wm_properties= {"title": "Test Update", "tags":["update_layer"], "snippet":"Updated a layer and now save"}
+            map1.save(wm_properties)
+        """
+        # Update the webmap part
+        self.webmap.update_layer(layer)
+
+        # Update the mapview part
+        self._webmap = self.webmap._webmapdict
 
     def remove_layers(self, layers=None):
         """
@@ -1565,7 +1688,6 @@ class MapView(widgets.DOMWidget):
         # Remove everything if the user didn't specify. Then, look up the hash
         # for each layer, remove it from the python side, trigger the removal
         # from the JS side
-        from arcgis.raster import Raster
 
         output_bool = True
         if layers is None:
@@ -1602,11 +1724,6 @@ class MapView(widgets.DOMWidget):
         'layer', or anything, attempt to return a list of of 'layer' types
         that would exist in self.layers
         """
-        from arcgis.features import FeatureSet, Feature, FeatureCollection
-        from arcgis.raster import ImageryLayer, Raster, _ImageServerRaster, _ArcpyRaster
-        from arcgis.gis import Layer
-        from arcgis.gis import Item
-        from arcgis._impl.common._mixins import PropertyMap
         from arcgis.mapping.ogc._base import BaseOGC
 
         output_layers = []
@@ -1628,7 +1745,7 @@ class MapView(widgets.DOMWidget):
                 output_layers.append(layer)
         elif isinstance(arg, FeatureSet):
             fc = FeatureCollection.from_featureset(arg)
-            for layer in fc:
+            for layer in fc["layers"]:
                 output_layers.append(layer)
         elif isinstance(arg, dict):
             output_layers.append(arg)
@@ -1650,7 +1767,7 @@ class MapView(widgets.DOMWidget):
         self._hashed_layers[hash_] = item
 
     def _remove_from_notype_layers(self, layer):
-        layers_to_test = list(self._notype_layers)
+        layers_to_test = list(self.layers)
         for i in range(0, len(layers_to_test)):
             layer_to_test = layers_to_test[i]
             if layer_to_test["_hashFromPython"] == self._get_hash(
@@ -1666,8 +1783,6 @@ class MapView(widgets.DOMWidget):
         if self._is_hashable(item):
             return str(hash(item))
         else:
-            from arcgis.raster import Raster, ImageryLayer
-
             if isinstance(item, dict):
                 return str(hash(frozenset(item)))
             elif is_numpy_array(item):
@@ -1790,7 +1905,7 @@ class MapView(widgets.DOMWidget):
            USAGE EXAMPLE: Save map widget as a new web map item in GIS
            map1 = gis.map("Italy")
            map1.add_layer(Italy_streets_item)
-           map1.basemap = 'dark-gray'
+           map1.basemap = 'dark-gray-vector'
            italy_streets_map = map1.save({'title':'Italy streets',
                                         'snippet':'Arterial road network of Italy',
                                         'tags':'streets, network, roads'})
@@ -1870,9 +1985,6 @@ class MapView(widgets.DOMWidget):
                 index += 1
 
     def _check_for_drawn_layers(self):
-        from arcgis.geometry import Point, Polygon, Polyline, MultiPoint, Geometry
-        from arcgis.features import FeatureSet, Feature, FeatureCollection
-
         for layer in self._readonly_webmap_from_js["layers"]:
             if ("graphics" in layer) and (len(layer["graphics"]) > 0):
                 for graphic in layer["graphics"]:
@@ -1907,8 +2019,6 @@ class MapView(widgets.DOMWidget):
                         )
 
     def _check_if_graphic_already_saved(self, geom):
-        from arcgis.geometry import Geometry
-
         for layer in self.webmap.layers:
             for fset in layer["featureCollection"]["layers"]:
                 for feat in fset["featureSet"]["features"]:
@@ -2203,11 +2313,6 @@ class MapView(widgets.DOMWidget):
             <Map Widget Displayed with the drawn Polygons>
 
         """
-        from arcgis.features import FeatureSet, Feature, FeatureCollection
-        from arcgis.raster import ImageryLayer
-        from arcgis.gis import Layer
-        from arcgis.gis import Item
-        from arcgis._impl.common._mixins import PropertyMap
 
         title = (
             attributes["title"]
@@ -2409,7 +2514,7 @@ class MapView(widgets.DOMWidget):
         """
         In a JupyterLab environment, calling ``toggle_window_view`` will separate
         the drawn map widget to a new window next to the open notebook,
-        allowing you to move the widget it, split it, put it in a new tab, etc.
+        allowing you to move the widget to it, split it, put it in a new tab, etc.
         If the widget is already separated in a new window, calling this
         function will restore the widget to the notebook where it originated
         from.

@@ -1,25 +1,17 @@
 import sys
 
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
+# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import datetime
 import unittest
 from arcgis.gis import GIS, Item
 from arcgis.features import FeatureLayer
 from arcgis.features.find_locations import create_watersheds
-from arcgis.gis import ProfileManager
+from config_tests import setup_profiles, stage_data
 
-profile_list = ProfileManager().list()
-
-if not "ent11" in profile_list:
-    GIS(
-        url="https://gpportal.esri.com/portal/",
-        username="admin",
-        password="esri.agp",
-        profile="ent11",
-    )  # create enterprise 11 connection
-
-
-profiles = ["your_online_profile", "ent11"]
+test_items = ["435fcf6cff1f4f34989e151c1f25d64a"]  # Esri Offices
+profiles = ["online_test", "ent_test", "kube_test"]
+setup_profiles(profiles[0], profiles[1], profiles[2])
+stage_data(test_items)
 
 
 class TestCreateWatersheds(unittest.TestCase):
@@ -31,9 +23,9 @@ class TestCreateWatersheds(unittest.TestCase):
             print("User: ", gis.users.me.username)
             # gather layer
             if gis._is_agol:
-                office_item = gis.content.get("b96b5740372b4b838d621716264bb21d")
+                office_item = gis.content.get("435fcf6cff1f4f34989e151c1f25d64a")
             else:
-                office_item = gis.content.get("999b3776bdae41acb787ae0ce2dfce0e")
+                office_item = gis.content.get("435fcf6cff1f4f34989e151c1f25d64a")
             assert isinstance(office_item, Item)
             office_lyr = office_item.layers[0]
             assert isinstance(office_lyr, FeatureLayer)

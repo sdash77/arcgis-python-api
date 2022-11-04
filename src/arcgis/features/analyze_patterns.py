@@ -88,11 +88,12 @@ def calculate_density(
     -------------------------    ---------------------------------------------------------
     classification_type          Optional string. Determines how density values will be classified into polygons.
                                  Choice list: ['EqualInterval', 'GeometricInterval', 'NaturalBreaks', 'EqualArea', 'StandardDeviation']
-                                    * EqualInterval - Polygons are created such that the range of density values is equal for each area.
-                                    * GeometricInterval - Polygons are based on class intervals that have a geometric series. This method ensures that each class range has approximately the same number of values within each class and that the change between intervals is consistent.
-                                    * NaturalBreaks - Class intervals for polygons are based on natural groupings of the data. Class break values are identified that best group similar values and that maximize the differences between classes.
-                                    * EqualArea - Polygons are created such that the size of each area is equal. For example, if the result has more high density values than low density values, more polygons will be created for high densities.
-                                    * StandardDeviation - Polygons are created based upon the standard deviation of the predicted density values.
+
+                                 * EqualInterval - Polygons are created such that the range of density values is equal for each area.
+                                 * GeometricInterval - Polygons are based on class intervals that have a geometric series. This method ensures that each class range has approximately the same number of values within each class and that the change between intervals is consistent.
+                                 * NaturalBreaks - Class intervals for polygons are based on natural groupings of the data. Class break values are identified that best group similar values and that maximize the differences between classes.
+                                 * EqualArea - Polygons are created such that the size of each area is equal. For example, if the result has more high density values than low density values, more polygons will be created for high densities.
+                                 * StandardDeviation - Polygons are created based upon the standard deviation of the predicted density values.
     -------------------------    ---------------------------------------------------------
     num_classes                  Optional int. This value is used to divide the range of predicted values into distinct classes. The range of values in each class is determined by the classification_type parameter.
     -------------------------    ---------------------------------------------------------
@@ -119,15 +120,18 @@ def calculate_density(
                                                      "outSR": {"wkid": 3857},
                                                      "overwrite": True}
     -------------------------    ---------------------------------------------------------
-    gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                          Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
     -------------------------    ---------------------------------------------------------
     estimate                     Optional Boolean. Is true, the number of credits needed to run the operation will be returned as a float.
     -------------------------    ---------------------------------------------------------
-    future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                       Optional, If True, a future object will be returned and the process
+                                 will not wait for the task to complete.
+                                 The default is False, which means wait for results.
     =========================    =========================================================
 
 
     :return: result_layer : :class:`~arcgis.features.FeatureLayer` if output_name is specified, else :class:`~arcgis.features.FeatureCollection`.
+    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 
@@ -234,7 +238,7 @@ def summarize_center_and_dispersion(
 
                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 11+
 
                                 .. code-block:: python
 
@@ -247,12 +251,14 @@ def summarize_center_and_dispersion(
                                                 "outSR": {"wkid": 3857},
                                                 "overwrite": True}
     --------------------    ---------------------------------------------------------
-    gis                     Optional, the GIS on which this tool runs. If not
+    gis                     Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not
                             specified, the active GIS is used.
     --------------------    ---------------------------------------------------------
     estimate                Optional Boolean. If True, the number of credits to run the operation will be returned.
     --------------------    ---------------------------------------------------------
-    future                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                  Optional, If True, a future object will be returned and the process
+                            will not wait for the task to complete.
+                            The default is False, which means wait for results.
     ====================    =========================================================
 
     :return: Python dictionary with the following keys:
@@ -261,6 +267,8 @@ def summarize_center_and_dispersion(
         "median_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
         "ellipse_feature_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
         "process_info" : list of messages
+
+        If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     """
 
@@ -361,7 +369,7 @@ def find_point_clusters(
 
                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 11+
 
                                 .. code-block:: python
 
@@ -374,19 +382,22 @@ def find_point_clusters(
                                                 "outSR": {"wkid": 3857},
                                                 "overwrite": True}
     --------------------    ---------------------------------------------------------
-    gis                     Optional, the GIS on which this tool runs. If not
+    gis                     Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not
                             specified, the active GIS is used.
     --------------------    ---------------------------------------------------------
     estimate                Optional Boolean. If True, the number of credits to run the operation will be returned.
     --------------------    ---------------------------------------------------------
-    future                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                  Optional, If True, a future object will be returned and the process
+                            will not wait for the task to complete.
+                            The default is False, which means wait for results.
     ====================    =========================================================
 
     :return: :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else :class:`~arcgis.features.FeatureCollection`.
+    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 
-        USAGE EXAMPLE: To find patterns of taffic accidents purely on spatial location.
+        USAGE EXAMPLE: To find patterns of traffic accidents purely on spatial location.
         clusters= find_point_clusters(collision,
                                       min_features_cluster=200,
                                       search_distance=2,
@@ -478,10 +489,10 @@ def find_hot_spots(
     -------------------------------------------------------------------     ---------------------------------------------------------
     analysis_field                                                          Optional string. The numeric field that will be analyzed. The field you select might represent:
 
-                                                                                + counts (such as the number of traffic accidents)
-                                                                                + rates (such as the number of crimes per square mile)
-                                                                                + averages (such as the mean math test score)
-                                                                                + indices (such as a customer satisfaction score)
+                                                                            + counts (such as the number of traffic accidents)
+                                                                            + rates (such as the number of crimes per square mile)
+                                                                            + averages (such as the mean math test score)
+                                                                            + indices (such as a customer satisfaction score)
 
                                                                             If an ``analysis_field`` is not supplied, hot spot results are based on point densities only.
     -------------------------------------------------------------------     ---------------------------------------------------------
@@ -509,7 +520,7 @@ def find_hot_spots(
 
                                                                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+                                                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online and ArcGIS Enterprise 11.1+.
 
                                                                                 .. code-block:: python
 
@@ -522,14 +533,14 @@ def find_hot_spots(
                                                                                                 "outSR": {"wkid": 3857},
                                                                                                 "overwrite": True}
     -------------------------------------------------------------------     ---------------------------------------------------------
-    gis                                                                     Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+    gis                                                                     Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
     -------------------------------------------------------------------     ---------------------------------------------------------
     estimate                                                                Optional Boolean. Is true, the number of credits needed to run the operation will be returned as a float.
     -------------------------------------------------------------------     ---------------------------------------------------------
     shape_type                                                              Optional string. The shape of the polygon mesh the input features will be aggregated into.
 
-                                                                             * ``Fishnet``-The input features will be aggregated into a grid of square (fishnet) cells.
-                                                                             * ``Hexagon``-The input features will be aggregated into a grid of hexagonal cells.
+                                                                            * ``Fishnet``-The input features will be aggregated into a grid of square (fishnet) cells.
+                                                                            * ``Hexagon``-The input features will be aggregated into a grid of hexagonal cells.
     -------------------------------------------------------------------     ---------------------------------------------------------
     cell_size                                                               Optional float. The size of the grid cells used to aggregate your features.
                                                                             When aggregating into a hexagon grid, this distance is used as the height to construct the hexagon polygons.
@@ -543,10 +554,13 @@ def find_hot_spots(
     -------------------------------------------------------------------     ---------------------------------------------------------
     distance_band_unit                                                      Optional string. The units of the ``distance_band`` value. You must provide a value if ``distance_band`` has been set.
     -------------------------------------------------------------------     ---------------------------------------------------------
-    future                                                                  Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                                                                  Optional, If True, a future object will be returned and the process
+                                                                            will not wait for the task to complete.
+                                                                            The default is False, which means wait for results.
     ===================================================================     =========================================================
 
     :return: :class:`~arcgis.features.FeatureLayer` if output_name is specified, else a dictionary with a :class:`~arcgis.features.FeatureCollection` and processing messages.
+    If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 
@@ -555,6 +569,7 @@ def find_hot_spots(
                                              bounding_polygon_layer=boundry_lyr,
                                              output_name='collision_hexagon_hot_spots',
                                              shape_type='hexagon')
+
     """
 
     distance_band_units = distance_band_unit
@@ -673,7 +688,7 @@ def find_outliers(
 
                                                                         Choice list: ['Speed', 'Balance', 'Presision']
 
-                                                                        * ``Speed`` - implements 199 permutations and results in p-values with a precision of 0.01.
+                                                                        * ``Speed`` - implements 199 permutations and results in p-values with a precision of 0.005.
                                                                         * ``Balance`` - implements 499 permutations and results in p-values with a precision of 0.002.
                                                                         * ``Precision`` - implements 999 permutations and results in p-values with a precision of 0.001.
     ------------------------------------------------------------------  ---------------------------------------------------------------
@@ -705,7 +720,7 @@ def find_outliers(
 
                                                                         - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                                         - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                                                        - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+                                                                        - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online and ArcGIS Enterprise 11.1+.
 
                                                                             .. code-block:: python
 
@@ -720,7 +735,9 @@ def find_outliers(
     ------------------------------------------------------------------  ---------------------------------------------------------------
     estimate                                                            Optional boolean. Returns the number of credit for the operation.
     ------------------------------------------------------------------  ---------------------------------------------------------------
-    future                                                              Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
+    future                                                              Optional, If True, a future object will be returned and the process
+                                                                        will not wait for the task to complete.
+                                                                        The default is False, which means wait for results.
     ==================================================================  ===============================================================
 
     :return:
@@ -729,6 +746,8 @@ def find_outliers(
         "find_outliers_result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
         "process_info" : list of messages
+
+        If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 
@@ -857,80 +876,81 @@ def interpolate_points(
     * nbrMin - 15
     * nbrMax - 15
 
-    ===========================  ===========================================================================================
-    **Argument**                 **Description**
-    ---------------------------  -------------------------------------------------------------------------------------------
-    input_layer                  Required layer. The point layer whose features will be interpolated. See :ref:`Feature Input<FeatureInput>`.
-    ---------------------------  -------------------------------------------------------------------------------------------
-    field                        Required string. Name of the numeric field containing the values you wish to interpolate.
-    ---------------------------  -------------------------------------------------------------------------------------------
-    interpolate_option           Optional integer. Integer value declaring your preference for speed versus accuracy, from 1 (fastest) to 9 (most accurate).
-                                 More accurate predictions take longer to calculate.
 
-                                 Choice list: [1, 5, 9].
+    ===========================    ===========================================================================================
+    **Argument**                   **Description**
+    ---------------------------    -------------------------------------------------------------------------------------------
+    input_layer                    Required layer. The point layer whose features will be interpolated. See :ref:`Feature Input<FeatureInput>`.
+    ---------------------------    -------------------------------------------------------------------------------------------
+    field                          Required string. Name of the numeric field containing the values you wish to interpolate.
+    ---------------------------    -------------------------------------------------------------------------------------------
+    interpolate_option             Optional integer. Integer value declaring your preference for speed versus accuracy, from 1 (fastest) to 9 (most accurate).
+                                   More accurate predictions take longer to calculate.
 
-                                 The default is 5.
-    ---------------------------  -------------------------------------------------------------------------------------------
-    output_prediction_error      Optional boolean. If True, a polygon layer of standard errors for the interpolation
-                                 predictions will be returned in the ``prediction_error`` output parameter.
+                                   Choice list: [1, 5, 9].
 
-                                 Standard errors are useful because they provide information about the reliability of the predicted values.
-                                 A simple rule of thumb is that the true value will fall within two standard errors of the predicted
-                                 value 95 percent of the time. For example, suppose a new location gets a predicted value of 50 with a
-                                 standard error of 5. This means that this task's best guess is that the true value at that location is 50,
-                                 but it reasonably could be as low as 40 or as high as 60. To calculate this range of reasonable values,
-                                 multiply the standard error by 2, add this value to the predicted value to get the upper end of the range,
-                                 and subtract it from the predicted value to get the lower end of the range.
-    ---------------------------  -------------------------------------------------------------------------------------------
-    classification_type          Optional string. Determines how predicted values will be classified into areas.
+                                   The default is 5.
+    ---------------------------    -------------------------------------------------------------------------------------------
+    output_prediction_error        Optional boolean. If True, a polygon layer of standard errors for the interpolation
+                                   predictions will be returned in the ``prediction_error`` output parameter.
 
-                                 * ``EqualArea`` - Polygons are created such that the number of data values in each area is equal.
+                                   Standard errors are useful because they provide information about the reliability of the predicted values.
+                                   A simple rule of thumb is that the true value will fall within two standard errors of the predicted
+                                   value 95 percent of the time. For example, suppose a new location gets a predicted value of 50 with a
+                                   standard error of 5. This means that this task's best guess is that the true value at that location is 50,
+                                   but it reasonably could be as low as 40 or as high as 60. To calculate this range of reasonable values,
+                                   multiply the standard error by 2, add this value to the predicted value to get the upper end of the range,
+                                   and subtract it from the predicted value to get the lower end of the range.
+    ---------------------------    -------------------------------------------------------------------------------------------
+    classification_type            Optional string. Determines how predicted values will be classified into areas.
+
+                                   * ``EqualArea`` - Polygons are created such that the number of data values in each area is equal.
                                    For example, if the data has more large values than small values, more areas will be created for large values.
-                                 * ``EqualInterval`` - Polygons are created such that the range of predicted values is equal for each area.
-                                 * ``GeometricInterval`` - Polygons are based on class intervals that have a geometrical series.
-                                   This method ensures that each class range has approximately the same number of values within
-                                   each class and that the change between intervals is consistent.
-                                 * ``Manual`` - You to define your own range of values for areas. These values will be entered in
-                                   the ``class_breaks`` parameter below.
 
-                                 Choice list: ['EqualArea', 'EqualInterval', 'GeometricInterval', 'Manual']
+                                   * ``EqualInterval`` - Polygons are created such that the range of predicted values is equal for each area.
 
-                                 The default is 'GeometricInterval'.
-    ---------------------------  -------------------------------------------------------------------------------------------
-    num_classes                  Optional integer. This value is used to divide the range of interpolated values into distinct classes.
-                                 The range of values in each class is determined by the ``classification_type`` parameter.
-                                 Each class defines the boundaries of the result polygons.
+                                   * ``GeometricInterval`` - Polygons are based on class intervals that have a geometrical series. This method ensures that each class range has approximately the same number of values within each class and that the change between intervals is consistent.
 
-                                 The default is 10. The maximum value is 32.
-    ---------------------------  -------------------------------------------------------------------------------------------
-    class_breaks                 Optional list of floats. If ``classification_type`` is Manual, supply desired class break values separated by spaces.
-                                 These values define the upper limit of each class, so the number of classes will equal the number of entered values.
-                                 Areas will not be created for any locations with predicted values above the largest entered break value.
-                                 You must enter at least two values and no more than 32.
-    ---------------------------  -------------------------------------------------------------------------------------------
-    bounding_polygon_layer       Optional layer. A layer specifying the polygon(s) where you want values to be interpolated.  For example,
-                                 if you are interpolating densities of fish within a lake, you can use the boundary of the lake in this
-                                 parameter and the output will only contain polygons within the boundary of the lake. See :ref:`Feature Input<FeatureInput>`.
-    ---------------------------  -------------------------------------------------------------------------------------------
-    predict_at_point_layer       Optional layer. An optional layer specifying point locations to calculate prediction values.
-                                 This allows you to make predictions at specific locations of interest. For example, if the ``input_layer`` represents
-                                 measurements of pollution levels, you can use this parameter to predict the pollution levels of locations with large
-                                 at-risk populations, such as schools or hospitals. You can then use this information to give recommendations to health
-                                 officials in those locations.
+                                   * ``Manual`` - You to define your own range of values for areas. These values will be entered in the ``class_breaks`` parameter below.
 
-                                 If supplied, the output ``predicted_point_layer`` will contain predictions at the specified locations. See :ref:`Feature Input<FeatureInput>`.
-    ---------------------------  -------------------------------------------------------------------------------------------
-    output_name                  Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
-                                 feature layer will cause the new layer to be appended to the Feature Service.
-                                 If overwrite is True in context, new layer will overwrite existing layer.
-                                 If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
-    -------------------------    ---------------------------------------------------------
-    context                      Optional dict. Additional settings such as processing extent and output spatial reference.
-                                 For interpolate_points, there are three settings.
+                                   Choice list: ['EqualArea', 'EqualInterval', 'GeometricInterval', 'Manual']
 
-                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
-                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                 - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
+                                   The default is 'GeometricInterval'.
+    ---------------------------    -------------------------------------------------------------------------------------------
+    num_classes                    Optional integer. This value is used to divide the range of interpolated values into distinct classes.
+                                   The range of values in each class is determined by the ``classification_type`` parameter.
+                                   Each class defines the boundaries of the result polygons.
+
+                                   The default is 10. The maximum value is 32.
+    ---------------------------    -------------------------------------------------------------------------------------------
+    class_breaks                   Optional list of floats. If ``classification_type`` is Manual, supply desired class break values separated by spaces.
+                                   These values define the upper limit of each class, so the number of classes will equal the number of entered values.
+                                   Areas will not be created for any locations with predicted values above the largest entered break value.
+                                   You must enter at least two values and no more than 32.
+    ---------------------------    -------------------------------------------------------------------------------------------
+    bounding_polygon_layer         Optional layer. A layer specifying the polygon(s) where you want values to be interpolated.  For example,
+                                   if you are interpolating densities of fish within a lake, you can use the boundary of the lake in this
+                                   parameter and the output will only contain polygons within the boundary of the lake. See :ref:`Feature Input<FeatureInput>`.
+    ---------------------------    -------------------------------------------------------------------------------------------
+    predict_at_point_layer         Optional layer. An optional layer specifying point locations to calculate prediction values.
+                                   This allows you to make predictions at specific locations of interest. For example, if the ``input_layer`` represents
+                                   measurements of pollution levels, you can use this parameter to predict the pollution levels of locations with large
+                                   at-risk populations, such as schools or hospitals. You can then use this information to give recommendations to health
+                                   officials in those locations.
+
+                                   If supplied, the output ``predicted_point_layer`` will contain predictions at the specified locations. See :ref:`Feature Input<FeatureInput>`.
+    ---------------------------    -------------------------------------------------------------------------------------------
+    output_name                    Optional string or :class:`~arcgis.features.FeatureLayer`. Existing
+                                   feature layer will cause the new layer to be appended to the Feature Service.
+                                   If overwrite is True in context, new layer will overwrite existing layer.
+                                   If output_name not indicated then new :class:`~arcgis.features.FeatureCollection` created.
+    -------------------------      -------------------------------------------------------------------------------------------
+    context                        Optional dict. Additional settings such as processing extent and output spatial reference.
+                                   For interpolate_points, there are three settings.
+
+                                   - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
+                                   - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
+                                   - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online or Enterprise 10.9.1+
 
                                      .. code-block:: python
 
@@ -942,21 +962,27 @@ def interpolate_points(
                                                              "spatialReference":{"wkid":102100,"latestWkid":3857}},
                                                      "outSR": {"wkid": 3857},
                                                      "overwrite": True}
-    ---------------------------  -------------------------------------------------------------------------------------------
-    gis                          Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
-    ---------------------------  -------------------------------------------------------------------------------------------
-    estimate                     Optional boolean. If True, the number of credits to run the operation will be returned.
-    ---------------------------  -------------------------------------------------------------------------------------------
-    future                       Optional boolean. If True, the result will be a GPJob object and results will be returned asynchronously.
-    ===========================  ===========================================================================================
+    ---------------------------    -------------------------------------------------------------------------------------------
+    gis                            Optional, the :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
+    ---------------------------    -------------------------------------------------------------------------------------------
+    estimate                       Optional boolean. If True, the number of credits to run the operation will be returned.
+    ---------------------------    -------------------------------------------------------------------------------------------
+    future                         Optional, If True, a future object will be returned and the process
+                                   will not wait for the task to complete.
+                                   The default is False, which means wait for results.
+    ===========================    ===========================================================================================
 
-    :return: result_layer : :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else Python dictionary with the following keys:
+
+    :return:
+        result_layer : :class:`~arcgis.features.FeatureLayer` if ``output_name`` is specified, else Python dictionary with the following keys:
 
         "result_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
 
         "prediction_error" : layer (:class:`~arcgis.features.FeatureCollection`)
 
         "predicted_point_layer" : layer (:class:`~arcgis.features.FeatureCollection`)
+
+        If ``future = True``, then the result is a :class:`~concurrent.futures.Future` object. Call ``result()`` to get the response.
 
     .. code-block:: python
 

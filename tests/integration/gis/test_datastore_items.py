@@ -5,7 +5,6 @@ import sys
 import json
 import uuid
 import unittest
-import pytest
 
 import arcgis
 from arcgis.gis import GIS

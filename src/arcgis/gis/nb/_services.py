@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import os
 import json
 from arcgis.gis import Item
@@ -27,7 +29,7 @@ class NBService:
         """
         Deletes the notebook service
 
-        :returns: bool
+        :returns: Boolean
         """
         url = f"{self._url}/delete"
         params = {"f": "json"}
@@ -37,7 +39,9 @@ class NBService:
 
 class NBServicesManager:
     """
-    The `NBServicesManager` is used to manage the container of services published on the notebook server.
+    The `NBServicesManager` is used to manage the container of services published on the notebook server. An object of this
+    class can be created using :meth:`~arcgis.gis.nb.NotebookServer.services` method of the
+    :class:`~arcgis.gis.nb.NotebookServer` class
     """
 
     _properties = None
@@ -67,7 +71,7 @@ class NBServicesManager:
         information for a specific service type can be accessed by
         appending the type name (GPServer, for example) to this URL.
 
-        :returns: dict
+        :returns: Dict
         """
         url = f"{self._url}/types"
         params = {"f": "json"}
@@ -76,7 +80,7 @@ class NBServicesManager:
     @property
     def services(self) -> tuple[NBService]:
         """
-        Returns a tuple of all `NBServices` created by the Notebook Server.
+        Returns a tuple of all :class:`~arcgis.gis.nb._services.NBService` created by the Notebook Server.
 
         :returns: tuple
 
@@ -113,7 +117,9 @@ class NBServicesManager:
         description            Required string. The description of the tool.
         ==================     ====================================================================
 
-        :returns: `Item` of the tool.
+        :return:
+            :class:`~arcgis.gis.Item` of the tool.
+
         """
 
         assert isinstance(item, Item) and item.type.lower() == "notebook"

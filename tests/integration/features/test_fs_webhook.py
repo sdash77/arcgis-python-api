@@ -1,11 +1,16 @@
-import sys, os
+import sys, os, uuid
 
-# sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_issue_4086\src")
+sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8791\src")
 import unittest
 
 from arcgis.gis import GIS
 from arcgis.features import FeatureLayerCollection
-from arcgis.features.managers import WebHook, WebHookServiceManager
+from arcgis.features.managers import (
+    WebHook,
+    WebHookServiceManager,
+    WebHookEvents,
+    WebHookScheduleInfo,
+)
 
 hook_end_point_url = "https://en1dx5cd33emv.x.pipedream.net/"
 SKIPIF = False
@@ -75,20 +80,42 @@ class TestFeatureServiceWebHook(unittest.TestCase):
 
         assert isinstance(whm, WebHookServiceManager)
         wh = whm.create(
-            "hook1test", "https://en1dx5cd33emv.x.pipedream.net", active=True
+            f"hook{uuid.uuid4().hex[:5]}test",
+            "https://en1dx5cd33emv.x.pipedream.net",
+            active=True,
         )
         assert wh.properties
         res = wh.edit(
             name=None,
-            change_types="FeatureCreated",
+            change_types="FeaturesCreated",
             hook_url=None,
             signature_key=None,
             active=None,
             schedule_info=None,
             payload_format=None,
         )
+        assert res
+        res2 = wh.edit(
+            name=None,
+            change_types=[WebHookEvents.FEATURESEDITED, WebHookEvents.FEATURESUPDATED],
+            hook_url=None,
+            signature_key=None,
+            active=None,
+            schedule_info=None,
+            payload_format=None,
+        )
+        assert res2
+        import datetime as _dt
+
+        res3 = wh.edit(
+            schedule_info=WebHookScheduleInfo(
+                name="whm test", start_at=_dt.datetime.now()
+            ),
+        )
+        assert res3
         assert wh.properties
         assert wh.delete()
+        assert len(whm.list) == 0
         pitem.delete()
         item.delete()
 
@@ -126,7 +153,9 @@ class TestFeatureServiceWebHook(unittest.TestCase):
         assert isinstance(whm, WebHookServiceManager)
 
         wh = whm.create(
-            "hook1test", "https://en1dx5cd33emv.x.pipedream.net", active=True
+            f"hook{uuid.uuid4().hex[:5]}test",
+            "https://en1dx5cd33emv.x.pipedream.net",
+            active=True,
         )
         assert wh.properties
         hooks = whm.list

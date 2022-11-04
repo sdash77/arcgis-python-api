@@ -1,6 +1,20 @@
 """
 Holds Delegate and Accessor Logic
 """
+from __future__ import annotations
+import logging
+import pandas as pd
+from collections.abc import Iterable
+
+from ._internals import register_dataframe_accessor, register_series_accessor
+from ._array import GeoType
+from ._io.fileops import (
+    to_featureclass,
+    from_featureclass,
+    _sanitize_column_names,
+    read_feather,
+)
+
 from arcgis.auth.tools import LazyLoader
 
 os = LazyLoader("os")
@@ -11,22 +25,12 @@ datetime = LazyLoader("datetime")
 np = LazyLoader("numpy")
 tempfile = LazyLoader("tempfile")
 warnings = LazyLoader("warnings")
-import logging
-import pandas as pd
-from collections.abc import Iterable
-from ._internals import register_dataframe_accessor, register_series_accessor
-from ._array import GeoType
-from ._io.fileops import (
-    to_featureclass,
-    from_featureclass,
-    _sanitize_column_names,
-    read_feather,
-)
-
+features = LazyLoader("arcgis.features")
+_gis = LazyLoader("arcgis.gis")
 _geometry = LazyLoader("arcgis.geometry")
 _mixins = LazyLoader("arcgis._impl.common._mixins")
 _isd = LazyLoader("arcgis._impl.common._isd")
-
+_pa = LazyLoader("pyarrow")
 
 _LOGGER = logging.getLogger(__name__)
 ############################################################################
@@ -181,7 +185,9 @@ class GeoSeriesAccessor:
             A Series of strings
         """
         return pd.Series(
-            self._data.hull_rectangle, name="hull_rectangle", index=self._index
+            self._data.hull_rectangle,
+            name="hull_rectangle",
+            index=self._index,
         )
 
     # ----------------------------------------------------------------------
@@ -329,7 +335,9 @@ class GeoSeriesAccessor:
             A Series of :class:`~arcgis.geometry.SpatialReference` objects.
         """
         return pd.Series(
-            self._data.spatial_reference, name="spatial_reference", index=self._index
+            self._data.spatial_reference,
+            name="spatial_reference",
+            index=self._index,
         )
 
     # ----------------------------------------------------------------------
@@ -445,7 +453,9 @@ class GeoSeriesAccessor:
 
         """
         return pd.Series(
-            self._data.clip(**{"envelope": envelope}), index=self._index, name="clip"
+            self._data.clip(**{"envelope": envelope}),
+            index=self._index,
+            name="clip",
         )
 
     # ----------------------------------------------------------------------
@@ -529,7 +539,9 @@ class GeoSeriesAccessor:
 
         """
         return pd.Series(
-            self._data.cut(**{"cutter": cutter}), index=self._index, name="cut"
+            self._data.cut(**{"cutter": cutter}),
+            index=self._index,
+            name="cut",
         )
 
     # ----------------------------------------------------------------------
@@ -563,7 +575,11 @@ class GeoSeriesAccessor:
         """
         return pd.Series(
             self._data.densify(
-                **{"method": method, "distance": distance, "deviation": deviation}
+                **{
+                    "method": method,
+                    "distance": distance,
+                    "deviation": deviation,
+                }
             ),
             index=self._index,
             name="densify",
@@ -785,7 +801,10 @@ class GeoSeriesAccessor:
         """
         return pd.Series(
             self._data.intersect(
-                **{"second_geometry": second_geometry, "dimension": dimension}
+                **{
+                    "second_geometry": second_geometry,
+                    "dimension": dimension,
+                }
             ),
             name="intersect",
             index=self._index,
@@ -811,7 +830,10 @@ class GeoSeriesAccessor:
 
         """
         res = self._data.measure_on_line(
-            **{"second_geometry": second_geometry, "as_percentage": as_percentage}
+            **{
+                "second_geometry": second_geometry,
+                "as_percentage": as_percentage,
+            }
         )
         return pd.Series(res, index=self._index, name="measure_on_line")
 
@@ -948,7 +970,10 @@ class GeoSeriesAccessor:
 
         """
         res = self._data.query_point_and_distance(
-            **{"second_geometry": second_geometry, "use_percentage": use_percentage}
+            **{
+                "second_geometry": second_geometry,
+                "use_percentage": use_percentage,
+            }
         )
         return pd.Series(res, index=self._index, name="query_point_and_distance")
 
@@ -1330,6 +1355,61 @@ class GeoAccessor(object):
                 ).format(view_box, width, height, transform, svg)
         return
 
+    # ----------------------------------------------------------------------
+    @staticmethod
+    def from_parquet(path: str, columns: list = None, **kwargs) -> pd.DataFrame:
+        """
+        Load a Parquet object from the file path, returning a Spatially Enabled DataFrame.
+
+        You can read a subset of columns in the file using the ``columns`` parameter.
+        However, the structure of the returned Spatially Enabled DataFrame will depend on which
+        columns you read:
+
+        * if no geometry columns are read, this will raise a ``ValueError`` - you
+          should use the pandas `read_parquet` method instead.
+        * if the primary geometry column saved to this file is not included in
+          columns, the first available geometry column will be set as the geometry
+          column of the returned Spatially Enabled DataFrame.
+
+        Requires 'pyarrow'.
+
+        .. versionadded:: arcgis 1.9
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        path                   Required String. path object
+        ------------------     --------------------------------------------------------------------
+        columns                Optional List[str]. The defaulti s `None`. If not None, only these
+                               columns will be read from the file.  If the primary geometry column
+                               is not included, the first secondary geometry read from the file will
+                               be set as the geometry column of the returned Spatially Enabled
+                               DataFrame.  If no geometry columns are present, a ``ValueError``
+                               will be raised.
+        ------------------     --------------------------------------------------------------------
+        **kwargs               Optional dict. Any additional kwargs that can be given to the
+                               `pyarrow.parquet.read_table` method.
+        ==================     ====================================================================
+
+
+
+        :returns: Spatially Enabled DataFrame
+
+        Examples
+        --------
+        >>> df = pd.DataFrame.spatial.read_parquet("data.parquet")  # doctest: +SKIP
+
+        Specifying columns to read:
+
+        >>> df = pd.DataFrame.spatial.read_parquet(
+        ...     "data.parquet",
+        ...     columns=["SHAPE", "pop_est"]
+        ... )  # doctest: +SKIP
+        """
+        from ._io._arrow import _read_parquet
+
+        return _read_parquet(path=path, columns=columns, **kwargs)
+
     @staticmethod
     def from_feather(path, spatial_column="SHAPE", columns=None, use_threads=True):
         """
@@ -1500,7 +1580,12 @@ class GeoAccessor(object):
 
     # ----------------------------------------------------------------------
     def join(
-        self, right_df, how="inner", op="intersects", left_tag="left", right_tag="right"
+        self,
+        right_df,
+        how="inner",
+        op="intersects",
+        left_tag="left",
+        right_tag="right",
     ):
         """
         The ``join`` method joins the current DataFrame to another Spatially-Enabled DataFrame based
@@ -1550,7 +1635,15 @@ class GeoAccessor(object):
             raise ValueError(
                 "`how` is an invalid inputs of %s, but should be %s" % (op, allowed_ops)
             )
-        if self.sr != right_df.spatial.sr:
+        same_sr = False
+        if self.sr == right_df.spatial.sr:
+            same_sr = True
+        else:
+            # check for cases where there is latestWkid by iterating through values of sr
+            for value in self.sr.values():
+                if value in right_df.spatial.sr.values():
+                    same_sr = True
+        if same_sr is False:
             raise Exception("Difference Spatial References, aborting operation")
         index_left = "index_{}".format(left_tag)
         index_right = "index_{}".format(right_tag)
@@ -1632,7 +1725,10 @@ class GeoAccessor(object):
             # within implemented as the inverse of contains; swap names
             left_df, right_df = right_df, left_df
             result = result.rename(
-                columns={"_key_left": "_key_right", "_key_right": "_key_left"}
+                columns={
+                    "_key_left": "_key_right",
+                    "_key_right": "_key_left",
+                }
             )
 
         if how == "inner":
@@ -1663,7 +1759,10 @@ class GeoAccessor(object):
                 left_df.drop(left_df.spatial._name, axis=1)
                 .merge(
                     result.merge(
-                        right_df, left_on="_key_right", right_index=True, how="right"
+                        right_df,
+                        left_on="_key_right",
+                        right_index=True,
+                        how="right",
                     ),
                     left_index=True,
                     right_on="_key_left",
@@ -1694,12 +1793,21 @@ class GeoAccessor(object):
         ======================  =========================================================
         **Explicit Argument**   **Description**
         ----------------------  ---------------------------------------------------------
-        map_widget              optional ``WebMap`` object. This is the map to display the
-                                data on.
+        map_widget              optional ``WebMap`` object. This is the map to display
+                                the data on.
         ----------------------  ---------------------------------------------------------
-        palette                 optional string/dict.  Color mapping.  For simple renderer,
-                                just provide a string.  For more robust renderers like
-                                unique renderer, a dictionary can be given.
+        palette                 optional string/dict. Color mapping. Can also be listed
+                                as 'colors' or 'cmap'. For a simple renderer, just
+                                provide the string name of a colormap or a RGB + alpha
+                                int array. For a unique renderer, a list of colormaps can
+                                be provided. For heatmaps, a list of 3+ specific
+                                colorstops can be provided in the form of an array of RGB
+                                + alpha values or a list of colormaps, or the name of a
+                                single colormap can be provided.
+
+                                Accepts palettes exported from colorbrewer or imported
+                                from palettable as well. To get a list of built-in
+                                palettes, use the **display_colormaps** method.
         ----------------------  ---------------------------------------------------------
         renderer_type           optional string.  Determines the type of renderer to use
                                 for the provided dataset. The default is 's' which is for
@@ -1717,8 +1825,8 @@ class GeoAccessor(object):
                                         density or weighted values.
         ----------------------  ---------------------------------------------------------
         symbol_type             optional string. This is the type of symbol the user
-                                needs to create.  Valid inputs are: simple, picture, text,
-                                or carto.  The default is simple.
+                                needs to create.  Valid inputs are: simple, picture,
+                                text, or carto.  The default is simple.
         ----------------------  ---------------------------------------------------------
         symbol_type             optional string. This is the symbology used by the
                                 geometry.  For example 's' for a Line geometry is a solid
@@ -1763,21 +1871,16 @@ class GeoAccessor(object):
         col                     optional string/list. Field or fields used for heatmap,
                                 class breaks, or unique renderers.
         ----------------------  ---------------------------------------------------------
-        palette                optional string. The color map to draw from in order to
-                                visualize the data.  The default palette is 'jet'. To
-                                get a visual representation of the allowed color maps,
-                                use the **display_colormaps** method.
-        ----------------------  ---------------------------------------------------------
         alpha                   optional float.  This is a value between 0 and 1 with 1
-                                being the default value.  The alpha sets the transparancy
+                                being the default value.  The alpha sets the transparency
                                 of the renderer when applicable.
         ======================  =========================================================
 
-        ** Render Syntax **
+        **Render Syntax**
 
         The render syntax allows for users to fully customize symbolizing the data.
 
-        ** Simple Renderer**
+        **Simple Renderer**
 
         A simple renderer is a renderer that uses one symbol only.
 
@@ -1873,6 +1976,11 @@ class GeoAccessor(object):
         ----------------------  ---------------------------------------------------------
         ratio                   A number between 0-1. Describes what portion along the
                                 gradient the colorStop is added.
+        ----------------------  ---------------------------------------------------------
+        show_none               Boolean. Determines the alpha value of the base color for
+                                the heatmap. Setting this to ``True`` covers an entire
+                                map with the base color of the heatmap. Default is
+                                ``False``.
         ======================  =========================================================
 
         **Unique Renderer**
@@ -2349,8 +2457,137 @@ class GeoAccessor(object):
             return map_widget
 
     # ----------------------------------------------------------------------
+    def insert_layer(
+        self,
+        feature_service: _gis.Item | str,
+        gis=None,
+        sanitize_columns: bool = False,
+        service_name: str = None,
+    ):
+        """
+                This method creates a feature layer from the spatially enabled dataframe and adds (inserts)
+                it to an existing feature service.
+
+                ============================    ====================================================================
+                **Argument**                    **Description**
+        l        ---------------------------    --------------------------------------------------------------------
+                feature_service                 Required Item or Feature Service Id. Depicts the feature service to
+                                                which the layer will be added.
+                ----------------------------    --------------------------------------------------------------------
+                gis                             Optional GIS. The GIS connection object
+                ----------------------------    --------------------------------------------------------------------
+                sanitize_columns                Optional Boolean. If True, column names will be converted to string,
+                                                invalid characters removed and other checks will be performed. The
+                                                default is False.
+                ----------------------------    --------------------------------------------------------------------
+                service_name                    Optional String. The name for the service that will be added to the Item.
+                                                Name cannot be used already and cannot contain special characters, spaces,
+                                                or a numerical value as the first letter.
+                ============================    ====================================================================
+        """
+        from arcgis import env
+        import copy
+
+        if gis is None:
+            gis = env.active_gis
+            if gis is None:
+                raise ValueError("GIS object must be provided")
+        content = gis.content
+        origin_columns = self._data.columns.tolist()
+        origin_index = copy.deepcopy(self._data.index)
+        if isinstance(feature_service, _gis.Item):
+            fs_id = feature_service.id
+        else:
+            fs_id = feature_service
+
+        if service_name:
+            # sanitize name
+            service_name = service_name.replace(" ", "")
+            if service_name[0].isnumeric():
+                raise ValueError(
+                    "First character of service_name cannot be an integer."
+                )
+            if (
+                content.is_service_name_available(service_name, "featureService")
+                is False
+            ):
+                raise ValueError(
+                    "This service name is unavailable for Feature Service."
+                )
+        result = content.import_data(
+            self._data,
+            sanitize_columns=sanitize_columns,
+            service_name=service_name,
+            append=True,
+            service={"featureServiceId": fs_id, "layer": None},
+        )
+        self._data.columns = origin_columns
+        self._data.index = origin_index
+        return result
+
+    # ----------------------------------------------------------------------
+    def to_arrow(self, index: bool = None) -> "pyarrow.Table":
+        """
+        Converts a Pandas DatFrame to an Arrow Table
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        index                  Optional Bool. If ``True``, always include the dataframe's
+                               index(es) as columns in the file output.
+                               If ``False``, the index(es) will not be written to the file.
+                               If ``None``, the index(ex) will be included as columns in the file
+                               output except `RangeIndex` which is stored as metadata only.
+        ==================     ====================================================================
+
+        :returns: pyarrow.Table
+
+        """
+        from ._io import _arrow
+
+        _arrow._validate_dataframe(self._data)
+        df = self._data
+        # create geo metadata before altering incoming data frame
+        geo_metadata = _arrow._create_metadata(df)
+        table = _pa.Table.from_pandas(df, preserve_index=index)
+
+        # Store geopandas specific file-level metadata
+        # This must be done AFTER creating the table or
+        # it is not persisted
+        metadata = table.schema.metadata
+        metadata.update({b"geo": _arrow._encode_metadata(geo_metadata)})
+        fin = table.replace_schema_metadata(metadata)
+
+        return fin
+
+    # ----------------------------------------------------------------------
+    @staticmethod
+    def from_arrow(table: "pyarrow.Table") -> pd.DataFrame:
+        """
+        Converts a Pandas DatFrame to an Arrow Table
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        table                  Required pyarrow.Table. The Arrow Table to convert back into a
+                               spatially enabled dataframe.
+        ==================     ====================================================================
+
+        :returns: pandas.DataFrame
+
+        """
+        from ._io import _arrow
+
+        return _arrow._arrow_to_sedf(table)
+
+    # ----------------------------------------------------------------------
     def to_featureclass(
-        self, location, overwrite=True, has_z=None, has_m=None, sanitize_columns=False
+        self,
+        location,
+        overwrite=True,
+        has_z=None,
+        has_m=None,
+        sanitize_columns=True,
     ):
         """
         The ``to_featureclass`` exports a spatially enabled dataframe to a feature class.
@@ -2407,6 +2644,11 @@ class GeoAccessor(object):
         """
         The ``to_table`` method exports a geo enabled dataframe to a :class:`~arcgis.features.Table` object.
 
+        .. note::
+            Null integer values will be changed to 0 when using shapely instead
+            of ArcPy due to shapely conventions.
+            With ArcPy null integer values will remain null.
+
         ===========================     ====================================================================
         **Argument**                    **Description**
         ---------------------------     --------------------------------------------------------------------
@@ -2418,7 +2660,7 @@ class GeoAccessor(object):
         ---------------------------     --------------------------------------------------------------------
         sanitize_columns                Optional Boolean. If True, column names will be converted to
                                         string, invalid characters removed and other checks will be
-                                        performed. The default is False.
+                                        performed. The default is True.
         ===========================     ====================================================================
 
         :return: String
@@ -2427,10 +2669,14 @@ class GeoAccessor(object):
         from arcgis.features.geo._io.fileops import to_table
         from ._tools._utils import run_and_hide
 
-        sanitize_columns = kwargs.pop("sanitize_columns", False)
+        sanitize_columns = kwargs.pop("sanitize_columns", True)
         origin_columns = self._data.columns.tolist()
         origin_index = copy.deepcopy(self._data.index)
-        location = os.path.abspath(location)
+        if location and not str(os.path.dirname(location)).lower() in [
+            "memory",
+            "in_memory",
+        ]:
+            location = os.path.abspath(path=location)
         table = run_and_hide(
             to_table,
             **{
@@ -2445,6 +2691,59 @@ class GeoAccessor(object):
         return table
 
     # ----------------------------------------------------------------------
+    def to_parquet(
+        self,
+        path: str,
+        index: bool = None,
+        compression: str = "gzip",
+        **kwargs,
+    ) -> str:
+        """
+        Write a Spatially Enabled DataFrame to the Parquet format.
+
+        Any geometry columns present are serialized to WKB format in the file.
+
+        Requires 'pyarrow'.
+
+        WARNING: this is an initial implementation of Parquet file support and
+        associated metadata.  This is tracking version 0.4.0 of the metadata
+        specification at:
+        https://github.com/geopandas/geo-arrow-spec
+
+        .. versionadded:: 2.1.0
+
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        path                   Required String. The save file path
+        ------------------     --------------------------------------------------------------------
+        index                  Optional Bool. If ``True``, always include the dataframe's
+                               index(es) as columns in the file output.
+                               If ``False``, the index(es) will not be written to the file.
+                               If ``None``, the index(ex) will be included as columns in the file
+                               output except `RangeIndex` which is stored as metadata only.
+        ------------------     --------------------------------------------------------------------
+        compression            Optional string. {'snappy', 'gzip', 'brotli', None}, default 'gzip'
+                               Name of the compression to use. Use ``None`` for no compression.
+        ------------------     --------------------------------------------------------------------
+        **kwargs               Optional dict. Any additional kwargs that can be given to the
+                               `pyarrow.parquet.write_table` method.
+        ==================     ====================================================================
+
+        :returns: string
+
+        """
+        from ._io._arrow import _to_parquet
+
+        return _to_parquet(
+            df=self._data,
+            path=path,
+            index=index,
+            compression=compression,
+            **kwargs,
+        )
+
+    # ----------------------------------------------------------------------
     def to_featurelayer(
         self,
         title=None,
@@ -2453,10 +2752,16 @@ class GeoAccessor(object):
         folder=None,
         sanitize_columns=False,
         service_name=None,
+        **kwargs,
     ):
         """
         The ``to_featurelayer`` method publishes a spatial dataframe to a new
         :class:`~arcgis.features.FeatureLayer` object.
+
+        .. note::
+            Null integer values will be changed to 0 when using shapely instead
+            of ArcPy due to shapely conventions.
+            With ArcPy null integer values will remain null.
 
         ===========================     ====================================================================
         **Argument**                    **Description**
@@ -2479,6 +2784,25 @@ class GeoAccessor(object):
         service_name                    Optional String. The name for the service that will be added to the Item.
                                         Name cannot be used already and cannot contain special characters, spaces,
                                         or a numerical value as the first letter.
+        ===========================     ====================================================================
+
+        When publishing a Spatial Dataframe, additional options can be given:
+
+        ===========================     ====================================================================
+        **Optional Arguments**          **Description**
+        ---------------------------     --------------------------------------------------------------------
+        overwrite                       Optional boolean. If True, the specified layer in the `service` parameter
+                                        will be overwritten.
+        ---------------------------     --------------------------------------------------------------------
+        service                         Dictionary that is required if `overwrite = True`. Dictionary with two
+                                        keys: "FeatureServiceId" and "layers".
+                                        "featureServiceId" value is a string of the feature service id that the layer
+                                        belongs to.
+                                        "layer" value is an integer depicting the index value of the layer to
+                                        overwrite.
+
+                                        Example:
+                                        {"featureServiceId" : "9311d21a9a2047d19c0faaebd6f2cca6", "layer": 0}
         ===========================     ====================================================================
 
         :return:
@@ -2511,6 +2835,7 @@ class GeoAccessor(object):
                 raise ValueError(
                     "This service name is unavailable for Feature Service."
                 )
+
         result = content.import_data(
             self._data,
             folder=folder,
@@ -2518,6 +2843,7 @@ class GeoAccessor(object):
             tags=tags,
             sanitize_columns=sanitize_columns,
             service_name=service_name,
+            **kwargs,
         )
         self._data.columns = origin_columns
         self._data.index = origin_index
@@ -2526,7 +2852,11 @@ class GeoAccessor(object):
     # ----------------------------------------------------------------------
     @staticmethod
     def from_df(
-        df, address_column="address", geocoder=None, sr=None, geometry_column=None
+        df,
+        address_column="address",
+        geocoder=None,
+        sr=None,
+        geometry_column=None,
     ):
         """
         The ``from_df`` creates a Spatially Enabled DataFrame from a dataframe with an address column.
@@ -2586,7 +2916,18 @@ class GeoAccessor(object):
                     sr = 4326
             from ._array import GeoArray
 
-            df[geometry_column] = GeoArray(df[geometry_column].apply(Geometry))
+            def _set_default_sr(geom):
+                if geom["spatialReference"] is None:
+                    geom["spatialReference"] = {"wkid": 4326}
+                elif (
+                    geom["spatialReference"].get("wkid", None) is None
+                    and geom["spatialReference"].get("wkt", None) is None
+                ):
+                    geom["spatialReference"] = {"wkid": 4326}
+                return geom
+
+            series = df[geometry_column].apply(Geometry).apply(_set_default_sr)
+            df[geometry_column] = GeoArray(series)
             df.spatial.set_geometry(geometry_column)
             df.spatial.project(sr)
             return df
@@ -2626,7 +2967,15 @@ class GeoAccessor(object):
 
     # ----------------------------------------------------------------------
     @staticmethod
-    def from_xy(df, x_column, y_column, sr=4326):
+    def from_xy(
+        df,
+        x_column,
+        y_column,
+        sr=4326,
+        z_column=None,
+        m_column=None,
+        **kwargs,
+    ):
         """
         The ``from_xy`` method converts a Pandas DataFrame into a Spatially Enabled DataFrame
         by providing the X/Y columns.
@@ -2642,6 +2991,18 @@ class GeoAccessor(object):
         --------------------    ---------------------------------------------------------
         sr                      Optional int.  The wkid number of the spatial reference.
                                 4326 is the default value.
+        --------------------    ---------------------------------------------------------
+        z_column                Optional string.  The name of the Z-coordinate series
+        --------------------    ---------------------------------------------------------
+        m_column                Optional string.  The name of the M-value series
+        ====================    =========================================================
+
+
+        ====================    =========================================================
+        **kwargs**              **Description**
+        --------------------    ---------------------------------------------------------
+        oid_field               Optional string. If the value is provided the OID field
+                                will not be converted from int64 to int32.
         ====================    =========================================================
 
         :return: DataFrame
@@ -2649,7 +3010,15 @@ class GeoAccessor(object):
         """
         from ._io.fileops import _from_xy
 
-        return _from_xy(df=df, x_column=x_column, y_column=y_column, sr=sr)
+        return _from_xy(
+            df=df,
+            x_column=x_column,
+            y_column=y_column,
+            sr=sr,
+            z_column=z_column,
+            m_column=m_column,
+            oid_field=kwargs.pop("oid_field", None),
+        )
 
     # ----------------------------------------------------------------------
     @staticmethod
@@ -2703,6 +3072,11 @@ class GeoAccessor(object):
         The ``from_featureclass`` creates a Spatially enabled `pandas.DataFrame` from a
         :class:`~arcgis.features.Features` class.
 
+        .. note::
+            Null integer values will be changed to 0 when using shapely instead
+            of ArcPy due to shapely conventions.
+            With ArcPy null integer values will remain null.
+
         ===========================     ====================================================================
         **Argument**                    **Description**
         ---------------------------     --------------------------------------------------------------------
@@ -2723,6 +3097,15 @@ class GeoAccessor(object):
         ---------------------------     --------------------------------------------------------------------
         spatial_filter                  A `Geometry` object that will filter the results.  This requires
                                         `arcpy` to work.
+        ---------------------------     --------------------------------------------------------------------
+        sr                              A Spatial reference to project (or transform) output GeoDataFrame
+                                        to. This requires `arcpy` to work.
+        ---------------------------     --------------------------------------------------------------------
+        datum_transformation            Used in combination with 'sr' parameter. if the spatial reference of
+                                        output GeoDataFrame and input data do not share the same datum,
+                                        an appropriate datum transformation should be specified.
+                                        To Learn more see [Geographic datum transformations](https://pro.arcgis.com/en/pro-app/help/mapping/properties/geographic-coordinate-system-transformation.htm)
+                                        This requires `arcpy` to work.
         ===========================     ====================================================================
 
         **Optional Parameters are not supported for URL based resources**
@@ -2917,37 +3300,31 @@ class GeoAccessor(object):
         }
         # Ensure all number values are 0 so errors do not occur.
         df = self._data.where(pd.notnull(self._data), None)
-        date_cols = [col for col in df.columns if df[col].dtype == "datetime64[ns]"]
+        date_fields = [col for col in df.columns if df[col].dtype == "datetime64[ns]"]
         cols_norm = [col for col in df.columns]
         cols_lower = [col.lower() for col in df.columns]
-        old_series = None
+
         if "objectid" in cols_lower:
             fs["objectIdFieldName"] = cols_norm[cols_lower.index("objectid")]
             fs["displayFieldName"] = cols_norm[cols_lower.index("objectid")]
             if df[fs["objectIdFieldName"]].is_unique == False:
                 old_series = df[fs["objectIdFieldName"]].copy()
                 df[fs["objectIdFieldName"]] = list(range(1, df.shape[0] + 1))
-                # res = self.__feature_set__
-                # df[fs['objectIdFieldName']] = old_series
-                # return res
+
         elif "fid" in cols_lower:
             fs["objectIdFieldName"] = cols_norm[cols_lower.index("fid")]
             fs["displayFieldName"] = cols_norm[cols_lower.index("fid")]
             if df[fs["objectIdFieldName"]].is_unique == False:
                 old_series = df[fs["objectIdFieldName"]].copy()
                 df[fs["objectIdFieldName"]] = list(range(1, df.shape[0] + 1))
-                # res = self.__feature_set__
-                # df[fs['objectIdFieldName']] = old_series
-                # return res
+
         elif "oid" in cols_lower:
             fs["objectIdFieldName"] = cols_norm[cols_lower.index("oid")]
             fs["displayFieldName"] = cols_norm[cols_lower.index("oid")]
             if df[fs["objectIdFieldName"]].is_unique == False:
                 old_series = df[fs["objectIdFieldName"]].copy()
                 df[fs["objectIdFieldName"]] = list(range(1, df.shape[0] + 1))
-                # res = self.__feature_set__
-                # df[fs['objectIdFieldName']] = old_series
-                # return res
+
         else:
             fs["objectIdFieldName"] = "OBJECTID"
             fs["displayFieldName"] = "OBJECTID"
@@ -2980,60 +3357,73 @@ class GeoAccessor(object):
             del fs["globalIdFieldName"]
         if self.name in cols_norm:
             cols_norm.pop(cols_norm.index(self.name))
-        for col in cols_norm:
-            try:
-                idx = df[col].first_valid_index()
-                col_val = df[col].loc[idx]
-            except:
-                col_val = ""
-            if isinstance(col_val, (str, np.str)) and not col in date_cols:
-                l = df[col].str.len().max()
-                if str(l) == "nan":
-                    l = 255
+        from numpy import dtype as _dtype
 
-                fields.append(
-                    {
-                        "name": col,
-                        "type": "esriFieldTypeString",
-                        "length": int(l),
-                        "alias": col,
-                    }
-                )
-                if fs["displayFieldName"] == "":
-                    fs["displayFieldName"] = col
-            elif (
-                isinstance(
-                    col_val,
-                    (
-                        datetime.datetime,
-                        pd.Timestamp,
-                        np.datetime64,
-                    ),
-                )
-                or col in date_cols
-            ):  # pd.datetime
-                fields.append({"name": col, "type": "esriFieldTypeDate", "alias": col})
-                date_fields.append(col)
-            elif isinstance(col_val, (np.int16, np.int8)) and not col in date_cols:
-                fields.append(
-                    {"name": col, "type": "esriFieldTypeSmallInteger", "alias": col}
-                )
-            elif (
-                isinstance(col_val, (int, np.int, np.int64, np.int32))
-                and not col in date_cols
-            ):
-                fields.append(
-                    {"name": col, "type": "esriFieldTypeInteger", "alias": col}
-                )
-            elif isinstance(col_val, (float, np.float64)) and not col in date_cols:
-                fields.append(
-                    {"name": col, "type": "esriFieldTypeDouble", "alias": col}
-                )
-            elif isinstance(col_val, (np.float32)) and not col in date_cols:
-                fields.append(
-                    {"name": col, "type": "esriFieldTypeSingle", "alias": col}
-                )
+        _look_up = {
+            np.int8: "esriFieldTypeInteger",
+            _dtype(bool): "esriFieldTypeInteger",
+            bool: "esriFieldTypeInteger",
+            _dtype(np.int8): "esriFieldTypeInteger",
+            np.int16: "esriFieldTypeInteger",
+            _dtype(np.int16): "esriFieldTypeInteger",
+            np.int32: "esriFieldTypeInteger",
+            _dtype(np.int32): "esriFieldTypeInteger",
+            np.int64: "esriFieldTypeDouble",
+            _dtype(np.int64): "esriFieldTypeOID",
+            pd.Int64Dtype(): "esriFieldTypeOID",
+            pd.Int32Dtype(): "esriFieldTypeInteger",
+            int: "esriFieldTypeInteger",
+            float: "esriFieldTypeDouble",
+            np.float16: "esriFieldTypeSingle",
+            _dtype(np.float16): "esriFieldTypeSingle",
+            np.float32: "esriFieldTypeDouble",
+            _dtype(np.float32): "esriFieldTypeDouble",
+            np.float64: "esriFieldTypeDouble",
+            _dtype(np.float64): "esriFieldTypeDouble",
+            pd.Float32Dtype(): "esriFieldTypeDouble",
+            pd.Float64Dtype(): "esriFieldTypeDouble",
+            "geometry": "esriFieldTypeGeometry",
+            str: "esriFieldTypeString",
+            _dtype("O"): "esriFieldTypeString",
+            object: "esriFieldTypeString",
+            _dtype(str): "esriFieldTypeString",
+            pd.StringDtype(): "esriFieldTypeString",
+            "<M8[us]": "esriFieldTypeDate",
+            np.dtype("<M8[ns]"): "esriFieldTypeDate",
+            datetime: "esriFieldTypeDate",
+            np.datetime64: "esriFieldTypeDate",
+            _dtype(np.datetime64): "esriFieldTypeDate",
+            arcgis.features.geo._array.GeoType(): "esriFieldTypeGeometry",
+        }
+        fields = []
+        for idx, dtype in enumerate(self._data.dtypes):
+            col = self._data.dtypes.index[idx]
+            if fs["objectIdFieldName"] == col:
+                column = {
+                    "name": col,
+                    "type": "esriFieldTypeOID",
+                    "alias": col,
+                }
+            else:
+                column = {
+                    "name": col,
+                    "type": _look_up[dtype],
+                    "alias": col,
+                }
+            if column["type"] == "esriFieldTypeString":
+                try:
+                    column["length"] = int(self._data[col].str.len().max())
+                except:
+                    column["length"] = 256
+            if _look_up[dtype] != "esriFieldTypeGeometry":
+                fields.append(column)
+
         fs["fields"] = fields
+        df = df.copy()
+        string_column = df.select_dtypes(pd.StringDtype()).columns.tolist()
+        number_columns = df.select_dtypes(np.number).columns.tolist()
+        df[string_column] = df[string_column].replace(pd.NA, "")
+        df[number_columns] = df[number_columns].replace(pd.NA, 0)
         for row in df.to_dict("records"):
             geom = {}
             if self.name in row:
@@ -3054,7 +3444,6 @@ class GeoAccessor(object):
             del row
             del geom
         fs["features"] = features
-        # if old_series:
 
         return fs
 
@@ -3141,11 +3530,13 @@ class GeoAccessor(object):
                     ref = {"wkt": ref}
                 elif isinstance(ref, int):
                     ref = {"wkid": ref}
-                self._data[self.name].apply(
-                    lambda x: x.update({"spatialReference": ref})
-                    if pd.notnull(x)
-                    else None
-                )
+                if len(self._data[self.name]) > 0:
+
+                    self._data[self.name].apply(
+                        lambda x: x.update({"spatialReference": ref})
+                        if pd.notnull(x)
+                        else None
+                    )
 
     # ----------------------------------------------------------------------
     def to_featureset(self):
@@ -3158,7 +3549,7 @@ class GeoAccessor(object):
         """
         from arcgis.features import FeatureSet
 
-        return FeatureSet.from_dataframe(self._data)
+        return FeatureSet.from_dict(self.__feature_set__)
 
     # ----------------------------------------------------------------------
     def to_feature_collection(
@@ -3501,7 +3892,8 @@ class GeoAccessor(object):
         """
         q = self._data[self.name].geom.centroid.isnull()
         df = pd.DataFrame(
-            self._data[~q][self.name].geom.centroid.tolist(), columns=["x", "y"]
+            self._data[~q][self.name].geom.centroid.tolist(),
+            columns=["x", "y"],
         )
         return df["x"].mean(), df["y"].mean()
 
@@ -3546,7 +3938,7 @@ class GeoAccessor(object):
         :return:
             A boolean indicating `Z` values (True), or not (False)
         """
-        return self._data[self.name].geom.has_z.all()
+        return self._data[self.name].geom.has_z.any()
 
     # ----------------------------------------------------------------------
     @property
@@ -3557,7 +3949,7 @@ class GeoAccessor(object):
         :return:
             A boolean indicating `M` values (True), or not (False)
         """
-        return self._data[self.name].geom.has_m.all()
+        return self._data[self.name].geom.has_m.any()
 
     # ----------------------------------------------------------------------
     @property
@@ -3960,5 +4352,9 @@ class GeoAccessor(object):
         """
 
         return _sanitize_column_names(
-            self, convert_to_string, remove_special_char, inplace, use_snake_case
+            self,
+            convert_to_string,
+            remove_special_char,
+            inplace,
+            use_snake_case,
         )

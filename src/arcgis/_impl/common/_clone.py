@@ -194,6 +194,7 @@ class _DeepCloner:
 
             has_admin_info = (
                 layer._token
+                or layer._con.token
                 and layer.manager
                 and layer.manager.properties
                 and "adminLayerInfo" in layer.manager.properties
@@ -254,7 +255,7 @@ class _DeepCloner:
         from arcgis.gis.clone import clone_registry
 
         # if the item is in the clone_registry then use the item definition.
-        if item["type"] in clone_registry():
+        if isinstance(item, arcgis.gis.Item) and item["type"] in clone_registry():
             item_definition = self._get_item_definition(item)
             self._graph[item.id] = item_definition
         # if the item is a group find all the web maps that are shared with the group
@@ -342,6 +343,36 @@ class _DeepCloner:
             featurelayer_services = []
             feature_collections = []
 
+            def process_group(layer):
+                services = []
+                collections = []
+                services += [
+                    sublayer
+                    for sublayer in layer["layers"]
+                    if "layerType" in sublayer
+                    and sublayer["layerType"] == "ArcGISFeatureLayer"
+                    and "url" in sublayer
+                    and sublayer["url"] is not None
+                    and (
+                        "type" not in sublayer
+                        or sublayer["type"] != "Feature Collection"
+                    )
+                ]
+                collections += [
+                    sublayer
+                    for sublayer in layer["layers"]
+                    if "layerType" in sublayer
+                    and sublayer["layerType"] == "ArcGISFeatureLayer"
+                    and "type" in sublayer
+                    and sublayer["type"] == "Feature Collection"
+                ]
+                for sublayer in layer["layers"]:
+                    if "layers" in sublayer:
+                        res = process_group(sublayer)
+                        services += res[0]
+                        collections += res[1]
+                return [services, collections]
+
             if "operationalLayers" in webmap_json:
                 featurelayer_services += [
                     layer
@@ -360,6 +391,12 @@ class _DeepCloner:
                     and "type" in layer
                     and layer["type"] == "Feature Collection"
                 ]
+                # check for group layers
+                for layer in webmap_json["operationalLayers"]:
+                    if "layers" in layer:
+                        res = process_group(layer)
+                        featurelayer_services += res[0]
+                        feature_collections += res[1]
             if "tables" in webmap_json:
                 featurelayer_services += [
                     table for table in webmap_json["tables"] if "url" in table
@@ -1918,6 +1955,7 @@ class _ItemDefinition(CloneNode):
         self.owner = owner
         self.item_extent = item_extent
         self.created_items = []
+        self.metadata_xml = portal_item.metadata
 
     @property
     def data(self):
@@ -1943,13 +1981,21 @@ class _ItemDefinition(CloneNode):
             owner=self.owner,
             item_id=item_id,
         )
+        if self.metadata_xml:
+            new_item.metadata = self.metadata_xml
         self.created_items.append(new_item)
         self._clone_resources(new_item)
         return new_item
 
     def _clone_resources(self, new_item):
         """Add the resources to the new item"""
+
         if self.portal_item:
+            try:
+                if self.portal_item.metadata:
+                    new_item.update(metadata=self.portal_item.download_metadata())
+            except:
+                ...
             resources = self.portal_item.resources
             resource_list = resources.list()
             if len(resource_list) > 0:

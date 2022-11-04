@@ -25,6 +25,12 @@ class NotebookFile:
     # ---------------------------------------------------------------------
     @property
     def properties(self):
+        """
+        returns the properties of the resource
+
+        :return: Dict
+
+        """
         return InsensitiveDict(self._definition)
 
     # ---------------------------------------------------------------------
@@ -70,7 +76,7 @@ class NotebookDataAccess:
         fp                   Required String. The path of the file to upload
         ===================  ==========================================================================
 
-        :return: bool
+        :return: Boolean
         """
 
         url = f"{self._url}/notebookworkspace/{os.path.basename(fp)}"

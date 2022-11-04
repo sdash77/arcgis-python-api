@@ -41,11 +41,11 @@ class AGOLServerManager:
 
     # ---------------------------------------------------------------------
     def __str__(self):
-        return f"<AGOLServerManager @ {self._url}>"
+        return f"< AGOLServerManager @ {self._url} >"
 
     # ---------------------------------------------------------------------
     def __repr__(self):
-        return f"<AGOLServerManager @ {self._url}>"
+        return f"< AGOLServerManager @ {self._url} >"
 
     @property
     @lru_cache(maxsize=100)
@@ -87,11 +87,11 @@ class AGOLServerManager:
         name                   Required String. The name of the service.
         ==================     ====================================================================
 
-        :returns: Union[VectorTileLayerManager,
-                        ImageryLayerCacheManager,
-                        SceneLayerManager,
-                        FeatureLayerCollectionManager,
-                        MapImageLayerManager]
+        :returns: Union[:class:`~arcgis.mapping.VectorTileLayer`,
+                        :class:`~arcgis.raster.ImageryLayerCacheManager`,
+                        :class:`~arcgis.mapping.SceneLayerManager`,
+                        :class:`~arcgis.features.managers.FeatureLayerCollectionManager`,
+                        :class:`~arcgis.mapping.MapImageLayerManager`]
         """
 
         if self.is_tile_server == False:
@@ -258,6 +258,6 @@ class AGOLServersManager:
         """
         Returns a list of all server managers
 
-        :returns: List[AGOLServerManager]
+        :returns: List[:class:`~arcgis.gis.agoserver.AGOLServerManager`]
         """
         return self.tile_server + self.feature_server

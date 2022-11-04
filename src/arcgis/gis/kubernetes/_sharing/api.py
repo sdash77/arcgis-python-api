@@ -20,7 +20,7 @@ from arcgis._impl.common._utils import _to_utf8
 from urllib import request
 from urllib.parse import urlparse
 
-__version__ = "2.0.1"
+__version__ = "2.1.0"
 
 _log = logging.getLogger(__name__)
 
@@ -56,6 +56,7 @@ class KbertnetesPy(object):
         **kwargs,
     ):
         """The Portal constructor. Requires URL and optionally username/password."""
+        self._security_kwargs = kwargs.pop("security_kwargs", None)
         client_secret = kwargs.get("client_secret", None)
         trust_env = kwargs.get("trust_env", None)
         self._timeout = kwargs.pop("timeout", 600)
@@ -147,6 +148,8 @@ class KbertnetesPy(object):
                     timeout=self._timeout,
                     proxy=kwargs.get("proxy", None),
                     custom_adapter=custom_adapter,
+                    use_gen_token=kwargs.get("use_gen_token", False),
+                    security_kwargs=self._security_kwargs,
                 )
             else:
                 if token == api_key:
@@ -173,6 +176,8 @@ class KbertnetesPy(object):
                     timeout=self._timeout,
                     proxy=kwargs.get("proxy", None),
                     custom_adapter=custom_adapter,
+                    use_gen_token=kwargs.get("use_gen_token", False),
+                    security_kwargs=self._security_kwargs,
                 )
         # self.get_version(True)
         self.get_properties(True)
@@ -1247,7 +1252,12 @@ class KbertnetesPy(object):
             username          string, name of user
             ================  ========================================================
         """
-        return self.con.post("community/users/" + username, self._postdata())
+        res = self.con.post("community/users/" + username, {"f": "json"})
+        res2 = self.con.get(
+            "/community/self", {"f": "json", "returnUserLicensedItems": True}
+        )
+        res2.update(res)
+        return res2
 
     # ----------------------------------------------------------------------
     def get_org_users(
