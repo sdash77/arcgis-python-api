@@ -418,17 +418,17 @@ def create_buffers(
     """
     .. image:: _static/images/create_buffers/create_buffers.png
 
-    .. |Disks| image:: _static/images/create_buffers/Disks.png
-    .. |Dissolve| image:: _static/images/create_buffers/Dissolve.png
-    .. |Flat| image:: _static/images/create_buffers/Flat.png
-    .. |Full| image:: _static/images/create_buffers/Full.png
-    .. |Left| image:: _static/images/create_buffers/Left.png
-    .. |None| image:: _static/images/create_buffers/None.png
-    .. |Outside| image:: _static/images/create_buffers/Outside.png
-    .. |Right| image:: _static/images/create_buffers/Right.png
-    .. |Rings| image:: _static/images/create_buffers/Rings.png
-    .. |Round| image:: _static/images/create_buffers/Round.png
-    .. |Unspecified| image:: _static/images/create_buffers/Unspecified.png
+    .. |Disks| image:: _static/images/create_buffers/buffers_disks.png
+    .. |Dissolve| image:: _static/images/create_buffers/buffers_dissolve.png
+    .. |Flat| image:: _static/images/create_buffers/buffers_flat.png
+    .. |Full| image:: _static/images/create_buffers/buffers_full.png
+    .. |Left| image:: _static/images/create_buffers/buffers_left.png
+    .. |None| image:: _static/images/create_buffers/buffers_none.png
+    .. |Outside| image:: _static/images/create_buffers/buffers_outside.png
+    .. |Right| image:: _static/images/create_buffers/buffers_right.png
+    .. |Rings| image:: _static/images/create_buffers/buffers_rings.png
+    .. |Round| image:: _static/images/create_buffers/buffers_round.png
+    .. |Unspecified| image:: _static/images/create_buffers/buffers_unspecified.png
 
     The ``create_buffers`` task creates polygons that cover a given distance from a point,
     line, or polygon feature. Buffers are typically used to create areas that can be
@@ -649,9 +649,9 @@ def create_drive_time_areas(
     """
     .. image:: _static/images/create_drive_time_areas/create_drive_time_areas.png
 
-    .. |Overlap| image:: _static/images/create_drive_time_areas/Overlap.png
-    .. |Dissolve| image:: _static/images/create_drive_time_areas/Dissolve.png
-    .. |Split| image:: _static/images/create_drive_time_areas/Split.png
+    .. |Overlap| image:: _static/images/create_drive_time_areas/drive_time_overlap.png
+    .. |Dissolve| image:: _static/images/create_drive_time_areas/drive_time_dissolve.png
+    .. |Split| image:: _static/images/create_drive_time_areas/drive_time_split.png
 
     The ``create_drive_time_areas`` method creates areas that can be reached within a
     given drive time or drive distance. It can help you answer questions such as:
