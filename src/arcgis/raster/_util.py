@@ -1387,10 +1387,3 @@ def _get_all_stac_catalog_items(stac_json, request_params={}):
             raise RuntimeError(f"Invalid STAC Catalog-\n{child_res.text}")
         child_json = child_res.json()
         yield from _get_all_stac_catalog_items(child_json, request_params)
-
-
-# --------------------------------------------------------------------------
-def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
-    import random
-
-    return "".join(random.choice(chars) for _ in range(size))

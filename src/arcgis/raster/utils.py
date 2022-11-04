@@ -147,7 +147,7 @@ def publish_hosted_imagery_layer(
                                                  The input_data param can then be used to specify local raster dataset path(s) in the mosaic dataset.
     ------------------------------------     --------------------------------------------------------------------
     layer_configuration                      Required String.
-    
+
                                                 - ONE_IMAGE: Uses a single, processed image or mosaics multiple \
                                                 images into a single dataset to create one layer. \
                                                 This option supports all common image formats and satellite \
@@ -324,10 +324,9 @@ def publish_hosted_imagery_layer(
         output_name = "layer" + "_" + _id_generator()
 
     if layer_configuration == "ONE_IMAGE":
-        from arcgis.raster.analytics import copy_raster
 
         gis = env.active_gis if gis is None else gis
-        # url = gis.properties.helperServices.rasterAnalytics.url
+
         return gis._tools.rasteranalysis.copy_raster(
             input_raster=input_data,
             output_name=output_name,
@@ -341,10 +340,9 @@ def publish_hosted_imagery_layer(
         )
 
     elif layer_configuration == "IMAGE_COLLECTION":
-        from arcgis.raster.analytics import create_image_collection
 
         gis = env.active_gis if gis is None else gis
-        # url = gis.properties.helperServices.rasterAnalytics.url
+
         return gis._tools.rasteranalysis.create_image_collection(
             image_collection=output_name,
             input_rasters=input_data,
