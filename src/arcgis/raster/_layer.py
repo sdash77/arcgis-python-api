@@ -44,6 +44,20 @@ except:
     pass
 
 
+def _get_rendering_service_layer(layer):
+    if layer._rendering_service_layer:
+        return layer._rendering_service_layer
+    else:
+        from .functions.utility import _generate_layer_token
+
+        token = _generate_layer_token(layer, layer.url)
+        newlyr = ImageryLayer(
+            {"input_raster": layer.url + "?token=" + token}, layer._gis
+        )
+        layer._rendering_service_layer = newlyr
+        return newlyr
+
+
 def _find_and_replace_mosaic_rule(fnarg_ra, mosaic_rule, url):
     for key, value in fnarg_ra.items():
         if key == "Raster" and isinstance(value, dict) and not (value.keys() & {"url"}):
@@ -636,8 +650,13 @@ class ImageryLayer(Layer):
                 self._datastore_raster = True
                 self._uri = url
                 if isinstance(url, dict):
-                    encoded_dict = str(self._uri).encode("utf-8")
-                    self._uri = base64.b64encode(encoded_dict)
+                    raster_url = None
+                    raster_url = url.get("input_raster", None)
+                    if raster_url:
+                        self._uri = raster_url
+                    else:
+                        encoded_dict = str(self._uri).encode("utf-8")
+                        self._uri = base64.b64encode(encoded_dict)
                 gis = _arcgis.env.active_gis if gis is None else gis
                 if gis is not None:
                     if ImageryLayer._rendering_service_object is None or (
@@ -678,6 +697,7 @@ class ImageryLayer(Layer):
         self._extent_set = False
         self._original_info = {}
         self._rendering_rule_from_item = False
+        self._rendering_service_layer = None
 
     @property
     def rasters(self):
@@ -1187,9 +1207,12 @@ class ImageryLayer(Layer):
 
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+            except:
+                raise RuntimeError(
+                    "Failed to perform project operation on the TilesOnly service"
+                )
 
         url = "%s/project" % self._url
         params = {"f": "json", "inSR": in_sr, "outSR": out_sr, "geometries": geometries}
@@ -1345,9 +1368,12 @@ class ImageryLayer(Layer):
                                             )
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+            except:
+                raise RuntimeError(
+                    "Failed to perform identify operation on the TilesOnly service"
+                )
 
         url = "%s/identify" % self._url
         params = {"f": "json", "geometry": dict(geometry)}
@@ -1556,9 +1582,13 @@ class ImageryLayer(Layer):
                                          measure_operation="HeightFromTopAndTopShadow")
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+
+            except:
+                raise RuntimeError(
+                    "Failed to perform measure operation on the TilesOnly service"
+                )
 
         if linear_unit is not None:
             linear_unit = "esri%s" % linear_unit
@@ -2006,9 +2036,13 @@ class ImageryLayer(Layer):
 
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+
+            except:
+                raise RuntimeError(
+                    "Failed to perform export image operation on the TilesOnly service"
+                )
 
         import datetime
 
@@ -3380,9 +3414,13 @@ class ImageryLayer(Layer):
 
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+
+            except:
+                raise RuntimeError(
+                    "Failed to perform compute statistics and histograms operation on the TilesOnly service"
+                )
 
         import datetime
 
@@ -3501,9 +3539,13 @@ class ImageryLayer(Layer):
         :return: A legend as a dictionary by default, or as an HTML table if as_html is True
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+
+            except:
+                raise RuntimeError(
+                    "Failed to perform legend operation on the TilesOnly service"
+                )
 
         url = "%s/legend" % self._url
         params = {"f": "json"}
@@ -3717,9 +3759,13 @@ class ImageryLayer(Layer):
 
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+
+            except:
+                raise RuntimeError(
+                    "Failed to perform compute class stats operation on the TilesOnly service"
+                )
 
         url = self._url + "/computeClassStatistics"
 
@@ -3870,9 +3916,13 @@ class ImageryLayer(Layer):
 
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+
+            except:
+                raise RuntimeError(
+                    "Failed to perform compute histograms operation on the TilesOnly service"
+                )
 
         import datetime
 
@@ -4039,9 +4089,13 @@ class ImageryLayer(Layer):
             A list of samples
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+
+            except:
+                raise RuntimeError(
+                    "Failed to perform get samples operation on the TilesOnly service"
+                )
 
         if not isinstance(geometry, Geometry):
             geometry = Geometry(geometry)
@@ -4488,9 +4542,13 @@ class ImageryLayer(Layer):
 
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+
+            except:
+                raise RuntimeError(
+                    "Failed to perform calculate volume operation on the TilesOnly service"
+                )
 
         if self.properties.serviceDataType == "esriImageServiceDataTypeElevation":
             url = "%s/calculateVolume" % self._url
@@ -4569,9 +4627,12 @@ class ImageryLayer(Layer):
             (hasattr(self, "_do_not_hydrate")) and not self._do_not_hydrate
         ) or not hasattr(self, "_do_not_hydrate"):
             if self.tiles_only:
-                raise RuntimeError(
-                    "This operation cannot be performed on a TilesOnly Service"
-                )
+                try:
+                    self = _get_rendering_service_layer(self)
+                except:
+                    raise RuntimeError(
+                        "Failed to perform query boundary operation on the TilesOnly service"
+                    )
 
         url = self._url + "/queryBoundary"
 
@@ -6778,11 +6839,6 @@ class ImageryLayer(Layer):
                                     )
         
         """
-        if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
-
         from arcgis.raster._charts import plot_histograms
 
         return plot_histograms(
@@ -9919,12 +9975,6 @@ class _ImageServerRaster(ImageryLayer, Raster):
         return super().raster_info
 
     def get_raster_bands(self, band_ids_or_names=None):
-        if (hasattr(self, "_do_not_hydrate")) and not self._do_not_hydrate:
-            if super().tiles_only:
-                raise RuntimeError(
-                    "This operation cannot be performed on a TilesOnly Service"
-                )
-
         if band_ids_or_names is None or (
             isinstance(band_ids_or_names, list) and len(band_ids_or_names) == 0
         ):
