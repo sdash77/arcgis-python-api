@@ -769,11 +769,11 @@ def overlay_data(
     """
     .. image:: _static/images//overlay_layers/overlay_layers.png
 
-    .. |Intersect| image:: _static/images/overlay_layers/Intersect.png
-    .. |Union| image:: _static/images/overlay_layers/Union.png
-    .. |Erase| image:: _static/images/overlay_layers/Erase.png
-    .. |identity| image:: _static/images/overlay_layers/identity.png
-    .. |symm| image:: _static/images/overlay_layers/Symmetric_Difference.png
+    .. |Intersect| image:: _static/images/overlay_layers/overlay_intersect.png
+    .. |Union| image:: _static/images/overlay_layers/overlay_union.png
+    .. |Erase| image:: _static/images/overlay_layers/overlay_erase.png
+    .. |identity| image:: _static/images/overlay_layers/overlay_identity.png
+    .. |symm| image:: _static/images/overlay_layers/overlay_symmetric_difference.png
 
     The ``overlay_data`` task combines two or more layers into one single layer.
     You can think of overlay as peering through a stack of maps and creating a single

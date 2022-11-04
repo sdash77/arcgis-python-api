@@ -47,7 +47,7 @@ def calculate_density(
     future: bool = False,
 ):
     """
-    .. image:: _static/images/cal_density_standard/calculate_density.png
+    .. image:: _static/images/cal_density_standard/calculate_density_standard.png
 
     The calculate_density function creates a density map from point or line features by spreading known quantities of
     some phenomenon (represented as attributes of the points or lines) across the map. The result is a layer of areas
