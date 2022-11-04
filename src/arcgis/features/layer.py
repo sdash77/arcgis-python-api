@@ -5146,7 +5146,8 @@ class FeatureLayerCollection(_GISResource):
                                         transformation on each layer when the spatial reference used in
                                         geometry is different than the layer's spatial reference.
         -----------------------------   --------------------------------------------------------------------
-        time_reference_unknown_client   Setting timeReferenceUnknownClient as true indicates that the client is                  capable of working with data values that are not in UTC. If its not set
+        time_reference_unknown_client   Setting timeReferenceUnknownClient as true indicates that the client is
+                                        capable of working with data values that are not in UTC. If its not set
                                         to true, and the service layer's datesInUnknownTimeZone property is true,
                                         then an error is returned. The default is false
 
