@@ -964,7 +964,7 @@ def choose_best_facilities(
     =====================================    =========================================================
     **Argument**                             **Description**
     -------------------------------------    ---------------------------------------------------------
-    goal                                     Required string. Specify the goal that must be satisfied when allocating
+    goal                                     Optional string. Specify the goal that must be satisfied when allocating
                                              demand locations to facilities.
 
                                              Choice list: ['Allocate', 'MinimizeImpedance', 'MaximizeCoverage', 'MaximizeCapacitatedCoverage', 'PercentCoverage']
