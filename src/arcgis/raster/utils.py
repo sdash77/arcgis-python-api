@@ -143,34 +143,33 @@ def publish_hosted_imagery_layer(
                                              
                                              .. note:: 
                                                  You can also upload an existing mosaic dataset and create an imagery layer by 
-                                                 specifying the md path as input to source_mosaic parameter. 
+                                                 specifying the mosaic dataset path as input to source_mosaic parameter. 
                                                  The input_data param can then be used to specify local raster dataset path(s) in the mosaic dataset.
     ------------------------------------     --------------------------------------------------------------------
     layer_configuration                      Required String.
-                                                - ONE_IMAGE: Uses a single, processed image or mosaics multiple 
-                                                images into a single dataset to create one layer. 
-                                                This option supports all common image formats and satellite 
+                                                - ONE_IMAGE: Uses a single, processed image or mosaics multiple \
+                                                images into a single dataset to create one layer. \
+                                                This option supports all common image formats and satellite \
                                                 products at various levels.
 
-                                                - IMAGE_COLLECTION: Manages a collection of images using a 
-                                                single layer and mosaics images dynamically. Each image can 
-                                                be accessed independently. This option supports all common 
+                                                - IMAGE_COLLECTION: Manages a collection of images using a \
+                                                single layer and mosaics images dynamically. Each image can \
+                                                be accessed independently. This option supports all common \
                                                 image formats and satellite products at various levels. 
     ------------------------------------     --------------------------------------------------------------------
     tiles_only                               Optional boolean. If set to True, function will generate a tiles only layer
                                              otherwise will generate a dynamic imagery layer.
 
-                                                - True - Provides imagery access as static tiles and associated metadata. 
-                                                Supports client-side processing and rendering. Can be used as an input 
+                                                - True - Provides imagery access as static tiles and associated metadata. \
+                                                Supports client-side processing and rendering. Can be used as an input \
                                                 to raster analysis.
 
-                                                - False - Provides versatile dynamic imagery access capabilities. 
-                                                Supports on-demand server-side processing and 
-                                                dynamic mosaicking. Supports managing a collection of images. 
+                                                - False - Provides versatile dynamic imagery access capabilities. \
+                                                Supports on-demand server-side processing and \
+                                                dynamic mosaicking. Supports managing a collection of images. \
                                                 Can be used as an input to raster analysis.
     ------------------------------------     --------------------------------------------------------------------
-    raster_type_name                         Required string. The name of the raster type to use for adding data to \
-                                             the image collection.
+    raster_type_name                         Required string. The name of the raster type to use for adding data.
 
                                              Choice list:
 
@@ -194,8 +193,8 @@ def publish_hosted_imagery_layer(
     ------------------------------------     --------------------------------------------------------------------
     raster_type_params                       Optional dict. Additional ``raster_type`` specific parameters.
         
-                                             The process of add rasters to the image collection can be \
-                                             controlled by specifying additional raster type arguments.
+                                             The process of add rasters can be controlled by specifying \
+                                             additional raster type arguments.
 
                                              The raster type parameters argument is a dictionary.
 
