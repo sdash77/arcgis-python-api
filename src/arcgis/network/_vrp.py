@@ -1270,14 +1270,14 @@ def solve_vehicle_routing_problem(
     ignore_invalid_order_locations: bool = False,
 ):
     """
-    .. |either| image:: _static/images/solve_vehicle_routing_problem/either_side.png
-    .. |left| image:: _static/images/solve_vehicle_routing_problem/left_side.png
-    .. |turn| image:: _static/images/solve_vehicle_routing_problem/no_u_turn.png
-    .. |right| image:: _static/images/solve_vehicle_routing_problem/right_side.png
-    .. |ALLOW_UTURNS| image:: _static/images/solve_vehicle_routing_problem/ALLOW_UTURNS.png
-    .. |NO_UTURNS| image:: _static/images/solve_vehicle_routing_problem/NO_UTURNS.png
-    .. |ALLOW_DEAD_ENDS_ONLY| image:: _static/images/solve_vehicle_routing_problem/ALLOW_DEAD_ENDS_ONLY.png
-    .. |ALLOW_DEAD_ENDS_AND_INTERSECTIONS_ONLY| image:: _static/images/solve_vehicle_routing_problem/ALLOW_DEAD_ENDS_AND_INTERSECTIONS_ONLY.png
+    .. |either| image:: _static/images/solve_vehicle_routing_problem/routing_either_side.png
+    .. |left| image:: _static/images/solve_vehicle_routing_problem/routing_left_side.png
+    .. |turn| image:: _static/images/solve_vehicle_routing_problem/routing_no_u_turn.png
+    .. |right| image:: _static/images/solve_vehicle_routing_problem/routing_right_side.png
+    .. |ALLOW_UTURNS| image:: _static/images/solve_vehicle_routing_problem/routing_ALLOW_UTURNS.png
+    .. |NO_UTURNS| image:: _static/images/solve_vehicle_routing_problem/routing_NO_UTURNS.png
+    .. |ALLOW_DEAD_ENDS_ONLY| image:: _static/images/solve_vehicle_routing_problem/routing_ALLOW_DEAD_ENDS_ONLY.png
+    .. |ALLOW_DEAD_ENDS_AND_INTERSECTIONS_ONLY| image:: _static/images/solve_vehicle_routing_problem/routing_ALLOW_DEAD_ENDS_AND_INTERSECTIONS_ONLY.png
 
 
     ``solve_vehicle_routing_problem`` tool solves a vehicle routing problem (VRP) to find the best routes for a fleet of vehicles.

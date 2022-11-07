@@ -1402,7 +1402,7 @@ def flow_direction(
     The output of the FlowDirection task run with the D8 flow direction type is an integer
     raster whose values range from 1-255. The values for each direction from the center are the following:
 
-    .. image:: _static/images/flow_direction/D8.gif
+    .. image:: _static/images/flow_direction/flow_D8.gif
 
     For example, if the direction of steepest drop was to the left of the current
     processing cell, its flow direction would be coded at 16.
