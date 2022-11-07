@@ -542,9 +542,9 @@ def overlay_layers(
     """
     .. image:: _static/images//overlay_layers/overlay_layers.png
 
-    .. |Intersect| image:: _static/images/overlay_layers/Intersect.png
-    .. |Union| image:: _static/images/overlay_layers/Union.png
-    .. |Erase| image:: _static/images/overlay_layers/Erase.png
+    .. |Intersect| image:: _static/images/overlay_layers/overlay_intersect.png
+    .. |Union| image:: _static/images/overlay_layers/overlay_union.png
+    .. |Erase| image:: _static/images/overlay_layers/overlay_erase.png
 
 
     The ``overlay_layers`` method combines two or more layers into one single layer.
