@@ -10,12 +10,7 @@ from typing import Any, Optional, Union
 
 from arcgis.geometry import SpatialReference
 from arcgis.features.layer import FeatureLayer
-from arcgis.geoprocessing._support import (
-    _analysis_job,
-    _analysis_job_results,
-    _analysis_job_status,
-    _layer_input,
-)
+
 import json as _json
 import arcgis as _arcgis
 import string as _string
@@ -23,6 +18,7 @@ import random as _random
 import collections
 from arcgis.gis import GIS, Item
 from arcgis.raster._util import _set_context, _id_generator
+from arcgis.raster import ImageryLayer
 from .._impl.common._deprecate import deprecated
 
 
@@ -9566,15 +9562,15 @@ def export_to_tile_package(
 
 
 def mosaic_image(
-    input_rasters,
-    target_raster,
-    mosaic_operator="LAST",
-    mosaic_colormap_mode="FIRST",
-    no_data_value=None,
-    context=None,
+    input_rasters: list[ImageryLayer],
+    target_raster: ImageryLayer,
+    mosaic_operator: str = "LAST",
+    mosaic_colormap_mode: str = "FIRST",
+    no_data_value: Optional[float] = None,
+    context: Optional[dict[str, Any]] = None,
     *,
-    gis=None,
-    future=False,
+    gis: Optional[GIS] = None,
+    future: bool = False,
     **kwargs,
 ):
     """
