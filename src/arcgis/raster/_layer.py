@@ -14203,16 +14203,19 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         return newcollection
 
     def get_field_values(self, field_name, max_count=0):
-        return self._raster_collection.getFieldValues(
-            field_name=field_name, max_count=max_count
-        )
-
-    def get_field_values(self, field_name, max_count=0):
         df = self._df
         if max_count != 0:
             return df[field_name].tolist()[0:max_count]
         else:
             return df[field_name].tolist()
+
+    def to_multidimensional_raster(self, variable_field_name, dimension_field_names):
+        return Raster(
+            self._raster_collection.toMultidimensionalRaster(
+                variable_field_name=variable_field_name,
+                dimension_field_names=dimension_field_names,
+            )
+        )
 
     def max(self, ignore_nodata=True, extent_type="FirstOf", cellsize_type="FirstOf"):
         return Raster(
