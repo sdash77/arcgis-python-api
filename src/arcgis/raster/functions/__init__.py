@@ -13034,7 +13034,7 @@ def geometric_median(
                                          specified value, the iteration will stop, and the result of the
                                          last iteration will be used.
     --------------------------------     --------------------------------------------------------------------
-    max_iteration                        Optional int. Specifies the maximum number of iterations to complete.
+    max_iteration                        Optional integer. Specifies the maximum number of iterations to complete.
                                          The computation will end once this value is reached, regardless of the
                                          epsilon setting.
     --------------------------------     --------------------------------------------------------------------
