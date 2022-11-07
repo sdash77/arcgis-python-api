@@ -9671,8 +9671,8 @@ def mosaic_image(
 
         # Usage Example:
 
-        mosaiced_target_op = mosaic_image(input_rasters=input_rasters,
-                                          target_raster=target_raster,
+        mosaiced_target_op = mosaic_image(input_rasters=[raster_1, raster_2],
+                                          target_raster=raster_3,
                                           mosaic_operator="FIRST",
                                           mosaic_colormap_mode="FIRST",
                                           gis=gis)
