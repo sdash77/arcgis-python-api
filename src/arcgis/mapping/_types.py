@@ -1,7 +1,7 @@
 from __future__ import absolute_import, annotations
 
 import logging
-from re import search
+from re import search, findall
 from uuid import uuid4
 from warnings import warn
 from contextlib import contextmanager
@@ -1851,6 +1851,36 @@ class WebMap(HasTraits, collections.OrderedDict):
             "streets-vector",
             "terrain",
             "topo-vector",
+            "arcgis-imagery",
+            "arcgis-imagery-standard",
+            "arcgis-imagery-labels",
+            "arcgis-light-gray",
+            "arcgis-dark-gray",
+            "arcgis-navigation",
+            "arcgis-navigation-night",
+            "arcgis-streets",
+            "arcgis-streets-night",
+            "arcgis-streets-relief",
+            "arcgis-topographic",
+            "arcgis-oceans",
+            "osm-standard",
+            "osm-standard-relief",
+            "osm-streets",
+            "osm-streets-relief",
+            "osm-light-gray",
+            "osm-dark-gray",
+            "arcgis-terrain",
+            "arcgis-community",
+            "arcgis-charted-territory",
+            "arcgis-colored-pencil",
+            "arcgis-nova",
+            "arcgis-modern-antique",
+            "arcgis-midcentury",
+            "arcgis-newspaper",
+            "arcgis-hillshade-light",
+            "arcgis-hillshade-dark",
+            "arcgis-human-geography",
+            "arcgis-human-geography-dark",
         ]
         return basemaps
 
@@ -3754,6 +3784,17 @@ class OfflineMapAreaManager(object):
                         layer0_obj = VectorTileLayer.fromitem(
                             self._gis.content.get(cached_layer.itemId)
                         )
+                    elif hasattr(cached_layer, "styleUrl") and getattr(
+                        cached_layer, "title"
+                    ) in ["OpenStreetMap"]:
+                        res = findall(
+                            r"[0-9a-f]{8}(?:[0-9a-f]{4}){3}[0-9a-f]{12}",
+                            cached_layer["styleUrl"],
+                        )
+                        if res:
+                            layer0_obj = VectorTileLayer.fromitem(
+                                self._gis.content.get(res[0])
+                            )
                 else:
                     layer0_obj = MapImageLayer(cached_layer.url, self._gis)
 
@@ -5315,7 +5356,7 @@ class MapImageLayerManager(arcgis.gis._GISResource):
         Before executing this operation, you will need to make certain the following prerequisites are met:
 
         - Upload the TPK you wish to merge with the existing service, take note of its item ID.
-        - Make certain that the uploaded TPK item's tiling scheme matches with the service you wish to import into.
+        - Make certain that the uploaded TPK, TPKX item's tiling scheme matches with the service you wish to import into.
         - The source service LOD's should include all the LOD's that are part of the imported TPK item. For example, if the source service has tiles from levels 0 through 10, you can import tiles only within these levels and not above it.
 
 
@@ -5382,7 +5423,10 @@ class MapImageLayerManager(arcgis.gis._GISResource):
             params["sourceItemId"] = item.itemid
         else:
             raise ValueError("The `item` must be a string or Item")
-        url = self._url + "/importTiles"
+        if self._gis.version >= [10, 3]:
+            url = self._url + "/import"
+        else:
+            url = self._url + "/importTiles"
         res = self._con.post(url, params)
         return res
 
@@ -5451,7 +5495,11 @@ class MapImageLayerManager(arcgis.gis._GISResource):
             <Dictionary>
         """
         if self._gis._portal.is_arcgisonline:
-            url = "%s/updateTiles" % self._url
+            if self._gis.version >= [10, 3]:
+                url = "%s/update" % self._url
+            else:
+                url = "%s/updateTiles" % self._url
+
             params = {
                 "f": "json",
                 "mergeBundle": merge,

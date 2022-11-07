@@ -605,7 +605,7 @@ class TabularDataObject(object):
 
         return training_data, training_labels, validation_data, validation_labels
 
-    def _time_series_bunch(self, seq_len, normalize=True, bunch=True):
+    def _time_series_bunch(self, seq_len, location_var, normalize=True, bunch=True):
         if self._index_data is not None:
             bunched = []
             for i in range(len(self._index_data) - seq_len - 1):
@@ -616,8 +616,11 @@ class TabularDataObject(object):
         if self._is_raster_only:
             return self._raster_timeseries_bunch(normalize, bunch)
 
-        if len(list(self._dataframe.columns.values)) == 1:
-            return self._univariate_bunch(seq_len, normalize, bunch)
+        col_list = list(self._dataframe.columns.values)
+        if location_var:
+            col_list.remove(location_var)
+        if len(col_list) == 1:
+            return self._univariate_bunch(seq_len, normalize, bunch, location_var)
         else:
             return self._multivariate_bunch(seq_len, normalize, bunch)
 
@@ -804,7 +807,7 @@ class TabularDataObject(object):
 
         return data
 
-    def _univariate_bunch(self, seq_len, normalize=True, bunch=True):
+    def _univariate_bunch(self, seq_len, normalize=True, bunch=True, location_var=None):
         kwargs_variables = {"num_workers": 0} if sys.platform == "win32" else {}
 
         kwargs_variables["bs"] = self._bs
@@ -855,18 +858,28 @@ class TabularDataObject(object):
         else:
             processed_dataframe = self._dataframe.copy()
 
-        for i in range(len(processed_dataframe[self._dependent_variable]) - seq_len):
-            for j in range(seq_len):
-                if len(processed_dataframe[self._dependent_variable]) > i + seq_len - 1:
-                    df_columns[f"att{j + 1}"].append(
-                        processed_dataframe[self._dependent_variable][i + j]
-                    )
-                else:
-                    continue
+        for k in processed_dataframe[location_var].unique():
+            loc_processed_dataframe = processed_dataframe[
+                processed_dataframe[location_var] == k
+            ]
+            loc_processed_dataframe.reset_index(inplace=True)
+            for i in range(
+                len(loc_processed_dataframe[self._dependent_variable]) - seq_len
+            ):
+                for j in range(seq_len):
+                    if (
+                        len(loc_processed_dataframe[self._dependent_variable])
+                        > i + seq_len - 1
+                    ):
+                        df_columns[f"att{j + 1}"].append(
+                            loc_processed_dataframe[self._dependent_variable][i + j]
+                        )
+                    else:
+                        continue
 
-            df_columns["target"].append(
-                processed_dataframe[self._dependent_variable][i + seq_len]
-            )
+                df_columns["target"].append(
+                    loc_processed_dataframe[self._dependent_variable][i + seq_len]
+                )
 
         import pandas as pd
 

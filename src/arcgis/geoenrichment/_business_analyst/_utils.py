@@ -609,16 +609,24 @@ def pro_at_least_version(version: str) -> bool:
 
     # variable to store status
     at_least = False
+    all_parts_equal = True  # until proven false
 
     # test all the parts of the input version against the current version
     for idx in range(0, max_len):
-
         # evaluate if the part and if greater, break and report status
-        if v_lst[idx] < in_lst[idx]:
-            at_least = True
+        if v_lst[idx] > in_lst[idx]:
+            all_parts_equal = False
+            at_least = True  # current Pro version is more recent
             break
 
-    return at_least
+        if v_lst[idx] < in_lst[idx]:
+            all_parts_equal = False
+            at_least = False  # current Pro version is too old
+            break
+
+    return (
+        at_least | all_parts_equal
+    )  # if versions are equal, return true. Otherwise return at_least
 
 
 def extract_from_kwargs(paramater_key: str, kwargs: dict) -> Tuple[Any, dict]:

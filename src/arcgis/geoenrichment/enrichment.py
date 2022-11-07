@@ -7,9 +7,9 @@ from typing import Any, Union, Iterable, Optional
 from arcgis import __version__
 from arcgis import env
 from arcgis.features import FeatureSet, GeoAccessor, GeoSeriesAccessor
-from arcgis.geometry import Geometry, SpatialReference
+from arcgis.geometry import Geometry, SpatialReference, Polyline, Polygon, Point
 from arcgis.gis import GIS
-from arcgis.geocoding import geocode
+from arcgis.geocoding import geocode, reverse_geocode
 from arcgis._impl.common._deprecate import deprecated
 from arcgis._impl.common._utils import _lazy_property
 import pandas as pd
@@ -1588,6 +1588,7 @@ def enrich(
     if isinstance(study_areas, list):
         first_geo = study_areas[0]
         for index, value in enumerate(study_areas):
+            cntry = None
             if isinstance(value, BufferStudyArea):
                 # returns a string
                 value = value.area
@@ -1606,9 +1607,36 @@ def enrich(
                     sa_to_country[cntry].append(value)
                 else:
                     sa_to_country[cntry] = [value]
+            elif isinstance(value, dict):
+                if "address" in value and "sourceCountry" in value["address"]:
+                    cntry = Country(value["address"]["sourceCountry"])
+                elif "sourceCountry" in value:
+                    cntry = Country(value["sourceCountry"])
+                elif isinstance(value, Geometry):
+                    if isinstance(value, Polyline) or isinstance(value, Polygon):
+                        value = value.true_centroid
+                    # geocode the geom and extract the country
+                    geocoded_area = reverse_geocode(value)
+                    cntry = Country(geocoded_area["address"]["CountryCode"])
+                if cntry in sa_to_country:
+                    sa_to_country[cntry].append(value)
+                else:
+                    sa_to_country[cntry] = [value]
             if index == 0:
                 # if the first instance is a geocoded area, assign enrich_src
                 enrich_src = cntry
+    if isinstance(study_areas, GeoAccessor):
+        first_geo = Point(
+            {
+                "x": study_areas.true_centroid[0],
+                "y": study_areas.true_centroid[1],
+                "spatialReference": study_areas.sr,
+            }
+        )
+        geocoded_area = reverse_geocode(first_geo)
+        cntry = Country(geocoded_area["address"]["CountryCode"])
+        sa_to_country[cntry] = study_areas._data["SHAPE"].tolist()
+        enrich_src = cntry
 
     # assign further properties if found
     if isinstance(first_geo, NamedArea):
@@ -1669,6 +1697,7 @@ def enrich(
             enrich_res = pd.DataFrame()
             for country, sas in sa_to_country.items():
                 enrich_src = country
+                study_areas = sas
                 avail_data_coll = enrich_src.enrich_variables.data_collection.unique()
                 unavail_data_coll = [
                     dc for dc in data_collections if dc not in avail_data_coll

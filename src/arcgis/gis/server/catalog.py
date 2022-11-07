@@ -115,16 +115,30 @@ class ServicesDirectory(BaseServer):
         ags_file = kwargs.pop("ags_file", None)
         if url is None and ags_file:
             import arcpy
+            from arcgis.auth._auth._token import _parse_arcgis_url
 
             resp = arcpy.gp.getStandaloneServerToken(ags_file)
-            url = resp.get("serverUrl", None)
+            url = _parse_arcgis_url(resp.get("serverUrl", None)) + "/rest/services"
         profile = kwargs.pop("profile", None)
         if str(url).endswith("/"):
             url = url[:-1]
         if profile:
             # pm = self._pm
-            url, username, password, key_file, cert_file, client_id = self._profile_mgr(
-                profile, url, username, password, cert_file, key_file, client_id=None
+            (
+                url,
+                username,
+                password,
+                key_file,
+                cert_file,
+                client_id,
+            ) = self._profile_mgr(
+                profile,
+                url,
+                username,
+                password,
+                cert_file,
+                key_file,
+                client_id=None,
             )
         if profile is None and url is None and ags_file is None:
             raise ValueError(
@@ -155,7 +169,11 @@ class ServicesDirectory(BaseServer):
         if aurl is None:
             parsed = urlparse(url)
             wa = parsed.path[1:].split("/")[0]
-            self._adminurl = "%s://%s/%s/admin" % (parsed.scheme, parsed.netloc, wa)
+            self._adminurl = "%s://%s/%s/admin" % (
+                parsed.scheme,
+                parsed.netloc,
+                wa,
+            )
         else:
             self._adminurl = aurl
 
@@ -198,7 +216,14 @@ class ServicesDirectory(BaseServer):
         self._init(self._con)
 
     def _profile_mgr(
-        self, profile, url, username, password, cert_file, key_file, client_id=None
+        self,
+        profile,
+        url,
+        username,
+        password,
+        cert_file,
+        key_file,
+        client_id=None,
     ):
         if profile not in self._pm.list():
             _log.info("Adding new profile {} to config...".format(profile))
@@ -269,7 +294,10 @@ class ServicesDirectory(BaseServer):
                 # if s['name'].split('/')[-1].lower() == name.lower():
                 url = "%s/%s/%s" % (self._url, s["name"], s["type"])
                 data.append(
-                    [s["name"].split("/")[-1], """<a href="%s">Service</a>""" % url]
+                    [
+                        s["name"].split("/")[-1],
+                        """<a href="%s">Service</a>""" % url,
+                    ]
                 )
 
         df = pd.DataFrame(data=data, columns=columns)
@@ -347,7 +375,7 @@ class ServicesDirectory(BaseServer):
             :class:`~arcgis.gis.nb.NotebookServer` objects, or the
             :class:`~arcgis.gis.server.ServiceManager.list` method of
             the :class:`~arcgis.gis.server.ServiceManager` class, which
-            returns a list of :class:`~arcgis.gis.server.Service` objects.
+            returns a list of :class:`~arcgis.gis.server.Service` objects and modules.
 
         """
         services = []

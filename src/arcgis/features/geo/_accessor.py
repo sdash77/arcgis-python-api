@@ -185,7 +185,9 @@ class GeoSeriesAccessor:
             A Series of strings
         """
         return pd.Series(
-            self._data.hull_rectangle, name="hull_rectangle", index=self._index
+            self._data.hull_rectangle,
+            name="hull_rectangle",
+            index=self._index,
         )
 
     # ----------------------------------------------------------------------
@@ -333,7 +335,9 @@ class GeoSeriesAccessor:
             A Series of :class:`~arcgis.geometry.SpatialReference` objects.
         """
         return pd.Series(
-            self._data.spatial_reference, name="spatial_reference", index=self._index
+            self._data.spatial_reference,
+            name="spatial_reference",
+            index=self._index,
         )
 
     # ----------------------------------------------------------------------
@@ -449,7 +453,9 @@ class GeoSeriesAccessor:
 
         """
         return pd.Series(
-            self._data.clip(**{"envelope": envelope}), index=self._index, name="clip"
+            self._data.clip(**{"envelope": envelope}),
+            index=self._index,
+            name="clip",
         )
 
     # ----------------------------------------------------------------------
@@ -533,7 +539,9 @@ class GeoSeriesAccessor:
 
         """
         return pd.Series(
-            self._data.cut(**{"cutter": cutter}), index=self._index, name="cut"
+            self._data.cut(**{"cutter": cutter}),
+            index=self._index,
+            name="cut",
         )
 
     # ----------------------------------------------------------------------
@@ -567,7 +575,11 @@ class GeoSeriesAccessor:
         """
         return pd.Series(
             self._data.densify(
-                **{"method": method, "distance": distance, "deviation": deviation}
+                **{
+                    "method": method,
+                    "distance": distance,
+                    "deviation": deviation,
+                }
             ),
             index=self._index,
             name="densify",
@@ -789,7 +801,10 @@ class GeoSeriesAccessor:
         """
         return pd.Series(
             self._data.intersect(
-                **{"second_geometry": second_geometry, "dimension": dimension}
+                **{
+                    "second_geometry": second_geometry,
+                    "dimension": dimension,
+                }
             ),
             name="intersect",
             index=self._index,
@@ -815,7 +830,10 @@ class GeoSeriesAccessor:
 
         """
         res = self._data.measure_on_line(
-            **{"second_geometry": second_geometry, "as_percentage": as_percentage}
+            **{
+                "second_geometry": second_geometry,
+                "as_percentage": as_percentage,
+            }
         )
         return pd.Series(res, index=self._index, name="measure_on_line")
 
@@ -952,7 +970,10 @@ class GeoSeriesAccessor:
 
         """
         res = self._data.query_point_and_distance(
-            **{"second_geometry": second_geometry, "use_percentage": use_percentage}
+            **{
+                "second_geometry": second_geometry,
+                "use_percentage": use_percentage,
+            }
         )
         return pd.Series(res, index=self._index, name="query_point_and_distance")
 
@@ -1559,7 +1580,12 @@ class GeoAccessor(object):
 
     # ----------------------------------------------------------------------
     def join(
-        self, right_df, how="inner", op="intersects", left_tag="left", right_tag="right"
+        self,
+        right_df,
+        how="inner",
+        op="intersects",
+        left_tag="left",
+        right_tag="right",
     ):
         """
         The ``join`` method joins the current DataFrame to another Spatially-Enabled DataFrame based
@@ -1699,7 +1725,10 @@ class GeoAccessor(object):
             # within implemented as the inverse of contains; swap names
             left_df, right_df = right_df, left_df
             result = result.rename(
-                columns={"_key_left": "_key_right", "_key_right": "_key_left"}
+                columns={
+                    "_key_left": "_key_right",
+                    "_key_right": "_key_left",
+                }
             )
 
         if how == "inner":
@@ -1730,7 +1759,10 @@ class GeoAccessor(object):
                 left_df.drop(left_df.spatial._name, axis=1)
                 .merge(
                     result.merge(
-                        right_df, left_on="_key_right", right_index=True, how="right"
+                        right_df,
+                        left_on="_key_right",
+                        right_index=True,
+                        how="right",
                     ),
                     left_index=True,
                     right_on="_key_left",
@@ -2550,7 +2582,12 @@ class GeoAccessor(object):
 
     # ----------------------------------------------------------------------
     def to_featureclass(
-        self, location, overwrite=True, has_z=None, has_m=None, sanitize_columns=True
+        self,
+        location,
+        overwrite=True,
+        has_z=None,
+        has_m=None,
+        sanitize_columns=True,
     ):
         """
         The ``to_featureclass`` exports a spatially enabled dataframe to a feature class.
@@ -2607,6 +2644,11 @@ class GeoAccessor(object):
         """
         The ``to_table`` method exports a geo enabled dataframe to a :class:`~arcgis.features.Table` object.
 
+        .. note::
+            Null integer values will be changed to 0 when using shapely instead
+            of ArcPy due to shapely conventions.
+            With ArcPy null integer values will remain null.
+
         ===========================     ====================================================================
         **Argument**                    **Description**
         ---------------------------     --------------------------------------------------------------------
@@ -2650,7 +2692,11 @@ class GeoAccessor(object):
 
     # ----------------------------------------------------------------------
     def to_parquet(
-        self, path: str, index: bool = None, compression: str = "gzip", **kwargs
+        self,
+        path: str,
+        index: bool = None,
+        compression: str = "gzip",
+        **kwargs,
     ) -> str:
         """
         Write a Spatially Enabled DataFrame to the Parquet format.
@@ -2690,7 +2736,11 @@ class GeoAccessor(object):
         from ._io._arrow import _to_parquet
 
         return _to_parquet(
-            df=self._data, path=path, index=index, compression=compression, **kwargs
+            df=self._data,
+            path=path,
+            index=index,
+            compression=compression,
+            **kwargs,
         )
 
     # ----------------------------------------------------------------------
@@ -2707,6 +2757,11 @@ class GeoAccessor(object):
         """
         The ``to_featurelayer`` method publishes a spatial dataframe to a new
         :class:`~arcgis.features.FeatureLayer` object.
+
+        .. note::
+            Null integer values will be changed to 0 when using shapely instead
+            of ArcPy due to shapely conventions.
+            With ArcPy null integer values will remain null.
 
         ===========================     ====================================================================
         **Argument**                    **Description**
@@ -2797,7 +2852,11 @@ class GeoAccessor(object):
     # ----------------------------------------------------------------------
     @staticmethod
     def from_df(
-        df, address_column="address", geocoder=None, sr=None, geometry_column=None
+        df,
+        address_column="address",
+        geocoder=None,
+        sr=None,
+        geometry_column=None,
     ):
         """
         The ``from_df`` creates a Spatially Enabled DataFrame from a dataframe with an address column.
@@ -2909,7 +2968,13 @@ class GeoAccessor(object):
     # ----------------------------------------------------------------------
     @staticmethod
     def from_xy(
-        df, x_column, y_column, sr=4326, z_column=None, m_column=None, **kwargs
+        df,
+        x_column,
+        y_column,
+        sr=4326,
+        z_column=None,
+        m_column=None,
+        **kwargs,
     ):
         """
         The ``from_xy`` method converts a Pandas DataFrame into a Spatially Enabled DataFrame
@@ -3006,6 +3071,11 @@ class GeoAccessor(object):
         """
         The ``from_featureclass`` creates a Spatially enabled `pandas.DataFrame` from a
         :class:`~arcgis.features.Features` class.
+
+        .. note::
+            Null integer values will be changed to 0 when using shapely instead
+            of ArcPy due to shapely conventions.
+            With ArcPy null integer values will remain null.
 
         ===========================     ====================================================================
         **Argument**                    **Description**
@@ -3291,6 +3361,8 @@ class GeoAccessor(object):
 
         _look_up = {
             np.int8: "esriFieldTypeInteger",
+            _dtype(bool): "esriFieldTypeInteger",
+            bool: "esriFieldTypeInteger",
             _dtype(np.int8): "esriFieldTypeInteger",
             np.int16: "esriFieldTypeInteger",
             _dtype(np.int16): "esriFieldTypeInteger",
@@ -3820,7 +3892,8 @@ class GeoAccessor(object):
         """
         q = self._data[self.name].geom.centroid.isnull()
         df = pd.DataFrame(
-            self._data[~q][self.name].geom.centroid.tolist(), columns=["x", "y"]
+            self._data[~q][self.name].geom.centroid.tolist(),
+            columns=["x", "y"],
         )
         return df["x"].mean(), df["y"].mean()
 
@@ -4279,5 +4352,9 @@ class GeoAccessor(object):
         """
 
         return _sanitize_column_names(
-            self, convert_to_string, remove_special_char, inplace, use_snake_case
+            self,
+            convert_to_string,
+            remove_special_char,
+            inplace,
+            use_snake_case,
         )
