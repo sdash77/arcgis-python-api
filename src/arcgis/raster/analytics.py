@@ -9571,7 +9571,6 @@ def mosaic_image(
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
-    **kwargs,
 ):
     """
     Merges multiple existing raster datasets into an existing raster dataset. 
@@ -9684,5 +9683,4 @@ def mosaic_image(
         context=context,
         gis=gis,
         future=future,
-        **kwargs,
     )

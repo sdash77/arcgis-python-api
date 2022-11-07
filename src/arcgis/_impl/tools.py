@@ -17191,8 +17191,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         mosaic_colormap_mode="FIRST",
         no_data_value=None,
         context=None,
+        gis=None,
         future=False,
-        **kwargs,
     ):
 
         """
@@ -17216,6 +17216,8 @@ class _RasterAnalysisTools(BaseAnalytics):
         future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
 
         """
+
+        gis = self._gis
 
         context_param = {}
         _set_raster_context(context_param, context)
@@ -17259,7 +17261,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             mosaic_colormap_mode=mosaic_colormap_mode,
             no_data_value=no_data_value,
             context=context,
-            gis=self._gis,
+            gis=gis,
             future=True,
         )
 
