@@ -7,7 +7,6 @@ from ..tools._lazy import LazyLoader
 from ..tools import parse_url
 
 HAS_SSPI = False
-HAS_NTLM2 = False
 HAS_GSSAPI = False
 HAS_KERBEROS = False
 
@@ -30,12 +29,6 @@ try:
 except:
     HAS_KERBEROS = False
 
-try:
-    import requests_ntlm2
-
-    HAS_NTLM2 = True
-except:
-    HAS_NTLM2 = False
 
 requests = LazyLoader("requests")
 
