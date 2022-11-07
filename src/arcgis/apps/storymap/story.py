@@ -92,7 +92,7 @@ class StoryMap(object):
             for resource in self._resources:
                 for key, val in resource.items():
                     if key == "resource" and (
-                        re.match("draft_\d{13}.json", val)
+                        re.match("draft_[0-9]{13}.json", val)
                         or re.match("draft.json", val)
                     ):
                         saved_drafts.append(val)
@@ -966,7 +966,7 @@ class StoryMap(object):
         """
         # Remove old draft item
         for resource in self._resources:
-            if re.match("draft_\d{13}.json", resource["resource"]) or re.match(
+            if re.match("draft_[0-9]{13}.json", resource["resource"]) or re.match(
                 "draft.json", resource["resource"]
             ):
                 self._remove_resource(file=resource["resource"])
