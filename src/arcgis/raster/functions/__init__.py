@@ -13029,7 +13029,7 @@ def geometric_median(
     --------------------------------     --------------------------------------------------------------------
     rasters                              Required list of :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` objects.
     --------------------------------     --------------------------------------------------------------------
-    epsilon                              Optional int. float. Specifies the convergence value between two
+    epsilon                              Optional float. Specifies the convergence value between two
                                          consecutive iterations. When epsilon is less than or equal to the
                                          specified value, the iteration will stop, and the result of the
                                          last iteration will be used.
