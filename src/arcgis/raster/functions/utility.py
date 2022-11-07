@@ -1,4 +1,4 @@
-from .._layer import ImageryLayer, Raster
+from .._layer import ImageryLayer, Raster, RasterCollection
 from arcgis.gis import Item
 import numbers
 from arcgis.features.layer import FeatureLayer
@@ -16,6 +16,13 @@ import requests
 
 def _raster_input(raster, raster2=None):
     layer = None
+
+    #if input is a rastercollection, get the list of rasters and use that as the input
+    if isinstance(raster, RasterCollection):
+        raster = raster._ras_coll_engine_obj._rasters_list
+    if isinstance(raster2, RasterCollection):
+        raster2 = raster2._ras_coll_engine_obj._rasters_list
+
     if isinstance(raster, Raster):
         if hasattr(raster, "_engine_obj"):
             raster = raster._engine_obj
