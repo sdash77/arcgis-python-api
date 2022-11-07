@@ -1,3 +1,4 @@
+from __future__ import annotations
 import collections
 from functools import wraps
 from pathlib import Path
@@ -7,8 +8,16 @@ from typing import Any, Union, Iterable, Optional
 from arcgis import __version__
 from arcgis import env
 from arcgis.features import FeatureSet, GeoAccessor, GeoSeriesAccessor
-from arcgis.geometry import Geometry, SpatialReference, Polyline, Polygon, Point
+from arcgis.features.geo import _is_geoenabled
+from arcgis.geometry import (
+    Geometry,
+    SpatialReference,
+    Polyline,
+    Polygon,
+    Point,
+)
 from arcgis.gis import GIS
+from arcgis import env as _env
 from arcgis.geocoding import geocode, reverse_geocode
 from arcgis._impl.common._deprecate import deprecated
 from arcgis._impl.common._utils import _lazy_property
@@ -1658,7 +1667,9 @@ def enrich(
                 study_areas = sas
                 # get all possible requested enrich variables
                 enrich_vars = _preproces_data_colletions_and_analysis_variables(
-                    enrich_src._ba_cntry, data_collections, analysis_variables
+                    enrich_src._ba_cntry,
+                    data_collections,
+                    analysis_variables,
                 )
 
                 # invoke enrich on the business analyst object
@@ -1706,7 +1717,9 @@ def enrich(
                 if len(unavail_data_coll) == 0:
                     # get all possible requested enrich variables
                     enrich_vars = _preproces_data_colletions_and_analysis_variables(
-                        enrich_src._ba_cntry, data_collections, analysis_variables
+                        enrich_src._ba_cntry,
+                        data_collections,
+                        analysis_variables,
                     )
                     # invoke enrich on the business analyst object
                     enrich_df = enrich_src.enrich(
@@ -2013,3 +2026,186 @@ def _standard_geography_query_gis(
         feature_limit=feature_limit,
         as_featureset=as_featureset,
     )
+
+
+def _process_study_areas(areas: list) -> list:
+    """converts the multiples inputs into the proper format."""
+    processed = []
+    for area in areas:
+        if isinstance(
+            area, str
+        ):  # street address - {"address":{"text":"380 New York St Redlands CA 92373"}}
+            res: FeatureSet = geocode(address=area, as_featureset=True)
+            if len(res) > 0:
+                processed.append({"geometry": res.features[0].geometry})
+        elif isinstance(area, NamedArea):
+            processed.append(area.__studyarea__)
+        elif isinstance(area, Country):
+            processed.append({"geometry": area.geometry})
+        elif isinstance(area, (Polygon, Point, Geometry)):
+            processed.append({"geometry": area})
+        elif isinstance(area, Polyline):
+            processed.append({"geometry": area.true_centroid})
+        elif isinstance(area, BufferStudyArea):
+
+            # namedtuple('BufferStudyArea', 'area radii units overlap travel_mode')
+            g = area.area
+            if isinstance(g, str):
+                area_dict = {"address": {"text": g}}
+            elif isinstance(g, Geometry):  # geometry, polygons, points
+                area_dict = {"geometry": dict(g)}
+            elif isinstance(g, dict):
+                area_dict = g
+
+            else:
+                raise ValueError(
+                    "BufferStudyArea is only supported for Point geometry and addresses"
+                )
+
+            area_type = "RingBuffer"
+            if area.travel_mode is None:
+                if not area.overlap:
+                    area_type = "RingBufferBands"
+            else:
+                area_type = "NetworkServiceArea"
+
+            area_dict["areaType"] = area_type
+            area_dict["bufferUnits"] = area.units
+            area_dict["bufferRadii"] = area.radii
+            if area.travel_mode is not None:
+                area_dict["travel_mode"] = area.travel_mode
+            processed.append(area_dict)
+        elif _is_geoenabled(area):
+            processed.extend(_process_study_areas(area[area.spatial.name].tolist()))
+        elif isinstance(area, dict):
+            processed.append(area)
+        else:
+            raise ValueError(f"Invalid Input of type: {type(area)}")
+        del area
+    return processed
+
+
+def interesting_facts(
+    study_areas: list[
+        Union[pd.DataFrame, NamedArea, BufferStudyArea, Country, Polygon, Point]
+    ],
+    *,
+    study_area_options: dict[str, Any] | None = None,
+    use_data: dict[str, Any] | None = None,
+    variables_filter: str | None = None,
+    analysis_variables: list[str] | None = None,
+    data_collections: str | None = None,
+    variable_types: str | None = None,
+    comparison_layer: str = "Admin3",
+    spatial_filter: dict[str, Any] | None = None,
+    thresholds: list[dict[str, Any]] | None = None,
+    remove_similar_facts: bool = True,
+    result_record_count: int = 10,
+    return_explanation: bool = True,
+    out_statistics: str | None = None,
+    out_histogram: dict[str, Any] | None = None,
+    out_fields: list[dict[str, Any]] | None = None,
+    return_geometry: bool = False,
+    out_sr: Union[dict[str, Any], SpatialReference] | None = None,
+    gis: GIS | None = None,
+) -> dict[str, Any]:
+    """
+    The GeoEnrichment service allows to analyze a study area and reveal
+    facts by comparing key statistics to comparison standard geography
+    features.
+
+    ======================     ====================================================================
+    **Argument**               **Description**
+    ----------------------     --------------------------------------------------------------------
+    study_areas                Required list[Union[pd.DataFrame, NamedArea, BufferStudyArea,
+                               Country, Polygon, Point]]. Study areas to be analyzed.
+    ----------------------     --------------------------------------------------------------------
+    study_area_options         Optional dict[str, Any]. The options for a study area. This
+                               parameter is only applicable to input study areas that are based on
+                               points. This parameter is not needed and ignored for input polygon
+                               study areas.
+    ----------------------     --------------------------------------------------------------------
+    use_data                   Optional dict[str, Any]. Explicitly specify the country or dataset
+                               to query.
+    ----------------------     --------------------------------------------------------------------
+    variables_filter           Optional str. Allows for specify a subset of variables to be
+                               returned from one or more Data Collections.
+    ----------------------     --------------------------------------------------------------------
+    analysis_variables         Optional list[str]. Optional parameter to specify a subset of
+                               variables to be returned from one or more Data Collections.
+
+                               A Data Collection is a preassembled list of attributes that will be
+                               used to find interesting facts.
+    ----------------------     --------------------------------------------------------------------
+    data_collections           Optional str. Optional parameter to specify the hierarchy to query
+                               in the case of multiple vintages being available.
+    ----------------------     --------------------------------------------------------------------
+    variable_types             Optional str. A filter by data collection.
+    ----------------------     --------------------------------------------------------------------
+    comparison_layer           Optional str. The default is"Admin3".
+    ----------------------     --------------------------------------------------------------------
+    spatial_filter             Optional dict[str, Any]. The geometry spatial filter.
+    ----------------------     --------------------------------------------------------------------
+    thresholds                 Optional list[dict[str, Any]]. Defines thresholds used as interesting criteria.
+    ------------------- ---     --------------------------------------------------------------------
+    remove_similar_facts       Optional bool. Removes the similar facts. The default is True.
+    ----------------------     --------------------------------------------------------------------
+    result_record_count        Optional int. The number of records to return.  The default is 10.
+    ----------------------     --------------------------------------------------------------------
+    return_explanation         Optional bool. Returns the explanations of the results with the response. The default is True.
+    ----------------------     --------------------------------------------------------------------
+    out_statistics             Optional str. Defines what statistical measurements will be added to
+                               explanations section.
+                               Possible values: 'min', 'max', 'median', 'avg', 'stdDev', 'var',
+                               'count', 'percentile1 - percentile10', 'percentile90, percentile99',
+                               '*', or 'none'
+    ----------------------     --------------------------------------------------------------------
+    out_histogram              Optional dict[str, Any]. Defines the parameters of histogram that
+                               should be included in response.
+    ----------------------     --------------------------------------------------------------------
+    out_fields                 Optional list[dict[str, Any]]. Defines which fields (properties) of
+                               result feature set should be included in response.
+    ----------------------     --------------------------------------------------------------------
+    return_geometry            Optional bool. If true, the response will include geometries.  The
+                               default is False.
+    ----------------------     --------------------------------------------------------------------
+    out_sr                     Optional Union[dict[str, Any], SpatialReference]. The result spatial reference.
+    ----------------------     --------------------------------------------------------------------
+    gis                        Optional :class:`~arcgis.gis.GIS` .  If None, the GIS object will be used from the
+                               arcgis.env.active_gis.  This GIS object must be authenticated and
+                               have the ability to consume credits
+    ======================     ====================================================================
+
+    """
+    if gis is None:
+        gis: GIS = _env.active_gis
+    if out_sr is None:
+        out_sr = {"wkid": 3857}
+    url: str = f"{gis.properties.helperServices.geoenrichment.url}/Geoenrichment/InterestingFacts"
+    study_areas = _process_study_areas(areas=study_areas)
+    params = {
+        "studyAreas": study_areas,
+        "studyAreasOptions": study_area_options,
+        "useData": use_data,
+        "variablesFilter": variables_filter,
+        "analysisVariables": analysis_variables,
+        "dataCollections": data_collections,
+        "variableTypes": variable_types,
+        "comparisonLayer": comparison_layer,
+        "spatialFilter": spatial_filter,
+        "thresholds": thresholds,
+        "removeSimilarFacts": remove_similar_facts,
+        "resultRecordCount": result_record_count,
+        "returnExplanation": return_explanation,
+        "outStatistics": out_statistics,
+        "outHistogram": out_histogram,
+        "outFields": out_fields,
+        "returnGeometry": return_geometry,
+        "outSR": out_sr,
+    }
+    if gis.version < [10, 3] and gis._con.token:
+        params["token"] = gis._con.token
+    for key in list(params.keys()):
+        if params[key] is None:
+            del params[key]
+    return gis._con.post(url, params=params)
