@@ -13011,12 +13011,13 @@ def interpolate_raster_by_dimension(
 
     return _clone_layer(layer1, template_dict, raster_ra1)
 
+
 def geometric_median(
     rasters,
     epsilon=0.001,
     max_iteration=10,
     extent_type: str = "FirstOf",
-    cellsize_type: str = "FirstOf"
+    cellsize_type: str = "FirstOf",
 ):
     """
     Calculates the geometric median across pixels in a time series of multiband imagery.
@@ -13028,13 +13029,13 @@ def geometric_median(
     --------------------------------     --------------------------------------------------------------------
     rasters                              Required list of :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` objects.
     --------------------------------     --------------------------------------------------------------------
-    epsilon                              Optional int. float. Specifies the convergence value between two 
-                                         consecutive iterations. When epsilon is less than or equal to the 
-                                         specified value, the iteration will stop, and the result of the 
+    epsilon                              Optional int. float. Specifies the convergence value between two
+                                         consecutive iterations. When epsilon is less than or equal to the
+                                         specified value, the iteration will stop, and the result of the
                                          last iteration will be used.
     --------------------------------     --------------------------------------------------------------------
-    max_iteration                        Optional int. Specifies the maximum number of iterations to complete. 
-                                         The computation will end once this value is reached, regardless of the 
+    max_iteration                        Optional int. Specifies the maximum number of iterations to complete.
+                                         The computation will end once this value is reached, regardless of the
                                          epsilon setting.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -13096,6 +13097,7 @@ def geometric_median(
         template_dict["rasterFunctionArguments"]["CellsizeType"] = in_cellsize_type
 
     return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
+
 
 class RFT:
     def __init__(self, raster_function_template, gis=None):
