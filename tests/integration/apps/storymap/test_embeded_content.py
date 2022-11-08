@@ -1,0 +1,75 @@
+# import sys
+# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
+import unittest
+from arcgis.gis import GIS
+from arcgis.apps.storymap import StoryMap
+from arcgis.apps.storymap.story_content import Embed
+
+profiles = ["your_online_profile", "your_enterprise_profile"]
+
+class TestEmbedContent(unittest.TestCase):
+    """Test adding embed and seeing properties"""
+    def test_add_embed(self):
+        """Test adding Embed and seeing properties"""
+        for profile in profiles:
+             with self.subTest(msg=profile):
+                # establish gis connection
+                gis = GIS(profile=profile, verify_cert=False)
+                story = StoryMap()
+                emb = Embed(
+                    "https://www.nps.gov/media/multimedia-search.htm#sort=Date_Last_Modified+desc"
+                )
+                web_page = story.add(emb)
+
+                assert web_page
+                assert emb.link
+                assert emb.properties
+                item = gis.content.get(story._itemid)
+                assert item.delete()
+
+    def test_delete(self):
+        """Test delete method on an Audio node. Each content has this delete method"""
+        # Audio through URL
+        for profile in profiles:
+             with self.subTest(msg=profile):
+                # establish gis connection
+                gis = GIS(profile=profile, verify_cert=False)
+                story = StoryMap()
+                
+                emb = Embed(
+                    "https://www.nps.gov/media/multimedia-search.htm#sort=Date_Last_Modified+desc"
+                )
+                web_page = story.add(emb)
+
+                deleted = web_page.delete()
+                assert deleted
+                item = gis.content.get(story._itemid)
+                assert item.delete()
+
+    def test_replace_media_item(self):
+        """Test replacing the webpage link. This can be done through a property for each content"""
+        for profile in profiles:
+             with self.subTest(msg=profile):
+                # establish gis connection
+                gis = GIS(profile=profile, verify_cert=False)
+                story = StoryMap()
+                emd = Embed(
+                    "https://www.nps.gov/media/multimedia-search.htm#sort=Date_Last_Modified+desc"
+                )
+                story.add(emd)
+
+                new_emd = "https://www.nps.gov/index.htm"
+                assert emd.link
+                print(emd.link)
+
+                emd.link = new_emd
+                emd.caption = "I updated the webpage"
+                print(emd.link)
+                print(emd.caption)
+
+                assert emd.link
+                item = gis.content.get(story._itemid)
+                assert item.delete()
+                
+if __name__ == "__main__":
+    unittest.main()

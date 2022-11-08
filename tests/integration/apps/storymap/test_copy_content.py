@@ -1,29 +1,15 @@
-import sys
-from unittest.case import SkipTest
-
-sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
+# import sys
+# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
-from arcgis.gis import GIS, Item
-from arcgis.apps.storymap import StoryMap, Themes
-from arcgis.apps.storymap import (
-    Image,
-    Audio,
-    Map,
-    Video,
-    Embed,
-    Button,
-    Text,
-    TextStyles,
-    Gallery,
-    Scales,
-)
+from arcgis.gis import GIS
+from arcgis.apps.storymap import StoryMap
 
-profiles = [ "your_enterprise_profile"]
+profiles = ["your_online_profile", "your_enterprise_profile"]
 
 class TestStoryMapsCopyContent(unittest.TestCase):
     """This test is built to test the copy content method on the arcgis storymap"""
     def test_copy_content(self):
-        """tests creating a feature layer and overwriting it"""
+        """tests copying content to a new story map"""
         for profile in profiles:
              with self.subTest(msg=profile):
                 # establish gis connection
