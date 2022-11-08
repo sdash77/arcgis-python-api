@@ -27,8 +27,11 @@ import logging
 from typing import Any, Optional, Union
 from urllib.error import HTTPError
 import requests
-from arcgis.gis._impl import (
+from arcgis.gis._impl._dataclasses._contentds import (
+    ItemTypeEnum,
     ItemProperties,
+)
+from arcgis.gis._impl import (
     MetadataFormatEnum,
     CreateServiceParameter,
     ServiceTypeEnum,
@@ -13442,6 +13445,14 @@ class Item(dict):
             self._hydrate()  # hydrated properties needed below
 
         # find if portal is ArcGIS Online
+        try:
+
+            ig_url = f"{self._gis._portal.resturl}content/itemsgroups"
+            params = {"f": "json", "items": self.itemid}
+            ig_groups = list(self._portal.con.get(ig_url, params).keys())
+        except:
+            ig_groups = []
+
         if self._gis._portal.is_arcgisonline:
             # Call with owner info
             if self._user_id != self._gis.users.me.username:
@@ -13458,6 +13469,7 @@ class Item(dict):
                     resp.get("admin", [])
                     + resp.get("other", [])
                     + resp.get("member", [])
+                    + ig_groups
                 ):
                     try:
                         grp = Group(gis=self._gis, groupid=grpid["id"])
@@ -13485,6 +13497,7 @@ class Item(dict):
                     resp.get("admin", [])
                     + resp.get("other", [])
                     + resp.get("member", [])
+                    + ig_groups
                 ):
                     try:
                         grp = Group(gis=self._gis, groupid=grpid["id"])
