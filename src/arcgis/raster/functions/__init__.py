@@ -1970,10 +1970,6 @@ def clip(
         geom_dict = template_dict["rasterFunctionArguments"]["ClippingGeometry"]
 
         template_dict["rasterFunctionArguments"]["Extent"] = extent_envelope
-        if (geom_dict) and not isinstance(
-            Geometry(geom_dict), Envelope
-        ):  # for release after 2.0.1 remove this code that sets Extent to None
-            template_dict["rasterFunctionArguments"]["Extent"] = None
 
     except:
         pass
@@ -13010,6 +13006,93 @@ def interpolate_raster_by_dimension(
         template_dict["rasterFunctionArguments"]["IgnoreNoData"] = ignore_nodata
 
     return _clone_layer(layer1, template_dict, raster_ra1)
+
+
+def geometric_median(
+    rasters,
+    epsilon=0.001,
+    max_iteration=10,
+    extent_type: str = "FirstOf",
+    cellsize_type: str = "FirstOf",
+):
+    """
+    Calculates the geometric median across pixels in a time series of multiband imagery.
+
+    The arguments for this function are as follows:
+
+    ================================     ====================================================================
+    **Argument**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` objects.
+    --------------------------------     --------------------------------------------------------------------
+    epsilon                              Optional float. Specifies the convergence value between two
+                                         consecutive iterations. When epsilon is less than or equal to the
+                                         specified value, the iteration will stop, and the result of the
+                                         last iteration will be used.
+    --------------------------------     --------------------------------------------------------------------
+    max_iteration                        Optional integer. Specifies the maximum number of iterations to complete.
+                                         The computation will end once this value is reached, regardless of the
+                                         epsilon setting.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
+
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
+
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
+
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
+
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    ================================     ====================================================================
+
+    :return: The output raster with the function applied.
+
+    .. code-block:: python
+
+        # Usage Example 1: Calculates the geometric_median function on a list of input rasters.
+
+        geometric_median_raster = geometric_median([raster1, raster2, raster3], epsilon=0.001, max_iteration=10)
+    """
+    raster = rasters
+
+    layer, raster, raster_ra = _raster_input(raster)
+
+    extent_types = {"FirstOf": 0, "IntersectionOf": 1, "UnionOf": 2, "LastOf": 3}
+
+    cellsize_types = {"FirstOf": 0, "MinOf": 1, "MaxOf": 2, "MeanOf": 3, "LastOf": 4}
+
+    in_extent_type = extent_types[extent_type]
+    in_cellsize_type = cellsize_types[cellsize_type]
+
+    template_dict = {
+        "rasterFunction": "GeometricMedian",
+        "rasterFunctionArguments": {"Rasters": raster},
+        "variableName": "Rasters",
+    }
+
+    if epsilon is not None:
+        template_dict["rasterFunctionArguments"]["Epsilon"] = epsilon
+    if max_iteration is not None:
+        template_dict["rasterFunctionArguments"]["MaxIteration"] = max_iteration
+
+    if extent_type is not None:
+        template_dict["rasterFunctionArguments"]["ExtentType"] = in_extent_type
+    if cellsize_type is not None:
+        template_dict["rasterFunctionArguments"]["CellsizeType"] = in_cellsize_type
+
+    return _clone_layer(layer, template_dict, raster_ra, variable_name="Rasters")
 
 
 class RFT:

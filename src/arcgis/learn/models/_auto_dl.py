@@ -1218,7 +1218,7 @@ class AutoDL:
 
         if not self._save_evaluated_models:
             if self._save_to_folder:
-                getattr(self, self.best_model).save(
+                self.BestPerformingModel.save(
                     self._output_path
                     + os.sep
                     + "models"
@@ -1243,7 +1243,7 @@ class AutoDL:
                     print(log_msg)
                     self._logger_dict.append(log_msg)
             else:
-                getattr(self, self.best_model).save(
+                self.BestPerformingModel.save(
                     "AutoDL_" + str(self.best_model) + "_" + self._best_backbone
                 )
                 if self.verbose:
@@ -1279,7 +1279,7 @@ class AutoDL:
         _all_executed_model = list(self._train_df["Model"])
 
         if self._save_to_folder:
-            getattr(self, self.best_model).save(self._output_path)
+            self.BestPerformingModel.save(self._output_path)
 
         for ex_models in _all_executed_model:
             try:

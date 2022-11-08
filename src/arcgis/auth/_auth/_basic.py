@@ -1,4 +1,9 @@
-from requests.auth import _basic_auth_str, HTTPBasicAuth, HTTPDigestAuth, HTTPProxyAuth
+from requests.auth import (
+    _basic_auth_str,
+    HTTPBasicAuth,
+    HTTPDigestAuth,
+    HTTPProxyAuth,
+)
 from ._schain import SupportMultiAuth
 from ..tools._lazy import LazyLoader
 from ..tools import parse_url
@@ -119,8 +124,10 @@ class EsriBasicAuth(HTTPBasicAuth, SupportMultiAuth):
             else:
                 info = self._session.get(
                     server_url + "/rest/info?f=json",
-                    auth=self.auth,
+                    auth=self._session.auth,
                     verify=self.verify_cert,
+                    proxies=self._proxies,
+                    timeout=5,
                 ).json()
                 token_url = info["authInfo"]["tokenServicesUrl"]
                 self._server_log[server_url] = token_url
@@ -130,7 +137,7 @@ class EsriBasicAuth(HTTPBasicAuth, SupportMultiAuth):
                 token = self._session.post(
                     token_url,
                     data=postdata,
-                    auth=self.auth,
+                    auth=self._session.auth,
                     verify=self.verify_cert,
                     proxies=self._proxies,
                 )

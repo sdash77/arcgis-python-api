@@ -10,12 +10,7 @@ from typing import Any, Optional, Union
 
 from arcgis.geometry import SpatialReference
 from arcgis.features.layer import FeatureLayer
-from arcgis.geoprocessing._support import (
-    _analysis_job,
-    _analysis_job_results,
-    _analysis_job_status,
-    _layer_input,
-)
+
 import json as _json
 import arcgis as _arcgis
 import string as _string
@@ -23,6 +18,7 @@ import random as _random
 import collections
 from arcgis.gis import GIS, Item
 from arcgis.raster._util import _set_context, _id_generator
+from arcgis.raster import ImageryLayer
 from .._impl.common._deprecate import deprecated
 
 
@@ -46,10 +42,19 @@ def is_supported(gis: Optional[GIS] = None):
     checks if :attr:`~arcgis.env.active_gis` supports raster analytics
     """
     gis = _arcgis.env.active_gis if gis is None else gis
-    if "rasterAnalytics" in gis.properties.helperServices:
-        return True
-    else:
-        return False
+    if (
+        gis is not None
+        and hasattr(gis.properties, "helperServices")
+        and "rasterAnalytics" in gis.properties.helperServices
+    ):
+        user = gis.users.me
+        if user is not None and "premium:publisher:rasteranalysis" in user.privileges:
+            if (
+                "portal:publisher:publishDynamicImagery" in user.privileges
+                or "portal:publisher:publishTiledImagery" in user.privileges
+            ):
+                return True
+    return False
 
 
 def _id_generator(size=6, chars=_string.ascii_uppercase + _string.digits):
@@ -6173,6 +6178,9 @@ def find_argument_statistics(
     ignore_nodata: bool = True,
     output_name: Optional[str] = None,
     context: Optional[dict[str, Any]] = None,
+    argument_value: Optional[int] = None,
+    comparison: Optional[str] = "EQUAL_TO",
+    occurrence: Optional[str] = "FIRST_OCCURRENCE",
     *,
     gis: Optional[GIS] = None,
     future: bool = False,
@@ -6231,6 +6239,8 @@ def find_argument_statistics(
                                              - ARGUMENT_MEDIAN : The dimension value at which the median variable value is reached will be extracted.
 
                                              - DURATION : The longest dimension duration for which the variable values fall between the minimum and maximum values.
+
+                                             - ARGUMENT_VALUE: The dimension value at which the specified variable value is reached will be extracted.
     ------------------------------------     --------------------------------------------------------------------
     min_value                                Optional Float. The minimum variable value to be used to extract the duration.
 
@@ -6310,6 +6320,36 @@ def find_argument_statistics(
 
                                                     {"parallelProcessingFactor": "60%"}
     ------------------------------------     --------------------------------------------------------------------
+    argument_value                           Optional Integer. The value at which a comparison will be made to extract
+                                             the dimension value. This parameter is required when the statistics_type
+                                             parameter is set to ARGUMENT_VALUE.
+
+                                             |
+                                             .. note::
+                                                    This parameter is currently only available on ArcGIS online.
+    ------------------------------------     --------------------------------------------------------------------
+    comparison                               Optional String. Specifies the comparison type that will be used to
+                                             extract the dimension value.
+
+                                             - EQUAL_TO : The extracted dimension is equal to the specified value. This is the default.
+
+                                             - GREATER_THAN : The extracted dimension is greater than the specified value.
+
+                                             - SMALLER_THAN : The extracted dimension is smaller than the specified value.
+
+                                             .. note::
+                                                    This parameter is currently only available on ArcGIS online.
+    ------------------------------------     --------------------------------------------------------------------
+    occurrence                               Optional String. Specifies whether the value of the dimension will be returned the first
+                                             time or last time the argument statistic is reached.
+
+                                             - FIRST_OCCURRENCE : The value of the dimension will be returned the first time the argument statistic is reached. This is the default.
+
+                                             - LAST_OCCURRENCE : The value of the dimension will be returned the last time the argument statistic is reached.
+
+                                             .. note::
+                                                    This parameter is currently only available on ArcGIS online.
+    ------------------------------------     --------------------------------------------------------------------
     gis                                      Keyword only parameter. Optional :class:`~arcgis.gis.GIS` object. the GIS on which this tool runs. If not specified,
                                              the active GIS is used.
     ------------------------------------     --------------------------------------------------------------------
@@ -6383,6 +6423,9 @@ def find_argument_statistics(
         ignore_nodata=ignore_nodata,
         context=context,
         future=future,
+        argument_value=argument_value,
+        comparison=comparison,
+        occurrence=occurrence,
         **kwargs,
     )
 
@@ -9562,4 +9605,129 @@ def export_to_tile_package(
         output_tile_package=output_name,
         future=future,
         **kwargs,
+    )
+
+
+def mosaic_image(
+    input_rasters: list[ImageryLayer],
+    target_raster: ImageryLayer,
+    mosaic_operator: str = "LAST",
+    mosaic_colormap_mode: str = "FIRST",
+    no_data_value: Optional[float] = None,
+    context: Optional[dict[str, Any]] = None,
+    *,
+    gis: Optional[GIS] = None,
+    future: bool = False,
+):
+    """
+    Merges multiple existing raster datasets into an existing raster dataset. 
+    Function available in ArcGIS Image Server 10.9 and higher.
+    Supported only for Cloud Raster format based Imagery Layers.
+
+    ====================================     ====================================================================
+    **Argument**                             **Description**
+    ------------------------------------     --------------------------------------------------------------------
+    input_rasters                             Required list of :class:`~arcgis.raster.ImageryLayer` objects.
+                                              Single or multiple rasters which will be mosaicked to the target raster. 
+    ------------------------------------     --------------------------------------------------------------------
+    target_raster                            Required :class:`~arcgis.raster.ImageryLayer` object. The raster to which the input rasters will be added.
+                                             This must be an existing raster dataset (cloud raster format (CRF) based image service).
+    ------------------------------------     --------------------------------------------------------------------
+    mosaic_operator                          Optional String. Specifies the method that will be used to mosaic overlapping areas.
+
+                                             - FIRST - The output cell value of the overlapping areas will be the value from the first raster\
+                                                       dataset mosaicked into that location.
+                                             - LAST - The output cell value of the overlapping areas will be the value from the last raster dataset\
+                                                      mosaicked into that location. This is the default.
+                                             - BLEND  - The output cell value of the overlapping areas will be a horizontally weighted calculation of\
+                                                        the values of the cells in the overlapping area.
+                                             - MEAN - The output cell value of the overlapping areas will be the average value of the overlapping cells.
+                                             - MINIMUM - The output cell value of the overlapping areas will be the minimum value of the overlapping cells.
+                                             - MAXIMUM - The output cell value of the overlapping areas will be the maximum value of the overlapping cells.
+                                             - SUM - The output cell value of the overlapping areas will be the total sum of the overlapping cells.
+                                             
+                                             Example:
+
+                                                "LAST"
+    ------------------------------------     --------------------------------------------------------------------
+    mosaic_colormap_mode                     Optional String. Specifies the method that will be used to choose which color map from the
+                                             input rasters will be applied to the mosaic output.
+
+                                             - FIRST - The color map from the first raster dataset in the list will be applied to the\
+                                                       output raster mosaic. This is the default.
+                                             - LAST - The color map from the last raster dataset in the list will be applied to the output raster mosaic.
+                                             - MATCH  - All the color maps will be considered when mosaicking. If all possible values are\
+                                                        already used (for the bit depth), the tool will match the value with the closest available color.
+                                             - REJECT  - Only the raster datasets that do not have a color map associated with them will be mosaicked.
+                                             
+                                             Example:
+
+                                                "FIRST"
+    ------------------------------------     --------------------------------------------------------------------
+    no_data_value                            Optional Float or Integer. All the pixels with the specified value will be set to NoData
+                                             in the output raster dataset (target_raster).
+
+                                             Example:
+
+                                                21
+    ------------------------------------     --------------------------------------------------------------------
+    context                                  Context contains additional settings that affect task execution.
+
+                                             context parameter overwrites values set through arcgis.env parameter
+
+                                             This function has the following settings:
+
+                                             - Resampling Method (resamplingMethod): The output raster will be
+                                               resampled to method specified.
+                                               The supported values are: BILINEAR, NEAREST, CUBIC.
+
+                                                Example:
+
+                                                   {'resamplingMethod': "NEAREST"}
+
+
+                                             - Parallel Processing Factor (parallelProcessingFactor): controls
+                                               Raster Processing (CPU) service instances.
+
+                                                Example:
+
+                                                Syntax example with a specified number of processing instances:
+
+                                                    {"parallelProcessingFactor": "2"}
+
+                                                Syntax example with a specified percentage of total
+                                                processing instances:
+
+                                                    {"parallelProcessingFactor": "60%"}
+    ------------------------------------     --------------------------------------------------------------------
+    gis                                      Optional GIS. The :class:`~arcgis.gis.GIS` on which this tool runs. If not specified, the active GIS is used.
+    ------------------------------------     --------------------------------------------------------------------
+    future                                   Keyword only parameter. Optional Boolean. If True, the result will be a GPJob object and
+                                             results will be returned asynchronously.
+    ====================================     ====================================================================
+
+    :return:
+        The output imagery layer item
+
+    .. code-block:: python
+
+        # Usage Example:
+
+        mosaiced_target_op = mosaic_image(input_rasters=[raster_1, raster_2],
+                                          target_raster=raster_3,
+                                          mosaic_operator="FIRST",
+                                          mosaic_colormap_mode="FIRST",
+                                          gis=gis)
+    """
+
+    gis = _arcgis.env.active_gis if gis is None else gis
+    return gis._tools.rasteranalysis.mosaic_image(
+        input_rasters=input_rasters,
+        target_raster=target_raster,
+        mosaic_operator=mosaic_operator,
+        mosaic_colormap_mode=mosaic_colormap_mode,
+        no_data_value=no_data_value,
+        context=context,
+        gis=gis,
+        future=future,
     )

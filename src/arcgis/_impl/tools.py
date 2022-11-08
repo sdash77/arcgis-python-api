@@ -4104,7 +4104,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                                                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online Only.
+                                                                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online and ArcGIS Enterprise 11.1+.
 
                                                                                     .. code-block:: python
 
@@ -4149,7 +4149,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if aggregation_polygon_layer:
             aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
-        if self._gis._is_agol:
+        if self._gis.version > [10, 3] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -4555,7 +4555,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                                                             - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                                                             - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online.
+                                                                            - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online and ArcGIS Enterprise 11.1+.
 
                                                                                 .. code-block:: python
 
@@ -4590,7 +4590,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
             bounding_polygon_layer = self._feature_input(bounding_polygon_layer)
         if aggregation_polygon_layer:
             aggregation_polygon_layer = self._feature_input(aggregation_polygon_layer)
-        if self._gis._is_agol:
+        if self._gis.version > [10, 3] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -4869,7 +4869,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                     - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                     - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online Only.
+                                    - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online and ArcGIS Enterprise 11.1+.
 
                                         .. code-block:: python
 
@@ -4898,7 +4898,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         task = "FindSimilarLocations"
         input_layer = self._feature_input(input_layer)
         search_layer = self._feature_input(search_layer)
-        if self._gis._is_agol:
+        if self._gis.version > [10, 3] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -6158,7 +6158,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                 - ``extent`` - a bounding box that defines the analysis area. Only those features in the input_layer that intersect the bounding box will be analyzed.
                                 - ``outSR`` - the output features will be projected into the output spatial reference referred to by the `wkid`.
-                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online Only and Enterprise 11+.
+                                - ``overwrite`` - if True, then the feature layer in output_name will be overwritten with new feature layer. Available for ArcGIS Online and ArcGIS Enterprise 11+.
 
                                     .. code-block:: python
 
@@ -6189,7 +6189,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         params = {}
         analysis_layer = self._feature_input(analysis_layer)
 
-        if self._gis.version > [9, 2] or self._gis._is_agol:
+        if self._gis.version > [10, 1] or self._gis._is_agol:
             overwrite = context.pop("overwrite", False) if context else False
         else:
             # Remove if in context but default to False in all cases.
@@ -8904,7 +8904,10 @@ class _RasterAnalysisTools(BaseAnalytics):
 
                                 token = _generate_layer_token(input_layer, url)
                                 if token is not None:
-                                    url = input_param["url"] + "?token=" + token
+                                    if input_layer.type == "Feature Service":
+                                        input_param.update({"serviceToken": token})
+                                    else:
+                                        url = input_param["url"] + "?token=" + token
                                 input_param.update({"url": url})
                     except:
                         pass
@@ -9069,14 +9072,17 @@ class _RasterAnalysisTools(BaseAnalytics):
         self, output_name, task, folder=None, output_properties=None
     ):
         gis = self._gis
-        ok = gis.content.is_service_name_available(output_name, "Image Service")
+
+        ok = gis.content.is_service_name_available(
+            output_name.replace(" ", "_"), "Image Service"
+        )
         if not ok:
             raise RuntimeError(
                 "An Image Service by this name already exists: " + output_name
             )
 
         create_parameters = {
-            "name": output_name,
+            "name": output_name.replace(" ", "_"),
             "description": "",
             "capabilities": "Image, Metadata",
             "properties": {"path": "@", "description": "", "copyright": ""},
@@ -9102,6 +9108,7 @@ class _RasterAnalysisTools(BaseAnalytics):
             create_params=create_parameters,
             service_type="imageService",
             folder=folder,
+            item_properties={"title": output_name},
         )
         if output_service is None:
             raise RuntimeError("Unable to create service")
@@ -13785,6 +13792,9 @@ class _RasterAnalysisTools(BaseAnalytics):
         multiple_occurrence_value=None,
         ignore_nodata=True,
         context=None,
+        argument_value=None,
+        comparison="EQUAL_TO",
+        occurrence="FIRST_OCCURRENCE",
         future=False,
         **kwargs,
     ):
@@ -13805,7 +13815,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         variables: variables (str). Optional parameter.
 
         statistics_type: statisticsType (str). Optional parameter.
-           Choice list:['ARGUMENT_MIN', 'ARGUMENT_MAX', 'ARGUMENT_MEDIAN', 'DURATION']
+           Choice list:['ARGUMENT_MIN', 'ARGUMENT_MAX', 'ARGUMENT_MEDIAN', 'DURATION', 'ARGUMENT_VALUE']
 
         min_value: minValue (float). Optional parameter.
 
@@ -13819,8 +13829,13 @@ class _RasterAnalysisTools(BaseAnalytics):
 
          gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
 
-
          future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+         argument_value: argumentValue (int). Optional parameter. Required when statistics_type is set to 'ARGUMENT_VALUE'.
+
+         comparison: comparison (str). Optional parameter.
+
+         occurrence: occurrence (str). Optional parameter.
 
         """
 
@@ -13885,6 +13900,7 @@ class _RasterAnalysisTools(BaseAnalytics):
                 "ARGUMENT_MAX",
                 "ARGUMENT_MEDIAN",
                 "DURATION",
+                "ARGUMENT_VALUE",
             ]
             if [element.lower() for element in statistics_type_allowed_values].count(
                 statistics_type.lower()
@@ -13898,26 +13914,71 @@ class _RasterAnalysisTools(BaseAnalytics):
                 if statistics_type.upper() == element:
                     statistics_type_val = element
 
+            if statistics_type.lower() == "argument_value" and argument_value is None:
+                raise RuntimeError(
+                    "argument_value is required when statistics_type is set to 'ARGUMENT_VALUE'."
+                )
+
+        comparison_val = comparison
+        if comparison is not None:
+            comparison_type_allowed_values = [
+                "EQUAL_TO",
+                "GREATER_THAN",
+                "SMALLER_THAN",
+            ]
+            if [element.lower() for element in comparison_type_allowed_values].count(
+                comparison.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "comparison can only be one of the following: "
+                    + str(comparison_type_allowed_values)
+                )
+
+            for element in comparison_type_allowed_values:
+                if comparison.upper() == element:
+                    comparison_val = element
+
+        occurrence_val = occurrence
+        if occurrence is not None:
+            occurrence_type_allowed_values = ["FIRST_OCCURRENCE", "LAST_OCCURRENCE"]
+            if [element.lower() for element in occurrence_type_allowed_values].count(
+                occurrence.lower()
+            ) <= 0:
+                raise RuntimeError(
+                    "occurrence can only be one of the following: "
+                    + str(occurrence_type_allowed_values)
+                )
+
+            for element in occurrence_type_allowed_values:
+                if occurrence.upper() == element:
+                    occurrence_val = element
+
         output_raster, output_service = self._set_output_raster(
             output_name=output_name, task=task, output_properties=kwargs
         )
 
-        gpjob = self._tbx.find_argument_statistics(
-            input_raster=input_raster,
-            output_name=output_raster,
-            dimension=dimension,
-            dimension_definition=dimension_definition_val,
-            interval_keyword=interval_keyword_val,
-            variables=variables,
-            statistics_type=statistics_type_val,
-            min_value=min_value,
-            max_value=max_value,
-            multiple_occurrence_value=multiple_occurrence_value,
-            ignore_nodata=ignore_nodata,
-            context=context,
-            gis=self._gis,
-            future=True,
-        )
+        params = {
+            "input_raster": input_raster,
+            "output_name": output_raster,
+            "dimension": dimension,
+            "dimension_definition": dimension_definition_val,
+            "interval_keyword": interval_keyword_val,
+            "variables": variables,
+            "statistics_type": statistics_type_val,
+            "min_value": min_value,
+            "max_value": max_value,
+            "multiple_occurrence_value": multiple_occurrence_value,
+            "ignore_nodata": ignore_nodata,
+            "context": context,
+            "argument_value": argument_value,
+            "comparison": comparison_val,
+            "occurrence": occurrence_val,
+            "gis": self._gis,
+        }
+        params = _inspect_function_inputs(self._tbx.find_argument_statistics, **params)
+        params["future"] = True
+        gpjob = self._tbx.find_argument_statistics(**params)
+
         gpjob._is_ra = True
         gpjob._item_properties = True
         item = None
@@ -17181,6 +17242,94 @@ class _RasterAnalysisTools(BaseAnalytics):
         if future:
             return RAJob(gpjob)
 
+        return RAJob(gpjob).result()
+
+    def mosaic_image(
+        self,
+        input_rasters,
+        target_raster,
+        mosaic_operator="LAST",
+        mosaic_colormap_mode="FIRST",
+        no_data_value=None,
+        context=None,
+        gis=None,
+        future=False,
+    ):
+
+        """
+        input_rasters: inputRasters (str). Required parameter.
+
+        target_raster: targetRaster (str). Required parameter.
+
+        mosaic_operator: mosaicOperator (str). Optional parameter.
+        Choice list:FIRST,LAST,BLEND,MEAN,MININUM,MAXIMUM,SUM
+
+        mosaic_colormap_mode: mosaicColormapMode (str). Optional parameter.
+        Choice list:FIRST,LAST,MATCH,REJECT
+
+        no_data_value: noDataValue (float). Optional parameter.
+
+        context: context (str). Optional parameter.
+
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+        """
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param["context"]
+
+        input_rasters = self._set_multiple_raster_inputs(input_rasters)
+
+        target_raster = self._layer_input(input_layer=target_raster)
+
+        mosaic_operator_allowed_values = self._tbx.choice_list.mosaic_image[
+            "mosaic_operator"
+        ]
+        mosaic_operator = (
+            mosaic_operator.upper()
+            if isinstance(mosaic_operator, str)
+            else mosaic_operator
+        )
+        if mosaic_operator not in mosaic_operator_allowed_values:
+            raise RuntimeError(
+                f"mosaic_operator can only be one of the following: {mosaic_operator_allowed_values}"
+            )
+
+        mosaic_colormap_mode_allowed_values = self._tbx.choice_list.mosaic_image[
+            "mosaic_colormap_mode"
+        ]
+        mosaic_colormap_mode = (
+            mosaic_colormap_mode.upper()
+            if isinstance(mosaic_colormap_mode, str)
+            else mosaic_colormap_mode
+        )
+        if mosaic_colormap_mode not in mosaic_colormap_mode_allowed_values:
+            raise RuntimeError(
+                f"mosaic_colormap_mode can only be one of the following: {mosaic_colormap_mode_allowed_values}"
+            )
+
+        gpjob = self._tbx.mosaic_image(
+            input_rasters=input_rasters,
+            target_raster=target_raster,
+            mosaic_operator=mosaic_operator,
+            mosaic_colormap_mode=mosaic_colormap_mode,
+            no_data_value=no_data_value,
+            context=context,
+            gis=gis,
+            future=True,
+        )
+
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return RAJob(gpjob)
         return RAJob(gpjob).result()
 
 

@@ -5,8 +5,6 @@ properly with the Spatially enabled DataFrame.
 
 """
 import os, sys
-
-# sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import shutil, datetime
 import tempfile
 import unittest
@@ -132,6 +130,25 @@ _fs_dict = {
 }
 
 
+def portal_selector():
+    """ select available portal for import_toolbox """
+    from urllib.request import urlopen
+    from urllib.error import HTTPError, URLError
+    for server_num in range(1, 9):
+        url = "http://sampleserver" \
+              + str(server_num) \
+              + ".arcgisonline.com/ArcGIS/rest/services/Elevation/ESRI_Elevation_World/GPServer"
+        try:
+            response = urlopen(url)
+            return url
+        except HTTPError as e:
+            print(e)
+        except URLError as e:
+            print(e)
+        else:
+            return url
+
+
 class TestArcGISIntegrationTests(unittest.TestCase):
 
     def test_content_import_data(self):
@@ -170,7 +187,7 @@ class TestArcGISIntegrationTests(unittest.TestCase):
         from arcgis.geoprocessing import import_toolbox
 
         vs = import_toolbox(
-            "http://sampleserver1.arcgisonline.com/ArcGIS/rest/services/Elevation/ESRI_Elevation_World/GPServer"
+            portal_selector()
         )
         import arcgis
 

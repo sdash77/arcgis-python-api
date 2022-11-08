@@ -44,6 +44,20 @@ except:
     pass
 
 
+def _get_rendering_service_layer(layer):
+    if layer._rendering_service_layer:
+        return layer._rendering_service_layer
+    else:
+        from .functions.utility import _generate_layer_token
+
+        token = _generate_layer_token(layer, layer.url)
+        newlyr = ImageryLayer(
+            {"input_raster": layer.url + "?token=" + token}, layer._gis
+        )
+        layer._rendering_service_layer = newlyr
+        return newlyr
+
+
 def _find_and_replace_mosaic_rule(fnarg_ra, mosaic_rule, url):
     for key, value in fnarg_ra.items():
         if key == "Raster" and isinstance(value, dict) and not (value.keys() & {"url"}):
@@ -636,8 +650,13 @@ class ImageryLayer(Layer):
                 self._datastore_raster = True
                 self._uri = url
                 if isinstance(url, dict):
-                    encoded_dict = str(self._uri).encode("utf-8")
-                    self._uri = base64.b64encode(encoded_dict)
+                    raster_url = None
+                    raster_url = url.get("input_raster", None)
+                    if raster_url:
+                        self._uri = raster_url
+                    else:
+                        encoded_dict = str(self._uri).encode("utf-8")
+                        self._uri = base64.b64encode(encoded_dict)
                 gis = _arcgis.env.active_gis if gis is None else gis
                 if gis is not None:
                     if ImageryLayer._rendering_service_object is None or (
@@ -678,6 +697,7 @@ class ImageryLayer(Layer):
         self._extent_set = False
         self._original_info = {}
         self._rendering_rule_from_item = False
+        self._rendering_service_layer = None
 
     @property
     def rasters(self):
@@ -1187,9 +1207,12 @@ class ImageryLayer(Layer):
 
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+            except:
+                raise RuntimeError(
+                    "Failed to perform project operation on the TilesOnly service"
+                )
 
         url = "%s/project" % self._url
         params = {"f": "json", "inSR": in_sr, "outSR": out_sr, "geometries": geometries}
@@ -1345,9 +1368,12 @@ class ImageryLayer(Layer):
                                             )
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+            except:
+                raise RuntimeError(
+                    "Failed to perform identify operation on the TilesOnly service"
+                )
 
         url = "%s/identify" % self._url
         params = {"f": "json", "geometry": dict(geometry)}
@@ -1556,9 +1582,13 @@ class ImageryLayer(Layer):
                                          measure_operation="HeightFromTopAndTopShadow")
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+
+            except:
+                raise RuntimeError(
+                    "Failed to perform measure operation on the TilesOnly service"
+                )
 
         if linear_unit is not None:
             linear_unit = "esri%s" % linear_unit
@@ -2006,9 +2036,13 @@ class ImageryLayer(Layer):
 
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+
+            except:
+                raise RuntimeError(
+                    "Failed to perform export image operation on the TilesOnly service"
+                )
 
         import datetime
 
@@ -3380,9 +3414,13 @@ class ImageryLayer(Layer):
 
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+
+            except:
+                raise RuntimeError(
+                    "Failed to perform compute statistics and histograms operation on the TilesOnly service"
+                )
 
         import datetime
 
@@ -3501,9 +3539,13 @@ class ImageryLayer(Layer):
         :return: A legend as a dictionary by default, or as an HTML table if as_html is True
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+
+            except:
+                raise RuntimeError(
+                    "Failed to perform legend operation on the TilesOnly service"
+                )
 
         url = "%s/legend" % self._url
         params = {"f": "json"}
@@ -3717,9 +3759,13 @@ class ImageryLayer(Layer):
 
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+
+            except:
+                raise RuntimeError(
+                    "Failed to perform compute class stats operation on the TilesOnly service"
+                )
 
         url = self._url + "/computeClassStatistics"
 
@@ -3870,9 +3916,13 @@ class ImageryLayer(Layer):
 
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+
+            except:
+                raise RuntimeError(
+                    "Failed to perform compute histograms operation on the TilesOnly service"
+                )
 
         import datetime
 
@@ -4039,9 +4089,13 @@ class ImageryLayer(Layer):
             A list of samples
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+
+            except:
+                raise RuntimeError(
+                    "Failed to perform get samples operation on the TilesOnly service"
+                )
 
         if not isinstance(geometry, Geometry):
             geometry = Geometry(geometry)
@@ -4488,9 +4542,13 @@ class ImageryLayer(Layer):
 
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+
+            except:
+                raise RuntimeError(
+                    "Failed to perform calculate volume operation on the TilesOnly service"
+                )
 
         if self.properties.serviceDataType == "esriImageServiceDataTypeElevation":
             url = "%s/calculateVolume" % self._url
@@ -4569,9 +4627,12 @@ class ImageryLayer(Layer):
             (hasattr(self, "_do_not_hydrate")) and not self._do_not_hydrate
         ) or not hasattr(self, "_do_not_hydrate"):
             if self.tiles_only:
-                raise RuntimeError(
-                    "This operation cannot be performed on a TilesOnly Service"
-                )
+                try:
+                    self = _get_rendering_service_layer(self)
+                except:
+                    raise RuntimeError(
+                        "Failed to perform query boundary operation on the TilesOnly service"
+                    )
 
         url = self._url + "/queryBoundary"
 
@@ -6778,11 +6839,6 @@ class ImageryLayer(Layer):
                                     )
         
         """
-        if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
-
         from arcgis.raster._charts import plot_histograms
 
         return plot_histograms(
@@ -9919,12 +9975,6 @@ class _ImageServerRaster(ImageryLayer, Raster):
         return super().raster_info
 
     def get_raster_bands(self, band_ids_or_names=None):
-        if (hasattr(self, "_do_not_hydrate")) and not self._do_not_hydrate:
-            if super().tiles_only:
-                raise RuntimeError(
-                    "This operation cannot be performed on a TilesOnly Service"
-                )
-
         if band_ids_or_names is None or (
             isinstance(band_ids_or_names, list) and len(band_ids_or_names) == 0
         ):
@@ -13722,164 +13772,164 @@ class RasterCollection:
         """
         return self._ras_coll_engine_obj.map(func=func, context=context)
 
-    def reduce(self, func, func_args={}):
-        """
-        The ``reduce`` method composite all the images in the collection to a single image based on a reducer function.
+    # def reduce(self, func, func_args={}):
+    #    """
+    #    The ``reduce`` method composite all the images in the collection to a single image based on a reducer function.
 
-        ====================================     ====================================================================
-        **Argument**                             **Description**
-        ------------------------------------     --------------------------------------------------------------------
-        func                                     Required. The Python function to reduce the raster collection.
-                                                 The function should accept a list of rasters and return a single reduced raster
-        ------------------------------------     --------------------------------------------------------------------
-        func_args                                Optional dictionary. Additional paramters to be passed the reducer function.
-        ====================================     ====================================================================
+    #    ====================================     ====================================================================
+    #    **Argument**                             **Description**
+    #    ------------------------------------     --------------------------------------------------------------------
+    #    func                                     Required. The Python function to reduce the raster collection.
+    #                                             The function should accept a list of rasters and return a single reduced raster
+    #    ------------------------------------     --------------------------------------------------------------------
+    #    func_args                                Optional dictionary. Additional paramters to be passed the reducer function.
+    #    ====================================     ====================================================================
 
-        :return: a ``Raster`` object
+    #    :return: a ``Raster`` object
 
-        .. code-block:: python
+    #    .. code-block:: python
 
-            # Usage Example 1: This snippet reduces a raster collection based on a reducer function from arcgis.raster.functions module that can accept a list of rasters.
+    #        # Usage Example 1: This snippet reduces a raster collection based on a reducer function from arcgis.raster.functions module that can accept a list of rasters.
 
-            rc = RasterCollection("https://myserver/arcgis/rest/services/ImageServiceName/ImageServer")
-            from arcgis.raster.functions import max
-            max_raster = rc.reduce(func=max, func_args = {"cellsize_type":"MinOf"})
+    #        rc = RasterCollection("https://myserver/arcgis/rest/services/ImageServiceName/ImageServer")
+    #        from arcgis.raster.functions import max
+    #        max_raster = rc.reduce(func=max, func_args = {"cellsize_type":"MinOf"})
 
-            # Usage Example 2: This snippet reduces a raster collection based on a custom reducer function.
+    #        # Usage Example 2: This snippet reduces a raster collection based on a custom reducer function.
 
-            rc = RasterCollection("https://myserver/arcgis/rest/services/ImageServiceName/ImageServer")
+    #        rc = RasterCollection("https://myserver/arcgis/rest/services/ImageServiceName/ImageServer")
 
-            def skewness(ras_list):
-                from arcgis.raster.functions import mean, std, med
-                cs_mean = mean(ras_list, process_as_multiband=True)
-                cs_stddev  = std(ras_list, process_as_multiband=True)
-                cs_median = med(ras_list, process_as_multiband=True)
-                out_skewness = 3*(cs_mean - cs_median)/cs_stddev
-                return out_skewness
+    #        def skewness(ras_list):
+    #            from arcgis.raster.functions import mean, std, med
+    #            cs_mean = mean(ras_list, process_as_multiband=True)
+    #            cs_stddev  = std(ras_list, process_as_multiband=True)
+    #            cs_median = med(ras_list, process_as_multiband=True)
+    #            out_skewness = 3*(cs_mean - cs_median)/cs_stddev
+    #            return out_skewness
 
-            skewness = rc.reduce(func=skewness)
+    #        skewness = rc.reduce(func=skewness)
 
-        """
-        return self._ras_coll_engine_obj.reduce(func=func, func_args=func_args)
+    #    """
+    #    return self._ras_coll_engine_obj.reduce(func=func, func_args=func_args)
 
-    def merge(self, collection2):
-        """
-        The ``merge`` method merges two image collections into one. The output has all the items that were in either collection.
+    # def merge(self, collection2):
+    #    """
+    #    The ``merge`` method merges two image collections into one. The output has all the items that were in either collection.
 
-        ====================================     ====================================================================
-        **Argument**                             **Description**
-        ------------------------------------     --------------------------------------------------------------------
-        collection2                              RasterCollection object. The second collection to merge.
-        ====================================     ====================================================================
+    #    ====================================     ====================================================================
+    #    **Argument**                             **Description**
+    #    ------------------------------------     --------------------------------------------------------------------
+    #    collection2                              RasterCollection object. The second collection to merge.
+    #    ====================================     ====================================================================
 
-        :return: a new Collection that has all the items that were in either collection.
+    #    :return: a new Collection that has all the items that were in either collection.
 
-        .. code-block:: python
+    #    .. code-block:: python
 
-            # Usage Example 1: merges two image collections rc1 and rc2 into one.
+    #        # Usage Example 1: merges two image collections rc1 and rc2 into one.
 
-            rc1 = rc.filter_by_attribute("OBJECTID", "EQUALS", 1)
-            rc2 = rc.filter_by_attribute("OBJECTID", "EQUALS", 2)
-            new_rc = rc1.merge(rc2)
+    #        rc1 = rc.filter_by_attribute("OBJECTID", "EQUALS", 1)
+    #        rc2 = rc.filter_by_attribute("OBJECTID", "EQUALS", 2)
+    #        new_rc = rc1.merge(rc2)
 
-        """
+    #    """
 
-        return self._ras_coll_engine_obj.merge(collection2._ras_coll_engine_obj)
+    #    return self._ras_coll_engine_obj.merge(collection2._ras_coll_engine_obj)
 
-    def summarize_field(self, field_name, summary_type="ALL"):
-        """
-        Summarizes a numeric field of the RasterCollection based on the specified summary_type
-        :param field_name: str, the field name to be summarized
-        :param summary_type: str or list of str representing the summary type."COUNT", "COUNT_DISTINCT", "FIRST","HISTOGRAM", "MAX", "MEAN", "MIN",
-                        "PRODUCT", "SAMPLE_SD", "SAMPLE_VAR", "SUM", "TOTAL_SD", "TOTAL_VAR", "ALL".
-        :return: a dictionary with key being the summary type and the value being the summary value.
-        """
-        property_values = self.get_field_values(field_name)
-        summary_dict = {}
-        import numbers
+    # def summarize_field(self, field_name, summary_type="ALL"):
+    #    """
+    #    Summarizes a numeric field of the RasterCollection based on the specified summary_type
+    #    :param field_name: str, the field name to be summarized
+    #    :param summary_type: str or list of str representing the summary type."COUNT", "COUNT_DISTINCT", "FIRST","HISTOGRAM", "MAX", "MEAN", "MIN",
+    #                    "PRODUCT", "SAMPLE_SD", "SAMPLE_VAR", "SUM", "TOTAL_SD", "TOTAL_VAR", "ALL".
+    #    :return: a dictionary with key being the summary type and the value being the summary value.
+    #    """
+    #    property_values = self.get_field_values(field_name)
+    #    summary_dict = {}
+    #    import numbers
 
-        if not isinstance(summary_type, list):
-            summary_type = [summary_type]
+    #    if not isinstance(summary_type, list):
+    #        summary_type = [summary_type]
 
-        if "ALL" in map(str.upper, summary_type):
-            summary_type = [
-                "COUNT",
-                "COUNT_DISTINCT",
-                "FIRST",
-                "HISTOGRAM",
-                "MAX",
-                "MEAN",
-                "MIN",
-                "PRODUCT",
-                "SAMPLE_SD",
-                "SAMPLE_VAR",
-                "SUM",
-                "TOTAL_SD",
-                "TOTAL_VAR",
-            ]
+    #    if "ALL" in map(str.upper, summary_type):
+    #        summary_type = [
+    #            "COUNT",
+    #            "COUNT_DISTINCT",
+    #            "FIRST",
+    #            "HISTOGRAM",
+    #            "MAX",
+    #            "MEAN",
+    #            "MIN",
+    #            "PRODUCT",
+    #            "SAMPLE_SD",
+    #            "SAMPLE_VAR",
+    #            "SUM",
+    #            "TOTAL_SD",
+    #            "TOTAL_VAR",
+    #        ]
 
-        from operator import is_not
-        from functools import partial
+    #    from operator import is_not
+    #    from functools import partial
 
-        property_values_not_none = list(filter(partial(is_not, None), property_values))
+    #    property_values_not_none = list(filter(partial(is_not, None), property_values))
 
-        all_num = all(isinstance(x, numbers.Number) for x in property_values_not_none)
-        if not all_num:
-            raise RuntimeError("Only numeric fields can be summarized")
-        try:
-            for summary in summary_type:
-                val = None
-                summary = summary.lower()
-                if summary == "count":
-                    val = len(property_values_not_none)
+    #    all_num = all(isinstance(x, numbers.Number) for x in property_values_not_none)
+    #    if not all_num:
+    #        raise RuntimeError("Only numeric fields can be summarized")
+    #    try:
+    #        for summary in summary_type:
+    #            val = None
+    #            summary = summary.lower()
+    #            if summary == "count":
+    #                val = len(property_values_not_none)
 
-                elif summary == "count_distinct":
-                    val = len(np.unique(property_values_not_none))
+    #            elif summary == "count_distinct":
+    #                val = len(np.unique(property_values_not_none))
 
-                elif summary == "first":
-                    val = property_values_not_none[0]
+    #            elif summary == "first":
+    #                val = property_values_not_none[0]
 
-                elif summary == "histogram":
-                    unique, counts = np.unique(
-                        property_values_not_none, return_counts=True
-                    )
-                    val = dict(zip(unique, counts))
+    #            elif summary == "histogram":
+    #                unique, counts = np.unique(
+    #                    property_values_not_none, return_counts=True
+    #                )
+    #                val = dict(zip(unique, counts))
 
-                elif summary == "max":
-                    val = np.max(property_values_not_none)
+    #            elif summary == "max":
+    #                val = np.max(property_values_not_none)
 
-                elif summary == "mean":
-                    val = np.mean(property_values_not_none)
+    #            elif summary == "mean":
+    #                val = np.mean(property_values_not_none)
 
-                elif summary == "min":
-                    val = np.min(property_values_not_none)
+    #            elif summary == "min":
+    #                val = np.min(property_values_not_none)
 
-                elif summary == "product":
-                    val = np.prod(property_values_not_none)
+    #            elif summary == "product":
+    #                val = np.prod(property_values_not_none)
 
-                elif summary == "sample_sd":
-                    val = np.std(property_values_not_none, ddof=1)
+    #            elif summary == "sample_sd":
+    #                val = np.std(property_values_not_none, ddof=1)
 
-                elif summary == "sample_var":
-                    val = np.var(property_values_not_none, ddof=1)
+    #            elif summary == "sample_var":
+    #                val = np.var(property_values_not_none, ddof=1)
 
-                elif summary == "sum":
-                    val = np.sum(property_values_not_none)
+    #            elif summary == "sum":
+    #                val = np.sum(property_values_not_none)
 
-                elif summary == "total_sd":
-                    val = np.std(property_values_not_none)
+    #            elif summary == "total_sd":
+    #                val = np.std(property_values_not_none)
 
-                elif summary == "total_var":
-                    val = np.var(property_values_not_none)
+    #            elif summary == "total_var":
+    #                val = np.var(property_values_not_none)
 
-                else:
-                    raise ValueError("invalid summary_type value")
+    #            else:
+    #                raise ValueError("invalid summary_type value")
 
-                summary_dict.update({summary: val})
-        except:
-            raise RuntimeError("Failed to summarize the property")
+    #            summary_dict.update({summary: val})
+    #    except:
+    #        raise RuntimeError("Failed to summarize the property")
 
-        return summary_dict
+    #    return summary_dict
 
     def _as_df(
         self, result_offset=None, result_record_count=None, return_all_records=False
@@ -14247,9 +14297,11 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         return newcollection
 
     def get_field_values(self, field_name, max_count=0):
-        return self._raster_collection.getFieldValues(
-            field_name=field_name, max_count=max_count
-        )
+        df = self._df
+        if max_count != 0:
+            return df[field_name].tolist()[0:max_count]
+        else:
+            return df[field_name].tolist()
 
     def to_multidimensional_raster(self, variable_field_name, dimension_field_names):
         return Raster(
@@ -14389,7 +14441,7 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         value_geometries = []
         for index, field in enumerate(self.fields):
             try:
-                value = self.get_field_values(field)
+                value = self._raster_collection.getFieldValues(field)
                 if field == "Raster":
                     for i, ele in enumerate(value):
                         value_rasters.append(
@@ -14401,7 +14453,7 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
                         value_geometries.append(Geometry(ele.JSON))
                     data["Shape"] = value_geometries
                 else:
-                    data[field] = self.get_field_values(field)
+                    data[field] = self._raster_collection.getFieldValues(field)
             except:
                 continue
         return pd.DataFrame(data=data)

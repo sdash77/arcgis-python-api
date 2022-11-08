@@ -491,6 +491,11 @@ class MapView(widgets.DOMWidget):
     @basemap.setter
     def basemap(self, value):
         if value in self.basemaps:
+            if value.startswith("arcgis-"):
+                if self.gis is None or self.gis._portal.is_logged_in is False:
+                    raise ValueError(
+                        "This basemap requires you to be authenticated. Please login or try a different basemap."
+                    )
             self._basemap = value
             self.webmap.basemap = value
         elif value in self.gallery_basemaps:
@@ -859,7 +864,38 @@ class MapView(widgets.DOMWidget):
         "streets-vector",
         "terrain",
         "topo-vector",
+        "arcgis-imagery",
+        "arcgis-imagery-standard",
+        "arcgis-imagery-labels",
+        "arcgis-light-gray",
+        "arcgis-dark-gray",
+        "arcgis-navigation",
+        "arcgis-navigation-night",
+        "arcgis-streets",
+        "arcgis-streets-night",
+        "arcgis-streets-relief",
+        "arcgis-topographic",
+        "arcgis-oceans",
+        "osm-standard",
+        "osm-standard-relief",
+        "osm-streets",
+        "osm-streets-relief",
+        "osm-light-gray",
+        "osm-dark-gray",
+        "arcgis-terrain",
+        "arcgis-community",
+        "arcgis-charted-territory",
+        "arcgis-colored-pencil",
+        "arcgis-nova",
+        "arcgis-modern-antique",
+        "arcgis-midcentury",
+        "arcgis-newspaper",
+        "arcgis-hillshade-light",
+        "arcgis-hillshade-dark",
+        "arcgis-human-geography",
+        "arcgis-human-geography-dark",
     ]
+
     """
     The ``basemaps`` layers are a list of possible basemaps to set :attr:`~arcgis.widgets.MapView.basemap` with:
     
@@ -875,6 +911,40 @@ class MapView(widgets.DOMWidget):
     10. Streets Vector
     11. Terrain
     12. Topographic Vector
+
+    There are basemap layers available if you are authenticated or provide an api key.
+
+    1. ArcGIS Imagery
+    2. ArcGIS Imagery Standard
+    3. ArcGIS Imagery Labels
+    4. ArcGIS Light Gray
+    5. ArcGIS Dark Gray
+    6. ArcGIS Navigation
+    7. ArcGIS Navigation Night
+    8. ArcGIS Streets
+    9. ArcGIS Streets Night
+    10. ArcGIS Streets Relief
+    11. ArcGIS Topographic
+    12. ArcGIS Oceans
+    13. ArcGIS Standard
+    14. ArcGIS Standard Relief
+    15. ArcGIS Streets
+    16. ArcGIS Streets Relief
+    17. ArcGIS Open Street Map Light Gray
+    18. ArcGIS Open Street Map Dark Gray
+    19. ArcGIS Terrain
+    20. ArcGIS Community
+    21. ArcGIS Charted Territory
+    22. ArcGIS Colored Pencil
+    23. ArcGIS Nova
+    24. ArcGIS Modern Antique
+    25. ArcGIS Midcentury
+    26. ArcGIS Newspaper
+    27. ArcGIS Hillshade Light
+    28. ArcGIS Hillshade Dark
+    29. ArcGIS Human Geography
+    30. ArcGIS Human Geography Dark
+
     """
     # End other properties that don't interact with the model
 
@@ -1255,10 +1325,23 @@ class MapView(widgets.DOMWidget):
             self._gallery_basemaps = {}
             self._gallery_basemaps = copy_gallery
         elif (
-            "defaultBasemap" in self.gis.org_settings
+            self.gis.org_settings is not None
+            and "defaultBasemap" in self.gis.org_settings
             and self.gis.org_settings["defaultBasemap"]
         ):
             self._gallery_basemaps["default"] = self.gis.org_settings["defaultBasemap"]
+            self._basemap = "default"
+            # Add to text property so default is recorded
+            self._default_webscene_text_property["baseMap"] = self._gallery_basemaps[
+                "default"
+            ]
+            # You need to re-write this dict to trigger the JS side change
+            copy_gallery = dict(self._gallery_basemaps)
+            self._gallery_basemaps = {}
+            self._gallery_basemaps = copy_gallery
+        else:
+            # Enterprise 10.7.1 workflow
+            self._gallery_basemaps["default"] = self.gis.properties["defaultBasemap"]
             self._basemap = "default"
             # Add to text property so default is recorded
             self._default_webscene_text_property["baseMap"] = self._gallery_basemaps[

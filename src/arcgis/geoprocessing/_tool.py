@@ -36,7 +36,9 @@ except:
         return False
 
 
-def _import_code(code, name, verbose=False, add_to_sys_modules=False, choice_list=None):
+def _import_code(
+    code, name, verbose=False, add_to_sys_modules=False, choice_list=None, url=None
+):
     """
     Import dynamically generated code as a module. code is the
     object containing the code (a string, a file handle or an
@@ -56,9 +58,6 @@ def _import_code(code, name, verbose=False, add_to_sys_modules=False, choice_lis
 
     Returns a newly generated module.
     """
-    import sys
-    import importlib, types
-
     module = types.ModuleType(name)
 
     if verbose:
@@ -71,6 +70,9 @@ def _import_code(code, name, verbose=False, add_to_sys_modules=False, choice_lis
     if choice_list:
         setattr(module, "choice_list", choice_list)
         module.__dict__["choice_list"] = choice_list
+    if url:
+        setattr(module, "url", url)
+        module.__dict__["url"] = url
     return module
 
 
@@ -639,10 +641,18 @@ _log = _logging.getLogger(__name__)
 
     if isinstance(url_or_item, Item):
         name = f"GPService @ {url_or_item.url}"
-        return _import_code(r"%s" % src_code, name, verbose, choice_list=listed_params)
+        return _import_code(
+            r"%s" % src_code,
+            name,
+            verbose,
+            choice_list=listed_params,
+            url=url_or_item.url,
+        )
     else:
         name = f"GPService @ {url_or_item}"
-        return _import_code(r"%s" % src_code, name, verbose, choice_list=listed_params)
+        return _import_code(
+            r"%s" % src_code, name, verbose, choice_list=listed_params, url=url_or_item
+        )
     # print(src_code)
 
 

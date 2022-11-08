@@ -465,6 +465,11 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
     """
     Exports a geo enabled dataframe to a table.
 
+    .. note::
+        Null integer values will be changed to 0 when using shapely instead
+        of ArcPy due to shapely conventions.
+        With ArcPy null integer values will remain null.
+
     ===========================     ====================================================================
     **Argument**                    **Description**
     ---------------------------     --------------------------------------------------------------------
@@ -486,7 +491,7 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
     df = geo._data.copy()
     df[df.select_dtypes(np.number).columns.tolist()] = df[
         df.select_dtypes(np.number).columns.tolist()
-    ].replace(pd.NA, 0)
+    ].replace({pd.NA: None})
     df[df.select_dtypes(pd.StringDtype()).columns.tolist()] = df[
         df.select_dtypes(pd.StringDtype()).columns.tolist()
     ].replace(pd.NA, "")
@@ -870,6 +875,11 @@ def to_featureclass(
     """
     Exports the DataFrame to a Feature class.
 
+    .. note::
+        Null integer values will be changed to 0 when using shapely instead
+        of ArcPy due to shapely conventions.
+        With ArcPy null integer values will remain null.
+
     ===============     ====================================================
     **Argument**        **Description**
     ---------------     ----------------------------------------------------
@@ -931,7 +941,7 @@ def to_featureclass(
             col = str(col)
     df[df.select_dtypes(np.number).columns.tolist()] = df[
         df.select_dtypes(np.number).columns.tolist()
-    ].replace(pd.NA, 0)
+    ].replace({pd.NA: None})
     df[df.select_dtypes(pd.StringDtype()).columns.tolist()] = df[
         df.select_dtypes(pd.StringDtype()).columns.tolist()
     ].replace(pd.NA, "")

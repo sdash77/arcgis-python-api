@@ -1,3 +1,4 @@
+import numpy as np
 import warnings
 
 
@@ -29,6 +30,23 @@ def arcpy_localization_helper(msg, id, msg_type="ERROR", param=None):
                 pass
     except:
         return msg
+
+
+def chips_to_batch(chips, model_height, model_width, batch_size=1):
+    dtype = np.float32
+    band_count = 3
+    if len(chips) != 0:
+        dtype = chips[0].dtype
+
+    batch = np.zeros(
+        shape=(batch_size, band_count, model_height, model_width),
+        dtype=dtype,
+    )
+    for b in range(batch_size):
+        if b < len(chips):
+            batch[b, :, :model_height, :model_height] = chips[b]
+
+    return batch
 
 
 def check_imbalance(total_sample, unique_sample, class_imbalance_pct, stratify):
