@@ -7,12 +7,14 @@ from arcgis.apps.storymap.story_content import Text, TextStyles, Button
 
 profiles = ["your_online_profile", "your_enterprise_profile"]
 
+
 class TestTextContent(unittest.TestCase):
     """Test adding text and seeing properties"""
+
     def test_add_button(self):
         """Test adding a Button and seeing the properties"""
         for profile in profiles:
-             with self.subTest(msg=profile):
+            with self.subTest(msg=profile):
                 # establish gis connection
                 gis = GIS(profile=profile, verify_cert=False)
                 story = StoryMap()
@@ -31,7 +33,7 @@ class TestTextContent(unittest.TestCase):
     def test_add_text(self):
         """Test adding Text of different styles and seeing properties"""
         for profile in profiles:
-             with self.subTest(msg=profile):
+            with self.subTest(msg=profile):
                 # establish gis connection
                 gis = GIS(profile=profile, verify_cert=False)
                 story = StoryMap()
@@ -57,7 +59,7 @@ class TestTextContent(unittest.TestCase):
     def test_get(self):
         """Test the get method for getting nodes by type and from an id"""
         for profile in profiles:
-             with self.subTest(msg=profile):
+            with self.subTest(msg=profile):
                 # establish gis connection
                 gis = GIS(profile=profile, verify_cert=False)
                 story = StoryMap()
@@ -66,7 +68,7 @@ class TestTextContent(unittest.TestCase):
                     style=TextStyles.HEADING,
                 )
                 story.add(welcome, position=2)
-                
+
                 park_quote = Text(
                     text="I encourage everybody to hop on Google and type in 'national park' in whatever state they live in and see the beauty that lies in their own backyard. It's that simple.",
                     style=TextStyles.QUOTE,
@@ -77,9 +79,10 @@ class TestTextContent(unittest.TestCase):
                 text = story.get(type="text")[0]
                 text_id = list(text.keys())[0]
                 assert story.get(node=text_id)
-                
+
                 item = gis.content.get(story._itemid)
                 assert item.delete()
-                
+
+
 if __name__ == "__main__":
     unittest.main()

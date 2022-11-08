@@ -10,16 +10,18 @@ from arcgis.apps.storymap.story_content import Audio
 
 profiles = ["your_online_profile", "your_enterprise_profile"]
 
+
 class TestAudioContent(unittest.TestCase):
     """Test adding audio and seeing properties"""
+
     def test_add_audio(self):
         """Test adding Embed and seeing properties"""
         for profile in profiles:
-             with self.subTest(msg=profile):
+            with self.subTest(msg=profile):
                 # establish gis connection
                 gis = GIS(profile=profile, verify_cert=False)
                 story = StoryMap()
-                
+
                 import os
 
                 file = r"C:\ipython_workfolder\Content\rocks.mp3"
@@ -43,6 +45,6 @@ class TestAudioContent(unittest.TestCase):
                 item = gis.content.get(story._itemid)
                 assert item.delete()
 
+
 if __name__ == "__main__":
     unittest.main()
-        

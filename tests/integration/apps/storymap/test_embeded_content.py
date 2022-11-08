@@ -7,12 +7,14 @@ from arcgis.apps.storymap.story_content import Embed
 
 profiles = ["your_online_profile", "your_enterprise_profile"]
 
+
 class TestEmbedContent(unittest.TestCase):
     """Test adding embed and seeing properties"""
+
     def test_add_embed(self):
         """Test adding Embed and seeing properties"""
         for profile in profiles:
-             with self.subTest(msg=profile):
+            with self.subTest(msg=profile):
                 # establish gis connection
                 gis = GIS(profile=profile, verify_cert=False)
                 story = StoryMap()
@@ -31,11 +33,11 @@ class TestEmbedContent(unittest.TestCase):
         """Test delete method on an Audio node. Each content has this delete method"""
         # Audio through URL
         for profile in profiles:
-             with self.subTest(msg=profile):
+            with self.subTest(msg=profile):
                 # establish gis connection
                 gis = GIS(profile=profile, verify_cert=False)
                 story = StoryMap()
-                
+
                 emb = Embed(
                     "https://www.nps.gov/media/multimedia-search.htm#sort=Date_Last_Modified+desc"
                 )
@@ -49,7 +51,7 @@ class TestEmbedContent(unittest.TestCase):
     def test_replace_media_item(self):
         """Test replacing the webpage link. This can be done through a property for each content"""
         for profile in profiles:
-             with self.subTest(msg=profile):
+            with self.subTest(msg=profile):
                 # establish gis connection
                 gis = GIS(profile=profile, verify_cert=False)
                 story = StoryMap()
@@ -70,6 +72,7 @@ class TestEmbedContent(unittest.TestCase):
                 assert emd.link
                 item = gis.content.get(story._itemid)
                 assert item.delete()
-                
+
+
 if __name__ == "__main__":
     unittest.main()

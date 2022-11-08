@@ -7,20 +7,24 @@ from arcgis.apps.storymap.story_content import Image, Gallery
 
 profiles = ["your_online_profile", "your_enterprise_profile"]
 
+
 class TestImageContent(unittest.TestCase):
     """Test adding an Image and seeing properties"""
+
     def test_add_image(self):
         """test adding an image to a story"""
-        
+
         for profile in profiles:
-             with self.subTest(msg=profile):
+            with self.subTest(msg=profile):
                 # establish gis connection
                 gis = GIS(profile=profile, verify_cert=False)
                 story = StoryMap()
                 img = Image(
                     "https://www.nps.gov/npgallery/GetAsset/69680c29-caa3-42da-93d9-32925e9ed409/proxy/hires"
                 )
-                image = story.add(img, "Trees with a deer", "Sequoia trees in the distance")
+                image = story.add(
+                    img, "Trees with a deer", "Sequoia trees in the distance"
+                )
                 story.add()  # separator
 
                 assert image
@@ -30,7 +34,7 @@ class TestImageContent(unittest.TestCase):
 
                 item = gis.content.get(story._itemid)
                 assert item.delete()
-    
+
     def test_create_gallery(self):
         """Test creating a gallery and adding images to it"""
         for profile in profiles:
@@ -64,6 +68,7 @@ class TestImageContent(unittest.TestCase):
 
                 item = gis.content.get(story._itemid)
                 assert item.delete()
-                
+
+
 if __name__ == "__main__":
     unittest.main()

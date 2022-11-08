@@ -7,15 +7,17 @@ from arcgis.apps.storymap.story_content import Map, Scales
 
 profiles = ["your_online_profile", "your_enterprise_profile"]
 
+
 class TestMapContent(unittest.TestCase):
     """Test adding an map and seeing properties"""
+
     def test_add_map(self):
         """
         Test adding a Map and seeing the properties
         Map id can be changed if not found.
         """
         for profile in profiles:
-             with self.subTest(msg=profile):
+            with self.subTest(msg=profile):
                 # establish gis connection
                 gis = GIS(profile=profile, verify_cert=False)
                 story = StoryMap()
@@ -42,6 +44,7 @@ class TestMapContent(unittest.TestCase):
 
                 item = gis.content.get(story._itemid)
                 assert item.delete()
-                
+
+
 if __name__ == "__main__":
     unittest.main()

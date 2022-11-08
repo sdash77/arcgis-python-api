@@ -6,24 +6,25 @@ from arcgis.apps.storymap import StoryMap
 
 profiles = ["your_online_profile", "your_enterprise_profile"]
 
+
 class TestStoryMapsCopyContent(unittest.TestCase):
     """This test is built to test the copy content method on the arcgis storymap"""
+
     def test_copy_content(self):
         """tests copying content to a new story map"""
         for profile in profiles:
-             with self.subTest(msg=profile):
+            with self.subTest(msg=profile):
                 # establish gis connection
                 gis = GIS(profile=profile, verify_cert=False)
                 if gis._is_agol:
                     sm = StoryMap("ad5362af097845598a47f034c4096e2a")
                     # get the Text, Map, Image, and Swipe nodes that will be copied
-                    nodes_to_copy= ["n-ByaApK", "n-6UzYoJ", "n-bOzGMy", "n-yPjEV5"]
+                    nodes_to_copy = ["n-ByaApK", "n-6UzYoJ", "n-bOzGMy", "n-yPjEV5"]
                 else:
                     sm = StoryMap("bbca7674b8bc4fa9ab12d8b66e4a7467")
                     # get the Text, Map, Image, and Swipe nodes that will be copied
                     nodes_to_copy = ["n-VPFcjj", "n-Cyskj8", "n-HzZGw2", "n-4ih3Ig"]
                 assert sm.nodes
-                
 
                 # create new story
                 target_story = StoryMap(gis=gis)
@@ -41,6 +42,7 @@ class TestStoryMapsCopyContent(unittest.TestCase):
                 # delete target story
                 item = gis.content.get(target_story._itemid)
                 item.delete()
+
 
 if __name__ == "__main__":
     unittest.main()

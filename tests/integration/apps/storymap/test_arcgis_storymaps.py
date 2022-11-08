@@ -9,19 +9,28 @@ from arcgis.apps.storymap import (
 
 profiles = ["your_online_profile", "your_enterprise_profile"]
 
+
 class TestStoryMap(unittest.TestCase):
     """Test Basic Story Map Methods"""
-
 
     def test_creating_and_saving(self):
         """Change the storycover for the story"""
         for profile in profiles:
-             with self.subTest(msg=profile):
+            with self.subTest(msg=profile):
                 # establish gis connection
                 gis = GIS(profile=profile, verify_cert=False)
                 story = StoryMap()
+
+                # assert some properties
                 assert story.nodes
                 assert story.properties
+                assert story.cover_date
+                assert story.story_locale
+                assert isinstance(story.navigation_list, list)
+                assert story.get("n-aTn8ak")
+
+                assert isinstance(story.navigation(hidden=True), list)
+
                 # image for story cover
                 river = Image(
                     "https://www.nps.gov/npgallery/GetAsset/0022D3FF-1DD8-B71B-0BE3AD4C48F96FF9/proxy/hires"
@@ -46,6 +55,7 @@ class TestStoryMap(unittest.TestCase):
 
                 item = gis.content.get(story._itemid)
                 assert item.delete()
+
 
 if __name__ == "__main__":
     unittest.main()

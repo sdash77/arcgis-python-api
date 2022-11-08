@@ -7,12 +7,14 @@ from arcgis.apps.storymap.story_content import Video
 
 profiles = ["your_online_profile", "your_enterprise_profile"]
 
+
 class TestVideoContent(unittest.TestCase):
     """Test adding an video and seeing properties"""
+
     def test_add_video(self):
         """Test adding a Video and seeing properties"""
         for profile in profiles:
-             with self.subTest(msg=profile):
+            with self.subTest(msg=profile):
                 # establish gis connection
                 gis = GIS(profile=profile, verify_cert=False)
                 story = StoryMap()
@@ -21,13 +23,13 @@ class TestVideoContent(unittest.TestCase):
 
                 assert video
                 assert vid.video
-        
+
                 item = gis.content.get(story._itemid)
                 assert item.delete()
-    
+
     def test_replace_url(self):
         for profile in profiles:
-             with self.subTest(msg=profile):
+            with self.subTest(msg=profile):
                 # establish gis connection
                 gis = GIS(profile=profile, verify_cert=False)
                 story = StoryMap()
@@ -47,6 +49,7 @@ class TestVideoContent(unittest.TestCase):
 
                 item = gis.content.get(story._itemid)
                 assert item.delete()
-                
+
+
 if __name__ == "__main__":
     unittest.main()
