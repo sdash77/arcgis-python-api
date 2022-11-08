@@ -138,13 +138,8 @@ class _DeepCloner:
                                 "To clone this item you must have permission to create new groups and share content to groups in the target organization."
                             )
 
-                    if isinstance(
-                        item_definition, _FeatureServiceDefinition
-                    ):
-                        if (
-                            "portal:publisher:publishFeatures"
-                            not in privileges
-                        ):
+                    if isinstance(item_definition, _FeatureServiceDefinition):
+                        if "portal:publisher:publishFeatures" not in privileges:
                             raise Exception(
                                 "To clone this item you must have permission to publish hosted feature layers in the target organization."
                             )
@@ -158,10 +153,7 @@ class _DeepCloner:
         # (in this sense a leaf node, is a node where all it's children are resolved or it has no children)
         leaf_nodes = []
         for node in [x for x in self._graph.values() if not x.resolved]:
-            if (
-                all([child.resolved for child in node.children])
-                or not node.children
-            ):
+            if all([child.resolved for child in node.children]) or not node.children:
                 leaf_nodes.append(node)
         return leaf_nodes
 
@@ -179,9 +171,7 @@ class _DeepCloner:
                 if x not in processed_nodes
                 and (
                     not x.children
-                    or all(
-                        [child in processed_nodes for child in x.children]
-                    )
+                    or all([child in processed_nodes for child in x.children])
                 )
             ]:
                 for item in node.created_items:
@@ -214,17 +204,9 @@ class _DeepCloner:
                 layer_properties["adminLayerInfo"] = admin_layer_info
             elif admin_layer_info is None:
                 data_layers = []
-                if (
-                    data is not None
-                    and "layers" in data
-                    and data["layers"] is not None
-                ):
+                if data is not None and "layers" in data and data["layers"] is not None:
                     data_layers.extend(data["layers"])
-                if (
-                    data is not None
-                    and "tables" in data
-                    and data["tables"] is not None
-                ):
+                if data is not None and "tables" in data and data["tables"] is not None:
                     data_layers.extend(data["tables"])
                 data_layer = next(
                     (
@@ -273,10 +255,7 @@ class _DeepCloner:
         from arcgis.gis.clone import clone_registry
 
         # if the item is in the clone_registry then use the item definition.
-        if (
-            isinstance(item, arcgis.gis.Item)
-            and item["type"] in clone_registry()
-        ):
+        if isinstance(item, arcgis.gis.Item) and item["type"] in clone_registry():
             item_definition = self._get_item_definition(item)
             self._graph[item.id] = item_definition
         # if the item is a group find all the web maps that are shared with the group
@@ -318,24 +297,14 @@ class _DeepCloner:
                     webmap_ids = []
 
                 elif item["type"] == "Operation View":
-                    webmap_ids.extend(
-                        _OperationViewDefintion.get_webmap_ids(app_json)
-                    )
-                    layer_ids.extend(
-                        _OperationViewDefintion.get_layer_ids(app_json)
-                    )
+                    webmap_ids.extend(_OperationViewDefintion.get_webmap_ids(app_json))
+                    layer_ids.extend(_OperationViewDefintion.get_layer_ids(app_json))
 
                 elif item["type"] == "Dashboard":
-                    webmap_ids.extend(
-                        _DashboardDefinition.get_webmap_ids(app_json)
-                    )
-                    layer_ids.extend(
-                        _DashboardDefinition.get_layer_ids(app_json)
-                    )
+                    webmap_ids.extend(_DashboardDefinition.get_webmap_ids(app_json))
+                    layer_ids.extend(_DashboardDefinition.get_layer_ids(app_json))
 
-                elif (
-                    "Web AppBuilder" in item["typeKeywords"]
-                ):  # Web AppBuilder
+                elif "Web AppBuilder" in item["typeKeywords"]:  # Web AppBuilder
                     if "map" in app_json:
                         if "itemId" in app_json["map"]:
                             webmap_ids.append(app_json["map"]["itemId"])
@@ -348,21 +317,13 @@ class _DeepCloner:
                                 group = source.groups.get(group_id)
                             except RuntimeError:
                                 raise
-                            item_definition.add_child(
-                                self._get_item_definitions(group)
-                            )
+                            item_definition.add_child(self._get_item_definitions(group))
 
                         if "webmap" in app_json["values"]:
-                            if isinstance(
-                                app_json["values"]["webmap"], list
-                            ):
-                                webmap_ids.extend(
-                                    app_json["values"]["webmap"]
-                                )
+                            if isinstance(app_json["values"]["webmap"], list):
+                                webmap_ids.extend(app_json["values"]["webmap"])
                             else:
-                                webmap_ids.append(
-                                    app_json["values"]["webmap"]
-                                )
+                                webmap_ids.append(app_json["values"]["webmap"])
 
             for webmap_id in webmap_ids:
                 try:
@@ -424,10 +385,7 @@ class _DeepCloner:
                     and layer["layerType"] == "ArcGISFeatureLayer"
                     and "url" in layer
                     and layer["url"] is not None
-                    and (
-                        "type" not in layer
-                        or layer["type"] != "Feature Collection"
-                    )
+                    and ("type" not in layer or layer["type"] != "Feature Collection")
                 ]
                 feature_collections += [
                     layer
@@ -445,13 +403,11 @@ class _DeepCloner:
                         feature_collections += res[1]
             if "tables" in webmap_json:
                 featurelayer_services += [
-                    table
-                    for table in webmap_json["tables"]
-                    if "url" in table
+                    table for table in webmap_json["tables"] if "url" in table
                 ]
 
             for layer in featurelayer_services:
-                item = arcgis.gis.Item(item._gis, layer['itemId'])
+                item = arcgis.gis.Item(item._gis, layer["itemId"])
                 if (
                     getattr(item, "groupDesignations", "notlivingatlas")
                     != "livingatlas"
@@ -463,9 +419,7 @@ class _DeepCloner:
                             definition
                             for definition in self._graph.values()
                             if "url" in definition.info
-                            and _compare_url(
-                                definition.info["url"], service_url
-                            )
+                            and _compare_url(definition.info["url"], service_url)
                         ),
                         None,
                     )
@@ -479,9 +433,7 @@ class _DeepCloner:
                             )
                     else:
                         item_definition.add_child(
-                            self._get_item_definitions(
-                                feature_service.portal_item
-                            )
+                            self._get_item_definitions(feature_service.portal_item)
                         )
 
             for feature_collection in feature_collections:
@@ -497,15 +449,12 @@ class _DeepCloner:
                     )
 
             if not self._use_org_basemap:
-                basemap_layers = _deep_get(
-                    webmap_json, "baseMap", "baseMapLayers"
-                )
+                basemap_layers = _deep_get(webmap_json, "baseMap", "baseMapLayers")
                 if basemap_layers is not None:
                     for basemap_layer in basemap_layers:
                         if (
                             "layerType" in basemap_layer
-                            and basemap_layer["layerType"]
-                            == "VectorTileLayer"
+                            and basemap_layer["layerType"] == "VectorTileLayer"
                             and "itemId" in basemap_layer
                         ):
                             vector_tile_item = source.content.get(
@@ -516,9 +465,7 @@ class _DeepCloner:
 
                             if vector_tile_item["owner"] == item["owner"]:
                                 item_definition.add_child(
-                                    self._get_item_definitions(
-                                        vector_tile_item
-                                    )
+                                    self._get_item_definitions(vector_tile_item)
                                 )
 
         # If the item is a feature service determine if it is a view and if it is find all it's sources
@@ -559,10 +506,7 @@ class _DeepCloner:
                         _sources = []
 
                         layer_sources = source._portal.con.get(
-                            svc.url
-                            + "/"
-                            + str(layer.properties["id"])
-                            + "/sources"
+                            svc.url + "/" + str(layer.properties["id"]) + "/sources"
                         )
 
                         if not source.properties.isPortal:
@@ -575,32 +519,24 @@ class _DeepCloner:
                         else:
                             if "layers" in layer_sources:
                                 for layer_source in layer_sources["layers"]:
-                                    if not os.path.exists(
-                                        layer_source["url"]
-                                    ):
+                                    if not os.path.exists(layer_source["url"]):
                                         layer_flc = source.content.get(
                                             layer_source["serviceItemId"]
                                         )
                                         layer_id = int(
-                                            urlparse(
-                                                layer_source["url"]
-                                            ).path.split("/")[-1]
+                                            urlparse(layer_source["url"]).path.split(
+                                                "/"
+                                            )[-1]
                                         )
                                         try:
                                             layer_url_dict = {
-                                                "url": layer_flc.layers[
-                                                    layer_id
-                                                ].url
+                                                "url": layer_flc.layers[layer_id].url
                                             }
                                         except IndexError:
                                             # Layer could be a table
-                                            table_index = layer_id - (
-                                                len(svc.layers)
-                                            )
+                                            table_index = layer_id - (len(svc.layers))
                                             layer_url_dict = {
-                                                "url": layer_flc.tables[
-                                                    table_index
-                                                ].url
+                                                "url": layer_flc.tables[table_index].url
                                             }
                                         layer_source.update(layer_url_dict)
                                         _sources.append(layer_source)
@@ -613,35 +549,22 @@ class _DeepCloner:
                             layers_definition["tables"].append(properties)
 
                         for layer_source in _sources:
-                            if (
-                                layer_source["serviceItemId"]
-                                not in source_item_ids
-                            ):
+                            if layer_source["serviceItemId"] not in source_item_ids:
                                 source_item = source.content.get(
                                     layer_source["serviceItemId"]
                                 )
-                                source_fs_definition = (
-                                    self._get_item_definitions(source_item)
+                                source_fs_definition = self._get_item_definitions(
+                                    source_item
                                 )
                                 if source_fs_definition is not None:
-                                    source_fs_definitions.append(
-                                        source_fs_definition
-                                    )
-                                source_item_ids.append(
-                                    layer_source["serviceItemId"]
-                                )
+                                    source_fs_definitions.append(source_fs_definition)
+                                source_item_ids.append(layer_source["serviceItemId"])
                             _view_sources.append(layer_source["url"])
-                            feature_layer = FeatureLayer(
-                                layer_source["url"], source
-                            )
-                            _view_source_fields.append(
-                                feature_layer.properties.fields
-                            )
+                            feature_layer = FeatureLayer(layer_source["url"], source)
+                            _view_source_fields.append(feature_layer.properties.fields)
 
                         view_sources[layer.properties["id"]] = _view_sources
-                        view_source_fields[
-                            layer.properties["id"]
-                        ] = _view_source_fields
+                        view_source_fields[layer.properties["id"]] = _view_source_fields
                         if len(_sources) > 1:
                             # multi-source views will have necessary source field info as a part of the admin_layer_info
                             view_source_fields[layer.properties["id"]] = {}
@@ -675,14 +598,10 @@ class _DeepCloner:
                     raise
             else:
                 for layer in svc.layers:
-                    properties = self._get_properties(
-                        layer, data, False, is_view
-                    )
+                    properties = self._get_properties(layer, data, False, is_view)
                     layers_definition["layers"].append(properties)
                 for table in svc.tables:
-                    properties = self._get_properties(
-                        table, data, False, is_view
-                    )
+                    properties = self._get_properties(table, data, False, is_view)
                     layers_definition["tables"].append(properties)
                 ref_def_keywords = {"Singlelayer", "Multilayer"}
                 if (
@@ -737,9 +656,7 @@ class _DeepCloner:
                     self._copy_global_ids = True
 
                 # get Workforce group definition
-                group_id = _deep_get(
-                    item.properties, "workforceProjectGroupId"
-                )
+                group_id = _deep_get(item.properties, "workforceProjectGroupId")
                 group = source.groups.get(group_id)
                 group_item_definition = self._get_group_definition(group)
                 self._graph[group_id] = group_item_definition
@@ -758,57 +675,39 @@ class _DeepCloner:
                     item_id = _deep_get(item.properties, web_map)
                     if item_id is not None:
                         web_map_item = source.content.get(item_id)
-                        map_item_definition = self._get_item_definitions(
-                            web_map_item
-                        )
+                        map_item_definition = self._get_item_definitions(web_map_item)
                         if map_item_definition is not None:
                             # WF layer is the parent of the maps, so remove it from the children
                             for child in map_item_definition._children:
                                 try:
                                     if (
-                                        child._service_definition[
-                                            "serviceItemId"
-                                        ]
+                                        child._service_definition["serviceItemId"]
                                         == item.id
                                     ):
-                                        map_item_definition._children.remove(
-                                            child
-                                        )
+                                        map_item_definition._children.remove(child)
                                         break
                                 except Exception:
                                     # this is not the layer we want since it doesn't have a service definition
                                     continue
-                            map_item_definition.sharing["groups"].append(
-                                group_id
-                            )
+                            map_item_definition.sharing["groups"].append(group_id)
                             item_definition.add_child(map_item_definition)
-                            map_item_definition.add_child(
-                                group_item_definition
-                            )
+                            map_item_definition.add_child(group_item_definition)
 
                 # add integration as dependency
-                integrations_fl = FeatureLayer(
-                    url=item.url + "/4", gis=item._gis
-                )
+                integrations_fl = FeatureLayer(url=item.url + "/4", gis=item._gis)
                 integrations_df = integrations_fl.query("1=1", as_df=True)
                 for url_template in integrations_df.urltemplate.values:
                     parsed = urlparse(url_template)
                     try:
-                        item_id = urllib.parse.parse_qs(parsed.query)[
-                            "itemID"
-                        ][0]
+                        item_id = urllib.parse.parse_qs(parsed.query)["itemID"][0]
                         integration_item = source.content.get(item_id)
                         if integration_item:
-                            integration_item_definition = (
-                                self._get_item_definitions(integration_item)
+                            integration_item_definition = self._get_item_definitions(
+                                integration_item
                             )
                             if integration_item_definition is not None:
-                                self._graph[
-                                    item_id
-                                ] = integration_item_definition
-                                item_definition.add_child(
-                                    integration_item_definition
-                                )
+                                self._graph[item_id] = integration_item_definition
+                                item_definition.add_child(integration_item_definition)
                                 integration_item_definition.add_child(
                                     group_item_definition
                                 )
@@ -837,18 +736,12 @@ class _DeepCloner:
                 item_id = _deep_get(workforce_json, service, "serviceItemId")
                 if item_id is not None:
                     service_item = source.content.get(item_id)
-                    layer_item_definition = self._get_item_definitions(
-                        service_item
-                    )
+                    layer_item_definition = self._get_item_definitions(service_item)
                     if layer_item_definition is not None:
                         self._graph[item_id] = layer_item_definition
                         item_definition.add_child(layer_item_definition)
-                        layer_item_definition.sharing["groups"].append(
-                            group_id
-                        )
-                        layer_item_definition.add_child(
-                            group_item_definition
-                        )
+                        layer_item_definition.sharing["groups"].append(group_id)
+                        layer_item_definition.add_child(group_item_definition)
 
             # Process the web maps
             web_maps = ["workerWebMapId", "dispatcherWebMapId"]
@@ -856,20 +749,14 @@ class _DeepCloner:
                 item_id = _deep_get(workforce_json, web_map)
                 if item_id is not None:
                     web_map_item = source.content.get(item_id)
-                    map_item_definition = self._get_item_definitions(
-                        web_map_item
-                    )
+                    map_item_definition = self._get_item_definitions(web_map_item)
                     if map_item_definition is not None:
-                        map_item_definition.sharing["groups"].append(
-                            group_id
-                        )
+                        map_item_definition.sharing["groups"].append(group_id)
                         item_definition.add_child(map_item_definition)
                         map_item_definition.add_child(group_item_definition)
 
             # Handle any app integrations
-            integrations = _deep_get(
-                workforce_json, "assignmentIntegrations"
-            )
+            integrations = _deep_get(workforce_json, "assignmentIntegrations")
             if integrations is not None:
                 for integration in integrations:
                     url_templates = []
@@ -877,9 +764,7 @@ class _DeepCloner:
                     if url_template is not None:
                         url_templates.append(url_template)
 
-                    assignment_types = _deep_get(
-                        integration, "assignmentTypes"
-                    )
+                    assignment_types = _deep_get(integration, "assignmentTypes")
                     if assignment_types is not None:
                         for key, value in assignment_types.items():
                             url_template = _deep_get(value, "urlTemplate")
@@ -893,19 +778,13 @@ class _DeepCloner:
                             re.IGNORECASE,
                         )
                         for item_id in item_ids:
-                            integration_item = source.content.get(
-                                item_id[7:]
-                            )
-                            integration_item_definition = (
-                                self._get_item_definitions(integration_item)
+                            integration_item = source.content.get(item_id[7:])
+                            integration_item_definition = self._get_item_definitions(
+                                integration_item
                             )
                             if integration_item_definition is not None:
-                                self._graph[
-                                    item_id[7:]
-                                ] = integration_item_definition
-                                item_definition.add_child(
-                                    integration_item_definition
-                                )
+                                self._graph[item_id[7:]] = integration_item_definition
+                                item_definition.add_child(integration_item_definition)
 
         # If the item is a form find the feature service that supports it
         elif item["type"] == "Form":
@@ -925,10 +804,7 @@ class _DeepCloner:
             self._graph[item.id] = item_definition
 
             qc_json = item.resources.get("qc.project.json", try_json=True)
-            if (
-                "dataSources" in qc_json
-                and qc_json["dataSources"] is not None
-            ):
+            if "dataSources" in qc_json and qc_json["dataSources"] is not None:
                 for datasource in qc_json["dataSources"]:
                     if (
                         "featureServiceItemId" in datasource
@@ -950,9 +826,7 @@ class _DeepCloner:
             notebook = item_definition.data
             with open(notebook, "r", encoding="utf8") as file:
                 notebook_json = file.read()
-                item_ids = set(
-                    re.findall("[0-9A-F]{32}", notebook_json, re.IGNORECASE)
-                )
+                item_ids = set(re.findall("[0-9A-F]{32}", notebook_json, re.IGNORECASE))
                 for id in item_ids:
                     if id not in self._graph:
                         notebook_item = source.content.get(id)
@@ -985,42 +859,32 @@ class _DeepCloner:
             table_definitions = _deep_get(map_json, "tableDefinitions")
             if table_definitions is not None:
                 for table_definition in table_definitions:
-                    data_connection = _deep_get(
-                        table_definition, "dataConnection"
-                    )
+                    data_connection = _deep_get(table_definition, "dataConnection")
                     if data_connection is not None:
                         data_connections.append(data_connection)
 
             for data_connection in data_connections:
                 if (
                     "workspaceFactory" in data_connection
-                    and data_connection["workspaceFactory"]
-                    == "FeatureService"
+                    and data_connection["workspaceFactory"] == "FeatureService"
                 ):
                     if (
                         "workspaceConnectionString" in data_connection
-                        and data_connection["workspaceConnectionString"]
-                        is not None
+                        and data_connection["workspaceConnectionString"] is not None
                     ):
-                        service_url = data_connection[
-                            "workspaceConnectionString"
-                        ][4:]
+                        service_url = data_connection["workspaceConnectionString"][4:]
                         feature_service = next(
                             (
                                 definition
                                 for definition in self._graph.values()
                                 if "url" in definition.info
-                                and _compare_url(
-                                    definition.info["url"], service_url
-                                )
+                                and _compare_url(definition.info["url"], service_url)
                             ),
                             None,
                         )
                         if not feature_service:
-                            feature_service = (
-                                _get_feature_service_related_item(
-                                    service_url, source
-                                )
+                            feature_service = _get_feature_service_related_item(
+                                service_url, source
                             )
                             if feature_service:
                                 fs_definition = self._get_item_definitions(
@@ -1038,9 +902,7 @@ class _DeepCloner:
                     import arcpy
 
                     ppkx = item_definition.data
-                    extract_dir = os.path.join(
-                        os.path.dirname(ppkx), "extract"
-                    )
+                    extract_dir = os.path.join(os.path.dirname(ppkx), "extract")
                     if not os.path.exists(extract_dir):
                         os.makedirs(extract_dir)
 
@@ -1055,14 +917,10 @@ class _DeepCloner:
                     project_dir = os.path.join(extract_dir, project_folder)
                     if os.path.exists(project_dir):
                         aprx_files = [
-                            f
-                            for f in os.listdir(project_dir)
-                            if f.endswith(".aprx")
+                            f for f in os.listdir(project_dir) if f.endswith(".aprx")
                         ]
                         if len(aprx_files) == 1:
-                            aprx_file = os.path.join(
-                                project_dir, aprx_files[0]
-                            )
+                            aprx_file = os.path.join(project_dir, aprx_files[0])
                             aprx = arcpy.mp.ArcGISProject(aprx_file)
                             maps = aprx.listMaps()
                             for map in maps:
@@ -1073,9 +931,7 @@ class _DeepCloner:
                                 ]
                                 layers.extend(map.listTables())
                                 for lyr in layers:
-                                    connection_properties = (
-                                        lyr.connectionProperties
-                                    )
+                                    connection_properties = lyr.connectionProperties
                                     workspace_factory = _deep_get(
                                         connection_properties,
                                         "workspace_factory",
@@ -1102,12 +958,16 @@ class _DeepCloner:
                                             None,
                                         )
                                         if not feature_service:
-                                            feature_service = _get_feature_service_related_item(
-                                                service_url, source
+                                            feature_service = (
+                                                _get_feature_service_related_item(
+                                                    service_url, source
+                                                )
                                             )
                                             if feature_service:
-                                                fs_definition = self._get_item_definitions(
-                                                    feature_service
+                                                fs_definition = (
+                                                    self._get_item_definitions(
+                                                        feature_service
+                                                    )
                                                 )
                                                 if fs_definition is not None:
                                                     item_definition.add_child(
@@ -1140,11 +1000,7 @@ class _DeepCloner:
         if self.folder is not None:
             folders = user.folders
             target_folder = next(
-                (
-                    f
-                    for f in folders
-                    if f["title"].lower() == self.folder.lower()
-                ),
+                (f for f in folders if f["title"].lower() == self.folder.lower()),
                 None,
             )
             if target_folder is None:
@@ -1153,15 +1009,11 @@ class _DeepCloner:
                 )
 
         # Validate the item mapping and build service mapping for Feature Service and Map Service items
-        for original_item_id, new_item_id in self._clone_mapping[
-            "Item IDs"
-        ].items():
+        for original_item_id, new_item_id in self._clone_mapping["Item IDs"].items():
             new_item = self.target.content.get(new_item_id)
             if not new_item:
                 raise Exception(
-                    'Item "{0}" does not exist in the target portal'.format(
-                        new_item_id
-                    )
+                    'Item "{0}" does not exist in the target portal'.format(new_item_id)
                 )
 
             original_item = None
@@ -1195,9 +1047,7 @@ class _DeepCloner:
                     layer_id_mapping,
                     relationship_field_mapping,
                 ) = _compare_service(new_item, original_item, currentVersion)
-                self._clone_mapping["Services"][
-                    original_item["url"].rstrip("/")
-                ] = {
+                self._clone_mapping["Services"][original_item["url"].rstrip("/")] = {
                     "id": new_item["id"],
                     "url": new_item["url"].rstrip("/"),
                     "layer_field_mapping": layer_field_mapping,
@@ -1255,11 +1105,7 @@ class _DeepCloner:
                         item.delete()
                 raise ex
 
-        return [
-            i
-            for i in self._get_created_items()
-            if isinstance(i, arcgis.gis.Item)
-        ]
+        return [i for i in self._get_created_items() if isinstance(i, arcgis.gis.Item)]
 
     def _clone(self, excecutor):
         """
@@ -1294,8 +1140,7 @@ class _DeepCloner:
                 for hosted_view in [
                     node
                     for node in leaf_nodes
-                    if isinstance(node, _FeatureServiceDefinition)
-                    and node.is_view
+                    if isinstance(node, _FeatureServiceDefinition) and node.is_view
                 ]:
                     for id, sources in hosted_view.view_sources.items():
                         for source in sources:
@@ -1345,11 +1190,7 @@ class _DeepCloner:
             level += 1
             leaf_nodes = self._get_leaf_nodes()
         logging.getLogger().info("Completed")
-        return [
-            i
-            for i in self._get_created_items()
-            if isinstance(i, arcgis.gis.Item)
-        ]
+        return [i for i in self._get_created_items() if isinstance(i, arcgis.gis.Item)]
 
     def clone(self):
         # from ._itemdef._storymaps import _StoryMapDefinition
@@ -1370,9 +1211,7 @@ class _DeepCloner:
         #    return self._clone_synchronous()
         else:
 
-            with concurrent.futures.ThreadPoolExecutor(
-                max_workers=20
-            ) as executor:
+            with concurrent.futures.ThreadPoolExecutor(max_workers=20) as executor:
                 results = executor.submit(self._clone, executor).result()
                 return results
 
@@ -1458,9 +1297,7 @@ class _DeepCloner:
                     source_url=source_url,
                     preserve_item_id=self._preserve_item_id,
                 )
-        elif item[
-            "type"
-        ] == "Map Service" and _TileItemDefinition.is_tileservice(item):
+        elif item["type"] == "Map Service" and _TileItemDefinition.is_tileservice(item):
             return _TileItemDefinition(
                 target=self.target,
                 clone_mapping=self._clone_mapping,
@@ -1888,9 +1725,7 @@ class _ExcelHelper:
         file = str(file)
         ns = {
             k or "xmlns": v
-            for event, (k, v) in ElementTree.iterparse(
-                file, events=["start-ns"]
-            )
+            for event, (k, v) in ElementTree.iterparse(file, events=["start-ns"])
         }
         return ElementTree.parse(file), ns
 
@@ -1924,9 +1759,7 @@ class _ExcelHelper:
     ):
 
         # We need the positions of the "system columns" because they are replaced differently.
-        for row in element.iterfind(
-            "./xmlns:sheetData/xmlns:row", namespaces
-        ):
+        for row in element.iterfind("./xmlns:sheetData/xmlns:row", namespaces):
             row_num = row.attrib["r"]
             if int(row_num) == 1:
                 # Never need to process the header.
@@ -1963,9 +1796,9 @@ class _ExcelHelper:
             return
 
         # Ignorable is a space delimited list of namespaces.
-        for prefix in xml.attrib.get(
-            f"{{{markup_compatibility}}}Ignorable", ""
-        ).split(" "):
+        for prefix in xml.attrib.get(f"{{{markup_compatibility}}}Ignorable", "").split(
+            " "
+        ):
             if prefix == "xr":
                 # Not sure why this prefix is included, but we don't need to double add it.
                 continue
@@ -1975,9 +1808,7 @@ class _ExcelHelper:
                 continue
             xml.set(f"xmlns:{prefix}", uri)
 
-    def save_xml(
-        self, xml: ElementTree.Element, namespaces: dict, file: pathlib.Path
-    ):
+    def save_xml(self, xml: ElementTree.Element, namespaces: dict, file: pathlib.Path):
 
         self._add_attributes(xml, namespaces)
 
@@ -1990,9 +1821,7 @@ class _ExcelHelper:
         shared_xml, shared_ns = self.read_file(shared_file)
         shared_string = {
             str(i): string_item
-            for i, string_item in enumerate(
-                shared_xml.iterfind("xmlns:si/", shared_ns)
-            )
+            for i, string_item in enumerate(shared_xml.iterfind("xmlns:si/", shared_ns))
         }
 
         sheet_file = self.get_sheet_by_name("survey")
@@ -2004,9 +1833,7 @@ class _ExcelHelper:
 
         for k, v in {**sheet_ns, **shared_ns}.items():
             # xmlns does not need a prefix
-            ElementTree.register_namespace(
-                prefix="" if k == "xmlns" else k, uri=v
-            )
+            ElementTree.register_namespace(prefix="" if k == "xmlns" else k, uri=v)
 
         self.save_xml(shared_xml.getroot(), shared_ns, shared_file)
         self.save_xml(sheet_xml.getroot(), sheet_ns, sheet_file)
@@ -2050,22 +1877,16 @@ class _GroupDefinition(CloneNode):
                 title = original_group["title"]
                 tags = original_group["tags"]
                 for tag in list(tags):
-                    if tag.startswith("source-") or tag.startswith(
-                        "sourcefolder-"
-                    ):
+                    if tag.startswith("source-") or tag.startswith("sourcefolder-"):
                         tags.remove(tag)
 
-                original_group["tags"].append(
-                    "source-{0}".format(original_group["id"])
-                )
+                original_group["tags"].append("source-{0}".format(original_group["id"]))
                 tags = ",".join(original_group["tags"])
 
                 # Find a unique name for the group
                 i = 1
                 while True:
-                    search_query = 'title:"{0}" AND owner:{1}'.format(
-                        title, self.owner
-                    )
+                    search_query = 'title:"{0}" AND owner:{1}'.format(title, self.owner)
                     groups = [
                         group
                         for group in self.target.groups.search(
@@ -2080,14 +1901,10 @@ class _GroupDefinition(CloneNode):
 
                 thumbnail = self.thumbnail
                 if not thumbnail and self.portal_group:
-                    temp_dir = os.path.join(
-                        self._temp_dir.name, original_group["id"]
-                    )
+                    temp_dir = os.path.join(self._temp_dir.name, original_group["id"])
                     if not os.path.exists(temp_dir):
                         os.makedirs(temp_dir)
-                    thumbnail = self.portal_group.download_thumbnail(
-                        temp_dir
-                    )
+                    thumbnail = self.portal_group.download_thumbnail(temp_dir)
 
                 new_group = self.target.groups.create(
                     title,
@@ -2108,9 +1925,7 @@ class _GroupDefinition(CloneNode):
 
                 self.created_items.append(new_group)
             self.resolved = True
-            self._clone_mapping["Group IDs"][
-                original_group["id"]
-            ] = new_group["id"]
+            self._clone_mapping["Group IDs"][original_group["id"]] = new_group["id"]
             return new_group
         except Exception as ex:
             raise _ItemCreateException(
@@ -2184,10 +1999,7 @@ class _ItemDefinition(CloneNode):
                 os.makedirs(temp_dir)
             thumbnail = self.portal_item.download_thumbnail(temp_dir)
         item_id = None
-        if (
-            self._preserve_item_id
-            and self.target._portal.is_arcgisonline == False
-        ):
+        if self._preserve_item_id and self.target._portal.is_arcgisonline == False:
             item_id = self.portal_item.itemid
         new_item = self.target.content.add(
             item_properties=item_properties,
@@ -2209,9 +2021,7 @@ class _ItemDefinition(CloneNode):
         if self.portal_item:
             try:
                 if self.portal_item.metadata:
-                    new_item.update(
-                        metadata=self.portal_item.download_metadata()
-                    )
+                    new_item.update(metadata=self.portal_item.download_metadata())
             except:
                 ...
             resources = self.portal_item.resources
@@ -2236,19 +2046,14 @@ class _ItemDefinition(CloneNode):
                         resources_dir,
                         resource_name,
                     )
-                    new_item.resources.add(
-                        resource_path, folder_name, resource_name
-                    )
+                    new_item.resources.add(resource_path, folder_name, resource_name)
 
     def _get_item_properties(self, item_extent=None):
         """Get a dictionary of item properties used in create and update operations."""
 
         item_properties = {}
         for property_name in self._item_property_names:
-            if (
-                property_name in self.info
-                and self.info[property_name] is not None
-            ):
+            if property_name in self.info and self.info[property_name] is not None:
                 item_properties[property_name] = self.info[property_name]
 
         type_keywords = item_properties["typeKeywords"]
@@ -2258,17 +2063,11 @@ class _ItemDefinition(CloneNode):
 
         tags = item_properties["tags"]
         type_keywords.append("source-{0}".format(self.info["id"]))
-        item_properties["typeKeywords"] = ",".join(
-            item_properties["typeKeywords"]
-        )
+        item_properties["typeKeywords"] = ",".join(item_properties["typeKeywords"])
         item_properties["tags"] = ",".join(item_properties["tags"])
 
         extent = _deep_get(item_properties, "extent")
-        if (
-            item_extent is not None
-            and extent is not None
-            and len(extent) > 0
-        ):
+        if item_extent is not None and extent is not None and len(extent) > 0:
             item_properties["extent"] = "{0}, {1}, {2}, {3}".format(
                 item_extent.xmin,
                 item_extent.ymin,
@@ -2292,9 +2091,7 @@ class _ItemDefinition(CloneNode):
         item = next(
             (
                 item
-                for item in self.target.users.get(self.owner).items(
-                    folder=self.folder
-                )
+                for item in self.target.users.get(self.owner).items(folder=self.folder)
                 if item["name"] == name
             ),
             None,
@@ -2320,9 +2117,7 @@ class _ItemDefinition(CloneNode):
             new_item = None
             original_item = self.info
             if self._search_existing:
-                new_item = _search_org_for_existing_item(
-                    self.target, self.portal_item
-                )
+                new_item = _search_org_for_existing_item(self.target, self.portal_item)
             if not new_item:
 
                 # Get the item properties from the original item to be applied when the new item is created
@@ -2336,9 +2131,7 @@ class _ItemDefinition(CloneNode):
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
             self.resolved = True
-            self._clone_mapping["Item IDs"][original_item["id"]] = new_item[
-                "id"
-            ]
+            self._clone_mapping["Item IDs"][original_item["id"]] = new_item["id"]
             return new_item
         except Exception as ex:
             raise _ItemCreateException(
@@ -2360,9 +2153,7 @@ class _TextItemDefinition(_ItemDefinition):
             new_item = None
             original_item = self.info
             if self._search_existing:
-                new_item = _search_org_for_existing_item(
-                    self.target, self.portal_item
-                )
+                new_item = _search_org_for_existing_item(self.target, self.portal_item)
             if not new_item:
                 # Get the item properties from the original item to be applied when the new item is created
                 item_properties = self._get_item_properties(self.item_extent)
@@ -2377,9 +2168,7 @@ class _TextItemDefinition(_ItemDefinition):
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
             self.resolved = True
-            self._clone_mapping["Item IDs"][original_item["id"]] = new_item[
-                "id"
-            ]
+            self._clone_mapping["Item IDs"][original_item["id"]] = new_item["id"]
             return new_item
         except Exception as ex:
             raise _ItemCreateException(
@@ -2437,9 +2226,7 @@ class _FeatureCollectionDefinition(_TextItemDefinition):
             new_item = None
             original_item = self.info
             if self._search_existing:
-                new_item = _search_org_for_existing_item(
-                    self.target, self.portal_item
-                )
+                new_item = _search_org_for_existing_item(self.target, self.portal_item)
             if not new_item:
                 # Get the item properties from the original item to be applied when the new item is created
                 item_properties = self._get_item_properties(self.item_extent)
@@ -2462,9 +2249,7 @@ class _FeatureCollectionDefinition(_TextItemDefinition):
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
             self.resolved = True
-            self._clone_mapping["Item IDs"][original_item["id"]] = new_item[
-                "id"
-            ]
+            self._clone_mapping["Item IDs"][original_item["id"]] = new_item["id"]
             return new_item
         except Exception as ex:
             raise _ItemCreateException(
@@ -2538,9 +2323,7 @@ class _FeatureServiceRefDef(_TextItemDefinition):
             new_item = None
             original_item = self.info
             if self._search_existing:
-                new_item = _search_org_for_existing_item(
-                    self.target, self.portal_item
-                )
+                new_item = _search_org_for_existing_item(self.target, self.portal_item)
             if not new_item:
                 # Get the item properties from the original item to be applied when the new item is created
                 item_properties = self._get_item_properties(self.item_extent)
@@ -2560,9 +2343,7 @@ class _FeatureServiceRefDef(_TextItemDefinition):
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
             self.resolved = True
-            self._clone_mapping["Item IDs"][original_item["id"]] = new_item[
-                "id"
-            ]
+            self._clone_mapping["Item IDs"][original_item["id"]] = new_item["id"]
             return new_item
         except Exception as ex:
             raise _ItemCreateException(
@@ -2676,12 +2457,10 @@ class _FeatureServiceDefinition(_TextItemDefinition):
             max_record_count = 1000
         offset = 0
         return_z = (
-            "hasZ" in feature_layer.properties
-            and feature_layer.properties["hasZ"]
+            "hasZ" in feature_layer.properties and feature_layer.properties["hasZ"]
         )
         return_m = (
-            "hasM" in feature_layer.properties
-            and feature_layer.properties["hasM"]
+            "hasM" in feature_layer.properties and feature_layer.properties["hasM"]
         )
         while offset < record_count:
             features = feature_layer.query(
@@ -2775,15 +2554,15 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
             # Create a mapping between the original global id and the new global id
             object_id_mapping[layer_id] = {
-                layer_features[i]["attributes"][
-                    object_id_field
-                ]: add_results[i]["objectId"]
+                layer_features[i]["attributes"][object_id_field]: add_results[i][
+                    "objectId"
+                ]
                 for i in range(0, len(layer_features))
             }
             global_id_mapping = {
-                layer_features[i]["attributes"][
-                    global_id_field
-                ]: add_results[i]["globalId"]
+                layer_features[i]["attributes"][global_id_field]: add_results[i][
+                    "globalId"
+                ]
                 for i in range(0, len(layer_features))
             }
 
@@ -2816,29 +2595,23 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     if key_field in feature["attributes"]:
                         global_id = feature["attributes"][key_field]
                         if global_id in global_id_mapping:
-                            feature["attributes"][
-                                key_field
-                            ] = global_id_mapping[global_id]
+                            feature["attributes"][key_field] = global_id_mapping[
+                                global_id
+                            ]
 
                 # Add the related features to the layer in chunks
                 add_results = []
                 for features_chunk in [
                     related_layer_features[i : i + chunk_size]
-                    for i in range(
-                        0, len(related_layer_features), chunk_size
-                    )
+                    for i in range(0, len(related_layer_features), chunk_size)
                 ]:
-                    edits = layers[related_layer_id].edit_features(
-                        adds=features_chunk
-                    )
+                    edits = layers[related_layer_id].edit_features(adds=features_chunk)
                     if self._logger:
                         self._logger.debug(edits)
                     add_results += edits["addResults"]
                     time.sleep(1)
                 layer_ids.remove(related_layer_id)
-                object_id_field = layers[related_layer_id].properties[
-                    "objectIdField"
-                ]
+                object_id_field = layers[related_layer_id].properties["objectIdField"]
                 object_id_mapping[related_layer_id] = {
                     related_layer_features[i]["attributes"][
                         object_id_field
@@ -2855,9 +2628,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
             is_generalized = False
             if "multiScaleGeometryInfo" in layers[layer_id].properties:
                 is_generalized = True
-                layers[layer_id].container.manager.layers[
-                    layer_id
-                ].update_definition(
+                layers[layer_id].container.manager.layers[layer_id].update_definition(
                     {
                         "multiScaleGeometryInfo": {"levels": []}
                     }  # {"multiScaleGeometryInfo": None}
@@ -2892,15 +2663,13 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         add_results += edits["addResults"]
             object_id_field = layers[layer_id].properties["objectIdField"]
             object_id_mapping[layer_id] = {
-                layer_features[i]["attributes"][
-                    object_id_field
-                ]: add_results[i]["objectId"]
+                layer_features[i]["attributes"][object_id_field]: add_results[i][
+                    "objectId"
+                ]
                 for i in range(0, len(layer_features))
             }
             if is_generalized:
-                layers[layer_id].container.manager.layers[
-                    layer_id
-                ].update_definition(
+                layers[layer_id].container.manager.layers[layer_id].update_definition(
                     {"multiScaleGeometryInfo": {"levels": []}}
                 )
                 layers[layer_id]._refresh()
@@ -2909,51 +2678,32 @@ class _FeatureServiceDefinition(_TextItemDefinition):
         for original_layer in original_layers:
             properties = original_layer.properties
             layer_id = properties["id"]
-            if (
-                "hasAttachments" in properties
-                and properties["hasAttachments"]
-            ):
-                if (
-                    str(layer_id) in features
-                    and features[str(layer_id)] is not None
-                ):
+            if "hasAttachments" in properties and properties["hasAttachments"]:
+                if str(layer_id) in features and features[str(layer_id)] is not None:
                     original_attachment_manager = original_layer.attachments
                     attachment_manager = layers[layer_id].attachments
-                    object_id_field = layers[layer_id].properties[
-                        "objectIdField"
-                    ]
+                    object_id_field = layers[layer_id].properties["objectIdField"]
                     layer_features = features[str(layer_id)]
                     if layer_id not in object_id_mapping:
                         continue
 
                     attachments = original_attachment_manager.search()
                     if len(attachments) > 0:
-                        temp_dir = os.path.join(
-                            self._temp_dir.name, "attachments"
-                        )
+                        temp_dir = os.path.join(self._temp_dir.name, "attachments")
                         if not os.path.exists(temp_dir):
                             os.makedirs(temp_dir)
 
                         for attachment in attachments:
-                            original_oid = _deep_get(
-                                attachment, "PARENTOBJECTID"
-                            )
-                            if (
-                                original_oid
-                                not in object_id_mapping[layer_id]
-                            ):
+                            original_oid = _deep_get(attachment, "PARENTOBJECTID")
+                            if original_oid not in object_id_mapping[layer_id]:
                                 continue
 
                             oid = object_id_mapping[layer_id][original_oid]
-                            attachment_files = (
-                                original_attachment_manager.download(
-                                    original_oid, attachment["ID"], temp_dir
-                                )
+                            attachment_files = original_attachment_manager.download(
+                                original_oid, attachment["ID"], temp_dir
                             )
                             if len(attachment_files) > 0:
-                                attachment_manager.add(
-                                    oid, attachment_files[0]
-                                )
+                                attachment_manager.add(oid, attachment_files[0])
 
     def _get_unique_name(self, target, name, force_add_guid_suffix=False):
         """Create a new unique name for the service.
@@ -2971,27 +2721,19 @@ class _FeatureServiceDefinition(_TextItemDefinition):
             guids = re.findall("[0-9A-F]{32}", name, re.IGNORECASE)
             for guid in guids:
                 if guid in self._clone_mapping["Group IDs"]:
-                    name = name.replace(
-                        guid, self._clone_mapping["Group IDs"][guid]
-                    )
+                    name = name.replace(guid, self._clone_mapping["Group IDs"][guid])
                 elif guid in self._clone_mapping["Item IDs"]:
-                    name = name.replace(
-                        guid, self._clone_mapping["Item IDs"][guid]
-                    )
+                    name = name.replace(guid, self._clone_mapping["Item IDs"][guid])
                 else:
                     new_guid = uuid.uuid4().hex[0:5]
                     name = name.replace(guid, new_guid)
 
             while True:
-                if target.content.is_service_name_available(
-                    name, "featureService"
-                ):
+                if target.content.is_service_name_available(name, "featureService"):
                     break
 
                 guid = uuid.uuid4().hex[0:5]
-                ends_with_guid = re.findall(
-                    "_[0-9A-F]{32}$", name, re.IGNORECASE
-                )
+                ends_with_guid = re.findall("_[0-9A-F]{32}$", name, re.IGNORECASE)
                 if len(ends_with_guid) > 0:
                     name = name[: len(name) - 32] + guid
                 else:
@@ -2999,9 +2741,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
         else:
             guid = uuid.uuid4().hex[0:5]
-            ends_with_guid = re.findall(
-                "_[0-9A-F]{32}$", name, re.IGNORECASE
-            )
+            ends_with_guid = re.findall("_[0-9A-F]{32}$", name, re.IGNORECASE)
             if len(ends_with_guid) > 0:
                 name = name[: len(name) - 32] + guid
             else:
@@ -3009,9 +2749,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
         return name
 
-    def _swizzle_workforce_layers(
-        self, wm_item_data, new_item, original_item_id
-    ):
+    def _swizzle_workforce_layers(self, wm_item_data, new_item, original_item_id):
         # replace old workforce layers with new cloned layers, leave non wf layers
         if (
             "operationalLayers" in wm_item_data
@@ -3019,9 +2757,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
         ):
             for i, layer in enumerate(wm_item_data["operationalLayers"]):
                 if layer.get("itemId", "") == original_item_id:
-                    wm_item_data["operationalLayers"][i][
-                        "itemId"
-                    ] = new_item.id
+                    wm_item_data["operationalLayers"][i]["itemId"] = new_item.id
                     wm_item_data["operationalLayers"][i][
                         "url"
                     ] = f"{new_item.url}/{layer['url'].split('/')[-1]}"
@@ -3046,23 +2782,17 @@ class _FeatureServiceDefinition(_TextItemDefinition):
             new_item = None
             original_item = self.info
             if self._search_existing:
-                new_item = _search_org_for_existing_item(
-                    self.target, self.portal_item
-                )
+                new_item = _search_org_for_existing_item(self.target, self.portal_item)
                 if new_item:
                     currentVersion = 0
                     if "currentVersion" in self.target.properties:
-                        currentVersion = (
-                            self.target.properties.currentVersion
-                        )
+                        currentVersion = self.target.properties.currentVersion
                     # build the mappings
                     (
                         layer_field_mapping,
                         layer_id_mapping,
                         relationship_field_mapping,
-                    ) = _compare_service(
-                        new_item, self.portal_item, currentVersion
-                    )
+                    ) = _compare_service(new_item, self.portal_item, currentVersion)
 
             if not new_item:
 
@@ -3072,9 +2802,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 # Modify the definition before passing to create the new service
                 name = original_item["name"]
                 if name is None:
-                    name = os.path.basename(
-                        os.path.dirname(original_item["url"])
-                    )
+                    name = os.path.basename(os.path.dirname(original_item["url"]))
                 # replace non-alphanumeric characters with underscore
                 name = re.sub("\W+", "_", name)
                 name = self._get_unique_name(self.target, name)
@@ -3094,34 +2822,25 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 # Set the extent and spatial reference of the service
                 new_extent = None
                 if "spatialReference" in service_definition:
-                    new_extent = _deep_get(
-                        service_definition, "initialExtent"
-                    )
+                    new_extent = _deep_get(service_definition, "initialExtent")
                     if new_extent is not None:
                         if "spatialReference" not in new_extent:
-                            new_extent[
+                            new_extent["spatialReference"] = service_definition[
                                 "spatialReference"
-                            ] = service_definition["spatialReference"]
+                            ]
                         if self._service_extent:
-                            new_extent = json.loads(
-                                self._service_extent.JSON
-                            )
-                            if (
-                                "maintain-spatial-ref"
-                                in original_item["tags"]
-                            ):
+                            new_extent = json.loads(self._service_extent.JSON)
+                            if "maintain-spatial-ref" in original_item["tags"]:
                                 new_extent = json.loads(
                                     project(
                                         [Geometry(new_extent)],
                                         in_sr=new_extent["spatialReference"],
-                                        out_sr=service_definition[
-                                            "spatialReference"
-                                        ],
+                                        out_sr=service_definition["spatialReference"],
                                     )[0].JSON
                                 )
-                                new_extent[
+                                new_extent["spatialReference"] = service_definition[
                                     "spatialReference"
-                                ] = service_definition["spatialReference"]
+                                ]
                         service_definition["initialExtent"] = new_extent
                         service_definition["spatialReference"] = new_extent[
                             "spatialReference"
@@ -3136,9 +2855,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         "capabilities",
                         "isMultiServicesView",
                     ]
-                    service_definition_copy = copy.deepcopy(
-                        service_definition
-                    )
+                    service_definition_copy = copy.deepcopy(service_definition)
                     for key, value in service_definition_copy.items():
                         if key not in properties:
                             del service_definition[key]
@@ -3155,9 +2872,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     "Extract",
                 ]
                 if self.target.properties.isPortal:
-                    capabilities = _deep_get(
-                        service_definition, "capabilities"
-                    )
+                    capabilities = _deep_get(service_definition, "capabilities")
                     if capabilities is not None:
                         service_definition["capabilities"] = ",".join(
                             [
@@ -3230,9 +2945,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     layers_definition["layers"] + layers_definition["tables"]
                 )
 
-                for layer in (
-                    layers_definition["layers"] + layers_definition["tables"]
-                ):
+                for layer in layers_definition["layers"] + layers_definition["tables"]:
                     # Need to remove relationships first and add them back individually
                     # after all layers and tables have been added to the definition
                     if (
@@ -3250,18 +2963,13 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
                     # Need to remove all indexes duplicated for fields.
                     # Services get into this state due to a bug in 10.4 and 1.2
-                    field_names = [
-                        f["name"].lower() for f in layer["fields"]
-                    ]
+                    field_names = [f["name"].lower() for f in layer["fields"]]
 
                     unique_fields = []
                     if "indexes" in layer:
                         for index in list(layer["indexes"]):
                             fields = index["fields"].lower()
-                            if (
-                                fields in unique_fields
-                                or fields not in field_names
-                            ):
+                            if fields in unique_fields or fields not in field_names:
                                 layer["indexes"].remove(index)
                             else:
                                 unique_fields.append(fields)
@@ -3273,9 +2981,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                             "esriFieldTypeDouble",
                             "esriFieldTypeSingle",
                         ]:
-                            coded_values = _deep_get(
-                                field, "domain", "codedValues"
-                            )
+                            coded_values = _deep_get(field, "domain", "codedValues")
                             if coded_values is not None:
                                 for coded_value in coded_values:
                                     code = _deep_get(coded_value, "code")
@@ -3298,12 +3004,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
                         if len(self.view_sources[layer["id"]]) > 1:
                             new_service = None
-                            for key, value in self._clone_mapping[
-                                "Services"
-                            ].items():
-                                if _compare_url(
-                                    key, original_feature_service
-                                ):
+                            for key, value in self._clone_mapping["Services"].items():
+                                if _compare_url(key, original_feature_service):
                                     new_service = value
                                     break
 
@@ -3311,45 +3013,32 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                             if (
                                 new_service is not None
                                 and "adminLayerInfo" in layer
-                                and "viewLayerDefinition"
-                                in layer["adminLayerInfo"]
+                                and "viewLayerDefinition" in layer["adminLayerInfo"]
                             ):
-                                layer["adminLayerInfo"][
-                                    "viewLayerDefinition"
-                                ]["table"][
+                                layer["adminLayerInfo"]["viewLayerDefinition"]["table"][
                                     "sourceServiceName"
                                 ] = os.path.basename(
                                     os.path.dirname(new_service["url"])
                                 )
-                                layer["adminLayerInfo"][
-                                    "viewLayerDefinition"
-                                ]["table"]["sourceLayerId"] = new_service[
-                                    "layer_id_mapping"
-                                ][
-                                    int(original_id)
-                                ]
+                                layer["adminLayerInfo"]["viewLayerDefinition"]["table"][
+                                    "sourceLayerId"
+                                ] = new_service["layer_id_mapping"][int(original_id)]
                                 if (
                                     "relatedTables"
-                                    in layer["adminLayerInfo"][
-                                        "viewLayerDefinition"
-                                    ]["table"]
+                                    in layer["adminLayerInfo"]["viewLayerDefinition"][
+                                        "table"
+                                    ]
                                 ):
                                     # Update the name of the related table to use the new items name
-                                    for related_table in layer[
-                                        "adminLayerInfo"
-                                    ]["viewLayerDefinition"]["table"][
-                                        "relatedTables"
-                                    ]:
-                                        name = related_table[
-                                            "sourceServiceName"
-                                        ]
+                                    for related_table in layer["adminLayerInfo"][
+                                        "viewLayerDefinition"
+                                    ]["table"]["relatedTables"]:
+                                        name = related_table["sourceServiceName"]
                                         for k, v in self._clone_mapping[
                                             "Services"
                                         ].items():
                                             if (
-                                                os.path.basename(
-                                                    os.path.dirname(k)
-                                                )
+                                                os.path.basename(os.path.dirname(k))
                                                 == name
                                             ):
                                                 related_table[
@@ -3358,20 +3047,14 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                                     os.path.dirname(v["url"])
                                                 )
                                                 if (
-                                                    "sourceLayerId"
-                                                    in related_table
-                                                    and "layer_id_mapping"
-                                                    in v
+                                                    "sourceLayerId" in related_table
+                                                    and "layer_id_mapping" in v
                                                     and int(
-                                                        related_table[
-                                                            "sourceLayerId"
-                                                        ]
+                                                        related_table["sourceLayerId"]
                                                     )
                                                     in v["layer_id_mapping"]
                                                 ):
-                                                    related_table[
-                                                        "sourceLayerId"
-                                                    ] = v[
+                                                    related_table["sourceLayerId"] = v[
                                                         "layer_id_mapping"
                                                     ][
                                                         int(
@@ -3393,16 +3076,12 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                     and layer["isMultiServicesView"]
                                     and "geometryType" in layer
                                 ):
-                                    admin_layer_info["geometryField"][
-                                        "name"
-                                    ] = (
-                                        admin_layer_info[
-                                            "viewLayerDefinition"
-                                        ]["table"]["name"]
+                                    admin_layer_info["geometryField"]["name"] = (
+                                        admin_layer_info["viewLayerDefinition"][
+                                            "table"
+                                        ]["name"]
                                         + "."
-                                        + admin_layer_info["geometryField"][
-                                            "name"
-                                        ]
+                                        + admin_layer_info["geometryField"]["name"]
                                     )
 
                                 if "tableName" in admin_layer_info:
@@ -3412,50 +3091,38 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                 if (
                                     "viewLayerDefinition" in admin_layer_info
                                     and "table"
-                                    in admin_layer_info[
-                                        "viewLayerDefinition"
-                                    ]
+                                    in admin_layer_info["viewLayerDefinition"]
                                 ):
                                     if (
                                         "sourceId"
-                                        in admin_layer_info[
-                                            "viewLayerDefinition"
-                                        ]["table"]
+                                        in admin_layer_info["viewLayerDefinition"][
+                                            "table"
+                                        ]
                                     ):
-                                        del admin_layer_info[
-                                            "viewLayerDefinition"
-                                        ]["table"]["sourceId"]
+                                        del admin_layer_info["viewLayerDefinition"][
+                                            "table"
+                                        ]["sourceId"]
                                     if (
                                         "relatedTables"
-                                        in admin_layer_info[
-                                            "viewLayerDefinition"
-                                        ]["table"]
+                                        in admin_layer_info["viewLayerDefinition"][
+                                            "table"
+                                        ]
                                         and len(
-                                            admin_layer_info[
-                                                "viewLayerDefinition"
-                                            ]["table"]["relatedTables"]
+                                            admin_layer_info["viewLayerDefinition"][
+                                                "table"
+                                            ]["relatedTables"]
                                         )
                                         > 0
                                     ):
-                                        for (
-                                            related_table
-                                        ) in admin_layer_info[
+                                        for related_table in admin_layer_info[
                                             "viewLayerDefinition"
-                                        ][
-                                            "table"
-                                        ][
-                                            "relatedTables"
-                                        ]:
+                                        ]["table"]["relatedTables"]:
                                             if "sourceId" in related_table:
                                                 del related_table["sourceId"]
 
                         else:
-                            for key, value in self._clone_mapping[
-                                "Services"
-                            ].items():
-                                if _compare_url(
-                                    key, original_feature_service
-                                ):
+                            for key, value in self._clone_mapping["Services"].items():
+                                if _compare_url(key, original_feature_service):
                                     new_service = value
                                     # retain this previous logic when admin_layer_info is not already avalible
                                     admin_layer_info = {}
@@ -3470,15 +3137,11 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                     ] = new_service["layer_id_mapping"][
                                         int(original_id)
                                     ]
-                                    view_layer_definition[
-                                        "sourceLayerFields"
-                                    ] = "*"
+                                    view_layer_definition["sourceLayerFields"] = "*"
                                     admin_layer_info[
                                         "viewLayerDefinition"
                                     ] = view_layer_definition
-                                    layer[
-                                        "adminLayerInfo"
-                                    ] = admin_layer_info
+                                    layer["adminLayerInfo"] = admin_layer_info
                                     break
 
                         if self.target.properties.isPortal:
@@ -3492,19 +3155,11 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                 ]
 
                             # Store the original templates to be updated later
-                            if (
-                                "templates" in layer
-                                and layer["templates"] is not None
-                            ):
-                                original_templates[layer["id"]] = layer[
-                                    "templates"
-                                ]
+                            if "templates" in layer and layer["templates"] is not None:
+                                original_templates[layer["id"]] = layer["templates"]
 
                             # Store the original types to be updated later
-                            if (
-                                "types" in layer
-                                and layer["types"] is not None
-                            ):
+                            if "types" in layer and layer["types"] is not None:
                                 original_types[layer["id"]] = layer["types"]
 
                     if self.target.properties.isPortal:
@@ -3526,21 +3181,13 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
                     if (_x + 1) % chunk_size == 0 or (_x + 1) == total_size:
                         layers_tables = {}
-                        layers = (
-                            copy.deepcopy(_layers)
-                            if len(_layers) > 0
-                            else []
-                        )
+                        layers = copy.deepcopy(_layers) if len(_layers) > 0 else []
                         if self.is_view:
                             for layer in layers:
                                 del layer["fields"]
                         layers_tables["layers"] = layers
 
-                        tables = (
-                            copy.deepcopy(_tables)
-                            if len(_tables) > 0
-                            else []
-                        )
+                        tables = copy.deepcopy(_tables) if len(_tables) > 0 else []
                         if self.is_view:
                             for table in tables:
                                 del table["fields"]
@@ -3557,11 +3204,9 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 feature_service_admin = feature_service.manager
                 if len(layers_and_tables) > 0:
                     for o in layers_and_tables:
-                        definition = (
-                            '{{"layers" : {0}, "tables" : {1}}}'.format(
-                                json.dumps(o["layers"]),
-                                json.dumps(o["tables"]),
-                            )
+                        definition = '{{"layers" : {0}, "tables" : {1}}}'.format(
+                            json.dumps(o["layers"]),
+                            json.dumps(o["tables"]),
                         )
                         _add_to_definition(feature_service_admin, definition)
 
@@ -3572,9 +3217,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 )
                 i = 0
                 for layer in feature_service.layers + feature_service.tables:
-                    layer_id_mapping[
-                        original_layers[i]["id"]
-                    ] = layer.properties["id"]
+                    layer_id_mapping[original_layers[i]["id"]] = layer.properties["id"]
                     i += 1
 
                 # Create a lookup for the layers and tables using their id
@@ -3587,9 +3230,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
                 # Create a field mapping object if the case or name of the field has changes
                 layer_field_mapping = {}
-                for layer in (
-                    layers_definition["layers"] + layers_definition["tables"]
-                ):
+                for layer in layers_definition["layers"] + layers_definition["tables"]:
                     field_mapping = {}
                     del_fields = []
                     layer_id = layer["id"]
@@ -3602,15 +3243,11 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         and len(self.view_sources[layer_id]) == 1
                         and layer_id in self.view_source_fields.keys()
                     ):
-                        original_fields = self.view_source_fields[layer_id][
-                            0
-                        ]
+                        original_fields = self.view_source_fields[layer_id][0]
                     new_fields = _deep_get(new_layer_properties, "fields")
                     if new_fields is None or original_fields is None:
                         break
-                    new_fields_lower = [
-                        f["name"].lower() for f in new_fields
-                    ]
+                    new_fields_lower = [f["name"].lower() for f in new_fields]
 
                     if (
                         "editFieldsInfo" in layer
@@ -3618,8 +3255,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     ):
                         if (
                             "editFieldsInfo" in new_layer_properties
-                            and new_layer_properties["editFieldsInfo"]
-                            is not None
+                            and new_layer_properties["editFieldsInfo"] is not None
                         ):
                             for editor_field in [
                                 "creationDateField",
@@ -3635,13 +3271,9 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                     "editFieldsInfo",
                                     editor_field,
                                 )
-                                if (
-                                    original_editor_field_name
-                                    != new_editor_field_name
-                                ):
+                                if original_editor_field_name != new_editor_field_name:
                                     if (
-                                        original_editor_field_name
-                                        is not None
+                                        original_editor_field_name is not None
                                         and original_editor_field_name != ""
                                         and new_editor_field_name is not None
                                         and new_editor_field_name != ""
@@ -3664,9 +3296,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                                 pass
 
                     original_oid_field = _deep_get(layer, "objectIdField")
-                    new_oid_field = _deep_get(
-                        new_layer_properties, "objectIdField"
-                    )
+                    new_oid_field = _deep_get(new_layer_properties, "objectIdField")
                     if original_oid_field != new_oid_field:
                         if (
                             original_oid_field is not None
@@ -3676,9 +3306,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         ):
                             field_mapping[original_oid_field] = new_oid_field
 
-                    original_globalid_field = _deep_get(
-                        layer, "globalIdField"
-                    )
+                    original_globalid_field = _deep_get(layer, "globalIdField")
                     new_globalid_field = _deep_get(
                         new_layer_properties, "globalIdField"
                     )
@@ -3689,9 +3317,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                             and new_globalid_field is not None
                             and new_globalid_field != ""
                         ):
-                            field_mapping[
-                                original_globalid_field
-                            ] = new_globalid_field
+                            field_mapping[original_globalid_field] = new_globalid_field
 
                     for field in original_fields:
                         if field["name"] in field_mapping:
@@ -3701,25 +3327,19 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                 new_fields_lower.index(field["name"].lower())
                             ]
                             if field["name"] != new_field["name"]:
-                                field_mapping[field["name"]] = new_field[
-                                    "name"
-                                ]
+                                field_mapping[field["name"]] = new_field["name"]
                         except ValueError:
                             new_field = next(
                                 (
                                     f
                                     for f in new_fields
-                                    if f["name"][
-                                        0 : len(field["name"])
-                                    ].lower()
+                                    if f["name"][0 : len(field["name"])].lower()
                                     == field["name"].lower()
                                 ),
                                 None,
                             )
                             if new_field is not None:
-                                field_mapping[field["name"]] = new_field[
-                                    "name"
-                                ]
+                                field_mapping[field["name"]] = new_field["name"]
 
                     if len(field_mapping) > 0:
                         layer_field_mapping[layer_id] = field_mapping
@@ -3727,10 +3347,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     update_definition = {}
                     delete_definition = {}
 
-                    if (
-                        len(del_fields) > 0
-                        or layer_id in layer_field_mapping
-                    ):
+                    if len(del_fields) > 0 or layer_id in layer_field_mapping:
                         # Delete the old editor tracking fields from the layer
                         if (
                             len(del_fields) > 0
@@ -3739,12 +3356,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                             layer_admin = new_layer.manager
                             delete_definition_fields = []
                             for field in del_fields:
-                                delete_definition_fields.append(
-                                    {"name": field}
-                                )
-                            delete_definition[
-                                "fields"
-                            ] = delete_definition_fields
+                                delete_definition_fields.append({"name": field})
+                            delete_definition["fields"] = delete_definition_fields
 
                         # Update editing templates if field mapping is required
                         if layer_id in layer_field_mapping:
@@ -3752,8 +3365,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
                             if (
                                 "templates" in new_layer_properties
-                                and new_layer_properties["templates"]
-                                is not None
+                                and new_layer_properties["templates"] is not None
                             ):
                                 templates = new_layer_properties["templates"]
                                 for template in templates:
@@ -3775,16 +3387,12 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                 for layer_type in types:
                                     if (
                                         "templates" in layer_type
-                                        and layer_type["templates"]
-                                        is not None
+                                        and layer_type["templates"] is not None
                                     ):
-                                        for template in layer_type[
-                                            "templates"
-                                        ]:
+                                        for template in layer_type["templates"]:
                                             if (
                                                 "prototype" in template
-                                                and template["prototype"]
-                                                is not None
+                                                and template["prototype"] is not None
                                             ):
                                                 _update_feature_attributes(
                                                     template["prototype"],
@@ -3816,17 +3424,14 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                             view_field_names = [
                                 f["name"].lower() for f in layer["fields"]
                             ]
-                            view_fields = {
-                                f["name"]: f for f in layer["fields"]
-                            }
+                            view_fields = {f["name"]: f for f in layer["fields"]}
                             if layer_id in self.view_source_fields.keys():
-                                for source_field in self.view_source_fields[
-                                    layer_id
-                                ][0]:
+                                for source_field in self.view_source_fields[layer_id][
+                                    0
+                                ]:
                                     source_field_name = source_field["name"]
                                     visible = (
-                                        source_field_name.lower()
-                                        in view_field_names
+                                        source_field_name.lower() in view_field_names
                                     )
                                     field_name = source_field_name
                                     if layer_id in layer_field_mapping:
@@ -3834,9 +3439,9 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                             source_field_name
                                             in layer_field_mapping[layer_id]
                                         ):
-                                            field_name = layer_field_mapping[
-                                                layer_id
-                                            ][source_field_name]
+                                            field_name = layer_field_mapping[layer_id][
+                                                source_field_name
+                                            ]
 
                                     field_update = {
                                         "name": field_name,
@@ -3844,9 +3449,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                     }
 
                                     # Update domain of a view if it is different from the source feature service
-                                    new_field_names = {
-                                        f["name"]: f for f in new_fields
-                                    }
+                                    new_field_names = {f["name"]: f for f in new_fields}
                                     if (
                                         source_field_name in view_fields
                                         and field_name in new_field_names
@@ -3872,15 +3475,9 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                             ) != _deep_get(
                                                 original_domain, "range"
                                             ):
-                                                field_update[
-                                                    "domain"
-                                                ] = new_domain
-                                                field_update[
-                                                    "visible"
-                                                ] = visible
-                                                field_updates.append(
-                                                    field_update
-                                                )
+                                                field_update["domain"] = new_domain
+                                                field_update["visible"] = visible
+                                                field_updates.append(field_update)
                                     elif not visible:
                                         field_updates.append(field_update)
                                 update_definition["fields"] = field_updates
@@ -3892,19 +3489,13 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                 field_mapping = layer_field_mapping[layer_id]
 
                             if layer_id in original_drawing_infos:
-                                drawing_info = original_drawing_infos[
-                                    layer_id
-                                ]
+                                drawing_info = original_drawing_infos[layer_id]
                                 if field_mapping is not None:
-                                    layer_definition = {
-                                        "drawingInfo": drawing_info
-                                    }
+                                    layer_definition = {"drawingInfo": drawing_info}
                                     _update_layer_definition_fields(
                                         layer_definition, field_mapping
                                     )
-                                update_definition[
-                                    "drawingInfo"
-                                ] = drawing_info
+                                update_definition["drawingInfo"] = drawing_info
 
                             if layer_id in original_templates:
                                 templates = original_templates[layer_id]
@@ -3912,8 +3503,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                     for template in templates:
                                         if (
                                             "prototype" in template
-                                            and template["prototype"]
-                                            is not None
+                                            and template["prototype"] is not None
                                         ):
                                             _update_feature_attributes(
                                                 template["prototype"],
@@ -3927,21 +3517,16 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                     for layer_type in types:
                                         if (
                                             "templates" in layer_type
-                                            and layer_type["templates"]
-                                            is not None
+                                            and layer_type["templates"] is not None
                                         ):
-                                            for template in layer_type[
-                                                "templates"
-                                            ]:
+                                            for template in layer_type["templates"]:
                                                 if (
                                                     "prototype" in template
                                                     and template["prototype"]
                                                     is not None
                                                 ):
                                                     _update_feature_attributes(
-                                                        template[
-                                                            "prototype"
-                                                        ],
+                                                        template["prototype"],
                                                         field_mapping,
                                                     )
                                 update_definition["types"] = types
@@ -3951,32 +3536,23 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         time_info = time_infos[layer_id]
                         start_time = _deep_get(time_info, "startTimeField")
                         if start_time and start_time in field_mapping:
-                            time_info["startTimeField"] = field_mapping[
-                                start_time
-                            ]
+                            time_info["startTimeField"] = field_mapping[start_time]
                         elif start_time == "":
                             time_info["startTimeField"] = None
                         end_time = _deep_get(time_info, "endTimeField")
                         if end_time and end_time in field_mapping:
-                            time_info["endTimeField"] = field_mapping[
-                                end_time
-                            ]
+                            time_info["endTimeField"] = field_mapping[end_time]
                         elif end_time == "":
                             time_info["endTimeField"] = None
                         update_definition["timeInfo"] = time_info
 
                     # Update the definition of the layer
-                    if (
-                        len(update_definition) > 0
-                        or len(delete_definition) > 0
-                    ):
+                    if len(update_definition) > 0 or len(delete_definition) > 0:
                         layer_admin = new_layer.manager
                         if len(update_definition) > 0:
                             layer_admin.update_definition(update_definition)
                         if len(delete_definition) > 0:
-                            layer_admin.delete_from_definition(
-                                delete_definition
-                            )
+                            layer_admin.delete_from_definition(delete_definition)
 
                 # Add the relationships back to the layers
                 relationship_field_mapping = {}
@@ -3991,13 +3567,8 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                     ]
                             related_table_id = relationship["relatedTableId"]
                             if related_table_id in layer_field_mapping:
-                                field_mapping = layer_field_mapping[
-                                    related_table_id
-                                ]
-                                if (
-                                    layer_id
-                                    not in relationship_field_mapping
-                                ):
+                                field_mapping = layer_field_mapping[related_table_id]
+                                if layer_id not in relationship_field_mapping:
                                     relationship_field_mapping[layer_id] = {}
                                 relationship_field_mapping[layer_id][
                                     relationship["id"]
@@ -4007,9 +3578,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         relationships_copy = copy.deepcopy(relationships)
                         for layer_id in relationships_copy:
                             for relationship in relationships_copy[layer_id]:
-                                relationship[
-                                    "relatedTableId"
-                                ] = layer_id_mapping[
+                                relationship["relatedTableId"] = layer_id_mapping[
                                     relationship["relatedTableId"]
                                 ]
 
@@ -4019,9 +3588,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                                 relationships_definition["layers"].append(
                                     {
                                         "id": value,
-                                        "relationships": relationships_copy[
-                                            key
-                                        ],
+                                        "relationships": relationships_copy[key],
                                     }
                                 )
                         feature_service_admin.add_to_definition(
@@ -4034,18 +3601,14 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
                 # Merge type keywords from what is created by default for the new item and what was in the original item
                 type_keywords = list(new_item["typeKeywords"])
-                type_keywords.extend(
-                    item_properties["typeKeywords"].split(",")
-                )
+                type_keywords.extend(item_properties["typeKeywords"].split(","))
                 type_keywords = list(set(type_keywords))
 
                 # Replace type keyword if it references an item id of cloned item, ex. Survey123
                 for keyword in list(type_keywords):
                     if keyword in self._clone_mapping["Item IDs"]:
                         type_keywords.remove(keyword)
-                        type_keywords.append(
-                            self._clone_mapping["Item IDs"][keyword]
-                        )
+                        type_keywords.append(self._clone_mapping["Item IDs"][keyword])
                 item_properties["typeKeywords"] = ",".join(type_keywords)
 
                 # Get the collection of layers and tables from the item data
@@ -4059,11 +3622,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 # Update any pop-up, labeling or renderer field references
                 for layer_id in layer_field_mapping:
                     layer = next(
-                        (
-                            layer
-                            for layer in layers
-                            if layer["id"] == layer_id
-                        ),
+                        (layer for layer in layers if layer["id"] == layer_id),
                         None,
                     )
                     if layer:
@@ -4075,11 +3634,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
 
                 for layer_id in relationship_field_mapping:
                     layer = next(
-                        (
-                            layer
-                            for layer in layers
-                            if layer["id"] == layer_id
-                        ),
+                        (layer for layer in layers if layer["id"] == layer_id),
                         None,
                     )
                     if layer:
@@ -4113,15 +3668,11 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 )
                 for guid in guids:
                     if guid in self._clone_mapping["Group IDs"]:
-                        item_properties["title"] = item_properties[
-                            "title"
-                        ].replace(
+                        item_properties["title"] = item_properties["title"].replace(
                             guid, self._clone_mapping["Group IDs"][guid]
                         )
                     elif guid in self._clone_mapping["Item IDs"]:
-                        item_properties["title"] = item_properties[
-                            "title"
-                        ].replace(
+                        item_properties["title"] = item_properties["title"].replace(
                             guid, self._clone_mapping["Item IDs"][guid]
                         )
 
@@ -4138,9 +3689,9 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     old_dispatcher_webmap_id = item_properties["properties"][
                         "workforceDispatcherMapId"
                     ]
-                    new_dispatcher_webmap_id = self._clone_mapping[
-                        "Item IDs"
-                    ][old_dispatcher_webmap_id]
+                    new_dispatcher_webmap_id = self._clone_mapping["Item IDs"][
+                        old_dispatcher_webmap_id
+                    ]
                     item_properties["properties"][
                         "workforceDispatcherMapId"
                     ] = new_dispatcher_webmap_id
@@ -4155,9 +3706,7 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     )
                     dispatcher_webmap_item.update(
                         item_properties={
-                            "properties": {
-                                "workforceFeatureServiceId": new_item.id
-                            },
+                            "properties": {"workforceFeatureServiceId": new_item.id},
                             "text": json.dumps(wm_item_data),
                         }
                     )
@@ -4174,18 +3723,14 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                     ] = new_worker_webmap_id
 
                     # replace operational layers with new data
-                    worker_webmap_item = self.target.content.get(
-                        new_worker_webmap_id
-                    )
+                    worker_webmap_item = self.target.content.get(new_worker_webmap_id)
                     wm_item_data = worker_webmap_item.get_data()
                     wm_item_data = self._swizzle_workforce_layers(
                         wm_item_data, new_item, original_item["id"]
                     )
                     worker_webmap_item.update(
                         item_properties={
-                            "properties": {
-                                "workforceFeatureServiceId": new_item.id
-                            },
+                            "properties": {"workforceFeatureServiceId": new_item.id},
                             "text": json.dumps(wm_item_data),
                         }
                     )
@@ -4236,15 +3781,11 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                 # Update the item definition of the service
                 thumbnail = self.thumbnail
                 if not thumbnail and self.portal_item:
-                    temp_dir = os.path.join(
-                        self._temp_dir.name, original_item["id"]
-                    )
+                    temp_dir = os.path.join(self._temp_dir.name, original_item["id"])
                     if not os.path.exists(temp_dir):
                         os.makedirs(temp_dir)
                     thumbnail = self.portal_item.download_thumbnail(temp_dir)
-                new_item.update(
-                    item_properties=item_properties, thumbnail=thumbnail
-                )
+                new_item.update(item_properties=item_properties, thumbnail=thumbnail)
 
                 # Clone any item resources
                 self._clone_resources(new_item)
@@ -4289,24 +3830,18 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         )
 
                     # update item ids in the integrations url
-                    new_integrations = new_proj.integrations_table.query(
-                        "1=1"
-                    )
+                    new_integrations = new_proj.integrations_table.query("1=1")
                     for i, feature in enumerate(new_integrations):
                         try:
-                            old_url = integrations_features.features[
-                                i
-                            ].attributes[
+                            old_url = integrations_features.features[i].attributes[
                                 new_proj._integration_schema.url_template
                             ]
                             url_parts = list(urllib.parse.urlparse(old_url))
-                            query_dict = dict(
-                                urllib.parse.parse_qsl(url_parts[4])
-                            )
+                            query_dict = dict(urllib.parse.parse_qsl(url_parts[4]))
                             old_item_id = query_dict["itemID"]
-                            query_dict["itemID"] = self._clone_mapping[
-                                "Item IDs"
-                            ][old_item_id]
+                            query_dict["itemID"] = self._clone_mapping["Item IDs"][
+                                old_item_id
+                            ]
                             url_parts[4] = urllib.parse.urlencode(
                                 query_dict, safe="${},"
                             )
@@ -4316,21 +3851,15 @@ class _FeatureServiceDefinition(_TextItemDefinition):
                         except KeyError:
                             # itemid does not necessarily exist in the url template
                             continue
-                    new_proj.integrations_table.edit_features(
-                        updates=new_integrations
-                    )
+                    new_proj.integrations_table.edit_features(updates=new_integrations)
 
             # share items
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
             self.resolved = True
-            self._clone_mapping["Item IDs"][original_item["id"]] = new_item[
-                "id"
-            ]
-            self._clone_mapping["Services"][
-                original_item["url"].rstrip("/")
-            ] = {
+            self._clone_mapping["Item IDs"][original_item["id"]] = new_item["id"]
+            self._clone_mapping["Services"][original_item["url"].rstrip("/")] = {
                 "id": new_item["id"],
                 "url": new_item["url"].rstrip("/"),
                 "layer_field_mapping": layer_field_mapping,
@@ -4392,9 +3921,7 @@ class _WebMapDefinition(_TextItemDefinition):
             new_item = None
             original_item = self.info
             if self._search_existing:
-                new_item = _search_org_for_existing_item(
-                    self.target, self.portal_item
-                )
+                new_item = _search_org_for_existing_item(self.target, self.portal_item)
             if not new_item:
 
                 # Get the item properties from the original web map which will be applied when the new item is created
@@ -4448,9 +3975,7 @@ class _WebMapDefinition(_TextItemDefinition):
                     )
                 if "tables" in webmap_json:
                     layers += [
-                        table
-                        for table in webmap_json["tables"]
-                        if "url" in table
+                        table for table in webmap_json["tables"] if "url" in table
                     ]
 
                 for layer in layers:
@@ -4460,33 +3985,19 @@ class _WebMapDefinition(_TextItemDefinition):
                     ].items():
                         if _compare_url(feature_service_url, original_url):
                             layer_id = int(os.path.basename(layer["url"]))
-                            new_id = new_service["layer_id_mapping"][
-                                layer_id
-                            ]
-                            layer["url"] = "{0}/{1}".format(
-                                new_service["url"], new_id
-                            )
+                            new_id = new_service["layer_id_mapping"][layer_id]
+                            layer["url"] = "{0}/{1}".format(new_service["url"], new_id)
                             layer["itemId"] = new_service["id"]
-                            if (
-                                layer_id
-                                in new_service["layer_field_mapping"]
-                            ):
+                            if layer_id in new_service["layer_field_mapping"]:
                                 _update_layer_fields(
                                     layer,
-                                    new_service["layer_field_mapping"][
-                                        layer_id
-                                    ],
+                                    new_service["layer_field_mapping"][layer_id],
                                     new_service["layer_field_mapping"],
                                 )
-                            if (
-                                layer_id
-                                in new_service["relationship_field_mapping"]
-                            ):
+                            if layer_id in new_service["relationship_field_mapping"]:
                                 _update_layer_related_fields(
                                     layer,
-                                    new_service[
-                                        "relationship_field_mapping"
-                                    ][layer_id],
+                                    new_service["relationship_field_mapping"][layer_id],
                                 )
                             break
 
@@ -4494,13 +4005,10 @@ class _WebMapDefinition(_TextItemDefinition):
                     if (
                         "itemId" in vector_tile
                         and vector_tile["itemId"] is not None
-                        and vector_tile["itemId"]
-                        in self._clone_mapping["Item IDs"]
+                        and vector_tile["itemId"] in self._clone_mapping["Item IDs"]
                     ):
 
-                        new_id = self._clone_mapping["Item IDs"][
-                            vector_tile["itemId"]
-                        ]
+                        new_id = self._clone_mapping["Item IDs"][vector_tile["itemId"]]
                         portal_url = "http://www.arcgis.com/"
                         if self.target.properties.isPortal:
                             portal_url = _get_org_url(self.target)
@@ -4522,9 +4030,9 @@ class _WebMapDefinition(_TextItemDefinition):
                         and feature_collection["itemId"]
                         in self._clone_mapping["Item IDs"]
                     ):
-                        feature_collection["itemId"] = self._clone_mapping[
-                            "Item IDs"
-                        ][feature_collection["itemId"]]
+                        feature_collection["itemId"] = self._clone_mapping["Item IDs"][
+                            feature_collection["itemId"]
+                        ]
 
                 for map_service_layer in map_service_layers:
                     map_service_url = map_service_layer["url"]
@@ -4536,15 +4044,12 @@ class _WebMapDefinition(_TextItemDefinition):
                             map_service_layer["itemId"] = new_service["id"]
                             break
 
-                basemap_layers = _deep_get(
-                    webmap_json, "baseMap", "baseMapLayers"
-                )
+                basemap_layers = _deep_get(webmap_json, "baseMap", "baseMapLayers")
                 if basemap_layers is not None:
                     for basemap_layer in basemap_layers:
                         if (
                             "layerType" in basemap_layer
-                            and basemap_layer["layerType"]
-                            == "VectorTileLayer"
+                            and basemap_layer["layerType"] == "VectorTileLayer"
                         ):
                             if (
                                 "itemId" in basemap_layer
@@ -4580,9 +4085,7 @@ class _WebMapDefinition(_TextItemDefinition):
                             for key in [k for k in default_basemap]:
                                 if key not in ["title", "baseMapLayers"]:
                                     del default_basemap[key]
-                            for basemap_layer in default_basemap[
-                                "baseMapLayers"
-                            ]:
+                            for basemap_layer in default_basemap["baseMapLayers"]:
                                 if "resourceInfo" in basemap_layer:
                                     del basemap_layer["resourceInfo"]
                             webmap_json["baseMap"] = default_basemap
@@ -4597,9 +4100,7 @@ class _WebMapDefinition(_TextItemDefinition):
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
             self.resolved = True
-            self._clone_mapping["Item IDs"][original_item["id"]] = new_item[
-                "id"
-            ]
+            self._clone_mapping["Item IDs"][original_item["id"]] = new_item["id"]
             return new_item
         except Exception as ex:
             raise _ItemCreateException(
@@ -4620,9 +4121,7 @@ class _OperationViewDefintion(_TextItemDefinition):
             new_item = None
             original_item = self.info
             if self._search_existing:
-                new_item = _search_org_for_existing_item(
-                    self.target, self.portal_item
-                )
+                new_item = _search_org_for_existing_item(self.target, self.portal_item)
             if not new_item:
 
                 # Get the item properties from the original application which will be applied when the new item is created
@@ -4641,9 +4140,9 @@ class _OperationViewDefintion(_TextItemDefinition):
                     for layer_id in self._clone_mapping["Services"][service][
                         "layer_field_mapping"
                     ]:
-                        field_mapping = self._clone_mapping["Services"][
-                            service
-                        ]["layer_field_mapping"][layer_id]
+                        field_mapping = self._clone_mapping["Services"][service][
+                            "layer_field_mapping"
+                        ][layer_id]
                         _find_and_replace_fields_json(
                             app_json,
                             field_mapping,
@@ -4661,9 +4160,7 @@ class _OperationViewDefintion(_TextItemDefinition):
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
             self.resolved = True
-            self._clone_mapping["Item IDs"][original_item["id"]] = new_item[
-                "id"
-            ]
+            self._clone_mapping["Item IDs"][original_item["id"]] = new_item["id"]
             return new_item
 
         except Exception as ex:
@@ -4686,35 +4183,25 @@ class _OperationViewDefintion(_TextItemDefinition):
             for widget in app_json["widgets"]:
                 if widget["type"] == "mapWidget":
                     if "mapId" in widget:
-                        widget["mapId"] = clone_mapping["Item IDs"][
-                            widget["mapId"]
-                        ]
+                        widget["mapId"] = clone_mapping["Item IDs"][widget["mapId"]]
         if "standaloneDataSources" in app_json:
             for ds in app_json["standaloneDataSources"]:
                 if "serviceItemId" in ds:
                     # update the url
                     if "url" in ds:
-                        for url, cloned_service in clone_mapping[
-                            "Services"
-                        ].items():
+                        for url, cloned_service in clone_mapping["Services"].items():
                             if (
                                 cloned_service["id"]
-                                == clone_mapping["Item IDs"][
-                                    ds["serviceItemId"]
-                                ]
+                                == clone_mapping["Item IDs"][ds["serviceItemId"]]
                             ):
                                 # get layer id from url
                                 layer_id = int(ds["url"].split("/")[-1])
                                 ds["url"] = "{}/{}".format(
                                     cloned_service["url"],
-                                    cloned_service["layer_id_mapping"][
-                                        layer_id
-                                    ],
+                                    cloned_service["layer_id_mapping"][layer_id],
                                 )
                     # update the item id
-                    ds["serviceItemId"] = clone_mapping["Item IDs"][
-                        ds["serviceItemId"]
-                    ]
+                    ds["serviceItemId"] = clone_mapping["Item IDs"][ds["serviceItemId"]]
         return app_json
 
     @staticmethod
@@ -4759,9 +4246,7 @@ class _DashboardDefinition(_TextItemDefinition):
             new_item = None
             original_item = self.info
             if self._search_existing:
-                new_item = _search_org_for_existing_item(
-                    self.target, self.portal_item
-                )
+                new_item = _search_org_for_existing_item(self.target, self.portal_item)
             if not new_item:
 
                 # Get the item properties from the original application which will be applied when the new item is created
@@ -4792,9 +4277,9 @@ class _DashboardDefinition(_TextItemDefinition):
                     for layer_id in self._clone_mapping["Services"][service][
                         "layer_field_mapping"
                     ]:
-                        field_mapping = self._clone_mapping["Services"][
-                            service
-                        ]["layer_field_mapping"][layer_id]
+                        field_mapping = self._clone_mapping["Services"][service][
+                            "layer_field_mapping"
+                        ][layer_id]
                         _find_and_replace_fields_json(
                             app_json,
                             field_mapping,
@@ -4813,9 +4298,7 @@ class _DashboardDefinition(_TextItemDefinition):
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
             self.resolved = True
-            self._clone_mapping["Item IDs"][original_item["id"]] = new_item[
-                "id"
-            ]
+            self._clone_mapping["Item IDs"][original_item["id"]] = new_item["id"]
             return new_item
 
         except Exception as ex:
@@ -4837,9 +4320,7 @@ class _DashboardDefinition(_TextItemDefinition):
             for widget in app_json["widgets"]:
                 if widget["type"] == "mapWidget":
                     if "itemId" in widget:
-                        widget["itemId"] = clone_mapping["Item IDs"][
-                            widget["itemId"]
-                        ]
+                        widget["itemId"] = clone_mapping["Item IDs"][widget["itemId"]]
                 elif "datasets" in widget:
                     for dataset in widget["datasets"]:
                         if (
@@ -4858,20 +4339,15 @@ class _DashboardDefinition(_TextItemDefinition):
                                     ]
                                 ):
                                     # update the layer id
-                                    dataset["dataSource"][
-                                        "layerId"
-                                    ] = cloned_service["layer_id_mapping"][
-                                        dataset["dataSource"]["layerId"]
-                                    ]
+                                    dataset["dataSource"]["layerId"] = cloned_service[
+                                        "layer_id_mapping"
+                                    ][dataset["dataSource"]["layerId"]]
                             # update the item id
-                            dataset["dataSource"]["itemId"] = clone_mapping[
-                                "Item IDs"
-                            ][dataset["dataSource"]["itemId"]]
+                            dataset["dataSource"]["itemId"] = clone_mapping["Item IDs"][
+                                dataset["dataSource"]["itemId"]
+                            ]
 
-        if (
-            "headerPanel" in app_json
-            and "selectors" in app_json["headerPanel"]
-        ):
+        if "headerPanel" in app_json and "selectors" in app_json["headerPanel"]:
             for selector in app_json["headerPanel"]["selectors"]:
                 if "datasets" in selector:
                     for dataset in selector["datasets"]:
@@ -4891,15 +4367,13 @@ class _DashboardDefinition(_TextItemDefinition):
                                     ]
                                 ):
                                     # update the layer id
-                                    dataset["dataSource"][
-                                        "layerId"
-                                    ] = cloned_service["layer_id_mapping"][
-                                        dataset["dataSource"]["layerId"]
-                                    ]
+                                    dataset["dataSource"]["layerId"] = cloned_service[
+                                        "layer_id_mapping"
+                                    ][dataset["dataSource"]["layerId"]]
                             # update the item id
-                            dataset["dataSource"]["itemId"] = clone_mapping[
-                                "Item IDs"
-                            ][dataset["dataSource"]["itemId"]]
+                            dataset["dataSource"]["itemId"] = clone_mapping["Item IDs"][
+                                dataset["dataSource"]["itemId"]
+                            ]
 
         if "leftPanel" in app_json and "selectors" in app_json["leftPanel"]:
             for selector in app_json["leftPanel"]["selectors"]:
@@ -4921,15 +4395,13 @@ class _DashboardDefinition(_TextItemDefinition):
                                     ]
                                 ):
                                     # update the layer id
-                                    dataset["dataSource"][
-                                        "layerId"
-                                    ] = cloned_service["layer_id_mapping"][
-                                        dataset["dataSource"]["layerId"]
-                                    ]
+                                    dataset["dataSource"]["layerId"] = cloned_service[
+                                        "layer_id_mapping"
+                                    ][dataset["dataSource"]["layerId"]]
                             # update the item id
-                            dataset["dataSource"]["itemId"] = clone_mapping[
-                                "Item IDs"
-                            ][dataset["dataSource"]["itemId"]]
+                            dataset["dataSource"]["itemId"] = clone_mapping["Item IDs"][
+                                dataset["dataSource"]["itemId"]
+                            ]
         return app_json
 
     @staticmethod
@@ -4945,9 +4417,7 @@ class _DashboardDefinition(_TextItemDefinition):
                 webmap_ids = _DashboardDefinition._get_webmap_ids_v24(data)
             else:
                 raise _ItemCreateException(
-                    "Dashboard version {} is not supported".format(
-                        data["version"]
-                    )
+                    "Dashboard version {} is not supported".format(data["version"])
                 )
         else:
             raise _ItemCreateException(
@@ -4982,9 +4452,7 @@ class _DashboardDefinition(_TextItemDefinition):
                 layer_ids = _DashboardDefinition._get_layer_ids_v24(data)
             else:
                 raise _ItemCreateException(
-                    "Dashboard version {} is not supported".format(
-                        data["version"]
-                    )
+                    "Dashboard version {} is not supported".format(data["version"])
                 )
         else:
             raise _ItemCreateException(
@@ -5004,9 +4472,7 @@ class _DashboardDefinition(_TextItemDefinition):
             for widget in data["widgets"]:
                 if "datasets" in widget:
                     layer_ids = layer_ids.union(
-                        _DashboardDefinition._parse_datasets_v24(
-                            widget["datasets"]
-                        ),
+                        _DashboardDefinition._parse_datasets_v24(widget["datasets"]),
                         layer_ids,
                     )
 
@@ -5014,9 +4480,7 @@ class _DashboardDefinition(_TextItemDefinition):
             for selector in data["headerPanel"]["selectors"]:
                 if "datasets" in selector:
                     layer_ids = layer_ids.union(
-                        _DashboardDefinition._parse_datasets_v24(
-                            selector["datasets"]
-                        ),
+                        _DashboardDefinition._parse_datasets_v24(selector["datasets"]),
                         layer_ids,
                     )
 
@@ -5024,9 +4488,7 @@ class _DashboardDefinition(_TextItemDefinition):
             for selector in data["leftPanel"]["selectors"]:
                 if "datasets" in selector:
                     layer_ids = layer_ids.union(
-                        _DashboardDefinition._parse_datasets_v24(
-                            selector["datasets"]
-                        ),
+                        _DashboardDefinition._parse_datasets_v24(selector["datasets"]),
                         layer_ids,
                     )
         return layer_ids
@@ -5106,9 +4568,7 @@ class _ApplicationDefinition(_TextItemDefinition):
             new_item = None
             original_item = self.info
             if self._search_existing:
-                new_item = _search_org_for_existing_item(
-                    self.target, self.portal_item
-                )
+                new_item = _search_org_for_existing_item(self.target, self.portal_item)
             if not new_item:
                 org_url = _get_org_url(self.target)
                 is_web_appbuilder = False
@@ -5139,23 +4599,15 @@ class _ApplicationDefinition(_TextItemDefinition):
                                 if "portalUrl" in app_json["map"]:
                                     app_json["map"]["portalUrl"] = org_url
                                 if "itemId" in app_json["map"]:
-                                    app_json["map"][
-                                        "itemId"
-                                    ] = self._clone_mapping["Item IDs"][
-                                        app_json["map"]["itemId"]
-                                    ]
+                                    app_json["map"]["itemId"] = self._clone_mapping[
+                                        "Item IDs"
+                                    ][app_json["map"]["itemId"]]
                                 if (
                                     "mapOptions" in app_json["map"]
-                                    and app_json["map"]["mapOptions"]
-                                    is not None
+                                    and app_json["map"]["mapOptions"] is not None
                                 ):
-                                    if (
-                                        "extent"
-                                        in app_json["map"]["mapOptions"]
-                                    ):
-                                        del app_json["map"]["mapOptions"][
-                                            "extent"
-                                        ]
+                                    if "extent" in app_json["map"]["mapOptions"]:
+                                        del app_json["map"]["mapOptions"]["extent"]
                             if "httpProxy" in app_json:
                                 if "url" in app_json["httpProxy"]:
                                     app_json["httpProxy"]["url"] = (
@@ -5166,13 +4618,9 @@ class _ApplicationDefinition(_TextItemDefinition):
                                 and "geometry"
                                 in self.target.properties["helperServices"]
                             ):
-                                app_json[
-                                    "geometryService"
-                                ] = self.target.properties["helperServices"][
-                                    "geometry"
-                                ][
-                                    "url"
-                                ]
+                                app_json["geometryService"] = self.target.properties[
+                                    "helperServices"
+                                ]["geometry"]["url"]
 
                         else:  # Configurable Application Template
                             if "folderId" in app_json:
@@ -5183,8 +4631,7 @@ class _ApplicationDefinition(_TextItemDefinition):
                                         (
                                             f
                                             for f in folders
-                                            if f["title"].lower()
-                                            == self.folder.lower()
+                                            if f["title"].lower() == self.folder.lower()
                                         ),
                                         None,
                                     )
@@ -5197,27 +4644,19 @@ class _ApplicationDefinition(_TextItemDefinition):
 
                             if "values" in app_json:
                                 if "group" in app_json["values"]:
-                                    app_json["values"][
-                                        "group"
-                                    ] = self._clone_mapping["Group IDs"][
-                                        app_json["values"]["group"]
-                                    ]
+                                    app_json["values"]["group"] = self._clone_mapping[
+                                        "Group IDs"
+                                    ][app_json["values"]["group"]]
                                 if "webmap" in app_json["values"]:
-                                    if isinstance(
-                                        app_json["values"]["webmap"], list
-                                    ):
+                                    if isinstance(app_json["values"]["webmap"], list):
                                         new_webmap_ids = []
-                                        for webmap_id in app_json["values"][
-                                            "webmap"
-                                        ]:
+                                        for webmap_id in app_json["values"]["webmap"]:
                                             new_webmap_ids.append(
-                                                self._clone_mapping[
-                                                    "Item IDs"
-                                                ][webmap_id]
+                                                self._clone_mapping["Item IDs"][
+                                                    webmap_id
+                                                ]
                                             )
-                                        app_json["values"][
-                                            "webmap"
-                                        ] = new_webmap_ids
+                                        app_json["values"]["webmap"] = new_webmap_ids
                                     else:
                                         app_json["values"][
                                             "webmap"
@@ -5242,12 +4681,12 @@ class _ApplicationDefinition(_TextItemDefinition):
 
                         # Perform a general find and replace of field names if field mapping is required
                         for service in self._clone_mapping["Services"]:
-                            for layer_id in self._clone_mapping["Services"][
-                                service
-                            ]["layer_field_mapping"]:
-                                field_mapping = self._clone_mapping[
-                                    "Services"
-                                ][service]["layer_field_mapping"][layer_id]
+                            for layer_id in self._clone_mapping["Services"][service][
+                                "layer_field_mapping"
+                            ]:
+                                field_mapping = self._clone_mapping["Services"][
+                                    service
+                                ]["layer_field_mapping"][layer_id]
                                 _find_and_replace_fields_json(
                                     app_json,
                                     field_mapping,
@@ -5256,12 +4695,8 @@ class _ApplicationDefinition(_TextItemDefinition):
 
                         app_json_text = json.dumps(app_json)
                         for original_url in self._clone_mapping["Services"]:
-                            service = self._clone_mapping["Services"][
-                                original_url
-                            ]
-                            for key, value in service[
-                                "layer_id_mapping"
-                            ].items():
+                            service = self._clone_mapping["Services"][original_url]
+                            for key, value in service["layer_id_mapping"].items():
                                 app_json_text = re.sub(
                                     "{0}/{1}".format(original_url, key),
                                     "{0}/{1}".format(service["url"], value),
@@ -5284,14 +4719,10 @@ class _ApplicationDefinition(_TextItemDefinition):
                                 0,
                                 re.IGNORECASE,
                             )
-                        for original_web_tool in self._clone_mapping[
-                            "Web Tools"
-                        ]:
+                        for original_web_tool in self._clone_mapping["Web Tools"]:
                             app_json_text = re.sub(
                                 original_web_tool,
-                                self._clone_mapping["Web Tools"][
-                                    original_web_tool
-                                ],
+                                self._clone_mapping["Web Tools"][original_web_tool],
                                 app_json_text,
                                 0,
                                 re.IGNORECASE,
@@ -5422,9 +4853,7 @@ class _ApplicationDefinition(_TextItemDefinition):
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
             self.resolved = True
-            self._clone_mapping["Item IDs"][original_item["id"]] = new_item[
-                "id"
-            ]
+            self._clone_mapping["Item IDs"][original_item["id"]] = new_item["id"]
             return new_item
         except Exception as ex:
             raise _ItemCreateException(
@@ -5552,9 +4981,7 @@ class _FormDefinition(_ItemDefinition):
                 "<h:html "
                 + " ".join(
                     [
-                        '{0}="{1}"'.format(
-                            "xmlns" if not k else "xmlns:" + k, v
-                        )
+                        '{0}="{1}"'.format("xmlns" if not k else "xmlns:" + k, v)
                         for k, v in namespace.items()
                     ]
                 )
@@ -5570,9 +4997,7 @@ class _FormDefinition(_ItemDefinition):
             new_item = None
             original_item = self.info
             if self._search_existing:
-                new_item = _search_org_for_existing_item(
-                    self.target, self.portal_item
-                )
+                new_item = _search_org_for_existing_item(self.target, self.portal_item)
             if not new_item:
 
                 # Get the item properties from the original item to be applied when the new item is created
@@ -5588,9 +5013,7 @@ class _FormDefinition(_ItemDefinition):
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
             self.resolved = True
-            self._clone_mapping["Item IDs"][original_item["id"]] = new_item[
-                "id"
-            ]
+            self._clone_mapping["Item IDs"][original_item["id"]] = new_item["id"]
             return new_item
 
         except Exception as ex:
@@ -5663,14 +5086,10 @@ class _FormDefinition(_ItemDefinition):
 
                     data = data.replace(original_item["id"], new_item["id"])
                     for key, value in clone_mapping["Services"].items():
-                        data = re.sub(
-                            key, value["url"], data, 0, re.IGNORECASE
-                        )
+                        data = re.sub(key, value["url"], data, 0, re.IGNORECASE)
 
                     for key, value in clone_mapping["Item IDs"].items():
-                        url = "{0}sharing/rest/content/items/{1}".format(
-                            org_url, value
-                        )
+                        url = "{0}sharing/rest/content/items/{1}".format(org_url, value)
                         data = re.sub(
                             '(?<=")([^<]+?{0})(?=")'.format(key),
                             url,
@@ -5687,18 +5106,12 @@ class _FormDefinition(_ItemDefinition):
                     if os.path.splitext(path)[1].lower() == ".xml":
                         # Find related service mapping and replace in xml
                         for related_item in self.related_items:
-                            for key, value in clone_mapping[
-                                "Services"
-                            ].items():
+                            for key, value in clone_mapping["Services"].items():
                                 if _compare_url(related_item["url"], key):
                                     field_mapping = {}
-                                    for layer_id in value[
-                                        "layer_field_mapping"
-                                    ]:
+                                    for layer_id in value["layer_field_mapping"]:
                                         field_mapping.update(
-                                            value["layer_field_mapping"][
-                                                layer_id
-                                            ]
+                                            value["layer_field_mapping"][layer_id]
                                         )
                                     if len(field_mapping) > 0:
                                         self._replace_xml_file(
@@ -5721,9 +5134,9 @@ class _FormDefinition(_ItemDefinition):
                         for key, value in clone_mapping["Services"].items():
                             if _compare_url(related_item["url"], key):
                                 for layer_id in value["layer_field_mapping"]:
-                                    field_mapping = value[
-                                        "layer_field_mapping"
-                                    ][layer_id]
+                                    field_mapping = value["layer_field_mapping"][
+                                        layer_id
+                                    ]
                                     model = payload["model"]
                                     form = payload["form"]
                                     _find_and_replace_fields_json(
@@ -5739,9 +5152,7 @@ class _FormDefinition(_ItemDefinition):
                                     file_changed = True
 
                     if file_changed:
-                        with open(
-                            os.path.join(zip_dir, path), "w"
-                        ) as writer:
+                        with open(os.path.join(zip_dir, path), "w") as writer:
                             json.dump(payload, writer, indent="  ")
 
                 elif os.path.splitext(path)[1].lower() == ".iteminfo":
@@ -5767,9 +5178,7 @@ class _FormDefinition(_ItemDefinition):
                             data = file.read()
 
                         for key, value in clone_mapping["Services"].items():
-                            data = re.sub(
-                                key, value["url"], data, 0, re.IGNORECASE
-                            )
+                            data = re.sub(key, value["url"], data, 0, re.IGNORECASE)
 
                         for key, value in clone_mapping["Item IDs"].items():
                             url = "{0}sharing/rest/content/items/{1}".format(
@@ -5792,19 +5201,13 @@ class _FormDefinition(_ItemDefinition):
 
                         # Find related service mapping and replace in excel file
                         for related_item in self.related_items:
-                            for key, value in clone_mapping[
-                                "Services"
-                            ].items():
+                            for key, value in clone_mapping["Services"].items():
                                 if _compare_url(related_item["url"], key):
-                                    for layer_id in value[
-                                        "layer_field_mapping"
-                                    ]:
-                                        field_mapping = value[
-                                            "layer_field_mapping"
-                                        ][layer_id]
-                                        e = _ExcelHelper(
-                                            xlsx_dir, field_mapping
-                                        )
+                                    for layer_id in value["layer_field_mapping"]:
+                                        field_mapping = value["layer_field_mapping"][
+                                            layer_id
+                                        ]
+                                        e = _ExcelHelper(xlsx_dir, field_mapping)
                                         e.main()
 
                         xlsx = zipfile.ZipFile(
@@ -5825,20 +5228,14 @@ class _FormDefinition(_ItemDefinition):
                 for key, value in clone_mapping["Services"].items():
                     if _compare_url(related_item["url"], key):
                         feature_service = target.content.get(value["id"])
-                        new_item.add_relationship(
-                            feature_service, "Survey2Service"
-                        )
+                        new_item.add_relationship(feature_service, "Survey2Service")
                         break
 
             # If the survey was authored on the web add the web_json to the metadata table in the service
             if form_json is not None and feature_service_url is not None:
                 svc = FeatureLayerCollection(feature_service_url, target)
                 table = next(
-                    (
-                        t
-                        for t in svc.tables
-                        if t.properties.name == "metadata"
-                    ),
+                    (t for t in svc.tables if t.properties.name == "metadata"),
                     None,
                 )
                 if table is not None:
@@ -5914,9 +5311,7 @@ class _QuickCaptureDefinition(_ItemDefinition):
             new_item = None
             original_item = self.info
             if self._search_existing:
-                new_item = _search_org_for_existing_item(
-                    self.target, self.portal_item
-                )
+                new_item = _search_org_for_existing_item(self.target, self.portal_item)
             if not new_item:
 
                 # Get the item properties from the original item to be applied when the new item is created
@@ -5927,26 +5322,18 @@ class _QuickCaptureDefinition(_ItemDefinition):
                 new_item = self._add_new_item(item_properties, data)
 
                 # Get the Quick Capture json resource
-                qc_json = new_item.resources.get(
-                    "qc.project.json", try_json=True
-                )
+                qc_json = new_item.resources.get("qc.project.json", try_json=True)
                 qc_json["itemId"] = new_item["id"]
 
                 # Update the datasources in the quick capture project
                 datasourceid_field_mapping = {}
-                if (
-                    "dataSources" in qc_json
-                    and qc_json["dataSources"] is not None
-                ):
+                if "dataSources" in qc_json and qc_json["dataSources"] is not None:
                     for datasource in qc_json["dataSources"]:
                         if (
                             "featureServiceItemId" in datasource
-                            and datasource["featureServiceItemId"]
-                            is not None
+                            and datasource["featureServiceItemId"] is not None
                         ):
-                            feature_service_item_id = datasource[
-                                "featureServiceItemId"
-                            ]
+                            feature_service_item_id = datasource["featureServiceItemId"]
                             if (
                                 feature_service_item_id
                                 in self._clone_mapping["Item IDs"]
@@ -5956,43 +5343,27 @@ class _QuickCaptureDefinition(_ItemDefinition):
                                 ] = self._clone_mapping["Item IDs"][
                                     feature_service_item_id
                                 ]
-                        if (
-                            "url" in datasource
-                            and datasource["url"] is not None
-                        ):
-                            feature_service_url = os.path.dirname(
-                                datasource["url"]
-                            )
+                        if "url" in datasource and datasource["url"] is not None:
+                            feature_service_url = os.path.dirname(datasource["url"])
                             for (
                                 original_url,
                                 new_service,
                             ) in self._clone_mapping["Services"].items():
-                                if _compare_url(
-                                    feature_service_url, original_url
-                                ):
-                                    layer_id = int(
-                                        os.path.basename(datasource["url"])
-                                    )
-                                    new_id = new_service["layer_id_mapping"][
-                                        layer_id
-                                    ]
+                                if _compare_url(feature_service_url, original_url):
+                                    layer_id = int(os.path.basename(datasource["url"]))
+                                    new_id = new_service["layer_id_mapping"][layer_id]
                                     datasource["url"] = "{0}/{1}".format(
                                         new_service["url"], new_id
                                     )
                                     if (
                                         "dataSourceId" in datasource
-                                        and datasource["dataSourceId"]
-                                        is not None
+                                        and datasource["dataSourceId"] is not None
                                         and layer_id
                                         in new_service["layer_field_mapping"]
                                     ):
                                         datasourceid_field_mapping[
                                             datasource["dataSourceId"]
-                                        ] = new_service[
-                                            "layer_field_mapping"
-                                        ][
-                                            layer_id
-                                        ]
+                                        ] = new_service["layer_field_mapping"][layer_id]
                                     break
 
                 # Update any field names that may have changed in the service
@@ -6011,17 +5382,13 @@ class _QuickCaptureDefinition(_ItemDefinition):
                                 )
                                 if (
                                     datasourceid is not None
-                                    and datasourceid
-                                    in datasourceid_field_mapping
+                                    and datasourceid in datasourceid_field_mapping
                                 ):
                                     if (
                                         "fieldInfos" in template
-                                        and template["fieldInfos"]
-                                        is not None
+                                        and template["fieldInfos"] is not None
                                     ):
-                                        for fieldinfo in template[
-                                            "fieldInfos"
-                                        ]:
+                                        for fieldinfo in template["fieldInfos"]:
                                             fieldname = _deep_get(
                                                 fieldinfo, "fieldName"
                                             )
@@ -6043,14 +5410,12 @@ class _QuickCaptureDefinition(_ItemDefinition):
                 # Set the admin email
                 admin_email = _deep_get(qc_json, "preferences", "adminEmail")
                 if admin_email is not None:
-                    qc_json["preferences"][
-                        "adminEmail"
-                    ] = self.target.users.get(self.owner).email
+                    qc_json["preferences"]["adminEmail"] = self.target.users.get(
+                        self.owner
+                    ).email
 
                 # Update the Quick Capture json resource
-                temp_dir = os.path.join(
-                    self._temp_dir.name, original_item["id"]
-                )
+                temp_dir = os.path.join(self._temp_dir.name, original_item["id"])
                 if not os.path.exists(temp_dir):
                     os.makedirs(temp_dir)
 
@@ -6058,17 +5423,13 @@ class _QuickCaptureDefinition(_ItemDefinition):
                 with open(qc_json_file, "w") as file:
                     file.write(json.dumps(qc_json))
 
-                new_item.resources.update(
-                    qc_json_file, None, "qc.project.json"
-                )
+                new_item.resources.update(qc_json_file, None, "qc.project.json")
 
             _share_item_with_groups(
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
             self.resolved = True
-            self._clone_mapping["Item IDs"][original_item["id"]] = new_item[
-                "id"
-            ]
+            self._clone_mapping["Item IDs"][original_item["id"]] = new_item["id"]
             return new_item
 
         except Exception as ex:
@@ -6124,9 +5485,7 @@ class _NotebookDefinition(_ItemDefinition):
             new_item = None
             original_item = self.info
             if self._search_existing:
-                new_item = _search_org_for_existing_item(
-                    self.target, self.portal_item
-                )
+                new_item = _search_org_for_existing_item(self.target, self.portal_item)
             if not new_item:
 
                 # Get the item properties from the original item to be applied when the new item is created
@@ -6143,13 +5502,9 @@ class _NotebookDefinition(_ItemDefinition):
                     notebook_json = file.read()
 
                 for key, value in self._clone_mapping["Item IDs"].items():
-                    notebook_json = re.sub(
-                        key, value, notebook_json, 0, re.IGNORECASE
-                    )
+                    notebook_json = re.sub(key, value, notebook_json, 0, re.IGNORECASE)
                 for key, value in self._clone_mapping["Group IDs"].items():
-                    notebook_json = re.sub(
-                        key, value, notebook_json, 0, re.IGNORECASE
-                    )
+                    notebook_json = re.sub(key, value, notebook_json, 0, re.IGNORECASE)
                 notebook_json = re.sub(
                     self._source_url,
                     _get_org_url(self.target),
@@ -6172,9 +5527,7 @@ class _NotebookDefinition(_ItemDefinition):
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
             self.resolved = True
-            self._clone_mapping["Item IDs"][original_item["id"]] = new_item[
-                "id"
-            ]
+            self._clone_mapping["Item IDs"][original_item["id"]] = new_item["id"]
             return new_item
 
         except Exception as ex:
@@ -6198,9 +5551,7 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
             new_item = None
             original_item = self.info
             if self._search_existing:
-                new_item = _search_org_for_existing_item(
-                    self.target, self.portal_item
-                )
+                new_item = _search_org_for_existing_item(self.target, self.portal_item)
             if not new_item:
 
                 # Get the item properties from the original application which will be applied when the new item is created
@@ -6216,9 +5567,9 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
                         original_id is not None
                         and original_id in self._clone_mapping["Item IDs"]
                     ):
-                        workforce_json[webmap] = self._clone_mapping[
-                            "Item IDs"
-                        ][original_id]
+                        workforce_json[webmap] = self._clone_mapping["Item IDs"][
+                            original_id
+                        ]
 
                 # Update the service references
                 services = [
@@ -6232,18 +5583,14 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
                     if service_definition is not None:
                         layer_url = _deep_get(service_definition, "url")
                         feature_service_url = os.path.dirname(layer_url)
-                        for key, value in self._clone_mapping[
-                            "Services"
-                        ].items():
+                        for key, value in self._clone_mapping["Services"].items():
                             if _compare_url(feature_service_url, key):
                                 layer_id = int(os.path.basename(layer_url))
                                 new_id = value["layer_id_mapping"][layer_id]
                                 service_definition["url"] = "{0}/{1}".format(
                                     value["url"], new_id
                                 )
-                                service_definition["serviceItemId"] = value[
-                                    "id"
-                                ]
+                                service_definition["serviceItemId"] = value["id"]
 
                                 if service == "dispatchers":
                                     feature_layer = FeatureLayer(
@@ -6251,9 +5598,7 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
                                         self.target,
                                     )
                                     features = feature_layer.query(
-                                        "userId = '{0}'".format(
-                                            user.username
-                                        )
+                                        "userId = '{0}'".format(user.username)
                                     ).features
                                     if len(features) == 0:
                                         features = [
@@ -6264,17 +5609,13 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
                                                 }
                                             }
                                         ]
-                                        feature_layer.edit_features(
-                                            adds=features
-                                        )
+                                        feature_layer.edit_features(adds=features)
                                         time.sleep(1)
                                 break
 
                 # Update the group reference
                 group_id = _deep_get(workforce_json, "groupId")
-                workforce_json["groupId"] = self._clone_mapping["Group IDs"][
-                    group_id
-                ]
+                workforce_json["groupId"] = self._clone_mapping["Group IDs"][group_id]
 
                 # Update the folder reference
                 if "folderId" in workforce_json:
@@ -6289,16 +5630,12 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
                             None,
                         )
                         if target_folder:
-                            workforce_json["folderId"] = _deep_get(
-                                target_folder, "id"
-                            )
+                            workforce_json["folderId"] = _deep_get(target_folder, "id")
                     else:
                         workforce_json["folderId"] = None
 
                 # Update the application integration references
-                integrations = _deep_get(
-                    workforce_json, "assignmentIntegrations"
-                )
+                integrations = _deep_get(workforce_json, "assignmentIntegrations")
                 if integrations is not None:
                     for integration in integrations:
                         url_template = _deep_get(integration, "urlTemplate")
@@ -6312,63 +5649,41 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
                                     re.IGNORECASE,
                                 )
 
-                            for original_url in self._clone_mapping[
-                                "Services"
-                            ]:
-                                service = self._clone_mapping["Services"][
-                                    original_url
-                                ]
-                                for key, value in service[
-                                    "layer_id_mapping"
-                                ].items():
+                            for original_url in self._clone_mapping["Services"]:
+                                service = self._clone_mapping["Services"][original_url]
+                                for key, value in service["layer_id_mapping"].items():
                                     integration["urlTemplate"] = re.sub(
                                         "{0}/{1}".format(original_url, key),
-                                        "{0}/{1}".format(
-                                            service["url"], value
-                                        ),
+                                        "{0}/{1}".format(service["url"], value),
                                         integration["urlTemplate"],
                                         0,
                                         re.IGNORECASE,
                                     )
 
-                        assignment_types = _deep_get(
-                            integration, "assignmentTypes"
-                        )
+                        assignment_types = _deep_get(integration, "assignmentTypes")
                         if assignment_types is not None:
                             for key, value in assignment_types.items():
-                                url_template = _deep_get(
-                                    value, "urlTemplate"
-                                )
+                                url_template = _deep_get(value, "urlTemplate")
                                 if url_template is not None:
-                                    for item_id in self._clone_mapping[
-                                        "Item IDs"
-                                    ]:
+                                    for item_id in self._clone_mapping["Item IDs"]:
                                         value["urlTemplate"] = re.sub(
                                             item_id,
-                                            self._clone_mapping["Item IDs"][
-                                                item_id
-                                            ],
+                                            self._clone_mapping["Item IDs"][item_id],
                                             value["urlTemplate"],
                                             0,
                                             re.IGNORECASE,
                                         )
 
-                                for original_url in self._clone_mapping[
-                                    "Services"
-                                ]:
-                                    service = self._clone_mapping[
-                                        "Services"
-                                    ][original_url]
+                                for original_url in self._clone_mapping["Services"]:
+                                    service = self._clone_mapping["Services"][
+                                        original_url
+                                    ]
                                     for old_id, new_id in service[
                                         "layer_id_mapping"
                                     ].items():
                                         value["urlTemplate"] = re.sub(
-                                            "{0}/{1}".format(
-                                                original_url, old_id
-                                            ),
-                                            "{0}/{1}".format(
-                                                service["url"], new_id
-                                            ),
+                                            "{0}/{1}".format(original_url, old_id),
+                                            "{0}/{1}".format(service["url"], new_id),
                                             value["urlTemplate"],
                                             0,
                                             re.IGNORECASE,
@@ -6382,9 +5697,7 @@ class _WorkforceProjectDefinition(_TextItemDefinition):
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
             self.resolved = True
-            self._clone_mapping["Item IDs"][original_item["id"]] = new_item[
-                "id"
-            ]
+            self._clone_mapping["Item IDs"][original_item["id"]] = new_item["id"]
             return new_item
         except Exception as ex:
             raise _ItemCreateException(
@@ -6407,9 +5720,7 @@ class _ProMapDefinition(_ItemDefinition):
             new_item = None
             original_item = self.info
             if self._search_existing:
-                new_item = _search_org_for_existing_item(
-                    self.target, self.portal_item
-                )
+                new_item = _search_org_for_existing_item(self.target, self.portal_item)
             if not new_item:
                 mapx = self.data
 
@@ -6432,49 +5743,35 @@ class _ProMapDefinition(_ItemDefinition):
                 table_definitions = _deep_get(map_json, "tableDefinitions")
                 if table_definitions is not None:
                     for table_definition in table_definitions:
-                        data_connection = _deep_get(
-                            table_definition, "dataConnection"
-                        )
+                        data_connection = _deep_get(table_definition, "dataConnection")
                         if data_connection is not None:
                             data_connections.append(data_connection)
 
                 for data_connection in data_connections:
                     if (
                         "workspaceFactory" in data_connection
-                        and data_connection["workspaceFactory"]
-                        == "FeatureService"
+                        and data_connection["workspaceFactory"] == "FeatureService"
                     ):
                         if (
                             "workspaceConnectionString" in data_connection
-                            and data_connection["workspaceConnectionString"]
-                            is not None
+                            and data_connection["workspaceConnectionString"] is not None
                         ):
                             feature_service_url = data_connection[
                                 "workspaceConnectionString"
                             ][4:]
-                            for original_url in self._clone_mapping[
-                                "Services"
-                            ]:
-                                if _compare_url(
-                                    feature_service_url, original_url
-                                ):
-                                    new_service = self._clone_mapping[
-                                        "Services"
-                                    ][original_url]
-                                    layer_id = int(
-                                        data_connection["dataset"]
-                                    )
-                                    new_id = new_service["layer_id_mapping"][
-                                        layer_id
+                            for original_url in self._clone_mapping["Services"]:
+                                if _compare_url(feature_service_url, original_url):
+                                    new_service = self._clone_mapping["Services"][
+                                        original_url
                                     ]
+                                    layer_id = int(data_connection["dataset"])
+                                    new_id = new_service["layer_id_mapping"][layer_id]
                                     data_connection[
                                         "workspaceConnectionString"
                                     ] = "URL={0}".format(new_service["url"])
                                     data_connection["dataset"] = new_id
 
-                new_mapx_dir = os.path.join(
-                    os.path.dirname(mapx), "new_mapx"
-                )
+                new_mapx_dir = os.path.join(os.path.dirname(mapx), "new_mapx")
                 os.makedirs(new_mapx_dir)
                 new_mapx = os.path.join(new_mapx_dir, os.path.basename(mapx))
                 with open(new_mapx, "w", encoding="utf8") as file:
@@ -6486,9 +5783,7 @@ class _ProMapDefinition(_ItemDefinition):
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
             self.resolved = True
-            self._clone_mapping["Item IDs"][original_item["id"]] = new_item[
-                "id"
-            ]
+            self._clone_mapping["Item IDs"][original_item["id"]] = new_item["id"]
             return new_item
 
         except Exception as ex:
@@ -6526,23 +5821,17 @@ class _ProProjectPackageDefinition(_ItemDefinition):
             ppkx = self.data
 
             if self._search_existing:
-                new_item = _search_org_for_existing_item(
-                    self.target, self.portal_item
-                )
+                new_item = _search_org_for_existing_item(self.target, self.portal_item)
 
             if not new_item:
                 if "copy-only" not in original_item["tags"]:
                     try:
                         import arcpy
 
-                        extract_dir = os.path.join(
-                            os.path.dirname(ppkx), "extract"
-                        )
+                        extract_dir = os.path.join(os.path.dirname(ppkx), "extract")
                         if not os.path.exists(extract_dir):
                             os.makedirs(extract_dir)
-                            arcpy.ExtractPackage_management(
-                                ppkx, extract_dir, False
-                            )
+                            arcpy.ExtractPackage_management(ppkx, extract_dir, False)
 
                         # 1.x versions of Pro use a different folder name
                         project_folder = "p20"
@@ -6550,9 +5839,7 @@ class _ProProjectPackageDefinition(_ItemDefinition):
                         if version.startswith("1"):
                             project_folder = "p12"
 
-                        project_dir = os.path.join(
-                            extract_dir, project_folder
-                        )
+                        project_dir = os.path.join(extract_dir, project_folder)
                         if os.path.exists(project_dir):
                             aprx_files = [
                                 f
@@ -6561,9 +5848,7 @@ class _ProProjectPackageDefinition(_ItemDefinition):
                             ]
                             if len(aprx_files) == 1:
                                 service_version_infos = {}
-                                aprx_file = os.path.join(
-                                    project_dir, aprx_files[0]
-                                )
+                                aprx_file = os.path.join(project_dir, aprx_files[0])
                                 aprx = arcpy.mp.ArcGISProject(aprx_file)
                                 maps = aprx.listMaps()
                                 for map in maps:
@@ -6574,9 +5859,7 @@ class _ProProjectPackageDefinition(_ItemDefinition):
                                     ]
                                     layers.extend(map.listTables())
                                     for lyr in layers:
-                                        connection_properties = (
-                                            lyr.connectionProperties
-                                        )
+                                        connection_properties = lyr.connectionProperties
                                         workspace_factory = _deep_get(
                                             connection_properties,
                                             "workspace_factory",
@@ -6587,46 +5870,35 @@ class _ProProjectPackageDefinition(_ItemDefinition):
                                             "url",
                                         )
                                         if (
-                                            workspace_factory
-                                            == "FeatureService"
+                                            workspace_factory == "FeatureService"
                                             and service_url is not None
                                         ):
-                                            for (
-                                                original_url
-                                            ) in self._clone_mapping[
+                                            for original_url in self._clone_mapping[
                                                 "Services"
                                             ]:
                                                 if _compare_url(
                                                     service_url, original_url
                                                 ):
-                                                    new_service = (
-                                                        self._clone_mapping[
-                                                            "Services"
-                                                        ][original_url]
-                                                    )
+                                                    new_service = self._clone_mapping[
+                                                        "Services"
+                                                    ][original_url]
                                                     layer_id = int(
-                                                        connection_properties[
-                                                            "dataset"
-                                                        ]
+                                                        connection_properties["dataset"]
                                                     )
                                                     new_id = new_service[
                                                         "layer_id_mapping"
                                                     ][layer_id]
-                                                    new_connection_properties = copy.deepcopy(
-                                                        connection_properties
+                                                    new_connection_properties = (
+                                                        copy.deepcopy(
+                                                            connection_properties
+                                                        )
                                                     )
                                                     new_connection_properties[
                                                         "connection_info"
-                                                    ][
-                                                        "url"
-                                                    ] = new_service[
-                                                        "url"
-                                                    ]
+                                                    ]["url"] = new_service["url"]
                                                     new_connection_properties[
                                                         "dataset"
-                                                    ] = str(
-                                                        new_id
-                                                    )
+                                                    ] = str(new_id)
 
                                                     if (
                                                         new_service["url"]
@@ -6634,39 +5906,28 @@ class _ProProjectPackageDefinition(_ItemDefinition):
                                                     ):
                                                         try:
                                                             service_version_infos[
-                                                                new_service[
-                                                                    "url"
-                                                                ]
+                                                                new_service["url"]
                                                             ] = _get_version_management_server(
                                                                 self.target,
-                                                                new_service[
-                                                                    "url"
-                                                                ],
+                                                                new_service["url"],
                                                             )
                                                         except:
                                                             service_version_infos[
-                                                                new_service[
-                                                                    "url"
-                                                                ]
+                                                                new_service["url"]
                                                             ] = {}
-                                                    version_info = service_version_infos[
-                                                        new_service["url"]
-                                                    ]
+                                                    version_info = (
+                                                        service_version_infos[
+                                                            new_service["url"]
+                                                        ]
+                                                    )
                                                     for key, value in {
                                                         "defaultVersionName": "version",
                                                         "defaultVersionGuid": "versionguid",
                                                     }.items():
-                                                        if (
-                                                            key
-                                                            in version_info
-                                                        ):
+                                                        if key in version_info:
                                                             new_connection_properties[
                                                                 "connection_info"
-                                                            ][
-                                                                value
-                                                            ] = version_info[
-                                                                key
-                                                            ]
+                                                            ][value] = version_info[key]
                                                         elif (
                                                             value
                                                             in new_connection_properties[
@@ -6736,9 +5997,7 @@ class _ProProjectPackageDefinition(_ItemDefinition):
                 new_item, self.sharing, self._clone_mapping["Group IDs"]
             )
             self.resolved = True
-            self._clone_mapping["Item IDs"][original_item["id"]] = new_item[
-                "id"
-            ]
+            self._clone_mapping["Item IDs"][original_item["id"]] = new_item["id"]
             return new_item
 
         except Exception as ex:
@@ -6756,9 +6015,7 @@ class _ProProjectPackageDefinition(_ItemDefinition):
             extract_dir = os.path.join(os.path.dirname(ppkx), "extract")
             if os.path.exists(extract_dir):
                 shutil.rmtree(extract_dir)
-            new_package_dir = os.path.join(
-                os.path.dirname(ppkx), "new_package"
-            )
+            new_package_dir = os.path.join(os.path.dirname(ppkx), "new_package")
             if os.path.exists(new_package_dir):
                 shutil.rmtree(new_package_dir)
 
@@ -6782,10 +6039,7 @@ def _get_feature_service_related_item(service_url, source):
     except Exception:
         return
 
-    if (
-        "serviceItemId" in service.properties
-        and service.properties["serviceItemId"]
-    ):
+    if "serviceItemId" in service.properties and service.properties["serviceItemId"]:
         item_id = service.properties["serviceItemId"]
         return source.content.get(item_id)
     return
@@ -6801,9 +6055,7 @@ def _compare_service(new_item, original_item, currentVersion):
         new_service = FeatureLayerCollection.fromitem(new_item)
     elif new_item["type"] == "Map Service":
         new_service = MapImageLayer.fromitem(new_item)
-    new_layers = [
-        l.properties for l in new_service.layers + new_service.tables
-    ]
+    new_layers = [l.properties for l in new_service.layers + new_service.tables]
 
     original_layers = None
     if isinstance(original_item, gis.Item):
@@ -6812,14 +6064,11 @@ def _compare_service(new_item, original_item, currentVersion):
         elif original_item["type"] == "Map Service":
             original_service = MapImageLayer.fromitem(original_item)
         original_layers = [
-            l.properties
-            for l in original_service.layers + original_service.tables
+            l.properties for l in original_service.layers + original_service.tables
         ]
     else:
         layers_definition = original_item.layers_definition
-        original_layers = (
-            layers_definition["layers"] + layers_definition["tables"]
-        )
+        original_layers = layers_definition["layers"] + layers_definition["tables"]
 
     if len(new_layers) < len(original_layers):
         raise Exception(
@@ -6832,9 +6081,7 @@ def _compare_service(new_item, original_item, currentVersion):
         )
 
     # Get a mapping between layer ids, fields and related fields
-    original_layer_ids = [
-        original_layer["id"] for original_layer in original_layers
-    ]
+    original_layer_ids = [original_layer["id"] for original_layer in original_layers]
     new_layer_ids = [new_layer["id"] for new_layer in new_layers]
     new_layer_names = [new_layer["name"] for new_layer in new_layers]
 
@@ -6842,9 +6089,7 @@ def _compare_service(new_item, original_item, currentVersion):
         try:
             # When portal is 6.4 or greator compare based on ID rather than layer name
             if currentVersion is not None and float(currentVersion) >= 6.4:
-                _test_id_search = [
-                    p for p in new_layers if p["id"] == layer["id"]
-                ]
+                _test_id_search = [p for p in new_layers if p["id"] == layer["id"]]
             else:
                 _test_id_search = []
             if len(_test_id_search) == 1:
@@ -6864,19 +6109,14 @@ def _compare_service(new_item, original_item, currentVersion):
         field_mapping = {}
         for layer in original_layers:
             if layer["id"] == original_id:
-                new_layer = next(
-                    (l for l in new_layers if l["id"] == new_id), None
-                )
+                new_layer = next((l for l in new_layers if l["id"] == new_id), None)
                 original_fields = _deep_get(layer, "fields")
                 new_fields = _deep_get(new_layer, "fields")
                 if new_fields is None or original_fields is None:
                     break
                 new_fields_lower = [f["name"].lower() for f in new_fields]
 
-                if (
-                    "editFieldsInfo" in layer
-                    and layer["editFieldsInfo"] is not None
-                ):
+                if "editFieldsInfo" in layer and layer["editFieldsInfo"] is not None:
                     if (
                         "editFieldsInfo" in new_layer
                         and new_layer["editFieldsInfo"] is not None
@@ -6893,10 +6133,7 @@ def _compare_service(new_item, original_item, currentVersion):
                             new_editor_field_name = _deep_get(
                                 new_layer, "editFieldsInfo", editor_field
                             )
-                            if (
-                                original_editor_field_name
-                                != new_editor_field_name
-                            ):
+                            if original_editor_field_name != new_editor_field_name:
                                 if (
                                     original_editor_field_name is not None
                                     and original_editor_field_name != ""
@@ -6927,9 +6164,7 @@ def _compare_service(new_item, original_item, currentVersion):
                         and new_globalid_field is not None
                         and new_globalid_field != ""
                     ):
-                        field_mapping[
-                            original_globalid_field
-                        ] = new_globalid_field
+                        field_mapping[original_globalid_field] = new_globalid_field
 
                 for field in original_fields:
                     if field["name"] in field_mapping:
@@ -6983,18 +6218,10 @@ def _search_org_for_existing_item(target, item):
     target - The portal that items will be cloned to.
     item - The original item used to determine if it has already been cloned to the specified folder."""
 
-    search_query = "typekeywords:source-{0} type:{1}".format(
-        item["id"], item["type"]
-    )
-    items = target.content.search(
-        search_query, max_items=100, outside_org=False
-    )
-    search_query = "tags:source-{0} type:{1}".format(
-        item["id"], item["type"]
-    )
-    items.extend(
-        target.content.search(search_query, max_items=100, outside_org=False)
-    )
+    search_query = "typekeywords:source-{0} type:{1}".format(item["id"], item["type"])
+    items = target.content.search(search_query, max_items=100, outside_org=False)
+    search_query = "tags:source-{0} type:{1}".format(item["id"], item["type"])
+    items.extend(target.content.search(search_query, max_items=100, outside_org=False))
     existing_item = None
     if len(items) > 0:
         existing_item = max(items, key=lambda x: x["created"])
@@ -7011,9 +6238,7 @@ def _search_for_existing_group(user, group):
     existing_group = None
     if "groups" in user and user["groups"] is not None:
         groups = [
-            g
-            for g in user["groups"]
-            if "source-{0}".format(group["id"]) in g["tags"]
+            g for g in user["groups"] if "source-{0}".format(group["id"]) in g["tags"]
         ]
         if len(groups) > 0:
             existing_group = max(groups, key=lambda x: x["created"])
@@ -7123,9 +6348,7 @@ def _compare_url(url1, url2):
     ) == "{0}{1}".format(url_parse2.netloc.lower(), url_parse2.path.lower())
 
 
-def _find_and_replace_fields_json(
-    obj, field_mapping, patterns=[], ignore_keys=[]
-):
+def _find_and_replace_fields_json(obj, field_mapping, patterns=[], ignore_keys=[]):
     """Perform a find and replace for field names in a json objects.
     Keyword arguments:
     obj - The obj to recursively search and replace fields names in text values
@@ -7144,9 +6367,7 @@ def _find_and_replace_fields_json(
         elif isinstance(v, str):
             obj[k] = _find_and_replace_fields(v, field_mapping, patterns)
         else:
-            _find_and_replace_fields_json(
-                v, field_mapping, patterns, ignore_keys
-            )
+            _find_and_replace_fields_json(v, field_mapping, patterns, ignore_keys)
 
 
 def _find_and_replace_fields(text, field_mapping, patterns=[]):
@@ -7177,9 +6398,7 @@ def _find_and_replace_fields_sql(text, field_mapping):
     for field in field_mapping:
         replace = field_mapping[field]
 
-        results = set(
-            re.findall('([{{("\[ ])({0})([}})"\] ])'.format(field), text)
-        )
+        results = set(re.findall('([{{("\[ ])({0})([}})"\] ])'.format(field), text))
         start = re.findall('(^{0})([}})"\] ])'.format(field), text)
         end = re.findall('([{{("\[ ])({0}$)'.format(field), text)
         for element in results:
@@ -7226,9 +6445,9 @@ def _update_feature_attributes(feature, field_mapping):
             if attribute in field_mapping:
                 if field_mapping[attribute] in feature["attributes"]:
                     continue
-                feature["attributes"][field_mapping[attribute]] = feature[
-                    "attributes"
-                ][attribute]
+                feature["attributes"][field_mapping[attribute]] = feature["attributes"][
+                    attribute
+                ]
                 del feature["attributes"][attribute]
 
 
@@ -7243,10 +6462,7 @@ def _update_layer_fields(layer, field_mapping, layer_field_mapping):
         _update_layer_definition_fields(layer_definition, field_mapping)
 
     if "popupInfo" in layer and layer["popupInfo"] is not None:
-        if (
-            "title" in layer["popupInfo"]
-            and layer["popupInfo"]["title"] is not None
-        ):
+        if "title" in layer["popupInfo"] and layer["popupInfo"]["title"] is not None:
             results = re.findall("{(.*?)}", layer["popupInfo"]["title"])
             for result in results:
                 if result in field_mapping:
@@ -7261,9 +6477,7 @@ def _update_layer_fields(layer, field_mapping, layer_field_mapping):
             "description" in layer["popupInfo"]
             and layer["popupInfo"]["description"] is not None
         ):
-            results = re.findall(
-                "{(.*?)}", layer["popupInfo"]["description"]
-            )
+            results = re.findall("{(.*?)}", layer["popupInfo"]["description"])
             for result in results:
                 if result in field_mapping:
                     layer["popupInfo"]["description"] = str(
@@ -7291,16 +6505,12 @@ def _update_layer_fields(layer, field_mapping, layer_field_mapping):
                     and expression_info["expression"] is not None
                 ):
                     for layer_id in layer_field_mapping:
-                        expression_info[
-                            "expression"
-                        ] = _find_and_replace_fields(
+                        expression_info["expression"] = _find_and_replace_fields(
                             str(expression_info["expression"]),
                             layer_field_mapping[layer_id],
                             [SURVEY_123],
                         )
-                    expression_info[
-                        "expression"
-                    ] = _find_and_replace_fields_arcade(
+                    expression_info["expression"] = _find_and_replace_fields_arcade(
                         str(expression_info["expression"]), field_mapping
                     )
 
@@ -7313,22 +6523,15 @@ def _update_layer_fields(layer, field_mapping, layer_field_mapping):
                     results = re.findall("{(.*?)}", media_info["title"])
                     for result in results:
                         if result in field_mapping:
-                            media_info["title"] = str(
-                                media_info["title"]
-                            ).replace(
+                            media_info["title"] = str(media_info["title"]).replace(
                                 "{{{0}}}".format(result),
                                 "{{{0}}}".format(field_mapping[result]),
                             )
-                if (
-                    "caption" in media_info
-                    and media_info["caption"] is not None
-                ):
+                if "caption" in media_info and media_info["caption"] is not None:
                     results = re.findall("{(.*?)}", media_info["caption"])
                     for result in results:
                         if result in field_mapping:
-                            media_info["caption"] = str(
-                                media_info["caption"]
-                            ).replace(
+                            media_info["caption"] = str(media_info["caption"]).replace(
                                 "{{{0}}}".format(result),
                                 "{{{0}}}".format(field_mapping[result]),
                             )
@@ -7340,10 +6543,7 @@ def _update_layer_fields(layer, field_mapping, layer_field_mapping):
                         media_info["normalizeField"] = field_mapping[
                             media_info["normalizeField"]
                         ]
-                if (
-                    "fields" in media_info
-                    and media_info["fields"] is not None
-                ):
+                if "fields" in media_info and media_info["fields"] is not None:
                     for field in media_info["fields"]:
                         fields = []
                         if field in field_mapping:
@@ -7363,18 +6563,12 @@ def _update_layer_fields(layer, field_mapping, layer_field_mapping):
                     and definition_input["parameters"] is not None
                 ):
                     for param in definition_input["parameters"]:
-                        if (
-                            "fieldName" in param
-                            and param["fieldName"] is not None
-                        ):
+                        if "fieldName" in param and param["fieldName"] is not None:
                             if param["fieldName"] in field_mapping:
-                                param["fieldName"] = field_mapping[
-                                    param["fieldName"]
-                                ]
+                                param["fieldName"] = field_mapping[param["fieldName"]]
         if (
             "parameterizedExpression" in layer["definitionEditor"]
-            and layer["definitionEditor"]["parameterizedExpression"]
-            is not None
+            and layer["definitionEditor"]["parameterizedExpression"] is not None
         ):
             layer["definitionEditor"][
                 "parameterizedExpression"
@@ -7394,9 +6588,7 @@ def _update_layer_definition_fields(layer_definition, field_mapping):
         "definitionExpression" in layer_definition
         and layer_definition["definitionExpression"] is not None
     ):
-        layer_definition[
-            "definitionExpression"
-        ] = _find_and_replace_fields_sql(
+        layer_definition["definitionExpression"] = _find_and_replace_fields_sql(
             layer_definition["definitionExpression"], field_mapping
         )
 
@@ -7424,15 +6616,11 @@ def _update_layer_definition_fields(layer_definition, field_mapping):
 
             value_expression = _deep_get(renderer, "valueExpression")
             if value_expression is not None:
-                renderer[
-                    "valueExpression"
-                ] = _find_and_replace_fields_arcade(
+                renderer["valueExpression"] = _find_and_replace_fields_arcade(
                     str(value_expression), field_mapping
                 )
 
-        labeling_infos = _deep_get(
-            layer_definition["drawingInfo"], "labelingInfo"
-        )
+        labeling_infos = _deep_get(layer_definition["drawingInfo"], "labelingInfo")
         if labeling_infos is not None:
             for label_info in labeling_infos:
                 label_expression = _deep_get(label_info, "labelExpression")
@@ -7459,15 +6647,11 @@ def _update_layer_definition_fields(layer_definition, field_mapping):
                                 "{{{0}}}".format(field_mapping[result]),
                             )
 
-                expression = _deep_get(
-                    label_info, "labelExpressionInfo", "expression"
-                )
+                expression = _deep_get(label_info, "labelExpressionInfo", "expression")
                 if expression is not None:
                     label_info["labelExpressionInfo"][
                         "expression"
-                    ] = _find_and_replace_fields_arcade(
-                        str(expression), field_mapping
-                    )
+                    ] = _find_and_replace_fields_arcade(str(expression), field_mapping)
 
 
 def _update_layer_related_fields(layer, relationship_field_mapping):
@@ -7494,9 +6678,7 @@ def _update_layer_related_fields(layer, relationship_field_mapping):
                             layer["popupInfo"]["title"]
                         ).replace(
                             "{{{0}{1}}}".format(field_prefix, result),
-                            "{{{0}{1}}}".format(
-                                field_prefix, field_mapping[result]
-                            ),
+                            "{{{0}{1}}}".format(field_prefix, field_mapping[result]),
                         )
 
             if (
@@ -7513,9 +6695,7 @@ def _update_layer_related_fields(layer, relationship_field_mapping):
                             layer["popupInfo"]["description"]
                         ).replace(
                             "{{{0}{1}}}".format(field_prefix, result),
-                            "{{{0}{1}}}".format(
-                                field_prefix, field_mapping[result]
-                            ),
+                            "{{{0}{1}}}".format(field_prefix, field_mapping[result]),
                         )
 
             if (
@@ -7525,14 +6705,11 @@ def _update_layer_related_fields(layer, relationship_field_mapping):
                 for field in layer["popupInfo"]["fieldInfos"]:
                     if (
                         field["fieldName"].startswith(field_prefix)
-                        and field["fieldName"][len(field_prefix) :]
-                        in field_mapping
+                        and field["fieldName"][len(field_prefix) :] in field_mapping
                     ):
                         field["fieldName"] = "{0}{1}".format(
                             field_prefix,
-                            field_mapping[
-                                field["fieldName"][len(field_prefix) :]
-                            ],
+                            field_mapping[field["fieldName"][len(field_prefix) :]],
                         )
 
             if (
@@ -7540,30 +6717,20 @@ def _update_layer_related_fields(layer, relationship_field_mapping):
                 and layer["popupInfo"]["mediaInfos"] is not None
             ):
                 for media_info in layer["popupInfo"]["mediaInfos"]:
-                    if (
-                        "title" in media_info
-                        and media_info["title"] is not None
-                    ):
+                    if "title" in media_info and media_info["title"] is not None:
                         results = re.findall(
                             "{{{0}(.*?)}}".format(field_prefix),
                             media_info["title"],
                         )
                         for result in results:
                             if result in field_mapping:
-                                media_info["title"] = str(
-                                    media_info["title"]
-                                ).replace(
-                                    "{{{0}{1}}}".format(
-                                        field_prefix, result
-                                    ),
+                                media_info["title"] = str(media_info["title"]).replace(
+                                    "{{{0}{1}}}".format(field_prefix, result),
                                     "{{{0}{1}}}".format(
                                         field_prefix, field_mapping[result]
                                     ),
                                 )
-                    if (
-                        "caption" in media_info
-                        and media_info["caption"] is not None
-                    ):
+                    if "caption" in media_info and media_info["caption"] is not None:
                         results = re.findall(
                             "{{{0}(.*?)}}".format(field_prefix),
                             media_info["caption"],
@@ -7573,9 +6740,7 @@ def _update_layer_related_fields(layer, relationship_field_mapping):
                                 media_info["caption"] = str(
                                     media_info["caption"]
                                 ).replace(
-                                    "{{{0}{1}}}".format(
-                                        field_prefix, result
-                                    ),
+                                    "{{{0}{1}}}".format(field_prefix, result),
                                     "{{{0}{1}}}".format(
                                         field_prefix, field_mapping[result]
                                     ),
@@ -7585,36 +6750,26 @@ def _update_layer_related_fields(layer, relationship_field_mapping):
                         and media_info["normalizeField"] is not None
                     ):
                         if (
-                            media_info["normalizeField"].startswith(
-                                field_prefix
-                            )
+                            media_info["normalizeField"].startswith(field_prefix)
                             and media_info["normalizeField"] in field_mapping
                         ):
                             media_info["normalizeField"] = "{0}{1}".format(
                                 field_prefix,
                                 field_mapping[
-                                    media_info["normalizeField"][
-                                        len(field_prefix) :
-                                    ]
+                                    media_info["normalizeField"][len(field_prefix) :]
                                 ],
                             )
-                    if (
-                        "fields" in media_info
-                        and media_info["fields"] is not None
-                    ):
+                    if "fields" in media_info and media_info["fields"] is not None:
                         for field in media_info["fields"]:
                             fields = []
                             if (
                                 field.startswith(field_prefix)
-                                and field[len(field_prefix) :]
-                                in field_mapping
+                                and field[len(field_prefix) :] in field_mapping
                             ):
                                 fields.append(
                                     "{0}{1}".format(
                                         field_prefix,
-                                        field_mapping[
-                                            field[len(field_prefix) :]
-                                        ],
+                                        field_mapping[field[len(field_prefix) :]],
                                     )
                                 )
                             else:
@@ -7638,9 +6793,7 @@ def _zip_dir(path, zip_file, include_root=True):
         for file in files:
             zip_file.write(
                 os.path.join(root, file),
-                os.path.relpath(
-                    os.path.join(root, file), os.path.join(path, rel_path)
-                ),
+                os.path.relpath(os.path.join(root, file), os.path.join(path, rel_path)),
             )
 
 
