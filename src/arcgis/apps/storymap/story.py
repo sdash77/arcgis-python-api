@@ -232,7 +232,10 @@ class StoryMap(object):
         if self._gis._is_agol:
             thumbnail = "https://storymaps.arcgis.com/static/images/item-default-thumbnails/item.jpg"
         else:
-            thumbnail = "https://{portal}/apps/storymaps/static/images/item-default-thumbnails/item.jpg"
+            thumbnail = (
+                self._gis._url
+                + "/apps/storymaps/static/images/item-default-thumbnails/item.jpg"
+            )
         return thumbnail
 
     # ----------------------------------------------------------------------
