@@ -62,9 +62,7 @@ class RandLANet(PointCNN):
                                 - 'out_channels': Number of channels produced by each layer,
                                 - 'sub_sampling_ratio': Sampling ratio of random sampling at each layer,
                                 - 'k_n': Number of K-nearest neighbor for a point.
-    ---------------------   -------------------------------------------
-    sample_point_num        Optional integer. The number of points that the model
-                            will actually process.
+
     =====================   ===========================================
 
     :return: `RandLANet` Object
@@ -81,7 +79,7 @@ class RandLANet(PointCNN):
             )
 
         self._backbone = None
-        self.sample_point_num = kwargs.get("sample_point_num", data.max_point)
+        self.sample_point_num = data.max_point
 
         self.encoder_params = kwargs.get("encoder_params", None)
         if self.encoder_params is None:

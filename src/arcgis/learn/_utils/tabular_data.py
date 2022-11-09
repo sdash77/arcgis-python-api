@@ -612,17 +612,26 @@ class TabularDataObject(object):
                 bunched.append(list(self._index_data[i : i + seq_len]))
 
             self._index_seq = np.array(bunched)
+        
+        if location_var:
+            location_var_data = self._dataframe[location_var]
+            self._dataframe = self._dataframe.drop(location_var, axis=1)
+            if location_var in self._continuous_variables:
+                self._continuous_variables.remove(location_var)
+            elif location_var in self._categorical_variables:
+                self._categorical_variables.remove(location_var)
+            else:
+                location_var_data = None
+        else:
+            location_var_data = None
 
         if self._is_raster_only:
             return self._raster_timeseries_bunch(normalize, bunch)
 
-        col_list = list(self._dataframe.columns.values)
-        if location_var:
-            col_list.remove(location_var)
-        if len(col_list) == 1:
-            return self._univariate_bunch(seq_len, normalize, bunch, location_var)
+        if len(list(self._dataframe.columns.values)) == 1:
+            return self._univariate_bunch(seq_len, normalize, bunch, location_var_data)
         else:
-            return self._multivariate_bunch(seq_len, normalize, bunch)
+            return self._multivariate_bunch(seq_len, normalize, bunch, location_var_data)
 
     def _raster_timeseries_bunch(self, normalize=True, bunched=True):
         kwargs_variables = {"num_workers": 0} if sys.platform == "win32" else {}
@@ -715,7 +724,7 @@ class TabularDataObject(object):
 
         return data
 
-    def _multivariate_bunch(self, seq_len, normalize=True, bunched=True):
+    def _multivariate_bunch(self, seq_len, normalize=True, bunched=True, location_var=None):
         kwargs_variables = {"num_workers": 0} if sys.platform == "win32" else {}
 
         kwargs_variables["bs"] = self._bs
@@ -762,13 +771,25 @@ class TabularDataObject(object):
             processed_dataframe = df.copy()
 
         big_bunch = []
+        
+        if location_var is not None:
+            big_loc_processed_dataframe = pd.DataFrame()
+            big_loc_processed_dataframe['temp_location'] = location_var
+            unq_locations = location_var.unique()
+        else:
+            unq_locations = [None]
+        for k in range(len(unq_locations)):
+            if unq_locations[0] is not None:
+                loc_processed_dataframe = processed_dataframe[big_loc_processed_dataframe['temp_location'] == unq_locations[k]]
+                loc_processed_dataframe.reset_index(inplace=True, drop=True)
+            else:
+                loc_processed_dataframe = processed_dataframe
+            for i in range(len(loc_processed_dataframe) - seq_len - 1):
+                bunch = []
+                for col in list(loc_processed_dataframe.columns.values):
+                    bunch.append(list(loc_processed_dataframe[col][i : i + seq_len]))
 
-        for i in range(len(processed_dataframe) - seq_len - 1):
-            bunch = []
-            for col in list(processed_dataframe.columns.values):
-                bunch.append(list(processed_dataframe[col][i : i + seq_len]))
-
-            big_bunch.append(bunch)
+                big_bunch.append(bunch)
 
         big_bunch = np.array(big_bunch)
 
@@ -858,12 +879,28 @@ class TabularDataObject(object):
         else:
             processed_dataframe = self._dataframe.copy()
 
-        for k in processed_dataframe[location_var].unique():
-            loc_processed_dataframe = processed_dataframe[processed_dataframe[location_var]==k]
-            loc_processed_dataframe.reset_index(inplace=True)
-            for i in range(len(loc_processed_dataframe[self._dependent_variable]) - seq_len):
+        import pandas as pd
+        if location_var is not None:
+            big_loc_processed_dataframe = pd.DataFrame()
+            big_loc_processed_dataframe['temp_location'] = location_var
+            unq_locations = location_var.unique()
+        else:
+            unq_locations = [None]
+        
+        for k in range(len(unq_locations)):
+            if unq_locations[0] is not None:
+                loc_processed_dataframe = processed_dataframe[big_loc_processed_dataframe['temp_location'] == unq_locations[k]]
+                loc_processed_dataframe.reset_index(inplace=True, drop=True)
+            else:
+                loc_processed_dataframe = processed_dataframe
+            for i in range(
+                len(loc_processed_dataframe[self._dependent_variable]) - seq_len
+            ):
                 for j in range(seq_len):
-                    if len(loc_processed_dataframe[self._dependent_variable]) > i + seq_len - 1:
+                    if (
+                        len(loc_processed_dataframe[self._dependent_variable])
+                        > i + seq_len - 1
+                    ):
                         df_columns[f"att{j + 1}"].append(
                             loc_processed_dataframe[self._dependent_variable][i + j]
                         )
@@ -873,8 +910,6 @@ class TabularDataObject(object):
                 df_columns["target"].append(
                     loc_processed_dataframe[self._dependent_variable][i + seq_len]
                 )
-
-        import pandas as pd
 
         df = pd.DataFrame(df_columns)
 
