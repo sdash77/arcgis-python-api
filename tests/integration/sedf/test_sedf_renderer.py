@@ -1,7 +1,5 @@
 import os
 import sys
-
-# sys.path.insert(0, r"C:\SVN\achapkowski_geosaurus_fork_issue_viz_take_3\src")
 import json
 import unittest
 import tempfile
@@ -20,7 +18,7 @@ class TestSeDFRenderer(unittest.TestCase):
         from arcgis.features import FeatureLayer
 
         fl = FeatureLayer(
-            "https://sampleserver1.arcgisonline.com/ArcGIS/rest/services/Demographics/ESRI_Census_USA/MapServer/5"
+            "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer/3"
         )
         sdf = fl.query(as_df=True)
         assert sdf.spatial.renderer == InsensitiveDict(
@@ -48,7 +46,7 @@ class TestSeDFRenderer(unittest.TestCase):
         from arcgis.features import FeatureLayer
 
         fl = FeatureLayer(
-            "https://sampleserver1.arcgisonline.com/ArcGIS/rest/services/Demographics/ESRI_Census_USA/MapServer/5"
+            "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer/3"
         )
         sdf = fl.query(as_df=True)
         with tempfile.TemporaryDirectory() as tmpdirectory:

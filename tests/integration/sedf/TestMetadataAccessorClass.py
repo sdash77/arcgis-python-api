@@ -42,7 +42,7 @@ class TestMetaDataClass(unittest.TestCase):
         m = _Metadata()
         assert m.source_type is None
         m.source = FeatureLayer(
-            "https://sampleserver1.arcgisonline.com/ArcGIS/rest/services/Demographics/ESRI_Census_USA/MapServer/5"
+            "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer/3"
         )
         assert isinstance(m.source_type, str)
         assert m.source_type == "FeatureLayer"
@@ -66,7 +66,7 @@ class TestMetaDataClass(unittest.TestCase):
 
         m = _Metadata()
         fl = FeatureLayer(
-            "https://sampleserver1.arcgisonline.com/ArcGIS/rest/services/Demographics/ESRI_Census_USA/MapServer/5"
+            "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer/3"
         )
         r_property = fl.properties.drawingInfo.renderer
         r_dict = dict(r_property)
@@ -86,7 +86,7 @@ class TestAttrSeDFMetadata(unittest.TestCase):
         from arcgis.features import FeatureLayer
 
         fl = FeatureLayer(
-            "https://sampleserver1.arcgisonline.com/ArcGIS/rest/services/Demographics/ESRI_Census_USA/MapServer/5"
+            "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer/3"
         )
         sdf = fl.query(as_df=True)
         assert sdf.spatial._meta
@@ -101,7 +101,7 @@ class TestAttrSeDFMetadata(unittest.TestCase):
         import pandas as pd
 
         fl = FeatureLayer(
-            "https://sampleserver1.arcgisonline.com/ArcGIS/rest/services/Demographics/ESRI_Census_USA/MapServer/5"
+            "https://sampleserver6.arcgisonline.com/arcgis/rest/services/Census/MapServer/3"
         )
         sdf = fl.query(as_df=True)
         assert sdf.spatial._meta

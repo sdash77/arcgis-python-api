@@ -10,3 +10,7 @@ __________________________
 upload_imagery_to_agol_userstore
 ________________________________
 .. autofunction:: arcgis.raster.utils.upload_imagery_to_agol_userstore
+
+publish_hosted_imagery_layer
+____________________________
+.. autofunction:: arcgis.raster.utils.publish_hosted_imagery_layer
