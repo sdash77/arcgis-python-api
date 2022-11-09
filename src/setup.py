@@ -65,6 +65,7 @@ else:
     dependencies = [
         "pillow",
         "urllib3",
+        "gssapi",
         "cachetools",
         "six",
         "lxml",
