@@ -12640,7 +12640,7 @@ class Item(dict):
                 import re
 
                 file_name = self.name or self.title
-                file_name = re.sub("[^a-zA-Z0-9 \n\.]", "", file_name) or self.itemid
+                file_name = re.sub(r"[^a-zA-Z0-9 \n\.]", "", file_name) or self.itemid
             if save_path is None:
                 save_path = tempfile.gettempdir()
             download_path = self._portal.con.get(
@@ -14731,7 +14731,7 @@ class Item(dict):
         if str(output_type).lower() in ["ogc", "ogcfeatureservice"]:
             output_type = "OGCFeatureService"
             file_type = "featureService"
-            scrubbed = re.sub("\W+", "", self.title)
+            scrubbed = re.sub("[^a-zA-Z0-9_]+", "", self.title)
             if publish_parameters is None:
                 publish_parameters = {}
             publish_parameters.update(
