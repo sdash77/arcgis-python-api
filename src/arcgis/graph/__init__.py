@@ -8,7 +8,10 @@ your database, along with other information about the graph. Performing a search
 return results from the database based on the search or query terms provided.
 
 .. note::
-    For ArcGIS Enterprise 10.9.1 and 11.0, use ArcGIS API for Python version 2.0.1. For ArcGIS Enterprise at 11.1 and later, use ArcGIS API for Python version 2.1.0 or later.
+    Applications based on ArcGIS API for Python version 2.0.1 can only communicate with knowledge graphs in an ArcGIS Enterprise 
+    10.9.1 or 11.0 deployment. ArcGIS Enterprise 11.1 includes breaking changes for knowledge graphs. Only applications based on 
+    ArcGIS API for Python version 2.1.0 or later will be able to communicate with knowledge graphs in an Enterprise 11.1 deployment. 
+    See the ArcGIS Enterprise Knowledge Server documentation for more details.
 """
 
 from arcgis.graph._service import KnowledgeGraph
