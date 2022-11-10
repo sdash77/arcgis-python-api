@@ -16129,8 +16129,6 @@ class Item(dict):
                               )
 
         """
-        if self.type.lower() in ["api key"]:
-            return None
         if redirect_uris is None:
             redirect_uris = []
         if str(app_type).lower() not in [
