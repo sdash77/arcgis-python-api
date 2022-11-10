@@ -1141,12 +1141,12 @@ class GIS(object):
         """
         The ``datastore`` property returns the manager for `user-managed data store
         items <https://enterprise.arcgis.com/en/portal/10.7/use/data-store-items.htm>`_.
-        
+
         .. note::
             This is only available with ArcGIS Enterprise 10.7+.
-            See :class:`~arcgis.gis._impl._datastores.PortalDataStore` for 
+            See :class:`~arcgis.gis._impl._datastores.PortalDataStore` for
             more information.
-        
+
         :return: A :class:`~arcgis.gis._impl._datastores.PortalDataStore` object
         """
         if self.version >= [7, 1] and not self._portal.is_arcgisonline:
@@ -1572,9 +1572,9 @@ class GIS(object):
 
 class Datastore(dict):
     """
-    The ``Datastore`` class represents a data store, either a folder, database 
-    or bigdata fileshare on a :class:`~arcgis.gis.server.Server` within 
-    the Enterprise. See :class:`~arcgis.gis.server.Datastore` for more 
+    The ``Datastore`` class represents a data store, either a folder, database
+    or bigdata fileshare on a :class:`~arcgis.gis.server.Server` within
+    the Enterprise. See :class:`~arcgis.gis.server.Datastore` for more
     information on data stores on a server.
     """
 
@@ -2059,16 +2059,16 @@ class GroupMigrationManager(object):
 ###########################################################################
 class DatastoreManager(object):
     """
-    The ``DatastoreManager`` class is a helper class for managing the data 
+    The ``DatastoreManager`` class is a helper class for managing the data
     store for servers configured within the Enterprise. Depending upon the `server role <https://enterprise.arcgis.com/en/get-started/latest/windows/additional-server-deployment.htm>`_
     an instance of this class can be obtained from helper functions.
 
     .. note::
-        This class is not created directly, but rather the following server roles have 
-        :class:`datastores <arcgis.gis.Datastore>`, and an instance of the 
-        :class:`~arcgis.gis.DatastoreManager` for each server is returned by 
-        the respective `get_datastores()` function: 
-          * GeoAnalytics Server: :meth:`~arcgis.geoanalytics.get_datastores` 
+        This class is not created directly, but rather the following server roles have
+        :class:`datastores <arcgis.gis.Datastore>`, and an instance of the
+        :class:`~arcgis.gis.DatastoreManager` for each server is returned by
+        the respective `get_datastores()` function:
+          * GeoAnalytics Server: :meth:`~arcgis.geoanalytics.get_datastores`
           * Raster Analytics Server: :meth:`~arcgis.raster.analytics.get_datastores`
     """
 
