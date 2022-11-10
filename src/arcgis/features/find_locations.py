@@ -1049,8 +1049,8 @@ def choose_best_facilities(
                                              To use live traffic when and where it is available,
                                              choose a time and date and convert to datetime.
 
-                                             Esri saves live traffic data for 12 hours and references
-                                             predictive data extending 12 hours into the future. If the
+                                             Esri saves live traffic data for 4 hours and references
+                                             predictive data extending 4 hours into the future. If the
                                              time and date you specify for this parameter is outside the
                                              24-hour time window, or the travel time in the analysis
                                              continues past the predictive data window, the task falls
