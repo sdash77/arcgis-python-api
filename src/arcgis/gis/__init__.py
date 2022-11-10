@@ -5276,6 +5276,7 @@ class ContentManager(object):
     """
 
     _depmgr = None
+    _mrktplcmgr = None
 
     def __init__(self, gis):
         self._gis = gis
