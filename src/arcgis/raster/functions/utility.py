@@ -13,20 +13,24 @@ from arcgis.auth import (
 )
 import requests
 
-_aggregating_functions = ["max", "min", "med", "mean", "majority", "sum", "std", "raster_calculator"]
+_aggregating_functions = ["max", "min", "med", "mean", "majority", "sum", "std"]
+
 
 def _raster_input(raster, raster2=None):
     layer = None
 
-    #if input is a rastercollection, get the list of rasters and use that as the input
+    # if input is a rastercollection, get the list of rasters and use that as the input
 
     if isinstance(raster, RasterCollection) or isinstance(raster2, RasterCollection):
         import inspect
-        fn_name= inspect.stack()[2][3]
+
+        fn_name = inspect.stack()[2][3]
         if fn_name == "<module>":
-            fn_name= inspect.stack()[1][3]
+            fn_name = inspect.stack()[1][3]
         if not fn_name in _aggregating_functions:
-            raise RuntimeError("RasterCollection object cannot be specified as input to non aggregating functions")
+            raise RuntimeError(
+                "RasterCollection object cannot be specified as input to non aggregating functions"
+            )
         if isinstance(raster, RasterCollection):
             raster = raster._ras_coll_engine_obj._rasters_list
         if isinstance(raster2, RasterCollection):
