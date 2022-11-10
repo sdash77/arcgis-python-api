@@ -826,7 +826,7 @@ class DataStoreManager(BaseServer):
         Connection portal item.
 
         .. note::
-            This method only works if using ArcGIS Insights. 
+            This method only works if using ArcGIS Insights.
 
         ==================     ====================================================================
         **Argument**           **Description**

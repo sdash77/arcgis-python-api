@@ -15,9 +15,9 @@ import concurrent.futures
 class PortalDataStore(object):
     """
 
-    The ``PortalDatastore`` object provides access to operations that allow you 
+    The ``PortalDatastore`` object provides access to operations that allow you
     to manage and work with user-managed `data store items <https://enterprise.arcgis.com/en/portal/latest/use/manage-data-store-items.htm>`_ .
-    Access an instance of this class using the `datastore` property of a 
+    Access an instance of this class using the `datastore` property of a
     :class:`~arcgis.gis.GIS` object.
 
     .. code-block:: python
@@ -39,12 +39,12 @@ class PortalDataStore(object):
     - Publish and retrieve layers in bulk, and delete bulk-published layers.
 
     See `User-managed data stores <https://enterprise.arcgis.com/en/portal/latest/use/data-store-items.htm>`_
-    for detailed explanation of the item types this class manages. Also, 
-    see `Data Item <https://developers.arcgis.com/rest/enterprise-administration/server/dataitem.htm>`_ 
+    for detailed explanation of the item types this class manages. Also,
+    see `Data Item <https://developers.arcgis.com/rest/enterprise-administration/server/dataitem.htm>`_
     for technical details on managing server side components.
 
     .. note::
-        This class provides different functionality than the :class:`~arcgis.gis.server.Datastore` object 
+        This class provides different functionality than the :class:`~arcgis.gis.server.Datastore` object
         which is used for data stores registered directly with a :class:`~arcgis.gis.server.Server`.
     """
 
@@ -72,7 +72,7 @@ class PortalDataStore(object):
     def describe(self, item, server_id, path, store_type="datastore"):
         """
         The ``describe`` method is used to list the contents of a data store
-        added to Enterprise as a data store item. A client can use this 
+        added to Enterprise as a data store item. A client can use this
         method multiple times to discover the contents of the
         data store incrementally. For example, the client can request a
         description of the root, and then request sub-folders.
@@ -87,7 +87,7 @@ class PortalDataStore(object):
                                to.
 
                                .. note::
-                                   You can retrieve the `server_id` value from the dictionary 
+                                   You can retrieve the `server_id` value from the dictionary
                                    returned by the federation.
 
                                    .. code-block:: python
@@ -109,12 +109,12 @@ class PortalDataStore(object):
                                        >>>
                                        >>> host_id = server_list[0]["id"]
         ------------------     --------------------------------------------------------------------
-        path                   Required String. The path to any data store's root ("/"), or the 
+        path                   Required String. The path to any data store's root ("/"), or the
                                path to a sub-folder or entity inside the root.
         ------------------     --------------------------------------------------------------------
-        store_type             Required String. For root resource the object type should be 
-                               `datastore`, and for sub-entities, the value depends upon data type  
-                               of the data store. Value can be determined by looking at 
+        store_type             Required String. For root resource the object type should be
+                               `datastore`, and for sub-entities, the value depends upon data type
+                               of the data store. Value can be determined by looking at
                                ``type`` values returned by :meth:`~PortalDataStore.describe`
         ==================     ====================================================================
 
@@ -122,7 +122,7 @@ class PortalDataStore(object):
 
             # Usage Example: Data store item added using an enterprise geodatabase
 
-            >>> ds_items = gis.content.search("*", item_type="Data Store") 
+            >>> ds_items = gis.content.search("*", item_type="Data Store")
             >>>
             >>> for ds_item in ds_items:
             >>>     print(f"{ds_item.title:33}{ds_item.id}{' '*2}{ds_item.get_data()['type']}")
@@ -174,7 +174,7 @@ class PortalDataStore(object):
                     'type': 'featureDataset',
                     'datastoreId': 'a25ae2f4c4674bf4799eb2f4fdae3b8f',
                     'path': '/world.DATAo.Forest_Landscapes'}]}}
-            >>> 
+            >>>
             >>> # describe sub-entity of the database data store
             >>>
             >>> describe_job_sub = portal_ds.describe(item=egdb_dsitem,
@@ -249,7 +249,7 @@ class PortalDataStore(object):
     @property
     def properties(self):
         """
-        The ``properties`` property retrieves the properties of the current 
+        The ``properties`` property retrieves the properties of the current
         :class:`~PortalDataStore` object
 
         :return:
@@ -265,23 +265,23 @@ class PortalDataStore(object):
     def register(self, item, server_id, bind=False):
         """
 
-        The ``register`` method allows for a data store :class:`~arcgis.gis.Item` 
-        that has been added to the Enterprise portal to be registered with 
+        The ``register`` method allows for a data store :class:`~arcgis.gis.Item`
+        that has been added to the Enterprise portal to be registered with
         Enterprise servers.
 
         .. note::
-            Before registering a data store :class:`~arcgis.gis.Item`, it is 
-            recommended that you :meth:`~PortalDataStore.validate` it with 
+            Before registering a data store :class:`~arcgis.gis.Item`, it is
+            recommended that you :meth:`~PortalDataStore.validate` it with
             the server.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        item                   Required data store :class:`~arcgis.gis.Item` or Item Id 
+        item                   Required data store :class:`~arcgis.gis.Item` or Item Id
                                string.
 
-                               .. note:: 
-                                   A data store :class:`~arcgis.gis.Item` can be registered on 
+                               .. note::
+                                   A data store :class:`~arcgis.gis.Item` can be registered on
                                    multiple servers.
         ------------------     --------------------------------------------------------------------
         server_id              Required String. The unique id of the server you want to register
@@ -301,14 +301,14 @@ class PortalDataStore(object):
             >>> # Get the server id value for registration
             >>> servers_dict = gis.admin.federation.servers
             >>> server_list = servers_dict["servers"]
-            >>> host_id = [srvr["id"] 
-            >>>            for srvr in server_list 
+            >>> host_id = [srvr["id"]
+            >>>            for srvr in server_list
             >>>            if srvr["serverRole"] == "HOSTING_SERVER"][0]
             >>>
-            >>> # Get the host server's DataStoreManager to create an 
+            >>> # Get the host server's DataStoreManager to create an
             >>> # encrypted password string for the database
             >>> host = gis.admin.servers.get(role="HOSTING_SERVER")[0]
-            >>> host_dsmgr = host.datastores            
+            >>> host_dsmgr = host.datastores
             >>> conn_file_sql = r"/pathway/to/connection_file/your_connection.sde"
             >>> conn_string = host_dsmgr.generate_connection_string(conn_file_sql)
             >>>
@@ -325,7 +325,7 @@ class PortalDataStore(object):
             >>>
             >>> ds_item = gis.content.add(item_properties=item_properties,
             >>>                           text=text_param)
-            >>> 
+            >>>
             >>> # Get the Enteprises PortalDataStore and register with the server
             >>> portal_ds = gis.datastore
             >>>
@@ -383,14 +383,14 @@ class PortalDataStore(object):
         data store :class:`~arcgis.gis.Item`.
 
         .. note::
-            Before a data store :class:`~arcgis.gis.Item` can be unregistered 
+            Before a data store :class:`~arcgis.gis.Item` can be unregistered
             from a server, all of its bulk-published layers must be deleted.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The database data store
-                               :class:`~arcgis.gis.Item` from which to delete all 
+                               :class:`~arcgis.gis.Item` from which to delete all
                                the published layers.
         ==================     ====================================================================
 
@@ -432,18 +432,18 @@ class PortalDataStore(object):
     def layers(self, item):
         """
         The ``layers`` operation returns a list of layers bulk published from
-        a database data store item using the 
+        a database data store item using the
         :meth:`~PortalDataStore.publish_layers` method.
 
         .. note::
-            The ``layers`` method returns a list of dictionaries. Each 
+            The ``layers`` method returns a list of dictionaries. Each
             dictionary contains a `layer` key and a `dataset` key for each
             layer created during publishing.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        item                   Required Item. The data store :class:`~arcgis.gis.Item` to list all 
+        item                   Required Item. The data store :class:`~arcgis.gis.Item` to list all
                                published layers and registered datasets.
         ==================     ====================================================================
 
@@ -452,10 +452,10 @@ class PortalDataStore(object):
             # Usage Example
             >>> ds_items = gis.content.get("*", item_type="Data Store")
             >>>
-            >>> db_dsitem = [ds 
-            >>>              for ds in ds_items 
+            >>> db_dsitem = [ds
+            >>>              for ds in ds_items
             >>>              if ds.get_data()["type"] == "egdb"][0]
-            >>> 
+            >>>
             >>> portal_ds = gis.datastore
             >>>
             >>> portal_ds.layers(db_dsitem)
@@ -486,8 +486,8 @@ class PortalDataStore(object):
                           'datastoreId': 'ad38...01b8e',
                           'path': '/world.dto.dk_lau_2016'}}]
 
-        :return: 
-            A list of dictionaries. For each layer, a dictionary of information about the 
+        :return:
+            A list of dictionaries. For each layer, a dictionary of information about the
             layer and the source dataset from which it was published.
         """
 
@@ -523,7 +523,7 @@ class PortalDataStore(object):
         config                 Required Dictionary.  This is the service configuration property
                                and it must contain the reference to the data in the data store. It
                                specifies the data store Id and the path of the data.  A client can
-                               discover the proper paths of the data by using the 
+                               discover the proper paths of the data by using the
                                :meth:`~PortalDataStore.describe` method.
 
                                .. note::
@@ -534,7 +534,7 @@ class PortalDataStore(object):
 
                                    # Example format
 
-                                   >>> config = {"type":"SceneServer",  
+                                   >>> config = {"type":"SceneServer",
                                    >>>           "serviceName":"sonoma",
                                    >>>           "properties":{"pathInCachedStore":"/v17_i3s/SONOMA_LiDAR.i3srest",
                                    >>>                         "cacheStoreId":"d7b072...00d9"}}
@@ -543,17 +543,17 @@ class PortalDataStore(object):
 
                                .. note::
                                    Any :class:`~arcgis.gis.server.Server` id can be obtained from
-                                   the dictionary returned by by the 
+                                   the dictionary returned by by the
                                    :attr:`~arcgis.gis.admin.Federation.servers` property of
                                    :class:`~arcgis.gis.admin.Federation` objects.
         ------------------     --------------------------------------------------------------------
-        folder                 Optional String. The name of the folder on the server to store the 
+        folder                 Optional String. The name of the folder on the server to store the
                                service. If none is provided, it is placed in the root.
         ------------------     --------------------------------------------------------------------
-        description            Optional String. An optional string to attach to the 
+        description            Optional String. An optional string to attach to the
                                generated :class:`~arcgis.gis.Item`.
         ------------------     --------------------------------------------------------------------
-        tags                   Optional list. An array of descriptive words that describes the 
+        tags                   Optional list. An array of descriptive words that describes the
                                newly published :class:`~arcgis.gis.Item`.
         ==================     ====================================================================
 
@@ -563,17 +563,17 @@ class PortalDataStore(object):
 
             >>> portal_ds = gis.datastore
             >>>
-            >>> service_config = {"type":"SceneServer",  
+            >>> service_config = {"type":"SceneServer",
             >>>                   "serviceName":"sonoma",
             >>>                   "properties":{"pathInCachedStore":"/v17_i3s/SONOMA_LiDAR.i3srest",
             >>>                                 "cacheStoreId":"d7b072...00d9"}}
             >>>
             >>> server_list = gis.admin.Federation.servers["servers"]
-            >>> gis_server_id = [s["id"] 
-            >>>                  for s in server_list 
+            >>> gis_server_id = [s["id"]
+            >>>                  for s in server_list
             >>>                  if s["serverRole"] == "HOSTING_SERVER"]
-            >>> 
-            >>> pub_job = portal_ds.publish(config= service_config, 
+            >>>
+            >>> pub_job = portal_ds.publish(config= service_config,
             >>>                             server_id= gis_server_id)
             >>>
             >>> if pub_job.status == "succeeded":
@@ -623,7 +623,7 @@ class PortalDataStore(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        item                   Required Item. The data store :class:`~arcgis.gis.Item` to 
+        item                   Required Item. The data store :class:`~arcgis.gis.Item` to
                                for which to list all registered servers.
         ==================     ====================================================================
 
@@ -677,15 +677,15 @@ class PortalDataStore(object):
     ):
         """
         The ``publish_layers`` operation publishes, or syncs, the datasets from a
-        database data store :class:`~arcgis.gis.Item`. This results in at least 
+        database data store :class:`~arcgis.gis.Item`. This results in at least
         one layer per dataset.
 
         .. note::
-            When this operation is called for the first time, an **argument for 
+            When this operation is called for the first time, an **argument for
             every parameter must be provided**. On subsequent calls, this method
             will synchronize the datasets in the data store with the layers
-            creted in the Enterprise, which includes both publishing layers 
-            from newly added datasets and removing layers for datasets no 
+            creted in the Enterprise, which includes both publishing layers
+            from newly added datasets and removing layers for datasets no
             longer found in the data store.
 
         ==================     ====================================================================
@@ -734,8 +734,8 @@ class PortalDataStore(object):
             >>>
             >>> db_dsitem = [ds for ds in ds_items if ds.get_data()["type"] == "egdb"][0]
             >>>
-            >>> portal_folderid = [f["id"] 
-            >>>                    for f in gis.users.me.folders 
+            >>> portal_folderid = [f["id"]
+            >>>                    for f in gis.users.me.folders
             >>>                    if f["title"] == "My_Bulk_Layers_Folder"]
             >>>
             >>> service_template = {"serviceName": None,
@@ -746,9 +746,9 @@ class PortalDataStore(object):
             >>>                                     "enabled": "true",
             >>>                                     "properties": {"maxRecordCount": 3500}}]}
             >>>
-            >>> 
+            >>>
             >>> portal_ds = gis.datastore
-            >>> 
+            >>>
             >>> bulk_publish_job = portal_ds.publish_layers(item = db_dsitem,
             >>>                                             srv_config = service_template,
             >>>                                             server_id = host_id,
@@ -839,13 +839,13 @@ class PortalDataStore(object):
     # ----------------------------------------------------------------------
     def refresh_server(self, item, server_id):
         """
-        The ``refresh_server`` method updates the server with information that 
+        The ``refresh_server`` method updates the server with information that
         changed in the data store. See
         `Manage data store items <https://enterprise.arcgis.com/en/portal/latest/use/manage-data-store-items.htm>`_
         for more information.
 
         .. note::
-            After a data store :class:`~arcgis.gis.Item` has been registered, there 
+            After a data store :class:`~arcgis.gis.Item` has been registered, there
             may be times in which the registration information may be changed. When
             changes like these occur, the server will need to be updated with
             the newly configured information so that your users will still be
@@ -858,7 +858,7 @@ class PortalDataStore(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        item                   Required data store :class:`~arcgis.gis.Item` or item id (as string). 
+        item                   Required data store :class:`~arcgis.gis.Item` or item id (as string).
                                The data store to register with the server. Note that a data store
                                can be registered on multiple servers.
         ------------------     --------------------------------------------------------------------
@@ -873,8 +873,8 @@ class PortalDataStore(object):
             >>>
             >>> ds_item = gis.content.search("*", item_type="Data Store")[0]
             >>> server_list = gis.admin.federation.servers["servers]
-            >>> 
-            >>> host_id = [s["id"] 
+            >>>
+            >>> host_id = [s["id"]
             >>>            for s in server_list
             >>>            if s["serverRole"] == "HOSTING_SERVER][0]
             >>>
@@ -906,7 +906,7 @@ class PortalDataStore(object):
 
         .. note::
             While this operation can be called before or after the data store item
-            has been registered, it is recommended to validate before 
+            has been registered, it is recommended to validate before
             registration on the server.
 
         ==================     ====================================================================
@@ -915,7 +915,7 @@ class PortalDataStore(object):
         server_id              Required String. The unique id of the server with which you want to
                                register the data store.
         ------------------     --------------------------------------------------------------------
-        item                   Optional. The item id or data store 
+        item                   Optional. The item id or data store
                                :class:`~arcgis.gis.Item` to validate. Required if no ``config``
                                provided.
 
@@ -925,7 +925,7 @@ class PortalDataStore(object):
         config                 Optional dict. The connection information for a new datastore.
                                Required if no ``item`` provided.
         ------------------     --------------------------------------------------------------------
-        future                 Optional bool. Indicates whether to run the validate operation 
+        future                 Optional bool. Indicates whether to run the validate operation
                                asynchronously. The default is `False`.
         ==================     ====================================================================
 
