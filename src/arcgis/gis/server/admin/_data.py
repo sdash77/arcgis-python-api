@@ -20,6 +20,8 @@ from arcgis.gis import GIS
 from typing import Optional
 
 ###########################################################################
+
+
 class Datastore(BaseServer):
     """
     Represents a single Datastore in the Data Store Manager.
@@ -312,6 +314,7 @@ class DataStoreManager(BaseServer):
     _gis = None
     _datastores = None
     # ----------------------------------------------------------------------
+
     def __init__(self, url: str, gis: GIS = None, **kwargs):
         """Constructor
         Inputs:
@@ -822,11 +825,15 @@ class DataStoreManager(BaseServer):
         applications must provide when creating a Relational Database
         Connection portal item.
 
+        .. note::
+            This method only works if using ArcGIS Insights. 
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         type_id                Required string. The datastore type ID of interest.
-                               See https://developers.arcgis.com/rest/enterprise-administration/server/relational-data-store-types.htm
+                               See `Relational Data Store Types <https://developers.arcgis.com/rest/enterprise-administration/server/relational-data-store-types.htm>`_
+                               for details.
         ==================     ====================================================================
 
 
