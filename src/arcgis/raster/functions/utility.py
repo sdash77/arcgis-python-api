@@ -13,7 +13,17 @@ from arcgis.auth import (
 )
 import requests
 
-_aggregating_functions = ["max", "min", "med", "mean", "majority", "sum", "std"]
+_aggregating_functions = [
+    "max",
+    "min",
+    "med",
+    "mean",
+    "majority",
+    "sum",
+    "std",
+    "variety",
+    "geometric_median",
+]
 
 
 def _raster_input(raster, raster2=None):
