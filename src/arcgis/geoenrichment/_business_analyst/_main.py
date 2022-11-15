@@ -1113,7 +1113,7 @@ class BusinessAnalyst(object):
         var_df.insert(3, "enrich_name", var_df.data_collection + "." + var_df.name)
 
         # create column for matching to previously enriched column names
-        regex = re.compile(r"(^\d+)")
+        regex = re.compile(r"(^[0-9]+)")
         fld_vals = var_df.enrich_name.apply(
             lambda val: regex.sub(r"F\1", val.replace(".", "_"))
         )
