@@ -1491,11 +1491,13 @@ class TabularDataObject(object):
                         data_source, fields, spatial_reference=sr
                     ) as cursor:
                         for row in cursor:
+                            loc = "{locx} {locy}".format(locx=row[0], locy=row[1])
                             # print(u'{0}, {1}'.format(row[0], row[1]))
                             # if arcpy.Describe(data_source).shapeType == "Point":
                             try:
+                                new_coordinate = _adjust_origin_coordinate((row[0], row[1]) ,raster, (raster.mean_cell_width, raster.mean_cell_height))
                                 raster_value = raster.read(
-                                    origin_coordinate=(row[0], row[1]), ncols=1, nrows=1
+                                    origin_coordinate=(new_coordinate), ncols=1, nrows=1
                                 )
                                 value = raster_value[0][0]
                             except:
@@ -2228,6 +2230,19 @@ def show_local_interpretation(
             explainer.expected_value, shap_values[0], processed_df, matplotlib=True
         )
 
+def _adjust_origin_coordinate(coordinate, raster, cell_size):
+    import math
+    x = coordinate[0]
+    y = coordinate[1]
+    xmin = raster.extent['xmin']
+    ymax = raster.extent['ymax']
+    dx = cell_size[0]
+    dy = cell_size[1]
+    x = math.floor((x - xmin) / dx)
+    y = math.floor((ymax - y) / dy)
+    xmin_new = xmin + x * dx
+    ymax_new = ymax - y * dy
+    return xmin_new, ymax_new
 
 def global_interpretation(model, plot_type="bar", method="KernelRegressor"):
     try:
