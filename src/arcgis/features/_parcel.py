@@ -1,10 +1,9 @@
 from __future__ import annotations
 import time
-from typing import Any, Optional
-from arcgis.geometry import Polygon
+from typing import Any
+from arcgis.geometry import Polygon, Envelope
 from arcgis._impl.common._mixins import PropertyMap
-from arcgis.features import FeatureLayer, FeatureLayerCollection
-from arcgis.features._version import Version, VersionManager
+from arcgis.features import FeatureLayer
 
 ########################################################################
 
@@ -101,7 +100,7 @@ class ParcelFabricManager(object):
         features: list[dict[str, Any]],
         record: str,
         write_attribute: str,
-        moment: Union[int, str] = None,
+        moment: int | str | None = None,
         future: bool = False,
     ):
         """
@@ -180,10 +179,10 @@ class ParcelFabricManager(object):
 
     def build(
         self,
-        extent: Optional[Union[dict, Envelope]] = None,
-        moment: Union[int, str] = None,
+        extent: dict | Envelope | None = None,
+        moment: int | str | None = None,
         return_errors: bool = False,
-        record: str = None,
+        record: str | None = None,
         future: bool = False,
     ):
         """
@@ -274,12 +273,12 @@ class ParcelFabricManager(object):
     def clip(
         self,
         parent_parcels: list[dict[str, Any]],
-        clip_record: str = None,
-        clipping_parcels: Optional[list[dict[str, Any]]] = None,
-        geometry: Polygon = None,
-        moment: Union[int, str] = None,
-        option: str = None,
-        area_unit: str = None,
+        clip_record: str | None = None,
+        clipping_parcels: list[dict[str, Any]] | None = None,
+        geometry: Polygon | None = None,
+        moment: int | str | None = None,
+        option: str | None = None,
+        area_unit: str | None = None,
         future: bool = False,
     ):
         """
@@ -390,12 +389,12 @@ class ParcelFabricManager(object):
         self,
         parent_parcels: list[dict[str, Any]],
         target_parcel_type: str,
-        attribute_overrides: Optional[dict[str, Any]] = None,
-        child_name: str = None,
-        default_area_unit: int = None,
-        merge_record: str = None,
-        merge_into: str = None,
-        moment: Union[int, str] = None,
+        attribute_overrides: dict[str, Any] | None = None,
+        child_name: str | None = None,
+        default_area_unit: int | None = None,
+        merge_record: str | None = None,
+        merge_into: str | None = None,
+        moment: int | str | None = None,
         future: bool = False,
     ):
         """
@@ -507,13 +506,13 @@ class ParcelFabricManager(object):
         self,
         parent_parcels: list[dict[str, Any]],
         record: str,
-        target_type: Union[int, str],
-        moment: Union[int, str] = None,
+        target_type: int | str,
+        moment: int | str | None = None,
         mark_historic: bool = False,
         use_source_attributes: bool = False,
-        attribute_overrides: Optional[dict[str, Any]] = None,
+        attribute_overrides: dict[str, Any] | None = None,
         use_polygon_attributes: bool = False,
-        parcel_subtype: int = None,
+        parcel_subtype: int | None = None,
         future: bool = False,
     ):
         """
@@ -618,8 +617,8 @@ class ParcelFabricManager(object):
         self,
         parcels: list[dict[str, Any]],
         target_type: str,
-        parcel_subtype: Union[int, str] = 0,
-        moment: Union[int, str] = None,
+        parcel_subtype: int | str = 0,
+        moment: int | str | None = None,
         future: bool = False,
     ):
         """
@@ -690,7 +689,7 @@ class ParcelFabricManager(object):
     def delete(
         self,
         parcels: list[dict[str, Any]],
-        moment: Union[int, str] = None,
+        moment: int | str | None = None,
         future: bool = False,
     ):
         """
@@ -751,7 +750,7 @@ class ParcelFabricManager(object):
         self,
         features: list[dict[str, Any]],
         record: str,
-        moment: Union[int, str] = None,
+        moment: int | str | None = None,
         set_as_historic: bool = False,
         future: bool = False,
     ):
@@ -836,8 +835,8 @@ class ParcelFabricManager(object):
     def create_seeds(
         self,
         record: str,
-        moment: Union[int, str] = None,
-        extent: Union[dict, Envelope] = None,
+        moment: int | str | None = None,
+        extent: dict | Envelope | None = None,
         future: bool = False,
     ):
         """
@@ -912,10 +911,10 @@ class ParcelFabricManager(object):
     def duplicate(
         self,
         parcels: list[dict[str, Any]],
-        parcel_type: Union[int, str],
+        parcel_type: int | str,
         record: str,
-        parcel_subtype: Union[int, str] = None,
-        moment: Union[int, str] = None,
+        parcel_subtype: int | str | None = None,
+        moment: int | str | None = None,
         future: bool = False,
     ):
         """
@@ -1006,7 +1005,7 @@ class ParcelFabricManager(object):
         self,
         analysis_type: str = "CONSISTENCY_CHECK",
         convergence_tolerance: float = 0.05,
-        parcel_features: Optional[dict[str, Any]] = None,
+        parcel_features: dict[str, Any] | None = None,
         future: bool = False,
     ):
         """
@@ -1156,15 +1155,15 @@ class ParcelFabricManager(object):
     def divide(
         self,
         divide_parcel_guid: str,
-        divide_parcel_type: Union[int, str],
+        divide_parcel_type: int | str | None,
         divide_record: str,
         divide_option: str,
-        divide_number_of_parts: Union[int, str, None],
-        divide_part_area: Union[float, int, None],
+        divide_number_of_parts: int | str,
+        divide_part_area: float | int,
         divide_line_bearing: float,
-        divide_left_side: Union[bool, None],
-        divide_distribute_remainder: Union[bool, None],
-        default_area_unit: Union[int, str],
+        divide_left_side: bool,
+        divide_distribute_remainder: bool,
+        default_area_unit: int | str | None = None,
         divide_cogo_line_bearing: float = None,
     ):
         """
@@ -1356,7 +1355,7 @@ class ParcelFabricManager(object):
     # ----------------------------------------------------------------------
     def reconstruct_from_seeds(
         self,
-        extent: Union[dict, Envelope],
+        extent: dict | Envelope,
         future: bool = False,
     ):
         """
@@ -1424,7 +1423,7 @@ class ParcelFabricManager(object):
         target_parcel_features: list[dict[str, Any]],
         record: str,
         default_area_unit: int,
-        source_parcel_features: Optional[list[dict[str, Any]]] = None,
+        source_parcel_features: list[dict[str, Any]] | None = None,
         future: bool = False,
     ):
         """
@@ -1571,7 +1570,7 @@ class ParcelFabricManager(object):
 
     # ----------------------------------------------------------------------
 
-    def _validate_extent(self, extent: Union[dict, Envelope]):
+    def _validate_extent(self, extent: dict | Envelope):
         """Check for valid Extent object or None"""
         from arcgis.geometry import Envelope
 

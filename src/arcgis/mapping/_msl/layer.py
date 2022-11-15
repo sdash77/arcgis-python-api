@@ -287,7 +287,7 @@ class MapFeatureLayer(Layer):
 
         dataframe_merged = pandas.merge(
             self.query().sdf,
-            self.attachments.search(as_df=True),
+            self._attachments.search(as_df=True),
             left_on=object_id_field,
             right_on="PARENTOBJECTID",
         )

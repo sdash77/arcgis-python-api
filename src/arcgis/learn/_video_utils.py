@@ -10,6 +10,7 @@ try:
     from ._image_utils import _draw_predictions
     from fastai.vision.image import bb2hw, Image, pil2tensor
     from fastprogress.fastprogress import progress_bar
+    import arcpy
 except Exception:
     HAS_FASTAI = False
 
