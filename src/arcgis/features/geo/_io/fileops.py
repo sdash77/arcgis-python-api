@@ -1235,7 +1235,7 @@ def _pyshp_to_shapefile(df, out_path, out_name):
             except:
                 # Unable to write PRJ file.
                 pass
-
+            shpfile.close()
             del shpfile
             return out_fc
     return None
