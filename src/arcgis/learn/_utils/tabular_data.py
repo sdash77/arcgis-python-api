@@ -1495,7 +1495,11 @@ class TabularDataObject(object):
                             # print(u'{0}, {1}'.format(row[0], row[1]))
                             # if arcpy.Describe(data_source).shapeType == "Point":
                             try:
-                                new_coordinate = _adjust_origin_coordinate((row[0], row[1]) ,raster, (raster.mean_cell_width, raster.mean_cell_height))
+                                new_coordinate = _adjust_origin_coordinate(
+                                    (row[0], row[1]),
+                                    raster,
+                                    (raster.mean_cell_width, raster.mean_cell_height),
+                                )
                                 raster_value = raster.read(
                                     origin_coordinate=(new_coordinate), ncols=1, nrows=1
                                 )
@@ -2230,12 +2234,14 @@ def show_local_interpretation(
             explainer.expected_value, shap_values[0], processed_df, matplotlib=True
         )
 
+
 def _adjust_origin_coordinate(coordinate, raster, cell_size):
     import math
+
     x = coordinate[0]
     y = coordinate[1]
-    xmin = raster.extent['xmin']
-    ymax = raster.extent['ymax']
+    xmin = raster.extent["xmin"]
+    ymax = raster.extent["ymax"]
     dx = cell_size[0]
     dy = cell_size[1]
     x = math.floor((x - xmin) / dx)
@@ -2243,6 +2249,7 @@ def _adjust_origin_coordinate(coordinate, raster, cell_size):
     xmin_new = xmin + x * dx
     ymax_new = ymax - y * dy
     return xmin_new, ymax_new
+
 
 def global_interpretation(model, plot_type="bar", method="KernelRegressor"):
     try:

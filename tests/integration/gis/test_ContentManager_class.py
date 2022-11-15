@@ -4,8 +4,9 @@
 # -------------------------------------------------------------------------------
 
 # Code to import test package for relative imports when running locally
-#import sys
-#sys.path.insert(0, r"local_path_to_repo\geosaurus\tests")
+# import sys
+# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
+# sys.path.insert(1, r"C:\ipython_workfolder\geosaurus\src")
 
 import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
@@ -33,7 +34,7 @@ else:
 # Import the module after Precondition checks pass
 try:
     import arcgis
-    from arcgis.gis import GIS
+    from arcgis.gis import GIS, Item
 except ImportError:
     print("API import error. Quitting test")
     raise (exit())
@@ -87,7 +88,7 @@ class Test_ContentManager_portal_builtin(unittest.TestCase):
         if not r1:
             cls.class_skip = True
 
-        cls.gis = GIS(cls.portal_url, cls.portal_username, cls.portal_password)
+        cls.gis = GIS(profile="your_online_profile")
         if cls.gis is None:
             cls.class_skip = True
 
@@ -155,9 +156,9 @@ class Test_ContentManager_portal_builtin(unittest.TestCase):
                 # validate return type
                 self.assertIsInstance(
                     publish_output,
-                    arcgis.features.FeatureCollection,
+                    Item,
                     "import_data does not return "
-                    "a Feature Collection upon success. Instead it returns: "
+                    "an Item upon success. Instead it returns: "
                     + str(type(publish_output)),
                 )
 
@@ -357,9 +358,9 @@ class Test_ContentManager_ago_builtin(unittest.TestCase):
                 # validate return type
                 self.assertIsInstance(
                     publish_output,
-                    arcgis.features.FeatureCollection,
+                    Item,
                     "import_data does not return "
-                    "a Feature Collection upon success. Instead it returns: "
+                    "an Item upon success. Instead it returns: "
                     + str(type(publish_output)),
                 )
 
@@ -417,9 +418,9 @@ class Test_ContentManager_ago_builtin(unittest.TestCase):
                 # validate return type
                 self.assertIsInstance(
                     publish_output,
-                    arcgis.features.FeatureCollection,
+                    Item,
                     "import_data does not return "
-                    "a Feature Collection upon success. Instead it returns: "
+                    "an Item upon success. Instead it returns: "
                     + str(type(publish_output)),
                 )
 

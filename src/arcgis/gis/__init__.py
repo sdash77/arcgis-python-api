@@ -7322,8 +7322,7 @@ class ContentManager(object):
 
 
         :return:
-           A :class:`feature collection <arcgis.features.FeatureCollection>` or :class:`feature layer <arcgis.features.FeatureLayer>`
-           that can be used for analysis, visualization, or published to the GIS as an :class:`~arcgis.gis.Item`.
+           An :class:`~arcgis.gis.Item`.
         """
         sanitize_columns = kwargs.pop("sanitize_columns", False)
         if item_id and self._gis.version <= [7, 1]:

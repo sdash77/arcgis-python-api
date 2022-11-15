@@ -93,7 +93,7 @@ class KnowledgeGraph:
 
             #Perform a search on the knowledge graph
             search_result = knowledge_graph.search("cat")
-            
+
             # Perform a search on only entities in the knowledge graph
             searchentities_result = knowledge_graph.search("cat", "entities")
 
