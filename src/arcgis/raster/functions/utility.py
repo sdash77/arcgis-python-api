@@ -23,6 +23,7 @@ _aggregating_functions = [
     "std",
     "variety",
     "geometric_median",
+    "minority",
 ]
 
 
