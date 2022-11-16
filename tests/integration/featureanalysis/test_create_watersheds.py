@@ -7,7 +7,7 @@ from arcgis.gis import GIS, Item
 from arcgis.features import FeatureLayer
 from arcgis.features.find_locations import create_watersheds
 
-profiles = ["your_online_profile", "your_enterprise_profile", "kube_test"]
+profiles = ["your_online_profile", "your_enterprise_profile"]
 
 class TestCreateWatersheds(unittest.TestCase):
     def test_overwrite(self):
@@ -30,7 +30,7 @@ class TestCreateWatersheds(unittest.TestCase):
             output_name = "overwrite_test_create_watersheds_" + test_id
             print("Creating ", output_name)
             target_item = create_watersheds(
-                input_layer=office_lyr, output_name=output_name
+                input_layer=office_lyr, output_name=output_name, context={"outSR": {"wkid": 4326}}
             )
             assert isinstance(target_item, Item)
             target_layer = target_item.layers[0]
