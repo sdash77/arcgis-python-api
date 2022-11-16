@@ -2634,6 +2634,7 @@ class MapView(widgets.DOMWidget):
     _time_info = Dict({}).tag(sync=True)
 
     _writeonly_start_time = Datetime().tag(sync=True)
+    _writeonly_start_time.default_value = dt.datetime(1970, 1, 2)
     _readonly_start_time = Unicode("").tag(sync=True)
     """JS can't send `Date` objects -- ISO string of time"""
 
@@ -2652,10 +2653,11 @@ class MapView(widgets.DOMWidget):
     def start_time(self, value):
         if not isinstance(value, dt.datetime):
             raise Exception("Value must be of type `datetime.datetime`")
-        self._writeonly_start_time = dt.datetime(1, 1, 1)
+        self._writeonly_start_time = dt.datetime(1970, 1, 2)
         self._writeonly_start_time = value
 
     _writeonly_end_time = Datetime().tag(sync=True)
+    _writeonly_end_time.default_value = dt.datetime(1970, 1, 2)
     _readonly_end_time = Unicode("").tag(sync=True)
     """JS can't send `Date` objects -- ISO string of time"""
 
@@ -2674,7 +2676,7 @@ class MapView(widgets.DOMWidget):
     def end_time(self, value):
         if not isinstance(value, dt.datetime):
             raise Exception("Value must be of type `datetime.datetime`")
-        self._writeonly_end_time = dt.datetime(1, 1, 1)
+        self._writeonly_end_time = dt.datetime(1970, 1, 2)
         self._writeonly_end_time = value
 
     def _update_time_extent_if_applicable(self, item):

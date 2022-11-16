@@ -385,7 +385,6 @@ def temporal_profile(
             "ascending": False,
             "sortField": x_var,
         }
-
         for index, point in enumerate(points):
             for variable in variables:
                 t2 = raster.get_samples(

@@ -39,6 +39,8 @@ requirements:
   - certifi
   - dask
   - geomet
+  - python-gssapi
+  - requests-gssapi
   run:
   - python
   - pillow
@@ -68,6 +70,8 @@ requirements:
   - certifi
   - dask
   - geomet
+  - python-gssapi
+  - requests-gssapi
 source:
   path: ../../src
 test:

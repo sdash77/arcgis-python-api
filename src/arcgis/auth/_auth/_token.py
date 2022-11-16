@@ -1,7 +1,7 @@
 from __future__ import annotations
 from cachetools import cached, TTLCache
 import lxml.html
-from urllib.parse import urlunparse, quote, parse_qsl, parse_qs
+from urllib.parse import urlunparse, quote, parse_qsl, parse_qs, urlparse
 from functools import lru_cache
 from typing import Any
 from getpass import getpass
@@ -149,7 +149,7 @@ class ArcGISServerAuth(AuthBase, SupportMultiAuth):
     def _url(self, ags_file) -> str:
         if self._arcpy:
             resp = self._read_ags_file(ags_file)
-            return resp.get("serverUrl")
+            return _parse_arcgis_url(resp.get("serverUrl")) + "/rest/services"
         else:
             raise Exception("ArcPy not found, please install arcpy")
 
@@ -236,15 +236,23 @@ class ArcGISServerAuth(AuthBase, SupportMultiAuth):
             server_url = f"{parsed.scheme}://{parsed.netloc}{parsed.path}"
         if not server_url in self._invalid_token_urls:
             r.register_hook("response", self.handle_40x)
-            if self.legacy == False:
+            if self.legacy == False and self.token:
                 r.headers["X-Esri-Authorization"] = f"Bearer {self.token}"
                 r.headers["referer"] = self._referer or ""
-            elif self.legacy and r.method == "GET":
+            elif self.legacy == False and not self.token:
+                r.headers["referer"] = self._referer or ""
+            elif self.legacy and r.method == "GET" and self.token:
                 r.prepare_url(url=r.url, params={"token": self.token})
                 r.headers["referer"] = self._referer or ""
-            elif self.legacy and r.method == "POST":
+            elif self.legacy and r.method == "GET" and not self.token:
+                r.headers["referer"] = self._referer or ""
+            elif self.legacy and r.method == "POST" and self.token:
                 data = parse_qs(r.body)
                 data["token"] = self.token
+                r.prepare_body(data, None, None)
+                r.headers["referer"] = self._referer or ""
+            elif self.legacy and r.method == "POST" and not self.token:
+                data = parse_qs(r.body)
                 r.prepare_body(data, None, None)
                 r.headers["referer"] = self._referer or ""
             else:
