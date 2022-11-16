@@ -12168,7 +12168,7 @@ class Item(dict):
                     layers.append(lyr)
 
             elif self.type == "Feature Service":
-                m = re.search(r"\d+$", self.url)
+                m = re.search(r"[0-9]+$", self.url)
                 if (
                     m is not None
                 ):  # ends in digit - it's a single layer from a Feature Service
@@ -12197,7 +12197,7 @@ class Item(dict):
                 for lyr in svc.layers:
                     layers.append(lyr)
             else:
-                m = re.search(r"\d+$", self.url)
+                m = re.search(r"[0-9]+$", self.url)
                 if m is not None:  # ends in digit
                     layers.append(FeatureLayer(self.url, self._gis))
                 else:
