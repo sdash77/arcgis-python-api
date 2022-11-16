@@ -86,8 +86,6 @@ def _clone_layer(
 ):
 
     _set_multidimensional_rules(function_chain)
-    print(layer)
-    print(type(layer))
     if isinstance(layer, Raster) or isinstance(layer, RasterCollection):
         if (
             isinstance(layer, RasterCollection)
@@ -342,8 +340,6 @@ def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
         try:
             import arcpy, json
 
-            print(layer._ras_coll_engine_obj)
-            print(function_chain_ra)
             arcpylyr = arcpy.ia.Apply(
                 layer._ras_coll_engine_obj._raster_collection,
                 json.dumps(function_chain_ra),
