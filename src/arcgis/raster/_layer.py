@@ -13963,6 +13963,14 @@ class RasterCollection:
             A Dictionary. The dictionary that contains the grouped raster collections. The key of the dictionary is a
             field value of the field name that the grouping is based on. The value of the dictionary is a raster
             collection whose field name contains the same field value.
+
+        .. code-block:: python
+
+            # Usage Example 1: This example groups the raster collection into yearly data and create a new raster collection using data from 1990.
+
+            group_by_year = rc.group_by(field_name="Year", context=None)
+            rc_1990 = group_by_year[1990]
+
         """
 
         return self._ras_coll_engine_obj.group_by(field_name, context=context)
