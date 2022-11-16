@@ -456,8 +456,8 @@ class AGOLAdminManager(object):
 
             res = self._gis._con.post(url, params)
             data.extend(res["items"])
-            while len(res["items"]) > 0 and res["nextKey"]:
-                params["start"] = res["nextKey"]
+            while len(res["items"]) > 0 and res["nextStart"] != -1:
+                params["start"] = res["nextStart"]
                 res = self._gis._con.post(url, params)
                 data.extend(res["items"])
                 if num > 0 and len(data) >= num:
@@ -470,8 +470,8 @@ class AGOLAdminManager(object):
 
             res = self._gis._con.post(url, params)
             data.extend(res["items"])
-            while len(res["items"]) > 0 and res["nextKey"]:
-                params["start"] = res["nextKey"]
+            while len(res["items"]) > 0 and res["nextStart"] != -1:
+                params["start"] = res["nextStart"]
                 res = self._gis._con.post(url, params)
                 data.extend(res["items"])
                 if num > 0 and len(data) >= num:
