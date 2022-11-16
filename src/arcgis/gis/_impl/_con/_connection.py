@@ -13,6 +13,12 @@ except ImportError:
 except:
     HASARCPY = False
 
+try:
+    requests_gssapi = LazyLoader("requests_gssapi", strict=True)
+    HAS_GSSAPI = True
+except:
+    HAS_GSSAPI = False
+
 import sys
 
 if sys.platform == "win32":
@@ -659,6 +665,14 @@ class Connection(object):
                     verify_cert=self._verify_cert,
                     legacy=False,
                     **self._security_kwargs,
+                )
+            elif HAS_GSSAPI:
+                self._session.auth = EsriWindowsAuth(
+                    username=self._username,
+                    password=self._password,
+                    verify_cert=self._verify_cert,
+                    legacy=False,
+                    proxies=self._proxy,
                 )
             else:
                 self._session.auth = EsriKerberosAuth(
