@@ -86,9 +86,7 @@ def _from_geometry(data: list) -> "GeoArray":
         elif _isna(geom):
             out.append(None)
         else:
-            raise TypeError(
-                "Input must be valid geometry objects: {0}".format(geom)
-            )
+            raise TypeError("Input must be valid geometry objects: {0}".format(geom))
 
     aout = np.empty(n, dtype=object)
     aout[:] = out
@@ -126,10 +124,7 @@ class GeoDaskSpatialAccessor:
             return row_pieces[0]
         else:
             fs = row_pieces[0]
-            [
-                fs["features"].extend(pieces["features"])
-                for pieces in row_pieces[1:]
-            ]
+            [fs["features"].extend(pieces["features"]) for pieces in row_pieces[1:]]
             return fs
 
     # ----------------------------------------------------------------------
@@ -290,18 +285,14 @@ class GeoDaskSpatialAccessor:
             try:
                 cols = [c.lower() for c in self._data.columns]
                 if any(self._data.dtypes == "geometry"):
-                    name = self._data.dtypes[
-                        self._data.dtypes == "geometry"
-                    ].index[0]
+                    name = self._data.dtypes[self._data.dtypes == "geometry"].index[0]
                     self._name = name
                     return name
                 elif "shape" in cols:
                     idx = cols.index("shape")
                     self._name = self._data.columns[idx]
             except:
-                raise Exception(
-                    "Spatial column not defined, please use `set_geometry`"
-                )
+                raise Exception("Spatial column not defined, please use `set_geometry`")
         return self._name
 
     # ----------------------------------------------------------------------
@@ -494,9 +485,7 @@ class GeoDaskSpatialAccessor:
 
         """
         results = self._data.map_partitions(
-            lambda part: self._fn_method(
-                part.spatial, "select", **{"other": other}
-            )
+            lambda part: self._fn_method(part.spatial, "select", **{"other": other})
         )
         return results
 
@@ -533,10 +522,7 @@ class GeoDaskSpatialAccessor:
         op = str(op).lower()
         if self._data.spatial.geometry_type != sdf.spatial.geometry_type:
             raise ValueError(
-                (
-                    "Spatially enabled DataFrame must "
-                    "be the same geometry type."
-                )
+                ("Spatially enabled DataFrame must " "be the same geometry type.")
             )
 
         if (
@@ -545,18 +531,13 @@ class GeoDaskSpatialAccessor:
             and sdf.spatial.geometry_type != ["polygon"]
         ):
             raise ValueError(
-                (
-                    "symmetric_difference is only supported for "
-                    "polygon geometries."
-                )
+                ("symmetric_difference is only supported for " "polygon geometries.")
             )
 
         def fn(part):
             return overlay_dask(part, sdf, op)
 
-        results = self._data.map_partitions(
-            fn, meta=meta, enforce_metadata=False
-        )
+        results = self._data.map_partitions(fn, meta=meta, enforce_metadata=False)
         return results
 
     # ----------------------------------------------------------------------
@@ -845,9 +826,9 @@ class GeoDaskSpatialAccessor:
     def sr(self):
         """returns the spatial references of the dataframe"""
         b = self._data.index.partitions[0]
-        res = self._data.loc[
-            b.to_series().compute().nlargest(5).tolist(), [self.name]
-        ][self.name].geom.spatial_reference.unique()
+        res = self._data.loc[b.to_series().compute().nlargest(5).tolist(), [self.name]][
+            self.name
+        ].geom.spatial_reference.unique()
         return res
 
     # ----------------------------------------------------------------------
@@ -966,9 +947,7 @@ class GeoDaskSpatialAccessor:
             res = (
                 self._data.get_partition(i)
                 .compute()
-                .spatial.to_parquet(
-                    fp, index=index, compression=compression, **kwargs
-                )
+                .spatial.to_parquet(fp, index=index, compression=compression, **kwargs)
             )
             results.append(res)
         return results
@@ -1358,9 +1337,7 @@ class GeoDaskSeriesAccessor:
 
         :returns: Series of Bytes
         """
-        return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "WKB")
-        )
+        return self._data.map_partitions(lambda part: self._fn_attr(part.geom, "WKB"))
 
     # ----------------------------------------------------------------------
     @property
@@ -1421,9 +1398,7 @@ class GeoDaskSeriesAccessor:
         """
         pass
 
-    def angle_distance_to(
-        self, second_geometry: "Geometry", method: str = "GEODESIC"
-    ):
+    def angle_distance_to(self, second_geometry: "Geometry", method: str = "GEODESIC"):
         """
         Returns a tuple of angle and distance to another point using a
         measurement type.
@@ -1477,9 +1452,7 @@ class GeoDaskSeriesAccessor:
         :returns: arcgis.geometry.Polygon
         """
         return self._data.map_partitions(
-            lambda part: self._fn_method(
-                part.geom, "buffer", **{"distance": distance}
-            )
+            lambda part: self._fn_method(part.geom, "buffer", **{"distance": distance})
         )
 
     # ----------------------------------------------------------------------
@@ -1498,9 +1471,7 @@ class GeoDaskSeriesAccessor:
 
         """
         return self._data.map_partitions(
-            lambda part: self._fn_method(
-                part.geom, "clip", **{"envelope": envelope}
-            )
+            lambda part: self._fn_method(part.geom, "clip", **{"envelope": envelope})
         )
 
     # ----------------------------------------------------------------------
@@ -1577,9 +1548,7 @@ class GeoDaskSeriesAccessor:
 
         """
         return self._data.map_partitions(
-            lambda part: self._fn_method(
-                part.geom, "cut", **{"cutter": cutter}
-            )
+            lambda part: self._fn_method(part.geom, "cut", **{"cutter": cutter})
         )
 
     # ----------------------------------------------------------------------
@@ -1811,9 +1780,7 @@ class GeoDaskSeriesAccessor:
 
         """
         return self._data.map_partitions(
-            lambda part: self._fn_method(
-                part.geom, "get_part", **{"index": index}
-            )
+            lambda part: self._fn_method(part.geom, "get_part", **{"index": index})
         )
 
     # ----------------------------------------------------------------------
@@ -1854,9 +1821,7 @@ class GeoDaskSeriesAccessor:
         )
 
     # ----------------------------------------------------------------------
-    def measure_on_line(
-        self, second_geometry: "Geometry", as_percentage: bool = False
-    ):
+    def measure_on_line(self, second_geometry: "Geometry", as_percentage: bool = False):
         """
         Returns a measure from the start point of this line to the in_point.
 
@@ -1940,9 +1905,7 @@ class GeoDaskSeriesAccessor:
         )
 
     # ----------------------------------------------------------------------
-    def position_along_line(
-        self, value: float, use_percentage: bool = False
-    ):
+    def position_along_line(self, value: float, use_percentage: bool = False):
         """
         Returns a point on a line at a specified distance from the beginning
         of the line.
