@@ -37,7 +37,6 @@ for key, val in all_required_dlls.items():
     subprocess.call(command, shell=True )
 
 import arcgis
-from arcgis.learn.models._rand_lanet_utils import randlanet_input
 
 from fastai.vision.transform import rotate, brightness, contrast
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"

@@ -463,7 +463,6 @@ def commonTestCases(
 ):
     global success_flag
     success_flag = False
-    from arcgis.learn.models._rand_lanet_utils import randlanet_input
     from arcgis.learn import prepare_data
     if model_test == "sequencetosequence_test":
         data = prepare_textdata(**preparedata)
