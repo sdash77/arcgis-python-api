@@ -1,4 +1,4 @@
-from .._layer import ImageryLayer, Raster, RasterCollection
+from .._layer import ImageryLayer, Raster, RasterCollection, _ArcpyRasterCollection
 from arcgis.gis import Item
 import numbers
 from arcgis.features.layer import FeatureLayer
@@ -43,9 +43,19 @@ def _raster_input(raster, raster2=None):
                 "RasterCollection object cannot be specified as input to non aggregating functions"
             )
         if isinstance(raster, RasterCollection):
-            raster = raster._ras_coll_engine_obj._rasters_list
-        if isinstance(raster2, RasterCollection):
-            raster2 = raster2._ras_coll_engine_obj._rasters_list
+            if raster._ras_coll_engine != _ArcpyRasterCollection:
+                raster = raster._ras_coll_engine_obj._rasters_list
+            else:
+                return raster, raster, raster
+
+        if (
+            isinstance(raster2, RasterCollection)
+        ) and raster._ras_coll_engine != _ArcpyRasterCollection:
+            if raster2._ras_coll_engine != _ArcpyRasterCollection:
+                raster2 = raster2._ras_coll_engine_obj._rasters_list
+            else:
+                raster2 = raster2._ras_coll_engine_obj
+                return raster, raster, raster, raster
 
     if isinstance(raster, Raster):
         if hasattr(raster, "_engine_obj"):
