@@ -13966,7 +13966,7 @@ class RasterCollection:
 
         .. code-block:: python
 
-            # Usage Example 1: This example groups the raster collection into yearly data and create a new raster collection using data from 1990.
+            # Usage Example 1: This example groups the raster collection into yearly data and creates a new raster collection using data from 1990.
 
             group_by_year = rc.group_by(field_name="Year", context=None)
             rc_1990 = group_by_year[1990]
