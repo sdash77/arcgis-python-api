@@ -4,9 +4,9 @@
 # -------------------------------------------------------------------------------
 
 # Code to import test package for relative imports when running locally
-# import sys
-# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
-# sys.path.insert(1, r"C:\ipython_workfolder\geosaurus\src")
+import sys
+sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
+sys.path.insert(1, r"C:\ipython_workfolder\geosaurus\src")
 
 import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
@@ -34,7 +34,7 @@ else:
 # Import the module after Precondition checks pass
 try:
     import arcgis
-    from arcgis.gis import GIS, Item
+    from arcgis.gis import GIS
 except ImportError:
     print("API import error. Quitting test")
     raise (exit())
@@ -156,9 +156,9 @@ class Test_ContentManager_portal_builtin(unittest.TestCase):
                 # validate return type
                 self.assertIsInstance(
                     publish_output,
-                    Item,
+                    arcgis.features.FeatureCollection,
                     "import_data does not return "
-                    "an Item upon success. Instead it returns: "
+                    "a Feature Collection upon success. Instead it returns: "
                     + str(type(publish_output)),
                 )
 
@@ -358,9 +358,9 @@ class Test_ContentManager_ago_builtin(unittest.TestCase):
                 # validate return type
                 self.assertIsInstance(
                     publish_output,
-                    Item,
+                    arcgis.features.FeatureCollection,
                     "import_data does not return "
-                    "an Item upon success. Instead it returns: "
+                    "a Feature Collection upon success. Instead it returns: "
                     + str(type(publish_output)),
                 )
 
@@ -418,9 +418,9 @@ class Test_ContentManager_ago_builtin(unittest.TestCase):
                 # validate return type
                 self.assertIsInstance(
                     publish_output,
-                    Item,
+                    arcgis.features.FeatureCollection,
                     "import_data does not return "
-                    "an Item upon success. Instead it returns: "
+                    "a Feature Collection upon success. Instead it returns: "
                     + str(type(publish_output)),
                 )
 
