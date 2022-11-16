@@ -270,10 +270,13 @@ class Site(OrderedDict):
         _content_group_id = self.content_group_id
         _content_group = self._gis.groups.get(_content_group_id)
         # Disable delete protection on groups and site
-        _content_group.protected = False
-        self.item.protect(enable=False)
-        # Delete groups, site
-        _content_group.delete()
+        try:
+            _content_group.protected = False
+            self.item.protect(enable=False)
+            # Delete groups, site
+            _content_group.delete()
+        except:
+            pass
         if not self._gis._portal.is_arcgisonline:
             return self.item.delete()
         else:
@@ -290,8 +293,8 @@ class Site(OrderedDict):
                     "Referer": self._gis._con._referer,
                 }
                 path = "https://hub.arcgis.com/utilities/domains?siteId=" + self.itemid
-                _site_domain = requests.get(path, headers=_HEADERS)
-                _siteId = _site_domain.json()[0]["id"]
+                _site_domain = self._gis._con.get(path=path)
+                _siteId = _site_domain[0]["id"]
                 # Delete domain entry
                 _HEADERS = {
                     "Content-Type": "application/json",
@@ -299,12 +302,14 @@ class Site(OrderedDict):
                     "Referer": self._gis._con._referer,
                 }
                 path = "https://hub.arcgis.com/utilities/domains/" + _siteId
-                _delete_domain = requests.delete(path, headers=_HEADERS)
-                if _delete_domain.status_code == 200:
-                    # Delete site item
-                    return self.item.delete()
-                else:
-                    return _delete_domain.content
+                response = self._gis._con.delete(path=path, token_header={"X-Esri-Authorization": gis_basic._con.token, "Referer": gis_basic._con._referer})
+                print(response)
+                #_delete_domain = requests.delete(url=path, headers=_HEADERS)
+                # if _delete_domain.status_code == 200:
+                #     # Delete site item
+                #     return self.item.delete()
+                # else:
+                #     return _delete_domain.content
 
     def reassign_to(self, target_owner: str):
         """
@@ -482,8 +487,8 @@ class Site(OrderedDict):
                     'Referer': self._gis._con._referer
                 }
                 path = 'https://hub.arcgis.com/utilities/domains?siteId='+self.itemid
-                _site_domain = requests.get(path, headers = _HEADERS)
-                _siteId = _site_domain.json()[0]['id']
+                _site_domain = self._gis._con.get(path)
+                _siteId = _site_domain[0]['id']
                 client_key = _site_domain.json()[0]['clientKey']
                 #Delete old domain entry
                 _HEADERS = {
@@ -520,7 +525,8 @@ class Site(OrderedDict):
                         hostname = subdomain + '-' + self._gis.properties['urlKey'] + '.hub.arcgis.com'
                         domain = self._gis.url[:8] + hostname
                         #update initiative item 
-                        self.initiative.item.update(item_properties={'url':domain})
+                        if self._gis.hub._hub_enabled:
+                            self.initiative.item.update(item_properties={'url':domain})
                         #update site item and data
                         data = self.definition
                         data['values']['defaultHostname'] = hostname
@@ -681,7 +687,7 @@ class SiteManager(object):
 
             # Create domain entry for new site
             _HEADERS = {
-                "Content-Type": "application/json",
+                #"Content-Type": "application/json",
                 "Authorization": self._gis._con.token,
                 "Referer": self._gis._con._referer,
             }
@@ -699,7 +705,7 @@ class SiteManager(object):
                 "sslOnly": True,
             }
             path = "https://hub.arcgis.com/utilities/domains"
-            _new_domain = requests.post(path, headers=_HEADERS, data=json.dumps(_body))
+            _new_domain = self._gis._con.post(path, params={'data':json.dumps(_body)}, add_headers=_HEADERS)
             if _new_domain.status_code == 200:
                 _siteId = _new_domain.json()["id"]
             else:
@@ -822,8 +828,8 @@ class SiteManager(object):
             #Domain manipulation
             domain = self._gis.url[:8] + subdomain + '-' + self._gis.properties['urlKey'] + '.hub.arcgis.com'
             _request_url = 'https://hub.arcgis.com/utilities/domains/'+domain[8:]
-            _response = requests.get(_request_url)
-        
+            _response = self._gis._con.get(path=_request_url)
+            print(_response)
             #Check if domain doesn't exist
             if _response.status_code==404:
                 pass
