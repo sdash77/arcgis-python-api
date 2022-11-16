@@ -245,7 +245,7 @@ class TestWorkflowManager(unittest.TestCase):
             ],
         )
 
-    def create_job_robust(self):
+    def create_job_robust(self, location=None):
         uniqueness = re.sub("[^0-9a-z]+", "_", str(datetime.datetime.now()))
 
         template_name = "Testing Template  " + uniqueness
@@ -261,6 +261,14 @@ class TestWorkflowManager(unittest.TestCase):
             if x.job_template_name == template_name:
                 job_template = x
 
+        if location is None:
+            location = {
+                "geometryType": "Polygon",
+                "geometry": '{"rings":[[[-6848757.734349992,3330625.6782390587],[-2256822.369376309,'
+                "6774572.424655061],[-2935181.886149995,1973920.9766344912],[-6848757.734349992,"
+                '3330625.6782390587]]],"spatialReference":{"latestWkid":3857,"wkid":102100}}',
+            }
+
         return self.connection.workflow_manager.jobs.create(
             template=job_template.job_template_id,
             count=1,
@@ -274,10 +282,7 @@ class TestWorkflowManager(unittest.TestCase):
             complete=42,
             notes="testing notes",
             parent="",
-            location={
-                "geometryType": "Polygon",
-                "geometry": '{"rings":[[[-6848757.734349992,3330625.6782390587],[-2256822.369376309,6774572.424655061],[-2935181.886149995,1973920.9766344912],[-6848757.734349992,3330625.6782390587]]],"spatialReference":{"latestWkid":3857,"wkid":102100}}',
-            },
+            location=location,
             extended_properties=[
                 {"identifier": table_name + ".prop1", "value": "newly_created123"},
                 {"identifier": table_name + ".prop2", "value": "newly_created456"},
@@ -1401,9 +1406,33 @@ class TestWorkflowManager(unittest.TestCase):
 
         except Exception as testException:
             self.assertTrue(
-                "Route Edits is not active" in str(testException),
+                "Route Edits state is not active" in str(testException),
                 "Incorrect Exception returned",
             )
+
+    def test_create_job_robust_location_is_geometry_class_successfully_returns(self):
+        # Arrange
+        new_location = {
+            "geometryType": "Polygon",
+            "geometry": '{"rings":[[[-6848757.734349992,3330625.6782390587],'
+            "[-2256822.369376309,6774572.424655061],"
+            "[-2935181.886149995,1973920.9766344912],"
+            "[-6848757.734349992,3330625.6782390587]]],"
+            '"spatialReference":{"latestWkid":3857,"wkid":102100}}',
+        }
+        geo = Geometry(new_location["geometry"])
+
+        # Act
+        actual = self.create_job_robust(location=geo)
+        job = self.connection.workflow_manager.job_manager.get(actual[0])
+        location = job.location
+
+        # Assert
+        self.assertIsInstance(actual, list, "Incorrect return type")
+        self.assertIsInstance(actual[0], str, "Incorrect return type")
+        self.assertEqual(
+            location.geometry_type, "Polygon", "Incorrect return value for location"
+        )
 
     # endregion Create Jobs
 
@@ -1707,6 +1736,40 @@ class TestWorkflowManager(unittest.TestCase):
         # Act
         job_location = self.connection.workflow_manager.jobs.get(test_id).location
         actual = self.connection.workflow_manager.jobs.set_job_location(test_id, geo)
+        new_job_location = self.connection.workflow_manager.jobs.get(test_id).location
+
+        # Assert
+        self.assertEqual(
+            default_job_location["geometry_type"],
+            str(job_location.geometry_type),
+            "Incorrect job location returned",
+        )
+        self.assertEqual(
+            new_location["geometryType"],
+            str(new_job_location.geometry_type),
+            "Incorrect job location returned",
+        )
+        self.assertTrue(actual, "Did not return correct attachment")
+
+    def test_set_job_location_polyline_returns_true_with_object_format(self):
+        # Arrange
+        test_id = self.create_job()[0]
+
+        default_job_location = {"geometry": "{}", "geometry_type": "None"}
+        new_location = {
+            "geometryType": "Polyline",
+            "geometry": '{"paths":[[[-5283327.395069996,-1730934.0112043545],'
+            "[1500210.4448956922,1921738.3728870638],"
+            "[-10397060.1336323,4739512.983591061],"
+            "[-10449247.514693994,4739512.983591061]]],"
+            '"spatialReference":{"latestWkid":3857,"wkid":102100}}',
+        }
+
+        # Act
+        job_location = self.connection.workflow_manager.jobs.get(test_id).location
+        actual = self.connection.workflow_manager.jobs.set_job_location(
+            test_id, new_location
+        )
         new_job_location = self.connection.workflow_manager.jobs.get(test_id).location
 
         # Assert

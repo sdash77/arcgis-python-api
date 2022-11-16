@@ -15,8 +15,16 @@ import random
 import string
 import glob
 from sys import platform
-from arcgis.learn import classify_pixels, detect_objects, classify_objects, ImageryModel
 import pandas as pd
+from integration.arcgis_learn.properties import (
+        data,
+        data_folder,
+        setuposenviron,
+        data_folder_ms,
+        data_inference_only
+    )
+from arcgis.learn import classify_pixels, detect_objects, classify_objects, ImageryModel
+from arcgis.learn import prepare_data, prepare_tabulardata, prepare_textdata
 
 import_exception = None
 
@@ -53,14 +61,6 @@ if not HAS_DEPS:
 else:
     from arcgis.gis import GIS
     from arcgis.features import FeatureLayerCollection
-    from integration.arcgis_learn.properties import (
-        data,
-        data_folder,
-        setuposenviron,
-        data_folder_ms,
-        data_inference_only
-    )
-    from arcgis.learn import prepare_data, prepare_tabulardata, prepare_textdata
     from datetime import datetime
 
 accuracy_values = {
@@ -463,6 +463,7 @@ def commonTestCases(
 ):
     global success_flag
     success_flag = False
+    from arcgis.learn import prepare_data
     if model_test == "sequencetosequence_test":
         data = prepare_textdata(**preparedata)
     elif model_test == "timeseriesmodel_test":
@@ -802,7 +803,7 @@ def CommonTestTextModels(model_name, model, data, labels):
         model = model()
         predictions = model.generate_text(data, num_return_sequences=2, max_length=25)
     elif model_name == "fillmask":
-        model = model(backbone="roberta-base")
+        model = model()
         predictions = model.predict_token(data, num_suggestions=2)
         result = predictions[0][0]["score"]
     else:

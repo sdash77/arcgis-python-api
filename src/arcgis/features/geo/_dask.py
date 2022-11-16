@@ -332,7 +332,12 @@ class GeoDaskSpatialAccessor:
             for pt in parts[1:]:
                 main_part["rings"][0].extend(pt["rings"][0])
             df = pd.DataFrame(main_part["rings"][0], columns=["x", "y"])
-        xmin, ymin, xmax, ymax = df.x.min(), df.y.min(), df.x.max(), df.y.max()
+        xmin, ymin, xmax, ymax = (
+            df.x.min(),
+            df.y.min(),
+            df.x.max(),
+            df.y.max(),
+        )
         if isinstance(sr, list) and len(sr) > 0:
             sr = sr[0]
         if xmin == xmax:
@@ -370,7 +375,8 @@ class GeoDaskSpatialAccessor:
         """
 
         df = pd.DataFrame(
-            self._data[self.name].geom.centroid.compute().tolist(), columns=["x", "y"]
+            self._data[self.name].geom.centroid.compute().tolist(),
+            columns=["x", "y"],
         )
         return df.x.mean(), df.y.mean()
 
@@ -536,7 +542,12 @@ class GeoDaskSpatialAccessor:
 
     # ----------------------------------------------------------------------
     def join(
-        self, right_df, how="inner", op="intersects", left_tag="left", right_tag="right"
+        self,
+        right_df,
+        how="inner",
+        op="intersects",
+        left_tag="left",
+        right_tag="right",
     ):
         """
         Joins the current DataFrame to another spatially enabled dataframes based
@@ -855,12 +866,18 @@ class GeoDaskSpatialAccessor:
         :returns: pandas.core.frame.DataFrame
         """
         return from_pandas(
-            data=from_featureclass(filename=location, **kwargs), npartitions=npartitions
+            data=from_featureclass(filename=location, **kwargs),
+            npartitions=npartitions,
         )
 
     # ----------------------------------------------------------------------
     def to_featureclass(
-        self, location, overwrite=True, has_z=None, has_m=None, sanitize_columns=True
+        self,
+        location,
+        overwrite=True,
+        has_z=None,
+        has_m=None,
+        sanitize_columns=True,
     ):
         """
         Exports a dask dataframe to a feature class.
@@ -910,7 +927,11 @@ class GeoDaskSpatialAccessor:
 
     # ----------------------------------------------------------------------
     def to_parquet(
-        self, folder: str, index: bool = None, compression: str = "gzip", **kwargs
+        self,
+        folder: str,
+        index: bool = None,
+        compression: str = "gzip",
+        **kwargs,
     ):
         """
         Exports Each Dask DataFrame partition to a parquet file
@@ -1028,7 +1049,8 @@ class GeoDaskSeriesAccessor:
         :returns: float in a series
         """
         return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "area"), meta=float
+            lambda part: self._fn_attr(part.geom, "area"),
+            meta=pd.Series(dtype=float),
         )
 
     # ----------------------------------------------------------------------
@@ -1040,7 +1062,8 @@ class GeoDaskSeriesAccessor:
         :returns: arcpy.Geometry in a series
         """
         return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "as_arcpy")
+            lambda part: self._fn_attr(part.geom, "as_arcpy"),
+            meta=pd.Series(dtype=object),
         )
 
     # ----------------------------------------------------------------------
@@ -1112,7 +1135,8 @@ class GeoDaskSeriesAccessor:
         :returns: Series of strings
         """
         return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "geometry_type"), meta=str
+            lambda part: self._fn_attr(part.geom, "geometry_type"),
+            meta=pd.Series(dtype=str),
         )
 
     # ----------------------------------------------------------------------
@@ -1136,7 +1160,8 @@ class GeoDaskSeriesAccessor:
         :returns: Series of Boolean
         """
         return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "has_z"), meta=bool
+            lambda part: self._fn_attr(part.geom, "has_z"),
+            meta=pd.Series(dtype=bool),
         )
 
     # ----------------------------------------------------------------------
@@ -1148,7 +1173,8 @@ class GeoDaskSeriesAccessor:
         :returns: Series of Boolean
         """
         return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "has_m"), meta=bool
+            lambda part: self._fn_attr(part.geom, "has_m"),
+            meta=pd.Series(dtype=bool),
         )
 
     # ----------------------------------------------------------------------
@@ -1160,7 +1186,8 @@ class GeoDaskSeriesAccessor:
         :returns: Series of Booleans
         """
         return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "is_empty"), meta=bool
+            lambda part: self._fn_attr(part.geom, "is_empty"),
+            meta=pd.Series(dtype=bool),
         )
 
     # ----------------------------------------------------------------------
@@ -1172,7 +1199,8 @@ class GeoDaskSeriesAccessor:
         :returns: Series of Booleans
         """
         return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "is_multipart"), meta=bool
+            lambda part: self._fn_attr(part.geom, "is_multipart"),
+            meta=pd.Series(dtype=bool),
         )
 
     # ----------------------------------------------------------------------
@@ -1184,7 +1212,8 @@ class GeoDaskSeriesAccessor:
         :returns: Series of Booleans
         """
         return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "is_valid"), meta=bool
+            lambda part: self._fn_attr(part.geom, "is_valid"),
+            meta=pd.Series(dtype=bool),
         )
 
     # ----------------------------------------------------------------------
@@ -1196,7 +1225,8 @@ class GeoDaskSeriesAccessor:
         :returns: Series of strings
         """
         return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "JSON"), meta=str
+            lambda part: self._fn_attr(part.geom, "JSON"),
+            meta=pd.Series(dtype=str),
         )
 
     # ----------------------------------------------------------------------
@@ -1232,7 +1262,8 @@ class GeoDaskSeriesAccessor:
         :returns: Series of float
         """
         return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "length"), meta=float
+            lambda part: self._fn_attr(part.geom, "length"),
+            meta=pd.Series(dtype=float),
         )
 
     # ----------------------------------------------------------------------
@@ -1244,7 +1275,8 @@ class GeoDaskSeriesAccessor:
         :returns: Series of float
         """
         return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "length3D"), meta=float
+            lambda part: self._fn_attr(part.geom, "length3D"),
+            meta=pd.Series(dtype=float),
         )
 
     # ----------------------------------------------------------------------
@@ -1256,7 +1288,8 @@ class GeoDaskSeriesAccessor:
         :returns: Series of Integer
         """
         return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "part_count"), meta=int
+            lambda part: self._fn_attr(part.geom, "part_count"),
+            meta=pd.Series(dtype=int),
         )
 
     # ----------------------------------------------------------------------
@@ -1268,7 +1301,8 @@ class GeoDaskSeriesAccessor:
         :returns: Series of Integer
         """
         return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "point_count"), meta=int
+            lambda part: self._fn_attr(part.geom, "point_count"),
+            meta=pd.Series(dtype=int),
         )
 
     # ----------------------------------------------------------------------
@@ -1314,7 +1348,8 @@ class GeoDaskSeriesAccessor:
         :returns: Series of String
         """
         return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "WKT"), meta=str
+            lambda part: self._fn_attr(part.geom, "WKT"),
+            meta=pd.Series(dtype=str),
         )
 
     ##---------------------------------------------------------------------
@@ -1548,7 +1583,11 @@ class GeoDaskSeriesAccessor:
             lambda part: self._fn_method(
                 part.geom,
                 "densify",
-                **{"method": method, "distance": distance, "deviation": deviation},
+                **{
+                    "method": method,
+                    "distance": distance,
+                    "deviation": deviation,
+                },
             )
         )
 
@@ -1571,7 +1610,9 @@ class GeoDaskSeriesAccessor:
         """
         return self._data.map_partitions(
             lambda part: self._fn_method(
-                part.geom, "difference", **{"second_geometry": second_geometry}
+                part.geom,
+                "difference",
+                **{"second_geometry": second_geometry},
             )
         )
 
@@ -1614,7 +1655,9 @@ class GeoDaskSeriesAccessor:
         """
         return self._data.map_partitions(
             lambda part: self._fn_method(
-                part.geom, "distance_to", **{"second_geometry": second_geometry}
+                part.geom,
+                "distance_to",
+                **{"second_geometry": second_geometry},
             )
         )
 
@@ -1770,7 +1813,10 @@ class GeoDaskSeriesAccessor:
             lambda part: self._fn_method(
                 part.geom,
                 "intersect",
-                **{"second_geometry": second_geometry, "dimension": dimension},
+                **{
+                    "second_geometry": second_geometry,
+                    "dimension": dimension,
+                },
             )
         )
 
@@ -1795,7 +1841,10 @@ class GeoDaskSeriesAccessor:
             lambda part: self._fn_method(
                 part.geom,
                 "measure_on_line",
-                **{"second_geometry": second_geometry, "as_percentage": as_percentage},
+                **{
+                    "second_geometry": second_geometry,
+                    "as_percentage": as_percentage,
+                },
             )
         )
 
@@ -1886,7 +1935,9 @@ class GeoDaskSeriesAccessor:
 
     # ----------------------------------------------------------------------
     def project_as(
-        self, spatial_reference: "SpatialReference", transformation_name: str = None
+        self,
+        spatial_reference: "SpatialReference",
+        transformation_name: str = None,
     ):
         """
         Projects a geometry and optionally applies a geotransformation.
@@ -1948,7 +1999,10 @@ class GeoDaskSeriesAccessor:
 
     # ----------------------------------------------------------------------
     def segment_along_line(
-        self, start_measure: float, end_measure: float, use_percentage: bool = False
+        self,
+        start_measure: float,
+        end_measure: float,
+        use_percentage: bool = False,
     ):
         """
         Returns a Polyline between start and end measures. Similar to
@@ -2001,7 +2055,9 @@ class GeoDaskSeriesAccessor:
         """
         return self._data.map_partitions(
             lambda part: self._fn_method(
-                part.geom, "snap_to_line", **{"second_geometry": second_geometry}
+                part.geom,
+                "snap_to_line",
+                **{"second_geometry": second_geometry},
             )
         )
 

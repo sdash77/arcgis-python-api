@@ -154,6 +154,13 @@ PortalDataStore
     :undoc-members:
     :show-inheritance:
 
+StatusJob
+---------------------------
+.. autoclass:: arcgis.gis._impl._jb.StatusJob
+    :members:
+    :undoc-members:
+    :show-inheritance:
+    
 Dataclasses and Enumerations
 ---------------------------
 

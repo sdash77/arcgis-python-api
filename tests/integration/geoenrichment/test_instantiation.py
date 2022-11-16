@@ -1,10 +1,13 @@
+import sys
+# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
+# sys.path.insert(1, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from typing import Optional
 
 from arcgis.gis import GIS
 from arcgis.geoenrichment import Country
 
-from .configtest import (
+from integration.geoenrichment.configtest import (
     skip_if_no_agol,
     skip_if_no_local,
     does_not_raise,
