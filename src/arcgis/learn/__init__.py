@@ -52,6 +52,7 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
         WNet_cGAN,
         DETReg,
         RandLANet,
+        SQNSeg,
     )
 
     from ._object_tracker import ObjectTracker
