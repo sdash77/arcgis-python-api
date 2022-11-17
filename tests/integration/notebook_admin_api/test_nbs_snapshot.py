@@ -9,7 +9,7 @@ from arcgis.gis.tasks._schedule import TaskManager, Task
 from arcgis.gis.tasks._schedule import Run
 
 try:
-    url = "https://datascienceqa.esri.com/portal"
+    url = "https://datasciencedev.esri.com/portal"
     username = "portaladmin"
     password = "esri.agp"
     gis = GIS(
@@ -92,6 +92,7 @@ notebook_json = {
     "nbformat": 4,
     "nbformat_minor": 2,
 }
+
 ###########################################################################
 @unittest.skipIf(SKIP_TESTS == True, "Cannot connect to Testing Server and/or Portal")
 class TestNBS109SnapShotManger(unittest.TestCase):
@@ -99,19 +100,16 @@ class TestNBS109SnapShotManger(unittest.TestCase):
 
     def test_get_snapshot_manager(self):
         """tests that the snapshot manager is returned."""
-        servers = gis.admin.servers.list()
-        for s in servers:
-            if type(s).__name__ == "NotebookServer":
-                nbs = s
-                snapmgr = nbs.notebooks.snapshots
-                assert snapmgr
-                break
+        for s in gis.notebook_server:
+            nbs = s
+            snapmgr = nbs.notebooks.snapshots
+            assert snapmgr
+            break
 
     def test_mgr_methods(self):
         """tests that the snapshot manager is returned."""
         item = None
         try:
-
             import tempfile
 
             d = tempfile.gettempdir()
@@ -120,13 +118,7 @@ class TestNBS109SnapShotManger(unittest.TestCase):
             writer.write(json.dumps(notebook_json))
             writer.close()
 
-            servers = gis.admin.servers.list()
-            for s in servers:
-                if type(s).__name__ == "NotebookServer":
-                    nbs = s
-                    snapmgr = nbs.notebooks.snapshots
-                    assert snapmgr
-                    break
+            nbs = gis.notebook_server[0]
 
             item = gis.content.add(
                 {
