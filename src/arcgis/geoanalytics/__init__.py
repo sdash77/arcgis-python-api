@@ -35,7 +35,10 @@ from . import (
 def get_datastores(gis: Optional[GIS] = None):
     """
     Returns a helper object to manage geoanalytics datastores in the GIS.
-    If a gis isn't specified, returns datastore manager of arcgis.env.active_gis
+    If a :class:`gis <arcgis.gis.GIS>` isn't specified, returns a datastore
+    manager for the active gis (`arcgis.env.active_gis`).  If the active gis
+    has not been configured with a GeoAnalytics Server, the function returns
+    `None`.
     """
     import arcgis
 

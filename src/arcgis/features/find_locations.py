@@ -47,11 +47,11 @@ def find_existing_locations(
     """
     .. image:: _static/images/find_existing_locations/find_existing_locations.png
 
-    .. |intersect| image:: _static/images/derive_new_locations/intersect.png
-    .. |distance| image:: _static/images/derive_new_locations/distance.png
-    .. |within| image:: _static/images/derive_new_locations/within.png
-    .. |nearest| image:: _static/images/derive_new_locations/nearest.png
-    .. |contains| image:: _static/images/derive_new_locations/contains.png
+    .. |intersect| image:: _static/images/find_existing_locations/existing_intersect.png
+    .. |distance| image:: _static/images/find_existing_locations/existing_distance.png
+    .. |within| image:: _static/images/find_existing_locations/existing_within.png
+    .. |nearest| image:: _static/images/find_existing_locations/existing_nearest.png
+    .. |contains| image:: _static/images/find_existing_locations/existing_contains.png
 
     The ``find_existing_locations`` method selects features in the input layer that meet a query you specify.
     A query is made up of one or more expressions. There are two types of expressions: attribute and spatial.
@@ -336,11 +336,11 @@ def derive_new_locations(
     """
     .. image:: _static/images/derive_new_locations/derive_new_locations.png
 
-    .. |intersect| image:: _static/images/derive_new_locations/intersect.png
-    .. |distance| image:: _static/images/derive_new_locations/distance.png
-    .. |within| image:: _static/images/derive_new_locations/within.png
-    .. |nearest| image:: _static/images/derive_new_locations/nearest.png
-    .. |contains| image:: _static/images/derive_new_locations/contains.png
+    .. |intersect| image:: _static/images/derive_new_locations/derive_intersect.png
+    .. |distance| image:: _static/images/derive_new_locations/derive_distance.png
+    .. |within| image:: _static/images/derive_new_locations/derive_within.png
+    .. |nearest| image:: _static/images/derive_new_locations/derive_nearest.png
+    .. |contains| image:: _static/images/derive_new_locations/derive_contains.png
 
     The ``derive_new_locations`` method derives new features from the input layers that meet a query you specify. A query is
     made up of one or more expressions. There are two types of expressions: attribute and spatial. An example of an
@@ -964,7 +964,7 @@ def choose_best_facilities(
     =====================================    =========================================================
     **Argument**                             **Description**
     -------------------------------------    ---------------------------------------------------------
-    goal                                     Required string. Specify the goal that must be satisfied when allocating
+    goal                                     Optional string. Specify the goal that must be satisfied when allocating
                                              demand locations to facilities.
 
                                              Choice list: ['Allocate', 'MinimizeImpedance', 'MaximizeCoverage', 'MaximizeCapacitatedCoverage', 'PercentCoverage']
@@ -1049,8 +1049,8 @@ def choose_best_facilities(
                                              To use live traffic when and where it is available,
                                              choose a time and date and convert to datetime.
 
-                                             Esri saves live traffic data for 12 hours and references
-                                             predictive data extending 12 hours into the future. If the
+                                             Esri saves live traffic data for 4 hours and references
+                                             predictive data extending 4 hours into the future. If the
                                              time and date you specify for this parameter is outside the
                                              24-hour time window, or the travel time in the analysis
                                              continues past the predictive data window, the task falls

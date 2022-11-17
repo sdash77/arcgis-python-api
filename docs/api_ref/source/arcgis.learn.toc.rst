@@ -245,6 +245,13 @@ RandLANet
     :inherited-members:
     :undoc-members:
 
+SQNSeg
+^^^^^^^^
+.. autoclass:: arcgis.learn.SQNSeg
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 Object Tracking Models
 ------------------------
 SiamMask

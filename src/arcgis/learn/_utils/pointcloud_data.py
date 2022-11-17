@@ -48,16 +48,14 @@ try:
         SubsetRandomSampler,
         SequentialSampler,
     )
-    import torch.nn.functional as F
     import torch
     import numpy as np
     from fastai.data_block import DataBunch
-    import matplotlib.pyplot as plt
-    from mpl_toolkits.mplot3d import Axes3D
     import arcgis
     from fastai.data_block import ItemList
     from fastprogress.fastprogress import master_bar, progress_bar
     from scipy.spatial.transform import Rotation as R
+    from ..models._rand_lanet_utils import batch_preprocess_dict
 except ImportError:
     # To avoid breaking builds.
     class Dataset:
@@ -2106,23 +2104,12 @@ def get_predictions(
     np.random.shuffle(indices_shuffle)
     indices_batch_shuffle = np.reshape(indices_shuffle, (batch_size, sample_num, 1))
 
-    model_input = np.concatenate(
+    model_input = torch.cat(
         [points_batch[i, s[:, 0]][None] for i, s in enumerate(indices_batch_shuffle)],
-        axis=0,
+        dim=0,
     )
 
-    ## Putting model in evaluation mode and inferencing.
-    pointcnn_model.learn.model.eval()
-    with torch.no_grad():
-        probs = (
-            pointcnn_model.learn.model(
-                torch.tensor(model_input).to(pointcnn_model._device).float()
-            )
-            .softmax(dim=-1)
-            .cpu()
-        )
-
-    seg_probs = probs.numpy()
+    seg_probs = model_predictions(pointcnn_model, model_input, point_num)
 
     probs_2d = np.reshape(seg_probs, (sample_num * batch_size, -1))  ## Complete probs
     predictions = [(-1, 0.0, None)] * point_num  ## predictions
@@ -2728,7 +2715,7 @@ def compute_precision_recall(self):
     all_y = []
     all_pred = []
     for x_in, y_in in iter(valid_dl):
-        if not getattr(self, "_is_RandLANet", False):
+        if not getattr(self, "_is_ModelInputDict", False):
             x_in, point_nums = x_in  ## (batch, total_points, num_features), (batch,)
             batch, _, num_features = x_in.shape
             indices = torch.tensor(
@@ -2975,11 +2962,37 @@ def convert_extra_features(attributes, features_to_keep):
     return attributes_dict, features_to_keep
 
 
-def model_predictions(model, data):
+def model_predictions(model, data, point_nums):
 
     model.learn.model.eval()
     with torch.no_grad():
-        probs = model.learn.model(data.to(model._device).float()).softmax(dim=-1).cpu()
+        if getattr(model, "_is_ModelInputDict", False):
+            if isinstance(point_nums, int):
+                point_nums = [point_nums]
+            for batch_idx, p_num in enumerate(point_nums):
+                if data.shape[1] != p_num:
+                    # shifted xyz only not other fetures for knn
+                    min_point = data[batch_idx, :p_num, :3].min(dim=0)[0][None]
+                    max_point = data[batch_idx, :p_num, :3].max(dim=0)[0][None]
+                    diameter = torch.cdist(min_point, max_point, p=2).max()
+                    shift_point = 100 * diameter * max_point
+                    data[batch_idx, p_num:, :3] += (
+                        torch.rand(data.shape[1] - p_num, 3) + shift_point
+                    )
+            data = batch_preprocess_dict(
+                data, model.encoder_params, model.__str__() == "<SQNSeg>"
+            )
+            for key in data:
+                if type(data[key]) is list:
+                    for i in range(len(data[key])):
+                        data[key][i] = data[key][i].to(model._device)
+                else:
+                    data[key] = data[key].to(model._device)
+            probs = model.learn.model(data).softmax(dim=-1).cpu()
+        else:
+            probs = (
+                model.learn.model(data.to(model._device).float()).softmax(dim=-1).cpu()
+            )
 
     return probs.numpy()
 
@@ -2987,7 +3000,7 @@ def model_predictions(model, data):
 def get_batch_predictions(model, data, point_nums, point_batch_size):
 
     if model._data.max_point == model.sample_point_num:
-        return model_predictions(model, data)
+        return model_predictions(model, data, point_nums)
 
     # handle case if max point in the block is greter than model.sample_point_num
     indices = []
@@ -3012,7 +3025,7 @@ def get_batch_predictions(model, data, point_nums, point_batch_size):
         model_input.append(input_point)
 
     model_input = torch.cat(model_input, dim=0)
-    seg_probs = model_predictions(model, model_input)
+    seg_probs = model_predictions(model, model_input, point_nums)
 
     # for each point of batch
     model_output = []

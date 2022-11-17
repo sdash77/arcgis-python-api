@@ -52,7 +52,7 @@ def aggregate_points(
     bin_size_unit: Optional[str] = None,
 ):
     """
-    .. image:: _static/images/agg_points_standard/aggregate_points.png
+    .. image:: _static/images/agg_points_standard/aggregate_points_standard.png
 
     The Aggregate Points task works with a layer of point features and a layer of polygon features. It first figures out which points fall within each polygon's area.
     After determining this point-in-polygon spatial relationship, statistics about all points in the polygon are calculated and assigned to the area. The most basic statistic is the count of the number of points within the polygon, but you can get other statistics as well.
@@ -328,7 +328,7 @@ def summarize_nearby(
 
                                 To use live traffic when and where it is available, choose a time and date and convert to datetime.
 
-                                Esri saves live traffic data for 12 hours and references predictive data extending 12 hours into the future. If the time and date you
+                                Esri saves live traffic data for 4 hours and references predictive data extending 4 hours into the future. If the time and date you
                                 specify for this parameter is outside the 24-hour time window, or the travel time in the analysis continues past the predictive data window,
                                 the task falls back to typical traffic speeds.
 
@@ -467,10 +467,7 @@ def summarize_nearby(
         "shape_units": shape_units,
         "summary_fields": summary_fields,
         "group_by_field": group_by_field,
-        "minority_majority": minority_majority,
         "percent_shape": percent_shape,
-        "summary_fields": summary_fields,
-        "group_by_field": group_by_field,
         "minority_majority": minority_majority,
         "output_name": output_name,
         "context": context,

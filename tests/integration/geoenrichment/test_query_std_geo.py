@@ -1,18 +1,16 @@
+import sys
+# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
+# sys.path.insert(1, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 
 from arcgis.gis import GIS
 from arcgis.geoenrichment import Country
 from arcgis.geoenrichment.enrichment import NamedArea
-import pandas as pd
 
-from .configtest import (
+from integration.geoenrichment.configtest import (
     does_not_raise,
-    skip_if_no_local,
     skip_if_no_agol,
-    gis_pro,
     gis_agol,
-    usa_local,
-    usa_agol
 )
 
 

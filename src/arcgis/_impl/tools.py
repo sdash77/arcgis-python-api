@@ -1171,8 +1171,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                                 To use live traffic when and where it is available,
                                                 choose a time and date and convert to datetime.
 
-                                                Esri saves live traffic data for 12 hours and references
-                                                predictive data extending 12 hours into the future. If the
+                                                Esri saves live traffic data for 4 hours and references
+                                                predictive data extending 4 hours into the future. If the
                                                 time and date you specify for this parameter is outside the
                                                 24-hour time window, or the travel time in the analysis
                                                 continues past the predictive data window, the task falls
@@ -1547,7 +1547,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                                 To use live traffic when and where it is available, choose a time and date and convert to datetime.
 
-                                                Esri saves live traffic data for 12 hours and references predictive data extending 12 hours into the future. If the time and date you
+                                                Esri saves live traffic data for 4 hours and references predictive data extending 4 hours into the future. If the time and date you
                                                 specify for this parameter is outside the 24-hour time window, or the travel time in the analysis continues past the predictive data window, the task falls back to typical traffic speeds.
 
                                                 # Examples:
@@ -1871,7 +1871,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                     To use live traffic when and where it is available, choose a time and date and convert to datetime.
 
-                                    Esri saves live traffic data for 12 hours and references predictive data extending 12 hours into the future. If the time and date you
+                                    Esri saves live traffic data for 4 hours and references predictive data extending 4 hours into the future. If the time and date you
                                     specify for this parameter is outside the 24-hour time window, or the travel time in the analysis continues past the predictive data window, the task falls back to typical traffic speeds.
 
                                     Examples:
@@ -4303,7 +4303,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                     To use live traffic when and where it is available, choose a time and date and convert to datetime.
 
-                                    Esri saves live traffic data for 12 hours and references predictive data extending 12 hours into the future. If the time and date you specify for this parameter is outside the 24-hour time window, or the travel time in the analysis continues past the predictive data window, the task falls back to typical traffic speeds.
+                                    Esri saves live traffic data for 4 hours and references predictive data extending 4 hours into the future. If the time and date you specify for this parameter is outside the 24-hour time window, or the travel time in the analysis continues past the predictive data window, the task falls back to typical traffic speeds.
 
                                     Examples:
                                     from datetime import datetime
@@ -6692,7 +6692,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                     To use live traffic when and where it is available, choose a time and date and convert to datetime.
 
-                                    Esri saves live traffic data for 12 hours and references predictive data extending 12 hours into the future. If the time and date you
+                                    Esri saves live traffic data for 4 hours and references predictive data extending 4 hours into the future. If the time and date you
                                     specify for this parameter is outside the 24-hour time window, or the travel time in the analysis continues past the predictive data window,
                                     the task falls back to typical traffic speeds.
 
@@ -8904,7 +8904,10 @@ class _RasterAnalysisTools(BaseAnalytics):
 
                                 token = _generate_layer_token(input_layer, url)
                                 if token is not None:
-                                    url = input_param["url"] + "?token=" + token
+                                    if input_layer.type == "Feature Service":
+                                        input_param.update({"serviceToken": token})
+                                    else:
+                                        url = input_param["url"] + "?token=" + token
                                 input_param.update({"url": url})
                     except:
                         pass
@@ -17239,6 +17242,94 @@ class _RasterAnalysisTools(BaseAnalytics):
         if future:
             return RAJob(gpjob)
 
+        return RAJob(gpjob).result()
+
+    def mosaic_image(
+        self,
+        input_rasters,
+        target_raster,
+        mosaic_operator="LAST",
+        mosaic_colormap_mode="FIRST",
+        no_data_value=None,
+        context=None,
+        gis=None,
+        future=False,
+    ):
+
+        """
+        input_rasters: inputRasters (str). Required parameter.
+
+        target_raster: targetRaster (str). Required parameter.
+
+        mosaic_operator: mosaicOperator (str). Optional parameter.
+        Choice list:FIRST,LAST,BLEND,MEAN,MININUM,MAXIMUM,SUM
+
+        mosaic_colormap_mode: mosaicColormapMode (str). Optional parameter.
+        Choice list:FIRST,LAST,MATCH,REJECT
+
+        no_data_value: noDataValue (float). Optional parameter.
+
+        context: context (str). Optional parameter.
+
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+        """
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param["context"]
+
+        input_rasters = self._set_multiple_raster_inputs(input_rasters)
+
+        target_raster = self._layer_input(input_layer=target_raster)
+
+        mosaic_operator_allowed_values = self._tbx.choice_list.mosaic_image[
+            "mosaic_operator"
+        ]
+        mosaic_operator = (
+            mosaic_operator.upper()
+            if isinstance(mosaic_operator, str)
+            else mosaic_operator
+        )
+        if mosaic_operator not in mosaic_operator_allowed_values:
+            raise RuntimeError(
+                f"mosaic_operator can only be one of the following: {mosaic_operator_allowed_values}"
+            )
+
+        mosaic_colormap_mode_allowed_values = self._tbx.choice_list.mosaic_image[
+            "mosaic_colormap_mode"
+        ]
+        mosaic_colormap_mode = (
+            mosaic_colormap_mode.upper()
+            if isinstance(mosaic_colormap_mode, str)
+            else mosaic_colormap_mode
+        )
+        if mosaic_colormap_mode not in mosaic_colormap_mode_allowed_values:
+            raise RuntimeError(
+                f"mosaic_colormap_mode can only be one of the following: {mosaic_colormap_mode_allowed_values}"
+            )
+
+        gpjob = self._tbx.mosaic_image(
+            input_rasters=input_rasters,
+            target_raster=target_raster,
+            mosaic_operator=mosaic_operator,
+            mosaic_colormap_mode=mosaic_colormap_mode,
+            no_data_value=no_data_value,
+            context=context,
+            gis=gis,
+            future=True,
+        )
+
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return RAJob(gpjob)
         return RAJob(gpjob).result()
 
 

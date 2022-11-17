@@ -363,7 +363,7 @@ class Site(OrderedDict):
                 core_team.reassign_to(target_owner)
             else:
                 # create core team necessary for the initiative
-                _collab_group_title = title + " Core Team"
+                _collab_group_title = _collab_group_title + " Core Team"
                 _collab_group_dict = {
                     "title": _collab_group_title,
                     "tags": [
