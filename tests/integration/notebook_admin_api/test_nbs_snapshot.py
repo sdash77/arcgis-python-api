@@ -1,12 +1,7 @@
-import sys
-
 import unittest
 import os, json, uuid
-import arcgis
 from arcgis.gis import GIS
-from arcgis.gis.nb import NotebookServer, NotebookManager
-from arcgis.gis.tasks._schedule import TaskManager, Task
-from arcgis.gis.tasks._schedule import Run
+from arcgis.gis.nb import NotebookServer
 
 try:
     url = "https://datasciencedev.esri.com/portal"
@@ -100,23 +95,22 @@ class TestNBS109SnapShotManger(unittest.TestCase):
 
     def test_get_snapshot_manager(self):
         """tests that the snapshot manager is returned."""
-        for s in gis.notebook_server:
-            nbs = s
-            snapmgr = nbs.notebooks.snapshots
-            assert snapmgr
-            break
+        assert len(gis.notebook_server) >= 0
+        nbs = gis.notebook_server[0]
+        assert isinstance(nbs, NotebookServer)
+        snapmgr = nbs.notebooks.snapshots
+        assert snapmgr
 
     def test_mgr_methods(self):
-        """tests that the snapshot manager is returned."""
+        """tests that the snapshot manager creates and deletes snapshot."""
         item = None
         try:
             import tempfile
 
             d = tempfile.gettempdir()
             fp = os.path.join(d, f"test_nbs{uuid.uuid4().hex[:4]}.ipynb")
-            writer = open(fp, "w")
-            writer.write(json.dumps(notebook_json))
-            writer.close()
+            with open(fp, "w") as writer:
+                writer.write(json.dumps(notebook_json))
 
             nbs = gis.notebook_server[0]
 
