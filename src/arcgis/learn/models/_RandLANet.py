@@ -5,7 +5,7 @@ import_exception = None
 try:
     from ._pointcnnseg import PointCNN
     from fastai.basic_train import Learner
-    from ._rand_lanet_utils import RandLANetSeg, randlanet_data
+    from ._rand_lanet_utils import RandLANetSeg, prepare_data_dict
     from ._arcgis_model import _EmptyData
     from ._pointcnn_utils import (
         CrossEntropyPC,
@@ -62,9 +62,7 @@ class RandLANet(PointCNN):
                                 - 'out_channels': Number of channels produced by each layer,
                                 - 'sub_sampling_ratio': Sampling ratio of random sampling at each layer,
                                 - 'k_n': Number of K-nearest neighbor for a point.
-    ---------------------   -------------------------------------------
-    sample_point_num        Optional integer. The number of points that the model
-                            will actually process.
+
     =====================   ===========================================
 
     :return: `RandLANet` Object
@@ -81,7 +79,7 @@ class RandLANet(PointCNN):
             )
 
         self._backbone = None
-        self.sample_point_num = kwargs.get("sample_point_num", data.max_point)
+        self.sample_point_num = data.max_point
 
         self.encoder_params = kwargs.get("encoder_params", None)
         if self.encoder_params is None:
@@ -93,7 +91,7 @@ class RandLANet(PointCNN):
         self.encoder_params["num_classes"] = data.c
         self.encoder_params["num_layers"] = len(self.encoder_params["out_channels"])
         if not isinstance(data, _EmptyData):
-            data = randlanet_data(data, self.sample_point_num, self.encoder_params)
+            data = prepare_data_dict(data, self.sample_point_num, self.encoder_params)
         self.learn = Learner(
             data,
             RandLANetSeg(self.encoder_params, data.extra_dim + 3),
@@ -113,7 +111,7 @@ class RandLANet(PointCNN):
             self.load(pretrained_path)
 
     @property
-    def _is_RandLANet(self):
+    def _is_ModelInputDict(self):
         return True
 
     @classmethod

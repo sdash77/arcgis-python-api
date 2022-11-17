@@ -465,6 +465,11 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
     """
     Exports a geo enabled dataframe to a table.
 
+    .. note::
+        Null integer values will be changed to 0 when using shapely instead
+        of ArcPy due to shapely conventions.
+        With ArcPy null integer values will remain null.
+
     ===========================     ====================================================================
     **Argument**                    **Description**
     ---------------------------     --------------------------------------------------------------------
@@ -486,7 +491,7 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
     df = geo._data.copy()
     df[df.select_dtypes(np.number).columns.tolist()] = df[
         df.select_dtypes(np.number).columns.tolist()
-    ].replace(pd.NA, 0)
+    ].replace({pd.NA: None})
     df[df.select_dtypes(pd.StringDtype()).columns.tolist()] = df[
         df.select_dtypes(pd.StringDtype()).columns.tolist()
     ].replace(pd.NA, "")
@@ -870,6 +875,11 @@ def to_featureclass(
     """
     Exports the DataFrame to a Feature class.
 
+    .. note::
+        Null integer values will be changed to 0 when using shapely instead
+        of ArcPy due to shapely conventions.
+        With ArcPy null integer values will remain null.
+
     ===============     ====================================================
     **Argument**        **Description**
     ---------------     ----------------------------------------------------
@@ -931,7 +941,7 @@ def to_featureclass(
             col = str(col)
     df[df.select_dtypes(np.number).columns.tolist()] = df[
         df.select_dtypes(np.number).columns.tolist()
-    ].replace(pd.NA, 0)
+    ].replace({pd.NA: None})
     df[df.select_dtypes(pd.StringDtype()).columns.tolist()] = df[
         df.select_dtypes(pd.StringDtype()).columns.tolist()
     ].replace(pd.NA, "")
@@ -1144,85 +1154,90 @@ def _pyshp_to_shapefile(df, out_path, out_name):
         idx = df[geom_field].first_valid_index()
         if idx > -1:
             geom_type = df.loc[idx][geom_field].type
-        shpfile = shapefile.Writer(GEOMTYPELOOKUP[geom_type])
-        shpfile.autoBalance = 1
-        dfields = []
-        cfields = []
-        for c in df.columns:
-            idx = df[c].first_valid_index() or df.index.tolist()[0]
-            if idx > -1:
-                if isinstance(df[c].loc[idx], Geometry):
-                    geom_field = (c, "GEOMETRY")
-                else:
-                    cfields.append(c)
-                    if isinstance(df[c].loc[idx], (str)):
-                        shpfile.field(name=c, size=255)
-                    elif isinstance(df[c].loc[idx], (int)):
-                        shpfile.field(name=c, fieldType="N", size=5)
-                    elif isinstance(df[c].loc[idx], (np.int, np.int32)):
-                        shpfile.field(name=c, fieldType="N", size=10)
-                    elif isinstance(df[c].loc[idx], (np.float, np.float64, np.int64)):
-                        shpfile.field(name=c, fieldType="F", size=19, decimal=11)
-                    elif (
-                        isinstance(df[c].loc[idx], (datetime.datetime, np.datetime64))
-                        or df[c].dtype.name == "datetime64[ns]"
-                    ):
-                        shpfile.field(name=c, fieldType="D", size=8)
-                        dfields.append(c)
-                    elif isinstance(df[c].loc[idx], (bool, np.bool)):
-                        shpfile.field(name=c, fieldType="L", size=1)
-            del c
-            del idx
-        for idx, row in df.iterrows():
-            geom = row[df.spatial._name]
-            if geom.type == "Polygon":
-                shpfile.poly(geom["rings"])
-            elif geom.type == "Polyline":
-                shpfile.line(geom["paths"])
-            elif geom.type == "Point":
-                shpfile.point(x=geom.x, y=geom.y)
-            else:
-                shpfile.null()
-            row = row[cfields].tolist()
-            for fld in dfields:
-                idx = df[cfields].columns.tolist().index(fld)
-                if row[idx]:
-                    if isinstance(row[idx].to_pydatetime(), (type(pd.NaT))):
-                        row[idx] = None
+        with shapefile.Writer(
+            GEOMTYPELOOKUP[geom_type], dbf=out_fc + ".dbf"
+        ) as shpfile:
+            shpfile.autoBalance = 1
+            dfields = []
+            cfields = []
+            for c in df.columns:
+                idx = df[c].first_valid_index() or df.index.tolist()[0]
+                if idx > -1:
+                    if isinstance(df[c].loc[idx], Geometry):
+                        geom_field = (c, "GEOMETRY")
                     else:
-                        row[idx] = row[idx].to_pydatetime()
-            shpfile.record(*row)
-            del idx
-            del row
-            del geom
-        shpfile.save(out_fc)
+                        cfields.append(c)
+                        if isinstance(df[c].loc[idx], (str)):
+                            shpfile.field(name=c, size=255)
+                        elif isinstance(df[c].loc[idx], (int)):
+                            shpfile.field(name=c, fieldType="N", size=5)
+                        elif isinstance(df[c].loc[idx], (np.int, np.int32)):
+                            shpfile.field(name=c, fieldType="N", size=10)
+                        elif isinstance(
+                            df[c].loc[idx], (np.float, np.float64, np.int64)
+                        ):
+                            shpfile.field(name=c, fieldType="F", size=19, decimal=11)
+                        elif (
+                            isinstance(
+                                df[c].loc[idx], (datetime.datetime, np.datetime64)
+                            )
+                            or df[c].dtype.name == "datetime64[ns]"
+                        ):
+                            shpfile.field(name=c, fieldType="D", size=8)
+                            dfields.append(c)
+                        elif isinstance(df[c].loc[idx], (bool, np.bool)):
+                            shpfile.field(name=c, fieldType="L", size=1)
+                del c
+                del idx
+            for idx, row in df.iterrows():
+                geom = row[df.spatial._name]
+                if geom.type == "Polygon":
+                    shpfile.poly(geom["rings"])
+                elif geom.type == "Polyline":
+                    shpfile.line(geom["paths"])
+                elif geom.type == "Point":
+                    shpfile.point(x=geom.x, y=geom.y)
+                else:
+                    shpfile.null()
+                row = row[cfields].tolist()
+                for fld in dfields:
+                    idx = df[cfields].columns.tolist().index(fld)
+                    if row[idx]:
+                        if isinstance(row[idx].to_pydatetime(), (type(pd.NaT))):
+                            row[idx] = None
+                        else:
+                            row[idx] = row[idx].to_pydatetime()
+                shpfile.record(*row)
+                del idx
+                del row
+                del geom
 
-        # create the PRJ file
-        try:
-            from urllib import request
+            # create the PRJ file
+            try:
+                from urllib import request
 
-            wkid = df.spatial.sr["wkid"]
-            if wkid == 102100:
-                wkid = 3857
-            prj_filename = out_fc.replace(".shp", ".prj")
+                wkid = df.spatial.sr["wkid"]
+                if wkid == 102100:
+                    wkid = 3857
+                prj_filename = out_fc.replace(".shp", ".prj")
 
-            url = "http://epsg.io/{}.esriwkt".format(wkid)
+                url = "http://epsg.io/{}.esriwkt".format(wkid)
 
-            opener = request.build_opener()
-            opener.addheaders = [("User-Agent", "geosaurus")]
-            resp = opener.open(url)
+                opener = request.build_opener()
+                opener.addheaders = [("User-Agent", "geosaurus")]
+                resp = opener.open(url)
 
-            wkt = resp.read().decode("utf-8")
-            if len(wkt) > 0:
-                prj = open(prj_filename, "w")
-                prj.write(wkt)
-                prj.close()
-        except:
-            # Unable to write PRJ file.
-            pass
-
-        del shpfile
-        return out_fc
+                wkt = resp.read().decode("utf-8")
+                if len(wkt) > 0:
+                    prj = open(prj_filename, "w")
+                    prj.write(wkt)
+                    prj.close()
+            except:
+                # Unable to write PRJ file.
+                pass
+            shpfile.close()
+            del shpfile
+            return out_fc
     return None
 
 

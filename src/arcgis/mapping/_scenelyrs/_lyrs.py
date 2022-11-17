@@ -44,8 +44,6 @@ class SceneLayerManager(_GISResource):
 
             super(SceneLayerManager, self)._refresh()
 
-            self._ms._refresh()
-
             return res
         return None
 

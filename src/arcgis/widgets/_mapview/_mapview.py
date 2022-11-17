@@ -1325,10 +1325,23 @@ class MapView(widgets.DOMWidget):
             self._gallery_basemaps = {}
             self._gallery_basemaps = copy_gallery
         elif (
-            "defaultBasemap" in self.gis.org_settings
+            self.gis.org_settings is not None
+            and "defaultBasemap" in self.gis.org_settings
             and self.gis.org_settings["defaultBasemap"]
         ):
             self._gallery_basemaps["default"] = self.gis.org_settings["defaultBasemap"]
+            self._basemap = "default"
+            # Add to text property so default is recorded
+            self._default_webscene_text_property["baseMap"] = self._gallery_basemaps[
+                "default"
+            ]
+            # You need to re-write this dict to trigger the JS side change
+            copy_gallery = dict(self._gallery_basemaps)
+            self._gallery_basemaps = {}
+            self._gallery_basemaps = copy_gallery
+        else:
+            # Enterprise 10.7.1 workflow
+            self._gallery_basemaps["default"] = self.gis.properties["defaultBasemap"]
             self._basemap = "default"
             # Add to text property so default is recorded
             self._default_webscene_text_property["baseMap"] = self._gallery_basemaps[
@@ -2621,6 +2634,7 @@ class MapView(widgets.DOMWidget):
     _time_info = Dict({}).tag(sync=True)
 
     _writeonly_start_time = Datetime().tag(sync=True)
+    _writeonly_start_time.default_value = dt.datetime(1970, 1, 2)
     _readonly_start_time = Unicode("").tag(sync=True)
     """JS can't send `Date` objects -- ISO string of time"""
 
@@ -2639,10 +2653,11 @@ class MapView(widgets.DOMWidget):
     def start_time(self, value):
         if not isinstance(value, dt.datetime):
             raise Exception("Value must be of type `datetime.datetime`")
-        self._writeonly_start_time = dt.datetime(1, 1, 1)
+        self._writeonly_start_time = dt.datetime(1970, 1, 2)
         self._writeonly_start_time = value
 
     _writeonly_end_time = Datetime().tag(sync=True)
+    _writeonly_end_time.default_value = dt.datetime(1970, 1, 2)
     _readonly_end_time = Unicode("").tag(sync=True)
     """JS can't send `Date` objects -- ISO string of time"""
 
@@ -2661,7 +2676,7 @@ class MapView(widgets.DOMWidget):
     def end_time(self, value):
         if not isinstance(value, dt.datetime):
             raise Exception("Value must be of type `datetime.datetime`")
-        self._writeonly_end_time = dt.datetime(1, 1, 1)
+        self._writeonly_end_time = dt.datetime(1970, 1, 2)
         self._writeonly_end_time = value
 
     def _update_time_extent_if_applicable(self, item):

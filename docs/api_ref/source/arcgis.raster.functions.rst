@@ -291,6 +291,10 @@ geometric
 _________
 .. autofunction:: arcgis.raster.functions.geometric
 
+geometric_median
+________________
+.. autofunction:: arcgis.raster.functions.geometric_median
+
 gndvi
 ____
 .. autofunction:: arcgis.raster.functions.gndvi

@@ -13,6 +13,12 @@ except ImportError:
 except:
     HASARCPY = False
 
+try:
+    requests_gssapi = LazyLoader("requests_gssapi", strict=True)
+    HAS_GSSAPI = True
+except:
+    HAS_GSSAPI = False
+
 import sys
 
 if sys.platform == "win32":
@@ -113,7 +119,11 @@ class Connection(object):
     _server_log = None
     # ----------------------------------------------------------------------
     def __init__(
-        self, baseurl: str = None, username: str = None, password: str = None, **kwargs
+        self,
+        baseurl: str = None,
+        username: str = None,
+        password: str = None,
+        **kwargs,
     ):
         """initializer
 
@@ -145,7 +155,7 @@ class Connection(object):
         from arcgis.gis import GIS
 
         self._ags_file = kwargs.pop("ags_file", None)
-        self._security_kwargs = kwargs.pop("security_kwargs", None)
+        self._security_kwargs = kwargs.pop("security_kwargs", {})
         self._use_gen_token = kwargs.pop("use_gen_token", False)
         self._is_hosted_nb_home = kwargs.pop("is_hosted_nb_home", False)
         self._proxy = kwargs.pop("proxy", None)
@@ -246,7 +256,13 @@ class Connection(object):
             and any(
                 [
                     a in auth_check
-                    for a in ["Negotiate", "NTLM", "Negotiate, NTLM", "Basic", "basic"]
+                    for a in [
+                        "Negotiate",
+                        "NTLM",
+                        "Negotiate, NTLM",
+                        "Basic",
+                        "basic",
+                    ]
                 ]
             )
             == False
@@ -379,7 +395,12 @@ class Connection(object):
             )
             params = {"f": "json"}
             results = []
-            for pt in ["/info", "/rest/info", "/sharing/rest/info", "/rest/services"]:
+            for pt in [
+                "/info",
+                "/rest/info",
+                "/sharing/rest/info",
+                "/rest/services",
+            ]:
                 try:
 
                     www_auth = s.get(
@@ -438,7 +459,10 @@ class Connection(object):
                     % (self._proxy_username, self._proxy_password, url),
                 }
             else:
-                proxies = {"http": "http://%s" % url, "https": "https://%s" % url}
+                proxies = {
+                    "http": "http://%s" % url,
+                    "https": "https://%s" % url,
+                }
             return proxies
         return
 
@@ -457,7 +481,10 @@ class Connection(object):
                     % (self._proxy_username, self._proxy_password, url),
                 }
             else:
-                proxies = {"http": "http://%s" % url, "https": "https://%s" % url}
+                proxies = {
+                    "http": "http://%s" % url,
+                    "https": "https://%s" % url,
+                }
             self._proxy = proxies
         else:
             proxies = None
@@ -495,7 +522,15 @@ class Connection(object):
                     total=2,
                     backoff_factor=1,
                     method_whitelist=frozenset(
-                        ["POST", "DELETE", "GET", "HEAD", "OPTIONS", "PUT", "TRACE"]
+                        [
+                            "POST",
+                            "DELETE",
+                            "GET",
+                            "HEAD",
+                            "OPTIONS",
+                            "PUT",
+                            "TRACE",
+                        ]
                     ),
                 )
             )
@@ -601,7 +636,9 @@ class Connection(object):
                     )
         elif self._auth.lower() == "user_token":
             self._session.auth = EsriUserTokenAuth(
-                token=self._token, referer=self._referer, verify_cert=self._verify_cert
+                token=self._token,
+                referer=self._referer,
+                verify_cert=self._verify_cert,
             )
         elif self._auth.lower() == "api_key":
             from arcgis.auth._auth._apikey import EsriAPIKeyAuth
@@ -628,6 +665,14 @@ class Connection(object):
                     verify_cert=self._verify_cert,
                     legacy=False,
                     **self._security_kwargs,
+                )
+            elif HAS_GSSAPI:
+                self._session.auth = EsriWindowsAuth(
+                    username=self._username,
+                    password=self._password,
+                    verify_cert=self._verify_cert,
+                    legacy=False,
+                    proxies=self._proxy,
                 )
             else:
                 self._session.auth = EsriKerberosAuth(
@@ -671,7 +716,9 @@ class Connection(object):
             elif HAS_KERBEROS:
                 try:
                     self._session.auth = EsriKerberosAuth(
-                        verify_cert=self._verify_cert, legacy=False, proxies=self._proxy
+                        verify_cert=self._verify_cert,
+                        legacy=False,
+                        proxies=self._proxy,
                     )
                 except:
                     ...
@@ -739,7 +786,7 @@ class Connection(object):
             self._create_session()
 
         try_json = kwargs.pop("try_json", True)
-        if try_json:
+        if try_json and isinstance(params, dict):
             params["f"] = "json"
         if params == {}:
             params = None
@@ -749,14 +796,16 @@ class Connection(object):
         else:
             out_path = kwargs.pop("out_path", tempfile.gettempdir())
         file_name = kwargs.pop("file_name", None)
-        if params and json_encode:
-            for k, v in copy.copy(params).items():
-                if isinstance(v, (tuple, dict, list, bool)):
-                    params[k] = json.dumps(v)
-                elif isinstance(v, PropertyMap):
-                    params[k] = json.dumps(dict(v))
-                elif isinstance(v, InsensitiveDict):
-                    params[k] = v.json
+        if isinstance(params, dict):
+            if params and json_encode:
+                for k, v in copy.copy(params).items():
+                    if isinstance(v, (tuple, dict, list, bool)):
+                        params[k] = json.dumps(v)
+                    elif isinstance(v, PropertyMap):
+                        params[k] = json.dumps(dict(v))
+                    elif isinstance(v, InsensitiveDict):
+                        params[k] = v.json
+
         try:
             if self._cert_file:
                 cert = (self._cert_file, self._key_file)
@@ -1484,7 +1533,11 @@ class Connection(object):
             self._session.headers.update({token_header: "Bearer %s" % token})
 
         resp = self._session.put(
-            url=url, data=data, verify=verify, headers=self._session.headers, **kwargs
+            url=url,
+            data=data,
+            verify=verify,
+            headers=self._session.headers,
+            **kwargs,
         )
         self._session.headers = original_headers
         return resp
@@ -1771,14 +1824,21 @@ class Connection(object):
         self._session.post(url=url, data=data, json_data=json, stream=True)
 
     # ----------------------------------------------------------------------
-    def login(self, username: str, password: str, expiration: Union[int, float] = None):
+    def login(
+        self,
+        username: str,
+        password: str,
+        expiration: Union[int, float] = None,
+    ):
         """allows a user to login to a site with different credentials"""
         if expiration is None:
             expiration = 1440
         try:
             if self._username != username and self._password != password:
                 c = Connection(
-                    baseurl=self._baseurl, username=username, password=password
+                    baseurl=self._baseurl,
+                    username=username,
+                    password=password,
                 )
                 self = c
         except:
@@ -1866,14 +1926,18 @@ class Connection(object):
             if baseurl.endswith("/"):
                 try:
                     res = self.get(
-                        baseurl + "info", params={"f": "json"}, add_token=False
+                        baseurl + "info",
+                        params={"f": "json"},
+                        add_token=False,
                     )
                 except:
                     res = self.get(baseurl + "info", params={"f": "json"})
             else:
                 try:
                     res = self.get(
-                        baseurl + "/info", params={"f": "json"}, add_token=False
+                        baseurl + "/info",
+                        params={"f": "json"},
+                        add_token=False,
                     )
                 except:
                     res = self.get(baseurl + "/info", params={"f": "json"})
@@ -1928,13 +1992,21 @@ class Connection(object):
             root = (
                 rf"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
             )
-            parts = ["/info", "/rest/services", "/rest/info", "/sharing/rest/info"]
+            parts = [
+                "/info",
+                "/rest/services",
+                "/rest/info",
+                "/sharing/rest/info",
+            ]
             params = {"f": "json"}
             for pt in parts:
                 try:
 
                     res = self.get(
-                        root + pt, params=params, add_token=False, allow_redirects=False
+                        root + pt,
+                        params=params,
+                        add_token=False,
+                        allow_redirects=False,
                     )
                     if "folders" in res:
                         self._product = "SERVER"

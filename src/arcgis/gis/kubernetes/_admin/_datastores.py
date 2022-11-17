@@ -1,3 +1,4 @@
+from __future__ import annotations
 import json
 import csv
 from datetime import datetime
@@ -5,7 +6,7 @@ from arcgis.gis.kubernetes._admin._base import _BaseKube
 from collections import OrderedDict
 from urllib.request import HTTPError
 from arcgis.gis._impl._con import Connection
-from arcgis.gis import GIS
+from arcgis.gis import GIS, Item
 from arcgis._impl.common._mixins import PropertyMap
 from arcgis._impl.common._isd import InsensitiveDict
 from typing import Dict, Any, List, Tuple
@@ -217,7 +218,12 @@ class DataStores(_BaseKube):
         return stores
 
     # ----------------------------------------------------------------------
-    def add(self, item):
+    def add(
+        self,
+        item: str | Item,
+        options: dict[str, Any] | None = None,
+        sync: bool | None = None,
+    ) -> dict[str, Any] | None:
         """
         Registers a new data item with the data store.
 
@@ -233,12 +239,18 @@ class DataStores(_BaseKube):
             The data item if registered successfully, None otherwise.
 
         """
-        res = self._register_data_item(item=item)
+        if isinstance(item, Item):
+            item = item.id
+        res = self._register_data_item(item=item, options=options, sync=sync)
         if res["status"] == "success" or res["status"] == "exists":
             url = self._url + f"/{res['id']}"
             return DataStore(url, self._gis, self)
+        elif "jobsUrl" in res:
+            from arcgis.gis.kubernetes._admin._jobs import Job
+
+            return Job(url=res["JobsUrl"], gis=self._gis)
         else:
-            return None
+            return res
 
     def validate(self, item: Dict[str, Any]) -> bool:
         """
@@ -267,7 +279,9 @@ class DataStores(_BaseKube):
         )
 
     # ----------------------------------------------------------------------
-    def _register_data_item(self, item):
+    def _register_data_item(
+        self, item: Item, options: dict[str, Any] = None, sync: bool = None
+    ):
         """
         Registers a new data item with the server's data store.
 
@@ -282,6 +296,10 @@ class DataStores(_BaseKube):
             A response
         """
         params = {"item": item, "f": "json"}
+        if options:
+            params["options"] = options
+        if sync:
+            params["async"] = sync
         url = self._url + "/registerItem"
         return self._con.post(path=url, postdata=params)
 

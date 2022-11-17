@@ -622,7 +622,7 @@ class TestGeometryService(unittest.TestCase):
                     assert isinstance(j, GeometryJob)
                     assert j.result()
                 else:
-                    assert gs.label_points(sr=sr, polygons=geoms, future=fut)
+                    assert isinstance(gs.label_points(sr=sr, polygons=geoms, future=fut), list)
 
     # ----------------------------------------------------------------------
     # @unittest.skip('said so')

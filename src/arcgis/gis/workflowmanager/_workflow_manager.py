@@ -362,7 +362,8 @@ class JobManager:
         -------------------         --------------------------------------------------------------------
         parent                      Optional string Parent Job
         -------------------         --------------------------------------------------------------------
-        location                    Optional Geometry. Define an area of location for your job.
+        location                    Optional Geometry or Workflow Manager :class:`~arcgis.gis.workflowmanager.JobLocation`
+                                    Define an area of location for your job.
         -------------------         --------------------------------------------------------------------
         extended_properties         Optional Dict. Define additional properties on a job template
                                     specific to your business needs.
@@ -375,9 +376,33 @@ class JobManager:
         ===================         ====================================================================
 
         :return:
-            Workflow Manager :class:`~arcgis.gis.workflowmanager.Job`
+            List of newly created job ids
 
         """
+        location_obj = location
+        if location is not None and type(location) is not dict:
+            location_obj = {"geometryType": location.type}
+            if location.type == "Polygon":
+                location_obj["geometry"] = json.dumps(
+                    {
+                        "rings": location.rings,
+                        "spatialReference": location.spatial_reference,
+                    }
+                )
+            elif location.type == "Polyline":
+                location_obj["geometry"] = json.dumps(
+                    {
+                        "paths": location.paths,
+                        "spatialReference": location.spatial_reference,
+                    }
+                )
+            elif location.type == "Multipoint":
+                location_obj["geometry"] = json.dumps(
+                    {
+                        "points": location.points,
+                        "spatialReference": location.spatial_reference,
+                    }
+                )
         job_object = {
             "numberOfJobs": count,
             "jobName": name,
@@ -391,7 +416,7 @@ class JobManager:
             "percentComplete": complete,
             "notes": notes,
             "parentJob": parent,
-            "location": location,
+            "location": location_obj,
             "extendedProperties": extended_properties,
             "relatedProperties": related_properties,
             "jobId": job_id,
@@ -471,7 +496,7 @@ class JobManager:
         except:
             self._handle_error(sys.exc_info())
 
-    def get(self, id: str, get_ext_props: bool = True):
+    def get(self, id: str, get_ext_props: bool = True, get_holds: bool = True):
         """
         Returns an active job with the given ID
 
@@ -480,7 +505,9 @@ class JobManager:
         ---------------     --------------------------------------------------------------------
         id                  Required string. Job ID
         ---------------     --------------------------------------------------------------------
-        get_ext_props       Optional Boolean. If set to true will show the jobs extended properties.
+        get_ext_props       Optional Boolean. If set to false the object will not include the jobs extended properties.
+        ---------------     --------------------------------------------------------------------
+        get_holds           Optional Boolean. If set to false the object will not include the jobs holds.
         ===============     ====================================================================
 
         :return:
@@ -489,7 +516,9 @@ class JobManager:
         """
         try:
             url = f"{self._url}/jobs/{id}"
-            job_dict = self._gis._con.get(url, {"extProps": get_ext_props})
+            job_dict = self._gis._con.get(
+                url, {"extProps": get_ext_props, "holds": get_holds}
+            )
             return Job(job_dict, self._gis, self._url)
         except:
             self._handle_error(sys.exc_info())
@@ -633,8 +662,8 @@ class JobManager:
         ---------------     --------------------------------------------------------------------
         job_id              Required string. ID for the job to update
         ---------------     --------------------------------------------------------------------
-        geometry            Required ArcGIS.Geometry.Geometry that describes a Job's Location.
-                            Must be a Polygon, Polyline, or Multipoint geometry type
+        geometry            Required ArcGIS.Geometry.Geometry or Workflow Manager :class:`~arcgis.gis.workflowmanager.JobLocation`
+                            that describes a Job's Location. Must be a Polygon, Polyline, or Multipoint geometry type
         ===============     ====================================================================
 
         :return:
@@ -645,28 +674,31 @@ class JobManager:
             url = "{base}/jobs/{jobId}/location".format(
                 base=self._url, jobId=job_id, item=self._item
             )
-            location = {"geometryType": geometry.type}
-            if geometry.type == "Polygon":
-                location["geometry"] = json.dumps(
-                    {
-                        "rings": geometry.rings,
-                        "spatialReference": geometry.spatial_reference,
-                    }
-                )
-            elif geometry.type == "Polyline":
-                location["geometry"] = json.dumps(
-                    {
-                        "paths": geometry.paths,
-                        "spatialReference": geometry.spatial_reference,
-                    }
-                )
-            elif geometry.type == "Multipoint":
-                location["geometry"] = json.dumps(
-                    {
-                        "points": geometry.points,
-                        "spatialReference": geometry.spatial_reference,
-                    }
-                )
+            if type(geometry) is dict:
+                location = geometry
+            else:
+                location = {"geometryType": geometry.type}
+                if geometry.type == "Polygon":
+                    location["geometry"] = json.dumps(
+                        {
+                            "rings": geometry.rings,
+                            "spatialReference": geometry.spatial_reference,
+                        }
+                    )
+                elif geometry.type == "Polyline":
+                    location["geometry"] = json.dumps(
+                        {
+                            "paths": geometry.paths,
+                            "spatialReference": geometry.spatial_reference,
+                        }
+                    )
+                elif geometry.type == "Multipoint":
+                    location["geometry"] = json.dumps(
+                        {
+                            "points": geometry.points,
+                            "spatialReference": geometry.spatial_reference,
+                        }
+                    )
 
             return_obj = json.loads(
                 self._gis._con.put(
@@ -1741,7 +1773,7 @@ class LookUpTable(object):
         except KeyError:
             raise KeyError(f'The attribute "{item}" is invalid for LookUpTables')
 
-    def get(gis, url, params):
+    def get(self, gis, url, params):
         lookup_dict = gis._con.get(url, params)
         return LookUpTable(lookup_dict, gis, url)
 
@@ -1771,7 +1803,7 @@ class LookUpTable(object):
         }
         return return_obj
 
-    def delete(gis, url):
+    def delete(self, gis, url):
         return_obj = json.loads(gis._con.delete(url, try_json=False))
         if "error" in return_obj:
             gis._con._handle_json_error(return_obj["error"], 0)
@@ -2108,6 +2140,8 @@ class Job(object):
         ) = (
             self.extended_properties
         ) = (
+            self.holds
+        ) = (
             self.diagram_name
         ) = (
             self.parent_job
@@ -2158,7 +2192,7 @@ class Job(object):
             return return_obj["success"]
         return return_obj
 
-    def search(gis, url, search_object):
+    def search(self, gis, url, search_object):
         return_obj = json.loads(
             gis._con.post(
                 url,
@@ -2311,7 +2345,7 @@ class Job(object):
         }
         return return_obj
 
-    def delete_attachment(gis, url):
+    def delete_attachment(self, gis, url):
         return_obj = json.loads(gis._con.delete(url, try_json=False))
         if "error" in return_obj:
             gis._con._handle_json_error(return_obj["error"], 0)
@@ -2467,7 +2501,7 @@ class Job(object):
     def location(self, value):
         self._location = value
 
-    def manage_jobs(gis, url, ids, action):
+    def manage_jobs(self, gis, url, ids, action):
         post_object = {"jobIds": ids, "type": action}
         return_obj = json.loads(
             gis._con.post(
@@ -2553,7 +2587,7 @@ class WMRole(object):
         for key in init_data:
             setattr(self, _camelCase_to_underscore(key), init_data[key])
 
-    def get(gis, url, params):
+    def get(self, gis, url, params):
         role_dict = gis._con.get(url, params)
         return WMRole(role_dict)
 
@@ -2634,7 +2668,7 @@ class JobTemplate(object):
             else:
                 raise KeyError(f'The attribute "{item}" is invalid for Job Templates')
 
-    def get(gis, url, params):
+    def get(self, gis, url, params):
         job_template_dict = gis._con.get(url, params)
         return JobTemplate(job_template_dict, gis, url)
 
@@ -2685,7 +2719,7 @@ class JobTemplate(object):
             return return_obj["success"]
         return return_obj["jobTemplateId"]
 
-    def delete(gis, url):
+    def delete(self, gis, url):
         return_obj = json.loads(gis._con.delete(url, try_json=False))
         if "error" in return_obj:
             gis._con._handle_json_error(return_obj["error"], 0)
@@ -2890,7 +2924,7 @@ class Group(object):
         for key in init_data:
             setattr(self, _camelCase_to_underscore(key), init_data[key])
 
-    def get(gis, url, params):
+    def get(self, gis, url, params):
         group_dict = gis._con.get(url, params)
         return Group(group_dict)
 
@@ -2942,7 +2976,7 @@ class JobDiagram(object):
             else:
                 raise KeyError(f'The attribute "{item}" is invalid for Diagrams')
 
-    def get(gis, url, params):
+    def get(self, gis, url, params):
         job_diagram_dict = gis._con.get(url, params)
         return JobDiagram(job_diagram_dict, gis, url)
 
@@ -2999,7 +3033,7 @@ class JobDiagram(object):
         }
         return return_obj
 
-    def delete(gis, url):
+    def delete(self, gis, url):
         return_obj = json.loads(gis._con.delete(url, try_json=False))
         if "error" in return_obj:
             gis._con._handle_json_error(return_obj["error"], 0)
@@ -3031,6 +3065,6 @@ class JobLocation(object):
         for key in init_data:
             setattr(self, _camelCase_to_underscore(key), init_data[key])
 
-    def get(gis, url, params):
+    def get(self, gis, url, params):
         job_location_dict = gis._con.get(url, params)
         return JobLocation(job_location_dict)

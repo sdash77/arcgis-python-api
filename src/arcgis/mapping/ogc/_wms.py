@@ -127,7 +127,7 @@ class WMSLayer(BaseOGC):
             crss = self.properties.WMS_Capabilities.Capability.Layer.CRS
             output = []
             for crs_str in crss:
-                output += [int(crs_num) for crs_num in re.findall(r"\d+", crs_str)]
+                output += [int(crs_num) for crs_num in re.findall(r"[0-9]+", crs_str)]
             return output
         except Exception as e:
             return []
