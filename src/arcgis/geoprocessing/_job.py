@@ -49,6 +49,7 @@ class GPJob(object):
     _start_time = None
     _end_time = None
     _item_properties = None
+    _return_item = None
     # ----------------------------------------------------------------------
     def __init__(self, future, gptool, jobid, task_url, gis, notify=False):
         """
@@ -320,7 +321,6 @@ class GPJob(object):
             elif isinstance(value, dict) and "featureSet" in value:
                 return arcgis.features.FeatureCollection(value)
             return value
-        return result
 
     def _process_ra(self, result):
         import arcgis

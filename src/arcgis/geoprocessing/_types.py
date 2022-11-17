@@ -1,6 +1,8 @@
 import json
 import tempfile
 
+import arcgis
+
 
 class LinearUnit(object):
     """
@@ -114,20 +116,21 @@ class DataFile(object):
         if not save_path:
             save_path = tempfile.gettempdir()
         if data_path:
-            if self._con.product == "AGOL":
-                return self._con.get(
+            gis = arcgis.env.active_gis
+            if gis._con.product == "AGOL":
+                return gis._con.get(
                     path=data_path,
                     out_folder=save_path,
                     try_json=False,
                     add_token=False,
-                    token=self._token,
+                    token=gis._token,
                 )
             else:
-                return self._con.get(
+                return gis._con.get(
                     path=data_path,
                     out_folder=save_path,
                     try_json=False,
-                    token=self._token,
+                    token=gis._token,
                 )
 
 
