@@ -13931,12 +13931,12 @@ class RasterCollection:
 
     #    return summary_dict
 
-    #def add_field(
+    # def add_field(
     #    self,
     #    field_name: str,
     #    field_values: list,
     #    context: Optional[dict[str, Any]] = None,
-    #):
+    # ):
     #    """
     #    Adds a new field to the raster collection and populate it with values.
 
@@ -13978,7 +13978,7 @@ class RasterCollection:
     #        field_name, field_values, context=context
     #    )
 
-    #def group_by(self, field_name: str, context: Optional[dict[str, Any]] = None):
+    # def group_by(self, field_name: str, context: Optional[dict[str, Any]] = None):
     #    """
     #    group_by method can be used to group the raster collection based on a field.
 
