@@ -771,6 +771,7 @@ class Connection(object):
         allow_redirects = kwargs.pop("allow_redirects", True)
         return_raw_response = kwargs.pop("return_raw_response", False)
         json_encode = kwargs.pop("json_encode", True)
+        add_headers = kwargs.pop("add_headers", {})
         if self._baseurl.endswith("/") == False:
             self._baseurl += "/"
         url = path
@@ -805,7 +806,9 @@ class Connection(object):
                         params[k] = json.dumps(dict(v))
                     elif isinstance(v, InsensitiveDict):
                         params[k] = v.json
-
+        if add_headers:
+            original_headers = copy.deepcopy(self._session.headers)
+            self._session.headers.update(add_headers)
         try:
             if self._cert_file:
                 cert = (self._cert_file, self._key_file)
@@ -830,7 +833,6 @@ class Connection(object):
                     verify=self._verify_cert,
                     allow_redirects=allow_redirects,
                 )
-
         except requests.exceptions.SSLError as err:
             raise requests.exceptions.SSLError(
                 "Please set verify_cert=False due to encountered SSL error: %s" % err
@@ -861,6 +863,9 @@ class Connection(object):
             import traceback
 
             raise Exception("An unknown error occurred: %s" % traceback.format_exc())
+        if add_headers:
+            self._session.headers.clear()
+            self._session.headers.update(original_headers)
         if return_raw_response:
             return resp
         return self._handle_response(
@@ -1347,6 +1352,8 @@ class Connection(object):
         timeout = kwargs.pop("timeout", self._timeout)
         return_raw_response = kwargs.pop("return_raw_response", False)
         json_encode = kwargs.pop("json_encode", True)
+        add_headers = kwargs.pop("add_headers", {})
+
         if self._baseurl.endswith("/") == False:
             self._baseurl += "/"
         url = path
@@ -1411,6 +1418,9 @@ class Connection(object):
             or tempfile.gettempdir()
         )
         file_name = kwargs.pop("file_name", None)
+        if add_headers:
+            original_headers = copy.deepcopy(self._session.headers)
+            self._session.headers.update(add_headers)
         try:
             if self._cert_file:
                 cert = (self._cert_file, self._key_file)
@@ -1474,6 +1484,9 @@ class Connection(object):
                     )
             if auth:
                 self._session.auth = auth
+            if add_headers:
+                self._session.headers.clear()
+                self._session.headers.update(original_headers)
         except requests.exceptions.SSLError as err:
             raise requests.exceptions.SSLError(
                 "Please set verify_cert=False due to encountered SSL error: %s" % err
@@ -1539,7 +1552,9 @@ class Connection(object):
             headers=self._session.headers,
             **kwargs,
         )
-        self._session.headers = original_headers
+        self._session.headers.clear()
+        self._session.headers.update(original_headers)
+
         return resp
 
     # ----------------------------------------------------------------------
