@@ -38,24 +38,25 @@ def _raster_input(raster, raster2=None):
         fn_name = inspect.stack()[2][3]
         if fn_name == "<module>":
             fn_name = inspect.stack()[1][3]
-        if not fn_name in _aggregating_functions:
-            raise RuntimeError(
-                "RasterCollection object cannot be specified as input to non aggregating functions"
-            )
-        if isinstance(raster, RasterCollection):
-            if raster._ras_coll_engine != _ArcpyRasterCollection:
-                raster = raster._ras_coll_engine_obj._rasters_list
-            else:
-                return raster, raster, raster
+        if fn_name != "to_multidimensional_raster":
+            if not fn_name in _aggregating_functions:
+                raise RuntimeError(
+                    "RasterCollection object cannot be specified as input to non aggregating functions"
+                )
+            if isinstance(raster, RasterCollection):
+                if raster._ras_coll_engine != _ArcpyRasterCollection:
+                    raster = raster._ras_coll_engine_obj._rasters_list
+                else:
+                    return raster, raster, raster
 
-        if (
-            isinstance(raster2, RasterCollection)
-        ) and raster._ras_coll_engine != _ArcpyRasterCollection:
-            if raster2._ras_coll_engine != _ArcpyRasterCollection:
-                raster2 = raster2._ras_coll_engine_obj._rasters_list
-            else:
-                raster2 = raster2._ras_coll_engine_obj
-                return raster, raster, raster, raster
+            if (
+                isinstance(raster2, RasterCollection)
+            ) and raster._ras_coll_engine != _ArcpyRasterCollection:
+                if raster2._ras_coll_engine != _ArcpyRasterCollection:
+                    raster2 = raster2._ras_coll_engine_obj._rasters_list
+                else:
+                    raster2 = raster2._ras_coll_engine_obj
+                    return raster, raster, raster, raster
 
     if isinstance(raster, Raster):
         if hasattr(raster, "_engine_obj"):
