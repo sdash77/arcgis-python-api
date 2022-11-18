@@ -46,12 +46,14 @@ class NBServicesManager:
 
     _properties = None
     _gis = None
+    _nbs = None
     _url = None
 
-    def __init__(self, url: str, gis: GIS):
+    def __init__(self, url: str, gis: GIS, nbs: "NotebookServer"):
         """initializer"""
         self._url = url
         self._gis = gis
+        self._nbs = nbs
 
     @property
     def properties(self) -> dict:
@@ -91,7 +93,9 @@ class NBServicesManager:
             service_list.append(NBService(url=url, gis=self._gis))
         return tuple(service_list)
 
-    def create(self, item: Item, title: str, description: str = None) -> Item:
+    def create(
+        self, item: Item, title: str, description: str = None
+    ) -> Item:
         """
         ArcGIS Notebook Server supports publishing a geoprocessing service
         from a notebook. The `create` operation creates a service when a

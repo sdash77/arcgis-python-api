@@ -94,7 +94,9 @@ class NotebookServer(object):
         :return: List
         """
         if self._version is None:
-            self._version = [int(i) for i in self.properties.version.split(".")]
+            self._version = [
+                int(i) for i in self.properties.version.split(".")
+            ]
         return self._version
 
     # ----------------------------------------------------------------------
@@ -108,7 +110,9 @@ class NotebookServer(object):
         if self._sitemanager is None:
             from ._site import SiteManager
 
-            self._sitemanager = SiteManager(url=self._url, notebook=self, gis=self._gis)
+            self._sitemanager = SiteManager(
+                url=self._url, notebook=self, gis=self._gis
+            )
         return self._sitemanager
 
     # ----------------------------------------------------------------------
@@ -140,7 +144,9 @@ class NotebookServer(object):
 
         """
         netloc = urlparse(self._url).netloc
-        url = "https://{base}:11443/arcgis/rest/info/healthcheck".format(base=netloc)
+        url = "https://{base}:11443/arcgis/rest/info/healthcheck".format(
+            base=netloc
+        )
         params = {"f": "json"}
         res = self._gis._con.get(url, params)
         if "success" in res:
@@ -218,7 +224,9 @@ class NotebookServer(object):
         """
         if self._notebook is None:
             url = self._url + "/notebooks"
-            self._notebook = NotebookManager(url=url, gis=self._gis, nbs=self)
+            self._notebook = NotebookManager(
+                url=url, gis=self._gis, nbs=self
+            )
         return self._notebook
 
     # ----------------------------------------------------------------------
@@ -227,6 +235,8 @@ class NotebookServer(object):
         """The URL of the notebook server."""
         return self._url
 
+    # ----------------------------------------------------------------------
+    @property
     def services(self):
         """
         Provices access to managing notebook created geoprocessing tools
@@ -240,5 +250,5 @@ class NotebookServer(object):
             from arcgis.gis.nb._services import NBServicesManager
 
             url = self._url + "/services"
-            self._services = NBServicesManager(url, self._gis)
+            self._services = NBServicesManager(url, self._gis, nbs=self)
         return self._services
