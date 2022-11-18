@@ -185,6 +185,7 @@ class TimeSeriesModel(ArcGISModel):
         model_arch = emd["model_arch"]
         seq_len = emd["seq_len"]
         index_field = emd.get("index_field", None)
+        test_size = emd.get("test_size", None)
         # encoder_path = os.path.join(os.path.dirname(emd_path),
         #                             os.path.basename(emd_path).split('.')[0] + '_encoders.pkl')
 
@@ -216,6 +217,7 @@ class TimeSeriesModel(ArcGISModel):
 
             # if index_field is not None:
             data._index_field = index_field
+            data._test_size = test_size
 
             class_object = cls(
                 data,
@@ -345,6 +347,8 @@ class TimeSeriesModel(ArcGISModel):
         _emd_template["_is_classification"] = (
             "classification" if self._data._is_classification else "regression"
         )
+        if hasattr(self._data, "_test_size"):
+            _emd_template["test_size"] = self._data._test_size
 
         return _emd_template
 
