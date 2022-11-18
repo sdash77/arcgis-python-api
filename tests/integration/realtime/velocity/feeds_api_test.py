@@ -9,7 +9,6 @@ from arcgis.realtime.velocity.http_authentication_type import (
     CertificateAuth,
 )
 
-
 try:
     # Use your ArcGIS enterprise url and credentials to run the test
     url = "https://devext.arcgis.com"
@@ -28,33 +27,6 @@ class TestFeedsApiMethods(unittest.TestCase):
     velocity = gis.velocity
     feeds = velocity.feeds
 
-    # HTTP Receiver Properties
-    name = "http_receiver_feed_1"
-    description = "some description about the HTTP Receiver feed"
-    sample_data = """name,age
-    dan,23"""
-
-    http_receiver = HttpReceiver(
-        label=name,
-        description=description,
-        authentication_type="none",
-        sample_message=sample_data,
-        data_format=None,
-    )
-
-    http_receiver.rename_field("name", "name1")
-
-    # set track id for an existing field
-    http_receiver.set_track_id("name")
-
-    feeds.create(http_receiver)
-    feeds.items
-
-    # rss_feed = feeds._sample_message(input_type="feed")
-    # print(rss_feed)
-    # feed_item = feeds.get("e4d3c42193b14b48b912306919617010")
-
-    # ----------------------------------------------------------------------
     @unittest.skipIf(SKIP_SOME_TESTS, "test_get_all_feeds skipping")
     def test_get_all_feeds(self):
         print("\n ---- test_get_all_feeds ----")
@@ -78,7 +50,7 @@ class TestFeedsApiMethods(unittest.TestCase):
     def test_get_feed(self):
         print("\n ---- test_get_feed ----")
         try:
-            feed = self.feeds.get("e4d3c42193b14b48b912306919617010")
+            feed = self.feeds.get("7392333e5ab0406abaa67cc75a214b98")
             assert isinstance(feed, Feed)
 
         except AssertionError as assertErrorException:
@@ -193,6 +165,35 @@ class TestFeedsApiMethods(unittest.TestCase):
 
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
+
+    @unittest.skipIf(SKIP_SOME_TESTS, "create a feed")
+    def test_create_a_feed(self):
+
+        # HTTP Receiver Properties
+        name = "http_receiver_feed_1"
+        description = "some description about the HTTP Receiver feed"
+        sample_data = """name,age
+        dan,23"""
+
+        http_receiver = HttpReceiver(
+            label=name,
+            description=description,
+            authentication_type="none",
+            sample_message=sample_data,
+            data_format=None,
+        )
+
+        http_receiver.rename_field("name", "name1")
+
+        # set track id for an existing field
+        http_receiver.set_track_id("name")
+
+        self.feeds.create(http_receiver)
+        self.feeds.items
+
+        # rss_feed = feeds._sample_message(input_type="feed")
+        # print(rss_feed)
+        # feed_item = feeds.get("7392333e5ab0406abaa67cc75a214b98")
 
 
 if __name__ == "__main__":
