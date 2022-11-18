@@ -16,6 +16,13 @@ Item
     :undoc-members:
     :show-inheritance:
 
+ItemDependency
+---------------
+.. autoclass:: arcgis.gis.ItemDependency
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 User
 --------------
 .. autoclass:: arcgis.gis.User
