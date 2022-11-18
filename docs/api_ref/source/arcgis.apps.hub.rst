@@ -12,24 +12,32 @@ It can be used as shown in the following code example.
     gis = GIS("https://arcgis.com", "<username>", "<password>")
     myHub = gis.hub
     a_Initiative = myHub.initiatives.get(itemId)
-    a_Indicators = a_Initiative.indicators.search()
+    a_Site = myHub.sites.get(a_Initiative.site_id)
+    b_Site = myHub.sites.get(itemId)
+    c_Page = myHub.pages.get(itemId)
     myEvents = myHub.events.search()
 
 Hub
 --------------------------
-.. autoclass:: arcgis.apps.hub.Hub
+.. autoclass:: arcgis.apps.hub.hub.Hub
     :members:
     :undoc-members:
 
 Initiative
 --------------------------
-.. autoclass:: arcgis.apps.hub.Initiative
+.. autoclass:: arcgis.apps.hub.initiatives.Initiative
     :members:
     :undoc-members:
 
-Indicator
+Site
 --------------------------
-.. autoclass:: arcgis.apps.hub.Indicator
+.. autoclass:: arcgis.apps.hub.sites.Site
+    :members:
+    :undoc-members:
+
+Page
+--------------------------
+.. autoclass:: arcgis.apps.hub.sites.Page
     :members:
     :undoc-members:
 
@@ -41,18 +49,24 @@ Event
 
 InitiativeManager
 --------------------------
-.. autoclass:: arcgis.apps.hub.InitiativeManager
+.. autoclass:: arcgis.apps.hub.initiatives.InitiativeManager
     :members:
     :undoc-members:
 
-IndicatorManager
+SiteManager
 --------------------------
-.. autoclass:: arcgis.apps.hub.IndicatorManager
+.. autoclass:: arcgis.apps.hub.sites.SiteManager
+    :members:
+    :undoc-members:
+
+PageManager
+--------------------------
+.. autoclass:: arcgis.apps.hub.sites.PageManager
     :members:
     :undoc-members:
 
 EventManager
 --------------------------
-.. autoclass:: arcgis.apps.hub.EventManager
+.. autoclass:: arcgis.apps.hub.events.EventManager
     :members:
     :undoc-members:
