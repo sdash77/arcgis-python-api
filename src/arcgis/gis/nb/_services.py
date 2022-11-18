@@ -93,9 +93,7 @@ class NBServicesManager:
             service_list.append(NBService(url=url, gis=self._gis))
         return tuple(service_list)
 
-    def create(
-        self, item: Item, title: str, description: str = None
-    ) -> Item:
+    def create(self, item: Item, title: str, description: str = None) -> Item:
         """
         ArcGIS Notebook Server supports publishing a geoprocessing service
         from a notebook. The `create` operation creates a service when a
