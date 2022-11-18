@@ -5,7 +5,8 @@ import_exception = None
 try:
     from ._pointcnnseg import PointCNN
     from fastai.basic_train import Learner
-    from ._rand_lanet_utils import RandLANetSeg, prepare_data_dict
+    from ._rand_lanet_utils import prepare_data_dict
+    from ._sqn_utils import SQNRandLANet
     from ._arcgis_model import _EmptyData
     from ._pointcnn_utils import (
         CrossEntropyPC,
@@ -27,10 +28,10 @@ except Exception as e:
     HAS_FASTAI = False
 
 
-class RandLANet(PointCNN):
+class SQNSeg(PointCNN):
     """
-    Model architecture from https://arxiv.org/pdf/1911.11236v3.pdf.
-    Creates RandLANet point cloud segmentation model.
+    Model architecture from https://arxiv.org/pdf/2104.04891.pdf.
+    Creates SQNSeg point cloud segmentation model.
 
     =====================   ===========================================
     **Argument**            **Description**
@@ -62,10 +63,9 @@ class RandLANet(PointCNN):
                                 - 'out_channels': Number of channels produced by each layer,
                                 - 'sub_sampling_ratio': Sampling ratio of random sampling at each layer,
                                 - 'k_n': Number of K-nearest neighbor for a point.
-
     =====================   ===========================================
 
-    :return: `RandLANet` Object
+    :return: `SQNSeg` Object
     """
 
     def __init__(self, data, pretrained_path=None, *args, **kwargs):
@@ -91,10 +91,12 @@ class RandLANet(PointCNN):
         self.encoder_params["num_classes"] = data.c
         self.encoder_params["num_layers"] = len(self.encoder_params["out_channels"])
         if not isinstance(data, _EmptyData):
-            data = prepare_data_dict(data, self.sample_point_num, self.encoder_params)
+            data = prepare_data_dict(
+                data, self.sample_point_num, self.encoder_params, is_sqn=True
+            )
         self.learn = Learner(
             data,
-            RandLANetSeg(self.encoder_params, data.extra_dim + 3),
+            SQNRandLANet(self.encoder_params, data.extra_dim + 3),
             loss_func=CrossEntropyPC(data.c),
             metrics=[
                 AverageMetric(accuracy),
@@ -118,7 +120,7 @@ class RandLANet(PointCNN):
     def from_model(cls, emd_path, data=None):
 
         """
-        Creates an RandLANet model object from a Deep Learning Package(DLPK)
+        Creates an SQNSeg model object from a Deep Learning Package(DLPK)
         or Esri Model Definition (EMD) file.
 
         =====================   ===========================================
@@ -132,7 +134,7 @@ class RandLANet(PointCNN):
                                 inferencing.
         =====================   ===========================================
 
-        :return: :class:`~arcgis.learn.RandLANet`  Object
+        :return: :class:`~arcgis.learn.SQNSeg`  Object
         """
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
@@ -193,7 +195,7 @@ class RandLANet(PointCNN):
     def unfreeze(self):
         """
         Unfreezes the earlier layers of the model for
-        fine-tuning. Not implemented for RandLANet as
+        fine-tuning. Not implemented for SQNSeg as
         none of the layers are frozen by default.
         """
         super().unfreeze()
@@ -237,7 +239,7 @@ class RandLANet(PointCNN):
         ---------------------   -------------------------------------------
         remap_classes           Optional dictionary {int:int}. Mapping from
                                 class values to user defined values. Please query
-                                `randlanet._data.classes` to get the class values
+                                `sqnseg._data.classes` to get the class values
                                 on which the model is trained on.
                                 Default is {}.
         ---------------------   -------------------------------------------
@@ -246,7 +248,7 @@ class RandLANet(PointCNN):
                                 belonging to the specified class-codes. Other
                                 points in the input point clouds will retain
                                 their class-codes.
-                                Please query `randlanet._data.classes` to get
+                                Please query `sqnseg._data.classes` to get
                                 the class values on which the model is trained
                                 on. If `remap_classes` is specified, the new
                                 mapped values will be used for classification.

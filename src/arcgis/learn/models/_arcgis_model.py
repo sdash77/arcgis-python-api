@@ -1783,7 +1783,7 @@ class ArcGISModel(object):
             except:
                 plt.close()
 
-        if self.__str__() in ["<PointCNN>", "<RandLANet>"]:
+        if self.__str__() in ["<PointCNN>", "<RandLANet>", "<SQNSeg>"]:
             self.show_results(save_html=True, save_path=model_characteristics_dir)
         elif self.__str__() in [
             "<TextClassifier>",

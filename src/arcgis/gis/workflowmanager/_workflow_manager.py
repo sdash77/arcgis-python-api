@@ -1773,7 +1773,7 @@ class LookUpTable(object):
         except KeyError:
             raise KeyError(f'The attribute "{item}" is invalid for LookUpTables')
 
-    def get(gis, url, params):
+    def get(self, gis, url, params):
         lookup_dict = gis._con.get(url, params)
         return LookUpTable(lookup_dict, gis, url)
 
@@ -1803,7 +1803,7 @@ class LookUpTable(object):
         }
         return return_obj
 
-    def delete(gis, url):
+    def delete(self, gis, url):
         return_obj = json.loads(gis._con.delete(url, try_json=False))
         if "error" in return_obj:
             gis._con._handle_json_error(return_obj["error"], 0)
@@ -2192,7 +2192,7 @@ class Job(object):
             return return_obj["success"]
         return return_obj
 
-    def search(gis, url, search_object):
+    def search(self, gis, url, search_object):
         return_obj = json.loads(
             gis._con.post(
                 url,
@@ -2345,7 +2345,7 @@ class Job(object):
         }
         return return_obj
 
-    def delete_attachment(gis, url):
+    def delete_attachment(self, gis, url):
         return_obj = json.loads(gis._con.delete(url, try_json=False))
         if "error" in return_obj:
             gis._con._handle_json_error(return_obj["error"], 0)
@@ -2501,7 +2501,7 @@ class Job(object):
     def location(self, value):
         self._location = value
 
-    def manage_jobs(gis, url, ids, action):
+    def manage_jobs(self, gis, url, ids, action):
         post_object = {"jobIds": ids, "type": action}
         return_obj = json.loads(
             gis._con.post(
@@ -2587,7 +2587,7 @@ class WMRole(object):
         for key in init_data:
             setattr(self, _camelCase_to_underscore(key), init_data[key])
 
-    def get(gis, url, params):
+    def get(self, gis, url, params):
         role_dict = gis._con.get(url, params)
         return WMRole(role_dict)
 
@@ -2668,7 +2668,7 @@ class JobTemplate(object):
             else:
                 raise KeyError(f'The attribute "{item}" is invalid for Job Templates')
 
-    def get(gis, url, params):
+    def get(self, gis, url, params):
         job_template_dict = gis._con.get(url, params)
         return JobTemplate(job_template_dict, gis, url)
 
@@ -2719,7 +2719,7 @@ class JobTemplate(object):
             return return_obj["success"]
         return return_obj["jobTemplateId"]
 
-    def delete(gis, url):
+    def delete(self, gis, url):
         return_obj = json.loads(gis._con.delete(url, try_json=False))
         if "error" in return_obj:
             gis._con._handle_json_error(return_obj["error"], 0)
@@ -2924,7 +2924,7 @@ class Group(object):
         for key in init_data:
             setattr(self, _camelCase_to_underscore(key), init_data[key])
 
-    def get(gis, url, params):
+    def get(self, gis, url, params):
         group_dict = gis._con.get(url, params)
         return Group(group_dict)
 
@@ -2976,7 +2976,7 @@ class JobDiagram(object):
             else:
                 raise KeyError(f'The attribute "{item}" is invalid for Diagrams')
 
-    def get(gis, url, params):
+    def get(self, gis, url, params):
         job_diagram_dict = gis._con.get(url, params)
         return JobDiagram(job_diagram_dict, gis, url)
 
@@ -3033,7 +3033,7 @@ class JobDiagram(object):
         }
         return return_obj
 
-    def delete(gis, url):
+    def delete(self, gis, url):
         return_obj = json.loads(gis._con.delete(url, try_json=False))
         if "error" in return_obj:
             gis._con._handle_json_error(return_obj["error"], 0)
@@ -3065,6 +3065,6 @@ class JobLocation(object):
         for key in init_data:
             setattr(self, _camelCase_to_underscore(key), init_data[key])
 
-    def get(gis, url, params):
+    def get(self, gis, url, params):
         job_location_dict = gis._con.get(url, params)
         return JobLocation(job_location_dict)

@@ -1,7 +1,8 @@
 """
 These tools are used to identify areas that meet a number of different criteria you specify.
 
-find_similar_locations finds locations most similar to one or more reference locations based on criteria you specify.
+find_similar_locations finds locations most similar to one or more reference locations based on
+criteria you specify.
 """
 from __future__ import annotations
 import json as _json
@@ -479,7 +480,7 @@ def snap_tracks(
         )
     else:
         output_name = output_service_name
-        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
+        output_service = f"Results were written to: '{output_datastore}' with the name: '{output_service_name}'"
 
     params = {
         "point_layer": point_layer,
@@ -707,7 +708,7 @@ def detect_incidents(
         gis,
         output_name,
         output_service_name,
-        "Detect Incidents",
+        tool_name,
         output_datastore=output_datastore,
     )
 

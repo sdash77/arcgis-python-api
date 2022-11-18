@@ -55,7 +55,7 @@ try:
     from fastai.data_block import ItemList
     from fastprogress.fastprogress import master_bar, progress_bar
     from scipy.spatial.transform import Rotation as R
-    from ..models._rand_lanet_utils import randlanet_input
+    from ..models._rand_lanet_utils import batch_preprocess_dict
 except ImportError:
     # To avoid breaking builds.
     class Dataset:
@@ -2715,7 +2715,7 @@ def compute_precision_recall(self):
     all_y = []
     all_pred = []
     for x_in, y_in in iter(valid_dl):
-        if not getattr(self, "_is_RandLANet", False):
+        if not getattr(self, "_is_ModelInputDict", False):
             x_in, point_nums = x_in  ## (batch, total_points, num_features), (batch,)
             batch, _, num_features = x_in.shape
             indices = torch.tensor(
@@ -2966,7 +2966,7 @@ def model_predictions(model, data, point_nums):
 
     model.learn.model.eval()
     with torch.no_grad():
-        if getattr(model, "_is_RandLANet", False):
+        if getattr(model, "_is_ModelInputDict", False):
             if isinstance(point_nums, int):
                 point_nums = [point_nums]
             for batch_idx, p_num in enumerate(point_nums):
@@ -2979,8 +2979,9 @@ def model_predictions(model, data, point_nums):
                     data[batch_idx, p_num:, :3] += (
                         torch.rand(data.shape[1] - p_num, 3) + shift_point
                     )
-
-            data = randlanet_input(data, model.encoder_params)
+            data = batch_preprocess_dict(
+                data, model.encoder_params, model.__str__() == "<SQNSeg>"
+            )
             for key in data:
                 if type(data[key]) is list:
                     for i in range(len(data[key])):

@@ -75,10 +75,7 @@ def bytesto(size, to="m", bsize=1024):
 
 # ----------------------------------------------------------------------
 def create_uid():
-    if six.PY2:
-        return uuid.uuid4().get_hex()
-    else:
-        return uuid.uuid4().hex
+    return uuid.uuid4().hex
 
 
 # ----------------------------------------------------------------------
