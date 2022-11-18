@@ -46,12 +46,14 @@ class NBServicesManager:
 
     _properties = None
     _gis = None
+    _nbs = None
     _url = None
 
-    def __init__(self, url: str, gis: GIS):
+    def __init__(self, url: str, gis: GIS, nbs: "NotebookServer"):
         """initializer"""
         self._url = url
         self._gis = gis
+        self._nbs = nbs
 
     @property
     def properties(self) -> dict:

@@ -3301,6 +3301,9 @@ class GeoAccessor(object):
         # Ensure all number values are 0 so errors do not occur.
         df = self._data.where(pd.notnull(self._data), None)
         date_fields = [col for col in df.columns if df[col].dtype == "datetime64[ns]"]
+        time_delta_fields = [
+            col for col in df.columns if df[col].dtype in ["<m8[ns]", "timedelta64[ns]"]
+        ]
         cols_norm = [col for col in df.columns]
         cols_lower = [col.lower() for col in df.columns]
 
@@ -3388,6 +3391,8 @@ class GeoAccessor(object):
             object: "esriFieldTypeString",
             _dtype(str): "esriFieldTypeString",
             pd.StringDtype(): "esriFieldTypeString",
+            "<m8[ns]": "esriFieldTypeDouble",
+            _dtype("<m8[ns]"): "esriFieldTypeDouble",
             "<M8[us]": "esriFieldTypeDate",
             np.dtype("<M8[ns]"): "esriFieldTypeDate",
             datetime: "esriFieldTypeDate",
@@ -3432,6 +3437,11 @@ class GeoAccessor(object):
             for f in date_fields:
                 try:
                     row[f] = int(row[f].to_pydatetime().timestamp() * 1000)
+                except:
+                    row[f] = None
+            for f in time_delta_fields:
+                try:
+                    row[f] = row[f].dt.total_seconds()
                 except:
                     row[f] = None
             if geom and pd.notna(geom):
