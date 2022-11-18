@@ -1,6 +1,44 @@
 import os
-from fastai.vision.transform import rotate, brightness, contrast
+from platform import python_version
+import subprocess
+from subprocess import PIPE, run
 
+version = python_version().split(".")[:-1]
+python_ver = ".".join(version)
+
+
+hosted_ip = "http://10.44.9.88:8002"
+if os.environ.get("run_nightly") == "1":
+    workspace_path = "/var/lib/jenkins/workspace/learn_nightly"
+else:
+    workspace_path = "/var/lib/jenkins/workspace/learn_pullrequests"
+all_required_dlls = {
+    "_track_processor.so": {
+        "url": os.path.join(hosted_ip, "build_files", "tracking-engine"),
+        "destination": os.path.join(workspace_path, "src", "arcgis", "learn", "_tracking", "_track_processor.so")
+    },
+    "libTrackingEngine.so": {
+        "url": os.path.join(hosted_ip, "build_files", "tracking-engine"),
+        "destination": os.path.join(workspace_path, "src", "arcgis", "learn", "_tracking", "libTrackingEngine.so")
+    },
+    "nearest_neighbors.cpython-38-x86_64-linux-gnu.so": {
+        "url": os.path.join(hosted_ip, "build_files", "knn"),
+        "destination": os.path.join(workspace_path, "src", "arcgis", "learn", "_utils", "nearest_neighbors.cpython-38-x86_64-linux-gnu.so")
+    },
+    "nearest_neighbors.py": {
+        "url": os.path.join(hosted_ip, "build_files", "knn"),
+        "destination": os.path.join(workspace_path, "src", "arcgis", "learn", "_utils", "nearest_neighbors.py")
+    },
+}
+
+for key, val in all_required_dlls.items():
+    url = str(os.path.join(val["url"], "py"+python_ver+"_linux", key))
+    command = "curl "+ url + " --output " + val["destination"]
+    subprocess.call(command, shell=True )
+
+import arcgis
+
+from fastai.vision.transform import rotate, brightness, contrast
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 from arcgis.learn import (
     MLModel,
@@ -13,7 +51,6 @@ from arcgis.learn import (
     FeatureClassifier,
     RetinaNet,
     MaskRCNN,
-    prepare_data,
     DeepLab,
     YOLOv3,
     FullyConnectedNetwork,
@@ -38,6 +75,9 @@ from arcgis.learn import (
 )
 import json
 from arcgis.learn.text import EntityRecognizer, SequenceToSequence
+
+
+
 
 if os.environ.get("run_nightly") == "1":
     data_folder = r"/home/administrator/Raster/Test_Data/data_for_testing_1/train_model_regression"
@@ -79,6 +119,7 @@ X = [
 
 
 def setuposenviron():
+
     with open(authorization_path) as f:
         authorization_data = json.load(f)
     return authorization_data

@@ -1,7 +1,5 @@
-import sys
 import unittest
 
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_8072\src")
 import datetime
 import copy
 import os
@@ -91,7 +89,6 @@ geoms = [
         }
     ),
 ]
-import pytest
 import pandas as pd
 from arcgis.features.geo import GeoAccessor
 from arcgis.features.geo import _io

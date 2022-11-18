@@ -88,7 +88,6 @@ class AdminServiceFactory(type):
                 os.path.basename(url),
             )
             return AdminService(url=admin_url, gis=gis)
-        return type.__call__(cls, service, gis, False)
 
 
 ###########################################################################

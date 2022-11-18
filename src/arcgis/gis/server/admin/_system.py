@@ -654,7 +654,7 @@ class PlatformServiceManager(BaseServer):
             self._properties = PropertyMap({})
 
     # ----------------------------------------------------------------------
-    def get(self, service: str) -> "PlatformServices":
+    def get(self, service: str) -> PlatformService:
         """
         Returns a single instance of a Platform Service
 

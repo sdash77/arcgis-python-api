@@ -1,15 +1,21 @@
+import sys
+
+sys.path.insert(0, r"C:\SVN\geosaurus_issue_9163\src")
 import unittest
 import unittest.mock
 from unittest.mock import MagicMock
 from arcgis.gis import GIS, Item
 from arcgis.gis._impl._apikeys import APIKeyManager, APIKey
+from arcgis.auth.tools._util import detect_proxy
 
+PROXIES = detect_proxy(True)
 gis = GIS(
-    "https://devext.arcgis.com",
-    "andrew_token",
-    "#2020EsriConference",
+    # "https://devext.arcgis.com",
+    # "andrew_token",
+    # "#2020EsriConference",
+    profile='your_online_profile',
     verify_cert=False,
-    trust_env=True,
+    proxy=PROXIES,
 )
 USERNAME = gis.users.me.username is None
 
@@ -18,26 +24,44 @@ USERNAME = gis.users.me.username is None
 @unittest.skipIf(USERNAME, "Cannot Access Developer Account")
 class TestLoginWithAPIKey(unittest.TestCase):
     def test_login_api_key(self):
-        for k in gis.api_keys.keys:
-            if k._item.title.find("delete") > -1 or k._item.title.find("econd") > -1:
-                k.delete()
-        for k in gis.api_keys.keys:
-            if k._item.title.lower().find("first") > -1:
-                break
+        apk: APIKeyManager = gis.api_keys
+        k = apk.create(
+            title="testkey2",
+            tags="tags",
+            http_referers=[],
+            redirect_uris=[],
+            privileges=[
+                "premium:user:geocode:temporary",
+                "portal:apikey:basemaps",
+            ],
+        )
+
         api_key_gis = GIS(
-            url="https://devext.arcgis.com",
+            url="https://www.arcgis.com",
             api_key=k.properties.apikey,
             verify_cert=False,
+            proxy=PROXIES,
             set_active=False,
         )
-        assert api_key_gis.properties.appInfo.appOwner == "andrew_token"
+        assert (
+            api_key_gis.properties.appInfo.appOwner == gis.users.me.username
+        )
+        assert k.delete()
 
     def test_login_api_key_environment_variable(self):
         """tests logging in with API Key in environmental os variable"""
 
-        for k in gis.api_keys.keys:
-            if k._item.title.lower().find("first") > -1:
-                break
+        apk: APIKeyManager = gis.api_keys
+        k = apk.create(
+            title="testkey2",
+            tags="tags",
+            http_referers=[],
+            redirect_uris=[],
+            privileges=[
+                "premium:user:geocode:temporary",
+                "portal:apikey:basemaps",
+            ],
+        )
         import os
 
         with unittest.mock.patch.dict(
@@ -48,12 +72,16 @@ class TestLoginWithAPIKey(unittest.TestCase):
                 os, "getenv", return_value=k.properties.apikey
             ):
                 api_key_gis = GIS(
-                    url="https://devext.arcgis.com",
+                    url="https://www.arcgis.com",
                     api_key=k.properties.apikey,
                     verify_cert=False,
+                    proxy=PROXIES,
                     set_active=False,
                 )
-                assert api_key_gis.properties.appInfo.appOwner == "andrew_token"
+                assert (
+                    api_key_gis.properties.appInfo.appOwner
+                    == gis.users.me.username
+                )
 
 
 ###########################################################################

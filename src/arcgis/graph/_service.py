@@ -16,20 +16,20 @@ import platform
 
 class KnowledgeGraph:
     """
-    Provides access to a Knowledge Graph's datamodel and properties, as well as
+    Provides access to the Knowledge Graph service data model and properties, as well as
     methods to search and query the graph.
 
     ==================     ====================================================================
     **Argument**           **Description**
     ------------------     --------------------------------------------------------------------
-    url                    Knowledge Graph URL
+    url                    Knowledge Graph service URL
     ------------------     --------------------------------------------------------------------
     gis                    an authenticated :class:`arcigs.gis.GIS` object.
     ==================     ====================================================================
 
     .. code-block:: python
 
-        # Connect to a Knowledge Graph:
+        # Connect to a Knowledge Graph service:
 
         gis = GIS(url="url",username="username",password="password")
 
@@ -49,13 +49,13 @@ class KnowledgeGraph:
     def _validate_import(self):
         if HAS_KG == False:
             raise ImportError(
-                "An error occured with importing the KnowledgeGraph libraries. Please ensure you "
-                "are using Python 3.7,3.8, or 3.9 on Windows or Linux platforms."
+                "An error occured with importing the Knowledge Graph libraries. Please ensure you "
+                "are using Python 3.7, 3.8, or 3.9 on Windows or Linux platforms."
             )
 
     @classmethod
     def fromitem(cls, item):
-        """Returns the KnowledgeGraph Service from an Item"""
+        """Returns the Knowledge Graph service from an Item"""
         if item.type != "Knowledge Graph":
             raise ValueError(
                 "Invalid item type, please provide a 'Knowledge Graph' item."
@@ -64,7 +64,7 @@ class KnowledgeGraph:
 
     @property
     def properties(self) -> _isd.InsensitiveDict:
-        """returns the properties of the service"""
+        """Returns the properties of the Knowledge Graph service"""
         if self._properties is None:
             resp = self._gis._con.get(self._url, {"f": "json"})
             self._properties = _isd.InsensitiveDict(resp)
@@ -80,7 +80,7 @@ class KnowledgeGraph:
         ================    ===============================================================
         **Argument**        **Description**
         ----------------    ---------------------------------------------------------------
-        search              Required String. The search to perform on the knowledge graph.
+        search              Required String. The search to perform on the Knowledge Graph.
         ----------------    ---------------------------------------------------------------
         category            Optional String.  The category is the location of the full
                             text search.  This can be isolated to either the `entities` or
@@ -88,6 +88,14 @@ class KnowledgeGraph:
 
                             The allowed values are: both, entities, relationships
         ================    ===============================================================
+
+        .. code-block:: python
+
+            #Perform a search on the knowledge graph
+            search_result = knowledge_graph.search("cat")
+
+            # Perform a search on only entities in the knowledge graph
+            searchentities_result = knowledge_graph.search("cat", "entities")
 
         :return: List[list]
 
@@ -142,6 +150,12 @@ class KnowledgeGraph:
                             entities and relationships, by providing an openCypher query.
         ================    ===============================================================
 
+        .. code-block:: python
+
+            # Perform an openCypher query on the knowledge graph
+            query_result = knowledge_graph.query("MATCH path = (n)-[r]-(n2) RETURN path LIMIT 5")
+
+
         :return: List[list]
 
         """
@@ -167,7 +181,7 @@ class KnowledgeGraph:
     @property
     def _datamodel(self) -> object:
         """
-        Returns the datamodel for the Knowledge Graph Service
+        Returns the datamodel for the Knowledge Graph service
         """
         self._validate_import()
         url = f"{self._url}/dataModel/queryDataModel"
@@ -184,7 +198,7 @@ class KnowledgeGraph:
     @property
     def datamodel(self) -> dict:
         """
-        Returns the datamodel for the Knowledge Graph Service
+        Returns the datamodel for the Knowledge Graph service
         """
         self._validate_import()
         url = f"{self._url}/dataModel/queryDataModel"

@@ -65,6 +65,7 @@ else:
     dependencies = [
         "pillow",
         "urllib3",
+        "gssapi",
         "cachetools",
         "six",
         "lxml",
@@ -91,6 +92,7 @@ else:
         'requests-kerberos;platform_system=="Windows"',
         'winkerberos;platform_system=="Windows"',
         "requests-gssapi",
+        "gssapi>=1.8.1,<2",
         "dask",
     ]
 

@@ -44,6 +44,20 @@ except:
     pass
 
 
+def _get_rendering_service_layer(layer):
+    if layer._rendering_service_layer:
+        return layer._rendering_service_layer
+    else:
+        from .functions.utility import _generate_layer_token
+
+        token = _generate_layer_token(layer, layer.url)
+        newlyr = ImageryLayer(
+            {"input_raster": layer.url + "?token=" + token}, layer._gis
+        )
+        layer._rendering_service_layer = newlyr
+        return newlyr
+
+
 def _find_and_replace_mosaic_rule(fnarg_ra, mosaic_rule, url):
     for key, value in fnarg_ra.items():
         if key == "Raster" and isinstance(value, dict) and not (value.keys() & {"url"}):
@@ -636,8 +650,13 @@ class ImageryLayer(Layer):
                 self._datastore_raster = True
                 self._uri = url
                 if isinstance(url, dict):
-                    encoded_dict = str(self._uri).encode("utf-8")
-                    self._uri = base64.b64encode(encoded_dict)
+                    raster_url = None
+                    raster_url = url.get("input_raster", None)
+                    if raster_url:
+                        self._uri = raster_url
+                    else:
+                        encoded_dict = str(self._uri).encode("utf-8")
+                        self._uri = base64.b64encode(encoded_dict)
                 gis = _arcgis.env.active_gis if gis is None else gis
                 if gis is not None:
                     if ImageryLayer._rendering_service_object is None or (
@@ -678,6 +697,7 @@ class ImageryLayer(Layer):
         self._extent_set = False
         self._original_info = {}
         self._rendering_rule_from_item = False
+        self._rendering_service_layer = None
 
     @property
     def rasters(self):
@@ -1187,9 +1207,12 @@ class ImageryLayer(Layer):
 
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+            except:
+                raise RuntimeError(
+                    "Failed to perform project operation on the TilesOnly service"
+                )
 
         url = "%s/project" % self._url
         params = {"f": "json", "inSR": in_sr, "outSR": out_sr, "geometries": geometries}
@@ -1345,9 +1368,12 @@ class ImageryLayer(Layer):
                                             )
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+            except:
+                raise RuntimeError(
+                    "Failed to perform identify operation on the TilesOnly service"
+                )
 
         url = "%s/identify" % self._url
         params = {"f": "json", "geometry": dict(geometry)}
@@ -1556,9 +1582,13 @@ class ImageryLayer(Layer):
                                          measure_operation="HeightFromTopAndTopShadow")
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+
+            except:
+                raise RuntimeError(
+                    "Failed to perform measure operation on the TilesOnly service"
+                )
 
         if linear_unit is not None:
             linear_unit = "esri%s" % linear_unit
@@ -2006,9 +2036,13 @@ class ImageryLayer(Layer):
 
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+
+            except:
+                raise RuntimeError(
+                    "Failed to perform export image operation on the TilesOnly service"
+                )
 
         import datetime
 
@@ -3380,9 +3414,13 @@ class ImageryLayer(Layer):
 
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+
+            except:
+                raise RuntimeError(
+                    "Failed to perform compute statistics and histograms operation on the TilesOnly service"
+                )
 
         import datetime
 
@@ -3501,9 +3539,13 @@ class ImageryLayer(Layer):
         :return: A legend as a dictionary by default, or as an HTML table if as_html is True
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+
+            except:
+                raise RuntimeError(
+                    "Failed to perform legend operation on the TilesOnly service"
+                )
 
         url = "%s/legend" % self._url
         params = {"f": "json"}
@@ -3717,9 +3759,13 @@ class ImageryLayer(Layer):
 
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+
+            except:
+                raise RuntimeError(
+                    "Failed to perform compute class stats operation on the TilesOnly service"
+                )
 
         url = self._url + "/computeClassStatistics"
 
@@ -3870,9 +3916,13 @@ class ImageryLayer(Layer):
 
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+
+            except:
+                raise RuntimeError(
+                    "Failed to perform compute histograms operation on the TilesOnly service"
+                )
 
         import datetime
 
@@ -4039,9 +4089,13 @@ class ImageryLayer(Layer):
             A list of samples
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+
+            except:
+                raise RuntimeError(
+                    "Failed to perform get samples operation on the TilesOnly service"
+                )
 
         if not isinstance(geometry, Geometry):
             geometry = Geometry(geometry)
@@ -4488,9 +4542,13 @@ class ImageryLayer(Layer):
 
         """
         if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
+            try:
+                self = _get_rendering_service_layer(self)
+
+            except:
+                raise RuntimeError(
+                    "Failed to perform calculate volume operation on the TilesOnly service"
+                )
 
         if self.properties.serviceDataType == "esriImageServiceDataTypeElevation":
             url = "%s/calculateVolume" % self._url
@@ -4569,9 +4627,12 @@ class ImageryLayer(Layer):
             (hasattr(self, "_do_not_hydrate")) and not self._do_not_hydrate
         ) or not hasattr(self, "_do_not_hydrate"):
             if self.tiles_only:
-                raise RuntimeError(
-                    "This operation cannot be performed on a TilesOnly Service"
-                )
+                try:
+                    self = _get_rendering_service_layer(self)
+                except:
+                    raise RuntimeError(
+                        "Failed to perform query boundary operation on the TilesOnly service"
+                    )
 
         url = self._url + "/queryBoundary"
 
@@ -6778,11 +6839,6 @@ class ImageryLayer(Layer):
                                     )
         
         """
-        if self.tiles_only:
-            raise RuntimeError(
-                "This operation cannot be performed on a TilesOnly Service"
-            )
-
         from arcgis.raster._charts import plot_histograms
 
         return plot_histograms(
@@ -9919,12 +9975,6 @@ class _ImageServerRaster(ImageryLayer, Raster):
         return super().raster_info
 
     def get_raster_bands(self, band_ids_or_names=None):
-        if (hasattr(self, "_do_not_hydrate")) and not self._do_not_hydrate:
-            if super().tiles_only:
-                raise RuntimeError(
-                    "This operation cannot be performed on a TilesOnly Service"
-                )
-
         if band_ids_or_names is None or (
             isinstance(band_ids_or_names, list) and len(band_ids_or_names) == 0
         ):
@@ -13881,6 +13931,100 @@ class RasterCollection:
 
     #    return summary_dict
 
+    # def add_field(
+    #    self,
+    #    field_name: str,
+    #    field_values: list,
+    #    context: Optional[dict[str, Any]] = None,
+    # ):
+    #    """
+    #    Adds a new field to the raster collection and populate it with values.
+
+    #    ====================================     ====================================================================
+    #    **Argument**                             **Description**
+    #    ------------------------------------     --------------------------------------------------------------------
+    #    field_name                               Required string. The name of the field to be added.
+    #    ------------------------------------     --------------------------------------------------------------------
+    #    field_values                             Required list. The list of values associated with the field name.
+    #                                             The length of the list should match the number of items in the raster collection
+    #                                             Providing only one value will set the same value for all rows.
+    #    ------------------------------------     --------------------------------------------------------------------
+    #    context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
+    #                                             The default value for the context parameter would be the same as that of the
+    #                                             context settings applied to the parent collection.
+
+    #                                             Currently available:
+
+    #                                                 -  query_boundary:
+    #                                                    This boolean value set to this option determines whether to add SHAPE field
+    #                                                    to the RasterCollection. The value in the SHAPE field represents the
+    #                                                    boundary/geometry of the raster. The query_boundary parameter is honoured
+    #                                                    only when the RasterCollection is created from a list of Rasters.
+
+    #                                                    - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+
+    #                                                    - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
+
+    #                                                    Example:
+
+    #                                                    {"query_boundary":True}
+    #    ====================================     ====================================================================
+
+    #    :return:
+    #        A new :class:`~arcgis.raster.RasterCollection` that has the new field added.
+    #    """
+
+    #    return self._ras_coll_engine_obj.add_field(
+    #        field_name, field_values, context=context
+    #    )
+
+    # def group_by(self, field_name: str, context: Optional[dict[str, Any]] = None):
+    #    """
+    #    group_by method can be used to group the raster collection based on a field.
+
+    #    ====================================     ====================================================================
+    #    **Argument**                             **Description**
+    #    ------------------------------------     --------------------------------------------------------------------
+    #    field_name                               Required string.The name of the field that is used to group the raster collection.
+    #                                             Items with the same field values will be grouped together.
+    #    ------------------------------------     --------------------------------------------------------------------
+    #    context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
+    #                                             The default value for the context parameter would be the same as that of the
+    #                                             context settings applied to the parent collection.
+
+    #                                             Currently available:
+
+    #                                                 -  query_boundary:
+    #                                                    This boolean value set to this option determines whether to add SHAPE field
+    #                                                    to the RasterCollection. The value in the SHAPE field represents the
+    #                                                    boundary/geometry of the raster. The query_boundary parameter is honoured
+    #                                                    only when the RasterCollection is created from a list of Rasters.
+
+    #                                                    - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+
+    #                                                    - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
+
+    #                                                    Example:
+
+    #                                                    {"query_boundary":True}
+    #    ====================================     ====================================================================
+
+    #    :return:
+    #        A Dictionary. The dictionary that contains the grouped raster collections. The key of the dictionary is a
+    #        field value of the field name that the grouping is based on. The value of the dictionary is a raster
+    #        collection whose field name contains the same field value.
+
+    #    .. code-block:: python
+
+    #        # Usage Example 1: This example groups the raster collection into yearly data and creates a new raster collection using data from 1990.
+
+    #        group_by_year = rc.group_by(field_name="Year", context=None)
+    #        rc_1990 = group_by_year[1990]
+
+    #    """
+
+    #    return self._ras_coll_engine_obj.group_by(field_name, context=context)
+
     def _as_df(
         self, result_offset=None, result_record_count=None, return_all_records=False
     ):
@@ -14247,9 +14391,11 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         return newcollection
 
     def get_field_values(self, field_name, max_count=0):
-        return self._raster_collection.getFieldValues(
-            field_name=field_name, max_count=max_count
-        )
+        df = self._df
+        if max_count != 0:
+            return df[field_name].tolist()[0:max_count]
+        else:
+            return df[field_name].tolist()
 
     def to_multidimensional_raster(self, variable_field_name, dimension_field_names):
         return Raster(
@@ -14379,6 +14525,59 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         )
         return newcollection
 
+    def add_field(self, field_name, field_values, context=None):
+        """
+         Adds a new field to the raster collection and populate it with values.
+        :param field_name: Required string. The name of the field to be added.
+        :param field_values: Required list. The list of values associated with the field name.
+                             The length of the list should match the number of items in the raster collection
+                             Providing only one value will set the same value for all rows.
+        :return: Collection that has the new field added.
+        """
+        if context is None:
+            context = self._context
+
+        if field_name in self.fields:
+            raise RuntimeError("Cannot add the field. The field name already exists.")
+
+        newcollection = self._clone_raster_collection(context=context)
+        newcollection._ras_coll_engine_obj._raster_collection = (
+            self._raster_collection.addField(
+                field_name=field_name, field_values=field_values
+            )
+        )
+        newcollection._ras_coll_engine_obj._df = (
+            newcollection._ras_coll_engine_obj._as_df()
+        )
+        return newcollection
+
+    def group_by(self, field_name, context=None):
+        """
+         group_by method can be used to group the raster collection based on a field.
+        :param field_name: Required string.The name of the field that is used to group the raster collection. Items with the same field values will be grouped together.
+        :return: Dictionary.The dictionary that contains the grouped raster collections. The key of the dictionary is a field value of the field name that the grouping is based on.
+                 The value of the dictionary is a raster collection whose field name contains the same field value.
+        """
+        if context is None:
+            context = self._context
+
+        try:
+            grouped_output_arcpy = self._raster_collection.groupBy(
+                field_name=field_name
+            )
+            new_grouped_output = {}
+            for item, value in grouped_output_arcpy.items():
+                newcollection = self._clone_raster_collection(context=context)
+                newcollection._ras_coll_engine_obj._raster_collection = value
+                newcollection._ras_coll_engine_obj._df = (
+                    newcollection._ras_coll_engine_obj._as_df()
+                )
+                new_grouped_output.update({item: newcollection})
+            return new_grouped_output
+
+        except:
+            raise RuntimeError("group_by failed with the field_name - " + field_name)
+
     def _as_df(
         self, result_offset=None, result_record_count=None, return_all_records=False
     ):
@@ -14389,7 +14588,7 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         value_geometries = []
         for index, field in enumerate(self.fields):
             try:
-                value = self.get_field_values(field)
+                value = self._raster_collection.getFieldValues(field)
                 if field == "Raster":
                     for i, ele in enumerate(value):
                         value_rasters.append(
@@ -14401,7 +14600,7 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
                         value_geometries.append(Geometry(ele.JSON))
                     data["Shape"] = value_geometries
                 else:
-                    data[field] = self.get_field_values(field)
+                    data[field] = self._raster_collection.getFieldValues(field)
             except:
                 continue
         return pd.DataFrame(data=data)
@@ -15096,6 +15295,69 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         merged_collection.reset_index(drop=True, inplace=True)
 
         return RasterCollection(merged_collection)
+
+    def add_field(self, field_name, field_values, context=None):
+        """
+         Adds a new field to the raster collection and populate it with values.
+        :param field_name: Required string. The name of the field to be added.
+        :param field_values: Required list. The list of values associated with the field name.
+                             The length of the list should match the number of items in the raster collection
+                             Providing only one value will set the same value for all rows.
+        :return: Collection that has the new field added.
+        """
+        if context is None:
+            context = self._context
+
+        if field_name in self.fields:
+            raise RuntimeError("Cannot add the field. The field name already exists.")
+
+        df = self._as_df()
+        new_df = df.copy()
+
+        if not isinstance(field_values, list):
+            field_values = [field_values]
+
+        if self.count != len(field_values):
+            if len(field_values) == 1:
+                field_values = field_values * self.count
+            else:
+                raise RuntimeError(
+                    "Length of field_values does not match the raster collection count"
+                )
+
+        try:
+            new_df[field_name] = field_values
+        except:
+            raise RuntimeError("Failed to add the field to the raster collection")
+
+        return RasterCollection(new_df, context=context)
+
+    def group_by(self, field_name, context=None):
+        """
+         group_by method can be used to group the raster collection based on a field.
+        :param field_name: Required string.The name of the field that is used to group the raster collection. Items with the same field values will be grouped together.
+        :return: Dictionary.The dictionary that contains the grouped raster collections. The key of the dictionary is a field value of the field name that the grouping is based on.
+                 The value of the dictionary is a raster collection whose field name contains the same field value.
+        """
+        if context is None:
+            context = self._context
+
+        df = self._as_df()
+        try:
+            group_by_obj = df.groupby(field_name)
+            groups = {}
+
+            for key, val in group_by_obj.groups.items():
+                groups.update(
+                    {
+                        key: RasterCollection(
+                            group_by_obj.get_group(key), context=context
+                        )
+                    }
+                )
+            return groups
+        except:
+            raise RuntimeError("groupBy failed with the field_name - " + field_name)
 
     def _generate_raster_item_rft(self, raster_id):
         template_dict = {"rasterFunction": "RasterItem", "rasterFunctionArguments": {}}
@@ -16052,6 +16314,70 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
         merged_collection.reset_index(drop=True, inplace=True)
 
         return RasterCollection(merged_collection)
+
+    def add_field(self, field_name, field_values, context=None):
+        """
+         Adds a new field to the raster collection and populate it with values.
+        :param field_name: Required string. The name of the field to be added.
+        :param field_values: Required list. The list of values associated with the field name.
+                             The length of the list should match the number of items in the raster collection
+                             Providing only one value will set the same value for all rows.
+        :return: Collection that has the new field added.
+        """
+
+        if context is None:
+            context = self._context
+
+        if field_name in self.fields:
+            raise RuntimeError("Cannot add the field. The field name already exists.")
+
+        df = self._as_df()
+        new_df = df.copy()
+
+        if not isinstance(field_values, list):
+            field_values = [field_values]
+
+        if self.count != len(field_values):
+            if len(field_values) == 1:
+                field_values = field_values * self.count
+            else:
+                raise RuntimeError(
+                    "Length of field_values does not match the raster collection count"
+                )
+
+        try:
+            new_df[field_name] = field_values
+        except:
+            raise RuntimeError("Failed to add the field to the raster collection")
+
+        return RasterCollection(new_df, context=context)
+
+    def group_by(self, field_name, context=None):
+        """
+         group_by method can be used to group the raster collection based on a field.
+        :param field_name: Required string.The name of the field that is used to group the raster collection. Items with the same field values will be grouped together.
+        :return: Dictionary.The dictionary that contains the grouped raster collections. The key of the dictionary is a field value of the field name that the grouping is based on.
+                 The value of the dictionary is a raster collection whose field name contains the same field value.
+        """
+        if context is None:
+            context = self._context
+
+        df = self._as_df()
+        try:
+            group_by_obj = df.groupby(field_name)
+            groups = {}
+
+            for key, val in group_by_obj.groups.items():
+                groups.update(
+                    {
+                        key: RasterCollection(
+                            group_by_obj.get_group(key), context=context
+                        )
+                    }
+                )
+            return groups
+        except:
+            raise RuntimeError("groupBy failed with the field_name - " + field_name)
 
     def _as_df(
         self, result_offset=None, result_record_count=None, return_all_records=False
