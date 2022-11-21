@@ -2918,7 +2918,7 @@ class GeoAccessor(object):
 
             def _set_default_sr(geom):
                 if sr:
-                    geom["spatialReference"] = {"wkid" : sr}
+                    geom["spatialReference"] = {"wkid": sr}
                 elif "spatialReference" not in geom:
                     geom["spatialReference"] = {"wkid": 4326}
                 elif geom["spatialReference"] is None:
