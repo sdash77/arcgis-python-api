@@ -87,9 +87,9 @@ def _clone_layer(
 
     _set_multidimensional_rules(function_chain)
     if isinstance(layer, Raster) or isinstance(layer, RasterCollection):
-        if (
-            isinstance(layer, RasterCollection)
-        ) and layer._ras_coll_engine == _ArcpyRasterCollection:
+        if (isinstance(layer, RasterCollection)) and isinstance(
+            layer, _ArcpyRasterCollection
+        ):
             if "Rasters" in function_chain["rasterFunctionArguments"].keys():
                 if isinstance(
                     function_chain["rasterFunctionArguments"]["Rasters"],
@@ -333,21 +333,24 @@ def _clone_layer_raster(
 
 
 def _clone_layer_raster_without_copy(layer, function_chain, function_chain_ra):
-
-    if (
-        isinstance(layer, RasterCollection)
-    ) and layer._ras_coll_engine == _ArcpyRasterCollection:
+    if (isinstance(layer, RasterCollection)) and isinstance(
+        layer, _ArcpyRasterCollection
+    ):
+        if hasattr(layer, "_ras_coll_engine_obj"):
+            rc = layer._ras_coll_engine_obj
+        else:
+            rc = layer
         try:
             import arcpy, json
 
             arcpylyr = arcpy.ia.Apply(
-                layer._ras_coll_engine_obj._raster_collection,
+                rc._raster_collection,
                 json.dumps(function_chain_ra),
             )
             newlyr = Raster(
                 arcpylyr,
                 is_multidimensional=True,
-                engine=layer._ras_coll_engine_obj[0]["Raster"]._engine,
+                engine=rc[0]["Raster"]._engine,
             )
             return newlyr
         except Exception as err:
