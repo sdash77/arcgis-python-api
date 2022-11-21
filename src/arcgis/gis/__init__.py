@@ -16058,9 +16058,9 @@ class Item(dict):
     # ----------------------------------------------------------------------
     @property
     def dependencies(self):
-        """The ``dependencies`` property returns a class to manage an item's 
+        """The ``dependencies`` property returns a class to manage an item's
         dependencies.
-        
+
         :return: :class:`~arcgis.gis.ItemDependency` object.
         """
         if self._depend is None:
@@ -16494,7 +16494,7 @@ class ItemDependency(object):
     """
     Manage, monitor, and control Item dependencies.
 
-    Dependencies allow users to better understand the relationships between 
+    Dependencies allow users to better understand the relationships between
     their organizational items. This class provides the users with the following:
 
     - Warnings during item deletion if the deletion is going to break item/layer references in a web map or web application.
@@ -16508,10 +16508,10 @@ class ItemDependency(object):
     ---------------     --------------------------------------------------------------------
     item                Required Item. Item object to examine dependencies on.
     ===============     ====================================================================
-   
+
     .. note::
         Instances of this class are not created directly. Objects of this type
-        are returned by the :attr:`~arcgis.gis.Item.dependencies` property on 
+        are returned by the :attr:`~arcgis.gis.Item.dependencies` property on
         :class:`~arcgis.gis.Item` objects.
 
     """
@@ -16579,8 +16579,8 @@ class ItemDependency(object):
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         depend_type         Required String. This is the type of dependency that is registered
-                            for the item. Allowed values: 
-                            
+                            for the item. Allowed values:
+
                              - ``table``
                              - ``url``
                              - ``itemid``
