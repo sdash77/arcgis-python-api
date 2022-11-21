@@ -14441,13 +14441,12 @@ class Item(dict):
 
     # ----------------------------------------------------------------------
     def dependent_upon(self):
-
         """
         The ``dependent_upon`` method returns items, urls, etc that this item is dependent on.
 
         .. note::
-            This capability (item dependencies) is not yet available on ArcGIS Online - Currently, it is available only
-            with an ArcGIS Enterprise."""
+            This method only available for items in an ArcGIS Enterprise organization.
+        """
         return self._portal.get_item_dependencies(self.itemid)
 
     # ----------------------------------------------------------------------
@@ -14456,8 +14455,7 @@ class Item(dict):
         The ``dependent_to`` method returns items, urls, etc that are dependent to this item.
 
         .. note::
-            This capability (item dependencies) is not yet available on ArcGIS Online - Currently, it is available
-             only with an ArcGIS Enterprise.
+            This method only available for items in an ArcGIS Enterprise organization.
         """
         return self._portal.get_item_dependents_to(self.itemid)
 
@@ -16060,7 +16058,11 @@ class Item(dict):
     # ----------------------------------------------------------------------
     @property
     def dependencies(self):
-        """The ``dependencies`` property returns a class to manage the Item's dependencies"""
+        """The ``dependencies`` property returns a class to manage an item's 
+        dependencies.
+        
+        :return: :class:`~arcgis.gis.ItemDependency` object.
+        """
         if self._depend is None:
             self._depend = ItemDependency(self)
         return self._depend
@@ -16492,20 +16494,25 @@ class ItemDependency(object):
     """
     Manage, monitor, and control Item dependencies.
 
-    Depencies allows users to better understand the inter-dependency between their spatial assets.
-    This capability provides the users with the following:
+    Dependencies allow users to better understand the relationships between 
+    their organizational items. This class provides the users with the following:
 
-    - Users will be warned during item deletion if the deletion is going to break item/layer references in a web map or web application.
-    - Users will be able to explore the dependents and dependencies of a specific item.
-    - Portal administrators will be able to efficiently update the URLs of their hosted/federated services in an single edit operation.
+    - Warnings during item deletion if the deletion is going to break item/layer references in a web map or web application.
+    - Ability to explore the dependents and dependencies of a specific item.
+    - Administrator ability to efficiently update the URLs of their hosted/federated services in a single edit operation.
 
-    When an item is updated, its dependencies are updated as well and always kept in sync.
+    When an item is updated, its dependencies are updated as well and always be kept in sync.
 
     ===============     ====================================================================
     **Argument**        **Description**
     ---------------     --------------------------------------------------------------------
     item                Required Item. Item object to examine dependencies on.
     ===============     ====================================================================
+   
+    .. note::
+        Instances of this class are not created directly. Objects of this type
+        are returned by the :attr:`~arcgis.gis.Item.dependencies` property on 
+        :class:`~arcgis.gis.Item` objects.
 
     """
 
@@ -16572,7 +16579,12 @@ class ItemDependency(object):
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
         depend_type         Required String. This is the type of dependency that is registered
-                            for the item. The allowed values are: table, url, or itemid.
+                            for the item. Allowed values: 
+                            
+                             - ``table``
+                             - ``url``
+                             - ``itemid``
+                             - ``serverId``
         ---------------     --------------------------------------------------------------------
         depend_value        Required string. This is the associated value for the type above.
         ===============     ====================================================================

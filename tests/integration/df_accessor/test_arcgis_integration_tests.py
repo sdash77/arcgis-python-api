@@ -4,20 +4,12 @@ This collection of tests ensures that the functionality in the arcgis api works
 properly with the Spatially enabled DataFrame.
 
 """
-import os, sys
-import shutil, datetime
-import tempfile
+import sys
+# sys.path.insert(0,r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 
 from arcgis.gis import GIS
-from arcgis.features.geo._array import GeoArray, GeoType
 import arcgis.features.geo
-from arcgis.geometry import Geometry
-import copy
-from arcgis.features.geo import _io
-import pandas as pd
-from pandas.core.internals import ExtensionBlock
-import pandas.util.testing as tm
 
 USERNAME = None
 PASSWORD = None
@@ -129,7 +121,7 @@ _fs_dict = {
     ],
 }
 
-
+gis = GIS(profile="your_online_profile")
 def portal_selector():
     """ select available portal for import_toolbox """
     from urllib.request import urlopen
@@ -139,14 +131,12 @@ def portal_selector():
               + str(server_num) \
               + ".arcgisonline.com/ArcGIS/rest/services/Elevation/ESRI_Elevation_World/GPServer"
         try:
-            response = urlopen(url)
+            urlopen(url)
             return url
         except HTTPError as e:
-            print(e)
+            pass
         except URLError as e:
-            print(e)
-        else:
-            return url
+            pass
 
 
 class TestArcGISIntegrationTests(unittest.TestCase):
@@ -221,3 +211,7 @@ if __name__ == "__main__":
     test_inst.test_gp()
     print("   Testing GP finished")
     print("################################################################")
+
+if __name__ == "__main__":
+
+    unittest.main()
