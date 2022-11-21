@@ -8776,9 +8776,8 @@ class ResourceManager(object):
                 and resp.text.find("Resource does not exist or is inaccessible.") > -1
             ):
                 raise Exception(resp.text)
-            elif resp.headers["Content-Type"].lower().find("json") > -1:
+            elif resp.headers["Content-Type"].lower().find("json") > -1 and try_json:
                 try:
-
                     return resp.json()
                 except json.JSONDecodeError:
                     return resp.text
