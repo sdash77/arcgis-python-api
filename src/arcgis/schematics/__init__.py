@@ -24,8 +24,9 @@ class SchematicLayers(Layer):
     def diagrams(self):
         """
         The Schematic Diagrams resource represents all the schematic diagrams
-        under a schematic service. It is returned as an array of Schematic
-        Diagram resource by the REST API.
+        under a schematic service. It is returned as an array of `Schematic
+        Diagram resources <https://developers.arcgis.com/rest/services-reference/enterprise/schematic-diagram.htm>`_
+        by the REST API.
         """
         params = {"f": "json"}
         exportURL = self._url + "/diagrams"
@@ -37,7 +38,7 @@ class SchematicLayers(Layer):
         """
         The Schematic Folders resource represents the set of schematic folders
         in the schematic dataset(s) related to the schematic layers under a
-        schematic service. It is returned as an array of <Schematic Folder Object>
+        schematic service. It is returned as an array of `Schematic Folder Objects <https://developers.arcgis.com/documentation/common-data-types/schematic-folder-object.htm>`_
         by the REST API.
         """
         params = {"f": "json"}
@@ -50,7 +51,8 @@ class SchematicLayers(Layer):
         """
         The Schematic Layers resource represents all the schematic layers
         under a schematic service published by ArcGIS Server. It is returned
-        as an array of Schematic Layer resources by the REST API.
+        as an array of `Schematic Layer resources <https://developers.arcgis.com/rest/services-reference/enterprise/schematic-layer.htm>`_
+        by the REST API.
         """
         params = {"f": "json"}
         exportURL = self._url + "/schematicLayers"
@@ -62,8 +64,9 @@ class SchematicLayers(Layer):
         """
         The Schematic Diagram Templates represents all the schematic diagram
         templates related to the published schematic layers under a schematic
-        service. It is returned as an array of Schematic Diagram Template
-        resources by the REST API.
+        service. It is returned as an array of `Schematic Diagram Template
+        resources <https://developers.arcgis.com/rest/services-reference/enterprise/schematic-diagram-template.htm>`_
+        by the REST API.
         """
         params = {"f": "json"}
         exportURL = self._url + "/templates"
@@ -85,28 +88,30 @@ class SchematicLayers(Layer):
         that contain schematic features associated with the same GIS features/
         objects related to another set of schematic features.
 
-        Inputs:
-            whereClause - A where clause for the query filter. Any legal SQL
-                          where clause operating on the fields in the schematic
-                          diagram class table is allowed. See the Schematic
-                          diagram class table fields section below to know the
-                          exact list of field names that can be used in this
-                          where clause.
-            relatedObjects - An array containing the list of the GIS features/
-                             objects IDs per feature class/table name that are in
-                             relation with schematic features in the resulting
-                             queried diagrams. Each GIS feature/object ID
-                             corresponds to a value of the OBJECTID field in the
-                             GIS feature class/table.
-            relatedSchematicObjects - An array containing the list of the
-                                      schematic feature names per schematic
-                                      feature class ID that have the same
-                                      associated GIS features/objects with
-                                      schematic features in the resulting
-                                      queried diagrams. Each schematic feature
-                                      name corresponds to a value of the
-                                      SCHEMATICTID field in the schematic
-                                      feature class.
+        See `Schematic Search Diagrams <https://developers.arcgis.com/rest/services-reference/enterprise/schematic-search-diagrams.htm>`_
+        for full details.
+
+        =======================      =======================================================================
+        **Argument**                 **Description**
+        -----------------------      -----------------------------------------------------------------------
+        whereClause                  A where clause for the query filter. Any legal SQL where clause 
+                                     operating on the fields in the schematic diagram class table is allowed. 
+                                     See the `Schematic diagram class fields  <https://developers.arcgis.com/rest/services-reference/enterprise/schematic-search-diagrams.htm>`_ 
+                                     table for the exact list of field names that can be used in this where 
+                                     clause.
+        -----------------------      -----------------------------------------------------------------------
+        relatedObjects               An array containing the list of the GIS features/objects IDs per 
+                                     feature class/table name that are in relation with schematic features 
+                                     in the resulting queried diagrams. Each GIS feature/object ID
+                                     corresponds to a value of the OBJECTID field in the GIS feature 
+                                     class/table.
+        -----------------------      -----------------------------------------------------------------------
+        relatedSchematicObjects      An array containing the list of the schematic feature names per 
+                                     schematic feature class ID that have the same associated GIS 
+                                     features/objects with schematic features in the resulting queried 
+                                     diagrams. Each schematic feature name corresponds to a value of the
+                                     ``SCHEMATICTID`` field in the schematic feature class.
+        =======================      =======================================================================
         """
         params = {"f": "json"}
         if whereClause:
