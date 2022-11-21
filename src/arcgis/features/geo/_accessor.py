@@ -2917,7 +2917,11 @@ class GeoAccessor(object):
             from ._array import GeoArray
 
             def _set_default_sr(geom):
-                if geom["spatialReference"] is None:
+                if sr:
+                    geom["spatialReference"] = {"wkid": sr}
+                elif "spatialReference" not in geom:
+                    geom["spatialReference"] = {"wkid": 4326}
+                elif geom["spatialReference"] is None:
                     geom["spatialReference"] = {"wkid": 4326}
                 elif (
                     geom["spatialReference"].get("wkid", None) is None
