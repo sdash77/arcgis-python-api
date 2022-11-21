@@ -14415,8 +14415,7 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
         return RasterCollection(rasters, attribute_dict, context=context)
 
     def reduce(self, func, func_args={}):
-        rasters = self._rasters_list
-        reduced_raster = func(rasters, **func_args)
+        reduced_raster = func(self, **func_args)
         return reduced_raster
 
     def merge(self, collection2):
