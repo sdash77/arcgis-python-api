@@ -90,3 +90,9 @@ Timeline
    :undoc-members:
    :show-inheritance:
 
+Scales
+------------------------------------------
+.. autoclass:: arcgis.apps.storymap.story_content.Scales
+   :members:
+   :undoc-members:
+   :show-inheritance:
