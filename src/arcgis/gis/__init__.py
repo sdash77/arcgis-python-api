@@ -4121,9 +4121,7 @@ class UserManager(object):
             url = f"{self._gis._portal.resturl}portals/self/assignMemberCategorySchema"
             cat_param = [{"title": category} for category in value]
             if self._gis.properties.hasMemberCategorySchema:
-                from copy import deepcopy
-                mem_categories = deepcopy(self._gis.users.categories[0]["categories"])
-                for category in mem_categories:
+                for category in self._gis.users.categories[0]["categories"]:
                     cat_param.append(category)
             params = {
                     "f": "json",
@@ -4142,9 +4140,7 @@ class UserManager(object):
         elif isinstance(value, dict) and "memberCategorySchema" in value:
             url = f"{self._gis._portal.resturl}portals/self/assignMemberCategorySchema"
             if self._gis.properties.hasMemberCategorySchema:
-                from copy import deepcopy
-                mem_categories = deepcopy(self._gis.users.categories[0]["categories"])
-                for category in mem_categories:
+                for category in self._gis.users.categories[0]["categories"]:
                     value["memberCategorySchema"][0]["categories"].append(category)
             params = {"f": "json", "memberCategorySchema": value}
             res = self._gis._con.post(url, params)
