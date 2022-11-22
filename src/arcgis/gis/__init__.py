@@ -4026,7 +4026,17 @@ class UserManager(object):
 
     # ----------------------------------------------------------------------
     def assign_categories(self, users: list[User], categories: list[str]) -> list:
-        """ """
+        """Adds categories to :class:`users <arcgis.gis.User>`.
+           
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        users                  Required list of :class:`~arcgis.gis.User` objects to categorize.
+        ------------------     --------------------------------------------------------------------                       
+        categories             Required string defining the categories to add to each user in the 
+                               `users` argument list.
+        ==================     ====================================================================
+        """
         results = []
         for user in users:
             results.append({user.username: user.update(categories=categories)})
@@ -4036,16 +4046,26 @@ class UserManager(object):
     @property
     def categories(self) -> dict:
         """
-        Defines the member categories.
-
+        Provides means to get or set categories for members of an organization.
+        See `Categorize members <https://doc.arcgis.com/en/arcgis-online/administer/manage-members.htm#ESRI_SECTION1_91337F478F8542D9A6D2F1A7B65E0AFF>`_
+        or `Assign Member Category Schema description <https://developers.arcgis.com/rest/users-groups-and-items/assign-member-category-schema.htm>`_
+        for additional details.
+        
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        value                  Required List. A list of categories to assign to the organization.
-                               If `None` is given, the categories will be erased.
+        value                  Required List of strings naming the categories to create for 
+                               assigning to organizational members. If `None` is given, the 
+                               categories will be erased.
         ==================     ====================================================================
 
         :returns: list
+        
+        .. code-block:: python
+        
+            #Usage example: Setting member categories
+            
+            >>> gis.users.categories = ["Office Location"]
 
         """
         if dict(self._gis.properties).get("hasMemberCategorySchema", False):
@@ -4058,13 +4078,17 @@ class UserManager(object):
     @categories.setter
     def categories(self, value: list):
         """
-        Defines the member categories.
+        Provides means to get or set categories for members of an organization.
+        See `Categorize members <https://doc.arcgis.com/en/arcgis-online/administer/manage-members.htm#ESRI_SECTION1_91337F478F8542D9A6D2F1A7B65E0AFF>`_
+        or `Assign Member Category Schema description <https://developers.arcgis.com/rest/users-groups-and-items/assign-member-category-schema.htm>`_
+        for additional details.
 
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        value                  Required List. A list of categories to assign to the organization.
-                               If `None` is given, the categories will be erased.
+        value                  Required List of strings naming the categories to create for 
+                               assigning to organizational members. If `None` is given, the 
+                               categories will be erased.
         ==================     ====================================================================
 
         :returns: list
@@ -4082,22 +4106,33 @@ class UserManager(object):
                 raise Exception(res)
         elif isinstance(value, (tuple, list)):
             url = f"{self._gis._portal.resturl}portals/self/assignMemberCategorySchema"
+            cat_param = [{"title": category} for category in value]
+            if self._gis.properties.hasMemberCategorySchema:
+                from copy import deepcopy
+                mem_categories = deepcopy(self._gis.users.categories[0]["categories"])
+                for category in mem_categories:
+                    cat_param.append(category)
             params = {
-                "f": "json",
-                "memberCategorySchema": {
-                    "memberCategorySchema": [
-                        {
-                            "title": "Categories",
-                            "categories": list(value),
-                        }
-                    ]
-                },
-            }
+                    "f": "json",
+                    "memberCategorySchema": {
+                        "memberCategorySchema": [
+                            {
+                                "title": "Categories",
+                                "categories": cat_param,
+                            }
+                        ]
+                    }
+                }
             res = self._gis._con.post(url, params)
             if res.get("success", False) == False:
                 raise Exception(res)
         elif isinstance(value, dict) and "memberCategorySchema" in value:
             url = f"{self._gis._portal.resturl}portals/self/assignMemberCategorySchema"
+            if self._gis.properties.hasMemberCategorySchema:
+                from copy import deepcopy
+                mem_categories = deepcopy(self._gis.users.categories[0]["categories"])
+                for category in mem_categories:
+                    value["memberCategorySchema"][0]["categories"].append(category)
             params = {"f": "json", "memberCategorySchema": value}
             res = self._gis._con.post(url, params)
             if res.get("success", False) == False:
