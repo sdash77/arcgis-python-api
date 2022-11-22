@@ -4054,18 +4054,31 @@ class UserManager(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        value                  Required List of strings naming the categories to create for 
-                               assigning to organizational members. If `None` is given, the 
-                               categories will be erased.
+        value                  Required List of strings or dictionary defining the categories to 
+                               create for assigning to organizational members. If `None` is given,
+                               the category schema will be erased.
         ==================     ====================================================================
 
         :returns: list
         
         .. code-block:: python
         
-            #Usage example: Setting member categories
+            # Usage example #1: Setting member categories with a list
             
             >>> gis.users.categories = ["Office Location"]
+            
+            # Usage example #2: Setting member categories with dictionary
+            
+            >>> category_dict = {"memberCategorySchema": [
+                                                           {"title": "Categories",
+                                                           "categories": [
+                                                                          {"title": "Office Location"},
+                                                                          {"title": "Department"}
+                                                                         ]
+                                                           }
+                                                         ]
+                                 }
+            >>> gis.users.categories = category_dict
 
         """
         if dict(self._gis.properties).get("hasMemberCategorySchema", False):
