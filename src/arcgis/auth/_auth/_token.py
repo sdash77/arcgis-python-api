@@ -444,9 +444,13 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         self._expiration = expiration or 20160
         self._response_type = kwargs.pop("response_type", "token")
         if self._response_type == "token":
+            self._clientid = "pythonapi"  # "arcgisonline"
+        else:
+            self._clientid = kwargs.get("clientid", "pythonapi")  # "arcgispro"
+        if self._response_type == "token":
             from oauthlib.oauth2 import MobileApplicationClient
 
-            self._client = MobileApplicationClient(client_id="arcgisonline")
+            self._client = MobileApplicationClient(client_id=self._clientid)
 
         if referer is None:
             self._referer = ""
@@ -460,10 +464,7 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
         self._signin_url = f"{url}/sharing/oauth2/signin"
         self._reset_password_url = f"{url}/sharing/oauth2/resetPassword"
         self._update_profile_url = f"{url}/sharing/oauth2/updateUserProfile"
-        if self._response_type == "token":
-            self._clientid = "arcgisonline"
-        else:
-            self._clientid = kwargs.get("clientid", "arcgispro")
+
         self._no_go_token = set()
         self._username = username
         self._password = password
@@ -622,6 +623,13 @@ class EsriBuiltInAuth(AuthBase, SupportMultiAuth):
             verify=self._verify_cert,
             proxies=self.proxies,
         ).text
+        if content.find("Error: Invalid client_id") > -1:
+            self._clientid = "arcgisonline"
+            from oauthlib.oauth2 import MobileApplicationClient
+
+            self._client = MobileApplicationClient(client_id=self._clientid)
+            self._init_response_type_token()
+            return
         oauth_info = None
         pattern = self._re_expressions["step-1a"]
         if len(pattern.findall(content)) == 0:
