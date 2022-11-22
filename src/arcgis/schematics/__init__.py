@@ -94,21 +94,21 @@ class SchematicLayers(Layer):
         =======================      =======================================================================
         **Argument**                 **Description**
         -----------------------      -----------------------------------------------------------------------
-        whereClause                  A where clause for the query filter. Any legal SQL where clause 
-                                     operating on the fields in the schematic diagram class table is allowed. 
-                                     See the `Schematic diagram class fields  <https://developers.arcgis.com/rest/services-reference/enterprise/schematic-search-diagrams.htm>`_ 
-                                     table for the exact list of field names that can be used in this where 
+        whereClause                  A where clause for the query filter. Any legal SQL where clause
+                                     operating on the fields in the schematic diagram class table is allowed.
+                                     See the `Schematic diagram class fields  <https://developers.arcgis.com/rest/services-reference/enterprise/schematic-search-diagrams.htm>`_
+                                     table for the exact list of field names that can be used in this where
                                      clause.
         -----------------------      -----------------------------------------------------------------------
-        relatedObjects               An array containing the list of the GIS features/objects IDs per 
-                                     feature class/table name that are in relation with schematic features 
+        relatedObjects               An array containing the list of the GIS features/objects IDs per
+                                     feature class/table name that are in relation with schematic features
                                      in the resulting queried diagrams. Each GIS feature/object ID
-                                     corresponds to a value of the OBJECTID field in the GIS feature 
+                                     corresponds to a value of the OBJECTID field in the GIS feature
                                      class/table.
         -----------------------      -----------------------------------------------------------------------
-        relatedSchematicObjects      An array containing the list of the schematic feature names per 
-                                     schematic feature class ID that have the same associated GIS 
-                                     features/objects with schematic features in the resulting queried 
+        relatedSchematicObjects      An array containing the list of the schematic feature names per
+                                     schematic feature class ID that have the same associated GIS
+                                     features/objects with schematic features in the resulting queried
                                      diagrams. Each schematic feature name corresponds to a value of the
                                      ``SCHEMATICTID`` field in the schematic feature class.
         =======================      =======================================================================
