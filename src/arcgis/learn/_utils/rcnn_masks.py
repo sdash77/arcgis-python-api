@@ -141,7 +141,7 @@ def show_batch_rcnn_masks(
                 n_instance = y_batch[idx].unique().shape[0]
                 y_merged = y_batch[idx].max(dim=0)[0].cpu().numpy()
                 cmap_fn = getattr(matplotlib.cm, cmap)
-                y_rgba = cmap_fn._resample(n_instance)(y_merged)
+                y_rgba = cmap_fn.resampled(n_instance)(y_merged)
                 y_rgba[y_merged == 0] = 0
                 y_rgba[:, :, -1] = alpha
                 axi.imshow(y_rgba)
