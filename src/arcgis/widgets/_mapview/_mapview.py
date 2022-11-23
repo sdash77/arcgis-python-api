@@ -347,7 +347,7 @@ class MapView(widgets.DOMWidget):
     @property
     def snap_to_zoom(self):
         """
-        The ``snap_to_zoom`` property is used to determine how the zoom is enabled when the map widget is created.
+        The `snap_to_zoom` property is used to determine how the zoom is enabled when the map widget is created.
 
 
         ===============     ====================================================================
@@ -555,37 +555,36 @@ class MapView(widgets.DOMWidget):
         """
         Get/Set the map widget's extent.
 
+        ==================     ====================================================================
+        **Argument**           **Description**
+        ------------------     --------------------------------------------------------------------
+        value                  Required dict.
+                                A `[[xmin, ymin], [xmax, ymax]]` list, Spatially Enabled Data Frame ``full_extent``,
+                                or a dict that represents the JSON of the map widget's extent.
 
-            ==================     ====================================================================
-            **Argument**           **Description**
-            ------------------     --------------------------------------------------------------------
-            value                  Required dict.
-                                   A `[[xmin, ymin], [xmax, ymax]]` list, Spatially Enabled Data Frame ``full_extent``,
-                                   or a dict that represents the JSON of the map widget's extent.
+                                Examples for each:
+                                web_map.extent = [[-124.35, 32.54], [-114.31, 41.95]]
+                                web_map.extent = data_frame.spatial.full_extent
+                                web_map.extent = {
+                                        "xmin": -124.35,
+                                        "ymin": 32.54,
+                                        "xmax": -114.31,
+                                        "ymax": 41.95
+                                    }
+        ==================     ====================================================================
 
-                                    Examples for each:
-                                    web_map.extent = [[-124.35, 32.54], [-114.31, 41.95]]
-                                    web_map.extent = data_frame.spatial.full_extent
-                                    web_map.extent = {
-                                            "xmin": -124.35,
-                                            "ymin": 32.54,
-                                            "xmax": -114.31,
-                                            "ymax": 41.95
-                                        }
-            ==================     ====================================================================
+        .. code-block:: python
 
-            .. code-block:: python
+            #Usage Example
 
-                #Usage Example
-
-                >>> from arcgis.gis import GIS, Item
-                >>> from arcgis.widgets import MapView
-                >>> map2 = gis.map("California")
-                >>> map2.extent
-                {
-                'xmin': -124.20822999999997, 'ymin': 31.436105693000048,
-                'xmax': -114.33222999999997, 'ymax': 41.31210569300005
-                }
+            >>> from arcgis.gis import GIS, Item
+            >>> from arcgis.widgets import MapView
+            >>> map2 = gis.map("California")
+            >>> map2.extent
+            {
+            'xmin': -124.20822999999997, 'ymin': 31.436105693000048,
+            'xmax': -114.33222999999997, 'ymax': 41.31210569300005
+            }
 
         """
         if self._readonly_extent:
@@ -713,7 +712,8 @@ class MapView(widgets.DOMWidget):
     _trigger_interactive_draw_mode_for = Dict({}).tag(sync=True)
     _trigger_new_jlab_window_with_args = Dict({}).tag(sync=True)
     hide_mode_switch = Bool(False).tag(sync=True)
-    """When ``hide_mode_switch`` is set to ``True`` the 2D/3D switch button will be hidden from the widget.
+    """
+    When the hide_mode_switch property is set to True, the 2D/3D switch button will be hidden from the widget.
    
     .. note::
         Once the button is hidden, it cannot be made visible again: a new MapView instance must be created to see the 
@@ -721,15 +721,15 @@ class MapView(widgets.DOMWidget):
     """
     jupyter_target = Unicode("").tag(sync=True)
     """
-    ``jupyter_target`` is a readonly string that is either ``lab`` or ``notebook``: ``jupyter_target`` represents if
-    this widget is drawn in a Jupyter Notebook environment or a JupyterLab
+    The jupyter_target property is a read-only string that is either "lab" or "notebook". This represents if
+    the widget is drawn in a Jupyter Notebook environment or a JupyterLab
     environment.
     """
     tab_mode = Unicode("auto").tag(sync=True)
     """
     .. raw:: html
 
-        <p>The ``tab_mode`` property is a string property that specifies the 'default' behavior of toggling a
+        <p>The tab_mode property is a string property that specifies the 'default' behavior of toggling a
         new window in a JupyterLab environment, whether that is called by
         pressing the <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAC
         AAAAAgCAYAAABzenr0AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYA
@@ -773,18 +773,16 @@ class MapView(widgets.DOMWidget):
 
     ready = Bool(False).tag(sync=True)
     """
-    ``ready`` is a readonly bool that represents if the map widget has been drawn
+    The ready property is a read-only bool that represents if the map widget has been drawn
     in the notebook.
     """
     _js_cdn_override = Unicode().tag(sync=True)
 
     legend = Bool(False).tag(sync=True)
     """
-    If ``legend`` is set to ``True``, a legend will display in the widget that
-    describes all layers added to the map. If set to ``False``,the legend will be hidden.
-    
-    .. note::
-        The default is ``False`` .
+    If legend property is set to True, a legend will display in the widget that
+    describes all layers added to the map. If set to False,the legend will be hidden.
+    The default is False .
     """
 
     _gallery_basemaps = Dict({}).tag(sync=True)
@@ -899,7 +897,7 @@ class MapView(widgets.DOMWidget):
     """
     The ``basemaps`` layers are a list of possible basemaps to set :attr:`~arcgis.widgets.MapView.basemap` with:
     
-    1. Dark Grey Vector
+    1. Dark Gray Vector
     2. Gray Vector
     3. Hybrid
     4. Oceans
@@ -1088,16 +1086,6 @@ class MapView(widgets.DOMWidget):
         other_html = "<br><h4></h4>"
         class_id = class_id_root + self._uuid
         return f'<div class="{class_id}">{iframe_html}</div>'
-
-    print_service_url = Unicode("").tag(sync=True)
-    """
-    .. warning::
-        This property is obselete as of >v1.6 of the Python API, since
-        the underlying JavaScript code ran during a `take_screenshot()` Python
-        call has been has been changed to `MapView.takeScreenshot()` instead
-        of calling a Print Service URL. Any value you set to this property
-        will be ignored (2D screenshots will still be taken successfully).
-    """
 
     _trigger_screenshot_with_args = Dict({}).tag(sync=True)
 
@@ -1671,7 +1659,7 @@ class MapView(widgets.DOMWidget):
 
         .. note::
             A list of layers added to the widget can be retrieved by querying the
-        :attr:`~arcgis.widgets.MapView.layers` property.
+            :attr:`~arcgis.widgets.MapView.layers` property.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -1682,7 +1670,7 @@ class MapView(widgets.DOMWidget):
         ==================     ====================================================================
 
         :return:
-            True if layer is successfully removed. Else, False.
+            True if layer is successfully removed, otherwise False.
         """
         # Developer notes: infer all the layer types the user passed in.
         # Remove everything if the user didn't specify. Then, look up the hash
@@ -2253,11 +2241,9 @@ class MapView(widgets.DOMWidget):
 
     def draw(self, shape, popup=None, symbol=None, attributes=None):
         """
-        The ``draw`` method draws a shape on the map widget.
-
-        .. note::
-            Anything can be drawn from known :class:`~arcgis.geometry.Geometry` objects, coordinate pairs, and
-            :class:`~arcgis.features.FeatureSet` objects.
+        The draw method draws a shape on the map widget.
+        Anything can be drawn from known :class:`~arcgis.geometry.Geometry` objects, coordinate pairs, and
+        :class:`~arcgis.features.FeatureSet` objects.
 
         ==================     ====================================================================
         **Argument**           **Description**
@@ -2445,10 +2431,8 @@ class MapView(widgets.DOMWidget):
 
     def clear_graphics(self):
         """
-        The ``clear_graphics`` method clear the graphics drawn on the map widget.
-
-        .. note::
-            Graphics are shapes drawn using the :attr:`~arcgis.widgets.MapView.draw` method.
+        The clear_graphics method clears the graphics drawn on the map widget.
+        Graphics are shapes drawn using the :attr:`~arcgis.widgets.MapView.draw` method.
 
         .. code-block:: python
 
@@ -2609,7 +2593,7 @@ class MapView(widgets.DOMWidget):
 
     time_slider = Bool(False).tag(sync=True)
     """
-    ``time_slider`` is a string property that determines whether a time slider exists for a map widget.
+    The time_slider property determines whether a time slider exists for a map widget.
     If set to `True`, will display a time slider in the widget that will
     allow you to visualize temporal data for an applicable layer added to
     the map. Default: `False`.
@@ -2620,12 +2604,11 @@ class MapView(widgets.DOMWidget):
 
     time_mode = Unicode("time-window").tag(sync=True)
     """
-    ``time_mode`` is the string used for defining if the temporal data will be displayed
+    The time_mode property is the string used for defining if the temporal data will be displayed
     cumulatively up to a point in time, a single instant in time, or
     within a time range.
 
-    Possible values: "instant", "time-window", "cumulative-from-start",
-    "cumulative-from-end". Default: "time-window"
+    `Possible values: "instant", "time-window", "cumulative-from-start", "cumulative-from-end". Default: "time-window"`
 
     See the `TimeSlider <https://developers.arcgis.com/javascript/latest/api-reference/esri-widgets-TimeSlider.html#mode>`_
     page in the ArcGIS REST API page for more info.

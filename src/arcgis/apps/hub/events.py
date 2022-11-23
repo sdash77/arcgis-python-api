@@ -3,6 +3,7 @@ from collections import OrderedDict
 from arcgis.geocoding import geocode
 import json
 
+
 class Event(OrderedDict):
     """
     Represents an event in a Hub. A Hub has many Events that can be associated with an Initiative.
