@@ -35,11 +35,16 @@ def _raster_input(raster, raster2=None):
     if isinstance(raster, RasterCollection) or isinstance(raster2, RasterCollection):
         import inspect
 
-        fn_name = inspect.stack()[2][3]
-        if fn_name == "<module>":
-            fn_name = inspect.stack()[1][3]
-        if fn_name != "to_multidimensional_raster":
-            if not fn_name in _aggregating_functions:
+        fn_name_l2 = inspect.stack()[2][3]
+        fn_name_l1 = inspect.stack()[1][3]
+        if (
+            fn_name_l2 != "to_multidimensional_raster"
+            and fn_name_l1 != "_simple_collection"
+        ):
+            if (
+                not fn_name_l2 in _aggregating_functions
+                and not fn_name_l1 in _aggregating_functions
+            ):
                 raise RuntimeError(
                     "RasterCollection object cannot be specified as input to non aggregating functions"
                 )

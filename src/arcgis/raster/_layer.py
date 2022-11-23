@@ -13772,164 +13772,164 @@ class RasterCollection:
         """
         return self._ras_coll_engine_obj.map(func=func, context=context)
 
-    # def reduce(self, func, func_args={}):
-    #    """
-    #    The ``reduce`` method composite all the images in the collection to a single image based on a reducer function.
+    def reduce(self, func, func_args={}):
+        """
+        The ``reduce`` method composite all the images in the collection to a single image based on a reducer function.
 
-    #    ====================================     ====================================================================
-    #    **Argument**                             **Description**
-    #    ------------------------------------     --------------------------------------------------------------------
-    #    func                                     Required. The Python function to reduce the raster collection.
-    #                                             The function should accept a list of rasters and return a single reduced raster
-    #    ------------------------------------     --------------------------------------------------------------------
-    #    func_args                                Optional dictionary. Additional paramters to be passed the reducer function.
-    #    ====================================     ====================================================================
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        func                                     Required. The Python function to reduce the raster collection.
+                                                 The function should accept a list of rasters and return a single reduced raster
+        ------------------------------------     --------------------------------------------------------------------
+        func_args                                Optional dictionary. Additional paramters to be passed the reducer function.
+        ====================================     ====================================================================
 
-    #    :return: a ``Raster`` object
+        :return: a ``Raster`` object
 
-    #    .. code-block:: python
+        .. code-block:: python
 
-    #        # Usage Example 1: This snippet reduces a raster collection based on a reducer function from arcgis.raster.functions module that can accept a list of rasters.
+            # Usage Example 1: This snippet reduces a raster collection based on a reducer function from arcgis.raster.functions module that can accept a list of rasters.
 
-    #        rc = RasterCollection("https://myserver/arcgis/rest/services/ImageServiceName/ImageServer")
-    #        from arcgis.raster.functions import max
-    #        max_raster = rc.reduce(func=max, func_args = {"cellsize_type":"MinOf"})
+            rc = RasterCollection("https://myserver/arcgis/rest/services/ImageServiceName/ImageServer")
+            from arcgis.raster.functions import max
+            max_raster = rc.reduce(func=max, func_args = {"cellsize_type":"MinOf"})
 
-    #        # Usage Example 2: This snippet reduces a raster collection based on a custom reducer function.
+            # Usage Example 2: This snippet reduces a raster collection based on a custom reducer function.
 
-    #        rc = RasterCollection("https://myserver/arcgis/rest/services/ImageServiceName/ImageServer")
+            rc = RasterCollection("https://myserver/arcgis/rest/services/ImageServiceName/ImageServer")
 
-    #        def skewness(ras_list):
-    #            from arcgis.raster.functions import mean, std, med
-    #            cs_mean = mean(ras_list, process_as_multiband=True)
-    #            cs_stddev  = std(ras_list, process_as_multiband=True)
-    #            cs_median = med(ras_list, process_as_multiband=True)
-    #            out_skewness = 3*(cs_mean - cs_median)/cs_stddev
-    #            return out_skewness
+            def skewness(ras_list):
+                from arcgis.raster.functions import mean, std, med
+                cs_mean = mean(ras_list, process_as_multiband=True)
+                cs_stddev  = std(ras_list, process_as_multiband=True)
+                cs_median = med(ras_list, process_as_multiband=True)
+                out_skewness = 3*(cs_mean - cs_median)/cs_stddev
+                return out_skewness
 
-    #        skewness = rc.reduce(func=skewness)
+            skewness = rc.reduce(func=skewness)
 
-    #    """
-    #    return self._ras_coll_engine_obj.reduce(func=func, func_args=func_args)
+        """
+        return self._ras_coll_engine_obj.reduce(func=func, func_args=func_args)
 
-    # def merge(self, collection2):
-    #    """
-    #    The ``merge`` method merges two image collections into one. The output has all the items that were in either collection.
+    def merge(self, collection2):
+        """
+        The ``merge`` method merges two image collections into one. The output has all the items that were in either collection.
 
-    #    ====================================     ====================================================================
-    #    **Argument**                             **Description**
-    #    ------------------------------------     --------------------------------------------------------------------
-    #    collection2                              RasterCollection object. The second collection to merge.
-    #    ====================================     ====================================================================
+        ====================================     ====================================================================
+        **Argument**                             **Description**
+        ------------------------------------     --------------------------------------------------------------------
+        collection2                              RasterCollection object. The second collection to merge.
+        ====================================     ====================================================================
 
-    #    :return: a new Collection that has all the items that were in either collection.
+        :return: a new Collection that has all the items that were in either collection.
 
-    #    .. code-block:: python
+        .. code-block:: python
 
-    #        # Usage Example 1: merges two image collections rc1 and rc2 into one.
+            # Usage Example 1: merges two image collections rc1 and rc2 into one.
 
-    #        rc1 = rc.filter_by_attribute("OBJECTID", "EQUALS", 1)
-    #        rc2 = rc.filter_by_attribute("OBJECTID", "EQUALS", 2)
-    #        new_rc = rc1.merge(rc2)
+            rc1 = rc.filter_by_attribute("OBJECTID", "EQUALS", 1)
+            rc2 = rc.filter_by_attribute("OBJECTID", "EQUALS", 2)
+            new_rc = rc1.merge(rc2)
 
-    #    """
+        """
 
-    #    return self._ras_coll_engine_obj.merge(collection2._ras_coll_engine_obj)
+        return self._ras_coll_engine_obj.merge(collection2._ras_coll_engine_obj)
 
-    # def summarize_field(self, field_name, summary_type="ALL"):
-    #    """
-    #    Summarizes a numeric field of the RasterCollection based on the specified summary_type
-    #    :param field_name: str, the field name to be summarized
-    #    :param summary_type: str or list of str representing the summary type."COUNT", "COUNT_DISTINCT", "FIRST","HISTOGRAM", "MAX", "MEAN", "MIN",
-    #                    "PRODUCT", "SAMPLE_SD", "SAMPLE_VAR", "SUM", "TOTAL_SD", "TOTAL_VAR", "ALL".
-    #    :return: a dictionary with key being the summary type and the value being the summary value.
-    #    """
-    #    property_values = self.get_field_values(field_name)
-    #    summary_dict = {}
-    #    import numbers
+    def summarize_field(self, field_name, summary_type="ALL"):
+        """
+        Summarizes a numeric field of the RasterCollection based on the specified summary_type
+        :param field_name: str, the field name to be summarized
+        :param summary_type: str or list of str representing the summary type."COUNT", "COUNT_DISTINCT", "FIRST","HISTOGRAM", "MAX", "MEAN", "MIN",
+                        "PRODUCT", "SAMPLE_SD", "SAMPLE_VAR", "SUM", "TOTAL_SD", "TOTAL_VAR", "ALL".
+        :return: a dictionary with key being the summary type and the value being the summary value.
+        """
+        property_values = self.get_field_values(field_name)
+        summary_dict = {}
+        import numbers
 
-    #    if not isinstance(summary_type, list):
-    #        summary_type = [summary_type]
+        if not isinstance(summary_type, list):
+            summary_type = [summary_type]
 
-    #    if "ALL" in map(str.upper, summary_type):
-    #        summary_type = [
-    #            "COUNT",
-    #            "COUNT_DISTINCT",
-    #            "FIRST",
-    #            "HISTOGRAM",
-    #            "MAX",
-    #            "MEAN",
-    #            "MIN",
-    #            "PRODUCT",
-    #            "SAMPLE_SD",
-    #            "SAMPLE_VAR",
-    #            "SUM",
-    #            "TOTAL_SD",
-    #            "TOTAL_VAR",
-    #        ]
+        if "ALL" in map(str.upper, summary_type):
+            summary_type = [
+                "COUNT",
+                "COUNT_DISTINCT",
+                "FIRST",
+                "HISTOGRAM",
+                "MAX",
+                "MEAN",
+                "MIN",
+                "PRODUCT",
+                "SAMPLE_SD",
+                "SAMPLE_VAR",
+                "SUM",
+                "TOTAL_SD",
+                "TOTAL_VAR",
+            ]
 
-    #    from operator import is_not
-    #    from functools import partial
+        from operator import is_not
+        from functools import partial
 
-    #    property_values_not_none = list(filter(partial(is_not, None), property_values))
+        property_values_not_none = list(filter(partial(is_not, None), property_values))
 
-    #    all_num = all(isinstance(x, numbers.Number) for x in property_values_not_none)
-    #    if not all_num:
-    #        raise RuntimeError("Only numeric fields can be summarized")
-    #    try:
-    #        for summary in summary_type:
-    #            val = None
-    #            summary = summary.lower()
-    #            if summary == "count":
-    #                val = len(property_values_not_none)
+        all_num = all(isinstance(x, numbers.Number) for x in property_values_not_none)
+        if not all_num:
+            raise RuntimeError("Only numeric fields can be summarized")
+        try:
+            for summary in summary_type:
+                val = None
+                summary = summary.lower()
+                if summary == "count":
+                    val = len(property_values_not_none)
 
-    #            elif summary == "count_distinct":
-    #                val = len(np.unique(property_values_not_none))
+                elif summary == "count_distinct":
+                    val = len(np.unique(property_values_not_none))
 
-    #            elif summary == "first":
-    #                val = property_values_not_none[0]
+                elif summary == "first":
+                    val = property_values_not_none[0]
 
-    #            elif summary == "histogram":
-    #                unique, counts = np.unique(
-    #                    property_values_not_none, return_counts=True
-    #                )
-    #                val = dict(zip(unique, counts))
+                elif summary == "histogram":
+                    unique, counts = np.unique(
+                        property_values_not_none, return_counts=True
+                    )
+                    val = dict(zip(unique, counts))
 
-    #            elif summary == "max":
-    #                val = np.max(property_values_not_none)
+                elif summary == "max":
+                    val = np.max(property_values_not_none)
 
-    #            elif summary == "mean":
-    #                val = np.mean(property_values_not_none)
+                elif summary == "mean":
+                    val = np.mean(property_values_not_none)
 
-    #            elif summary == "min":
-    #                val = np.min(property_values_not_none)
+                elif summary == "min":
+                    val = np.min(property_values_not_none)
 
-    #            elif summary == "product":
-    #                val = np.prod(property_values_not_none)
+                elif summary == "product":
+                    val = np.prod(property_values_not_none)
 
-    #            elif summary == "sample_sd":
-    #                val = np.std(property_values_not_none, ddof=1)
+                elif summary == "sample_sd":
+                    val = np.std(property_values_not_none, ddof=1)
 
-    #            elif summary == "sample_var":
-    #                val = np.var(property_values_not_none, ddof=1)
+                elif summary == "sample_var":
+                    val = np.var(property_values_not_none, ddof=1)
 
-    #            elif summary == "sum":
-    #                val = np.sum(property_values_not_none)
+                elif summary == "sum":
+                    val = np.sum(property_values_not_none)
 
-    #            elif summary == "total_sd":
-    #                val = np.std(property_values_not_none)
+                elif summary == "total_sd":
+                    val = np.std(property_values_not_none)
 
-    #            elif summary == "total_var":
-    #                val = np.var(property_values_not_none)
+                elif summary == "total_var":
+                    val = np.var(property_values_not_none)
 
-    #            else:
-    #                raise ValueError("invalid summary_type value")
+                else:
+                    raise ValueError("invalid summary_type value")
 
-    #            summary_dict.update({summary: val})
-    #    except:
-    #        raise RuntimeError("Failed to summarize the property")
+                summary_dict.update({summary: val})
+        except:
+            raise RuntimeError("Failed to summarize the property")
 
-    #    return summary_dict
+        return summary_dict
 
     def _as_df(
         self, result_offset=None, result_record_count=None, return_all_records=False
