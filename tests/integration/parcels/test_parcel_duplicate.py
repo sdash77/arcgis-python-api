@@ -1,5 +1,6 @@
 
 import unittest
+import concurrent.futures
 from arcgis.gis import GIS
 from arcgis.features._parcel import ParcelFabricManager
 from arcgis.features.layer import FeatureLayerCollection
@@ -34,7 +35,7 @@ class TestDuplicateParcels(unittest.TestCase):
         cls.vms = cls.parcel_fabric_flc.versions
 
     def test_duplicate_one_parcel_into_condiv_increment_field(self):
-        fq_version_name = versioning_utils.create_version(self.vms)
+        fq_version_name = pfutils.create_version(self.vms)
         existing_record_guid = "{ABBBA98B-953F-48B2-A907-EBF5E2E9DA03}"
         parcel_feature = [{"id": "{F736D9F3-DFD9-4FEE-A2E8-07352E74EBDF}", "layerId": "15"}]
 
@@ -73,7 +74,7 @@ class TestDuplicateParcels(unittest.TestCase):
                 self.fail(f"Duplicate failed: {str(ex)}")
                 
     def test_duplicate_two_parcels_into_condiv_increment_field_async(self):
-        fq_version_name = versioning_utils.create_version(self.vms)
+        fq_version_name = pfutils.create_version(self.vms)
         existing_record_guid = "{ABBBA98B-953F-48B2-A907-EBF5E2E9DA03}"
         parcel_features = self.load_feature_json()
 
