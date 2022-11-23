@@ -1408,8 +1408,10 @@ class BusinessAnalyst(object):
         df_input.spatial.set_geometry(in_sedf.spatial.name)
 
         # come up with index field that doesn't exist yet
-        oid_field_name = str(uuid.uuid4())
-        df_input[oid_field_name] = range(1, len(in_sedf) + 1)
+        orig_index_field = str(uuid.uuid4())
+        # enrichArrowTable returns records in arbitrary order, ORIG_INDEX is in the original order
+        # ORIG_INDEX starts with 0
+        df_input[orig_index_field] = range(0, len(in_sedf))
 
         geo_accessor = GeoAccessor(df_input)
         arrow_table = geo_accessor.to_arrow()
@@ -1421,18 +1423,17 @@ class BusinessAnalyst(object):
         enrich_result_df = output_table.to_pandas()
 
         input_copy_df = in_sedf.copy()
-        input_copy_df[oid_field_name] = range(1, len(in_sedf) + 1)
+        input_copy_df[orig_index_field] = range(0, len(in_sedf))
 
-        # enrichArrowTable always outputs "OBJECTID" which represents the order of record in source
         # we need to rename that field to avoid clashes
-        enrich_result_df.rename(columns={"OBJECTID": oid_field_name}, inplace=True)
+        enrich_result_df.rename(columns={"ORIG_INDEX": orig_index_field}, inplace=True)
 
         if "ORIG_OID" in enrich_result_df:
             enrich_result_df.drop(["ORIG_OID"], axis=1, inplace=True)
 
         # join based on objectid
-        merged_df = input_copy_df.merge(enrich_result_df, on=oid_field_name)
-        merged_df.drop([oid_field_name], axis=1, inplace=True)
+        merged_df = input_copy_df.merge(enrich_result_df, on=orig_index_field)
+        merged_df.drop([orig_index_field], axis=1, inplace=True)
 
         # rearrange columns to move SHAPE to the last one
         orig_cols = merged_df.columns.tolist()
