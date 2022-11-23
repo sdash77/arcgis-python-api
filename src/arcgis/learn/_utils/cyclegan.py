@@ -651,6 +651,7 @@ def get_files(*args, **kwargs):
 image_extensions = set(
     k for k, v in mimetypes.types_map.items() if v.startswith("image/")
 )
+image_extensions.add(".mrf")
 
 
 def is_old_format_cyclegan(path):

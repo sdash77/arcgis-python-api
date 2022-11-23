@@ -27,6 +27,7 @@ from .._utils.common import (
 import types
 from functools import partial
 from .._data import _prepare_working_dir
+from .._utils.cyclegan import image_extensions
 from .._data import _get_batch_stats, _tensor_scaler
 
 stats = [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]]
@@ -266,11 +267,6 @@ def multispectral_additions(data):
 
 def get_files(*args, **kwargs):
     return sorted(gf(*args, **kwargs))
-
-
-image_extensions = set(
-    k for k, v in mimetypes.types_map.items() if v.startswith("image/")
-)
 
 
 def apply_tfms(images, other_tfms, resize_to):
@@ -742,8 +738,7 @@ def show_results(self, rows, **kwargs):
             )
         else:
             display_row(
-                axs[r],
-                (image2np(x_A[r]), image2np(x_B[r]), image2np(activations[r])),
+                axs[r], (image2np(x_A[r]), image2np(x_B[r]), image2np(activations[r])),
             )
 
 
