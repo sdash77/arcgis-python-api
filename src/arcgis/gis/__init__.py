@@ -5439,7 +5439,8 @@ class ContentManager(object):
         """
         Provides users the ability to manage the content's presence on the marketplace.
 
-        :returns: MarketPlaceManager or None if not available
+        :returns: 
+            :class:`~arcgis.gis.sharing.MarketPlaceManager` or None if not available
         """
         if self._mrktplcmgr is None and self._gis._portal.is_arcgisonline == False:
             from arcgis.gis.sharing._marketplace import MarketPlaceManager
