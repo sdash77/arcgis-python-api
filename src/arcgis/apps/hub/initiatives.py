@@ -5,18 +5,20 @@ from collections import OrderedDict
 from datetime import datetime
 import json
 
+
 def _lazy_property(fn):
-    '''Decorator that makes a property lazy-evaluated.
-    '''
+    """Decorator that makes a property lazy-evaluated."""
     # http://stevenloria.com/lazy-evaluated-properties-in-python/
-    attr_name = '_lazy_' + fn.__name__
+    attr_name = "_lazy_" + fn.__name__
 
     @property
     def _lazy_property(self):
         if not hasattr(self, attr_name):
             setattr(self, attr_name, fn(self))
         return getattr(self, attr_name)
+
     return _lazy_property
+
 
 class Initiative(OrderedDict):
     """
@@ -174,9 +176,7 @@ class Initiative(OrderedDict):
         Fetches the list of followers for initiative.
         """
         # Fetch followers group
-        _followers_group = self._gis.groups.get(
-            self.followers_group_id
-        )
+        _followers_group = self._gis.groups.get(self.followers_group_id)
         return _followers_group.get_members()
 
     def add_content(self, items_list: list):
@@ -336,7 +336,9 @@ class Initiative(OrderedDict):
             followers_team.reassign_to(target_owner)
         return self._gis.content.get(self.itemid)
 
-    def share(self,everyone=False, org=False, groups=None, allow_members_to_edit=False):
+    def share(
+        self, everyone=False, org=False, groups=None, allow_members_to_edit=False
+    ):
         """
         Shares an initiative and associated site with the specified list of groups.
 
@@ -753,7 +755,7 @@ class InitiativeManager(object):
         else:
             raise TypeError("Item is not a valid initiative or is inaccessible.")
 
-    def search(self,title=None, owner=None, created=None, modified=None, tags=None):
+    def search(self, title=None, owner=None, created=None, modified=None, tags=None):
         """
         Searches for initiatives.
 
@@ -792,7 +794,7 @@ class InitiativeManager(object):
         if tags != None:
             query += " AND tags:" + tags
 
-        #Search
+        # Search
         items = self._gis.content.search(query=query, max_items=5000)
 
         # Return searched initiatives
