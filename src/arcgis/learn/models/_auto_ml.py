@@ -1006,7 +1006,11 @@ class AutoML(object):
                     shap_df = pd.DataFrame(
                         list_for_df,
                         columns=[
-                            i + "_imp" for i in (self._data._continuous_variables + self._data._categorical_variables)
+                            i + "_imp"
+                            for i in (
+                                self._data._continuous_variables
+                                + self._data._categorical_variables
+                            )
                         ],
                     )
                 except:
@@ -1018,7 +1022,11 @@ class AutoML(object):
                     shap_df = pd.DataFrame(
                         shap_values_normalised,
                         columns=[
-                            i + "_imp" for i in (self._data._continuous_variables + self._data._categorical_variables)
+                            i + "_imp"
+                            for i in (
+                                self._data._continuous_variables
+                                + self._data._categorical_variables
+                            )
                         ],
                     )
                 except:

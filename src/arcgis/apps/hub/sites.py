@@ -107,7 +107,7 @@ class Site(OrderedDict):
         Returns the initiative id (if available) of the site
         """
         try:
-            return self.item.properties['parentInitiativeId']
+            return self.item.properties["parentInitiativeId"]
         except:
             return None
 
@@ -163,7 +163,7 @@ class Site(OrderedDict):
         """
         Return theme of a site
         """
-        return InsensitiveDict(self.definition['values']['theme'])
+        return InsensitiveDict(self.definition["values"]["theme"])
 
     @_lazy_property
     def pages(self) -> PageManager:
@@ -292,12 +292,12 @@ class Site(OrderedDict):
                 # Delete domain entry
                 session = self._gis._con._session
                 headers = {k: v for k, v in session.headers.items()}
-                headers['Content-Type'] = "application/json"
-                headers['Authorization'] = self._gis._con.token
+                headers["Content-Type"] = "application/json"
+                headers["Authorization"] = self._gis._con.token
                 path = "https://hub.arcgis.com/api/v3/domains/" + _siteId
                 _delete_domain = session.delete(url=path, headers=headers)
                 if _delete_domain.status_code == 200:
-                    #Delete site item
+                    # Delete site item
                     return self.item.delete()
                 else:
                     return _delete_domain.content
@@ -429,13 +429,13 @@ class Site(OrderedDict):
         return result
 
     def update(self, site_properties=None, subdomain=None):
-        """ Updates the site.
-        
+        """Updates the site.
+
         .. note::
             For site_properties, pass in arguments for only the properties you want to be updated.
             All other properties will be untouched.  For example, if you want to update only the
             site's description, then only provide the description argument in site_properties.
-        
+
         =====================     ====================================================================
         **Argument**              **Description**
         ---------------------     --------------------------------------------------------------------
@@ -443,19 +443,19 @@ class Site(OrderedDict):
         ---------------------     --------------------------------------------------------------------
         subdomain                 Optional string. New subdomain for the site.
         =====================     ====================================================================
-        
-        To find the list of applicable options for argument site_properties - 
+
+        To find the list of applicable options for argument site_properties -
         https://esri.github.io/arcgis-python-api/apidoc/html/arcgis.gis.toc.html#arcgis.gis.Item.update
-        
+
         :return:
            A boolean indicating success (True) or failure (False).
-        
+
         .. code-block:: python
             USAGE EXAMPLE: Update a site successfully
-            
+
             site1 = myHub.sites.get('itemId12345')
             site1.update(site_properties={'description':'Description for site.'})
-        
+
             >> True
         """
         _site_data = self.definition
@@ -463,86 +463,113 @@ class Site(OrderedDict):
             for key, value in site_properties.items():
                 _site_data[key] = value
         if subdomain:
-            #format subdomain if needed
-            subdomain = subdomain.replace(' ', '-').lower()
-            #Domain manipulation for new subdomain
+            # format subdomain if needed
+            subdomain = subdomain.replace(" ", "-").lower()
+            # Domain manipulation for new subdomain
             if self._gis._portal.is_arcgisonline:
-                #Check for length of domain
-                if len(subdomain + '-' + self._gis.properties['urlKey']) > 63:
-                    _num = 63 - len(self._gis.properties['urlKey'])
-                    raise ValueError('Requested url too long. Please enter a subdomain shorter than %d characters' %_num)
+                # Check for length of domain
+                if len(subdomain + "-" + self._gis.properties["urlKey"]) > 63:
+                    _num = 63 - len(self._gis.properties["urlKey"])
+                    raise ValueError(
+                        "Requested url too long. Please enter a subdomain shorter than %d characters"
+                        % _num
+                    )
                 # Fetch siteId from domain entry
                 path = "https://hub.arcgis.com/api/v3/domains?siteId=" + self.itemid
                 _site_domain = self._gis._con.get(path=path)
-                _siteId = _site_domain[0]['id']
-                client_key = _site_domain[0]['clientKey']
-                #Delete old domain entry
+                _siteId = _site_domain[0]["id"]
+                client_key = _site_domain[0]["clientKey"]
+                # Delete old domain entry
                 session = self._gis._con._session
                 headers = {k: v for k, v in session.headers.items()}
-                headers['Content-Type'] = "application/json"
-                headers['Authorization'] = self._gis._con.token
+                headers["Content-Type"] = "application/json"
+                headers["Authorization"] = self._gis._con.token
                 path = "https://hub.arcgis.com/api/v3/domains/" + _siteId
                 _delete_domain = session.delete(url=path, headers=headers)
-                #if deletion is successful
-                if _delete_domain.status_code==200:
-                    #Create new domain entry
+                # if deletion is successful
+                if _delete_domain.status_code == 200:
+                    # Create new domain entry
 
-                    #Create domain entry for new site
+                    # Create domain entry for new site
                     _HEADERS = {
-                        'Content-Type': 'application/json', 
-                        'Authorization': self._gis._con.token,
-                        'Referer': self._gis._con._referer
+                        "Content-Type": "application/json",
+                        "Authorization": self._gis._con.token,
+                        "Referer": self._gis._con._referer,
                     }
                     _body = {
-                        'hostname': subdomain + '-' + self._gis.properties['urlKey'] + '.hub.arcgis.com', 
-                        'siteId': self.item.id, 
-                        'siteTitle': self.title, 
-                        'clientKey': client_key, 
-                        'orgId': self._gis.properties.id, 
-                        'orgKey': self._gis.properties['urlKey'], 
-                        'orgTitle':self._gis.properties['name'],
-                        'sslOnly':True
+                        "hostname": subdomain
+                        + "-"
+                        + self._gis.properties["urlKey"]
+                        + ".hub.arcgis.com",
+                        "siteId": self.item.id,
+                        "siteTitle": self.title,
+                        "clientKey": client_key,
+                        "orgId": self._gis.properties.id,
+                        "orgKey": self._gis.properties["urlKey"],
+                        "orgTitle": self._gis.properties["name"],
+                        "sslOnly": True,
                     }
                     headers = {k: v for k, v in session.headers.items()}
-                    headers['Content-Type'] = "application/json"
-                    headers['Authorization'] = self._gis._con.token
-                    _new_domain = session.post(url="https://hub.arcgis.com/api/v3/domains", data=json.dumps(_body), headers=headers)
-                    if _new_domain.status_code==200:
-                        #define new domain and hostname
-                        hostname = subdomain + '-' + self._gis.properties['urlKey'] + '.hub.arcgis.com'
+                    headers["Content-Type"] = "application/json"
+                    headers["Authorization"] = self._gis._con.token
+                    _new_domain = session.post(
+                        url="https://hub.arcgis.com/api/v3/domains",
+                        data=json.dumps(_body),
+                        headers=headers,
+                    )
+                    if _new_domain.status_code == 200:
+                        # define new domain and hostname
+                        hostname = (
+                            subdomain
+                            + "-"
+                            + self._gis.properties["urlKey"]
+                            + ".hub.arcgis.com"
+                        )
                         domain = self._gis.url[:8] + hostname
-                        #update initiative item 
+                        # update initiative item
                         if self._gis.hub._hub_enabled:
-                            self.initiative.item.update(item_properties={'url':domain})
-                        #update site item and data
+                            self.initiative.item.update(item_properties={"url": domain})
+                        # update site item and data
                         data = self.definition
-                        data['values']['defaultHostname'] = hostname
-                        data['values']['subdomain'] = subdomain
-                        data['values']['internalUrl'] = hostname
-                        if self.item.update(item_properties={'url':domain, 'text':data}):
+                        data["values"]["defaultHostname"] = hostname
+                        data["values"]["subdomain"] = subdomain
+                        data["values"]["internalUrl"] = hostname
+                        if self.item.update(
+                            item_properties={"url": domain, "text": data}
+                        ):
                             return domain
-                    #if creating new domain entry fails
+                    # if creating new domain entry fails
                     else:
                         return _new_domain.content
-                #if deleting old domain entry fails
+                # if deleting old domain entry fails
                 else:
                     return _delete_domain.content
-            #For enterprise sites
+            # For enterprise sites
             else:
-                #Check for length of domain
+                # Check for length of domain
                 if len(subdomain) > 63:
-                    raise ValueError('Requested url too long. Please enter a name shorter than 63 characters')
+                    raise ValueError(
+                        "Requested url too long. Please enter a name shorter than 63 characters"
+                    )
                 typeKeywords = self.item.typeKeywords
-                typeKeywords = [keyword for keyword in typeKeywords if 'hubsubdomain' not in keyword]
-                typeKeywords.append('hubsubdomain|'+subdomain)
-                #Domain manipulation
-                hostname = self._gis.url[7:-5] + '/apps/sites/#/'+subdomain
-                domain = 'https://' + hostname
+                typeKeywords = [
+                    keyword for keyword in typeKeywords if "hubsubdomain" not in keyword
+                ]
+                typeKeywords.append("hubsubdomain|" + subdomain)
+                # Domain manipulation
+                hostname = self._gis.url[7:-5] + "/apps/sites/#/" + subdomain
+                domain = "https://" + hostname
                 data = self.definition
-                data['values']['defaultHostname'] = hostname
-                data['values']['subdomain'] = subdomain
-                data['values']['internalUrl'] = hostname
-                if self.item.update(item_properties={'typeKeywords':typeKeywords, 'url':domain, 'text':data}):
+                data["values"]["defaultHostname"] = hostname
+                data["values"]["subdomain"] = subdomain
+                data["values"]["internalUrl"] = hostname
+                if self.item.update(
+                    item_properties={
+                        "typeKeywords": typeKeywords,
+                        "url": domain,
+                        "text": data,
+                    }
+                ):
                     return domain
         return self.item.update(_site_data)
 
@@ -591,40 +618,48 @@ class Site(OrderedDict):
         return self.item.update(item_properties={"text": self.definition})
 
     def update_theme(self, theme):
-        """ Updates the theme of the site. 
+        """Updates the theme of the site.
 
         .. note::
             This operation can only be performed by the owner of the site or by an org administrator.
-        
+
         =====================     ====================================================================
         **Argument**              **Description**
         ---------------------     --------------------------------------------------------------------
         theme                     Required dictionary. The new theme dictionary to update to the site.
         =====================     ====================================================================
-        
+
         :return:
            A boolean indicating success (True) or failure (False).
-        
+
         .. code-block:: python
-            
+
             USAGE EXAMPLE: Update a site successfully
-            
+
             site1 = myHub.sites.get('itemId12345')
             site_theme = site1.theme
             site_theme.body.background = '#ffffff'
             site1.update_theme(theme = site_theme)
-            
+
             >> True
         """
-        #Deleting the draft file for this site, if exists
+        # Deleting the draft file for this site, if exists
         resources = self.item.resources.list()
         for resource in resources:
-            if 'draft-' in resource['resource']:
-                path = self._gis.url+'/sharing/rest/content/items/'+self.itemid+'/resources/'+resource['resource']+'?token='+self._gis._con.token
+            if "draft-" in resource["resource"]:
+                path = (
+                    self._gis.url
+                    + "/sharing/rest/content/items/"
+                    + self.itemid
+                    + "/resources/"
+                    + resource["resource"]
+                    + "?token="
+                    + self._gis._con.token
+                )
                 self.item.resources.remove(file=path)
-        #Update the data of the site
-        self.definition['values']['theme'] = theme._json()
-        return self.item.update(item_properties={'text': self.definition})
+        # Update the data of the site
+        self.definition["values"]["theme"] = theme._json()
+        return self.item.update(item_properties={"text": self.definition})
 
 
 class SiteManager(object):
@@ -694,9 +729,13 @@ class SiteManager(object):
             }
 
             headers = {k: v for k, v in session.headers.items()}
-            headers['Content-Type'] = "application/json"
-            headers['Authorization'] = self._gis._con.token
-            _new_domain = session.post(url="https://hub.arcgis.com/api/v3/domains", data=json.dumps(_body), headers=headers)
+            headers["Content-Type"] = "application/json"
+            headers["Authorization"] = self._gis._con.token
+            _new_domain = session.post(
+                url="https://hub.arcgis.com/api/v3/domains",
+                data=json.dumps(_body),
+                headers=headers,
+            )
             if _new_domain.status_code == 200:
                 _siteId = _new_domain.json()["id"]
             else:
@@ -757,12 +796,12 @@ class SiteManager(object):
         return site_data
 
     def add(self, title, subdomain=None):
-        """ 
+        """
         Adds a new site.
 
-        .. note:: 
+        .. note::
             Unicode characters are not allowed in the title of the site.
-        
+
         ===============     ====================================================================
         **Argument**        **Description**
         ---------------     --------------------------------------------------------------------
@@ -770,216 +809,265 @@ class SiteManager(object):
         ---------------     --------------------------------------------------------------------
         subdomain           Optional string. Available ONLY with Enterprise Sites.
         ===============     ====================================================================
-        
+
         :return:
            The site if successfully added, None if unsuccessful.
-        
+
         .. code-block:: python
-            
-            USAGE EXAMPLE: Add an open data site in Hub successfully 
-            
+
+            USAGE EXAMPLE: Add an open data site in Hub successfully
+
             site1 = myHub.sites.add(title='My first site')
             site1.item
 
         .. code-block:: python
-            
-            USAGE EXAMPLE: Add an initiative site successfully 
-            
+
+            USAGE EXAMPLE: Add an initiative site successfully
+
             initiative_site = initiative1.sites.add(title=title)
             site1.item
         """
 
         siteId = None
-        #Checking if subdomain is provided
+        # Checking if subdomain is provided
         if subdomain:
-            #disallow for AGO
+            # disallow for AGO
             if self._gis._portal.is_arcgisonline:
-                raise Exception('The option to add sites with custom subdomain is only available with Enterprise Sites. Please add this site without custom subdomain.')
-            #re-format if given for Enterprise sites
+                raise Exception(
+                    "The option to add sites with custom subdomain is only available with Enterprise Sites. Please add this site without custom subdomain."
+                )
+            # re-format if given for Enterprise sites
             else:
-                subdomain = subdomain.replace(' ', '-').lower()
-        #re-format title if subdomain not provided
+                subdomain = subdomain.replace(" ", "-").lower()
+        # re-format title if subdomain not provided
         else:
-            subdomain = title.replace(' ', '-').lower()
-        
-        #Check if initiative or site needs to be created for this gis
+            subdomain = title.replace(" ", "-").lower()
+
+        # Check if initiative or site needs to be created for this gis
         if self._gis._portal.is_arcgisonline:
             if self._hub._hub_enabled:
                 if self.initiative is None:
-                    raise Exception("Sites are created as part of an Initiative for your Hub. Please add a new initiative to proceed.")
+                    raise Exception(
+                        "Sites are created as part of an Initiative for your Hub. Please add a new initiative to proceed."
+                    )
 
-        #For sites in ArcGIS Online
+        # For sites in ArcGIS Online
         if self._gis._portal.is_arcgisonline:
-            #Set item details
+            # Set item details
             item_type = "Hub Site Application"
             typekeywords = "Hub, hubSite, hubSolution, JavaScript, Map, Mapping Site, Online Map, OpenData, Ready To Use, selfConfigured, Web Map, Registered App"
             tags = ["Hub Site"]
             description = "DO NOT DELETE OR MODIFY THIS ITEM. This item is managed by the ArcGIS Hub application. To make changes to this site, please visit https://hub.arcgis.com/admin/"
-            
-            #Domain manipulation
-            domain = self._gis.url[:8] + subdomain + '-' + self._gis.properties['urlKey'] + '.hub.arcgis.com'
-            _request_url = 'https://hub.arcgis.com/utilities/domains/'+domain[8:]
+
+            # Domain manipulation
+            domain = (
+                self._gis.url[:8]
+                + subdomain
+                + "-"
+                + self._gis.properties["urlKey"]
+                + ".hub.arcgis.com"
+            )
+            _request_url = "https://hub.arcgis.com/utilities/domains/" + domain[8:]
             session = self._gis._con._session
             headers = {k: v for k, v in session.headers.items()}
-            headers['Content-Type'] = "application/json"
-            headers['Authorization'] = self._gis._con.token
-            response = session.get(url=f"https://hub.arcgis.com/api/v3/domains/"+domain[8:], headers=headers)
-            #Check if domain doesn't exist
-            if response.status_code==404:
+            headers["Content-Type"] = "application/json"
+            headers["Authorization"] = self._gis._con.token
+            response = session.get(
+                url=f"https://hub.arcgis.com/api/v3/domains/" + domain[8:],
+                headers=headers,
+            )
+            # Check if domain doesn't exist
+            if response.status_code == 404:
                 pass
             else:
-            #If exists check if counter needs updating and update it
+                # If exists check if counter needs updating and update it
                 try:
                     count = int(subdomain[-1])
                     count = count + 1
                     subdomain = subdomain[:-1] + str(count)
                 except:
-                    subdomain = subdomain + '1'
-                domain = self._gis.url[:8] + subdomain + '-' + self._gis.properties['urlKey'] + '.hub.arcgis.com'
-        
-        #For Enterprise Sites
+                    subdomain = subdomain + "1"
+                domain = (
+                    self._gis.url[:8]
+                    + subdomain
+                    + "-"
+                    + self._gis.properties["urlKey"]
+                    + ".hub.arcgis.com"
+                )
+
+        # For Enterprise Sites
         else:
             item_type = "Site Application"
-            typekeywords = "Hub, hubSite, hubSolution, hubsubdomain|" +subdomain+", JavaScript, Map, Mapping Site, Online Map, OpenData, Ready To Use, selfConfigured, Web Map"
+            typekeywords = (
+                "Hub, hubSite, hubSolution, hubsubdomain|"
+                + subdomain
+                + ", JavaScript, Map, Mapping Site, Online Map, OpenData, Ready To Use, selfConfigured, Web Map"
+            )
             tags = ["Enterprise Site"]
-            description = "DO NOT DELETE OR MODIFY THIS ITEM. This item is managed by the ArcGIS Enterprise Sites application. To make changes to this site, please visit" + self._gis.url +"apps/sites/admin/"
+            description = (
+                "DO NOT DELETE OR MODIFY THIS ITEM. This item is managed by the ArcGIS Enterprise Sites application. To make changes to this site, please visit"
+                + self._gis.url
+                + "apps/sites/admin/"
+            )
 
-            #Domain manipulation
-            domain = 'https://' + self._gis.url[8:-5] + 'apps/sites/#/'+subdomain
+            # Domain manipulation
+            domain = "https://" + self._gis.url[8:-5] + "apps/sites/#/" + subdomain
 
-            #Check if site subdomain exists
-            if self._gis.content.search(query='typekeywords:hubsubdomain|'+subdomain+' AND title:'+title):
-                print(self._gis.content.search(query='typekeywords:hubsubdomain|'+subdomain))
-                raise ValueError("You already have a site that uses this subdomain. Please provide another title.")
+            # Check if site subdomain exists
+            if self._gis.content.search(
+                query="typekeywords:hubsubdomain|" + subdomain + " AND title:" + title
+            ):
+                print(
+                    self._gis.content.search(
+                        query="typekeywords:hubsubdomain|" + subdomain
+                    )
+                )
+                raise ValueError(
+                    "You already have a site that uses this subdomain. Please provide another title."
+                )
 
-        #setting item properties based on type of site
+        # setting item properties based on type of site
         if self._gis._portal.is_arcgisonline and self._hub._hub_enabled:
-            #Hub Premium Site
-            #if self._hub._hub_enabled:
+            # Hub Premium Site
+            # if self._hub._hub_enabled:
             content_group_id = self.initiative.content_group_id
             collab_group_id = self.initiative.collab_group_id
             _item_dict = {
-                "type":item_type, 
-                "typekeywords":typekeywords,
+                "type": item_type,
+                "typekeywords": typekeywords,
                 "tags": tags,
-                "title":title,
-                "description":description, 
+                "title": title,
+                "description": description,
                 "culture": self._gis.properties.user.culture,
                 "properties": {
-                    'hasSeenGlobalNav': True, 
-                    'createdFrom': 'defaultInitiativeSiteTemplate', 
-                    'schemaVersion': 1.5, 
-                    'contentGroupId': content_group_id, 
-                    'followersGroupId': self.initiative.followers_group_id, 
-                    'parentInitiativeId': self.initiative.itemid, 
-                    'children': []
-                }, 
-                "url":domain
+                    "hasSeenGlobalNav": True,
+                    "createdFrom": "defaultInitiativeSiteTemplate",
+                    "schemaVersion": 1.5,
+                    "contentGroupId": content_group_id,
+                    "followersGroupId": self.initiative.followers_group_id,
+                    "parentInitiativeId": self.initiative.itemid,
+                    "children": [],
+                },
+                "url": domain,
             }
             if collab_group_id:
                 collab_group = self._gis.groups.get(collab_group_id)
                 _item_dict["properties"]["collaborationGroupId"] = collab_group_id
-            _datafile = 'init-sites-data.json'
-            
-        
-        #Non Hub Premium Sites
+            _datafile = "init-sites-data.json"
+
+        # Non Hub Premium Sites
         else:
-            #Checking if it is a Hub Basic site
+            # Checking if it is a Hub Basic site
             if self._gis._portal.is_arcgisonline:
-                _content_group_title = title + ' Content'
+                _content_group_title = title + " Content"
                 _content_group_dict = {
-                    "title": _content_group_title, 
-                    "tags": ["Hub Group", "Hub Content Group", "Hub Site Group"], 
-                    "access":"public"
+                    "title": _content_group_title,
+                    "tags": ["Hub Group", "Hub Content Group", "Hub Site Group"],
+                    "access": "public",
                 }
-                _collab_group_title = title + ' Core Team'
+                _collab_group_title = title + " Core Team"
                 _collab_group_dict = {
-                    "title": _collab_group_title, 
-                    "tags": ["Hub Group", "Hub Site Group", "Hub Core Team Group", "Hub Team Group"], 
-                    "access":"org",
-                    "capabilities":"updateitemcontrol",
+                    "title": _collab_group_title,
+                    "tags": [
+                        "Hub Group",
+                        "Hub Site Group",
+                        "Hub Core Team Group",
+                        "Hub Team Group",
+                    ],
+                    "access": "org",
+                    "capabilities": "updateitemcontrol",
                     "membershipAccess": "collaboration",
-                    "snippet": "Members of this group can create, edit, and manage the site, pages, and other content related to "+title+"."
+                    "snippet": "Members of this group can create, edit, and manage the site, pages, and other content related to "
+                    + title
+                    + ".",
                 }
-                created_from = 'basicDefaultSite Solution Template (embedded)'
+                created_from = "basicDefaultSite Solution Template (embedded)"
             else:
-                #Defining content, collaboration groups for Enterprise Sites
+                # Defining content, collaboration groups for Enterprise Sites
                 collab_group_id = None
                 _content_group_dict = {
-                    "title": subdomain + ' Content', 
-                    "tags": ["Sites Group", "Sites Content Group"], 
-                    "access":"org",
-                    "snippet": "Applications, maps, data, etc. shared with this group generates the "+subdomain+" content catalog."
+                    "title": subdomain + " Content",
+                    "tags": ["Sites Group", "Sites Content Group"],
+                    "access": "org",
+                    "snippet": "Applications, maps, data, etc. shared with this group generates the "
+                    + subdomain
+                    + " content catalog.",
                 }
                 _collab_group_dict = {
-                    "title": subdomain + ' Core Team', 
-                    "tags": ["Sites Group", "Sites Core Team Group"], 
-                    "access":"org",
+                    "title": subdomain + " Core Team",
+                    "tags": ["Sites Group", "Sites Core Team Group"],
+                    "access": "org",
                     "capabilities": "updateitemcontrol",
                     "membershipAccess": "org",
-                    "snippet": "Members of this group can create, edit, and manage the site, pages, and other content related to "+subdomain+"."
+                    "snippet": "Members of this group can create, edit, and manage the site, pages, and other content related to "
+                    + subdomain
+                    + ".",
                 }
-                created_from = 'portalDefaultSite'
-            #Create groups
-            content_group =  self._gis.groups.create_from_dict(_content_group_dict)
+                created_from = "portalDefaultSite"
+            # Create groups
+            content_group = self._gis.groups.create_from_dict(_content_group_dict)
             content_group_id = content_group.id
-            #Create collaboration group if necessary privileges exist
-            if self._gis.users.me.role=='org_admin':
-                collab_group =  self._gis.groups.create_from_dict(_collab_group_dict)
+            # Create collaboration group if necessary privileges exist
+            if self._gis.users.me.role == "org_admin":
+                collab_group = self._gis.groups.create_from_dict(_collab_group_dict)
                 collab_group.protected = True
                 collab_group_id = collab_group.id
             else:
                 collab_group_id = None
-            #Protect groups from accidental deletion
+            # Protect groups from accidental deletion
             content_group.protected = True
             _item_dict = {
-                "type": item_type, 
-                "typekeywords":typekeywords, 
-                "tags": tags, 
-                "title":title, 
-                "description":description,
+                "type": item_type,
+                "typekeywords": typekeywords,
+                "tags": tags,
+                "title": title,
+                "description": description,
                 "properties": {
-                    'hasSeenGlobalNav': True, 
-                    'createdFrom': created_from, 
-                    'schemaVersion': 1.5, 
-                    'contentGroupId': content_group_id,
-                    'children': []
-                }, 
-                "url":domain
+                    "hasSeenGlobalNav": True,
+                    "createdFrom": created_from,
+                    "schemaVersion": 1.5,
+                    "contentGroupId": content_group_id,
+                    "children": [],
+                },
+                "url": domain,
             }
             if collab_group_id is not None:
                 _item_dict["properties"]["collaborationGroupId"] = collab_group.id
-            _datafile = 'sites-data.json'
+            _datafile = "sites-data.json"
 
-        #Create site item, share with group
+        # Create site item, share with group
         site = self._gis.content.add(_item_dict, owner=self._gis.users.me.username)
 
-        #Share with necessary group if group exists
+        # Share with necessary group if group exists
         try:
             site.share(groups=[collab_group])
         except:
             pass
 
-        #protect site from accidental deletion
+        # protect site from accidental deletion
         site.protect(enable=True)
 
-        #Setting data for site
-        data_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '_store/'+_datafile))
-        
+        # Setting data for site
+        data_path = os.path.abspath(
+            os.path.join(os.path.dirname(__file__), "_store/" + _datafile)
+        )
+
         with open(data_path) as f:
             _site_data = json.load(f)
 
-        #Register site and update its data
-        _data = self._create_and_register_site(site, subdomain, _site_data, content_group_id, collab_group_id)
+        # Register site and update its data
+        _data = self._create_and_register_site(
+            site, subdomain, _site_data, content_group_id, collab_group_id
+        )
         _data = json.dumps(_data)
-        site.update(item_properties={'text': _data, 'url': domain})
+        site.update(item_properties={"text": _data, "url": domain})
         return Site(self._gis, site)
 
     def clone(self, site, pages=True, title=None):
         """
         Clone allows for the creation of a site that is derived from the current site.
 
-        .. note:: 
+        .. note::
             Use this method if you are cloning a Site object from a Hub Basic or Enterprise environment.
             To clone from Hub Premium environments, please use the `initiatives.clone` method.
 
@@ -992,17 +1080,18 @@ class SiteManager(object):
         ---------------     --------------------------------------------------------------------
         title               Optional String.
         ===============     ====================================================================
-        
+
         :return:
            Site.
         """
         collab_group_id = None
         from datetime import timezone
+
         now = datetime.now(timezone.utc)
-        #Checking if item of correct type has been passed 
-        if 'hubSite' not in site.item.typeKeywords:
+        # Checking if item of correct type has been passed
+        if "hubSite" not in site.item.typeKeywords:
             raise Exception("Incorrect item type. Site item needed for cloning.")
-        #New title
+        # New title
         if title is None:
             title = site.title + "-copy-%s" % int(now.timestamp() * 1000)
         if self.initiative is None:
@@ -1011,115 +1100,142 @@ class SiteManager(object):
                     return self._hub.initiatives.add(title, site=site)
             except:
                 pass
-        subdomain = title.replace(' ', '-').lower()
-        #For Hub Sites
+        subdomain = title.replace(" ", "-").lower()
+        # For Hub Sites
         if self._gis._portal.is_arcgisonline:
             item_type = "Hub Site Application"
             typekeywords = "Hub, hubSite, hubSolution, JavaScript, Map, Mapping Site, Online Map, OpenData, Ready To Use, selfConfigured, Web Map, Registered App"
             description = "DO NOT DELETE OR MODIFY THIS ITEM. This item is managed by the ArcGIS Hub application. To make changes to this site, please visit https://hub.arcgis.com/admin/"
-            domain = self._gis.url[:8] + subdomain + '-' + self._gis.properties['urlKey'] + '.hub.arcgis.com'
-        #For Enterprise Sites
+            domain = (
+                self._gis.url[:8]
+                + subdomain
+                + "-"
+                + self._gis.properties["urlKey"]
+                + ".hub.arcgis.com"
+            )
+        # For Enterprise Sites
         else:
             item_type = "Site Application"
-            typekeywords = "Hub, hubSite, hubSolution, hubsubdomain|" +subdomain+", JavaScript, Map, Mapping Site, Online Map, OpenData, Ready To Use, selfConfigured, Web Map"
-            domain = 'https://' + self._gis.url[8:-5] + 'apps/sites/#/'+subdomain
+            typekeywords = (
+                "Hub, hubSite, hubSolution, hubsubdomain|"
+                + subdomain
+                + ", JavaScript, Map, Mapping Site, Online Map, OpenData, Ready To Use, selfConfigured, Web Map"
+            )
+            domain = "https://" + self._gis.url[8:-5] + "apps/sites/#/" + subdomain
         _site_properties = {
-                        "type":item_type, 
-                        "typekeywords":typekeywords, 
-                        "tags": ["Enterprise Site"], 
-                        "title":title, 
-                        "url":domain
+            "type": item_type,
+            "typekeywords": typekeywords,
+            "tags": ["Enterprise Site"],
+            "title": title,
+            "url": domain,
         }
-        #Updating properties, groups for Hub sites
+        # Updating properties, groups for Hub sites
         if self.initiative is not None:
             content_group_id = self.initiative.content_group_id
             collab_group_id = self.initiative.collab_group_id
             _site_properties["properties"] = {
-                'hasSeenGlobalNav': True, 
-                'createdFrom': 'defaultInitiativeSiteTemplate', 
-                'schemaVersion': 1.5, 
-                'contentGroupId': content_group_id,
-                'parentInitiativeId': self.initiative.itemid, 
-                'children': []
+                "hasSeenGlobalNav": True,
+                "createdFrom": "defaultInitiativeSiteTemplate",
+                "schemaVersion": 1.5,
+                "contentGroupId": content_group_id,
+                "parentInitiativeId": self.initiative.itemid,
+                "children": [],
             }
             if self._hub._hub_enabled:
-                _site_properties["properties"]['followersGroupId'] = self.initiative.followers_group_id
+                _site_properties["properties"][
+                    "followersGroupId"
+                ] = self.initiative.followers_group_id
             if collab_group_id:
                 collab_group = self._gis.groups.get(collab_group_id)
-                _site_properties["properties"]['collaborationGroupId'] = collab_group_id
+                _site_properties["properties"]["collaborationGroupId"] = collab_group_id
         else:
-            #Defining content, collaboration groups for Hub Basic and Enterprise Sites
-            #For Hub Basic Sites
+            # Defining content, collaboration groups for Hub Basic and Enterprise Sites
+            # For Hub Basic Sites
             if self._gis._portal.is_arcgisonline:
                 _content_group_dict = {
-                    "title": subdomain + ' Content', 
-                    "tags": ["Hub Group", "Hub Content Group", "Hub Site Group"], 
-                    "access":"public"
+                    "title": subdomain + " Content",
+                    "tags": ["Hub Group", "Hub Content Group", "Hub Site Group"],
+                    "access": "public",
                 }
                 _collab_group_dict = {
-                    "title": subdomain + ' Core Team', 
-                    "tags": ["Hub Group", "Hub Site Group", "Hub Core Team Group", "Hub Team Group"], 
-                    "access":"org",
-                    "capabilities":"updateitemcontrol",
+                    "title": subdomain + " Core Team",
+                    "tags": [
+                        "Hub Group",
+                        "Hub Site Group",
+                        "Hub Core Team Group",
+                        "Hub Team Group",
+                    ],
+                    "access": "org",
+                    "capabilities": "updateitemcontrol",
                     "membershipAccess": "collaboration",
-                    "snippet": "Members of this group can create, edit, and manage the site, pages, and other content related to "+subdomain+"."
+                    "snippet": "Members of this group can create, edit, and manage the site, pages, and other content related to "
+                    + subdomain
+                    + ".",
                 }
-                created_from = 'basicDefaultSite Solution Template (embedded)'
-            #For Enterprise Sites
+                created_from = "basicDefaultSite Solution Template (embedded)"
+            # For Enterprise Sites
             else:
                 _content_group_dict = {
-                    "title": subdomain + ' Content', 
-                    "tags": ["Sites Group", "Sites Content Group"], 
-                    "access":"org",
-                    "snippet": "Applications, maps, data, etc. shared with this group generates the "+subdomain+" content catalog."
+                    "title": subdomain + " Content",
+                    "tags": ["Sites Group", "Sites Content Group"],
+                    "access": "org",
+                    "snippet": "Applications, maps, data, etc. shared with this group generates the "
+                    + subdomain
+                    + " content catalog.",
                 }
                 _collab_group_dict = {
-                    "title": subdomain + ' Core Team', 
-                    "tags": ["Sites Group", "Sites Core Team Group"], 
-                    "access":"org",
+                    "title": subdomain + " Core Team",
+                    "tags": ["Sites Group", "Sites Core Team Group"],
+                    "access": "org",
                     "capabilities": "updateitemcontrol",
                     "membershipAccess": "org",
-                    "snippet": "Members of this group can create, edit, and manage the site, pages, and other content related to "+subdomain+"."
+                    "snippet": "Members of this group can create, edit, and manage the site, pages, and other content related to "
+                    + subdomain
+                    + ".",
                 }
-                created_from = 'portalDefaultSite'
-            #Create content group
-            content_group =  self._gis.groups.create_from_dict(_content_group_dict)
+                created_from = "portalDefaultSite"
+            # Create content group
+            content_group = self._gis.groups.create_from_dict(_content_group_dict)
             content_group_id = content_group.id
-            #Protect groups from accidental deletion
+            # Protect groups from accidental deletion
             content_group.protected = True
             _site_properties["properties"] = {
-                                            'hasSeenGlobalNav': True, 
-                                            'createdFrom': created_from, 
-                                            'schemaVersion': 1.5,  
-                                            'contentGroupId': content_group_id
-                                            }
-            #Create collaboration group if privilege exists
-            if self._gis.users.me.role=='org_admin':
-                collab_group =  self._gis.groups.create_from_dict(_collab_group_dict)
+                "hasSeenGlobalNav": True,
+                "createdFrom": created_from,
+                "schemaVersion": 1.5,
+                "contentGroupId": content_group_id,
+            }
+            # Create collaboration group if privilege exists
+            if self._gis.users.me.role == "org_admin":
+                collab_group = self._gis.groups.create_from_dict(_collab_group_dict)
                 collab_group_id = collab_group.id
                 collab_group.protected = True
                 _site_properties["properties"]["collaborationGroupId"] = collab_group_id
-            
-        #Create site item, share with group
-        new_item = self._gis.content.add(_site_properties, owner=self._gis.users.me.username)
 
-        #Share with necessary group
+        # Create site item, share with group
+        new_item = self._gis.content.add(
+            _site_properties, owner=self._gis.users.me.username
+        )
+
+        # Share with necessary group
         try:
             new_item.share(groups=[collab_group])
         except:
             pass
 
-        #Register new site and update its data
-        _data = self._create_and_register_site(new_item, subdomain, site.definition, content_group_id, collab_group_id)
+        # Register new site and update its data
+        _data = self._create_and_register_site(
+            new_item, subdomain, site.definition, content_group_id, collab_group_id
+        )
 
-        new_item.update(item_properties={'text': _data, 'url': domain})
+        new_item.update(item_properties={"text": _data, "url": domain})
         new_site = Site(self._gis, new_item)
 
-        #Pages of the site
+        # Pages of the site
         site_pages = site.pages.search()
-        #If pages exist
+        # If pages exist
         if len(site_pages) > 0:
-            #Check the value of param
+            # Check the value of param
             if pages:
                 for page in site_pages:
                     try:
@@ -1188,8 +1304,8 @@ class SiteManager(object):
             # fetch site itemid from domain service
             session = self._gis._con._session
             headers = {k: v for k, v in session.headers.items()}
-            headers['Content-Type'] = "application/json"
-            headers['Authorization'] = self._gis._con.token
+            headers["Content-Type"] = "application/json"
+            headers["Authorization"] = self._gis._con.token
             _site_domain = self._gis._con.get(path, headers=headers)
             try:
                 siteId = _site_domain["siteId"]

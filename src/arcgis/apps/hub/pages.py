@@ -6,6 +6,7 @@ from collections import OrderedDict
 import json
 import os
 
+
 class Page(OrderedDict):
     """
     Represents a page belonging to a site in Hub. A Page is a layout of
@@ -536,7 +537,7 @@ class PageManager(object):
         # Update site data to reflect unlinking
         return site.item.update(item_properties={"text": _site_data})
 
-    def search(self, title=None, owner=None, created=None, modified=None,tags=None):
+    def search(self, title=None, owner=None, created=None, modified=None, tags=None):
         """
         Searches for pages.
 

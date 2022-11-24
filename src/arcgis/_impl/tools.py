@@ -9163,7 +9163,10 @@ class _RasterAnalysisTools(BaseAnalytics):
                     item_id_list.append(item.itemid)
                 elif isinstance(item, str):
                     if "http:" in item or "https:" in item:
-                        if "blob.core" in item:
+                        if "blob.core" in item or all(
+                            blob_string in item
+                            for blob_string in ["stg-arcgisazure", "arcgis.com"]
+                        ):
                             uri_list.append(item)
                         else:
                             url_list.append(item)
@@ -9228,7 +9231,10 @@ class _RasterAnalysisTools(BaseAnalytics):
             folderId = gis._portal.get_folder_id(owner, input_rasters)
             if folderId is None:
                 if "http:" in input_rasters or "https:" in input_rasters:
-                    if "blob.core" in input_rasters:
+                    if "blob.core" in input_rasters or all(
+                        blob_string in input_rasters
+                        for blob_string in ["stg-arcgisazure", "arcgis.com"]
+                    ):
                         input_rasters_dict = {"uri": input_rasters}
                     elif raster_type_name.lower() == "tiled imagery layer":
                         input_rasters_dict = {"tiled_url": input_rasters}
