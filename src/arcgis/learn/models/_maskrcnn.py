@@ -1073,7 +1073,8 @@ class MaskRCNN(ArcGISModel):
 
                         box[2] -= box[0]
                         box[3] -= box[1]
-                        if math.sqrt(box[2] * box[3]) >= min_obj_size:
+                        area = box[2] * box[3]
+                        if area > 0 and math.sqrt(area) >= min_obj_size:
                             pred_box.append(box)
                             pred_class.append(
                                 predictions[batch_idx]["labels"][n].tolist()
