@@ -38,6 +38,7 @@ try:
         mask_rcnn_loss,
         train_callback,
         compute_class_AP,
+        predict_tta,
     )
     from .._image_utils import _get_image_chips, _draw_predictions
 
@@ -444,6 +445,11 @@ class MaskRCNN(ArcGISModel):
         if pretrained_path is not None:
             self.load(pretrained_path)
 
+        if hasattr(data, "_image_space_used"):
+            if data._image_space_used == "MAP_SPACE":
+                self.learn.model.arcgis_tta = list(range(8))
+            else:
+                self.learn.model.arcgis_tta = [0, 2]
         if self._is_multispectral:
             self._orig_backbone = self._backbone
             self._backbone = self._backbone_ms
@@ -692,18 +698,24 @@ class MaskRCNN(ArcGISModel):
             "average_precision_score": self.average_precision_score(show_progress=True)
         }
 
-    def _predict_batch(self, images):
+    def _predict_batch(self, images, detect_thresh=0.5, tta_prediction=False):
         model = self.learn.model
         model.eval()
         model = model.to(self._device)
         normed_batch_tensor = images.to(self._device)
-        predictions = model(list(normed_batch_tensor))
+        if tta_prediction:
+            predictions = predict_tta(model, normed_batch_tensor, detect_thresh)
+        else:
+            temp = model.roi_heads.score_thresh
+            model.roi_heads.score_thresh = detect_thresh
+            predictions = model(list(normed_batch_tensor))
+            model.roi_heads.score_thresh = temp
         normed_batch_tensor.detach().cpu()
         del normed_batch_tensor
         return predictions
 
-    def _predict_results(self, xb):
-        predictions = self._predict_batch(xb)
+    def _predict_results(self, xb, detect_thresh=0.5, tta_prediction=False):
+        predictions = self._predict_batch(xb, detect_thresh, tta_prediction)
         predictionsf = []
         for i in range(len(predictions)):
             predictionsf.append({})
@@ -754,6 +766,7 @@ class MaskRCNN(ArcGISModel):
         mode="mask",
         mask_threshold=0.5,
         box_threshold=0.7,
+        tta_prediction=False,
         imsize=5,
         index=0,
         alpha=0.5,
@@ -766,6 +779,10 @@ class MaskRCNN(ArcGISModel):
         =====================   ===========================================
         **Argument**            **Description**
         ---------------------   -------------------------------------------
+        ---------------------   -------------------------------------------
+        rows                    Optional int. Number of rows of results
+                                to be displayed.
+        ---------------------   -------------------------------------------
         mode                    Required arguments within ['bbox', 'mask', 'bbox_mask'].
                                     * ``bbox`` - For visualizing only bounding boxes.
                                     * ``mask`` - For visualizing only mask
@@ -777,8 +794,8 @@ class MaskRCNN(ArcGISModel):
         box_threshold           Optional float. The probability above which
                                 a detection will be considered valid.
         ---------------------   -------------------------------------------
-        nrows                   Optional int. Number of rows of results
-                                to be displayed.
+        tta_prediction          Optional bool. Perform test time augmentation
+                                while predicting
         =====================   ===========================================
         """
         self._check_requisites()
@@ -830,7 +847,11 @@ class MaskRCNN(ArcGISModel):
         prediction_store = []
         for i in range(0, x_batch.shape[0], self._data.batch_size):
             prediction_store.extend(
-                self._predict_results(x_batch[i : i + self._data.batch_size])
+                self._predict_results(
+                    x_batch[i : i + self._data.batch_size],
+                    box_threshold,
+                    tta_prediction,
+                )
             )
         pred_mask, pred_box = self._predict_postprocess(
             prediction_store, mask_threshold, box_threshold
@@ -944,7 +965,12 @@ class MaskRCNN(ArcGISModel):
             return fig
 
     def average_precision_score(
-        self, detect_thresh=0.5, iou_thresh=0.5, mean=False, show_progress=True
+        self,
+        detect_thresh=0.5,
+        iou_thresh=0.5,
+        mean=False,
+        show_progress=True,
+        tta_prediction=False,
     ):
 
         """
@@ -965,6 +991,9 @@ class MaskRCNN(ArcGISModel):
         mean                    Optional bool. If False returns class-wise
                                 average precision otherwise returns mean
                                 average precision.
+        ---------------------   -------------------------------------------
+        tta_prediction          Optional bool. Perform test time augmentation
+                                while predicting
         =====================   ===========================================
         :return: `dict` if mean is False otherwise `float`
         """
@@ -978,6 +1007,7 @@ class MaskRCNN(ArcGISModel):
                 detect_thresh,
                 iou_thresh,
                 mean,
+                tta_prediction,
             )
             return aps
         else:
@@ -988,6 +1018,7 @@ class MaskRCNN(ArcGISModel):
                 show_progress,
                 detect_thresh,
                 iou_thresh,
+                tta_prediction=tta_prediction,
             )
             return dict(zip(self._data.classes[1:], aps))
 
@@ -1019,8 +1050,11 @@ class MaskRCNN(ArcGISModel):
         pred_class,
         pred_score,
         extra_chips=0,
+        tta_prediction=False,
     ):
-        predictions = self._predict_batch(torch.tensor(batch).float())
+        predictions = self._predict_batch(
+            torch.tensor(batch).float(), threshold, tta_prediction
+        )
 
         for batch_idx in range(len(predictions) - extra_chips):
             offset = offsets[batch_idx]
@@ -1094,6 +1128,7 @@ class MaskRCNN(ArcGISModel):
         nms_overlap=0.3,
         min_obj_size=1,
         batch_size=1,
+        tta_prediction=False,
     ):
         data = []
         offsets = []
@@ -1147,6 +1182,7 @@ class MaskRCNN(ArcGISModel):
                     pred_class=pred_class,
                     pred_score=pred_score,
                     extra_chips=batch_size - len(data),
+                    tta_prediction=tta_prediction,
                 )
                 data = []
                 offsets = []
@@ -1174,6 +1210,7 @@ class MaskRCNN(ArcGISModel):
         return_scores=True,
         visualize=False,
         resize=False,
+        tta_prediction=False,
         **kwargs,
     ):
         """
@@ -1213,6 +1250,9 @@ class MaskRCNN(ArcGISModel):
                                 by applying the model on cropped sections of
                                 the image (of the same size as the model was
                                 trained on).
+        ---------------------   -------------------------------------------
+        tta_prediction          Optional bool. Perform test time augmentation
+                                while predicting
         =====================   ===========================================
 
         **kwargs**
@@ -1287,6 +1327,7 @@ class MaskRCNN(ArcGISModel):
             nms_overlap,
             min_obj_size,
             batch_size,
+            tta_prediction,
         )
 
         if visualize:

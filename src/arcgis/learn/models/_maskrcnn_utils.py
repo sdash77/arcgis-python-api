@@ -1,21 +1,19 @@
-from fastai.vision import ImageSegment, Image
-from fastai.vision.image import open_image, show_image, pil2tensor
+from fastai.vision import Image
 from fastai.vision.data import SegmentationProcessor, ImageList
 from fastai.layers import CrossEntropyFlat
 from fastai.basic_train import LearnerCallback
 import torch
 import warnings
-import PIL
 import numpy as np
-from skimage import io
 import matplotlib.pyplot as plt
-from torch import LongTensor
-import os
 from .._utils.common import ArcGISMSImage
 from typing import Callable
 import warnings
 from .._utils.utils import check_imbalance
 from fastprogress.fastprogress import progress_bar
+from torchvision.ops import boxes as box_ops
+from fastai.vision.transform import dihedral_affine
+from fastai.vision import ImageBBox
 
 
 class ArcGISImageSegment(Image):
@@ -450,8 +448,152 @@ def compute_ap(
     return mAP
 
 
+def batch_dihedral(x, k):
+    flips = []
+    if k & 1:
+        flips.append(2)
+    if k & 2:
+        flips.append(3)
+    if flips:
+        x = torch.flip(x, flips)
+    if k & 4:
+        x = x.transpose(2, 3)
+    return x.contiguous()
+
+
+def recover_boxes(bboxes, size, k):
+
+    if bboxes.size(0):
+        device = bboxes.device
+        bboxes = ImageBBox.create(*size, bboxes.detach().cpu())
+        bboxes = dihedral_affine(bboxes, k)
+        if k == 5 or k == 6:
+            bboxes = dihedral_affine(bboxes, 3)
+        bboxes = (size[0] * (bboxes.data + 1) / 2).to(device)
+
+    return bboxes
+
+
+def intersect(box_a, box_b):
+    max_xy = torch.min(box_a[:, None, 2:], box_b[None, :, 2:])
+    min_xy = torch.max(box_a[:, None, :2], box_b[None, :, :2])
+    inter = torch.clamp((max_xy - min_xy), min=0)
+    return inter[:, :, 0] * inter[:, :, 1]
+
+
+def box_area(b):
+    return (b[:, 2] - b[:, 0]) * (b[:, 3] - b[:, 1])
+
+
+def boxious(box_a, box_b):
+    inter = intersect(box_a, box_b)
+    union = box_area(box_a).unsqueeze(1) + box_area(box_b).unsqueeze(0) - inter
+    return inter / union
+
+
+def pred_mean_merge(pred, iou_thresold=0.5, same_pred=1):
+
+    bboxes = pred["boxes"]
+    masks = pred["masks"].squeeze()
+    scores, labels = pred["scores"], pred["labels"]
+    ious = boxious(bboxes, bboxes)
+    numOfboxes = ious.shape[0]
+    # merge predictions with iou>thresold
+    ref_boxs, merge_boxids = np.where(ious > iou_thresold)
+    _, idx = np.unique(ref_boxs, return_index=True)
+    counter = np.array(range(numOfboxes))
+    i = 0
+    merge_masks, merge_boxes, merge_scores, merge_labels = [], [], [], []
+    while i < numOfboxes:
+        if counter[i] == -1:
+            i += 1
+            continue
+        if i == numOfboxes - 1:
+            matched_idx = merge_boxids[idx[i] :]
+        else:
+            matched_idx = merge_boxids[idx[i] : idx[i + 1]]
+        if len(matched_idx) > same_pred:
+            merge_masks.append(masks[matched_idx, :, :].mean(dim=0))
+            merge_boxes.append(bboxes[matched_idx, :].mean(dim=0))
+            merge_scores.append(scores[matched_idx].mean())
+            merge_labels.append(labels[matched_idx[0]])
+
+        counter[np.isin(counter, matched_idx)] = -1
+        i += 1
+    return (
+        torch.stack(merge_masks) if merge_masks else torch.tensor([]),
+        torch.stack(merge_boxes) if merge_boxes else torch.tensor([]),
+        torch.tensor(merge_scores),
+        torch.tensor(merge_labels),
+    )
+
+
+def merge_tta_prediction(predictions, nms_thres=0.3, merge_policy="mean"):
+    device = predictions[0]["boxes"].device
+    result = {k: [] for k in predictions[0].keys()}
+    for pred in predictions:
+        for k, v in pred.items():
+            result[k].append(v)
+
+    for k, v in result.items():
+        result[k] = torch.cat(v).detach().cpu()
+
+    if merge_policy == "mean":
+        (
+            result["masks"],
+            result["boxes"],
+            result["scores"],
+            result["labels"],
+        ) = pred_mean_merge(result, nms_thres)
+    else:
+        keep = box_ops.batched_nms(
+            result["boxes"],
+            result["scores"],
+            result["labels"],
+            nms_thres,
+        )
+
+        for k, v in result.items():
+            result[k] = result[k][keep]
+
+    for k, v in result.items():
+        result[k] = result[k].to(device)
+
+    return result
+
+
+def predict_tta(model, batch, detect_thresh=0.5, merge_policy="mean"):
+
+    temp = model.roi_heads.score_thresh
+    model.roi_heads.score_thresh = detect_thresh
+    ttaPreds = [[] for _ in range(batch.shape[0])]
+    for k in model.arcgis_tta:
+        transforms = batch_dihedral(batch, k)
+        pred = model(list(transforms))
+        for i, p in enumerate(pred):
+            p["masks"] = batch_dihedral(p["masks"], k)
+            if k == 5 or k == 6:
+                p["masks"] = batch_dihedral(p["masks"], 3)
+            p["boxes"] = recover_boxes(p["boxes"], batch.shape[-2:], k)
+            ttaPreds[i].append(p)
+    for i, pred in enumerate(ttaPreds):
+        ttaPreds[i] = merge_tta_prediction(
+            pred, model.roi_heads.nms_thresh, merge_policy
+        )
+    model.roi_heads.score_thresh = temp
+
+    return ttaPreds
+
+
 def compute_class_AP(
-    model, dl, n_classes, show_progress, detect_thresh=0.5, iou_thresh=0.5, mean=False
+    model,
+    dl,
+    n_classes,
+    show_progress,
+    detect_thresh=0.5,
+    iou_thresh=0.5,
+    mean=False,
+    tta_prediction=False,
 ):
 
     model.learn.model.eval()
@@ -461,7 +603,10 @@ def compute_class_AP(
         aps = [[] for _ in range(n_classes)]
     with torch.no_grad():
         for input, target in progress_bar(dl, display=show_progress):
-            predictions = model.learn.model(list(input))
+            if tta_prediction:
+                predictions = predict_tta(model.learn.model, input, detect_thresh)
+            else:
+                predictions = model.learn.model(list(input))
             ground_truth = mask_to_dict(target, model._device)
             for i in range(len(predictions)):
 
