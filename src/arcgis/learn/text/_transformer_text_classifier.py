@@ -88,7 +88,6 @@ backbone_models_reverse_map = {
 
 
 class TransformerForTextClassification(ArcGISTransformer):
-
     _supported_backbones = transformer_architectures
 
     def __init__(

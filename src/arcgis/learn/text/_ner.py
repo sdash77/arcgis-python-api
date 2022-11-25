@@ -137,6 +137,7 @@ class EntityRecognizer:
                 if not HAS_TRANSFORMERS:
                     _raise_transformers_import_error()
                 model_config = AutoConfig.from_pretrained(backbone)
+
                 if data.backbone == "spacy":
                     logging.info("Preparing data for transformer backbone!")
                     if model_config.id2label != {0: "LABEL_0", 1: "LABEL_1"}:

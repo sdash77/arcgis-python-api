@@ -540,7 +540,6 @@ class _SpacyEntityRecognizer(ArcGISModel):
         if emd.get("metrics"):
             self.recorder.metrics = json.loads(emd.get("metrics"))
         self.saved_model_dir = deepcopy(self.model_dir)
-        print(self.model)
 
     @classmethod
     def from_model(cls, emd_path, data=None):
