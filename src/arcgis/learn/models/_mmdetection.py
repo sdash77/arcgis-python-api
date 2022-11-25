@@ -10,6 +10,7 @@ try:
     from fastai.torch_core import split_model_idx
     from .._utils.pascal_voc_rectangles import ObjectDetectionCategoryList
     from .._utils.common import get_multispectral_data_params_from_emd, _get_emd_path
+    from ._ssd_utils import AveragePrecision
 
     HAS_FASTAI = True
 
@@ -92,9 +93,12 @@ class MMDetectionConfig:
                 losses = self.forward_train(img, img_metas, gt_bboxes, gt_labels)
                 loss, log_vars = self._parse_losses(losses)
 
-                outputs = dict(loss=loss, log_vars=log_vars)
+                loss = dict(loss=loss, log_vars=log_vars)
 
-                return outputs
+                output = None
+                if self.train_val:
+                    output = self.forward_test([img], [img_metas], rescale=True)
+                return output, loss
             else:
                 return self.forward_test(img[0], img[1], rescale=True)
 
@@ -109,6 +113,11 @@ class MMDetectionConfig:
 
     def on_batch_begin(self, learn, model_input_batch, model_target_batch, **kwargs):
 
+        if kwargs.get("train"):
+            self.model.train_val = False
+        else:
+            self.set_test_parms()
+            self.model.train_val = True
         learn.model.train()
         img_metas = []
         gt_labels = []
@@ -151,8 +160,7 @@ class MMDetectionConfig:
         # return model_input and model_target
         return model_input, model_target
 
-    def transform_input(self, xb, thresh=0.5, nms_overlap=0.1):
-
+    def set_test_parms(self, thresh=0.2, nms_overlap=0.1):
         if hasattr(self.model, "roi_head"):
             self.nms_thres = self.model.roi_head.test_cfg.nms.iou_threshold
             self.thresh = self.model.roi_head.test_cfg.score_thr
@@ -164,6 +172,9 @@ class MMDetectionConfig:
             self.model.bbox_head.test_cfg.nms.iou_threshold = nms_overlap
             self.model.bbox_head.test_cfg.score_thr = thresh
 
+    def transform_input(self, xb, thresh=0.5, nms_overlap=0.1):
+
+        self.set_test_parms(thresh, nms_overlap)
         img_metas = []
         image_pad_shape = xb.permute(0, 2, 3, 1).shape[1:]
         image_scale_factor = self.numpy.array(
@@ -188,7 +199,7 @@ class MMDetectionConfig:
 
     def loss(self, model_output, *model_target):
 
-        return model_output["loss"]
+        return model_output[1]["loss"]
 
     def post_process(self, pred, nms_overlap, thres, chip_size, device):
 
@@ -265,6 +276,7 @@ class MMDetection(ModelExtension):
             model=model,
             model_weight=model_weight,
         )
+        self.learn.metrics = [AveragePrecision(self, data.c - 1)]
         idx = self._freeze()
         self.learn.layer_groups = split_model_idx(self.learn.model, [idx])
         self.learn.create_opt(lr=3e-3)

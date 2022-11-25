@@ -2,6 +2,17 @@ from fastai.vision import Image
 from fastai.vision.data import SegmentationProcessor, ImageList
 from fastai.layers import CrossEntropyFlat
 from fastai.basic_train import LearnerCallback
+from fastai.torch_core import add_metrics
+from torch.jit.annotations import List, Dict
+from torchvision.models.detection.roi_heads import (
+    fastrcnn_loss,
+    maskrcnn_loss,
+    maskrcnn_inference,
+)
+from torchvision.models.detection.transform import (
+    resize_boxes,
+    paste_masks_in_image,
+)
 import torch
 import warnings
 import numpy as np
@@ -14,6 +25,187 @@ from fastprogress.fastprogress import progress_bar
 from torchvision.ops import boxes as box_ops
 from fastai.vision.transform import dihedral_affine
 from fastai.vision import ImageBBox
+
+
+def forward_roi(self, features, proposals, image_shapes, targets=None):
+
+    """
+    Arguments:
+        features (List[Tensor])
+        proposals (List[Tensor[N, 4]])
+        image_shapes (List[Tuple[H, W]])
+        targets (List[Dict])
+    """
+
+    train_val = getattr(self, "train_val", False)
+
+    if targets is not None:
+        for t in targets:
+
+            floating_point_types = (torch.float, torch.double, torch.half)
+            assert (
+                t["boxes"].dtype in floating_point_types
+            ), "target boxes must of float type"
+            assert t["labels"].dtype == torch.int64, "target labels must of int64 type"
+
+    if self.training:
+        if train_val:
+            original_prpsl = [p.clone() for p in proposals]
+        (
+            proposals,
+            matched_idxs,
+            labels,
+            regression_targets,
+        ) = self.select_training_samples(proposals, targets)
+    else:
+        labels = None
+        regression_targets = None
+        matched_idxs = None
+
+    box_features = self.box_roi_pool(features, proposals, image_shapes)
+    box_features = self.box_head(box_features)
+    class_logits, box_regression = self.box_predictor(box_features)
+
+    result = torch.jit.annotate(List[Dict[str, torch.Tensor]], [])
+    losses = {}
+    if self.training:
+        assert labels is not None and regression_targets is not None
+        loss_classifier, loss_box_reg = fastrcnn_loss(
+            class_logits, box_regression, labels, regression_targets
+        )
+        losses = {
+            "loss_classifier": loss_classifier,
+            "loss_box_reg": loss_box_reg,
+        }
+    if not self.training or train_val:
+
+        if train_val:
+            box_features = self.box_roi_pool(features, original_prpsl, image_shapes)
+            box_features = self.box_head(box_features)
+            class_logits, box_regression = self.box_predictor(box_features)
+            boxes, scores, labels = self.postprocess_detections(
+                class_logits, box_regression, original_prpsl, image_shapes
+            )
+        else:
+            boxes, scores, labels = self.postprocess_detections(
+                class_logits, box_regression, proposals, image_shapes
+            )
+        num_images = len(boxes)
+        for i in range(num_images):
+            result.append(
+                {
+                    "boxes": boxes[i],
+                    "labels": labels[i],
+                    "scores": scores[i],
+                }
+            )
+
+    if self.has_mask():
+        mask_proposals = [p["boxes"] for p in result]
+        if self.training:
+            assert matched_idxs is not None
+            # during training, only focus on positive boxes
+            num_images = len(proposals)
+            mask_proposals = []
+            pos_matched_idxs = []
+            for img_id in range(num_images):
+                pos = torch.where(labels[img_id] > 0)[0]
+                mask_proposals.append(proposals[img_id][pos])
+                pos_matched_idxs.append(matched_idxs[img_id][pos])
+        else:
+            pos_matched_idxs = None
+
+        if self.mask_roi_pool is not None:
+            mask_features = self.mask_roi_pool(features, mask_proposals, image_shapes)
+            mask_features = self.mask_head(mask_features)
+            mask_logits = self.mask_predictor(mask_features)
+        else:
+            raise Exception("Expected mask_roi_pool to be not None")
+
+        loss_mask = {}
+        if self.training:
+            assert targets is not None
+            assert pos_matched_idxs is not None
+            assert mask_logits is not None
+
+            gt_masks = [t["masks"] for t in targets]
+            gt_labels = [t["labels"] for t in targets]
+            rcnn_loss_mask = maskrcnn_loss(
+                mask_logits, mask_proposals, gt_masks, gt_labels, pos_matched_idxs
+            )
+            loss_mask = {"loss_mask": rcnn_loss_mask}
+
+        if not self.training or train_val:
+            if train_val:
+                mask_proposals = [p["boxes"] for p in result]
+                mask_features = self.mask_roi_pool(
+                    features, mask_proposals, image_shapes
+                )
+                mask_features = self.mask_head(mask_features)
+                mask_logits = self.mask_predictor(mask_features)
+            labels = [r["labels"] for r in result]
+            masks_probs = maskrcnn_inference(mask_logits, labels)
+            for mask_prob, r in zip(masks_probs, result):
+                r["masks"] = mask_prob
+
+        losses.update(loss_mask)
+
+    return result, losses
+
+
+def postprocess_transform(self, result, image_shapes, original_image_sizes):
+
+    train_val = getattr(self, "train_val", False)
+
+    if not self.training or train_val:
+        for i, (pred, im_s, o_im_s) in enumerate(
+            zip(result, image_shapes, original_image_sizes)
+        ):
+            boxes = pred["boxes"]
+            boxes = resize_boxes(boxes, im_s, o_im_s)
+            result[i]["boxes"] = boxes
+            if "masks" in pred:
+                masks = pred["masks"]
+                masks = paste_masks_in_image(masks, boxes, o_im_s)
+                result[i]["masks"] = masks
+
+    elif self.training:
+        return result
+
+    return result
+
+
+def post_nms_top_n(self):
+
+    train_val = getattr(self, "train_val", False)
+
+    if train_val:
+        return self._post_nms_top_n["testing"]
+    elif self.training:
+        return self._post_nms_top_n["training"]
+    return self._post_nms_top_n["testing"]
+
+
+def pre_nms_top_n(self):
+
+    train_val = getattr(self, "train_val", False)
+
+    if train_val:
+        self._pre_nms_top_n["testing"]
+    elif self.training:
+        return self._pre_nms_top_n["training"]
+    return self._pre_nms_top_n["testing"]
+
+
+def eager_outputs_modified(self, losses, detections):
+
+    train_val = getattr(self, "train_val", False)
+
+    if train_val:
+        return detections, losses
+    elif self.training:
+        return losses
+    return detections
 
 
 class ArcGISImageSegment(Image):
@@ -255,6 +447,8 @@ class ArcGISInstanceSegmentationMSItemList(ArcGISInstanceSegmentationItemList):
 
 
 def mask_rcnn_loss(loss_value, *args):
+    if isinstance(loss_value, tuple):
+        loss_value = loss_value[1]
 
     final_loss = 0.0
     for i in loss_value.values():
@@ -326,14 +520,61 @@ class train_callback(LearnerCallback):
 
     def on_batch_begin(self, last_input, last_target, **kwargs):
         "Handle new batch `xb`,`yb` in `train` or validation."
+        train = kwargs.get("train")
+        self.model.train()
+        if train:
+            self.model.roi_heads.train_val = False
+            self.model.rpn.train_val = False
+            self.model.train_val = False
+            self.model.transform.train_val = False
+        else:
+            self.model.backbone.eval()  # to get feature in eval mode for evaluation
+            self.model.roi_heads.train_val = True
+            self.model.rpn.train_val = True
+            self.model.train_val = True
+            self.model.transform.train_val = True
         target_list = mask_to_dict(last_target, self.c_device)
         if last_input.shape[0] < 2:
             last_input = torch.cat((last_input, last_input))
             target_list.append(target_list[0])
-        self.learn.model.train()
+
         last_input = [list(last_input), target_list]
-        last_target = [torch.tensor([1]) for i in last_target]
+        last_target = target_list  # [torch.tensor([1]) for i in last_target]
         return {"last_input": last_input, "last_target": last_target}
+
+
+class AveragePrecision(LearnerCallback):
+    def __init__(self, learn):
+        super().__init__(learn)
+
+    def on_epoch_begin(self, **kwargs):
+        self.aps = []
+
+    def on_batch_end(self, last_output, last_target, **kwargs):
+        last_output = last_output[0]
+        for i in range(len(last_output)):
+
+            last_output[i]["masks"] = last_output[i]["masks"].squeeze()
+            if last_output[i]["masks"].shape[0] == 0:
+                continue
+            if len(last_output[i]["masks"].shape) == 2:
+                last_output[i]["masks"] = last_output[i]["masks"][None]
+            ap = compute_ap(
+                last_target[i]["labels"],
+                last_target[i]["masks"],
+                last_output[i]["labels"],
+                last_output[i]["scores"],
+                last_output[i]["masks"],
+            )
+            self.aps.append(ap)
+
+    def on_epoch_end(self, last_metrics, **kwargs):
+        self.model.roi_heads.train_val = False
+        self.model.rpn.train_val = False
+        self.model.train_val = False
+        self.model.transform.train_val = False
+        self.aps = torch.mean(torch.tensor(self.aps))
+        return add_metrics(last_metrics, self.aps)
 
 
 def masks_iou(masks1, masks2):

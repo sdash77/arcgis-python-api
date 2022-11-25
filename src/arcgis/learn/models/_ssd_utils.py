@@ -379,7 +379,10 @@ class AveragePrecision(Callback):
 
     def on_batch_end(self, last_output, last_target, **kwargs):
 
-        if getattr(self.model, "_is_fasterrcnn", False):
+        if (
+            getattr(self.model, "_is_fasterrcnn", False)
+            or "MMDetection" in self.model.__str__()
+        ):
             last_output = last_output[0]
 
         tps, p_scores, clas, self.n_gts = compute_cm(

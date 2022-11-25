@@ -39,6 +39,12 @@ try:
         train_callback,
         compute_class_AP,
         predict_tta,
+        AveragePrecision,
+        forward_roi,
+        postprocess_transform,
+        post_nms_top_n,
+        pre_nms_top_n,
+        eager_outputs_modified,
     )
     from .._image_utils import _get_image_chips, _draw_predictions
 
@@ -431,6 +437,23 @@ class MaskRCNN(ArcGISModel):
         else:
             self.learn = Learner(data, model, loss_func=mask_rcnn_loss)
         self.learn.callbacks.append(train_callback(self.learn))
+        if not pointrend:
+            self.learn.model.roi_heads.forward = types.MethodType(
+                forward_roi, self.learn.model.roi_heads
+            )
+        self.learn.model.eager_outputs = types.MethodType(
+            eager_outputs_modified, self.learn.model
+        )
+        self.learn.model.transform.postprocess = types.MethodType(
+            postprocess_transform, self.learn.model.transform
+        )
+        self.learn.model.rpn.post_nms_top_n = types.MethodType(
+            post_nms_top_n, self.learn.model.rpn
+        )
+        self.learn.model.rpn.pre_nms_top_n = types.MethodType(
+            pre_nms_top_n, self.learn.model.rpn
+        )
+        self.learn.metrics = [AveragePrecision(self.learn)]
         self.learn.model = self.learn.model.to(self._device)
         self.learn.c_device = self._device
 
