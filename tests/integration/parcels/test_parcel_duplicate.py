@@ -125,4 +125,4 @@ class TestDuplicateParcels(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        versioning_utils.clean_up_versions(cls.vms, "api-")
+        pfutils.clean_up_versions(cls.vms, "api-")
