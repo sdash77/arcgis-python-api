@@ -1319,7 +1319,7 @@ class ParcelFabricManager(object):
         delete_source_record     Required Bool. Parameter indicating whether to delete the original
                                  source record.
 
-        -----------------------     --------------------------------------------------------------------
+        --------------------     --------------------------------------------------------------------
         future                      Optional boolean. If `True`, the request is processed as an asynchronous
                                     job and a URL is returned that points a location displaying the status
                                     of the job.
@@ -1382,7 +1382,7 @@ class ParcelFabricManager(object):
                                                  "spatialReference": {"wkid": <wkid_value>}
                                                 }
 
-        -----------------------     --------------------------------------------------------------------
+        --------------------     --------------------------------------------------------------------
         future                      Optional boolean. If `True`, the request is processed as an asynchronous
                                     job and a URL is returned that points a location displaying the status
                                     of the job.
@@ -1427,7 +1427,8 @@ class ParcelFabricManager(object):
         future: bool = False,
     ):
         """
-        The :meth:`~transfer_parcel` supports workflows for transferring a piece of land between parcels.
+        The :meth:`~transfer_parcel` method supports workflows for transferring 
+        a piece of land between parcels.
 
         =======================     =======================================================================
         **Argument**                **Description**
@@ -1435,9 +1436,8 @@ class ParcelFabricManager(object):
         transfer_parcel_feature     Required Dict. Parameter representing the parcel to be transferred.
                                     Only one parcel can be specified as the transfer parcel.
 
-                                    :Syntax:
-
                                     .. code-block:: python
+                                        # Example Usage:
 
                                         >>> transfer_parcel_feature={"id":"<guid>","layerId":"<layerID>"}
         -----------------------     -----------------------------------------------------------------------
@@ -1445,9 +1445,8 @@ class ParcelFabricManager(object):
                                     will be transferred. These parcels will be merged with the transfer
                                     parcel and will become larger.
 
-                                    :Syntax:
-
                                     .. code-block:: python
+                                        # Example Usage:
 
                                         >>> target_parcel_features=[{"id":"<guid>","layerId":"<layerID>"},{...}]
 
@@ -1460,7 +1459,6 @@ class ParcelFabricManager(object):
                                     domain.
 
                                     .. code-block:: python
-
                                         #Example Usage:
 
                                         #Square feet
@@ -1473,13 +1471,12 @@ class ParcelFabricManager(object):
                                     land will be transferred. These parcels will be clipped and will
                                     become smaller.
 
-                                    :Syntax:
-
                                     .. code-block:: python
+                                        # Example Usage:
 
                                         >>> source_parcel_features=[{"id":"<guid>","layerId":"<layerID>"},{...}]
 
-        -----------------------     --------------------------------------------------------------------
+        -----------------------     -----------------------------------------------------------------------
         future                      Optional boolean. If `True`, the request is processed as an asynchronous
                                     job and a URL is returned that points a location displaying the status
                                     of the job.
@@ -1530,13 +1527,13 @@ class ParcelFabricManager(object):
         parcel_line_features        Required List. Parameter representing the input parcel line layers with
                                     label positions that will be updated.
 
-                                    :Syntax:
-
                                     .. code-block:: python
 
-                                        >>> parcel_line_features=[{"id":"<guid>","layerId":"<layerID>"},{...}]
+                                        >>> parcel_line_features=[{"id":"<guid>",
+                                                                   "layerId":"<layerID>"},
+                                                                   {...}]
 
-        --------------------        --------------------------------------------------------------------
+        -----------------------     -----------------------------------------------------------------------
         future                      Optional boolean. If `True`, the request is processed as an asynchronous
                                     job and a URL is returned that points a location displaying the status
                                     of the job.
