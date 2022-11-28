@@ -13,6 +13,8 @@ import xml.etree.ElementTree as ET
 from .exceptions import ServerError
 
 ########################################################################
+
+
 class SurveyManager:
     """
     Survey Manager allows users and administrators of Survey 123 to
@@ -26,6 +28,7 @@ class SurveyManager:
     _url = None
     _properties = None
     # ----------------------------------------------------------------------
+
     def __init__(self, gis, baseurl=None):
         """Constructor"""
         if baseurl is None:
@@ -159,6 +162,7 @@ class Survey:
     _ssi = None
     _baseurl = None
     # ----------------------------------------------------------------------
+
     def __init__(self, item, sm, baseurl: Optional[str] = None):
         """Constructor"""
         if baseurl is None:
@@ -265,7 +269,7 @@ class Survey:
         webmap_item: Optional[Item] = None,
         map_scale: Optional[float] = None,
         locale: str = "en",
-        save_folder: Optional[str] = tempfile.gettempdir(),
+        save_folder: Optional[str] = None,
     ) -> str:
         """
         Creates an MS Word Report or PDF.  The `generate_report` method allows users to either save the
@@ -422,7 +426,7 @@ class Survey:
         self,
         template_type: Optional[str] = "individual",
         template_name: Optional[str] = None,
-        save_folder: Optional[str] = tempfile.gettempdir(),
+        save_folder: Optional[str] = None,
     ):
         """
         The `create_report_template` creates a simple default template that
@@ -679,9 +683,8 @@ class Survey:
         webmap_item: Optional[Item] = None,
         map_scale: Optional[float] = None,
         locale: str = "en",
-        save_folder: Optional[str] = tempfile.gettempdir(),
+        save_folder: Optional[str] = None,
     ) -> str:
-
         """
         Similar task to generate_report for creating test sample report, and refining
         a report template before generating any formal report.
