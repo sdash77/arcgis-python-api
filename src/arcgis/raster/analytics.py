@@ -3982,7 +3982,7 @@ def create_image_collection(
 | "RapidEye"             |                        |"All", "Level1B",                             |"Multispectral" (default)                     |
 |                        |                        |"Level3A", "Level3B"                          |                                              |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
-| "SkySat"               |"0.41, 0.16, 0.13, 0.3" |"All", "Basic", "Ortho"                       |"All Bands",                                  |
+| "SkySat"               |"0.41, 0.16, 0.13, 0.3" |"All" (default), "Basic", "Ortho"             |"All Bands",                                  |
 |                        |                        |                                              |"Multispectral",                              |
 |                        |                        |                                              |"Panchromatic",                               |
 |                        |                        |                                              |"Pansharpen" ,                                |
