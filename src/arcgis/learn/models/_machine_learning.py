@@ -17,7 +17,11 @@ try:
     import sklearn
     from sklearn import *
     import pandas as pd
-    import xgboost
+    import warnings
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        import xgboost
     import lightgbm
     import catboost
 
