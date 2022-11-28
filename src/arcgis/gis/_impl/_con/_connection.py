@@ -1353,6 +1353,7 @@ class Connection(object):
         return_raw_response = kwargs.pop("return_raw_response", False)
         json_encode = kwargs.pop("json_encode", True)
         add_headers = kwargs.pop("add_headers", {})
+        buffer_reader = None
 
         if self._baseurl.endswith("/") == False:
             self._baseurl += "/"
@@ -1382,9 +1383,10 @@ class Connection(object):
                     if isinstance(v, (list, tuple)):
                         fields[k] = v
                     else:
+                        buffer_reader = open(v, "rb")
                         fields[k] = (
                             os.path.basename(v),
-                            open(v, "rb"),
+                            buffer_reader,
                             mimetypes.guess_type(v)[0],
                         )
             elif isinstance(files, (list, tuple)):
@@ -1395,9 +1397,10 @@ class Connection(object):
                         isinstance(fileName, str)
                         and isinstance(filePath, (io.StringIO, io.BytesIO)) == False
                     ):
+                        buffer_reader = open(filePath, "rb")
                         fields[key] = (
                             fileName,
-                            open(filePath, "rb"),
+                            buffer_reader,
                             mimetypes.guess_type(filePath)[0],
                         )
                     elif isinstance(fileName, str) and isinstance(
@@ -1518,6 +1521,8 @@ class Connection(object):
             import traceback
 
             raise Exception("An unknown error occurred: %s" % traceback.format_exc())
+        if buffer_reader:
+            buffer_reader.close()
         if return_raw_response:
             return resp
         return self._handle_response(

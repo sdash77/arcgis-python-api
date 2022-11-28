@@ -269,7 +269,6 @@ try:
 
         return keep, torch.tensor([count]).to(scores.device).int()
 
-
 except:
     print("\ntorch not available\n")
 
