@@ -44,14 +44,28 @@ Version
     :undoc-members:
 
 ParcelFabricManager
---------------
+-------------------
 .. autoclass:: arcgis.features._parcel.ParcelFabricManager
+    :inherited-members:
+    :members:
+    :undoc-members:
+    
+TopographicProductionManager
+----------------------------
+.. autoclass:: arcgis.features._topographic.TopographicProductionManager
+    :inherited-members:
+    :members:
+    :undoc-members:    
+
+TopographicProductionJobManager
+-------------------------------
+.. autoclass:: arcgis.features._topographic.TopographicProductionJobManager
     :inherited-members:
     :members:
     :undoc-members:
 
 UtilityNetworkManager
---------------
+---------------------
 .. autoclass:: arcgis.features._utility.UtilityNetworkManager
     :inherited-members:
     :members:
