@@ -75,7 +75,7 @@ def batch_preprocess_dict(batch_pc, cfg, is_sqn=False):
     min_layer_point = 512
     for i in range(cfg["num_layers"]):
         layer_num_point = batch_pc.shape[1] // cfg["sub_sampling_ratio"][i]
-        layer_num_point = max(layer_num_point, min_layer_point // (2 ** i))
+        layer_num_point = max(layer_num_point, min_layer_point // (2**i))
         neighbour_idx = knn_search(batch_pc, batch_pc, cfg["k_n"])
         sub_points = batch_pc[:, :layer_num_point, :]
         pool_i = neighbour_idx[:, :layer_num_point, :]

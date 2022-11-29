@@ -1427,7 +1427,7 @@ class ParcelFabricManager(object):
         future: bool = False,
     ):
         """
-        The :meth:`~transfer_parcel` method supports workflows for transferring 
+        The :meth:`~transfer_parcel` method supports workflows for transferring
         a piece of land between parcels.
 
         =======================     =======================================================================
