@@ -19,6 +19,8 @@ from arcgis.gis import GIS
 from typing import Optional
 
 ########################################################################
+
+
 class Server(BaseServer):
     """
     An ArcGIS Server site used for hosting GIS web services.
@@ -145,6 +147,7 @@ class Server(BaseServer):
     _catalog = None
     _sitemanager = None
     # ----------------------------------------------------------------------
+
     def __init__(self, url: str, gis: GIS = None, **kwargs):
         """Constructor"""
         if gis is None and len(kwargs) > 0:
@@ -878,6 +881,7 @@ class SiteManager(object):
 
     _sm = None
     # ----------------------------------------------------------------------
+
     def __init__(self, server: Server, initialize: bool = False):
         """Constructor"""
         self._sm = server
@@ -1151,6 +1155,12 @@ class SiteManager(object):
         ------------------     --------------------------------------------------------------------
         run_async              Required string. A flag to indicate if the operation needs to be run
                                asynchronously. The default value is False.
+        ------------------     --------------------------------------------------------------------
+        debug                  Optional Boolean. Introduced at 11.0. This parameter sets the log
+                               level for the upgrade process. If true, the log level is set to
+                               DEBUG during the upgrade, which can aid in troubleshooting issues
+                               related to the upgrade process. If false, the log level is set to
+                               VERBOSE during the upgrade process. The default value is false.                       
         ==================     ====================================================================
 
 
