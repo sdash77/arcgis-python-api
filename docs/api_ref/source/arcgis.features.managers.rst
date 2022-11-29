@@ -50,6 +50,20 @@ ParcelFabricManager
     :members:
     :undoc-members:
 
+TraceConfiguration
+-------------------
+.. autoclass:: arcgis.features._trace_configuration.TraceConfiguration
+    :inherited-members:
+    :members:
+    :undoc-members:
+    
+TraceNetworkManager
+-------------------
+.. autoclass:: arcgis.features._trace.TraceNetworkManager
+    :inherited-members:
+    :members:
+    :undoc-members:
+
 UtilityNetworkManager
 --------------
 .. autoclass:: arcgis.features._utility.UtilityNetworkManager
