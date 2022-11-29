@@ -5,6 +5,8 @@ from arcgis import GIS, env
 from arcgis._impl.common._mixins import PropertyMap
 
 ########################################################################
+
+
 class TopographicProductionManager(object):
     """
     The Topographic Production Service resource represents a topographic
@@ -37,6 +39,7 @@ class TopographicProductionManager(object):
     _url = None
     _property = None
     # ----------------------------------------------------------------------
+
     def __init__(self, url, gis=None):
         """Constructor"""
         if gis is None:
@@ -432,6 +435,9 @@ class TopographicProductionManager(object):
         """
         Retrieve the Topographic Production Job Manager class. With this manager
         you can retrieve all jobs, a single job, query or cancel a job.
+
+        :return:
+           :class:`~arcgis.features._topographic.TopographicProductionJobManager`
         """
         url = "%s/jobs" % self._url
         return TopographicProductionJobManager(url, self._gis)
