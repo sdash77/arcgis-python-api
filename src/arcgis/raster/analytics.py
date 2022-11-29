@@ -3565,7 +3565,7 @@ def create_image_collection(
 |"Landsat 9"             |"0.42, 0.51, 0.07, 0.0" |"All" (default)                               |"All Bands",                                  |
 |                        |                        |                                              |"Brightness Temperature",                     |
 |                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
-|                        |                        |                                              |"Multispectral",                              |
+|                        |                        |                                              |"Multiband", "Multispectral",                 |
 |                        |                        |                                              |"Panchromatic", "Pansharpen",                 |
 |                        |                        |                                              |"Pansharpen and Multispectral" (default),"QA",|
 |                        |                        |                                              |"SnowIce", "Spectral Indices",                |
@@ -3576,7 +3576,7 @@ def create_image_collection(
 |                        |                        +----------------------------------------------+----------------------------------------------+
 |                        |                        |"Level1"                                      |"All Bands",                                  |
 |                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
-|                        |                        |                                              |"Multispectral",                              |
+|                        |                        |                                              |"Multiband", "Multispectral",                 |
 |                        |                        |                                              |"Panchromatic", "Pansharpen",                 |
 |                        |                        |                                              |"Pansharpen and Multispectral" (default),"QA",|
 |                        |                        |                                              |"SnowIce",                                    |
@@ -3596,7 +3596,7 @@ def create_image_collection(
 |"Landsat 8"             |"0.42, 0.51, 0.07, 0.0" |"All" (default)                               |"All Bands",                                  |
 |                        |                        |                                              |"Brightness Temperature",                     |
 |                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
-|                        |                        |                                              |"Multispectral",                              |
+|                        |                        |                                              |"Multiband", "Multispectral",                 |
 |                        |                        |                                              |"Panchromatic", "Pansharpen",                 |
 |                        |                        |                                              |"Pansharpen and Multispectral" (default),"QA",|
 |                        |                        |                                              |"SnowIce", "Spectral Indices",                |
@@ -3607,7 +3607,7 @@ def create_image_collection(
 |                        |                        +----------------------------------------------+----------------------------------------------+
 |                        |                        |"Level1"                                      |"All Bands",                                  |
 |                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
-|                        |                        |                                              |"Multispectral",                              |
+|                        |                        |                                              |"Multiband", "Multispectral",                 |
 |                        |                        |                                              |"Panchromatic", "Pansharpen",                 |
 |                        |                        |                                              |"Pansharpen and Multispectral" (default),"QA",|
 |                        |                        |                                              |"SnowIce",                                    |
@@ -3627,7 +3627,7 @@ def create_image_collection(
 |"Landsat 7 ETM+"        |"0.11, 0.14, 0.14, 0.61"| "All" (default)                              |"All Bands",                                  |
 |                        |                        |                                              |"Brightness Temperature",                     |
 |                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
-|                        |                        |                                              |"Multispectral",                              |
+|                        |                        |                                              |"Multiband", "Multispectral",                 |
 |                        |                        |                                              |"Panchromatic", "Pansharpen",                 |
 |                        |                        |                                              |"Pansharpen and Multispectral" (default),"QA",|
 |                        |                        |                                              |"SnowIce", "Spectral Indices",                |
@@ -3638,7 +3638,7 @@ def create_image_collection(
 |                        |                        +----------------------------------------------+----------------------------------------------+
 |                        |                        |"Level1"                                      |"All Bands",                                  |
 |                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
-|                        |                        |                                              |"Multispectral",                              |
+|                        |                        |                                              |"Multiband", "Multispectral",                 |
 |                        |                        |                                              |"Panchromatic", "Pansharpen",                 |
 |                        |                        |                                              |"Pansharpen and Multispectral" (default),"QA",|
 |                        |                        |                                              |"SnowIce",                                    |
@@ -3658,7 +3658,7 @@ def create_image_collection(
 |"Landsat 4-5 TM"        |                        | "All" (default)                              |"All Bands",                                  |
 |                        |                        |                                              |"Brightness Temperature",                     |
 |                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
-|                        |                        |                                              |"Multispectral" (default),                    |
+|                        |                        |                                              |"Multiband", "Multispectral" (default),       |
 |                        |                        |                                              |"Panchromatic", "Pansharpen",                 |
 |                        |                        |                                              |"Pansharpen and Multispectral", "QA",         |
 |                        |                        |                                              |"SnowIce", "Spectral Indices",                |
@@ -3669,7 +3669,7 @@ def create_image_collection(
 |                        |                        +----------------------------------------------+----------------------------------------------+
 |                        |                        |"Level1"                                      |"All Bands",                                  |
 |                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
-|                        |                        |                                              |"Multispectral" (default),                    |
+|                        |                        |                                              |"Multiband", "Multispectral" (default),       |
 |                        |                        |                                              |"Panchromatic", "Pansharpen" ,                |
 |                        |                        |                                              |"Pansharpen and Multispectral", "QA",         |
 |                        |                        |                                              |"SnowIce",                                    |
@@ -3686,7 +3686,7 @@ def create_image_collection(
 |                        |                        +----------------------------------------------+----------------------------------------------+
 |                        |                        |"Surface Temperature"                         |"Surface Temperature"                         |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
-|"Landsat 1-5 MSS"       |                        | "All" (default), "Level1"                    |"All Bands",                                  |
+|"Landsat 1-5 MSS"       |                        | "All" (default), "Level1"                    |"All Bands", "Multiband",                     |
 |                        |                        |                                              |"Multispectral" (default),                    |
 |                        |                        |                                              |"Pseudocolor", "Thermal", "QA"                |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+ 
