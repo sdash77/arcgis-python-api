@@ -382,12 +382,16 @@ class GIS(object):
         self._proxy_host = kwargs.pop("proxy_host", None)
         self._proxy_port = kwargs.pop("proxy_port", 80)
         self._referer = kwargs.pop("referer", None)
-        self._timeout = kwargs.pop("timeout", 600)  # default timeout is 600 seconds
+        self._timeout = kwargs.pop(
+            "timeout", 600
+        )  # default timeout is 600 seconds
         custom_auth = kwargs.pop("custom_auth", None)
         custom_adapter = kwargs.pop("adapter", None)
         self._expiration = kwargs.pop("expiration", None)
         security_kwargs = {
-            "mutual_authentication": kwargs.pop("mutual_authentication", None),
+            "mutual_authentication": kwargs.pop(
+                "mutual_authentication", None
+            ),
             "force_preemptive": kwargs.pop("force_preemptive", None),
             "hostname_override": kwargs.pop("hostname_override", None),
             "delegate": kwargs.pop("delegate", None),
@@ -397,7 +401,9 @@ class GIS(object):
             ),
             "send_cbt": kwargs.pop("send_cbt", None),
         }
-        security_kwargs = {k: v for k, v in security_kwargs.items() if not v is None}
+        security_kwargs = {
+            k: v for k, v in security_kwargs.items() if not v is None
+        }
         if profile is not None and len(profile) == 0:
             raise ValueError("A `profile` name must not be an empty string.")
         elif profile is not None:
@@ -420,12 +426,15 @@ class GIS(object):
                         config = configparser.ConfigParser()
                     else:
                         raise RuntimeError(
-                            "{} not deleted, exiting" "".format(cfg_file_path)
+                            "{} not deleted, exiting"
+                            "".format(cfg_file_path)
                         )
 
             # Add any __init__() args to config/keyring store
             if profile not in pm.list():
-                _log.info("Adding new profile {} to config...".format(profile))
+                _log.info(
+                    "Adding new profile {} to config...".format(profile)
+                )
                 pm.create(
                     profile=profile,
                     url=url,
@@ -474,7 +483,9 @@ class GIS(object):
             password = getpass("Enter password: ")
         # Assumes PFX is being passed in cert_file parameter and no key_file is specified
         if (cert_file is not None) and (key_file is None):
-            if cert_file.lower().endswith(".pfx") or cert_file.lower().endswith(".p12"):
+            if cert_file.lower().endswith(
+                ".pfx"
+            ) or cert_file.lower().endswith(".p12"):
                 if password is None:
                     from getpass import getpass
 
@@ -510,12 +521,18 @@ class GIS(object):
                 self._utoken = kwargs.pop("api_key", None)
             self._api_key = self._utoken
 
-        if self._url.lower() == "home" and not os.getenv("NB_AUTH_FILE", None) is None:
+        if (
+            self._url.lower() == "home"
+            and not os.getenv("NB_AUTH_FILE", None) is None
+        ):
             # configuring for hosted notebooks need to happen before portalpy
             self._try_configure_for_hosted_nb()
             if self._expiration is None:
                 self._expiration = 10080
-        elif self._url.lower() == "home" and os.getenv("NB_AUTH_FILE", None) is None:
+        elif (
+            self._url.lower() == "home"
+            and os.getenv("NB_AUTH_FILE", None) is None
+        ):
             self._url = "pro"
             url = "pro"
         elif self._expiration is None:  # Keep Default Value
@@ -575,7 +592,10 @@ class GIS(object):
                 self._portal.con._referer = ""
                 self._portal.con._session.headers.pop("Referer", None)
         except Exception as e:
-            if len(e.args) > 0 and str(type(e.args[0])) == "<class 'ssl.SSLError'>":
+            if (
+                len(e.args) > 0
+                and str(type(e.args[0])) == "<class 'ssl.SSLError'>"
+            ):
                 raise RuntimeError(
                     "An untrusted SSL error occurred when attempting to connect to the provided GIS.\n"
                     "If you trust this server and want to proceed, add 'verify_cert=False' as an "
@@ -605,7 +625,10 @@ class GIS(object):
                 self._portal.con.baseurl = self._portal.resturl
                 if self._portal.con._auth != "OAUTH":
                     self._portal.con._token = None
-            elif url.lower().find("arcgis.com") > -1 and self._portal.is_logged_in:
+            elif (
+                url.lower().find("arcgis.com") > -1
+                and self._portal.is_logged_in
+            ):
                 from urllib.parse import urlparse
 
                 props = self._portal.get_properties(force=False)
@@ -748,7 +771,10 @@ class GIS(object):
                     can_publish = False
             if can_publish:
                 try:
-                    if self.properties.isPortal and self._portal.is_kubernetes:
+                    if (
+                        self.properties.isPortal
+                        and self._portal.is_kubernetes
+                    ):
                         from arcgis.gis.kubernetes._admin.kadmin import (
                             KubernetesAdmin,
                         )
@@ -870,9 +896,9 @@ class GIS(object):
         """
         if self.version < [5, 3]:
             return {"serviceUrl": service_url}
-        url = ("{base}portals/self" "/servers/computePrivateServiceUrl").format(
-            base=self._portal.resturl
-        )
+        url = (
+            "{base}portals/self" "/servers/computePrivateServiceUrl"
+        ).format(base=self._portal.resturl)
         params = {"f": "json", "serviceUrl": service_url}
 
         return self._con.post(url, params)
@@ -908,7 +934,9 @@ class GIS(object):
             pfx = open(pfx_path, "rb").read()
             p12 = OpenSSL.crypto.load_pkcs12(pfx, pfx_password)
         except OpenSSL.crypto.Error:
-            raise RuntimeError("Invalid PFX password.  Unable to parse file.")
+            raise RuntimeError(
+                "Invalid PFX password.  Unable to parse file."
+            )
         k.write(
             OpenSSL.crypto.dump_privatekey(
                 OpenSSL.crypto.FILETYPE_PEM, p12.get_privatekey()
@@ -1005,7 +1033,8 @@ class GIS(object):
             "See https://bit.ly/2DT1156 for more information."
         )
         _log.warning(
-            'Authenticating in GIS("home") mode failed.' "{}".format(mitigation_msg)
+            'Authenticating in GIS("home") mode failed.'
+            "{}".format(mitigation_msg)
         )
         raise RuntimeError("{}\n-----\n{}".format(err_msg, mitigation_msg))
 
@@ -1050,9 +1079,14 @@ class GIS(object):
         The resource manager for ArcGIS Velocity. See :class:`~arcgis.realtime.velocity.Velocity`
         :return: :class:`~arcgis.realtime.velocity.Velocity`
         """
-        if self._portal.is_arcgisonline and self._subscription_information is not None:
+        if (
+            self._portal.is_arcgisonline
+            and self._subscription_information is not None
+        ):
             _velocity_url = None
-            org_capabilities = self._subscription_information["orgCapabilities"]
+            org_capabilities = self._subscription_information[
+                "orgCapabilities"
+            ]
             for capabilities in org_capabilities:
                 if capabilities["id"] == "velocity":
                     _velocity_url = capabilities["velocityUrl"]
@@ -1065,7 +1099,9 @@ class GIS(object):
                 )
                 return velocity
             else:
-                raise Exception("Velocity is not available on this organizaiton.")
+                raise Exception(
+                    "Velocity is not available on this organizaiton."
+                )
         else:
             raise Exception("ArcGIS Enterprise does not support Velocity")
 
@@ -1077,7 +1113,9 @@ class GIS(object):
         if self._portal.is_arcgisonline:
             return arcgis.apps.hub.Hub(self)
         else:
-            raise Exception("Hub is currently only compatible with ArcGIS Online.")
+            raise Exception(
+                "Hub is currently only compatible with ArcGIS Online."
+            )
 
     @_lazy_property
     def sites(self):
@@ -1087,7 +1125,9 @@ class GIS(object):
         if not self._portal.is_arcgisonline:
             return arcgis.apps.hub.SiteManager(self)
         else:
-            raise Exception("Please access your ArcGIS Online sites through your Hub.")
+            raise Exception(
+                "Please access your ArcGIS Online sites through your Hub."
+            )
 
     @_lazy_property
     def notebook_server(
@@ -1100,7 +1140,9 @@ class GIS(object):
         """
         if self._portal.is_arcgisonline:
             urls = self._registered_servers()
-            url = urls.get("urls", {}).get("notebooks", {}).get("https", None)
+            url = (
+                urls.get("urls", {}).get("notebooks", {}).get("https", None)
+            )
             if url:
                 from arcgis.gis.agonb import AGOLNotebookManager
 
@@ -1110,7 +1152,9 @@ class GIS(object):
             try:
                 from arcgis.gis.nb import NotebookServer
 
-                res = self._portal.con.post("portals/self/servers", {"f": "json"})
+                res = self._portal.con.post(
+                    "portals/self/servers", {"f": "json"}
+                )
 
                 return [
                     NotebookServer(server["adminUrl"] + "/admin", self)
@@ -1166,13 +1210,17 @@ class GIS(object):
 
         self._datastores_list = []
         try:
-            res = self._portal.con.post("portals/self/servers", {"f": "json"})
+            res = self._portal.con.post(
+                "portals/self/servers", {"f": "json"}
+            )
 
             servers = res["servers"]
             admin_url = None
             for server in servers:
                 admin_url = server["adminUrl"] + "/admin"
-                self._datastores_list.append(DatastoreManager(self, admin_url, server))
+                self._datastores_list.append(
+                    DatastoreManager(self, admin_url, server)
+                )
         except:
             pass
         return self._datastores_list
@@ -1276,7 +1324,9 @@ class GIS(object):
     def version(self):
         """The ``version`` property returns the GIS version number"""
         self._is_agol = self._portal.is_arcgisonline
-        self._product_version = [int(i) for i in self._portal.get_version().split(".")]
+        self._product_version = [
+            int(i) for i in self._portal.get_version().split(".")
+        ]
         return self._product_version
 
     # ----------------------------------------------------------------------
@@ -1300,7 +1350,9 @@ class GIS(object):
 
             info = self._registered_servers()
             tile_urls = set(info["urls"].get("tiles", {}).get("https", []))
-            feature_urls = set(info["urls"].get("features", {}).get("https", []))
+            feature_urls = set(
+                info["urls"].get("features", {}).get("https", [])
+            )
             tile_urls = set(info["urls"].get("tiles", {}).get("https", []))
             tile_urls = [url for url in tile_urls if url not in feature_urls]
             pid = self.properties.id
@@ -1323,7 +1375,9 @@ class GIS(object):
 
             info = self._registered_servers()
             servers = [
-                ServicesDirectory(server["url"], portal_connection=self._con, gis=self)
+                ServicesDirectory(
+                    server["url"], portal_connection=self._con, gis=self
+                )
                 for server in info["servers"]
                 if server.get("serverRole", None) == "HOSTING_SERVER"
             ]
@@ -1342,9 +1396,15 @@ class GIS(object):
         if self._portal.is_arcgisonline:
             info = self._registered_servers()
             return info
-        elif self._portal.is_kubernetes or self._portal.is_arcgisonline == False:
+        elif (
+            self._portal.is_kubernetes
+            or self._portal.is_arcgisonline == False
+        ):
 
-            url = self._portal.resturl + f"portals/{self.properties['id']}/servers"
+            url = (
+                self._portal.resturl
+                + f"portals/{self.properties['id']}/servers"
+            )
             params = {"f": "json"}
         return self._con.get(url, params)
 
@@ -1602,7 +1662,8 @@ class Datastore(dict):
             return dict.__getitem__(self, name)
         except:
             raise AttributeError(
-                "'%s' object has no attribute '%s'" % (type(self).__name__, name)
+                "'%s' object has no attribute '%s'"
+                % (type(self).__name__, name)
             )
 
     def __getitem__(
@@ -1643,7 +1704,9 @@ class Datastore(dict):
         params = {
             "f": "json",
         }
-        res = self._portal.con.post(data_item_manifest_url, params, verify_cert=False)
+        res = self._portal.con.post(
+            data_item_manifest_url, params, verify_cert=False
+        )
         return res
 
     @manifest.setter
@@ -1652,13 +1715,18 @@ class Datastore(dict):
         The ``manifest`` property updates the manifest resource for bigdata file shares.
         """
         manifest_upload_url = (
-            self._admin_url + "/data/items" + self.datapath + "/manifest/update"
+            self._admin_url
+            + "/data/items"
+            + self.datapath
+            + "/manifest/update"
         )
 
         with _tempinput(json.dumps(value)) as tempfilename:
             # Build the files list (tuples)
             files = []
-            files.append(("manifest", tempfilename, os.path.basename(tempfilename)))
+            files.append(
+                ("manifest", tempfilename, os.path.basename(tempfilename))
+            )
 
             postdata = {"f": "pjson"}
 
@@ -1678,10 +1746,14 @@ class Datastore(dict):
         The ``ref_count`` property gets the total number of references to this data item that exists on the server.
         This property can be used to determine if this data item can be safely deleted or taken down for maintenance.
         """
-        data_item_manifest_url = self._admin_url + "/data/computeTotalRefCount"
+        data_item_manifest_url = (
+            self._admin_url + "/data/computeTotalRefCount"
+        )
 
         params = {"f": "json", "itemPath": self.datapath}
-        res = self._portal.con.post(data_item_manifest_url, params, verify_cert=False)
+        res = self._portal.con.post(
+            data_item_manifest_url, params, verify_cert=False
+        )
         return res["totalRefCount"]
 
     def delete(self):
@@ -1739,7 +1811,12 @@ class Datastore(dict):
         :return:
             A boolean indicating success (True), or failure (False)
         """
-        url = self._admin_url + "/data/items" + self.datapath + "/manifest/regenerate"
+        url = (
+            self._admin_url
+            + "/data/items"
+            + self.datapath
+            + "/manifest/regenerate"
+        )
         params = {"f": "json"}
         res = self._portal.con.post(url, params)
         if isinstance(res, dict):
@@ -1790,7 +1867,9 @@ class Datastore(dict):
         params = {
             "f": "json",
         }
-        res = self._portal.con.post(data_item_manifest_url, params, verify_cert=False)
+        res = self._portal.con.post(
+            data_item_manifest_url, params, verify_cert=False
+        )
 
         return res["datasets"]
 
@@ -1880,7 +1959,9 @@ class GroupMigrationManager(object):
             raise Exception(res)
 
     # ----------------------------------------------------------------------
-    def create(self, items: Optional[list[Item]] = None, future: bool = True):
+    def create(
+        self, items: Optional[list[Item]] = None, future: bool = True
+    ):
         """
         The ``create`` method exports a :class:`~arcgis.gis.Group` content to an **EPK Package Item**.
         `EPK Items` are intended to migrate content from an enterprise deployment to a new
@@ -1910,7 +1991,9 @@ class GroupMigrationManager(object):
         if self._gis.users.me.role == "org_admin":
             url = f"{self._gis._portal.resturl}community/groups/{self._group.groupid}/export"
             if items and isinstance(items, (list, tuple)):
-                items = ",".join([i.id if isinstance(i, Item) else i for i in items])
+                items = ",".join(
+                    [i.id if isinstance(i, Item) else i for i in items]
+                )
             else:
                 items = None
             params = {"itemIdList": items}
@@ -1939,7 +2022,9 @@ class GroupMigrationManager(object):
             else:
                 return job.result()
         else:
-            raise Exception("Must be an administrator to perform this action")
+            raise Exception(
+                "Must be an administrator to perform this action"
+            )
 
     # ----------------------------------------------------------------------
     def load(
@@ -1984,7 +2069,9 @@ class GroupMigrationManager(object):
 
         assert isinstance(epk_item, Item)
         if isinstance(item_ids, list):
-            item_ids = ",".join([i.id if isinstance(i, Item) else i for i in item_ids])
+            item_ids = ",".join(
+                [i.id if isinstance(i, Item) else i for i in item_ids]
+            )
         if isinstance(epk_item, Item) and epk_item.type == "Export Package":
             res = self._from_package(
                 item=epk_item,
@@ -2034,7 +2121,9 @@ class GroupMigrationManager(object):
             try:
                 import time
 
-                self._from_package(epk_item.itemid, preview_only=True, run_async=False)
+                self._from_package(
+                    epk_item.itemid, preview_only=True, run_async=False
+                )
                 time.sleep(2)
             except:
                 pass
@@ -2247,7 +2336,9 @@ class DatastoreManager(object):
         if res["success"]:
             print("Created Big Data file share for " + name)
         elif res["success"] == False and res["status"] != "exists":
-            raise Exception("Could not create Big Data file share: %s" % name)
+            raise Exception(
+                "Could not create Big Data file share: %s" % name
+            )
         elif res["status"] == "exists":
             print("Big Data file share exists for " + name)
 
@@ -2402,7 +2493,9 @@ class DatastoreManager(object):
         if res["success"]:
             print("Created cloud store for " + cloud_storage_name)
         elif res["success"] == False and res["status"] != "exists":
-            raise Exception("Could not create cloud store: %s" % cloud_storage_name)
+            raise Exception(
+                "Could not create cloud store: %s" % cloud_storage_name
+            )
         elif res["status"] == "exists":
             print("Cloud store exists for exists for " + cloud_storage_name)
         return output
@@ -2863,7 +2956,9 @@ class UserManager(object):
             "iAAAAAAAAAAAAAAA": "iAAAAAAAAAAAAAAA",
         }
         if self._gis.version > [7, 3]:
-            if settings is None or (isinstance(settings, dict) and len(settings) == 0):
+            if settings is None or (
+                isinstance(settings, dict) and len(settings) == 0
+            ):
                 cs = self.user_settings
                 if cs and len(cs) > 0:
                     self._delete_user_settings()
@@ -2890,7 +2985,11 @@ class UserManager(object):
                         grp.groupid
                         for grp in settings["groups"]
                         if isinstance(grp, Group)
-                    ] + [grp for grp in settings["groups"] if isinstance(grp, str)]
+                    ] + [
+                        grp
+                        for grp in settings["groups"]
+                        if isinstance(grp, str)
+                    ]
                     if len(settings["groups"]) == 0:
                         settings["groups"] = ""
                 if clear:
@@ -3416,11 +3515,17 @@ class UserManager(object):
                 params["invitationList"]["invitations"][0][
                     "targetUserProvider"
                 ] = provider
-                params["invitationList"]["invitations"][0]["idpUsername"] = idp_username
+                params["invitationList"]["invitations"][0][
+                    "idpUsername"
+                ] = idp_username
             if password is not None:
-                params["invitationList"]["invitations"][0]["password"] = password
+                params["invitationList"]["invitations"][0][
+                    "password"
+                ] = password
 
-            resp = self._portal.con.post("portals/self/invite", params, ssl=True)
+            resp = self._portal.con.post(
+                "portals/self/invite", params, ssl=True
+            )
             if resp and resp.get("success"):
                 if username in resp["notInvited"]:
                     print("Unable to create " + username)
@@ -3429,7 +3534,9 @@ class UserManager(object):
                 else:
                     return self.get(username)
         else:
-            createuser_url = self._portal.url + "/portaladmin/security/users/createUser"
+            createuser_url = (
+                self._portal.url + "/portaladmin/security/users/createUser"
+            )
             # print(createuser_url)
             params = {
                 "f": "json",
@@ -3449,7 +3556,9 @@ class UserManager(object):
             if thumbnail is not None:
                 ret = user.update(thumbnail=thumbnail)
                 if not ret:
-                    _log.error("Unable to update the thumbnail for  " + username)
+                    _log.error(
+                        "Unable to update the thumbnail for  " + username
+                    )
             return user
 
     # ----------------------------------------------------------------------
@@ -3536,17 +3645,25 @@ class UserManager(object):
         if self._gis.version >= [7, 2]:
             if self._gis._is_agol:
                 if user_type is None and role is None:
-                    if self.user_settings and "userLicenseType" in self.user_settings:
+                    if (
+                        self.user_settings
+                        and "userLicenseType" in self.user_settings
+                    ):
                         user_type = self.user_settings["userLicenseType"]
                         role = self.user_settings["role"]
         else:
             if self._gis.version >= [7, 1]:
                 if user_type is None and role is None:
-                    if "defaultUserTypeIdForUser" in self._gis.admin.security.config:
+                    if (
+                        "defaultUserTypeIdForUser"
+                        in self._gis.admin.security.config
+                    ):
                         user_type = self._gis.admin.security.config[
                             "defaultUserTypeIdForUser"
                         ]
-                        role = self._gis.admin.security.config["defaultRoleForUser"]
+                        role = self._gis.admin.security.config[
+                            "defaultRoleForUser"
+                        ]
         if level == 2 and user_type is None and role is None:
             user_type = "creator"
             role = "publisher"
@@ -3619,7 +3736,10 @@ class UserManager(object):
                 and "groups" in self.user_settings
                 and self.user_settings["groups"]
             ):
-                groups = [self._gis.groups.get(g) for g in self.user_settings["groups"]]
+                groups = [
+                    self._gis.groups.get(g)
+                    for g in self.user_settings["groups"]
+                ]
             params = {
                 "f": "json",
                 "invitationList": {
@@ -3647,11 +3767,17 @@ class UserManager(object):
                 params["invitationList"]["invitations"][0][
                     "targetUserProvider"
                 ] = provider
-                params["invitationList"]["invitations"][0]["idpUsername"] = idp_username
+                params["invitationList"]["invitations"][0][
+                    "idpUsername"
+                ] = idp_username
             if password is not None:
-                params["invitationList"]["invitations"][0]["password"] = password
+                params["invitationList"]["invitations"][0][
+                    "password"
+                ] = password
 
-            resp = self._portal.con.post("portals/self/invite", params, ssl=True)
+            resp = self._portal.con.post(
+                "portals/self/invite", params, ssl=True
+            )
             if resp and resp.get("success"):
                 if username in resp["notInvited"]:
                     print("Unable to create " + username)
@@ -3662,15 +3788,20 @@ class UserManager(object):
                     if (
                         self.user_settings
                         and "userType" in self.user_settings
-                        and not self.user_settings["userType"] == "arcgisonly"
+                        and not self.user_settings["userType"]
+                        == "arcgisonly"
                     ):
-                        update_url = "community/users/" + username + "/update"
+                        update_url = (
+                            "community/users/" + username + "/update"
+                        )
                         user_params = {
                             "f": "json",
                             "token": "token",
                             "userType": self.user_settings["userType"],
                         }
-                        self._portal.con.post(update_url, user_params, ssl=True)
+                        self._portal.con.post(
+                            update_url, user_params, ssl=True
+                        )
                         return new_user
                     else:
                         return new_user
@@ -3699,10 +3830,14 @@ class UserManager(object):
             if thumbnail is not None:
                 ret = user.update(thumbnail=thumbnail)
                 if not ret:
-                    _log.error("Unable to update the thumbnail for  " + username)
+                    _log.error(
+                        "Unable to update the thumbnail for  " + username
+                    )
             return user
         else:
-            createuser_url = self._portal.url + "/portaladmin/security/users/createUser"
+            createuser_url = (
+                self._portal.url + "/portaladmin/security/users/createUser"
+            )
             params = {
                 "f": "json",
                 "username": username,
@@ -3730,7 +3865,9 @@ class UserManager(object):
             if thumbnail is not None:
                 ret = user.update(thumbnail=thumbnail)
                 if not ret:
-                    _log.error("Unable to update the thumbnail for  " + username)
+                    _log.error(
+                        "Unable to update the thumbnail for  " + username
+                    )
             return user
 
     # ----------------------------------------------------------------------
@@ -3800,8 +3937,9 @@ class UserManager(object):
             raise ValueError("Invalid expiration.")
 
         url = self._portal.resturl + "/portals/self/inviteByEmail"
-        msg = "You have been invited you to join an ArcGIS Organization, %s. " % (
-            self._gis.properties["name"]
+        msg = (
+            "You have been invited you to join an ArcGIS Organization, %s. "
+            % (self._gis.properties["name"])
         )
         if message_text:
             msg = msg + "{text}".format(text=message_text)
@@ -3843,7 +3981,9 @@ class UserManager(object):
         return InvitationManager(url, gis=self._gis)
 
     # ----------------------------------------------------------------------
-    def signup(self, username: str, password: str, fullname: str, email: str):
+    def signup(
+        self, username: str, password: str, fullname: str, email: str
+    ):
         """
         The ``signup`` method is used to create a new user account in an ArcGIS Enterprise deployment.
 
@@ -3911,12 +4051,16 @@ class UserManager(object):
                 user = self._portal.get_user(username)
 
         except RuntimeError as re:
-            if re.args[0].__contains__("User does not exist or is inaccessible"):
+            if re.args[0].__contains__(
+                "User does not exist or is inaccessible"
+            ):
                 return None
             else:
                 raise re
         except Exception as e:
-            if e.args[0].__contains__("User does not exist or is inaccessible"):
+            if e.args[0].__contains__(
+                "User does not exist or is inaccessible"
+            ):
                 return None
             else:
                 raise e
@@ -3953,7 +4097,9 @@ class UserManager(object):
 
         """
         if self._gis.version >= [6, 4]:
-            url = "{base}/portals/self/enableUsers".format(base=self._portal.resturl)
+            url = "{base}/portals/self/enableUsers".format(
+                base=self._portal.resturl
+            )
             params = {"f": "json", "users": None}
             if isinstance(users, User) or isinstance(users, str):
                 users = [users]
@@ -4002,7 +4148,9 @@ class UserManager(object):
 
         """
         if self._gis.version >= [6, 4]:
-            url = "{base}/portals/self/disableUsers".format(base=self._portal.resturl)
+            url = "{base}/portals/self/disableUsers".format(
+                base=self._portal.resturl
+            )
             params = {"f": "json", "users": None}
             if isinstance(users, User) or isinstance(users, str):
                 users = [users]
@@ -4025,21 +4173,25 @@ class UserManager(object):
         return False
 
     # ----------------------------------------------------------------------
-    def assign_categories(self, users: list[User], categories: list[str]) -> list:
+    def assign_categories(
+        self, users: list[User], categories: list[str]
+    ) -> list:
         """Adds categories to :class:`users <arcgis.gis.User>`.
-           
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         users                  Required list of :class:`~arcgis.gis.User` objects to categorize.
-        ------------------     --------------------------------------------------------------------                       
-        categories             Required string defining the categories to add to each user in the 
+        ------------------     --------------------------------------------------------------------
+        categories             Required string defining the categories to add to each user in the
                                `users` argument list.
         ==================     ====================================================================
         """
         results = []
         for user in users:
-            results.append({user.username: user.update(categories=categories)})
+            results.append(
+                {user.username: user.update(categories=categories)}
+            )
         return results
 
     # ----------------------------------------------------------------------
@@ -4050,25 +4202,25 @@ class UserManager(object):
         See `Categorize members <https://doc.arcgis.com/en/arcgis-online/administer/manage-members.htm#ESRI_SECTION1_91337F478F8542D9A6D2F1A7B65E0AFF>`_
         or `Assign Member Category Schema description <https://developers.arcgis.com/rest/users-groups-and-items/assign-member-category-schema.htm>`_
         for additional details.
-        
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        value                  Required List of strings or dictionary defining the categories to 
+        value                  Required List of strings or dictionary defining the categories to
                                create for assigning to organizational members. If `None` is given,
                                the category schema will be erased.
         ==================     ====================================================================
 
         :returns: list
-        
+
         .. code-block:: python
-        
+
             # Usage example #1: Setting member categories with a list
-            
+
             >>> gis.users.categories = ["Office Location"]
-            
+
             # Usage example #2: Setting member categories with dictionary
-            
+
             >>> category_dict = {"memberCategorySchema": [
                                                            {"title": "Categories",
                                                            "categories": [
@@ -4084,7 +4236,9 @@ class UserManager(object):
         if dict(self._gis.properties).get("hasMemberCategorySchema", False):
             url = f"{self._gis._portal.resturl}portals/self/memberCategorySchema"
             params = {"f": "json"}
-            return self._gis._con.get(url, params).get("memberCategorySchema", [])
+            return self._gis._con.get(url, params).get(
+                "memberCategorySchema", []
+            )
         return None
 
     # ----------------------------------------------------------------------
@@ -4099,8 +4253,8 @@ class UserManager(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        value                  Required List of strings naming the categories to create for 
-                               assigning to organizational members. If `None` is given, the 
+        value                  Required List of strings naming the categories to create for
+                               assigning to organizational members. If `None` is given, the
                                categories will be erased.
         ==================     ====================================================================
 
@@ -4124,16 +4278,16 @@ class UserManager(object):
                 for category in self._gis.users.categories[0]["categories"]:
                     cat_param.append(category)
             params = {
-                    "f": "json",
-                    "memberCategorySchema": {
-                        "memberCategorySchema": [
-                            {
-                                "title": "Categories",
-                                "categories": cat_param,
-                            }
-                        ]
-                    }
-                }
+                "f": "json",
+                "memberCategorySchema": {
+                    "memberCategorySchema": [
+                        {
+                            "title": "Categories",
+                            "categories": cat_param,
+                        }
+                    ]
+                },
+            }
             res = self._gis._con.post(url, params)
             if res.get("success", False) == False:
                 raise Exception(res)
@@ -4141,13 +4295,17 @@ class UserManager(object):
             url = f"{self._gis._portal.resturl}portals/self/assignMemberCategorySchema"
             if self._gis.properties.hasMemberCategorySchema:
                 for category in self._gis.users.categories[0]["categories"]:
-                    value["memberCategorySchema"][0]["categories"].append(category)
+                    value["memberCategorySchema"][0]["categories"].append(
+                        category
+                    )
             params = {"f": "json", "memberCategorySchema": value}
             res = self._gis._con.post(url, params)
             if res.get("success", False) == False:
                 raise Exception(res)
         else:
-            raise ValueError("A list or tuple must be given to set the categories.")
+            raise ValueError(
+                "A list or tuple must be given to set the categories."
+            )
 
     # ----------------------------------------------------------------------
     def advanced_search(
@@ -4313,12 +4471,16 @@ class UserManager(object):
                 "num": 10,
                 "total": max_items,
             }
-            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=10
+            ) as executor:
                 future_to_url = {
                     executor.submit(self.advanced_search, **param): param
                     for param in params
                 }
-                for future in future_to_url.keys():  # preserves order of query
+                for (
+                    future
+                ) in future_to_url.keys():  # preserves order of query
                     result = future_to_url[future]
                     data = future.result()
                     if "results" in data:
@@ -4389,7 +4551,9 @@ class UserManager(object):
                     break
         else:  # use multiple threads to capture the data.
             iterations = (count // num) + int((count % num > 0))
-            with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=5
+            ) as executor:
                 future_users = {}
                 for i in range(iterations):
                     params["start"] = 1 + i * params["num"]
@@ -4522,7 +4686,9 @@ class UserManager(object):
                 role=role,
             )
             for user in users:
-                if "id" in user and (user["id"] is None or user["id"] == "null"):
+                if "id" in user and (
+                    user["id"] is None or user["id"] == "null"
+                ):
                     un = user["username"]
                 elif self._gis.version <= [6, 4]:
                     un = user["username"]
@@ -4560,7 +4726,9 @@ class UserManager(object):
         return RoleManager(self._gis)
 
     # ----------------------------------------------------------------------
-    def user_groups(self, users: Union[list[str], list[User]], max_results: int = -1):
+    def user_groups(
+        self, users: Union[list[str], list[User]], max_results: int = -1
+    ):
         """
         Givens a List of Users, the ``user_groups`` method will report back all group ids
         that each :class:`~arcgis.gis.User` belongs to. ``user_groups`` is designed to be a reporting
@@ -4597,7 +4765,9 @@ class UserManager(object):
             else:
                 us.append(user)
         params = {"f": "json", "users": ",".join(us), "limit": max_results}
-        url = "{base}/portals/self/usersGroups".format(base=self._portal.resturl)
+        url = "{base}/portals/self/usersGroups".format(
+            base=self._portal.resturl
+        )
         res = res = self._portal.con.get(url, params)
         if "results" in res:
             return res["results"]
@@ -4629,7 +4799,9 @@ class RoleManager(object):
         self._gis = gis
         self._portal = gis._portal
 
-    def create(self, name: str, description: str, privileges: Optional[str] = None):
+    def create(
+        self, name: str, description: str, privileges: Optional[str] = None
+    ):
         """
             The ``create`` method creates a custom :class:`~arcgis.gis.Role` with the specified parameters.
 
@@ -4778,10 +4950,21 @@ class Role(object):
             self._description = role["description"]
 
     def __repr__(self):
-        return "<Role name: " + self.name + ", description: " + self.description + ">"
+        return (
+            "<Role name: "
+            + self.name
+            + ", description: "
+            + self.description
+            + ">"
+        )
 
     def ___str___(self):
-        return "Custom Role name: " + self.name + ", description: " + self.description
+        return (
+            "Custom Role name: "
+            + self.name
+            + ", description: "
+            + self.description
+        )
 
     @property
     def name(self):
@@ -5145,11 +5328,15 @@ class GroupManager(object):
             isinstance(display_settings, str)
             and display_settings.lower() in display_settings_lu
         ):
-            params["displaySettings"] = display_settings_lu[display_settings.lower()]
+            params["displaySettings"] = display_settings_lu[
+                display_settings.lower()
+            ]
         elif display_settings is None:
             params["displaySettings"] = display_settings_lu[display_settings]
         else:
-            raise ValueError("Display settings must be set to a valid value.")
+            raise ValueError(
+                "Display settings must be set to a valid value."
+            )
         # if self._gis.version >= [8,2] and display_settings:
         #    params["itemTypes"] = display_settings
         group = self._portal.create_group_from_dict(params, thumbnail)
@@ -5209,12 +5396,16 @@ class GroupManager(object):
         try:
             group = self._portal.get_group(groupid)
         except RuntimeError as re:
-            if re.args[0].__contains__("Group does not exist or is inaccessible"):
+            if re.args[0].__contains__(
+                "Group does not exist or is inaccessible"
+            ):
                 return None
             else:
                 raise re
         except Exception as re:
-            if re.args[0].__contains__("Group does not exist or is inaccessible"):
+            if re.args[0].__contains__(
+                "Group does not exist or is inaccessible"
+            ):
                 return None
             else:
                 raise re
@@ -5342,7 +5533,9 @@ class ContentManager(object):
         return self._gis._con.get(curl, params, ignore_error_key=True)
 
     # ----------------------------------------------------------------------
-    def can_reassign(self, items: list[Item], user: User) -> list[dict[str, Any]]:
+    def can_reassign(
+        self, items: list[Item], user: User
+    ) -> list[dict[str, Any]]:
         """
         Checks if a `list[Item]` can be reassigned to a particular user.
         The operation checks whether the items owned by one user can be successfully
@@ -5373,7 +5566,10 @@ class ContentManager(object):
 
         :returns: `list[dict[str, Any]]`
         """
-        if self._gis.version < [10, 1] and self._gis._portal.is_arcgisonline == False:
+        if (
+            self._gis.version < [10, 1]
+            and self._gis._portal.is_arcgisonline == False
+        ):
             return []
         urls = {}
         params = {}
@@ -5471,7 +5667,10 @@ class ContentManager(object):
 
         :returns: :class:`~arcgis.gis.sharing.DependencyManager` or None for ArcGIS Online.
         """
-        if self._depmgr is None and self._gis._portal.is_arcgisonline == False:
+        if (
+            self._depmgr is None
+            and self._gis._portal.is_arcgisonline == False
+        ):
             from arcgis.gis.sharing._dependency import DependencyManager
 
             self._depmgr = DependencyManager(gis=self._gis)
@@ -5483,10 +5682,13 @@ class ContentManager(object):
         """
         Provides users the ability to manage the content's presence on the marketplace.
 
-        :returns: 
+        :returns:
             :class:`~arcgis.gis.sharing.MarketPlaceManager` or None if not available
         """
-        if self._mrktplcmgr is None and self._gis._portal.is_arcgisonline == False:
+        if (
+            self._mrktplcmgr is None
+            and self._gis._portal.is_arcgisonline == False
+        ):
             from arcgis.gis.sharing._marketplace import MarketPlaceManager
 
             self._mrktplcmgr = MarketPlaceManager(gis=self._gis)
@@ -5594,7 +5796,9 @@ class ContentManager(object):
                 ): idx
                 + 1
                 for idx, part in enumerate(
-                    chunk_by_file_size(file_path, size=size, upload_format=True)
+                    chunk_by_file_size(
+                        file_path, size=size, upload_format=True
+                    )
                 )
             }
         messages = []
@@ -5942,7 +6146,9 @@ class ContentManager(object):
                 multipart = False
                 item_properties.pop("multipart", None)
             elif (
-                is_file == False and hasattr(data, "tell") and bytesto(data.tell()) < 7
+                is_file == False
+                and hasattr(data, "tell")
+                and bytesto(data.tell()) < 7
             ):
                 multipart = False
                 item_properties.pop("multipart", None)
@@ -6118,9 +6324,13 @@ class ContentManager(object):
             from arcgis.geocoding._functions import Geocoder
 
             if isinstance(geocoding_service, Geocoder):
-                params["analyzeParameters"]["geocodeServiceUrl"] = geocoding_service.url
+                params["analyzeParameters"][
+                    "geocodeServiceUrl"
+                ] = geocoding_service.url
             else:
-                params["analyzeParameters"]["geocodeServiceUrl"] = geocoding_service
+                params["analyzeParameters"][
+                    "geocodeServiceUrl"
+                ] = geocoding_service
         if location_type:
             params["analyzeParameters"]["locationType"] = location_type
 
@@ -6129,9 +6339,9 @@ class ContentManager(object):
             if d:
                 if str(d).lower().endswith(".csv"):
                     params["fileType"] = "csv"
-                elif str(d).lower().endswith(".xls") or str(d).lower().endswith(
-                    ".xlsx"
-                ):
+                elif str(d).lower().endswith(".xls") or str(
+                    d
+                ).lower().endswith(".xlsx"):
                     params["fileType"] = "excel"
                 elif str(d).lower().endswith("gpkg"):
                     params["fileType"] = "geoPackage"
@@ -6383,7 +6593,9 @@ class ContentManager(object):
         See :class:`~arcgis.gis.CategorySchemaManager`.
         """
 
-        base_url = "{base}portals/self".format(base=self._gis._portal.resturl)
+        base_url = "{base}portals/self".format(
+            base=self._gis._portal.resturl
+        )
         return CategorySchemaManager(base_url=base_url, gis=self._gis)
 
     # ----------------------------------------------------------------------
@@ -6404,12 +6616,16 @@ class ContentManager(object):
         try:
             item = self._portal.get_item(itemid)
         except RuntimeError as re:
-            if re.args[0].__contains__("Item does not exist or is inaccessible"):
+            if re.args[0].__contains__(
+                "Item does not exist or is inaccessible"
+            ):
                 return None
             else:
                 raise re
         except Exception as e:
-            if e.args[0].__contains__("Item does not exist or is inaccessible"):
+            if e.args[0].__contains__(
+                "Item does not exist or is inaccessible"
+            ):
                 return None
             else:
                 raise e
@@ -6432,6 +6648,7 @@ class ContentManager(object):
         count_fields: Optional[str] = None,
         count_size: Optional[int] = None,
         as_dict: bool = False,
+        enrich: bool = False,
     ):
         """
         The ``advanced_search`` method allows the ability to fully customize the search experience.
@@ -6511,6 +6728,10 @@ class ContentManager(object):
         as_dict             Required Boolean. If True, the results comes back as a dictionary.
                             The result of the method will always be a dictionary but the
                             `results` key in the dictionary will be changed if set to False.
+        ----------------    ---------------------------------------------------------------
+        enrich              Optional Boolean. If True, search results will include both
+                            literal and relevant matches. Without this parameter search
+                            results will include only literal matches.
         ================    ===============================================================
 
         :return:
@@ -6548,6 +6769,7 @@ class ContentManager(object):
                 count_size=count_size,
                 group_id=group_id,
                 as_dict=as_dict,
+                enrich=enrich,
             )["total"]
         so = {
             "asc": "asc",
@@ -6576,6 +6798,7 @@ class ContentManager(object):
                 count_size=count_size,
                 group_id=group_id,
                 as_dict=as_dict,
+                enrich=enrich,
             )
             if "total" in res and return_count:
                 return res["total"]
@@ -6596,6 +6819,7 @@ class ContentManager(object):
                 "count_fields",
                 "count_size",
                 "as_dict",
+                "enrich",
             ]
             inputs = locals()
             kwargs = {}
@@ -6624,7 +6848,9 @@ class ContentManager(object):
                 "nextStart": next_start_tracker,
             }
 
-            with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=10
+            ) as executor:
                 future_to_url = {
                     executor.submit(self.advanced_search, **param): param
                     for param in params
@@ -6730,6 +6956,7 @@ class ContentManager(object):
         outside_org: bool = False,
         categories: Optional[Union[list[str], str]] = None,
         category_filters: Optional[Union[list[str], str]] = None,
+        enrich: Optional[bool] = None,
     ):
 
         """
@@ -6792,7 +7019,10 @@ class ContentManager(object):
 
                           Up to 2 category_filters parameter are allowed per request. It can not be
                           used together with categories to search in a request.
-
+        ----------------  --------------------------------------------------------------------------
+        enrich            Optional Boolean. If True, search results will include both literal and
+                          relevant matches. Without this parameter search results will include only
+                          literal matches.
         ================  ==========================================================================
 
         :return:
@@ -6808,7 +7038,10 @@ class ContentManager(object):
         """
         if max_items > 10000:
             raise Exception(
-                ("Use `advanced_search` fo" "r item queries over 10,000 Items.")
+                (
+                    "Use `advanced_search` fo"
+                    "r item queries over 10,000 Items."
+                )
             )
         itemlist = []
         if query is not None and query != "" and item_type is not None:
@@ -6817,9 +7050,13 @@ class ContentManager(object):
         if item_type is not None:
             item_type = item_type.lower()
             if item_type == "web map":
-                query += ' (type:"web map" NOT type:"web mapping application")'
+                query += (
+                    ' (type:"web map" NOT type:"web mapping application")'
+                )
             elif item_type == "web scene":
-                query += ' (type:"web scene" NOT type:"CityEngine Web Scene")'
+                query += (
+                    ' (type:"web scene" NOT type:"CityEngine Web Scene")'
+                )
             elif item_type == "feature layer":
                 query += ' (type:"feature service")'
             elif item_type == "geoprocessing tool":
@@ -6839,9 +7076,7 @@ class ContentManager(object):
             elif item_type == "scene layer":
                 query += ' (type:"scene service")'
             elif item_type == "layer":
-                query += (
-                    ' (type:"layer" NOT type:"layer package" NOT type:"Explorer Layer")'
-                )
+                query += ' (type:"layer" NOT type:"layer package" NOT type:"Explorer Layer")'
             elif item_type == "feature collection":
                 query += ' (type:"feature collection" NOT type:"feature collection template")'
             elif item_type == "desktop application":
@@ -6864,6 +7099,7 @@ class ContentManager(object):
             start=1,
             sort_field=sort_field,
             sort_order=sort_order,
+            enrich=enrich,
         )["results"]
         return itemlist
 
@@ -6950,10 +7186,12 @@ class ContentManager(object):
             folderid = self._portal.get_folder_id(owner_name, old_folder)
             if folderid is None:
                 raise ValueError("Folder: %s does not exist." % old_folder)
-            url = "{base}content/users/{user}/{folderid}/updateFolder".format(
-                base=self._gis._portal.resturl,
-                user=owner_name,
-                folderid=folderid,
+            url = (
+                "{base}content/users/{user}/{folderid}/updateFolder".format(
+                    base=self._gis._portal.resturl,
+                    user=owner_name,
+                    folderid=folderid,
+                )
             )
             res = self._gis._con.post(url, params)
             if "success" in res:
@@ -7064,7 +7302,11 @@ class ContentManager(object):
                     except:
                         return status
                 status = item.status(res["jobId"], "generateFeatures")
-            item.update(item_properties={"title": f"Generate Features: {res['jobId']}"})
+            item.update(
+                item_properties={
+                    "title": f"Generate Features: {res['jobId']}"
+                }
+            )
             return item
         return res
 
@@ -7124,8 +7366,15 @@ class ContentManager(object):
             >>> gis.content.generate(item= item1, future=False)
 
         """
-        if item is None and file_path is None and text is None and url is None:
-            raise Exception("You must provide an item, file_path, text or url.")
+        if (
+            item is None
+            and file_path is None
+            and text is None
+            and url is None
+        ):
+            raise Exception(
+                "You must provide an item, file_path, text or url."
+            )
         gurl = f"{self._gis._portal.resturl}content/features/generate"
         params = {
             "f": "json",
@@ -7195,7 +7444,9 @@ class ContentManager(object):
                 and self._gis._portal.is_arcgisonline == False
                 and params["publishParameters"] in (None, "")
             ):
-                raise ValueError("A publish parameter is needed for this data type.")
+                raise ValueError(
+                    "A publish parameter is needed for this data type."
+                )
             files.append(("file", file_path, os.path.basename(file_path)))
         elif text:
             params["text"] = text
@@ -7424,7 +7675,9 @@ class ContentManager(object):
             target_sr = kwargs.pop("target_sr", 102100)
             capabilities = kwargs.pop("capabilities", "Query")
             os.makedirs(temp_dir)
-            temp_zip = os.path.join(temp_dir, "%s.zip" % ("a" + uuid4().hex[:5]))
+            temp_zip = os.path.join(
+                temp_dir, "%s.zip" % ("a" + uuid4().hex[:5])
+            )
             if has_arcpy:
                 from arcgis.features.geo._tools._utils import run_and_hide
 
@@ -7495,9 +7748,9 @@ class ContentManager(object):
                     # Overwrite or Append Steps
                     if overwrite:
                         # update the name and id to represent correct values
-                        publish_parameters["name"] = flc.manager.properties.layers[
-                            fl_index
-                        ]["name"]
+                        publish_parameters[
+                            "name"
+                        ] = flc.manager.properties.layers[fl_index]["name"]
                         publish_parameters["id"] = fl_index
 
                         # Perform edit on the flc
@@ -7505,9 +7758,12 @@ class ContentManager(object):
                         revert = False
                         if (
                             "preserveLayerIds" not in flc_manager.properties
-                            or flc_manager.properties["preserveLayerIds"] is not True
+                            or flc_manager.properties["preserveLayerIds"]
+                            is not True
                         ):
-                            flc_manager.update_definition({"preserveLayerIds": True})
+                            flc_manager.update_definition(
+                                {"preserveLayerIds": True}
+                            )
                             revert = True
                         # Step 2: Delete layer from definition
                         flc_manager.delete_from_definition(
@@ -7519,7 +7775,9 @@ class ContentManager(object):
                         )
                         # Step 4: Cleanup
                         if revert:
-                            flc_manager.update_definition({"preserveLayerIds": False})
+                            flc_manager.update_definition(
+                                {"preserveLayerIds": False}
+                            )
                     elif append:
                         # Add new layer to definition
                         flc_manager.add_to_definition(
@@ -7533,7 +7791,9 @@ class ContentManager(object):
                     # Add new item dependency and append the features
                     if (
                         "filegdb"
-                        in fs_item.layers[fl_index].properties.supportedAppendFormats
+                        in fs_item.layers[
+                            fl_index
+                        ].properties.supportedAppendFormats
                     ):
                         ItemDependency(fs_item).add("itemid", fgdb_item.id)
                         fs_item.layers[fl_index].append(
@@ -7589,7 +7849,9 @@ class ContentManager(object):
                     flc_manager = flc.manager
 
                     # Analyze the shapefile item to get definition for new feature layer
-                    publish_parameters_orig = flc_manager.properties["layers"][fl_index]
+                    publish_parameters_orig = flc_manager.properties[
+                        "layers"
+                    ][fl_index]
                     publish_parameters = self._gis.content.analyze(
                         item=item, file_type="shapefile"
                     )["publishParameters"]["layers"][0]
@@ -7601,18 +7863,29 @@ class ContentManager(object):
 
                         # Perform edit on the feature layer collection using the manager
                         revert = False
-                        if flc_manager.properties["preserveLayerIds"] is not True:
-                            flc_manager.update_definition({"preserveLayerIds": True})
+                        if (
+                            flc_manager.properties["preserveLayerIds"]
+                            is not True
+                        ):
+                            flc_manager.update_definition(
+                                {"preserveLayerIds": True}
+                            )
                             revert = True
                         flc_manager.delete_from_definition(
                             {"layers": [{"id": fl_index}]}
                         )
-                        flc_manager.add_to_definition({"layers": [publish_parameters]})
+                        flc_manager.add_to_definition(
+                            {"layers": [publish_parameters]}
+                        )
                         if revert:
-                            flc_manager.update_definition({"preserveLayerIds": False})
+                            flc_manager.update_definition(
+                                {"preserveLayerIds": False}
+                            )
                     elif append:
                         # add new layer definition to existing service
-                        flc_manager.add_to_definition({"layers": [publish_parameters]})
+                        flc_manager.add_to_definition(
+                            {"layers": [publish_parameters]}
+                        )
                         # find position at which it was added
                         for layer in flc_manager.properties.layers:
                             if layer["name"] == publish_parameters["name"]:
@@ -7670,7 +7943,9 @@ class ContentManager(object):
 
             res = self._portal.con.post(path, postdata)
             if address_fields is not None:
-                res["publishParameters"].update({"addressFields": address_fields})
+                res["publishParameters"].update(
+                    {"addressFields": address_fields}
+                )
 
             path = "content/features/generate"
             postdata = {
@@ -7714,10 +7989,18 @@ class ContentManager(object):
             }
             update_dict = {}
             update_dict["locationType"] = kwargs.pop("location_type", "")
-            update_dict["latitudeFieldName"] = kwargs.pop("latitude_field", "")
-            update_dict["longitudeFieldName"] = kwargs.pop("longitude_field", "")
-            update_dict["coordinateFieldName"] = kwargs.pop("coordinate_field_name", "")
-            update_dict["coordinateFieldType"] = kwargs.pop("coordinate_field_type", "")
+            update_dict["latitudeFieldName"] = kwargs.pop(
+                "latitude_field", ""
+            )
+            update_dict["longitudeFieldName"] = kwargs.pop(
+                "longitude_field", ""
+            )
+            update_dict["coordinateFieldName"] = kwargs.pop(
+                "coordinate_field_name", ""
+            )
+            update_dict["coordinateFieldType"] = kwargs.pop(
+                "coordinate_field_type", ""
+            )
             rk = []
             for k, v in update_dict.items():
                 if v == "":
@@ -7745,7 +8028,9 @@ class ContentManager(object):
             # return
         return None
 
-    def is_service_name_available(self, service_name: str, service_type: str):
+    def is_service_name_available(
+        self, service_name: str, service_type: str
+    ):
 
         """
             The ``is_service_name_available`` method determines if that service name is
@@ -7941,7 +8226,9 @@ class ContentManager(object):
             elif isinstance(item, str):
                 updates.append({item: properties})
             else:
-                raise ValueError("Invalid Item or ItemID, must be string or Item")
+                raise ValueError(
+                    "Invalid Item or ItemID, must be string or Item"
+                )
 
         def _chunks(l, n):
             for i in range(0, len(l), n):
@@ -8216,7 +8503,9 @@ class ContentManager(object):
                 if isinstance(item, Item):
                     item.share(everyone=everyone, org=org)
                 elif isinstance(item, str):
-                    Item(gis=self._gis, itemid=item).share(everyone=everyone, org=org)
+                    Item(gis=self._gis, itemid=item).share(
+                        everyone=everyone, org=org
+                    )
         elif everyone is not None and org is None:
             for item in items:
                 if isinstance(item, Item):
@@ -8428,7 +8717,9 @@ class CategorySchemaManager(object):
         else:
             # else this SchemaManager is attached to a ContentManager
             params["items"] = json.dumps(items)
-            url = "{base}content/updateItems".format(base=self._gis._portal.resturl)
+            url = "{base}content/updateItems".format(
+                base=self._gis._portal.resturl
+            )
         response = self._gis._con.post(url, params)
         output = {}
         if "results" in response:
@@ -8588,7 +8879,9 @@ class ResourceManager(object):
 
         """
         if not file and (not text or not file_name):
-            raise ValueError("Please provide a valid file or text/file_name.")
+            raise ValueError(
+                "Please provide a valid file or text/file_name."
+            )
         query_url = (
             "content/users/"
             + self._user_id
@@ -8618,7 +8911,9 @@ class ResourceManager(object):
         if access and str(access) in ["inherit", "private"]:
             params["access"] = access
         # IF properties passed in, add them to params
-        resp = self._portal.con.post(query_url, params, files=files, compress=False)
+        resp = self._portal.con.post(
+            query_url, params, files=files, compress=False
+        )
         return resp
 
     def update(
@@ -8805,7 +9100,10 @@ class ResourceManager(object):
         safe_file_format: str = safe_file_format.replace("//", "/")
 
         query_url: str = (
-            "content/items/" + self._item.itemid + "/resources/" + safe_file_format
+            "content/items/"
+            + self._item.itemid
+            + "/resources/"
+            + safe_file_format
         )
 
         resp: requests.Response = self._portal.con.get(
@@ -8818,10 +9116,16 @@ class ResourceManager(object):
         if resp.status_code == 200:
             if (
                 resp.headers["Content-Type"].lower().find("json") > -1
-                and resp.text.find("Resource does not exist or is inaccessible.") > -1
+                and resp.text.find(
+                    "Resource does not exist or is inaccessible."
+                )
+                > -1
             ):
                 raise Exception(resp.text)
-            elif resp.headers["Content-Type"].lower().find("json") > -1 and try_json:
+            elif (
+                resp.headers["Content-Type"].lower().find("json") > -1
+                and try_json
+            ):
                 try:
                     return resp.json()
                 except json.JSONDecodeError:
@@ -8843,7 +9147,10 @@ class ResourceManager(object):
                 stream_size: int = 512 * 2
                 if "Content-Length" in resp.headers:
                     max_length: int = int(resp.headers["Content-Length"])
-                    if max_length > stream_size * 2 and max_length < 1024 * 1024:
+                    if (
+                        max_length > stream_size * 2
+                        and max_length < 1024 * 1024
+                    ):
                         stream_size = 1024 * 2
                     elif max_length > 5 * (1024 * 1024):
                         stream_size = 5 * (1024 * 1024)  # 5 mb
@@ -8955,7 +9262,8 @@ class Group(dict):
             return dict.__getitem__(self, name)
         except:
             raise AttributeError(
-                "'%s' object has no attribute '%s'" % (type(self).__name__, name)
+                "'%s' object has no attribute '%s'"
+                % (type(self).__name__, name)
             )
 
     def __getitem__(
@@ -9134,7 +9442,9 @@ class Group(dict):
         :return:
             A URL linking to the group HTML page.
         """
-        return "{}{}{}".format(self._gis.url, "/home/group.html?id=", self.groupid)
+        return "{}{}{}".format(
+            self._gis.url, "/home/group.html?id=", self.groupid
+        )
 
     def _repr_html_(self):
         thumbnail = self.thumbnail
@@ -9200,7 +9510,11 @@ class Group(dict):
             + str(owner)
             + """
                         <br/><b>Created</b>: """
-            + str(datetime.fromtimestamp(self.created / 1000).strftime("%B %d, %Y"))
+            + str(
+                datetime.fromtimestamp(self.created / 1000).strftime(
+                    "%B %d, %Y"
+                )
+            )
             + """
 
                     </div>
@@ -9266,7 +9580,10 @@ class Group(dict):
         The ``migration`` method allows users and groups to migrate content of a `Group` to a new Organaization or
         Portal.
         """
-        if self._gis.version > [7, 3] and self._gis._portal.is_arcgisonline == False:
+        if (
+            self._gis.version > [7, 3]
+            and self._gis._portal.is_arcgisonline == False
+        ):
             self._migrate = GroupMigrationManager(group=self)
         return self._migrate
 
@@ -9292,13 +9609,18 @@ class Group(dict):
         # Only proceed if a thumbnail exists
         if thumbnail_file:
             thumbnail_url_path = (
-                "community/groups/" + self.groupid + "/info/" + thumbnail_file
+                "community/groups/"
+                + self.groupid
+                + "/info/"
+                + thumbnail_file
             )
             if thumbnail_url_path:
                 if not save_folder:
                     save_folder = self._workdir
                 file_name = os.path.split(thumbnail_file)[1]
-                if len(file_name) > 50:  # If > 50 chars, truncate to last 30 chars
+                if (
+                    len(file_name) > 50
+                ):  # If > 50 chars, truncate to last 30 chars
                     file_name = file_name[-30:]
 
                 file_path = os.path.join(save_folder, file_name)
@@ -9469,7 +9791,9 @@ class Group(dict):
                     )
             params["admins"] = ",".join(managers)
         else:
-            raise ValueError("'admins' must be a list of strings or User objects")
+            raise ValueError(
+                "'admins' must be a list of strings or User objects"
+            )
 
         if isinstance(params["users"], (list, tuple)):
             users = params["users"]
@@ -9484,7 +9808,9 @@ class Group(dict):
                     )
             params["users"] = ",".join(users)
         else:
-            raise ValueError("'admins' must be a list of strings or User objects")
+            raise ValueError(
+                "'admins' must be a list of strings or User objects"
+            )
 
         url = "community/groups/" + self.groupid + "/updateUsers"
         return self._portal.con.post(url, params)
@@ -9885,7 +10211,9 @@ class Group(dict):
         elif display_settings is None:
             display_settings = display_settings_lu[display_settings]
         else:
-            raise ValueError("Display settings must be set to a valid value.")
+            raise ValueError(
+                "Display settings must be set to a valid value."
+            )
         resp = self._portal.update_group(
             self.groupid,
             title,
@@ -10268,7 +10596,9 @@ class User(dict):
             elif "roleId" in userdict and "role" not in userdict:
                 # try getting role name - only needed for custom roles
                 try:
-                    role_obj = self._gis.users.roles.get_role(userdict["roleId"])
+                    role_obj = self._gis.users.roles.get_role(
+                        userdict["roleId"]
+                    )
                     userdict["role"] = role_obj.name
                 except Exception as ex:
                     userdict["role"] = userdict["roleId"]
@@ -10299,7 +10629,8 @@ class User(dict):
             return dict.__getitem__(self, name)
         except:
             raise AttributeError(
-                "'%s' object has no attribute '%s'" % (type(self).__name__, name)
+                "'%s' object has no attribute '%s'"
+                % (type(self).__name__, name)
             )
 
     def __getitem__(
@@ -10430,13 +10761,16 @@ class User(dict):
                 return 0
 
         if self._gis._portal.is_arcgisonline == False:
-            raise Exception("The report operation only works on ArcGIS Online.")
+            raise Exception(
+                "The report operation only works on ArcGIS Online."
+            )
         if report_type.lower() != "activity" and duration == "daily":
             raise ValueError("Daily only applies to activity report type.")
         if (
             start_time
             and isinstance(start_time, _dt.datetime)
-            and start_time.date().today().strftime("%A") in ["Monday", "Sunday"]
+            and start_time.date().today().strftime("%A")
+            in ["Monday", "Sunday"]
             and duration in ["weekly", "monthly"]
         ):
             raise ValueError(
@@ -10504,7 +10838,10 @@ class User(dict):
         The ``tasks`` property retrieves the users tasks, effectively serving as sesource manager for user's tasks.
         See :class:`~arcgis.gis.tasks.TaskManager` for more information on task managers.
         """
-        if str(self.role).lower() == "org_admin" or self._gis.properties["user"]:
+        if (
+            str(self.role).lower() == "org_admin"
+            or self._gis.properties["user"]
+        ):
             url = f"{self._gis._portal.resturl}community/users/{self.username}/tasks"
             from .tasks import TaskManager
 
@@ -10596,7 +10933,8 @@ class User(dict):
         }
         res = self._portal.con.post(url, params)
         provs = [
-            Item(gis=self._gis, itemid=i["itemId"]) for i in res["provisionedListings"]
+            Item(gis=self._gis, itemid=i["itemId"])
+            for i in res["provisionedListings"]
         ]
         while res["nextStart"] > -1:
             params["start"] = res["nextStart"]
@@ -10663,7 +11001,10 @@ class User(dict):
         """
         thumbnail_file = self.thumbnail
         if thumbnail_file is None:
-            return self._gis.url + "/home/js/arcgisonline/css/images/no-user-thumb.jpg"
+            return (
+                self._gis.url
+                + "/home/js/arcgisonline/css/images/no-user-thumb.jpg"
+            )
         else:
             thumbnail_url_path = (
                 self._gis._public_rest_url
@@ -10679,7 +11020,9 @@ class User(dict):
         """
         The ``homepage`` property retrieves the URL to the HTML page for the user.
         """
-        return "{}{}{}".format(self._gis.url, "/home/user.html?user=", self._user_id)
+        return "{}{}{}".format(
+            self._gis.url, "/home/user.html?user=", self._user_id
+        )
 
     def _repr_html_(self):
         thumbnail = self.thumbnail
@@ -10884,7 +11227,9 @@ class User(dict):
         try:
             description = self.description
         except:
-            description = "This user has not provided any personal information."
+            description = (
+                "This user has not provided any personal information."
+            )
 
         url = self.homepage
 
@@ -10920,7 +11265,11 @@ class User(dict):
             + str(self.username)
             + """
                         <br/><b>Joined</b>: """
-            + str(datetime.fromtimestamp(self.created / 1000).strftime("%B %d, %Y"))
+            + str(
+                datetime.fromtimestamp(self.created / 1000).strftime(
+                    "%B %d, %Y"
+                )
+            )
             + """
 
                     </div>
@@ -11002,7 +11351,9 @@ class User(dict):
                 "The operation delete_thumbnail is not supported on this portal."
             )
 
-    def expire_password(self, temporary_password: Optional[str] = None) -> bool:
+    def expire_password(
+        self, temporary_password: Optional[str] = None
+    ) -> bool:
         """
         Expires the current user's Password.
 
@@ -11021,9 +11372,7 @@ class User(dict):
             url = f"{self._gis._portal.resturl}community/users/{self.username}/update"
             params = {"f": "json", "password": temporary_password}
             resp = self._gis._con.post(url, params)
-        url = (
-            f"{self._gis._portal.resturl}community/users/{self.username}/expirePassword"
-        )
+        url = f"{self._gis._portal.resturl}community/users/{self.username}/expirePassword"
         if self._gis._portal.is_arcgisonline:
 
             params = {"f": "json", "expiration": -1}
@@ -11097,7 +11446,12 @@ class User(dict):
             postdata["newSecurityAnswer"] = new_security_answer
         if reset_by_email:
             postdata["email"] = reset_by_email
-        url = self._gis._portal.resturl + "community/users/" + self.username + "/reset"
+        url = (
+            self._gis._portal.resturl
+            + "community/users/"
+            + self.username
+            + "/reset"
+        )
         resp = self._gis._con.post(url, postdata, ssl=True)
         if resp:
             return resp.get("success")
@@ -11213,7 +11567,9 @@ class User(dict):
             raise ValueError(
                 f"Invalid culture provided. Allowed cultures: {''.join(culture_check)}"
             )
-        if region and not region.upper() in [g["region"] for g in self._gis.regions]:
+        if region and not region.upper() in [
+            g["region"] for g in self._gis.regions
+        ]:
             raise ValueError(
                 f"Invalid region provided. Allowed regions: {''.join([g['region'] for g in self._gis.regions])}"
             )
@@ -11492,9 +11848,13 @@ class User(dict):
         """
         if self._portal.is_arcgisonline:
             if value == True:
-                ret = self._portal.update_user(self._user_id, user_type="both")
+                ret = self._portal.update_user(
+                    self._user_id, user_type="both"
+                )
             else:
-                ret = self._portal.update_user(self._user_id, user_type="arcgisonly")
+                ret = self._portal.update_user(
+                    self._user_id, user_type="arcgisonly"
+                )
             self._hydrate()
 
     # ----------------------------------------------------------------------
@@ -11803,7 +12163,11 @@ class User(dict):
             ]
         else:
             # delete the groups owned by the user
-            [grp.delete() for grp in self.groups if grp.owner == self.username]
+            [
+                grp.delete()
+                for grp in self.groups
+                if grp.owner == self.username
+            ]
         if self._gis._portal.is_arcgisonline:
             self.esri_access = "arcgisonly"
         return self._portal.delete_user(self._user_id, reassign_to)
@@ -11861,7 +12225,10 @@ class User(dict):
         thumbnail_file = self.thumbnail
         if thumbnail_file:
             thumbnail_url_path = (
-                "community/users/" + self._user_id + "/info/" + thumbnail_file
+                "community/users/"
+                + self._user_id
+                + "/info/"
+                + thumbnail_file
             )
             if thumbnail_url_path:
                 return self._portal.con.get(
@@ -11888,13 +12255,18 @@ class User(dict):
         # Only proceed if a thumbnail exists
         if thumbnail_file:
             thumbnail_url_path = (
-                "community/users/" + self._user_id + "/info/" + thumbnail_file
+                "community/users/"
+                + self._user_id
+                + "/info/"
+                + thumbnail_file
             )
             if thumbnail_url_path:
                 if not save_folder:
                     save_folder = self._workdir
                 file_name = os.path.split(thumbnail_file)[1]
-                if len(file_name) > 50:  # If > 50 chars, truncate to last 30 chars
+                if (
+                    len(file_name) > 50
+                ):  # If > 50 chars, truncate to last 30 chars
                     file_name = file_name[-30:]
 
                 file_path = os.path.join(save_folder, file_name)
@@ -11991,7 +12363,8 @@ class User(dict):
                 if folder_id is None:
                     msg = "Could not locate the folder: %s" % folder
                     raise ValueError(
-                        "%s. Please verify that this folder exists and try again." % msg
+                        "%s. Please verify that this folder exists and try again."
+                        % msg
                     )
             elif isinstance(folder, dict):
                 folder_id = folder["id"]
@@ -12182,7 +12555,9 @@ class Item(dict):
 
             params = {"f": "json"}
 
-            if self.type == "Image Service":  # service that is itself a layer
+            if (
+                self.type == "Image Service"
+            ):  # service that is itself a layer
                 lyr = ImageryLayer(self.url, self._gis)
                 try:
                     item_data = self.get_data()
@@ -12235,13 +12610,16 @@ class Item(dict):
                             "layers" in data
                             and idx < len(data["layers"])
                             and "layerDefinition" in data["layers"][idx]
-                            and "drawingInfo" in data["layers"][idx]["layerDefinition"]
+                            and "drawingInfo"
+                            in data["layers"][idx]["layerDefinition"]
                             and "renderer"
-                            in data["layers"][idx]["layerDefinition"]["drawingInfo"]
-                        ):
-                            lyr.renderer = data["layers"][idx]["layerDefinition"][
+                            in data["layers"][idx]["layerDefinition"][
                                 "drawingInfo"
-                            ]["renderer"]
+                            ]
+                        ):
+                            lyr.renderer = data["layers"][idx][
+                                "layerDefinition"
+                            ]["drawingInfo"]["renderer"]
                         layers.append(lyr)
                     for tbl in svc.tables:
                         tables.append(tbl)
@@ -12266,7 +12644,9 @@ class Item(dict):
                         layers.append(lyr)
                     try:
                         for lyr in svc.properties.tables:
-                            lyr = Table(svc.url + "/" + str(lyr.id), self._gis)
+                            lyr = Table(
+                                svc.url + "/" + str(lyr.id), self._gis
+                            )
                             tables.append(lyr)
                     except:
                         pass
@@ -12330,7 +12710,8 @@ class Item(dict):
             return dict.__getitem__(self, name)
         except:
             raise AttributeError(
-                "'%s' object has no attribute '%s'" % (type(self).__name__, name)
+                "'%s' object has no attribute '%s'"
+                % (type(self).__name__, name)
             )
 
     def __getitem__(
@@ -12399,7 +12780,8 @@ class Item(dict):
             pass
         elif str(value).lower() not in status_values:
             raise ValueError(
-                "%s is not valid value of: authoritative or deprecated" % value
+                "%s is not valid value of: authoritative or deprecated"
+                % value
             )
 
         if str(value).lower() == "authoritative":
@@ -12423,7 +12805,9 @@ class Item(dict):
     @property
     def homepage(self):
         """The ``homepage`` property gets the URL to the HTML page for the item."""
-        return "{}{}{}".format(self._gis.url, "/home/item.html?id=", self.itemid)
+        return "{}{}{}".format(
+            self._gis.url, "/home/item.html?id=", self.itemid
+        )
 
     # ----------------------------------------------------------------------
     def copy_feature_layer_collection(
@@ -12478,7 +12862,10 @@ class Item(dict):
         """
         from ..features import FeatureLayerCollection
 
-        if self.type != "Feature Service" and self.type != "Feature Layer Collection":
+        if (
+            self.type != "Feature Service"
+            and self.type != "Feature Layer Collection"
+        ):
             return
         if layers is None and tables is None:
             raise ValueError("An index of layers or tables must be provided")
@@ -12533,7 +12920,9 @@ class Item(dict):
         if len(self.tables) > 0 or len(self.layers) > 0:
             parent = FeatureLayerCollection(url=self.url, gis=self._gis)
         else:
-            raise Exception("No tables or layers found in service, cannot copy it.")
+            raise Exception(
+                "No tables or layers found in service, cannot copy it."
+            )
         if layers is not None:
             if isinstance(layers, (list, tuple)):
                 for idx in layers:
@@ -12705,7 +13094,10 @@ class Item(dict):
                 import re
 
                 file_name = self.name or self.title
-                file_name = re.sub(r"[^a-zA-Z0-9 \n\.]", "", file_name) or self.itemid
+                file_name = (
+                    re.sub(r"[^a-zA-Z0-9 \n\.]", "", file_name)
+                    or self.itemid
+                )
             if save_path is None:
                 save_path = tempfile.gettempdir()
             download_path = self._portal.con.get(
@@ -12820,16 +13212,25 @@ class Item(dict):
             params["snippet"] = snippet
         if parameters:
             params.update({"exportParameters": parameters})
-        if not enforce_fld_vis is None and "View Service" in self.typeKeywords:
+        if (
+            not enforce_fld_vis is None
+            and "View Service" in self.typeKeywords
+        ):
             if "exportParameters" in params:
-                params["exportParameters"]["enforceFieldVisibility"] = enforce_fld_vis
+                params["exportParameters"][
+                    "enforceFieldVisibility"
+                ] = enforce_fld_vis
             else:
-                params["exportParameters"] = {"enforceFieldVisibility": enforce_fld_vis}
+                params["exportParameters"] = {
+                    "enforceFieldVisibility": enforce_fld_vis
+                }
         try:
             res = self._portal.con.post(data_path, params)
         except Exception as e:
             if e.args[0].find("You do not have permissions") > -1:
-                data_path = "content/users/%s/export" % self._gis.users.me.username
+                data_path = (
+                    "content/users/%s/export" % self._gis.users.me.username
+                )
                 res = self._portal.con.post(data_path, params)
             else:
                 raise
@@ -12837,16 +13238,22 @@ class Item(dict):
         if wait == True:
             status = "partial"
             while status != "completed":
-                status = export_item.status(job_id=res["jobId"], job_type="export")
+                status = export_item.status(
+                    job_id=res["jobId"], job_type="export"
+                )
                 if status["status"] == "failed":
-                    raise Exception("Could not export item: %s" % self.itemid)
+                    raise Exception(
+                        "Could not export item: %s" % self.itemid
+                    )
                 elif status["status"].lower() == "completed":
                     return export_item
                 time.sleep(2)
         return res
 
     # ----------------------------------------------------------------------
-    def status(self, job_id: Optional[str] = None, job_type: Optional[str] = None):
+    def status(
+        self, job_id: Optional[str] = None, job_type: Optional[str] = None
+    ):
         """
         The ``status`` method provides the status of an :class:`~arcgis.gis.Item` in the following situations:
             1. Publishing an :class:`~arcgis.gis.Item`
@@ -12943,7 +13350,9 @@ class Item(dict):
                 if not save_folder:
                     save_folder = self._workdir
                 file_name = os.path.split(thumbnail_file)[1]
-                if len(file_name) > 50:  # If > 50 chars, truncate to last 30 chars
+                if (
+                    len(file_name) > 50
+                ):  # If > 50 chars, truncate to last 30 chars
                     file_name = file_name[-30:]
 
                 file_path = os.path.join(save_folder, file_name)
@@ -13005,7 +13414,9 @@ class Item(dict):
         from arcgis.gis.server._service import Service
 
         props = self._gis.properties
-        gp_url = os.path.dirname(self._gis.properties.helperServices.printTask.url)
+        gp_url = os.path.dirname(
+            self._gis.properties.helperServices.printTask.url
+        )
 
         if self.type == "Feature Service":
             layers = []
@@ -13032,7 +13443,9 @@ class Item(dict):
                 "mapOptions": {
                     "showAttribution": False,
                     "extent": dict(extent),
-                    "spatialReference": dict(container.properties.spatialReference),
+                    "spatialReference": dict(
+                        container.properties.spatialReference
+                    ),
                 },
                 "operationalLayers": layers,
                 "exportOptions": {"outputSize": [600, 400], "dpi": 96},
@@ -13057,7 +13470,9 @@ class Item(dict):
                     {
                         "id": "%s" % lyr["id"],
                         "title": lyr["title"],
-                        "opacity": lyr["opacity"] if "opacity" in lyr else None,
+                        "opacity": lyr["opacity"]
+                        if "opacity" in lyr
+                        else None,
                         "minScale": flyr.properties.minScale,
                         "maxScale": flyr.properties.maxScale,
                         "layerDefinition": {
@@ -13075,9 +13490,13 @@ class Item(dict):
                     "extent": dict(container.properties.initialExtent)
                     if container
                     else dict(self._gis.properties.defaultExtent),
-                    "spatialReference": dict(container.properties.spatialReference)
+                    "spatialReference": dict(
+                        container.properties.spatialReference
+                    )
                     if container
-                    else dict(self._gis.properties.defaultExtent.spatialReference),
+                    else dict(
+                        self._gis.properties.defaultExtent.spatialReference
+                    ),
                 },
                 "operationalLayers": layers,
                 "exportOptions": {"outputSize": [600, 400], "dpi": 96},
@@ -13217,7 +13636,9 @@ class Item(dict):
             Items with metadata have 'Metadata' in their typeKeywords.
 
         """
-        metadataurlpath = "content/items/" + self.itemid + "/info/metadata/metadata.xml"
+        metadataurlpath = (
+            "content/items/" + self.itemid + "/info/metadata/metadata.xml"
+        )
         try:
             return self._portal.con.get(metadataurlpath, try_json=False)
 
@@ -13272,7 +13693,9 @@ class Item(dict):
         :return:
            A file path, if the metadata download was successful. None if the item does not have metadata.
         """
-        metadataurlpath = "content/items/" + self.itemid + "/info/metadata/metadata.xml"
+        metadataurlpath = (
+            "content/items/" + self.itemid + "/info/metadata/metadata.xml"
+        )
         if not save_folder:
             save_folder = self._workdir
         try:
@@ -13304,7 +13727,10 @@ class Item(dict):
             icon = "websceneglobal16.png"
         elif self.type.lower() == "pro map":
             icon = "mapsgray16.png"
-        elif self.type.lower() == "feature service" and "Table" in self.typeKeywords:
+        elif (
+            self.type.lower() == "feature service"
+            and "Table" in self.typeKeywords
+        ):
             icon = "table16.png"
         elif self.type.lower() == "feature service":
             icon = "featureshosted16.png"
@@ -13339,7 +13765,11 @@ class Item(dict):
         else:
             icon = "layers16.png"
 
-        icon = self._gis.url + "/home/js/jsapi/esri/css/images/item_type_icons/" + icon
+        icon = (
+            self._gis.url
+            + "/home/js/jsapi/esri/css/images/item_type_icons/"
+            + icon
+        )
         return icon
 
     # ----------------------------------------------------------------------
@@ -13347,7 +13777,10 @@ class Item(dict):
         item_type = self.type
         if self.type == "Geoprocessing Service":
             item_type = "Geoprocessing Toolbox"
-        elif self.type.lower() == "feature service" and "Table" in self.typeKeywords:
+        elif (
+            self.type.lower() == "feature service"
+            and "Table" in self.typeKeywords
+        ):
             item_type = "Table Layer"
         elif self.type.lower() == "feature service":
             item_type = "Feature Layer Collection"
@@ -13374,9 +13807,13 @@ class Item(dict):
                 )
             except:
                 if self._gis.properties.portalName == "ArcGIS Online":
-                    thumbnail = "http://static.arcgis.com/images/desktopapp.png"
+                    thumbnail = (
+                        "http://static.arcgis.com/images/desktopapp.png"
+                    )
                 else:
-                    thumbnail = self._gis.url + "/portalimages/desktopapp.png"
+                    thumbnail = (
+                        self._gis.url + "/portalimages/desktopapp.png"
+                    )
 
         snippet = self.snippet
         if snippet is None:
@@ -13415,7 +13852,9 @@ class Item(dict):
             + self.owner
             + """
                         <br/>Last Modified: """
-            + datetime.fromtimestamp(self.modified / 1000).strftime("%B %d, %Y")
+            + datetime.fromtimestamp(self.modified / 1000).strftime(
+                "%B %d, %Y"
+            )
             + """
                         <br/>"""
             + str(self.numComments)
@@ -13443,7 +13882,9 @@ class Item(dict):
         )
 
     # ----------------------------------------------------------------------
-    def reassign_to(self, target_owner: str, target_folder: Optional[str] = None):
+    def reassign_to(
+        self, target_owner: str, target_folder: Optional[str] = None
+    ):
         """
         The ``reassign_to`` method allows the administrator to reassign a single item from one user to another.
 
@@ -13544,7 +13985,10 @@ class Item(dict):
                 return ret_dict
             else:
                 resp = self._portal.con.get(
-                    "content/users/" + self._user_id + "/items/" + self.itemid
+                    "content/users/"
+                    + self._user_id
+                    + "/items/"
+                    + self.itemid
                 )
 
         else:  # gis is a portal, find if item resides in a folder
@@ -13581,7 +14025,10 @@ class Item(dict):
                 )
             else:
                 resp = self._portal.con.get(
-                    "content/users/" + self._user_id + "/items/" + self.itemid
+                    "content/users/"
+                    + self._user_id
+                    + "/items/"
+                    + self.itemid
                 )
 
         # Get the sharing info
@@ -13668,7 +14115,9 @@ class Item(dict):
                     if len(search_result) > 0:
                         group_ids = group_ids + "," + search_result[0].id
                     else:
-                        raise Exception("Cannot find group with id: " + group)
+                        raise Exception(
+                            "Cannot find group with id: " + group
+                        )
                 else:
                     raise Exception("Invalid group(s)")
         elif isinstance(groups, Group):
@@ -13707,7 +14156,9 @@ class Item(dict):
                     "portal:admin:createUpdateCapableGroup"
                     in self._gis.users.me.privileges
                 ):
-                    params["confirmItemControl"] = allow_members_to_edit  # True
+                    params[
+                        "confirmItemControl"
+                    ] = allow_members_to_edit  # True
 
         res = self._portal.con.post(url, params)
         self._hydrated = False
@@ -13752,7 +14203,9 @@ class Item(dict):
                     if len(search_result) > 0:
                         group_ids = group_ids + "," + search_result[0].id
                     else:
-                        raise Exception("Cannot find group with id: " + group)
+                        raise Exception(
+                            "Cannot find group with id: " + group
+                        )
                 else:
                     raise Exception("Invalid group(s)")
 
@@ -13761,10 +14214,14 @@ class Item(dict):
             group_ids = groups
 
         if self.access == "public":
-            return self._portal.unshare_item_as_group_admin(self.itemid, group_ids)
+            return self._portal.unshare_item_as_group_admin(
+                self.itemid, group_ids
+            )
         else:
             owner = self._user_id
-            return self._portal.unshare_item(self.itemid, owner, folder, group_ids)
+            return self._portal.unshare_item(
+                self.itemid, owner, folder, group_ids
+            )
 
     # ----------------------------------------------------------------------
     def delete(self, force: bool = False, dry_run: bool = False):
@@ -13851,7 +14308,9 @@ class Item(dict):
 
                 return {"can_delete": False, "details": error_dict}
         else:
-            return self._portal.delete_item(self.itemid, self._user_id, folder, force)
+            return self._portal.delete_item(
+                self.itemid, self._user_id, folder, force
+            )
 
     # ----------------------------------------------------------------------
     def update(
@@ -13953,7 +14412,10 @@ class Item(dict):
                     or item_properties.thumbnail_url
                 )
             ):
-                thumbnail = item_properties.thumbnail or item_properties.thumbnail_url
+                thumbnail = (
+                    item_properties.thumbnail
+                    or item_properties.thumbnail_url
+                )
             if (
                 metadata is None
                 and item_properties.metadata
@@ -13985,9 +14447,13 @@ class Item(dict):
             if item_properties is not None:
                 if "tags" in item_properties:
                     if type(item_properties["tags"]) is list:
-                        item_properties["tags"] = ",".join(item_properties["tags"])
+                        item_properties["tags"] = ",".join(
+                            item_properties["tags"]
+                        )
 
-            if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
+            if data is not None and isinstance(
+                data, (io.StringIO, io.BytesIO)
+            ):
                 if item_properties is None:
                     item_properties = {}
                 if not "type" in item_properties:
@@ -14052,9 +14518,13 @@ class Item(dict):
             if item_properties is not None:
                 if "tags" in item_properties:
                     if type(item_properties["tags"]) is list:
-                        item_properties["tags"] = ",".join(item_properties["tags"])
+                        item_properties["tags"] = ",".join(
+                            item_properties["tags"]
+                        )
 
-            if data is not None and isinstance(data, (io.StringIO, io.BytesIO)):
+            if data is not None and isinstance(
+                data, (io.StringIO, io.BytesIO)
+            ):
                 if item_properties is None:
                     item_properties = {}
                 if not "type" in item_properties:
@@ -14146,7 +14616,10 @@ class Item(dict):
 
         :returns: ViewManager
         """
-        if self.type == "Feature Service" and "Hosted Service" in self.typeKeywords:
+        if (
+            self.type == "Feature Service"
+            and "Hosted Service" in self.typeKeywords
+        ):
             return ViewManager(item=self)
         return None
 
@@ -14257,7 +14730,9 @@ class Item(dict):
             12 2022-08-12     10
         """
         if not self._portal.is_arcgisonline:
-            raise ValueError("Usage() only supported for ArcGIS Online items.")
+            raise ValueError(
+                "Usage() only supported for ArcGIS Online items."
+            )
         end_date = None
         if end_date is None:
             end_date = datetime.now()
@@ -14278,7 +14753,9 @@ class Item(dict):
             if len(self.layers) > 0 and not self.layers[0].container:
                 params["name"] = os.path.basename(
                     os.path.abspath(
-                        os.path.join(self.layers[0]._url, ".." + os.sep + "..")
+                        os.path.join(
+                            self.layers[0]._url, ".." + os.sep + ".."
+                        )
                     )
                 )
             else:  # hasattr(self, "url") and self.url and len(self.url) > 0:
@@ -14293,10 +14770,14 @@ class Item(dict):
             params["endTime"] = int(date_range[1].timestamp() * 1000)
         elif date_range.lower() in ["24h", "1d"]:
             params["period"] = "1h"
-            params["startTime"] = int((end_date - timedelta(days=1)).timestamp() * 1000)
+            params["startTime"] = int(
+                (end_date - timedelta(days=1)).timestamp() * 1000
+            )
         elif date_range.lower() == "7d":
             params["period"] = "1d"
-            params["startTime"] = int((end_date - timedelta(days=7)).timestamp() * 1000)
+            params["startTime"] = int(
+                (end_date - timedelta(days=7)).timestamp() * 1000
+            )
         elif date_range.lower() == "14d":
             params["period"] = "1d"
             params["startTime"] = int(
@@ -14429,7 +14910,9 @@ class Item(dict):
                 if "data" not in res or len(res["data"]) == 0:
                     df = pd.DataFrame([], columns=["Date", "Usage"])
                 elif len(res["data"]):
-                    df = pd.DataFrame(res["data"][0]["num"], columns=["Date", "Usage"])
+                    df = pd.DataFrame(
+                        res["data"][0]["num"], columns=["Date", "Usage"]
+                    )
                     df.Date = pd.to_datetime(df["Date"], unit="ms")
                     df.Usage = df.Usage.astype(int)
                 return df
@@ -14465,7 +14948,9 @@ class Item(dict):
         """
         folder = None
         try:
-            item_data = self._portal.get_item_data(self.itemid, try_json, folder)
+            item_data = self._portal.get_item_data(
+                self.itemid, try_json, folder
+            )
         except:
             item_data = {}
 
@@ -14584,7 +15069,9 @@ class Item(dict):
             "content/items/" + self.itemid + "/relatedItems", postdata
         )
         for related_item in resp["relatedItems"]:
-            related_items.append(Item(self._gis, related_item["id"], related_item))
+            related_items.append(
+                Item(self._gis, related_item["id"], related_item)
+            )
         return related_items
 
     # ----------------------------------------------------------------------
@@ -14633,7 +15120,9 @@ class Item(dict):
         postdata["originItemId"] = self.itemid
         postdata["destinationItemId"] = rel_item.itemid
         postdata["relationshipType"] = rel_type
-        path = "content/users/{uid}/addRelationship".format(uid=self._user_id)
+        path = "content/users/{uid}/addRelationship".format(
+            uid=self._user_id
+        )
 
         resp = self._portal.con.post(path, postdata)
         if resp:
@@ -14672,7 +15161,9 @@ class Item(dict):
         postdata["originItemId"] = self.itemid
         postdata["destinationItemId"] = rel_item.itemid
         postdata["relationshipType"] = rel_type
-        path = "content/users/{uid}/deleteRelationship".format(uid=self._user_id)
+        path = "content/users/{uid}/deleteRelationship".format(
+            uid=self._user_id
+        )
 
         resp = self._portal.con.post(path, postdata)
         if resp:
@@ -14853,13 +15344,17 @@ class Item(dict):
             if fileType == "shapefile" and not overwrite:
                 publish_parameters = {
                     "hasStaticData": True,
-                    "name": os.path.splitext(self["name"])[0].replace(" ", "_"),
+                    "name": os.path.splitext(self["name"])[0].replace(
+                        " ", "_"
+                    ),
                     "maxRecordCount": 2000,
                     "layerInfo": {"capabilities": "Query"},
                 }
 
             elif fileType in ["csv", "excel"] and not overwrite:
-                res = self._gis.content.analyze(item=self, file_type=fileType)
+                res = self._gis.content.analyze(
+                    item=self, file_type=fileType
+                )
                 publish_parameters = res["publishParameters"]
                 service_name = re.sub(r"[\W_]+", "_", self["title"])
                 publish_parameters.update({"name": service_name})
@@ -14909,7 +15404,9 @@ class Item(dict):
                         }
 
                         if address_fields is not None:
-                            postdata["analyzeParameters"]["locationType"] = "address"
+                            postdata["analyzeParameters"][
+                                "locationType"
+                            ] = "address"
 
                         res = self._portal.con.post(path, postdata)
                         publish_parameters = res["publishParameters"]
@@ -14931,12 +15428,16 @@ class Item(dict):
                     }
 
                     if address_fields is not None:
-                        postdata["analyzeParameters"]["locationType"] = "address"
+                        postdata["analyzeParameters"][
+                            "locationType"
+                        ] = "address"
 
                     res = self._portal.con.post(path, postdata)
                     publish_parameters = res["publishParameters"]
                     if address_fields is not None:
-                        publish_parameters.update({"addressFields": address_fields})
+                        publish_parameters.update(
+                            {"addressFields": address_fields}
+                        )
 
                     # use csv title for service name, after replacing non-alphanumeric characters with _
                     service_name = re.sub(r"[\W_]+", "_", self["title"])
@@ -14962,11 +15463,15 @@ class Item(dict):
             elif fileType == "featureService":
                 name = re.sub(r"[\W_]+", "_", self["title"])
                 c = self._gis.content
-                is_avail = c.is_service_name_available(name, "featureService")
+                is_avail = c.is_service_name_available(
+                    name, "featureService"
+                )
                 i = 1
                 while is_avail == False:
                     sname = name + "_%s" % i
-                    is_avail = c.is_service_name_available(sname, "featureService")
+                    is_avail = c.is_service_name_available(
+                        sname, "featureService"
+                    )
                     if is_avail:
                         name = sname
                         break
@@ -15034,7 +15539,9 @@ class Item(dict):
                 if not self._gis.content.is_service_name_available(
                     publish_parameters["name"], "featureService"
                 ):
-                    raise Exception("Service name already exists in your org.")
+                    raise Exception(
+                        "Service name already exists in your org."
+                    )
 
         ret = self._portal.publish_item(
             self.itemid,
@@ -15060,7 +15567,11 @@ class Item(dict):
             from ..mapping._types import MapImageLayer
             from ..raster._layer import ImageryLayer
 
-            if len(ret) > 0 and "success" in ret[0] and ret[0]["success"] == False:
+            if (
+                len(ret) > 0
+                and "success" in ret[0]
+                and ret[0]["success"] == False
+            ):
                 raise Exception(ret[0]["error"])
             ms_url = self._gis.content.get(ret[0]["serviceItemId"]).url
             if ms_url.lower().find("mapserver") > -1:
@@ -15108,7 +15619,10 @@ class Item(dict):
             and ret[0].get("error", None)
         ):
             raise Exception(ret[0].get("error"))
-        elif not buildInitialCache and ret[0]["type"].lower() == "image service":
+        elif (
+            not buildInitialCache
+            and ret[0]["type"].lower() == "image service"
+        ):
             return Item(self._gis, ret[0]["serviceItemId"])
         else:
             serviceitem_id = self._check_publish_status(ret, folder)
@@ -15150,11 +15664,15 @@ class Item(dict):
                 if folder == "/":
                     folder_id = "/"
                 else:
-                    folder_id = self._portal.get_folder_id(owner_name, folder)
+                    folder_id = self._portal.get_folder_id(
+                        owner_name, folder
+                    )
             elif isinstance(folder, dict):
                 folder_id = folder["id"]
             else:
-                print("folder should be folder name as a string, or dict with id")
+                print(
+                    "folder should be folder name as a string, or dict with id"
+                )
 
         if folder_id is not None:
             ret = self._portal.move_item(
@@ -15368,7 +15886,9 @@ class Item(dict):
                 self._user_id,
             )
             res = self._gis._con.post(url, params)
-            serviceitem_id = self._check_publish_status(res["services"], folder=None)
+            serviceitem_id = self._check_publish_status(
+                res["services"], folder=None
+            )
             if self._gis._portal.is_arcgisonline:
                 from ..mapping._types import MapImageLayer
 
@@ -15384,7 +15904,10 @@ class Item(dict):
                 )
                 lods = []
                 for lod in cache_info["lods"]:
-                    if lod["scale"] <= min_scale and lod["scale"] >= max_scale:
+                    if (
+                        lod["scale"] <= min_scale
+                        and lod["scale"] >= max_scale
+                    ):
                         lods.append(str(lod["level"]))
                 ms.manager.update_tiles(levels=",".join(lods), extent=extent)
             return self._gis.content.get(serviceitem_id)
@@ -15415,7 +15938,9 @@ class Item(dict):
             folder = self.ownerFolder
         except:
             folder = None
-        res = self._portal.protect_item(self.itemid, self._user_id, folder, enable)
+        res = self._portal.protect_item(
+            self.itemid, self._user_id, folder, enable
+        )
         self._hydrated = False
         self._hydrate()
         return res
@@ -16017,7 +16542,9 @@ class Item(dict):
                     if idx in layers:
                         text["layers"].append(
                             {
-                                "layerDefinition": {"defaultVisibility": True},
+                                "layerDefinition": {
+                                    "defaultVisibility": True
+                                },
                                 "id": idx,
                             }
                         )
@@ -16047,7 +16574,9 @@ class Item(dict):
                 sfp = os.path.split(fp)
                 fname, ext = os.path.splitext(sfp[1])
                 ext = ext.replace(".", "")
-                nfp = os.path.join(sfp[0], "%s_%s.%s" % (fname, uuid4().hex[:5], ext))
+                nfp = os.path.join(
+                    sfp[0], "%s_%s.%s" % (fname, uuid4().hex[:5], ext)
+                )
                 os.rename(fp, nfp)
                 ip = {
                     "type": item.type,
@@ -16064,7 +16593,9 @@ class Item(dict):
             fp = self.get_data()
             sfp = os.path.split(fp)
             fname, ext = os.path.splitext(sfp[1])
-            nfp = os.path.join(sfp[0], "%s_%s.%s" % (fname, uuid4().hex[:5], ext))
+            nfp = os.path.join(
+                sfp[0], "%s_%s.%s" % (fname, uuid4().hex[:5], ext)
+            )
             os.rename(fp, nfp)
             ip = {
                 "type": item.type,
@@ -16092,11 +16623,15 @@ class Item(dict):
                 ip["properties"] = item.properties
             new_item = self._gis.content.add(item_properties=ip)
             if item.url and item.url.find(item.id) > -1:
-                new_item.update({"url": item.url.replace(item.id, new_item.id)})
+                new_item.update(
+                    {"url": item.url.replace(item.id, new_item.id)}
+                )
             return new_item
 
         else:
-            raise ValueError("Item of type: %s is not supported by copy" % (item.type))
+            raise ValueError(
+                "Item of type: %s is not supported by copy" % (item.type)
+            )
         return
 
     # ----------------------------------------------------------------------
@@ -16269,7 +16804,9 @@ class Item(dict):
         """
 
         url = f"{self._gis._portal.resturl}content/items/{self.itemid}/item.pkinfo"
-        res = self._portal.con.get(url, {}, try_json=False, out_folder=folder)
+        res = self._portal.con.get(
+            url, {}, try_json=False, out_folder=folder
+        )
         return res
 
     # ----------------------------------------------------------------------
@@ -16280,9 +16817,7 @@ class Item(dict):
 
         :returns: A string path to the downloaded XML file.
         """
-        url = (
-            f"{self._gis._portal.resturl}content/items/{self.itemid}/info/iteminfo.xml"
-        )
+        url = f"{self._gis._portal.resturl}content/items/{self.itemid}/info/iteminfo.xml"
         res = self._portal.con.get(url, {"f": "json"})
         return res
 
@@ -16507,7 +17042,9 @@ class ViewManager:
         return []
 
     # ----------------------------------------------------------------------
-    def update(self, layer_def: list[ViewLayerDefParameter] | None = None) -> bool:
+    def update(
+        self, layer_def: list[ViewLayerDefParameter] | None = None
+    ) -> bool:
         """
         Updates a set of layers with new queries, geometries, and column visibilities.
 
@@ -16519,7 +17056,10 @@ class ViewManager:
             assert isinstance(lyrdef, ViewLayerDefParameter)
             layer = layer_def.layer
             assert isinstance(layer, arcgis.features.FeatureLayer)
-            if "isView" in lyrdef.layer.properties and lyrdef.layer.properties.isView:
+            if (
+                "isView" in lyrdef.layer.properties
+                and lyrdef.layer.properties.isView
+            ):
                 results.append(
                     {
                         layer._url: layer.container.manager.update_definition(
@@ -16804,7 +17344,9 @@ class _GISResource(object):
 
         """
         if not item.type.lower().endswith("service"):
-            raise TypeError("item must be a type of service, not " + item.type)
+            raise TypeError(
+                "item must be a type of service, not " + item.type
+            )
         return cls(item.url, item._gis)
 
     def _refresh(self):
@@ -16823,8 +17365,12 @@ class _GISResource(object):
                         del params["renderingRule"]
                 params["Raster"] = self._uri
 
-        if type(self).__name__ == "VectorTileLayer":  # VectorTileLayer is GET only
-            dictdata = self._con.get(self.url, params)  # , token=self._lazy_token)
+        if (
+            type(self).__name__ == "VectorTileLayer"
+        ):  # VectorTileLayer is GET only
+            dictdata = self._con.get(
+                self.url, params
+            )  # , token=self._lazy_token)
         else:
             try:
                 if is_raster:
@@ -16907,7 +17453,8 @@ class _GISResource(object):
 
         if err is not None:
             raise RuntimeError(
-                "HTTPError: this service url encountered an HTTP Error: " + self.url
+                "HTTPError: this service url encountered an HTTP Error: "
+                + self.url
             )
 
         self._hydrated = True
@@ -17003,7 +17550,9 @@ class Layer(_GISResource):
         lyr_dict = {"type": type(self).__name__, "url": url}
 
         if self.filter is not None:
-            lyr_dict["options"] = json.dumps({"definition_expression": self.filter})
+            lyr_dict["options"] = json.dumps(
+                {"definition_expression": self.filter}
+            )
         if self._time_filter is not None:
             lyr_dict["time"] = self._time_filter
         return lyr_dict
@@ -17015,7 +17564,9 @@ class Layer(_GISResource):
         """
         domains = []
         for field in [
-            field for field in self.properties.fields if field["domain"] != None
+            field
+            for field in self.properties.fields
+            if field["domain"] != None
         ]:
             field_domain = dict(field.domain)
             field_domain["fieldName"] = field.name

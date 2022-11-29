@@ -18,6 +18,7 @@ def _search(
     count_size=None,
     group_id=None,
     as_dict=False,
+    enrich=None,
 ):
     """
     Generalized advanced search method.  This method allows for the query and
@@ -116,6 +117,8 @@ def _search(
         params["bbox"] = bbox
     if stype in {"content", "item", "items"}:
         url = "{base}search".format(base=gis._portal.resturl)
+        if enrich:
+            params['enrich'] = enrich
     elif stype == "group_content" and group_id:
         url = "{base}content/groups/{gid}/search".format(
             base=gis._portal.resturl, gid=group_id
@@ -123,14 +126,30 @@ def _search(
     elif stype == "group_content" and group_id is None:
         raise
     elif stype == "portal_users":
-        allowed_keys = {"q", "start", "num", "sortField", "sortOrder", "f", "token"}
+        allowed_keys = {
+            "q",
+            "start",
+            "num",
+            "sortField",
+            "sortOrder",
+            "f",
+            "token",
+        }
         for k in list(params.keys()):
             if not k in allowed_keys:
                 del params[k]
             del k
         url = "{base}portals/self/users".format(base=gis._portal.resturl)
     elif stype in {"user", "groups", "users", "group"}:
-        allowed_keys = {"q", "start", "num", "sortField", "sortOrder", "f", "token"}
+        allowed_keys = {
+            "q",
+            "start",
+            "num",
+            "sortField",
+            "sortOrder",
+            "f",
+            "token",
+        }
         for k in list(params.keys()):
             if not k in allowed_keys:
                 del params[k]
@@ -144,7 +163,9 @@ def _search(
     results = copy.deepcopy(res)
     count += int(res["num"])
     nextstart = int(res["nextStart"])
-    while (count < max_items and max_items > 0) or (nextstart > 0 and max_items == -1):
+    while (count < max_items and max_items > 0) or (
+        nextstart > 0 and max_items == -1
+    ):
         params["start"] = res["nextStart"]
         if len(results["results"]) >= max_items and max_items != -1:
             break
@@ -190,11 +211,17 @@ def _handle_response(res, stype, gis, as_dict):
     if as_dict:
         return res["results"]
     elif str(stype).lower() in {"content", "item", "items", "group_content"}:
-        return [Item(itemid=r["id"], itemdict=r, gis=gis) for r in res["results"]]
+        return [
+            Item(itemid=r["id"], itemdict=r, gis=gis) for r in res["results"]
+        ]
     elif str(stype).lower() in ["user", "users", "accounts", "account"]:
         return [
-            User(gis=gis, username=r["username"], userdict=res) for r in res["results"]
+            User(gis=gis, username=r["username"], userdict=res)
+            for r in res["results"]
         ]
     elif str(stype).lower() in ["groups", "group"]:
-        return [Group(groupdict=r, groupid=r["id"], gis=gis) for r in res["results"]]
+        return [
+            Group(groupdict=r, groupid=r["id"], gis=gis)
+            for r in res["results"]
+        ]
     return res["results"]
