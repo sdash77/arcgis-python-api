@@ -174,14 +174,15 @@ def publish_hosted_imagery_layer(
 
                                              Choice list:
 
-                                                 | [
-                                                 | "ASTER", "DMCII", "DubaiSat-2", "GeoEye-1", "GF-1 PMS", "GF-1 WFV"
-                                                 | "GF-2 PMS", "GRIB", "HDF","IKONOS", "KOMPSAT-2", "KOMPSAT-3", "Landsat 1-5 MSS"
-                                                 | "Landsat 4-5 TM", "Landsat 7 ETM+", "Landsat 8", "NetCDF", "Pleiades-1"
-                                                 | "QuickBird", "RapidEye", "Raster Dataset", "Sentinel-2"," SkySat"
-                                                 | "SPOT 5", "SPOT 6", "SPOT 7", "Tiled Imagery Layer", "UAV/UAS", "WordView-1"
-                                                 | "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", "Aerial", "ScannedAerial",
-                                                 | "ZY3-CRESDA"]
+                                                | [
+                                                | "Aerial", "ASTER", "DMCII", "DubaiSat-2", "GeoEye-1", "GF-1 PMS", "GF-1 WFV",
+                                                | "GF-2 PMS", "GRIB", "HDF", "IKONOS", "Jilin-1", "KOMPSAT-2", "KOMPSAT-3",
+                                                | "Landsat 1-5 MSS", "Landsat 4-5 TM", "Landsat 7 ETM+", "Landsat 8", "Landsat 9",
+                                                | "NetCDF", "PlanetScope", "Pleiades-1", "Pleiades NEO", "QuickBird", "RapidEye",
+                                                | "Raster Dataset", "ScannedAerial", "Sentinel-2", "SkySat", "SPOT 5", "SPOT 6",
+                                                | "SPOT 7", "Superview-1", "Tiled Imagery Layer", "UAV/UAS", "WordView-1",
+                                                | "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", "ZY3-CRESDA"
+                                                | ]
 
                                              If an existing mosaic dataset is being published as a 
                                              dynamic imagery layer using the ``source_mosaic_dataset`` parameter, the

@@ -1449,13 +1449,15 @@ def copy_raster(
 
                                          Choice list:
 
-                                             | ["ASTER", "DMCII", "DubaiSat-2", "GeoEye-1", "GF-1 PMS", "GF-1 WFV"
-                                             | "GF-2 PMS", "GRIB", "HDF","IKONOS", "KOMPSAT-2", "KOMPSAT-3",
-                                             | "Landsat 1-5 MSS","Landsat 4-5 TM", "Landsat 7 ETM+", "Landsat 8",
-                                             | "NetCDF", "Pleiades-1", "QuickBird", "RapidEye", "Raster Dataset",
-                                             | "Sentinel-2"," SkySat", "SPOT 5", "SPOT 6", "SPOT 7", "Tiled Imagery Layer",
-                                             | "UAV/UAS", "WordView-1", "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC",
-                                             | "Aerial", "ScannedAerial","ZY3-CRESDA"]
+                                             | [
+                                             | "Aerial", "ASTER", "DMCII", "DubaiSat-2", "GeoEye-1", "GF-1 PMS", "GF-1 WFV",
+                                             | "GF-2 PMS", "GRIB", "HDF", "IKONOS", "Jilin-1", "KOMPSAT-2", "KOMPSAT-3",
+                                             | "Landsat 1-5 MSS", "Landsat 4-5 TM", "Landsat 7 ETM+", "Landsat 8", "Landsat 9"
+                                             | "NetCDF", "PlanetScope", "Pleiades-1", "Pleiades NEO", "QuickBird", "RapidEye",
+                                             | "Raster Dataset", "ScannedAerial", "Sentinel-2", "SkySat", "SPOT 5", "SPOT 6",
+                                             | "SPOT 7", "Superview-1", "Tiled Imagery Layer", "UAV/UAS", "WordView-1",
+                                             | "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", "ZY3-CRESDA"
+                                             | ]
 
                                          If an existing mosaic dataset is being published as an 
                                          imagery layer using the ``source_mosaic_dataset`` parameter, the
@@ -3348,13 +3350,14 @@ def create_image_collection(
                                          Choice list:
 
                                              | [
-                                             | "ASTER", "DMCII", "DubaiSat-2", "GeoEye-1", "GF-1 PMS", "GF-1 WFV"
-                                             | "GF-2 PMS", "GRIB", "HDF","IKONOS", "KOMPSAT-2", "KOMPSAT-3", "Landsat 1-5 MSS"
-                                             | "Landsat 4-5 TM", "Landsat 7 ETM+", "Landsat 8", "NetCDF", "Pleiades-1"
-                                             | "QuickBird", "RapidEye", "Raster Dataset", "Sentinel-2"," SkySat"
-                                             | "SPOT 5", "SPOT 6", "SPOT 7", "Tiled Imagery Layer", "UAV/UAS", "WordView-1"
-                                             | "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", "Aerial", "ScannedAerial",
-                                             | "ZY3-CRESDA"]
+                                             | "Aerial", "ASTER", "DMCII", "DubaiSat-2", "GeoEye-1", "GF-1 PMS", "GF-1 WFV",
+                                             | "GF-2 PMS", "GRIB", "HDF", "IKONOS", "Jilin-1", "KOMPSAT-2", "KOMPSAT-3",
+                                             | "Landsat 1-5 MSS", "Landsat 4-5 TM", "Landsat 7 ETM+", "Landsat 8", "Landsat 9",
+                                             | "NetCDF", "PlanetScope", "Pleiades-1", "Pleiades NEO", "QuickBird", "RapidEye",
+                                             | "Raster Dataset", "ScannedAerial", "Sentinel-2", "SkySat", "SPOT 5", "SPOT 6",
+                                             | "SPOT 7", "Superview-1", "Tiled Imagery Layer", "UAV/UAS", "WordView-1",
+                                             | "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", "ZY3-CRESDA"
+                                             | ]
 
                                          If an existing mosaic dataset is being published as a 
                                          dynamic imagery layer using the ``source_mosaic_dataset`` parameter, the
@@ -3559,10 +3562,10 @@ def create_image_collection(
 |                        |                        |                                              |"Pansharpen",                                 |
 |                        |                        |                                              |"Pansharpen and Multispectral" (default)      |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
-|"Landsat 8"             |"0.42, 0.51, 0.07, 0.0" |"All" (default)                               |"All Bands",                                  |
+|"Landsat 9"             |"0.42, 0.51, 0.07, 0.0" |"All" (default)                               |"All Bands",                                  |
 |                        |                        |                                              |"Brightness Temperature",                     |
 |                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
-|                        |                        |                                              |"Multispectral",                              |
+|                        |                        |                                              |"Multiband", "Multispectral",                 |
 |                        |                        |                                              |"Panchromatic", "Pansharpen",                 |
 |                        |                        |                                              |"Pansharpen and Multispectral" (default),"QA",|
 |                        |                        |                                              |"SnowIce", "Spectral Indices",                |
@@ -3573,7 +3576,38 @@ def create_image_collection(
 |                        |                        +----------------------------------------------+----------------------------------------------+
 |                        |                        |"Level1"                                      |"All Bands",                                  |
 |                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
-|                        |                        |                                              |"Multispectral",                              |
+|                        |                        |                                              |"Multiband", "Multispectral",                 |
+|                        |                        |                                              |"Panchromatic", "Pansharpen",                 |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default),"QA",|
+|                        |                        |                                              |"SnowIce",                                    |
+|                        |                        |                                              |"Thermal",                                    |
+|                        |                        |                                              |"Vegetation", "Water"                         |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Surface Reflectance"                         |"Surface Reflectance"                         |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Spectral Indices"                            |"Spectral Indices"                            |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Top of Atmosphere Reflectance"               |"Top of Atmosphere Reflectance"               |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Brightness Temperature"                      |"Brightness Temperature"                      |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Surface Temperature"                         |"Surface Temperature"                         |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+|"Landsat 8"             |"0.42, 0.51, 0.07, 0.0" |"All" (default)                               |"All Bands",                                  |
+|                        |                        |                                              |"Brightness Temperature",                     |
+|                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
+|                        |                        |                                              |"Multiband", "Multispectral",                 |
+|                        |                        |                                              |"Panchromatic", "Pansharpen",                 |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default),"QA",|
+|                        |                        |                                              |"SnowIce", "Spectral Indices",                |
+|                        |                        |                                              |"Surface Reflectance", "Thermal",             |
+|                        |                        |                                              |"Top of Atmosphere Reflectance",              |
+|                        |                        |                                              |"Vegetation", "Water"                         |
+|                        |                        |                                              |"Surface Temperature"                         |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"Level1"                                      |"All Bands",                                  |
+|                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
+|                        |                        |                                              |"Multiband", "Multispectral",                 |
 |                        |                        |                                              |"Panchromatic", "Pansharpen",                 |
 |                        |                        |                                              |"Pansharpen and Multispectral" (default),"QA",|
 |                        |                        |                                              |"SnowIce",                                    |
@@ -3593,7 +3627,7 @@ def create_image_collection(
 |"Landsat 7 ETM+"        |"0.11, 0.14, 0.14, 0.61"| "All" (default)                              |"All Bands",                                  |
 |                        |                        |                                              |"Brightness Temperature",                     |
 |                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
-|                        |                        |                                              |"Multispectral",                              |
+|                        |                        |                                              |"Multiband", "Multispectral",                 |
 |                        |                        |                                              |"Panchromatic", "Pansharpen",                 |
 |                        |                        |                                              |"Pansharpen and Multispectral" (default),"QA",|
 |                        |                        |                                              |"SnowIce", "Spectral Indices",                |
@@ -3604,7 +3638,7 @@ def create_image_collection(
 |                        |                        +----------------------------------------------+----------------------------------------------+
 |                        |                        |"Level1"                                      |"All Bands",                                  |
 |                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
-|                        |                        |                                              |"Multispectral",                              |
+|                        |                        |                                              |"Multiband", "Multispectral",                 |
 |                        |                        |                                              |"Panchromatic", "Pansharpen",                 |
 |                        |                        |                                              |"Pansharpen and Multispectral" (default),"QA",|
 |                        |                        |                                              |"SnowIce",                                    |
@@ -3624,7 +3658,7 @@ def create_image_collection(
 |"Landsat 4-5 TM"        |                        | "All" (default)                              |"All Bands",                                  |
 |                        |                        |                                              |"Brightness Temperature",                     |
 |                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
-|                        |                        |                                              |"Multispectral" (default),                    |
+|                        |                        |                                              |"Multiband", "Multispectral" (default),       |
 |                        |                        |                                              |"Panchromatic", "Pansharpen",                 |
 |                        |                        |                                              |"Pansharpen and Multispectral", "QA",         |
 |                        |                        |                                              |"SnowIce", "Spectral Indices",                |
@@ -3635,7 +3669,7 @@ def create_image_collection(
 |                        |                        +----------------------------------------------+----------------------------------------------+
 |                        |                        |"Level1"                                      |"All Bands",                                  |
 |                        |                        |                                              |"Cirrus", "Cloud","Landcover",                |
-|                        |                        |                                              |"Multispectral" (default),                    |
+|                        |                        |                                              |"Multiband", "Multispectral" (default),       |
 |                        |                        |                                              |"Panchromatic", "Pansharpen" ,                |
 |                        |                        |                                              |"Pansharpen and Multispectral", "QA",         |
 |                        |                        |                                              |"SnowIce",                                    |
@@ -3652,7 +3686,7 @@ def create_image_collection(
 |                        |                        +----------------------------------------------+----------------------------------------------+
 |                        |                        |"Surface Temperature"                         |"Surface Temperature"                         |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
-|"Landsat 1-5 MSS"       |                        | "All" (default), "Level1"                    |"All Bands",                                  |
+|"Landsat 1-5 MSS"       |                        | "All" (default), "Level1"                    |"All Bands", "Multiband",                     |
 |                        |                        |                                              |"Multispectral" (default),                    |
 |                        |                        |                                              |"Pseudocolor", "Thermal", "QA"                |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+ 
@@ -3699,6 +3733,42 @@ def create_image_collection(
 |                        |                        |"Standard OrthoreadyAcomp"                    |"Pansharpen AComp"                            |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
 | "Pleiades-1"           |"0.9, 0.75, 0.5, 0.5"   |"All" (default), "ORTHO",                     |"All Bands",                                  |
+|                        |                        |"PRIMARY", "PROJECTED"                        |"Multispectral",                              |
+|                        |                        |                                              |"Multispectral Display",                      | 
+|                        |                        |                                              |"Multispectral Reflectance",                  |
+|                        |                        |                                              |"Panchromatic",                               |
+|                        |                        |                                              |"Panchromatic Display",                       |
+|                        |                        |                                              |"Panchromatic Reflectance",                   |
+|                        |                        |                                              |"Pansharpen"                                  |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default),     |
+|                        |                        |                                              |"Pansharpen Display",                         |
+|                        |                        |                                              |"Pansharpen Reflectance"                      |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"ORTHO DISPLAY"                               |"Multispectral Display" (default),            |
+|                        |                        |                                              |"Panchromatic Display",                       |
+|                        |                        |                                              |"Pansharpen Display"                          |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"ORTHO REFLECTANCE"                           |"Multispectral Reflectance" (default),        |
+|                        |                        |                                              |"Panchromatic Reflectance",                   |
+|                        |                        |                                              |"Pansharpen Reflectance"                      |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"PRIMARY DISPLAY"                             |"Multispectral Display" (default),            |
+|                        |                        |                                              |"Panchromatic Display",                       |
+|                        |                        |                                              |"Pansharpen Display"                          |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"PRIMARY REFLECTANCE"                         |"Multispectral Reflectance" (default),        |
+|                        |                        |                                              |"Panchromatic Reflectance",                   |
+|                        |                        |                                              |"Pansharpen Reflectance"                      |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"PROJECTED DISPLAY"                           |"Multispectral Display" (default),            |
+|                        |                        |                                              |"Panchromatic Display",                       |
+|                        |                        |                                              |"Pansharpen Dispplay"                         |
+|                        |                        +----------------------------------------------+----------------------------------------------+
+|                        |                        |"PROJECTED REFLECTANCE"                       |"Multispectral Reflectance" (default),        |
+|                        |                        |                                              |"Panchromatic Reflectance",                   |
+|                        |                        |                                              |"Pansharpen Reflectance"                      |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+| "Pleiades Neo"         |"0.45, 0.55, 0, 0"      |"All" (default), "ORTHO",                     |"All Bands",                                  |
 |                        |                        |"PRIMARY", "PROJECTED"                        |"Multispectral",                              |
 |                        |                        |                                              |"Multispectral Display",                      | 
 |                        |                        |                                              |"Multispectral Reflectance",                  |
@@ -3912,13 +3982,26 @@ def create_image_collection(
 | "RapidEye"             |                        |"All", "Level1B",                             |"Multispectral" (default)                     |
 |                        |                        |"Level3A", "Level3B"                          |                                              |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
-| "SkySat"               |"0.41, 0.16, 0.13, 0.3" |"All", "Basic", "Ortho"                       |"All Bands",                                  |
+| "SkySat"               |"0.41, 0.16, 0.13, 0.3" |"All" (default), "Basic", "Ortho"             |"All Bands",                                  |
 |                        |                        |                                              |"Multispectral",                              |
 |                        |                        |                                              |"Panchromatic",                               |
 |                        |                        |                                              |"Pansharpen" ,                                |
-|                        |                        |                                              |"All Bands",                                  |
 |                        |                        |                                              |"Skysat Pansharpen",                          |
 |                        |                        |                                              |"Visual"                                      |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default)      |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+| "Jilin-1"              |"0.2501, 0.3646, 0"     |"All" (default), "LEVEL1"                     |"All Bands",                                  |
+|                        |                        |                                              |"Multispectral",                              |
+|                        |                        |                                              |"Panchromatic",                               |
+|                        |                        |                                              |"Pansharpen" ,                                |
+|                        |                        |                                              |"Pansharpen and Multispectral" (default)      |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+| "PlanetScope"          |"0.166,0.167,0.167,0.5" |"All" (default), "Level1", "Level3"           |"Multispectral" (default)                     |
++------------------------+------------------------+----------------------------------------------+----------------------------------------------+
+| "SuperView-1"          |"0.85, 0.7, 0.35, 1"    |"All" (default), "LEVEL1B", "LEVEL2A",        |"All Bands",                                  |
+|                        |                        |"LEVEL3A"                                     |"Multispectral",                              |
+|                        |                        |                                              |"Panchromatic",                               |
+|                        |                        |                                              |"Pansharpen" ,                                |
 |                        |                        |                                              |"Pansharpen and Multispectral" (default)      |
 +------------------------+------------------------+----------------------------------------------+----------------------------------------------+
 
@@ -4092,13 +4175,16 @@ def add_image(
 
 
                                          Choice list:
-                                             | ["ASTER", "DMCII", "DubaiSat-2", "GeoEye-1", "GF-1 PMS", "GF-1 WFV"
-                                             | "GF-2 PMS", "GRIB", "HDF","IKONOS", "KOMPSAT-2", "KOMPSAT-3", "Landsat 1-5 MSS"
-                                             | "Landsat 4-5 TM", "Landsat 7 ETM+", "Landsat 8", "NetCDF", "Pleiades-1"
-                                             | "QuickBird", "RapidEye", "Raster Dataset", "Sentinel-2"," SkySat"
-                                             | "SPOT 5", "SPOT 6", "SPOT 7", "UAV/UAS", "WordView-1"
-                                             | "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", "Aerial", "ScannedAerial",
-                                             | "ZY3-CRESDA"]
+
+                                             | [
+                                             | "Aerial", "ASTER", "DMCII", "DubaiSat-2", "GeoEye-1", "GF-1 PMS", "GF-1 WFV",
+                                             | "GF-2 PMS", "GRIB", "HDF", "IKONOS", "Jilin-1", "KOMPSAT-2", "KOMPSAT-3",
+                                             | "Landsat 1-5 MSS", "Landsat 4-5 TM", "Landsat 7 ETM+", "Landsat 8", "Landsat 9",
+                                             | "NetCDF", "PlanetScope", "Pleiades-1", "Pleiades NEO", "QuickBird", "RapidEye",
+                                             | "Raster Dataset", "ScannedAerial", "Sentinel-2", "SkySat", "SPOT 5", "SPOT 6",
+                                             | "SPOT 7", "Superview-1", "Tiled Imagery Layer", "UAV/UAS", "WordView-1",
+                                             | "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", "ZY3-CRESDA"
+                                             | ]
                                          
 
                                          Example:
