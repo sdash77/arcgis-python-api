@@ -4027,13 +4027,13 @@ class UserManager(object):
     # ----------------------------------------------------------------------
     def assign_categories(self, users: list[User], categories: list[str]) -> list:
         """Adds categories to :class:`users <arcgis.gis.User>`.
-           
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
         users                  Required list of :class:`~arcgis.gis.User` objects to categorize.
-        ------------------     --------------------------------------------------------------------                       
-        categories             Required string defining the categories to add to each user in the 
+        ------------------     --------------------------------------------------------------------
+        categories             Required string defining the categories to add to each user in the
                                `users` argument list.
         ==================     ====================================================================
         """
@@ -4050,25 +4050,25 @@ class UserManager(object):
         See `Categorize members <https://doc.arcgis.com/en/arcgis-online/administer/manage-members.htm#ESRI_SECTION1_91337F478F8542D9A6D2F1A7B65E0AFF>`_
         or `Assign Member Category Schema description <https://developers.arcgis.com/rest/users-groups-and-items/assign-member-category-schema.htm>`_
         for additional details.
-        
+
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        value                  Required List of strings or dictionary defining the categories to 
+        value                  Required List of strings or dictionary defining the categories to
                                create for assigning to organizational members. If `None` is given,
                                the category schema will be erased.
         ==================     ====================================================================
 
         :returns: list
-        
+
         .. code-block:: python
-        
+
             # Usage example #1: Setting member categories with a list
-            
+
             >>> gis.users.categories = ["Office Location"]
-            
+
             # Usage example #2: Setting member categories with dictionary
-            
+
             >>> category_dict = {"memberCategorySchema": [
                                                            {"title": "Categories",
                                                            "categories": [
@@ -4099,8 +4099,8 @@ class UserManager(object):
         ==================     ====================================================================
         **Argument**           **Description**
         ------------------     --------------------------------------------------------------------
-        value                  Required List of strings naming the categories to create for 
-                               assigning to organizational members. If `None` is given, the 
+        value                  Required List of strings naming the categories to create for
+                               assigning to organizational members. If `None` is given, the
                                categories will be erased.
         ==================     ====================================================================
 
@@ -4124,16 +4124,16 @@ class UserManager(object):
                 for category in self._gis.users.categories[0]["categories"]:
                     cat_param.append(category)
             params = {
-                    "f": "json",
-                    "memberCategorySchema": {
-                        "memberCategorySchema": [
-                            {
-                                "title": "Categories",
-                                "categories": cat_param,
-                            }
-                        ]
-                    }
-                }
+                "f": "json",
+                "memberCategorySchema": {
+                    "memberCategorySchema": [
+                        {
+                            "title": "Categories",
+                            "categories": cat_param,
+                        }
+                    ]
+                },
+            }
             res = self._gis._con.post(url, params)
             if res.get("success", False) == False:
                 raise Exception(res)
@@ -5483,7 +5483,7 @@ class ContentManager(object):
         """
         Provides users the ability to manage the content's presence on the marketplace.
 
-        :returns: 
+        :returns:
             :class:`~arcgis.gis.sharing.MarketPlaceManager` or None if not available
         """
         if self._mrktplcmgr is None and self._gis._portal.is_arcgisonline == False:

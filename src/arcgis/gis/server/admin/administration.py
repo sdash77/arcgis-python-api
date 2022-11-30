@@ -1160,7 +1160,7 @@ class SiteManager(object):
                                level for the upgrade process. If true, the log level is set to
                                DEBUG during the upgrade, which can aid in troubleshooting issues
                                related to the upgrade process. If false, the log level is set to
-                               VERBOSE during the upgrade process. The default value is false.                       
+                               VERBOSE during the upgrade process. The default value is false.
         ==================     ====================================================================
 
 
