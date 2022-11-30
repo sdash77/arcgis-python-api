@@ -124,4 +124,3 @@ class ChildImageClassifier:
         )
 
         return psetae_ts_prediction
-
