@@ -13863,70 +13863,68 @@ class Item(dict):
     ):
 
         """
-         The ``update`` method updates an item in a Portal.
+        The ``update`` method updates an item in a Portal.
 
-         .. note::
-             The content can be a file (such as a layer package, geoprocessing package,
-             map package) or a URL (to an ArcGIS Server service, WMS service,
-             or an application).
+        .. note::
+            The content can be a file (such as a layer package, geoprocessing package,
+            map package) or a URL (to an ArcGIS Server service, WMS service,
+            or an application).
 
-             To upload a package or other type of file,  a path or URL
-             to the file must be provided in the data argument.
+            To upload a package or other type of file,  a path or URL
+            to the file must be provided in the data argument.
 
-             For item_properties, pass in arguments for only the properties you want to be updated.
-             All other properties will be untouched.  For example, if you want to update only the
-             item's description, then only provide the description argument in item_properties.
+            For item_properties, pass in arguments for only the properties you want to be updated.
+            All other properties will be untouched.  For example, if you want to update only the
+            item's description, then only provide the description argument in item_properties.
 
-
-         ===============     ====================================================================
-         **Argument**        **Description**
-         ---------------     --------------------------------------------------------------------
-         item_properties     Required dictionary. See table below for the keys and values.
-         ---------------     --------------------------------------------------------------------
-         data                Optional string, io.StringIO, or io.BytesIO. Either a path or URL to
-                             the data or an instance of `StringIO` or `BytesIO` objects.
-         ---------------     --------------------------------------------------------------------
-         thumbnail           Optional string. Either a path or URL to a thumbnail image.
-         ---------------     --------------------------------------------------------------------
-         metadata            Optional string. Either a path or URL to the metadata.
-         ===============     ====================================================================
-
-
-         *Key:Value Dictionary Options for Argument item_properties*
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        item_properties     Required dictionary. See table below for the keys and values.
+        ---------------     --------------------------------------------------------------------
+        data                Optional string, io.StringIO, or io.BytesIO. Either a path or URL to
+                            the data or an instance of `StringIO` or `BytesIO` objects.
+        ---------------     --------------------------------------------------------------------
+        thumbnail           Optional string. Either a path or URL to a thumbnail image.
+        ---------------     --------------------------------------------------------------------
+        metadata            Optional string. Either a path or URL to the metadata.
+        ===============     ====================================================================
 
 
-         =================  =====================================================================
-         **Key**            **Value**
-         -----------------  ---------------------------------------------------------------------
-         type               Optional string. Indicates type of item, see the link below for valid values.
-         -----------------  ---------------------------------------------------------------------
-         typeKeywords       Optional string. Provide a lists all sub-types, see the link below for valid values.
-         -----------------  ---------------------------------------------------------------------
-         description        Optional string. Description of the item.
-         -----------------  ---------------------------------------------------------------------
-         title              Optional string. Name label of the item.
-         -----------------  ---------------------------------------------------------------------
-         url                Optional string. URL to item that are based on URLs.
-         -----------------  ---------------------------------------------------------------------
-         tags               Optional string. Tags listed as comma-separated values, or a list of strings.
-                            Used for searches on items.
-         -----------------  ---------------------------------------------------------------------
-         text               Optional string. For text based items such as Feature Collections & WebMaps
-         -----------------  ---------------------------------------------------------------------
-         snippet            Optional string. Provide a short summary (limit to max 250 characters) of the what the item is.
-         -----------------  ---------------------------------------------------------------------
-         extent             Optional string. Provide comma-separated values for min x, min y, max x, max y.
-         -----------------  ---------------------------------------------------------------------
-         spatialReference   Optional string. Coordinate system that the item is in.
-         -----------------  ---------------------------------------------------------------------
-         accessInformation  Optional string. Information on the source of the content.
-         -----------------  ---------------------------------------------------------------------
-         licenseInfo        Optional string.  Any license information or restrictions regarding the content.
-         -----------------  ---------------------------------------------------------------------
-         culture            Optional string. Locale, country and language information.
-         -----------------  ---------------------------------------------------------------------
-         access             Optional string. Valid values are private, shared, org, or public.
-         =================  =====================================================================
+        *Key:Value Dictionary Options for Argument item_properties*
+
+        =================  =====================================================================
+        **Key**            **Value**
+        -----------------  ---------------------------------------------------------------------
+        type               Optional string. Indicates type of item, see the link below for valid values.
+        -----------------  ---------------------------------------------------------------------
+        typeKeywords       Optional string. Provide a lists all sub-types, see the link below for valid values.
+        -----------------  ---------------------------------------------------------------------
+        description        Optional string. Description of the item.
+        -----------------  ---------------------------------------------------------------------
+        title              Optional string. Name label of the item.
+        -----------------  ---------------------------------------------------------------------
+        url                Optional string. URL to item that are based on URLs.
+        -----------------  ---------------------------------------------------------------------
+        tags               Optional string. Tags listed as comma-separated values, or a list of strings.
+                           Used for searches on items.
+        -----------------  ---------------------------------------------------------------------
+        text               Optional string. For text based items such as Feature Collections & WebMaps
+        -----------------  ---------------------------------------------------------------------
+        snippet            Optional string. Provide a short summary (limit to max 250 characters) of the what the item is.
+        -----------------  ---------------------------------------------------------------------
+        extent             Optional string. Provide comma-separated values for min x, min y, max x, max y.
+        -----------------  ---------------------------------------------------------------------
+        spatialReference   Optional string. Coordinate system that the item is in.
+        -----------------  ---------------------------------------------------------------------
+        accessInformation  Optional string. Information on the source of the content.
+        -----------------  ---------------------------------------------------------------------
+        licenseInfo        Optional string.  Any license information or restrictions regarding the content.
+        -----------------  ---------------------------------------------------------------------
+        culture            Optional string. Locale, country and language information.
+        -----------------  ---------------------------------------------------------------------
+        access             Optional string. Valid values are private, shared, org, or public.
+        =================  =====================================================================
 
 
         .. note::
@@ -13934,15 +13932,16 @@ class Item(dict):
              <https://developers.arcgis.com/rest/users-groups-and-items/items-and-item-types.htm>`_
              in the ArcGIS REST API documentation for more details.
 
-         :return:
+        :return:
             A boolean indicating success (True) or failure (False).
 
-         .. code-block:: python
+        .. code-block:: python
 
-             # Usage Example
+            # Usage Example
 
-             item.update(description ="aggregated US hurricane data", title = "US Hurricane Data",
-                             tags = "Hurricanes, USA, Natural Disasters")
+            >>> item.update(description ="aggregated US hurricane data", 
+                            title = "US Hurricane Data",
+                            tags = "Hurricanes, USA, Natural Disasters")
         """
         if isinstance(item_properties, ItemProperties):
             if (
