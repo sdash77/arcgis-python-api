@@ -59,7 +59,7 @@ class Overview(_BaseKube):
         interval can me modified through the update operation.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         resource            Optional String.  Specifies the resource type (criticalLogs,
                             dataStores, systemServices, utilityServices) that will have their
@@ -88,7 +88,7 @@ class Overview(_BaseKube):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         resource            Required Dictionary. A dictionary object containing the `id`, `type`,
                             and `updateIntervalMin` for an overview resource type, returned by

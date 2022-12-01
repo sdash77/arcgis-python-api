@@ -30,7 +30,7 @@ class SystemManager(BaseServer):
         Constructor
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         url                    Required string. The machine URL.
         ------------------     --------------------------------------------------------------------
@@ -109,7 +109,7 @@ class SystemManager(BaseServer):
         Retrieves a single directory registered with ArcGIS Server.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         name                   Required string. The name of the registered directory.
         ==================     ====================================================================
@@ -146,7 +146,7 @@ class SystemManager(BaseServer):
         directory, you can also specify the directory's cleanup parameters.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         name                   Required string. The name of the server directory.
         ------------------     --------------------------------------------------------------------
@@ -257,7 +257,7 @@ class SystemManager(BaseServer):
         in the request.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         config                 Required string. The configuration items to be updated for this web
                                adaptor. Always include the web adaptor's sharedkey attribute.
@@ -288,7 +288,7 @@ class SystemManager(BaseServer):
             server that deploys your Web Adaptor.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         wa_id                  Required string. The web adaptor ID.
         ------------------     --------------------------------------------------------------------
@@ -326,7 +326,7 @@ class SystemManager(BaseServer):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         wa_id                  Required string. The web adaptor ID.
         ==================     ====================================================================
@@ -424,7 +424,7 @@ class SystemManager(BaseServer):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         origins                Optional String. A comma-separated list of URLs of domains allowed
                                to make requests. The default value, *, denotes all domains, meaning
@@ -447,7 +447,7 @@ class SystemManager(BaseServer):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         origins                Optional String. A comma-separated list of URLs of domains allowed
                                to make requests. The default value, *, denotes all domains, meaning
@@ -482,7 +482,7 @@ class SystemManager(BaseServer):
         hosted JavaScript API and map viewer.
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         allowed_origins          Required string. A comma-separated list of URLs of domains allowed to
                                  make requests. An asterisk (*) can be used to denote all domains.
@@ -593,7 +593,7 @@ class PlatformServiceManager(BaseServer):
 
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Required string. The service URL.
     ------------------     --------------------------------------------------------------------
@@ -616,7 +616,7 @@ class PlatformServiceManager(BaseServer):
     def __init__(self, url: str, connection: Connection, initialize: bool = False):
         """
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         url                    Required string. The service URL.
         ------------------     --------------------------------------------------------------------
@@ -732,7 +732,7 @@ class PlatformService(BaseServer):
         Constructor
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         url                    Required string. The service URL.
         ------------------     --------------------------------------------------------------------
@@ -804,7 +804,7 @@ class ConfigurationStore(BaseServer):
         Constructor
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         url                    Required string. The machine URL.
         ------------------     --------------------------------------------------------------------
@@ -868,7 +868,7 @@ class ConfigurationStore(BaseServer):
         a shared path while creating a site and skip this step altogether.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         type_value             Required string. The type of the configuration store. Values: FILESYSTEM
         ------------------     --------------------------------------------------------------------
@@ -928,7 +928,7 @@ class Jobs(BaseServer):
         Constructor
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         url                    Required string. The machine URL.
         ------------------     --------------------------------------------------------------------
@@ -963,7 +963,7 @@ class Jobs(BaseServer):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         job_id                 Required string. The ID of the job.
         ==================     ====================================================================
@@ -1094,7 +1094,7 @@ class ServerProperties(BaseServer):
         Constructor
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         url                    Required string. The machine URL.
         ------------------     --------------------------------------------------------------------
@@ -1128,7 +1128,7 @@ class ServerProperties(BaseServer):
         class description for all possible properties.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         properties             Required string. A Python dictionary of server properties to be updated.
                                To reset the properties, pass in `None`.
@@ -1207,7 +1207,7 @@ class DirectoryManager(object):
 
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         allowed_origins          Required string. A comma-separated list of URLs of domains allowed to
                                  make requests. An asterisk (*) can be used to denote all domains.
@@ -1268,7 +1268,7 @@ class DirectoryManager(object):
         Retrieves a single directory registered with ArcGIS Server.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         name                   Required string. The name of the registered directory.
         ==================     ====================================================================
@@ -1294,7 +1294,7 @@ class DirectoryManager(object):
         directory, you can also specify the directory's cleanup parameters.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         name                   Required string. The name of the server directory.
         ------------------     --------------------------------------------------------------------
@@ -1373,7 +1373,7 @@ class ServerDirectory(BaseServer):
         Constructor
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         url                    Required string. The machine URL.
         ------------------     --------------------------------------------------------------------
@@ -1415,7 +1415,7 @@ class ServerDirectory(BaseServer):
         network-accessible file share.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         physical_path          Required string. The absolute physical path of the server directory.
         ------------------     --------------------------------------------------------------------

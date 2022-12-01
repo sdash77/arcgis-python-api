@@ -61,7 +61,7 @@ class Geocoder(_GISResource):
         class:`~arcgis.gis.GIS` instance.
 
         =================== ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------- ----------------------------------------------------
         item                A required :class:`~arcgis.gis.Item` object. The
                             ``Item`` to convert to a ``Geocoder`` object.
@@ -104,7 +104,7 @@ class Geocoder(_GISResource):
         The geocode method geocodes one location per request.
 
         ====================     ====================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     ----------------------------------------------------
         address                  Required list of strings or dictionaries.
                                  Specifies the location to be geocoded. This can be
@@ -634,7 +634,7 @@ def get_geocoders(gis: GIS):
     :param gis: the GIS whose registered geocoders are to be queried
 
     =================== ====================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ------------------- ----------------------------------------------------
     gis                 A required :class:`~arcgis.gis.Gis` object. The
                         ``GIS`` whose registered ``geocoders`` are to be
@@ -681,7 +681,7 @@ def analyze_geocode_input(
     that helps the geocode tool parse the input file or table.
 
     =====================     ================================================================
-    **Argument**              **Description**
+    **Parameter**              **Description**
     ---------------------     ----------------------------------------------------------------
     input_table_or_item       required :class:`~arcgis.gis.Item`, string or dictionary.
                               The input to analyze for geocoding.
@@ -881,7 +881,7 @@ def geocode_from_items(
         ``geocode_from_items`` geocodes the entire file regardless of size.
 
     =====================     ================================================================
-    **Argument**              **Description**
+    **Parameter**              **Description**
     ---------------------     ----------------------------------------------------------------
     input_data                required Item, string, Layer. Data to geocode.
     ---------------------     ----------------------------------------------------------------
@@ -1209,7 +1209,7 @@ def geocode(
     The ``geocode`` function geocodes one location per request.
 
     ====================     ====================================================
-    **Argument**             **Description**
+    **Parameter**             **Description**
     --------------------     ----------------------------------------------------
     address                  Required list of strings or dictionaries.
                              Specifies the location to be geocoded. This can be
@@ -1392,7 +1392,7 @@ def reverse_geocode(
     closest to the location.
 
     =================== ====================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ------------------- ----------------------------------------------------
     location            Required location input as list, dict (with or without SpatialReference),
                         or :class:`~arcgis.geometry.Point` object.
@@ -1512,7 +1512,7 @@ def batch_geocode(
         Geocoding many addresses at once is also known as bulk geocoding.
 
     =========================     ================================================================
-    **Argument**                  **Description**
+    **Parameter**                  **Description**
     -------------------------     ----------------------------------------------------------------
     addresses                     Required list of strings or dictionaries.
                                   A list of addresses to be geocoded.
@@ -1682,7 +1682,7 @@ def suggest(
     user until the address they are looking for appears in the list.
 
     ===============     =================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     -----------------------------------------------------------------
     text                The input text provided by a user that is used by the
                         suggest operation to generate a list of possible

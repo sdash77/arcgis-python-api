@@ -66,7 +66,7 @@ class AOI(object):
         Source being used.
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         in_source               Optional either the 'local' keyword or an instantiated ``GIS`` object
                                 instance.
@@ -122,7 +122,7 @@ class AOI(object):
         data as a template.
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         enrich_variables        Required Iterable (normally a list) of enrich_variables correlating to
                                 enrichment enrich_variables. These variable names can be simply the name, the
@@ -244,7 +244,7 @@ class AOI(object):
             Online, and very well may also the be the case if using an instance of ArcGIS Enterprise.
 
         =============================       ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -----------------------------       --------------------------------------------------------------------
         geographies                         Required geographic areas or points to be enriched.
                                             enrich_variables: Enrichment enrich_variables to be used,
@@ -314,7 +314,7 @@ class Country(AOI):
     Analyst extension and local data) and ``GIS`` sources.
 
     =============================       ====================================================================
-    **Argument**                        **Description**
+    **Parameter**                        **Description**
     -----------------------------       --------------------------------------------------------------------
     iso3                                The country's ISO3 identifier.
     -----------------------------       --------------------------------------------------------------------
@@ -686,7 +686,7 @@ class BusinessAnalyst(object):
         introspection does *not* cost any credits.
 
     =============================       ====================================================================
-    **Argument**                        **Description**
+    **Parameter**                        **Description**
     -----------------------------       --------------------------------------------------------------------
     source                              Optional ``GIS`` object or ``local`` keyword specifying the Business
                                         Analyst data and analysis source. If ``local``, the Python
@@ -969,7 +969,7 @@ class BusinessAnalyst(object):
         """
         Get a Country object instance.
         =============================       ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -----------------------------       --------------------------------------------------------------------
         iso3                                Required String. The country's ISO3 identifier.
         -----------------------------       --------------------------------------------------------------------
@@ -1134,7 +1134,7 @@ class BusinessAnalyst(object):
         data as a template.
 
         =============================       ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -----------------------------       --------------------------------------------------------------------
         enrich_variables                    Iterable (normally a list) of enrich_variables correlating to
                                             enrichment enrich_variables. These variable names can be simply the name, the
@@ -1248,7 +1248,7 @@ class BusinessAnalyst(object):
         DataFrame as output.
 
         =============================       ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -----------------------------       --------------------------------------------------------------------
         enrich_variables                    Iterable (normally a list) or pd.DataFrame
                                             of enrich_variables correlating to
@@ -1462,7 +1462,7 @@ class BusinessAnalyst(object):
         Enrich enables retrieving apportioned demographic factors for input geographies.
 
         =============================       ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -----------------------------       --------------------------------------------------------------------
         geographies                         Input geographies desired to get demographic variables for. Normally
                                             these will be geometries included as part of a spatially enabled Pandas

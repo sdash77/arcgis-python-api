@@ -26,7 +26,7 @@ class VerizonConnectReveal(_FeedTemplate, _HasTime, _HasGeometry):
     the feed configuration and to create the feed.
 
     ==================        ====================================================================
-    **Argument**              **Description**
+    **Parameter**              **Description**
     ------------------        --------------------------------------------------------------------
     label                     String. Unique label for the feed instance.
     ------------------        --------------------------------------------------------------------

@@ -100,7 +100,7 @@ class Page(OrderedDict):
             page's description, then only provide the description argument in page_properties.
 
         =====================     ====================================================================
-        **Argument**              **Description**
+        **Parameter**              **Description**
         ---------------------     --------------------------------------------------------------------
         page_properties           Required dictionary. See URL below for the keys and values.
         ---------------------     --------------------------------------------------------------------
@@ -154,7 +154,7 @@ class Page(OrderedDict):
         """Updates the layout of the page.
 
         =====================     ====================================================================
-        **Argument**              **Description**
+        **Parameter**              **Description**
         ---------------------     --------------------------------------------------------------------
         layout                    Required dictionary. The new layout dictionary to update to the page.
         =====================     ====================================================================
@@ -247,7 +247,7 @@ class PageManager(object):
         Returns the pages linked to the specific site.
 
         =======================    =============================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         -----------------------    -------------------------------------------------------------
         title                      Required string. The title of the new page.
         -----------------------    -------------------------------------------------------------
@@ -346,7 +346,7 @@ class PageManager(object):
         Clone allows for the creation of a page that is derived from the current page.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         page                Required Page object of page to be cloned.
         ---------------     --------------------------------------------------------------------
@@ -397,7 +397,7 @@ class PageManager(object):
         Returns the page object for the specified page_id.
 
         =======================    =============================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         -----------------------    -------------------------------------------------------------
         page_id                    Required string. The page itemid.
         =======================    =============================================================
@@ -422,7 +422,7 @@ class PageManager(object):
         Links the page to the specific site.
 
         =======================    =============================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         -----------------------    -------------------------------------------------------------
         page                       Required string. The page object to link.
         -----------------------    -------------------------------------------------------------
@@ -483,7 +483,7 @@ class PageManager(object):
         Unlinks the page from the specific site.
 
         =======================    =============================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         -----------------------    -------------------------------------------------------------
         page                       Required Page. The page object to unlink.
         -----------------------    -------------------------------------------------------------
@@ -542,7 +542,7 @@ class PageManager(object):
         Searches for pages.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         title               Optional string. Return pages with provided string in title.
         ---------------     --------------------------------------------------------------------

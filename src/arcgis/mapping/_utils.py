@@ -170,7 +170,7 @@ def create_colormap(
     in mapping.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     color_list             Required list. List items must be of the format ``[R, G, B]``, where
                            R, G, and B represent values from 0 to 255, or any other format
@@ -217,7 +217,7 @@ def export_map(
 
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     web_map_as_json        Web Map JSON along with export options. See the
                            `Export Web Map Specifications <https://developers.arcgis.com/rest/services-reference/exportwebmap-specification.htm>`_
@@ -297,7 +297,7 @@ def get_layout_templates(gis: Optional[GIS] = None):
 
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     gis                    Optional :class:`~arcgis.gis.GIS` object. The ``GIS`` on which ``get_layout_templates`` runs.
 

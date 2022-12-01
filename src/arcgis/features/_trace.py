@@ -186,7 +186,7 @@ class TraceNetworkManager(object):
         and when the definition of the trace network was last modified.
 
         ====================================        ====================================================================
-        **Argument**                                **Description**
+        **Parameter**                                **Description**
         ------------------------------------        --------------------------------------------------------------------
         moments_to_return                           Optional List of Strings. Represents the collection of validate moments to
                                                     return. Default is all.
@@ -224,7 +224,7 @@ class TraceNetworkManager(object):
         is supported synchronously and asynchronously.
 
         ====================================        ====================================================================
-        **Argument**                                **Description**
+        **Parameter**                                **Description**
         ------------------------------------        --------------------------------------------------------------------
         envelope                                    Required Dictionary or Envelope. The envelope of the area to validate.
 

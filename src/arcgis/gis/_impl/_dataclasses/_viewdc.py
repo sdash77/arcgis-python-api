@@ -14,7 +14,7 @@ class ViewLayerDefParameter:
     of the view can see with the service view.
 
     ==================  ===============================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ------------------  -------------------------------------------------------------------------------
     layer               Required FeatureLayer.  The layer to apply the layer definition to.
     ------------------  -------------------------------------------------------------------------------

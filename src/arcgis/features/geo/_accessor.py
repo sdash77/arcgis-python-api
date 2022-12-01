@@ -383,7 +383,7 @@ class GeoSeriesAccessor:
         measurement method.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required Geometry.  A :class:`~arcgis.geometry.Geometry` object.
         ---------------     --------------------------------------------------------------------
@@ -419,7 +419,7 @@ class GeoSeriesAccessor:
         :class:`~arcgis.geometry.Geometry` object.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         distance            Required float. The buffer distance. The buffer distance is in the
                             same units as the geometry that is being buffered.
@@ -442,7 +442,7 @@ class GeoSeriesAccessor:
         specified extent.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         envelope            required tuple. The tuple must have (XMin, YMin, XMax, YMax) each value
                             represents the lower left bound and upper right bound of the extent.
@@ -465,7 +465,7 @@ class GeoSeriesAccessor:
         comparison :class:`~arcgis.geometry.Geometry`.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ---------------     --------------------------------------------------------------------
@@ -507,7 +507,7 @@ class GeoSeriesAccessor:
         of a lesser shape type.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ===============     ====================================================================
@@ -529,7 +529,7 @@ class GeoSeriesAccessor:
         :class:`~arcgis.geometry.Polyline` and a part to the right of it.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         cutter              Required :class:`~arcgis.geometry.Polyline`. The cutting polyline geometry
         ===============     ====================================================================
@@ -550,7 +550,7 @@ class GeoSeriesAccessor:
         The ``densify`` method creates a new :class:`~arcgis.geometry.Geometry` with added vertices
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         method              Required String. The type of densification, DISTANCE, ANGLE, or GEODESIC
         ---------------     --------------------------------------------------------------------
@@ -592,7 +592,7 @@ class GeoSeriesAccessor:
         region unique to the base geometry but not part of the other geometry.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ===============     ====================================================================
@@ -613,7 +613,7 @@ class GeoSeriesAccessor:
         no :class:`~arcgis.geometry.Point` objects in common.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ===============     ====================================================================
@@ -635,7 +635,7 @@ class GeoSeriesAccessor:
             Both geometries must have the same projection.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ===============     ====================================================================
@@ -657,7 +657,7 @@ class GeoSeriesAccessor:
             This is a 2D comparison only; M and Z values are ignored.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ===============     ====================================================================
@@ -683,7 +683,7 @@ class GeoSeriesAccessor:
             This only works on :class:`~arcgis.geometry.Polyline` and :class:`~arcgis.geometry.Polygon` objects.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         max_offset          Required float. The maximum offset tolerance.
         ===============     ====================================================================
@@ -701,7 +701,7 @@ class GeoSeriesAccessor:
         The ``get_area`` method retreives the area of the feature using a measurement type.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         method              Required String. `PLANAR` measurements reflect the projection of
                             geographic data onto the 2D surface (in other words, they will not
@@ -728,7 +728,7 @@ class GeoSeriesAccessor:
         The ``get_length`` method retrieves the length of the feature using a measurement type.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         method              Required String. `PLANAR` measurements reflect the projection of
                             geographic data onto the 2D surface (in other words, they will not
@@ -757,7 +757,7 @@ class GeoSeriesAccessor:
         **requires arcpy**
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         index               Required Integer. The index position of the geometry.
         ===============     ====================================================================
@@ -782,7 +782,7 @@ class GeoSeriesAccessor:
             between the original geometries.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ---------------     --------------------------------------------------------------------
@@ -817,7 +817,7 @@ class GeoSeriesAccessor:
         to the ``in_point``.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ---------------     --------------------------------------------------------------------
@@ -845,7 +845,7 @@ class GeoSeriesAccessor:
         either of the input geometries.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ===============     ====================================================================
@@ -867,7 +867,7 @@ class GeoSeriesAccessor:
         in degrees and meters using the specified measurement type.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         angle               Required Float. The angle in degrees to the returned point.
         ---------------     --------------------------------------------------------------------
@@ -897,7 +897,7 @@ class GeoSeriesAccessor:
         distance from the beginning of the line.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required Float. The distance along the line.
         ---------------     --------------------------------------------------------------------
@@ -924,7 +924,7 @@ class GeoSeriesAccessor:
         ``geotransformation``.
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         spatial_reference        Required :class:`~arcgis.geometry.SpatialReference`.
                                  The new spatial reference. This can be a
@@ -957,7 +957,7 @@ class GeoSeriesAccessor:
             the line where the nearest point occurs.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ---------------     --------------------------------------------------------------------
@@ -985,7 +985,7 @@ class GeoSeriesAccessor:
         two points on the polyline instead of a single :class:`~arcgis.geometry.Point`.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         start_measure       Required Float. The starting distance from the beginning of the line.
         ---------------     --------------------------------------------------------------------
@@ -1019,7 +1019,7 @@ class GeoSeriesAccessor:
         :class:`~arcgis.geometry.Geometry` object.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ===============     ====================================================================
@@ -1041,7 +1041,7 @@ class GeoSeriesAccessor:
             The two input :class:`~arcgis.geometry.Geometry` must be the same shape type.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ===============     ====================================================================
@@ -1059,7 +1059,7 @@ class GeoSeriesAccessor:
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ===============     ====================================================================
@@ -1081,7 +1081,7 @@ class GeoSeriesAccessor:
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ===============     ====================================================================
@@ -1099,7 +1099,7 @@ class GeoSeriesAccessor:
         :class:`~arcgis.geometry.Geometry`.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ---------------     --------------------------------------------------------------------
@@ -1217,7 +1217,7 @@ class GeoAccessor(object):
         The ``renderer`` property defines the renderer for the Spatially-enabled DataFrame.
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         value                   Required dict. If none is given, then the value is reset
         ==================      ====================================================================
@@ -1376,7 +1376,7 @@ class GeoAccessor(object):
         .. versionadded:: arcgis 1.9
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         path                   Required String. path object
         ------------------     --------------------------------------------------------------------
@@ -1416,7 +1416,7 @@ class GeoAccessor(object):
         The ``from-feather`` method loads a feather-format object from the file path.
 
         ======================    =========================================================
-        **Argument**              **Description**
+        **Parameter**              **Description**
         ----------------------    ---------------------------------------------------------
         path                      String. Path object or file-like object. Any valid string
                                   path is acceptable. The string could be a URL. Valid
@@ -1459,7 +1459,7 @@ class GeoAccessor(object):
         The ``set_geometry`` method assigns the geometry column by name or by list.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         col                    Required string, Pandas Series, GeoArray, list or tuple. If a string, this
                                is the name of the column containing the geometry. If a Pandas Series
@@ -1596,7 +1596,7 @@ class GeoAccessor(object):
 
 
         ======================    =========================================================
-        **Argument**              **Description**
+        **Parameter**              **Description**
         ----------------------    ---------------------------------------------------------
         right_df                  Required pd.DataFrame. Spatially enabled dataframe to join.
         ----------------------    ---------------------------------------------------------
@@ -2184,7 +2184,7 @@ class GeoAccessor(object):
         polygon geometries.
 
         ====================  =========================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         --------------------  ---------------------------------------------------------
         marker_size           optional float.  Numeric size of the symbol given in
                               points.
@@ -2228,7 +2228,7 @@ class GeoAccessor(object):
         This type of symbol only applies to Points, MultiPoints and Polygons.
 
         ====================  =========================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         --------------------  ---------------------------------------------------------
         marker_angle          Numeric value that defines the number of degrees ranging
                               from 0-360, that a marker symbol is rotated. The rotation
@@ -2283,7 +2283,7 @@ class GeoAccessor(object):
         This type of symbol only applies to Points, MultiPoints and Polygons.
 
         ====================  =========================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         --------------------  ---------------------------------------------------------
         font_decoration       The text decoration. Must be one of the following values:
                               - line-through
@@ -2364,7 +2364,7 @@ class GeoAccessor(object):
         This type of symbol only applies to line geometries.
 
         ====================  =========================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         --------------------  ---------------------------------------------------------
         line_width            optional float. Numeric value indicating the width of the line in points
         --------------------  ---------------------------------------------------------
@@ -2469,7 +2469,7 @@ class GeoAccessor(object):
                 it to an existing feature service.
 
                 ============================    ====================================================================
-                **Argument**                    **Description**
+                **Parameter**                    **Description**
         l        ---------------------------    --------------------------------------------------------------------
                 feature_service                 Required Item or Feature Service Id. Depicts the feature service to
                                                 which the layer will be added.
@@ -2531,7 +2531,7 @@ class GeoAccessor(object):
         Converts a Pandas DatFrame to an Arrow Table
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         index                  Optional Bool. If ``True``, always include the dataframe's
                                index(es) as columns in the file output.
@@ -2567,7 +2567,7 @@ class GeoAccessor(object):
         Converts a Pandas DatFrame to an Arrow Table
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         table                  Required pyarrow.Table. The Arrow Table to convert back into a
                                spatially enabled dataframe.
@@ -2593,7 +2593,7 @@ class GeoAccessor(object):
         The ``to_featureclass`` exports a spatially enabled dataframe to a feature class.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         location                        Required string. The output of the table.
         ---------------------------     --------------------------------------------------------------------
@@ -2650,7 +2650,7 @@ class GeoAccessor(object):
             With ArcPy null integer values will remain null.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         location                        Required string. The output of the table.
         ---------------------------     --------------------------------------------------------------------
@@ -2713,7 +2713,7 @@ class GeoAccessor(object):
         .. versionadded:: 2.1.0
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         path                   Required String. The save file path
         ------------------     --------------------------------------------------------------------
@@ -2764,7 +2764,7 @@ class GeoAccessor(object):
             With ArcPy null integer values will remain null.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         title                           Optional string. The name of the service. If not provided, a random
                                         string is generated.
@@ -2862,7 +2862,7 @@ class GeoAccessor(object):
         The ``from_df`` creates a Spatially Enabled DataFrame from a dataframe with an address column.
 
         ====================    =========================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         --------------------    ---------------------------------------------------------
         df                      Required Pandas DataFrame. Source dataset
         --------------------    ---------------------------------------------------------
@@ -2985,7 +2985,7 @@ class GeoAccessor(object):
         by providing the X/Y columns.
 
         ====================    =========================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         --------------------    ---------------------------------------------------------
         df                      Required Pandas DataFrame. Source dataset
         --------------------    ---------------------------------------------------------
@@ -3035,7 +3035,7 @@ class GeoAccessor(object):
             :class:`~arcgis.features.Table` to a Pandas' DataFrame
 
         ====================    =========================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         --------------------    ---------------------------------------------------------
         layer                   Required FeatureLayer or TableLayer. The service to convert
                                 to a Spatially enabled DataFrame.
@@ -3082,7 +3082,7 @@ class GeoAccessor(object):
             With ArcPy null integer values will remain null.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         location                        Required string or pathlib.Path. Full path to the feature class or URL (shapefile only).
         ===========================     ====================================================================
@@ -3129,7 +3129,7 @@ class GeoAccessor(object):
             The ``from_table`` method requires ArcPy
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         filename            Required string or pathlib.Path. The path to the
                             table.
@@ -3138,7 +3138,7 @@ class GeoAccessor(object):
         **Keyword Arguments**
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         fields              Optional List/Tuple. A list (or tuple) of field
                             names. For a single field, you can use a string
@@ -3486,7 +3486,7 @@ class GeoAccessor(object):
         The ``sr`` property gets and sets the :class:`~arcgis.geometry.SpatialReference` of the dataframe
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         value                   Spatial Reference
         ==================      ====================================================================
@@ -3749,7 +3749,7 @@ class GeoAccessor(object):
             The ``from_geodataframe`` method requires geopandas library be installed in current environment.
 
         =====================  ===============================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ---------------------  ---------------------------------------------------------------
         geo_df                 GeoDataFrame object, created using GeoPandas library
         ---------------------  ---------------------------------------------------------------
@@ -4011,7 +4011,7 @@ class GeoAccessor(object):
             The ``distance_matrix`` method requires SciPy
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         leafsize                 Optional Integer. The number of points at which the algorithm
                                  switches over to brute-force. Default: 16.
@@ -4070,7 +4070,7 @@ class GeoAccessor(object):
             The ``overlay`` method requires ArcPy or Shapely
 
         =========================    =========================================================
-        **Argument**                 **Description**
+        **Parameter**                 **Description**
         -------------------------    ---------------------------------------------------------
         sdf                          Required Spatially Enabled DataFrame. The geometry to
                                      perform the operation from.
@@ -4098,7 +4098,7 @@ class GeoAccessor(object):
             The return is a Pandas DataFrame (pd.DataFrame) that meet the operations' requirements.
 
         =========================    =========================================================
-        **Argument**                 **Description**
+        **Parameter**                 **Description**
         -------------------------    ---------------------------------------------------------
         other                        Required Spatially Enabled DataFrame. The geometry to
                                      perform the operation from.
@@ -4258,7 +4258,7 @@ class GeoAccessor(object):
             The ``project`` method requires ArcPy or pyproj v4
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         spatial_reference        Required :class:`~arcgis.geometry.SpatialReference`. The new spatial reference.
                                  This can be a SpatialReference object or the coordinate system name.
@@ -4345,7 +4345,7 @@ class GeoAccessor(object):
         when you publish the DataFrame as a Feature Layer in your web GIS.
 
         ==============================     ====================================================================
-        **Argument**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------     --------------------------------------------------------------------
         convert_to_string                  Optional Boolean. Default is True. Converts column names to string
         ------------------------------     --------------------------------------------------------------------

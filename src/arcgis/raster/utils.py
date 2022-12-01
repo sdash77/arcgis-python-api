@@ -10,7 +10,7 @@ def generate_direct_access_url(
     Function to get the direct access url for user's rasterStore on ArcGIS Online.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     expiration                               Optional integer. Direct access URL expiration time in minutes.
                                              (The default is 1440 ie. 24 hours)
@@ -44,7 +44,7 @@ def upload_imagery_to_agol_userstore(
     needs to be pre-installed. Refer https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-python#install-the-package
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     files                                    Required. It can be a folder, list of files or single file that needs to be uploaded.
     ------------------------------------     --------------------------------------------------------------------
@@ -136,7 +136,7 @@ def publish_hosted_imagery_layer(
     A collection can also be created from multiple input rasters.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_data                               Required list. The list of input raster paths(s) to be added to 
                                              the imagery layer being created. 

@@ -53,7 +53,7 @@ class Track:
     Creates a Track object, used to maintain the state of a track
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     id                      Required int. ID for each track initialized
     ---------------------   -------------------------------------------
@@ -84,7 +84,7 @@ class SiamMask(ArcGISModel):
     Creates a :class:`~arcgis.learn.SiamMask` object.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Optional fastai Databunch. Returned data object from
                             :meth:`~arcgis.learn.prepare_data` function with dataset_type as
@@ -207,7 +207,7 @@ class SiamMask(ArcGISModel):
         Creates a :class:`~arcgis.learn.SiamMask` Object tracker from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -276,7 +276,7 @@ class SiamMask(ArcGISModel):
         Initializes the position of the object in the frame/Image using detections.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         frame                   Required numpy array. frame is used to
                                 initialize the objects to track.
@@ -349,7 +349,7 @@ class SiamMask(ArcGISModel):
         Tracks the position of the object in the frame/Image
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         frame                   Required numpy array. frame is used to update
                                 the object track.
@@ -358,7 +358,7 @@ class SiamMask(ArcGISModel):
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         detections              Optional list. A list of bounding boxes.
         ---------------------   -------------------------------------------
@@ -402,7 +402,7 @@ class SiamMask(ArcGISModel):
         Removes the tracks from the track list using track_ids
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         track_ids               Required List. List of track ids to be removed
                                 from the track list.
@@ -434,7 +434,7 @@ class SiamMask(ArcGISModel):
         Displays the results of a trained model on a part of the validation set
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows to display.
         =====================   ===========================================
@@ -571,7 +571,7 @@ class SiamMask(ArcGISModel):
         Computes mean IOU and f-measure on validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         iou_thresh              Optional float. The intersection over union
                                 threshold with the ground truth mask, above

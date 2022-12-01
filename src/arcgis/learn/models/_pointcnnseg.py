@@ -49,7 +49,7 @@ class PointCNN(ArcGISModel):
     Creates a Point Cloud classification model.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
                             :meth:`~arcgis.learn.prepare_data` function.
@@ -61,7 +61,7 @@ class PointCNN(ArcGISModel):
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     encoder_params          Optional dictionary. The keys of the dictionary are
                             `out_channels`, `P`, `K`, `D` and `m`.
@@ -148,7 +148,7 @@ class PointCNN(ArcGISModel):
         or Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -239,7 +239,7 @@ class PointCNN(ArcGISModel):
         shown in the training table are macro averaged over all classes.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         epochs                  Required integer. Number of cycles of training
                                 on the data. Increase it if underfitting.
@@ -289,7 +289,7 @@ class PointCNN(ArcGISModel):
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         iters_per_epoch         Optional integer. The number of iterations
                                 to run during the training phase.
@@ -423,7 +423,7 @@ class PointCNN(ArcGISModel):
         is not yet supported.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional rows. Number of rows to show. Default
                                 value is 2 and maximum value is the `batch_size`
@@ -433,7 +433,7 @@ class PointCNN(ArcGISModel):
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         color_mapping           Optional dictionary. Mapping from class value
                                 to RGB values. Default value example:
@@ -488,7 +488,7 @@ class PointCNN(ArcGISModel):
 
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         path                    Required string. The path to folder where the las
                                 files which needs to be predicted are present.
@@ -505,7 +505,7 @@ class PointCNN(ArcGISModel):
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         remap_classes           Optional dictionary {int:int}. Mapping from
                                 class values to user defined values. Please query
@@ -558,7 +558,7 @@ class PointCNN(ArcGISModel):
         data should be the same.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         path                    Required string. The path to folder where the h5
                                 files which needs to be predicted are present.
@@ -571,7 +571,7 @@ class PointCNN(ArcGISModel):
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         batch_size              Optional integer. The number of blocks to process
                                 in one batch. Default is set to 1.
@@ -601,7 +601,7 @@ class PointCNN(ArcGISModel):
         Loads a compatible saved model for inferencing or fine tuning from the disk.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Name or Path to
                                 Deep Learning Package (DLPK) or

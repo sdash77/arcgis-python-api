@@ -257,7 +257,7 @@ class UtilityNetworkManager(object):
             Network user type extension to use this operation.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         error_count                              Optional Integer. Sets the threshold when the `enable_topology` will
                                                  stop if the maximum number of errors is met. The default value is
@@ -288,7 +288,7 @@ class UtilityNetworkManager(object):
         with `disable_subnetwork_controller`.
 
         ====================================        ====================================================================
-        **Argument**                                **Description**
+        **Parameter**                                **Description**
         ------------------------------------        --------------------------------------------------------------------
         network_source_id                           Required String. The network source ID that the subnetwork controller
                                                     participates in.
@@ -333,7 +333,7 @@ class UtilityNetworkManager(object):
         Controller network capability set.
 
         ====================================        ====================================================================
-        **Argument**                                **Description**
+        **Parameter**                                **Description**
         ------------------------------------        --------------------------------------------------------------------
         network_source_id                           Required String. The network source ID that the subnetwork controller
                                                     participates in.
@@ -396,7 +396,7 @@ class UtilityNetworkManager(object):
         the subnetwork has been removed.
 
         ====================================        ====================================================================
-        **Argument**                                **Description**
+        **Parameter**                                **Description**
         ------------------------------------        --------------------------------------------------------------------
         domain_name                                 Required String. The name of the domain network of which the subnetwork
                                                     is a part.
@@ -478,7 +478,7 @@ class UtilityNetworkManager(object):
         and when the definition of the utility network was last modified.
 
         ====================================        ====================================================================
-        **Argument**                                **Description**
+        **Parameter**                                **Description**
         ------------------------------------        --------------------------------------------------------------------
         moments_to_return                           Optional List of Strings. Represents the collection of validate moments to
                                                     return. Default is all.
@@ -563,7 +563,7 @@ class UtilityNetworkManager(object):
         then no geometry will be synthesized.
 
         ====================================        ====================================================================
-        **Argument**                                **Description**
+        **Parameter**                                **Description**
         ------------------------------------        --------------------------------------------------------------------
         attachment_associations                     Optional Boolean. Whether to return attachment associations.
         ------------------------------------        --------------------------------------------------------------------
@@ -653,7 +653,7 @@ class UtilityNetworkManager(object):
         finally diagrams are generated or updated for the subnetwork.
 
         ====================================        ====================================================================
-        **Argument**                                **Description**
+        **Parameter**                                **Description**
         ------------------------------------        --------------------------------------------------------------------
         domain_name                                 Required String. The name fo the domain network that the subnetwork
                                                     is a part of.
@@ -707,7 +707,7 @@ class UtilityNetworkManager(object):
         is supported synchronously and asynchronously.
 
         ====================================        ====================================================================
-        **Argument**                                **Description**
+        **Parameter**                                **Description**
         ------------------------------------        --------------------------------------------------------------------
         envelope                                    Required Dictionary. The envelope of the area to validate.
 
@@ -831,7 +831,7 @@ class UtilityNetworkManager(object):
         Available starting at Enterprise 10.9.1
 
         ====================================        ====================================================================
-        **Argument**                                **Description**
+        **Parameter**                                **Description**
         ------------------------------------        --------------------------------------------------------------------
         elements                                    Required List of Dictionary. The feature or object elements for which
                                                     the association is querried.
@@ -911,7 +911,7 @@ class UtilityNetworkManager(object):
             spatial feature.
 
         ====================================        ====================================================================
-        **Argument**                                **Description**
+        **Parameter**                                **Description**
         ------------------------------------        --------------------------------------------------------------------
         elements                                    Required List of Dictionary. The feature or object elements for which
                                                     the association is queried.
@@ -1017,7 +1017,7 @@ class UtilityNetworkManager(object):
         geometry bag as a collection of points and polylines.
 
         ====================================        ====================================================================
-        **Argument**                                **Description**
+        **Parameter**                                **Description**
         ------------------------------------        --------------------------------------------------------------------
         elements                                    Required List of Dictionary. The set of objects for which to get
                                                     locatability and synthesize the geometries.
@@ -1165,7 +1165,7 @@ class TraceConfigurationsManager(object):
         named trace configurations in a utility network.
 
         ============================        ===========================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         ----------------------------        -------------------------------------------
         global_ids                          Optional list of strings. Specify the global
                                             IDs of the named trace configs to be queried.
@@ -1246,7 +1246,7 @@ class TraceConfigurationsManager(object):
         If your trace configuration already exists, use the query method to find it.
 
         ======================      ===============================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         ----------------------      -----------------------------------------------
         name                        Required String. The altered name of the trace
                                     configuration.
@@ -1326,7 +1326,7 @@ class TraceConfigurationsManager(object):
         configuration without requiring the map to be republished.
 
         ======================      ===============================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         ----------------------      -----------------------------------------------
         global_id                   Required String. Specifying the global ID of
                                     the named trace configuration to alter.

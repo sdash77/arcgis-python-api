@@ -33,7 +33,7 @@ class RandLANet(PointCNN):
     Creates RandLANet point cloud segmentation model.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
                             `prepare_data` function.
@@ -45,7 +45,7 @@ class RandLANet(PointCNN):
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     encoder_params          Optional dictionary. The keys of the dictionary are
                             `out_channels`, `sub_sampling_ratio`, `k_n`.
@@ -122,7 +122,7 @@ class RandLANet(PointCNN):
         or Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -216,7 +216,7 @@ class RandLANet(PointCNN):
 
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         path                    Required string. The path to folder where the las
                                 files which needs to be predicted are present.
@@ -233,7 +233,7 @@ class RandLANet(PointCNN):
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         remap_classes           Optional dictionary {int:int}. Mapping from
                                 class values to user defined values. Please query

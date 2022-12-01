@@ -9,7 +9,7 @@ def pfx_to_pem(pfx_path, pfx_password):
     """Decrypts the .pfx file to be used with requests.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     pfx_path            Required string.  File pathname to .pfx file to parse.
     ---------------     --------------------------------------------------------------------

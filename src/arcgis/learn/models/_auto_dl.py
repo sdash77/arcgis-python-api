@@ -57,7 +57,7 @@ class ImageryModel(ArcGISModel):
         which can be used to further fine tune the models saved using AutoDL.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         path                    Required string. Path to
                                 Esri Model Definition(EMD) file.
@@ -114,7 +114,7 @@ class ImageryModel(ArcGISModel):
         specified learning rates
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         epochs                  Optional integer. Number of cycles of training
                                 on the data. Increase it if the model is underfitting.
@@ -205,7 +205,7 @@ class ImageryModel(ArcGISModel):
         Learning Package zip for deployment to Image Server or ArcGIS Pro.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Name of the model to save. It
                                 stores it at the pre-defined location. If path
@@ -273,7 +273,7 @@ class ImageryModel(ArcGISModel):
         optimum learning rate for training the model.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         allow_plot              Optional boolean. Display the plot of losses
                                 against the learning rates and mark the optimal
@@ -324,7 +324,7 @@ class ImageryModel(ArcGISModel):
         Computes mean IOU on the validation set for each class.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         mean                    Optional bool. If False returns class-wise
                                 mean IOU, otherwise returns mean iou of all
@@ -354,7 +354,7 @@ class ImageryModel(ArcGISModel):
         Computes average precision on the validation set for each class.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         detect_thresh           Optional float. The probability above which
                                 a detection will be considered for computing
@@ -392,7 +392,7 @@ class AutoDL:
     arcgis.learn supported deep learning models within a specified time limit.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required ImageryDataObject. Returned data object from
                             :meth:`~arcgis.learn.prepare_data`  function.
@@ -1329,7 +1329,7 @@ class AutoDL:
         Shows sample results for the model.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional number of rows. By default, 5 rows
                                 are displayed.

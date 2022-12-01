@@ -123,7 +123,7 @@ class FeatureClassifier(ArcGISModel):
     geographical feature based on the imagery it overlaps with.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
                             :meth:`~arcgis.learn.prepare_data`  function.
@@ -313,7 +313,7 @@ class FeatureClassifier(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
@@ -330,7 +330,7 @@ class FeatureClassifier(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
@@ -350,7 +350,7 @@ class FeatureClassifier(ArcGISModel):
         Runs prediction on an Image. Works with RGB images only.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         img_path                Required. Path to the image file to make the
                                 predictions on.
@@ -514,7 +514,7 @@ class FeatureClassifier(ArcGISModel):
         Creates a Feature classifier from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -610,7 +610,7 @@ class FeatureClassifier(ArcGISModel):
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         thresh                  confidence score threshold for multilabel predictions,
                                 defaults to 0.5
@@ -710,7 +710,7 @@ class FeatureClassifier(ArcGISModel):
         Plots the hard examples with their heatmaps.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         num_examples            Number of hard examples to plot
                                 :meth:`~arcgis.learn.prepare_data`  function.
@@ -796,7 +796,7 @@ class FeatureClassifier(ArcGISModel):
         Works with RGB images only.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         folder                  Required String. Folder containing images to inference on.
         ---------------------   -------------------------------------------
@@ -1096,7 +1096,7 @@ class FeatureClassifier(ArcGISModel):
         Works with RGB images only.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         feature_layer                            Required. :class:`~arcgis.features.FeatureLayer` for classification.
         ------------------------------------     --------------------------------------------------------------------
@@ -1744,7 +1744,7 @@ class FeatureClassifier(ArcGISModel):
         Deprecated, Use the Classify Objects Using Deep Learning tool or :meth:`~arcgis.learn.classify_objects`
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         feature_layer                            Required. Public :class:`~arcgis.features.FeatureLayer` or path of local feature class for classification with read, write, edit permissions.
         ------------------------------------     --------------------------------------------------------------------

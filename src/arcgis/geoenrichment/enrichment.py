@@ -112,7 +112,7 @@ BufferStudyArea.__new__.__defaults__ = (None, None, None, True, None)
 BufferStudyArea.__doc__ = """BufferStudyArea allows you to buffer point and street address study areas.
 
 ===================      ======================================================
-**Argument**             **Description**
+**Parameter**             **Description**
 -------------------      ------------------------------------------------------
 area                     :class:`~arcgis.geometry.Point` object or street address 
                          (string) study area to be buffered
@@ -139,7 +139,7 @@ travel_mode              None or string, one of the supported travel modes when
 def _pep8ify(name):
     """PEP8ify name"""
     if "." in name:
-        name = name[name.rfind(".") + 1:]
+        name = name[name.rfind(".") + 1 :]
     if name[0].isdigit():
         name = "level_" + name
     name = name.replace(".", "_")
@@ -304,7 +304,7 @@ class Country(object):
         two letter abbreviation or three letter ISO3 code.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         name              Required string. The country name, two letter code or
                           three letter ISO3 code identifying the country.
@@ -493,8 +493,8 @@ class Country(object):
                     pass
             else:
                 raise ValueError(
-                    "The specified dataset is not available in this country. Choose one of " +
-                    str(self.properties.datasets)
+                    "The specified dataset is not available in this country. Choose one of "
+                    + str(self.properties.datasets)
                 )
         else:
             raise NotImplementedError(
@@ -650,7 +650,7 @@ class Country(object):
         data as a template.
 
         ============================     ====================================================================
-        **Argument**                     **Description**
+        **Parameter**                     **Description**
         ----------------------------     --------------------------------------------------------------------
         enrich_variables                 Iterable (normally a list) of enrich_variables correlating to
                                          enrichment enrich_variables. These variable names can be simply the
@@ -703,7 +703,7 @@ class Country(object):
         locations in your workflow before performing enrichment.
 
         ============================     ====================================================================
-        **Argument**                     **Description**
+        **Parameter**                     **Description**
         ----------------------------     --------------------------------------------------------------------
         study_areas                      Required list, :class:`~arcgis.features.FeatureSet` or SpatiallyEnabledDataFrame containing
                                          the input areas to be enriched.
@@ -962,7 +962,7 @@ class Country(object):
         Returns a list of named areas matching the specified query
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         query             Required string. The query string to search for places
                           within this country.
@@ -1124,7 +1124,7 @@ def get_countries(gis: Optional[GIS] = None, as_df: bool = True):
     Retrieve available countries based on the GIS source being used.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     gis                    Optional :class:`~arcgis.gis.GIS` instance. This specifies what GIS
                            country sources are available based on the Web GIS source, whether
@@ -1195,7 +1195,7 @@ def create_report(
 
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     study_areas            required list. Required parameter: Study areas may be defined by
                            input points, polygons, administrative boundaries or addresses.
@@ -1339,8 +1339,8 @@ def _create_report_gis(
                 for namedarea in area:
                     a = namedarea.__studyarea__
                     if (
-                        a["layer"] != first_area["layer"] or
-                        a["sourceCountry"] != first_area["sourceCountry"]
+                        a["layer"] != first_area["layer"]
+                        or a["sourceCountry"] != first_area["sourceCountry"]
                     ):
                         raise ValueError(
                             "All NamedAreas in the list must have the same source country and level"
@@ -1398,7 +1398,7 @@ def _data_collections(
     Return a list of data collections that can be run for any country.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     country                optional string. lets the user supply and optional name of a country
                            in order to get information about the data collections in that given
@@ -1491,7 +1491,7 @@ def enrich(
     enrich is how to access data for human geography analysis.
 
     =========================     ====================================================================
-    **Argument**                  **Description**
+    **Parameter**                  **Description**
     -------------------------     --------------------------------------------------------------------
     study_areas                   Required list, :class:`~arcgis.features.FeatureSet` or SpatiallyEnabledDataFrame containing
                                   the input areas to be enriched.
@@ -1834,7 +1834,7 @@ def _find_report(country, gis=None):
     Returns a list of reports by a country code
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     country                optional string. lets the user supply and optional name of a country
                            in order to get information about the data collections in that given
@@ -1894,7 +1894,7 @@ def standard_geography_query(
     in the enrichment pack and optionally return geometry for the feature.
 
     ======================     ====================================================================
-    **Argument**               **Description**
+    **Parameter**               **Description**
     ----------------------     --------------------------------------------------------------------
     source_country             Optional string. to specify the source country for the search. Use
                                this parameter to limit the search and query of standard geographic

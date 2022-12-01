@@ -309,7 +309,7 @@ class CreateServiceParameter:
     The create service parameter description.
 
     =======================    =============================================================
-    **Argument**               **Description**
+    **Parameter**               **Description**
     -----------------------    -------------------------------------------------------------
     name                       Required String. Name of the Service
     -----------------------    -------------------------------------------------------------

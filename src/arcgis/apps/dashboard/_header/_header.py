@@ -6,7 +6,7 @@ class Header(object):
     Creates a dashboard header widget.
 
     =========================   ===========================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -------------------------   -------------------------------------------
     title                       Optional string. Title of the header.
     -------------------------   -------------------------------------------

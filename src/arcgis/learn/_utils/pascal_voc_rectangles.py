@@ -176,7 +176,7 @@ def show_batch_object_detection(
     """
     This function randomly picks a few training chips and visualizes them.
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     rows                    Optional Integer.
                             Number of rows to display.
@@ -209,7 +209,7 @@ def show_batch_pascal_voc_rectangles(
     """
     This function randomly picks a few training chips and visualizes them.
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     rows                    Optional Integer.
                             Number of rows to display.

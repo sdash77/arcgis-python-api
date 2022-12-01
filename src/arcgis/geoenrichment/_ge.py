@@ -80,7 +80,7 @@ class _GeoEnrichment(object):
     Desktop to discover if custom reports, stored as portal items, are available in the service.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     gis                    Required GIS object.  The ArcGIS Online GIS object.
     ------------------     --------------------------------------------------------------------
@@ -221,7 +221,7 @@ class _GeoEnrichment(object):
         Returns report information for a desired country using the country code.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         country                Required string. lets the user supply an optional name of a country
                                in order to get information about the data collections in that given
@@ -271,7 +271,7 @@ class _GeoEnrichment(object):
         # returns basic report metadata for Albania
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         country                Required string. lets the user supply an optional name of a country
                                in order to get information about the data collections in that given
@@ -352,7 +352,7 @@ class _GeoEnrichment(object):
         Return a list of data collections that can be run for any country.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         country                optional string. lets the user supply an optional name of a country
                                in order to get information about the data collections in that given
@@ -420,7 +420,7 @@ class _GeoEnrichment(object):
         Returns a list of reports by a country code
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         country                Optional string. lets the user supply an optional name of a country
                                in order to get information about the data collections in that given
@@ -484,7 +484,7 @@ class _GeoEnrichment(object):
         features.
 
         =========================     ====================================================================
-        **Argument**                  **Description**
+        **Parameter**                  **Description**
         -------------------------     --------------------------------------------------------------------
         study_areas                   Required list/dictionary. This parameter is used to specify a list
                                       of input features to be enriched. Study areas can be input XY point
@@ -637,7 +637,7 @@ class _GeoEnrichment(object):
         collections for variables that contain specific keywords.
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
         country                    Optional string. Specifies the source country for the search. Use
                                    this parameter to limit the search and query of standard geographic
@@ -724,7 +724,7 @@ class _GeoEnrichment(object):
         all search criteria specified.
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
         type_filters               Optional list. List of business type filters restricting the search.
                                    For USA, either the NAICS or SIC filter is useful as a business type
@@ -848,7 +848,7 @@ class _GeoEnrichment(object):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         study_areas            Required list. Required parameter: Study areas may be defined by
                                input points, polygons, administrative boundaries or addresses.
@@ -956,7 +956,7 @@ class _GeoEnrichment(object):
         relating to the area in question.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         country                Required string. lets the user supply an optional name of a country
                                in order to get information about the data collections in that given
@@ -993,7 +993,7 @@ class _GeoEnrichment(object):
         """
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         country                Required string. lets the user supply an optional name of a country
                                in order to get information about the data collections in that given
@@ -1091,7 +1091,7 @@ class _GeoEnrichment(object):
         in the enrichment pack and optionally return geometry for the feature.
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
         source_country             Optional string. to specify the source country for the search. Use
                                    this parameter to limit the search and query of standard geographic

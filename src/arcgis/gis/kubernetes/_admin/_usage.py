@@ -45,7 +45,7 @@ class UsageStatistics:
         Updates the credentials for the metrics viewer and metrics API.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         resource            Required String.  Specifies whether the updated credentials will be
                             applied to the metrics viewer (`grafana`) or the metrics

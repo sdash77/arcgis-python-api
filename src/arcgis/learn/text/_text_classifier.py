@@ -80,7 +80,7 @@ class TextClassifier(ArcGISModel):
     Based on the Hugging Face transformers library
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Optional data object returned from :class:`~arcgis.learn.prepare_textdata` function.
                             data object can be `None`, in case where someone wants to use a
@@ -103,7 +103,7 @@ class TextClassifier(ArcGISModel):
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     verbose                 Optional string. Default set to `error`. The
                             log level you want to set. It means the amount
@@ -286,7 +286,7 @@ class TextClassifier(ArcGISModel):
         Get available models for the given transformer backbone
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         architecture            Required string. name of the transformer
                                 backbone one wish to use. To learn more about
@@ -316,7 +316,7 @@ class TextClassifier(ArcGISModel):
         Hugging Face Transformer backbone.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         backbone                Required string. Specify the Hugging Face Transformer
                                 backbone name fine-tuned on Text Classification task.
@@ -352,7 +352,7 @@ class TextClassifier(ArcGISModel):
         Package(DLPK) or Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -408,7 +408,7 @@ class TextClassifier(ArcGISModel):
         Loads a saved TextClassifier model from disk.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -436,7 +436,7 @@ class TextClassifier(ArcGISModel):
         Learning Package zip for deployment.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Folder path to save the model.
         ---------------------   -------------------------------------------
@@ -529,7 +529,7 @@ class TextClassifier(ArcGISModel):
         Prints the rows of the dataframe with target and prediction columns.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional Integer.
                                 Number of rows to print.
@@ -631,7 +631,7 @@ class TextClassifier(ArcGISModel):
         Predicts the class label(s) for the input text
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         text_or_list            Required String or List. text or a list of
                                 texts for which we wish to find the class label(s).
@@ -901,7 +901,7 @@ samples. Metrics are only being calculated for classes present in the validation
         # EntityRecognizer
         #
         # =====================   ===========================================
-        # **Argument**            **Description**
+        # **Parameter**            **Description**
         # ---------------------   -------------------------------------------
         # text_or_list            Required String or List. text or a list of
         #                         texts for which we wish to find the class label(s).

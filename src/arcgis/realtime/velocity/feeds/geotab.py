@@ -19,7 +19,7 @@ class Geotab(_FeedTemplate, _HasTime, _HasGeometry):
     Poll Geotab for event data. This data class can be used to define the feed configuration and to create the feed.
 
     ==================        ====================================================================
-    **Argument**              **Description**
+    **Parameter**              **Description**
     ------------------        --------------------------------------------------------------------
     label                     String. Unique label for this feed instance.
     ------------------        --------------------------------------------------------------------

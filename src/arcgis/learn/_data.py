@@ -752,7 +752,7 @@ def prepare_textdata(
     Prepares a text data object from the files present at data folder
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     path                    Required directory path.
                             The directory path where the training and
@@ -842,7 +842,7 @@ def prepare_textdata(
     **Keyword Arguments**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     stratify                Optional boolean.
                             If True, prepare_textdata
@@ -1001,7 +1001,7 @@ def prepare_tabulardata(
     Prepares a tabular data object from input_features and optionally rasters.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     input_features          Optional :class:`~arcgis.features.FeatureLayer` Object or spatially enabled dataframe.
                             This contains features denoting the value of the dependent variable.
@@ -1126,7 +1126,7 @@ def prepare_tabulardata(
     **Keyword Arguments**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     stratify                Optional boolean.
                             If True, prepare_tabulardata
@@ -1254,7 +1254,7 @@ def prepare_data(
     -For panoptic segmentation, use Panoptic_Segmentation format.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     path                    Required string. Path to data directory or a list of paths.
     ---------------------   -------------------------------------------
@@ -1320,7 +1320,7 @@ def prepare_data(
     **Keyword Arguments**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     n_masks                 Optional int. Default value is 30.
                             Required for MaXDeepLab panoptic segmentation

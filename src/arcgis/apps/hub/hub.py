@@ -33,7 +33,7 @@ class Hub(object):
 
 
     ================    ===============================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ----------------    ---------------------------------------------------------------
     url                 Required string. If no URL is provided by user while connecting
                         to the GIS, then the URL will be ArcGIS Online.

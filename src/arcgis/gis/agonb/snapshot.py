@@ -48,7 +48,7 @@ class SnapShot(object):
         Converts a Snapshot to a new notebook `Item`.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         title                  Required String. The name of the new notebook.
         ==================     ====================================================================
@@ -72,7 +72,7 @@ class SnapShot(object):
         Rolls back the notebook to a previous snapshot state
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         title                  Optional string. The Item's title.
         ------------------     --------------------------------------------------------------------
@@ -97,7 +97,7 @@ class SnapShot(object):
         Deletes a snapshot associated with the notebook item
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The 'Notebook' typed item to remove snapshots from.
         ------------------     --------------------------------------------------------------------
@@ -133,7 +133,7 @@ class SnapshotManager(object):
         Converts a Snapshot to a new notebook.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The 'Notebook' typed item to convert.
         ------------------     --------------------------------------------------------------------
@@ -167,7 +167,7 @@ class SnapshotManager(object):
         Retrieves a snap shot locally on disk.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The 'Notebook' typed item to retrieve.
         ------------------     --------------------------------------------------------------------
@@ -201,7 +201,7 @@ class SnapshotManager(object):
         Creates a Snapshot of a Given Item.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The 'Notebook' typed item to create a snapshot for.
         ------------------     --------------------------------------------------------------------
@@ -240,7 +240,7 @@ class SnapshotManager(object):
         Returns a list of SnapShots for a notebook item.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The Notebook :class:`~arcgis.gis.Item` to get all
                                snapshots for.
@@ -284,7 +284,7 @@ class SnapshotManager(object):
         Rolls back the notebook to a previous snapshot state
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The 'Notebook' typed item to have rolled back.
         ------------------     --------------------------------------------------------------------
@@ -320,7 +320,7 @@ class SnapshotManager(object):
         Deletes a snapshot associated with the notebook item
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The 'Notebook' typed item to remove snapshots from.
         ------------------     --------------------------------------------------------------------
