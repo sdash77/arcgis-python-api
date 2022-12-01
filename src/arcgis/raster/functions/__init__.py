@@ -3690,7 +3690,7 @@ def bitwise_xor(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of :class:`arcgis.raster.Raster` or :class:`arcgis.raster.ImageryLayer` 
+    rasters                              Required list of :class:`~arcgis.raster.Raster` or :class:`~arcgis.raster.ImageryLayer` 
                                          objects. If a scalar is needed for the operation, the scalar can be a ``float``.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
