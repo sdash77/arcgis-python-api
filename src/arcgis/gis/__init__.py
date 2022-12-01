@@ -16380,7 +16380,8 @@ class ViewManager:
     service.``
     
     This class is not meant to be created directly, but instead returned 
-    from the :attr:`~arcgis.gis.Item.view_manager` property.
+    from the :attr:`~arcgis.gis.Item.view_manager` property on an
+    :class:`~arcgis.gis.Item`.
     """
 
     _item = None
