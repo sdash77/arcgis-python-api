@@ -589,7 +589,7 @@ class DataStoreManager(BaseServer):
 
 
         ===============   ====================================================
-        **Parameters**    **Description**
+        **Parameter**    **Description**
         ---------------   ----------------------------------------------------
         sde               required string.  Path to SDE connection file.
         ===============   ====================================================

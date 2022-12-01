@@ -1359,7 +1359,7 @@ class GIS(object):
         configuration for any access notices or information banners.
 
         ======================     ===============================================================
-        **Parameters**             **Description**
+        **Parameter**             **Description**
         ----------------------     ---------------------------------------------------------------
         settings                   Required Dict.  A dictionary of the settings
 
