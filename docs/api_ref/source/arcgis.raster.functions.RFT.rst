@@ -56,7 +56,7 @@ arcgis.raster.functions.RFT
 ..  class:: arcgis.raster.functions.RFT(raster_function_template,gis=None)
 
     ========================  ====================================================================
-    **Arguments**             **Description**	
+    **Parameter**             **Description**	
     ------------------------  --------------------------------------------------------------------
     raster_function_template  required, input portal raster function template item.
     ------------------------  --------------------------------------------------------------------

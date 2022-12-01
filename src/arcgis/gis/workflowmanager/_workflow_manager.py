@@ -658,7 +658,7 @@ class JobManager:
         Set a location of work for an existing job. jobUpdateLocation privilege is required to set a location on a job.
 
         ===============     ====================================================================
-        **Arguments**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         job_id              Required string. ID for the job to update
         ---------------     --------------------------------------------------------------------
@@ -1980,7 +1980,7 @@ class SavedSearchesManager:
         The adminAdvanced or adminBasic privilege is required.
 
         ===============     ====================================================================
-        **Arguments**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         search              Required object. An object defining the properties of the search to be updated.
         ===============     ====================================================================

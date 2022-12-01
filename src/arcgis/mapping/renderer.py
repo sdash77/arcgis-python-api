@@ -575,7 +575,7 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
     proportionally between the provided min and max sizes.
 
     ======================  =========================================================
-    **Arguments**           **Description**
+    **Parameter**           **Description**
     ----------------------  ---------------------------------------------------------
     si_field                Attribute field used for size rendering if no
                             si_expression is provided.
@@ -615,7 +615,7 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
     typically used to rotate symbols that indicate directionality.
 
     ======================  =========================================================
-    **Arguments**          **Description**
+    **Parameter**          **Description**
     ----------------------  ---------------------------------------------------------
     ri_field                Attribute field used for setting the rotation of a symbol
                             if no ``ri_expression`` is provided.

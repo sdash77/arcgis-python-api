@@ -93,7 +93,7 @@ class TraceNetworkManager(object):
             Network user type extention to use this operation.
 
         ====================    ==================================================
-        **Arguments**           **Description**
+        **Parameter**           **Description**
         --------------------    --------------------------------------------------
         locations               Required list of dictionaries. The locations for
                                 starting points and barriers. An empty array must
