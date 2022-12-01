@@ -5,6 +5,7 @@ from typing import Optional
 from .._impl._con import Connection
 from .. import GIS
 from ._base import BasePortalAdmin
+from arcgis._impl.common._deprecate import deprecated
 
 ########################################################################
 class PasswordPolicy(BasePortalAdmin):
@@ -357,8 +358,13 @@ class Security(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     @property
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
     def ssl(self):
         """
+        .. note::
+            It is best practice and highly recommended to use the `ssl_certificates`
+            property on the Machine class.
+
         Provides access to managing and updating SSL Certificates on a
         Portal site.
 
