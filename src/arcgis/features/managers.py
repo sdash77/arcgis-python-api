@@ -1957,9 +1957,14 @@ class FeatureLayerCollectionManager(_GISResource):
         else:
             url = gis._url
 
-        owner = gis.content.get(self.properties["serviceItemId"])["owner"]
+        if "serviceItemId" in self.properties:
+            # get the owner of the service
+            user = gis.content.get(self.properties["serviceItemId"])["owner"]
+        else:
+            # if no service item id then default to logged in user
+            user = gis.users.me.username
 
-        url = "%s/content/users/%s/createService" % (url, owner)
+        url = "%s/content/users/%s/createService" % (url, user)
         if spatial_reference is None:
             # handle for tables
             if "spatialReference" in fs.properties:
