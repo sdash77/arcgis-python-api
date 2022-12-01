@@ -2743,13 +2743,16 @@ class UserManager(object):
         administrator can remove the user, all of the user's content and
         groups must be reassigned or deleted.
 
-        ================  =========]======================================================================
-        **Keys**          **Description**
-        ----------------  -------------------------------------------------------------------------------
-        users             Required list[User]. A list of users to delete from the organization.
-        ================  ===============================================================================
+        ================  ====================================================
+        **Argument**      **Description**
+        ----------------  ----------------------------------------------------
+        users             Required list of :class:`users <arcgis.gis.User>` to
+                          delete from the organization.
+        ================  ====================================================
 
-        :returns: list[str] containing the users who could not be removed.
+        :return: 
+           list containing the :class:`users <arcgis.gis.User>` 
+           who could not be removed.
         """
         from arcgis._impl.common._utils import chunks as _chunks
 
