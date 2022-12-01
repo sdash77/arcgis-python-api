@@ -111,19 +111,35 @@ BufferStudyArea = collections.namedtuple(
 BufferStudyArea.__new__.__defaults__ = (None, None, None, True, None)
 BufferStudyArea.__doc__ = """BufferStudyArea allows you to buffer point and street address study areas.
 
-Parameters:
-area: the point geometry or street address (string) study area to be buffered
-radii: list of distances by which to buffer the study area, eg. [1, 2, 3]
-units: distance unit, eg. Miles, Kilometers, Minutes (when using drive times/travel_mode)
-overlap: boolean, uses overlapping rings when True, or non-overlapping disks when False
-travel_mode: None or string, one of the supported travel modes when using network service areas, eg. Driving, Trucking, Walking.
+===================      ======================================================
+**Argument**             **Description**
+-------------------      ------------------------------------------------------
+area                     :class:`~arcgis.geometry.Point` object or street address 
+                         (string) study area to be buffered
+-------------------      ------------------------------------------------------
+radii                    List of distances by which to buffer the study area
+                         
+                         Example: [1, 2, 3]
+-------------------      ------------------------------------------------------
+units                    String, distance unit. 
+                         
+                         Example: Miles, Kilometers, Minutes (when using drive times/travel_mode)
+-------------------      ------------------------------------------------------
+overlap                  Boolean. Uses overlapping rings when ``True``, 
+                         or non-overlapping disks when ``False``
+-------------------      ------------------------------------------------------
+travel_mode              None or string, one of the supported travel modes when 
+                         using network service areas.
+                         
+                         Example: Driving, Trucking, Walking.
+===================      ======================================================
 """
 
 
 def _pep8ify(name):
     """PEP8ify name"""
     if "." in name:
-        name = name[name.rfind(".") + 1 :]
+        name = name[name.rfind(".") + 1:]
     if name[0].isdigit():
         name = "level_" + name
     name = name.replace(".", "_")
@@ -477,8 +493,8 @@ class Country(object):
                     pass
             else:
                 raise ValueError(
-                    "The specified dataset is not available in this country. Choose one of "
-                    + str(self.properties.datasets)
+                    "The specified dataset is not available in this country. Choose one of " +
+                    str(self.properties.datasets)
                 )
         else:
             raise NotImplementedError(
@@ -1323,8 +1339,8 @@ def _create_report_gis(
                 for namedarea in area:
                     a = namedarea.__studyarea__
                     if (
-                        a["layer"] != first_area["layer"]
-                        or a["sourceCountry"] != first_area["sourceCountry"]
+                        a["layer"] != first_area["layer"] or
+                        a["sourceCountry"] != first_area["sourceCountry"]
                     ):
                         raise ValueError(
                             "All NamedAreas in the list must have the same source country and level"
