@@ -301,9 +301,13 @@ def find_existing_locations(
     """
 
     if input_layers is None:
-        input_layers = []
+        raise TypeError(
+            "find_existing_locations missing 1 required positional argument: 'input_layers'"
+        )
     if expressions is None:
-        expressions = []
+        raise TypeError(
+            "find_existing_locations missing 1 required positional argument: 'expressions'"
+        )
     gis = _arcgis.env.active_gis if gis is None else gis
     if gis is None:
         raise TypeError(
@@ -596,6 +600,14 @@ def derive_new_locations(
 
 
     """
+    if input_layers is None:
+        raise TypeError(
+            "derive_new_locations missing 1 required positional argument: 'input_layers'"
+        )
+    if expressions is None:
+        raise TypeError(
+            "derive_new_locations missing 1 required positional argument: 'input_layer'"
+        )
 
     gis = _arcgis.env.active_gis if gis is None else gis
     if gis is None:
@@ -1220,6 +1232,11 @@ def choose_best_facilities(
                                     candidate_count=1,
                                     output_name="choose best facilities")
     """
+    if demand_locations_layer is None:
+        raise TypeError(
+            "choose_best_facilities missing 1 required positional argument: 'demand_locations_layer'"
+        )
+
     gis = _arcgis.env.active_gis if gis is None else gis
     if gis is None:
         raise TypeError(
