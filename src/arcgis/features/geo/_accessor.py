@@ -46,10 +46,10 @@ def _is_geoenabled(df):
     """
     try:
         if (
-            isinstance(df, pd.DataFrame) and
-            hasattr(df, "spatial") and
-            df.spatial.name and
-            df[df.spatial.name].dtype.name.lower() == "geometry"
+            isinstance(df, pd.DataFrame)
+            and hasattr(df, "spatial")
+            and df.spatial.name
+            and df[df.spatial.name].dtype.name.lower() == "geometry"
         ):
             return True
         else:
@@ -1184,9 +1184,9 @@ class GeoAccessor(object):
         from arcgis.features.geo._tools import _metadata
 
         if (
-            "metadata" in self._data.attrs and
-            self._data.attrs["metadata"] and
-            isinstance(self._data.attrs["metadata"], _metadata._Metadata)
+            "metadata" in self._data.attrs
+            and self._data.attrs["metadata"]
+            and isinstance(self._data.attrs["metadata"], _metadata._Metadata)
         ):
             return self._data.attrs["metadata"]
         else:
@@ -1206,9 +1206,9 @@ class GeoAccessor(object):
         ):  # creates the attrs entry
             self._data.attrs["metadata"] = source
         elif (
-            "metadata" in self._data.attrs and
-            isinstance(source, _metadata._Metadata) and
-            source != self._data.attrs["metadata"]
+            "metadata" in self._data.attrs
+            and isinstance(source, _metadata._Metadata)
+            and source != self._data.attrs["metadata"]
         ):  # sets the new metadata value
             self._data.attrs["metadata"] = source
         elif source is None:  # resets/drops the source
@@ -1313,7 +1313,10 @@ class GeoAccessor(object):
         """draws the dataframe as SVG features"""
 
         if self.name:
-            def fn(g, n): return getattr(g, n, None)() if g is not None else None
+
+            def fn(g, n):
+                return getattr(g, n, None)() if g is not None else None
+
             vals = np.vectorize(fn, otypes="O")(self._data["SHAPE"], "svg")
             svg = "\n".join(vals.tolist())
             svg_top = (
@@ -1486,9 +1489,9 @@ class GeoAccessor(object):
         from ._array import GeoArray
 
         if (
-            isinstance(col, str) and
-            col in self._data.columns and
-            self._data[col].dtype.name.lower() != "geometry"
+            isinstance(col, str)
+            and col in self._data.columns
+            and self._data[col].dtype.name.lower() != "geometry"
         ):
             idx = self._data[col].first_valid_index()
             if sr is None:
@@ -1510,9 +1513,9 @@ class GeoAccessor(object):
                 warnings.simplefilter("ignore")
                 self._data[col] = GeoArray(self._data[col])
         elif (
-            isinstance(col, str) and
-            col in self._data.columns and
-            self._data[col].dtype.name.lower() == "geometry"
+            isinstance(col, str)
+            and col in self._data.columns
+            and self._data[col].dtype.name.lower() == "geometry"
         ):
             self._name = col
             # self._data[col] = self._data[col]
@@ -2398,10 +2401,10 @@ class GeoAccessor(object):
                 symbol_type=kwargs.pop("symbol_type", None),
                 symbol_style=kwargs.pop("symbol_style", None),
                 col=kwargs.pop("col", None),
-                colors=kwargs.pop("cmap", None) or
-                kwargs.pop("colors", None) or
-                kwargs.pop("pallette", None) or
-                kwargs.pop("palette", "jet"),
+                colors=kwargs.pop("cmap", None)
+                or kwargs.pop("colors", None)
+                or kwargs.pop("pallette", None)
+                or kwargs.pop("palette", "jet"),
                 alpha=kwargs.pop("alpha", 1),
                 **kwargs,
             )
@@ -2475,17 +2478,17 @@ class GeoAccessor(object):
         ============================    ====================================================================
         **Parameter**                   **Description**
         ----------------------------    --------------------------------------------------------------------
-        feature_service                 Required :class:`~arcgis.gis.Item` or Feature Service Id. Depicts 
+        feature_service                 Required :class:`~arcgis.gis.Item` or Feature Service Id. Depicts
                                         the feature service to which the layer will be added.
         ----------------------------    --------------------------------------------------------------------
         gis                             Optional :class:`~arcgis.gis.GIS`. The GIS object.
         ----------------------------    --------------------------------------------------------------------
-        sanitize_columns                Optional Boolean. If ``True``, column names will be converted to 
+        sanitize_columns                Optional Boolean. If ``True``, column names will be converted to
                                         string, invalid characters removed and other performed. The
                                         default is ``False``.
         ----------------------------    --------------------------------------------------------------------
-        service_name                    Optional String. The name for the service that will be added to the 
-                                        :class:`~arcgis.gis.Item` The name cannot be used already or contain 
+        service_name                    Optional String. The name for the service that will be added to the
+                                        :class:`~arcgis.gis.Item` The name cannot be used already or contain
                                         special characters, spaces, or a number as the first character.
         ============================    ====================================================================
         """
@@ -2928,8 +2931,8 @@ class GeoAccessor(object):
                 elif geom["spatialReference"] is None:
                     geom["spatialReference"] = {"wkid": 4326}
                 elif (
-                    geom["spatialReference"].get("wkid", None) is None and
-                    geom["spatialReference"].get("wkt", None) is None
+                    geom["spatialReference"].get("wkid", None) is None
+                    and geom["spatialReference"].get("wkt", None) is None
                 ):
                     geom["spatialReference"] = {"wkid": 4326}
                 return geom
@@ -2947,7 +2950,7 @@ class GeoAccessor(object):
             if address_column in df.columns:
                 batch_size = geocoder.properties.locatorProperties.MaxBatchSize
                 pieces = [
-                    df.iloc[i: i + batch_size] for i in range(0, len(df), batch_size)
+                    df.iloc[i : i + batch_size] for i in range(0, len(df), batch_size)
                 ]
                 data = []
                 for df in pieces:
@@ -3203,10 +3206,10 @@ class GeoAccessor(object):
             return self._sindex
         # bbox = self.full_extent
         if (
-            self.name and
-            filename and
-            os.path.isfile(filename + ".dat") and
-            os.path.isfile(filename + ".idx")
+            self.name
+            and filename
+            and os.path.isfile(filename + ".dat")
+            and os.path.isfile(filename + ".idx")
         ):
             l = len(self._data[self.name])
             self._sindex = SpatialIndex(
