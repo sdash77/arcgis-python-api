@@ -97,6 +97,13 @@ PointCloudLayer
     :undoc-members:
     :show-inheritance:
 
+VoxelLayer
+^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.mapping.VoxelLayer
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
 Working with Map Service Layers
 -------------------------------
 MapServiceLayer
