@@ -25,6 +25,8 @@ _log = logging.getLogger()
 
 # pylint: disable=protected-access
 ###########################################################################
+
+
 class WebHookEvents(Enum):
     """
     Provides the allowed webhook enumerations for the captured events.
@@ -1276,7 +1278,8 @@ class SyncManager(object):
                     parent_replica_id = replica["replicaID"]
                     break
             if child_replica_id and parent_replica_id:
-                import tempfile, os
+                import tempfile
+                import os
 
                 child_replica = child_replicas.get(replica_id=child_replica_id)
                 parent_replica = parent_replicas.get(replica_id=parent_replica_id)
@@ -1341,6 +1344,7 @@ class WebHook(object):
     _url = None
     _gis = None
     # ----------------------------------------------------------------------
+
     def __init__(self, url, gis):
         self._url = url
         self._gis = gis
@@ -1389,7 +1393,8 @@ class WebHook(object):
         -------------------------------------    ---------------------------------------------------------------------------
         hook_url                                 Optional String.  The URL to which the payloads will be delivered.
         -------------------------------------    ---------------------------------------------------------------------------
-        change_types                             Optional WebHookEvents or String.  The default is "*", which means all events.  This is a
+        change_types                             Optional :class:`~arcgis.features.managers.WebHookEvents` or String.  
+                                                 The default is "*", which means all events.  This is a
                                                  comma separated list of values that will fire off the web hook.  The list
                                                  each supported type is below.
         -------------------------------------    ---------------------------------------------------------------------------
@@ -1399,7 +1404,8 @@ class WebHook(object):
         -------------------------------------    ---------------------------------------------------------------------------
         active                                   Optional bool. Enable or disable call backs when the webhook is triggered.
         -------------------------------------    ---------------------------------------------------------------------------
-        schedule_info                            Optional WebHookScheduleInfo or Dict. Allows the trigger to be used as a given schedule.
+        schedule_info                            Optional :class:`~arcgis.features.managers.WebHookScheduleInfo` or Dict. 
+                                                 Allows the trigger to be used as a given schedule.
 
                                                  Example Dictionary:
 
@@ -1512,6 +1518,7 @@ class WebHookServiceManager(object):
     _url = None
     _gis = None
     # ----------------------------------------------------------------------
+
     def __init__(self, url, fc, gis) -> None:
         self._url = url
         self._fc = fc
