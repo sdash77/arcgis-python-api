@@ -60,7 +60,7 @@ def aggregate_points(
     For example, if your points represented coffee shops and each point has a TOTAL_SALES attribute, you can get statistics like the sum of all TOTAL_SALES within the polygon, or the minimum or maximum TOTAL_SALES value, or the standard deviation of all sales within the polygon.
 
     ====================================    ====================================================================
-    **Argument**                            **Description**
+    **Parameter**                            **Description**
     ------------------------------------    --------------------------------------------------------------------
     point_layer                             Required point layer. The point features that will be aggregated
                                             into the polygons in the polygon_layer. See :ref:`Feature Input<FeatureInput>`.
@@ -253,7 +253,7 @@ def summarize_nearby(
       store accessibility.
 
     =========================   ====================================================================================================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -------------------------   --------------------------------------------------------------------------------------------------------------------
     sum_nearby_layer            Required :class:`~arcgis.features.FeatureLayer` . Point, line, or polygon features from which distances will be measured to features in the ``summary_layer``. See :ref:`Feature Input<FeatureInput>`.
     -------------------------   --------------------------------------------------------------------------------------------------------------------
@@ -524,7 +524,7 @@ def summarize_center_and_dispersion(
     * Are there directional trends?
 
     ====================    ============================================================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     --------------------    --------------------------------------------------------------------------------------------
     analysis_layer          Required :class:`~arcgis.features.FeatureLayer` . The point, line, or polygon features to be analyzed. See :ref:`Feature Input<FeatureInput>`.
     --------------------    --------------------------------------------------------------------------------------------
@@ -665,7 +665,7 @@ def summarize_within(
     simple statistics about the attributes of the features in the ``summary_layer``, such as sum, mean, minimum, maximum, and so on.
 
     =====================================   =========================================================
-    **Argument**                            **Description**
+    **Parameter**                            **Description**
     -------------------------------------   ---------------------------------------------------------
     sum_within_layer                        Required :class:`~arcgis.features.FeatureLayer` . The polygon features. Features, or
                                             portions of features, in the ``summary_layer`` (below) that fall within
@@ -840,7 +840,7 @@ def join_features(
     from one feature to another based on spatial and attribute relationships.
 
     ============================================================================================    =================================================================================================================================
-    **Argument**                                                                                    **Description**
+    **Parameter**                                                                                    **Description**
     --------------------------------------------------------------------------------------------    ---------------------------------------------------------------------------------------------------------------------------------
     target_layer                                                                                    Required layer. The point, line, polygon or table layer that will have attributes from
                                                                                                     the ``join_layer`` appended to its table. See :ref:`Feature Input<FeatureInput>`.

@@ -20,7 +20,7 @@ class DataStore(_BaseKube):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         url                    Required string. The machine URL.
         ------------------     --------------------------------------------------------------------
@@ -96,7 +96,7 @@ class DataStores(_BaseKube):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         url                    Required string. The machine URL.
         ------------------     --------------------------------------------------------------------
@@ -228,7 +228,7 @@ class DataStores(_BaseKube):
         Registers a new data item with the data store.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required string. The dictionary representing the data item.
                                See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000001s9000000
@@ -265,7 +265,7 @@ class DataStores(_BaseKube):
         register operation.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required string. The JSON representing the data item.
                                See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000001s9000000
@@ -286,7 +286,7 @@ class DataStores(_BaseKube):
         Registers a new data item with the server's data store.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required string. The JSON representing the data item.
                                See http://resources.arcgis.com/en/help/arcgis-rest-api/index.html#//02r3000001s9000000
@@ -311,7 +311,7 @@ class DataStores(_BaseKube):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         path                   Required string. The path to the share folder.
         ==================     ====================================================================
@@ -351,7 +351,7 @@ class DataStores(_BaseKube):
         Use this operation to search through the various data items that are registered in the server's data store.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         parent_path            Optional string. The path of the parent under which to find items.
         ------------------     --------------------------------------------------------------------
@@ -410,7 +410,7 @@ class DataStores(_BaseKube):
         that affect the behavior of the data holdings of the server.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         config                 Required string. A JSON string containing the data store configuration.
         ==================     ====================================================================
@@ -430,7 +430,7 @@ class DataStores(_BaseKube):
         that affect the behavior of the data holdings of the server.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         config                 Required string. A JSON string containing the data store configuration.
         ==================     ====================================================================

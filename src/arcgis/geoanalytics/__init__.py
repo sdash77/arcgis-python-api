@@ -60,7 +60,7 @@ def define_output_datastore(
     to default.
 
     ==========================   ===============================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     --------------------------   ---------------------------------------------------------------
     datastore                    Optional Datastore/String. This specifies the big data file
                                  share to save GeoAnalyticss results to. If specified as None the

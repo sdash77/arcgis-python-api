@@ -543,7 +543,7 @@ def _format_from_config(
     Identifies and instantiates a format object from a feed configuration json dict
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     config                 dict. The feed configuration json/dict.
     ==================     ====================================================================

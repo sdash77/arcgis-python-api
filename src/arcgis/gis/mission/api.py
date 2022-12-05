@@ -163,7 +163,7 @@ class Mission(object):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         title	               Required String. The name of the report.
         ------------------     --------------------------------------------------------------------
@@ -288,7 +288,7 @@ class MissionCatalog:
         Creates a new `Mission` on the enterprise.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         title	               Required. String. The title of the mission. This is the human readable title that is displayed to users.
         ------------------     --------------------------------------------------------------------

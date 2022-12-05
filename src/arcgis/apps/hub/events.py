@@ -255,7 +255,7 @@ class EventManager(object):
         Adds an event for an initiative.
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         event_properties      Required dictionary. See table below for the keys and values.
         =================     ====================================================================
@@ -396,7 +396,7 @@ class EventManager(object):
         Searches for events within a Hub.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         initiative_id       Optional string. Initiative itemid.
         ---------------     --------------------------------------------------------------------
@@ -428,7 +428,7 @@ class EventManager(object):
         """Get the event for the specified event_id.
 
         =======================    =============================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         -----------------------    -------------------------------------------------------------
         event_id                   Required integer. The event identifier.
         =======================    =============================================================

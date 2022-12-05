@@ -68,7 +68,7 @@ class ValidationManager(object):
         Updates errors on the validation tables.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         error_features      Required List.  The error features to be updated.
 
@@ -148,7 +148,7 @@ class ValidationManager(object):
 
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         evaluation               Required List of Strings.  A list of evaluation types.
 

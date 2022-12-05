@@ -907,7 +907,7 @@ def edit_vehicle_routing_problem(
     analysis of only two routes.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     orders                                   Required FeatureSet. Specify one or more orders (up to 2,000).
                                              These are the locations that the routes of the vehicle routing
@@ -1300,7 +1300,7 @@ def solve_vehicle_routing_problem(
     route by the driver.
 
     ======================================    ==========================================================================================================================================
-    **Argument**                              **Description**
+    **Parameter**                              **Description**
     --------------------------------------    ------------------------------------------------------------------------------------------------------------------------------------------
     orders                                    Required :class:`~arcgis.features.FeatureSet`. Specify one or more orders (up to 2,000). These are the locations
                                               that the routes of the vehicle routing problem (VRP) analysis

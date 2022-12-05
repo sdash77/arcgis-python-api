@@ -16,6 +16,7 @@ try:
     import functools
     import time
     import importlib
+
     HAS_FASTAI = True
 except Exception as e:
     print(e)
@@ -27,6 +28,7 @@ except Exception as e:
 
 class ToolIsCancelled(Exception):
     pass
+
 
 class train_callback(LearnerCallback):
     def __init__(self, learn, stop_var):
@@ -40,6 +42,7 @@ class train_callback(LearnerCallback):
         is_present = importlib.util.find_spec("arcpy")
         if is_present is not None:
             import arcpy
+
             if arcpy.env.isCancelled:
                 raise ToolIsCancelled("Function aborted by User.")
         if self.counter > self.stop_var:
@@ -87,6 +90,7 @@ class EvaluateBatchSize:
                     is_present = importlib.util.find_spec("arcpy")
                     if is_present is not None:
                         import arcpy
+
                         if arcpy.env.isCancelled:
                             raise ToolIsCancelled("Function aborted by User.")
                     if self.is_executing == False:

@@ -45,7 +45,7 @@ class MultiTaskRoadLearner(Learner):
         Show `rows` result of predictions on `ds_type` dataset.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    number of rows of data to be displayed, if
                                 batch size is smaller than the rows will
@@ -54,7 +54,7 @@ class MultiTaskRoadLearner(Learner):
         **Keyword Arguments**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         alpha                   Opacity parameter for label overlay on image
                                 float [0..1]

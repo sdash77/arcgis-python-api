@@ -96,7 +96,7 @@ def connect_origins_to_destinations(
     paired origins and destinations.
 
     ===================================     ===============================================================
-    **Argument**                            **Description**
+    **Parameter**                            **Description**
     -----------------------------------     ---------------------------------------------------------------
     origins_layer                           Required layer. The starting point or points of the
                                             routes to be generated. See :ref:`Feature Input<FeatureInput>`.
@@ -439,7 +439,7 @@ def create_buffers(
     one mile of the school.
 
     =========================    =======================================================================================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     -------------------------    -----------------------------------------------------------------------------------------------------------------------
     input_layer                  Required point, line or polygon feature layer. The input features to be buffered. See :ref:`Feature Input<FeatureInput>`.
     -------------------------    -----------------------------------------------------------------------------------------------------------------------
@@ -665,7 +665,7 @@ def create_drive_time_areas(
     that runs this task.
 
     =========================    =========================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     -------------------------    ---------------------------------------------------------
     input_layer                  Required point feature layer. The points around which travel areas
                                  based on a mode of transportation will be drawn.
@@ -981,7 +981,7 @@ def find_nearest(
     The connecting line layer contains information about the start and nearest locations and the distances between.
 
     =========================    =========================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     -------------------------    ---------------------------------------------------------
     analysis_layer               Required layer. The features from which the nearest locations are found. This layer can have point, line, or polygon features. See :ref:`Feature Input<FeatureInput>`.
     -------------------------    ---------------------------------------------------------
@@ -1286,7 +1286,7 @@ def plan_routes(
     due to the given parameter settings; and a layer of directions containing the travel itinerary for each route.
 
     ============================    ==================================================================================================
-    **Argument**                    **Description**
+    **Parameter**                    **Description**
     ----------------------------    --------------------------------------------------------------------------------------------------
     stops_layer                     Required feature layer. The points that the vehicles, drivers, or routes, should visit.
                                     The fields on the input stops are included in the output stops, so if your input

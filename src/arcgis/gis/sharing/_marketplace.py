@@ -72,7 +72,7 @@ class MarketPlaceManager:
 
 
         ======================      ====================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         ----------------------      --------------------------------------------------------------------
         query                       Optional string. The query string to use to search.
         ----------------------      --------------------------------------------------------------------
@@ -145,7 +145,7 @@ class MarketPlaceManager:
         A listing in the marketplace. The listing and its corresponding item share the same ID.
 
         =====================       ========================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         ---------------------       ----------------------------------------
         itemid                      Required String. The item id.
         =====================       ========================================
@@ -170,7 +170,7 @@ class MarketPlaceManager:
             Only vendor org admins can invoke this operation.
 
         =====================       ========================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         ---------------------       ----------------------------------------
         itemid                      Required String. The item id.
         =====================       ========================================
@@ -206,7 +206,7 @@ class MarketPlaceManager:
         with request purchase information privilege.
 
         =====================       ========================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         ---------------------       ----------------------------------------
         itemid                      Required String. The item id.
         =====================       ========================================
@@ -239,7 +239,7 @@ class MarketPlaceManager:
         purchase information privilege.
 
         ==========================      ==================================================================================================================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         --------------------------      ------------------------------------------------------------------------------------------------------------------------------------------------------------------
         itemid                          Required String. The item id.
         --------------------------      ------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -283,7 +283,7 @@ class MarketPlaceManager:
         be provisioned in one request.
 
         =====================       ====================================================================================================================================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         ---------------------       ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
         itemid                      Required String. The item id.
         ---------------------       ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -325,7 +325,7 @@ class MarketPlaceManager:
         interests expressed by this organization for items in the marketplace.
 
         =====================       ====================================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         ---------------------       ------------------------------------------------------------------------------------
         status                      Optional String. Status of the listings to be returned. The default value is active.
 
@@ -351,7 +351,7 @@ class MarketPlaceManager:
     ) -> dict:
         """
         =====================       ====================================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         ---------------------       ------------------------------------------------------------------------------------
         itemid                      Required String. The item id.
         ---------------------       ------------------------------------------------------------------------------------
@@ -400,7 +400,7 @@ class MarketPlaceManager:
         purchasing orgs can invoke this operation.
 
         =====================       =================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         ---------------------       ---------------------------------
         itemid                      Required String. The item id.
         =====================       =================================
@@ -426,7 +426,7 @@ class MarketPlaceManager:
         assigned to users in their organization.
 
         =====================       ==============================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         ---------------------       ------------------------------
         itemid                      Required String. The item id.
         =====================       ==============================
@@ -447,7 +447,7 @@ class MarketPlaceManager:
         members with the manage licenses privilege to retrieve entitlements assigned to the user.
 
         =====================       ==============================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         ---------------------       ------------------------------
         itemid                      Required String.
         ---------------------       ------------------------------
@@ -478,7 +478,7 @@ class MarketPlaceManager:
         in the marketplace. This operation allows filtering and sorting of provisions.
 
         =====================       ====================================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         ---------------------       ------------------------------------------------------------------------------------
         itemid                      Optional String. The item id of the provision to be returned.
         ---------------------       ------------------------------------------------------------------------------------

@@ -242,7 +242,7 @@ class Portal(object):
             Portal or the owner of the group.
 
         ============  ======================================
-        **Argument**  **Description**
+        **Parameter**  **Description**
         ------------  --------------------------------------
         user_names    list of usernames
         ------------  --------------------------------------
@@ -277,7 +277,7 @@ class Portal(object):
         Removes the group's thumbnail
 
         ============  ======================================
-        **Argument**  **Description**
+        **Parameter**  **Description**
         ------------  --------------------------------------
         group_id      required string, The group id to remove the thumbnail for.
         ============  ======================================
@@ -318,7 +318,7 @@ class Portal(object):
 
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         item_properties     Required dictionary, see below for the keys and values
         ---------------     ----------------------------------------------------
@@ -614,7 +614,7 @@ class Portal(object):
            dict returned from another PortalPy call and copying it.
 
         ============  ======================================
-        **Argument**  **Description**
+        **Parameter**  **Description**
         ------------  --------------------------------------
         group         dict object
         ------------  --------------------------------------
@@ -666,7 +666,7 @@ class Portal(object):
         """Creates a group and returns a group id if successful.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         title             required string, name of the group
         ----------------  --------------------------------------------------------
@@ -711,7 +711,7 @@ class Portal(object):
         """Deletes a group.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         group_id          string containing the id for the group to be deleted.
         ================  ========================================================
@@ -736,7 +736,7 @@ class Portal(object):
         """Deletes an item.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         item_id           required string, unique identifier for the item
         ----------------  --------------------------------------------------------
@@ -770,7 +770,7 @@ class Portal(object):
         """checks if you can delete the item.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         item_id           Required string, unique identifier for the item
         ----------------  --------------------------------------------------------
@@ -804,7 +804,7 @@ class Portal(object):
         """Enable or disable delete protection on the item
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         item_id           Required string, unique identifier for the item
         ----------------  --------------------------------------------------------
@@ -839,7 +839,7 @@ class Portal(object):
         """Shares public item with the specified list of groups belonging to caller
 
         =====================   ========================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   --------------------------------------------------------
         item_id                 Required string, unique identifier for the item
         ---------------------   --------------------------------------------------------
@@ -868,7 +868,7 @@ class Portal(object):
         """Stops sharing public item with the specified list of groups belonging to caller
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         item_id           required string, unique identifier for the item
         ----------------  --------------------------------------------------------
@@ -902,7 +902,7 @@ class Portal(object):
         """Shares an item with the specified list of groups
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         item_id           required string, unique identifier for the item
         ----------------  --------------------------------------------------------
@@ -948,7 +948,7 @@ class Portal(object):
         """Stops sharing the item with the specified list of groups
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         item_id           required string, unique identifier for the item
         ----------------  --------------------------------------------------------
@@ -989,7 +989,7 @@ class Portal(object):
 
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         username          required string, the name of the user
         ----------------  --------------------------------------------------------
@@ -1025,7 +1025,7 @@ class Portal(object):
             require a token and this can be appended to those requests.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         username          required string, name of the user
         ----------------  --------------------------------------------------------
@@ -1525,7 +1525,7 @@ class Portal(object):
             The user executing the command must be group owner
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         user_names:       a required string list of users to invite
         ----------------  --------------------------------------------------------
@@ -1626,7 +1626,7 @@ class Portal(object):
              for the situation when you need to log in later.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         username          required string
         ----------------  --------------------------------------------------------
@@ -1705,7 +1705,7 @@ class Portal(object):
             can not be undone.  The changes are immediately made and permanent.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         username          required string, user who will have items/groups transferred
         ----------------  --------------------------------------------------------
@@ -1729,7 +1729,7 @@ class Portal(object):
 
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         group_id          required string, unique identifier for the group
         ----------------  --------------------------------------------------------
@@ -1761,7 +1761,7 @@ class Portal(object):
                 reassign_user method.  This method only moves one item at a time.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         item_id           required string, unique identifier for the item
         ----------------  --------------------------------------------------------
@@ -1809,7 +1809,7 @@ class Portal(object):
             be provided.
 
         =====================   ========================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   --------------------------------------------------------
         username                required string, account being reset
         ---------------------   --------------------------------------------------------
@@ -1844,7 +1844,7 @@ class Portal(object):
         """Remove users from a group.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         user_names        required string, comma-separated list of users
         ----------------  --------------------------------------------------------
@@ -1961,7 +1961,7 @@ class Portal(object):
                set outside_org to True.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         q                 required string, query string.  See notes.
         ----------------  --------------------------------------------------------
@@ -2078,7 +2078,7 @@ class Portal(object):
                into parenthesis when using outside_org.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         q                 required string, query string.  See notes.
         ----------------  --------------------------------------------------------
@@ -2187,7 +2187,7 @@ class Portal(object):
             enterprise accounts.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         username          required string, must be unique in the Portal, >4 characters
         ----------------  --------------------------------------------------------
@@ -2239,7 +2239,7 @@ class Portal(object):
             the description argument.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         username          required string, name of the user to be updated.
         ----------------  --------------------------------------------------------
@@ -2319,7 +2319,7 @@ class Portal(object):
             do everything that is possible in Portal.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         username          required string, the name of the user whose role will change
         ----------------  --------------------------------------------------------
@@ -2365,7 +2365,7 @@ class Portal(object):
             Only provide the values for the arguments you wish to update.
 
         ==================      ========================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------
         group_id                Required string, the group to modify
         ------------------      --------------------------------------------------------
@@ -2497,7 +2497,7 @@ class Portal(object):
 
 
         ==================     ====================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     ----------------------------------------------------
         item_properties        optional dictionary, see below for the keys and values
         ------------------     ----------------------------------------------------
@@ -2685,7 +2685,7 @@ class Portal(object):
         """Creates a folder for the given user with the given title.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         owner             required string, the name of the user
         ----------------  --------------------------------------------------------
@@ -2706,7 +2706,7 @@ class Portal(object):
         """Deletes folder owned by owner with the given folder name.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         owner             required string, the name of the user
         ----------------  --------------------------------------------------------
@@ -2745,7 +2745,7 @@ class Portal(object):
         """Finds the folder for a particular owner and returns its id.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         owner             required string, the name of the user
         ----------------  --------------------------------------------------------

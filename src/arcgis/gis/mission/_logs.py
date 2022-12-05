@@ -84,7 +84,7 @@ class LogManager(object):
         Get/set the current log settings.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         value                  dict. A dictionary with the key/values pairs to modify settings.
         ==================     ====================================================================
@@ -135,7 +135,7 @@ class LogManager(object):
         aggregate, filter, and page through logs across the entire site.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         start_time             Optional string/datetime.datetime/integer. The most recent time to query.  Default is now.
                                Time can be specified in milliseconds since UNIX epoch, or as an

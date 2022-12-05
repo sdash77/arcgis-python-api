@@ -87,7 +87,7 @@ class MaXDeepLab(ModelExtension):
     Creates a :class:`~arcgis.learn.MaXDeepLab` panoptic segmentation model.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data
                             object from :meth:`~arcgis.learn.prepare_data`  function.
@@ -132,7 +132,7 @@ class MaXDeepLab(ModelExtension):
         Creates a ``MaXDeepLab Panoptic Segmentation`` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.

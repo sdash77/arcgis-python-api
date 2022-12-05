@@ -15,7 +15,7 @@ def _estimate_credits(task, parameters, gis=None):
     Estimates the number of credits a spatial analysis operation will take.
 
     =======================     ====================================================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -----------------------     --------------------------------------------------------------------
     task                        Required String. The name of the analysis tool.
     -----------------------     --------------------------------------------------------------------

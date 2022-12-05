@@ -34,7 +34,7 @@ class SQNSeg(PointCNN):
     Creates SQNSeg point cloud segmentation model.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
                             `prepare_data` function.
@@ -46,7 +46,7 @@ class SQNSeg(PointCNN):
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     encoder_params          Optional dictionary. The keys of the dictionary are
                             `out_channels`, `sub_sampling_ratio`, `k_n`.
@@ -124,7 +124,7 @@ class SQNSeg(PointCNN):
         or Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -218,7 +218,7 @@ class SQNSeg(PointCNN):
 
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         path                    Required string. The path to folder where the las
                                 files which needs to be predicted are present.
@@ -235,7 +235,7 @@ class SQNSeg(PointCNN):
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         remap_classes           Optional dictionary {int:int}. Mapping from
                                 class values to user defined values. Please query

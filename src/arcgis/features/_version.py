@@ -19,7 +19,7 @@ class VersionManager(object):
     See the `Version Management Service <https://developers.arcgis.com/rest/services-reference/version-management-service.htm>`_ for more information
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     url                 Required String.  The URI to the web resource.
     ---------------     --------------------------------------------------------------------
@@ -86,7 +86,7 @@ class VersionManager(object):
         and access (default is public) may be optionally set.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         name                Required String. The name of the version
         ---------------     --------------------------------------------------------------------
@@ -125,7 +125,7 @@ class VersionManager(object):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         version             Required String. The name of the version that is locked.
         ---------------     --------------------------------------------------------------------
@@ -188,7 +188,7 @@ class VersionManager(object):
         and will be returned.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         owner               Optional String. A filter the versions by the owner.
         ---------------     --------------------------------------------------------------------
@@ -209,7 +209,7 @@ class VersionManager(object):
         Finds and Locations a Version by it's name
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         version             Required String. This is the name of the version to locate.
         ---------------     --------------------------------------------------------------------
@@ -239,7 +239,7 @@ class Version(object):
     A `Version` represents a single branch in the version tree.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     url                 Required String.  The URI to the web resource.
     ---------------     --------------------------------------------------------------------
@@ -402,7 +402,7 @@ class Version(object):
         view mode.
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         value                   Required string.
 
@@ -514,7 +514,7 @@ class Version(object):
         Get/Set the Property to Save the Changes.
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         value                   Required bool.
                                 Values:
@@ -572,7 +572,7 @@ class Version(object):
         Starts an edit session for the current user.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         save                Optional Boolean. States if the values should be saved. If the value
                             is set, it will override the :attr:`~arcgis.features._version.Version.save_edits` property.
@@ -657,7 +657,7 @@ class Version(object):
         version.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         moment              Required String. Moment representing the new tail of the version;
                             all forward moments will be trimmed.
@@ -693,7 +693,7 @@ class Version(object):
         conflicts exist, they should be resolved.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         end_with_conflict      Optional Boolean. Specifies if the reconcile should abort when
                                conflicts are found. The default is False
@@ -761,7 +761,7 @@ class Version(object):
         `DeleteUpdate` conflicts are identified during the last reconcile.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         rows                   Required List.  An array of the rows to be restored
 
@@ -804,7 +804,7 @@ class Version(object):
         description, and access permissions.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         owner               Optional String. The new name of the owner.
         ---------------     --------------------------------------------------------------------
@@ -862,7 +862,7 @@ class Version(object):
         responsibility to determine which are differences, and which are conflicts.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         result_type         Required String.  Determines the type of results to return.
                             The default result type is `objectIds`.
@@ -975,7 +975,7 @@ class Version(object):
         conflict.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         conflicts           Required List.  The conflicts that are being inspected (removed)
                             from the conflict set.
@@ -1024,7 +1024,7 @@ class Version(object):
         will have to reconcile again before posting.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         rows                Optional List of dictionaries representing the features or objects
                             for posting a subset of edits in the current version. The

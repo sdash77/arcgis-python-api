@@ -59,7 +59,7 @@ class GPJobManager:
         The query operation allows you to query jobs pertaining to a geoprocessing service.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         status              Required List[String]. The current status of a job. The value set with
                             this parameter will be used to filter the jobs by that set job
@@ -187,7 +187,7 @@ class KubeService(object):
         not be able to change their instance type.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         provider            Required String. Specifies the service instance as either a shared
                             (DMaps) or dedicated (ArcObjects11) instance type. These values are case-sensitive.
@@ -281,7 +281,7 @@ class KubeService(object):
         (cpuMin, cpuMax, memoryMin, memoryMax).
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required Dict[str, Any]. The service scaling properties.
         ===============     ====================================================================
@@ -548,7 +548,7 @@ class ServicesManager(object):
         check if the service can be created before calling `create_service`.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         service_type        Required String.  The type of service to create.
         ---------------     --------------------------------------------------------------------
@@ -589,7 +589,7 @@ class ServicesManager(object):
         submitting a JSON representation of the service to this operation.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         service_json        Required dict. The JSON representation of the service being created.
         ---------------     --------------------------------------------------------------------
@@ -630,7 +630,7 @@ class ServicesManager(object):
     def _delete_services(self, services: list[dict[str, Any]]) -> bool:
         """
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         services            Required list[dict[str, Any]]. A list of services, represented as a
                             list of dictionaries containing the folders containing the services,
@@ -668,7 +668,7 @@ class ServicesManager(object):
         Creates a folder on the hosting server
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         folder              Required string. Name of the folder.
         ===============     ====================================================================
@@ -688,7 +688,7 @@ class ServicesManager(object):
         Removes a folder on the hosting server
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         folder              Required string. Name of the folder.
         ===============     ====================================================================

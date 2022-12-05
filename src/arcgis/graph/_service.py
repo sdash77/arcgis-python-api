@@ -20,7 +20,7 @@ class KnowledgeGraph:
     methods to search and query the graph.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Knowledge Graph service URL
     ------------------     --------------------------------------------------------------------
@@ -78,7 +78,7 @@ class KnowledgeGraph:
         `Learn more about searching a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-graph-search.htm>`_
 
         ================    ===============================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
         search              Required String. The search to perform on the Knowledge Graph.
         ----------------    ---------------------------------------------------------------
@@ -143,7 +143,7 @@ class KnowledgeGraph:
         `Learn more about querying a knowledge graph <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-graph-query.htm>`_
 
         ================    ===============================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
         query               Required String. Allows you to return the entities and
                             relationships in a graph, as well as the properties of those

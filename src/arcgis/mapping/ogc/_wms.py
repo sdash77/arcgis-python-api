@@ -16,7 +16,7 @@ class WMSLayer(BaseOGC):
     Represents a Web Map Service, which is an OGC web service endpoint.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     url                 Required string. The administration URL for the ArcGIS Server.
     ---------------     --------------------------------------------------------------------

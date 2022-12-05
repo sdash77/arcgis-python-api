@@ -530,7 +530,7 @@ def generate_service_areas(
     determine which residents are able to reach the store within three minutes and are thus more likely to shop there.
 
     =================================================     ========================================================================
-    **Argument**                                          **Description**
+    **Parameter**                                          **Description**
     -------------------------------------------------     ------------------------------------------------------------------------
     facilities                                            Required :class:`~arcgis.features.FeatureSet` . The facilities around which service areas are
                                                           generated. You can load up to 1,000 facilities. The facilities feature set has an

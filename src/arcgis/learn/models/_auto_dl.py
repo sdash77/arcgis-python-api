@@ -24,6 +24,7 @@ except Exception as e:
     )
     HAS_FASTAI = False
 
+
 class RedirectedStdout:
     def __init__(self):
         self._stdout = None
@@ -56,7 +57,7 @@ class ImageryModel(ArcGISModel):
         which can be used to further fine tune the models saved using AutoDL.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         path                    Required string. Path to
                                 Esri Model Definition(EMD) file.
@@ -113,7 +114,7 @@ class ImageryModel(ArcGISModel):
         specified learning rates
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         epochs                  Optional integer. Number of cycles of training
                                 on the data. Increase it if the model is underfitting.
@@ -204,7 +205,7 @@ class ImageryModel(ArcGISModel):
         Learning Package zip for deployment to Image Server or ArcGIS Pro.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Name of the model to save. It
                                 stores it at the pre-defined location. If path
@@ -272,7 +273,7 @@ class ImageryModel(ArcGISModel):
         optimum learning rate for training the model.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         allow_plot              Optional boolean. Display the plot of losses
                                 against the learning rates and mark the optimal
@@ -323,7 +324,7 @@ class ImageryModel(ArcGISModel):
         Computes mean IOU on the validation set for each class.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         mean                    Optional bool. If False returns class-wise
                                 mean IOU, otherwise returns mean iou of all
@@ -353,7 +354,7 @@ class ImageryModel(ArcGISModel):
         Computes average precision on the validation set for each class.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         detect_thresh           Optional float. The probability above which
                                 a detection will be considered for computing
@@ -391,7 +392,7 @@ class AutoDL:
     arcgis.learn supported deep learning models within a specified time limit.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required ImageryDataObject. Returned data object from
                             :meth:`~arcgis.learn.prepare_data`  function.
@@ -414,7 +415,7 @@ class AutoDL:
                             Supported Object Detection models:
 
                             ["SingleShotDetector", "RetinaNet", "FasterRCNN", "YOLOv3", "MMDetection"]
-                            ["SingleShotDetector", "RetinaNet", "FasterRCNN", "YOLOv3", "ATSS", 
+                            ["SingleShotDetector", "RetinaNet", "FasterRCNN", "YOLOv3", "ATSS",
                             "CARAFE", "CascadeRCNN", "CascadeRPN", "DCN"]
                             Supported Pixel Classification models:
                             ["DeepLab", "UnetClassifier", "PSPNetClassifier",
@@ -654,7 +655,7 @@ class AutoDL:
         from ._autodl_utils import EvaluateBatchSize
 
         data_path = self._data.path
-        dataset_type_temp = dataset_type=self._data.dataset_type
+        dataset_type_temp = dataset_type = self._data.dataset_type
 
         try:
 
@@ -691,7 +692,6 @@ class AutoDL:
             self._data = prepare_data(
                 data_path, batch_size=2, dataset_type=dataset_type_temp
             )
-
 
         if backbone is None:
             if not self._model_stats()[model]["is_mm"]:
@@ -885,7 +885,7 @@ class AutoDL:
                     pd.DataFrame({key: [val] for key, val in miou.items()}),
                 ]
             )
-            
+
             if accuracy >= self._max_accuracy:
                 self._is_best = True
                 self._max_accuracy = accuracy
@@ -1329,7 +1329,7 @@ class AutoDL:
         Shows sample results for the model.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional number of rows. By default, 5 rows
                                 are displayed.

@@ -1017,7 +1017,7 @@ class TabularDataObject(object):
         """
         Shows a chunk of data prepared without applying transforms.
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional integer. Number of rows of dataframe
                                 or graph to plot. This parameter is not used

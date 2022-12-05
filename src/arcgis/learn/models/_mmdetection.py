@@ -245,7 +245,7 @@ class MMDetectionConfig:
 class MMDetection(ModelExtension):
     """
     =============================   =============================================
-    **Argument**                    **Description**
+    **Parameter**                    **Description**
     -----------------------------   ---------------------------------------------
     data                            Required fastai Databunch. Returned data object from
                                     :meth:`~arcgis.learn.prepare_data`  function.
@@ -346,7 +346,7 @@ class MMDetection(ModelExtension):
         Creates a :class:`~arcgis.learn.MMDetection` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -438,7 +438,7 @@ class MMDetection(ModelExtension):
         Runs prediction on an Image. This method is only supported for RGB images.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         image_path              Required. Path to the image file to make the
                                 predictions on.
@@ -507,7 +507,7 @@ class MMDetection(ModelExtension):
         This method is only supported for RGB images.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         input_video_path        Required. Path to the video file to make the
                                 predictions on.
@@ -577,7 +577,7 @@ class MMDetection(ModelExtension):
         Computes average precision on the validation set for each class.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         detect_thresh           Optional float. The probability above which
                                 a detection will be considered for computing
@@ -602,7 +602,7 @@ class MMDetection(ModelExtension):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.

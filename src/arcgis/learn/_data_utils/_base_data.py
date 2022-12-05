@@ -55,7 +55,7 @@ class ArcgisData(object):
         different data object formt such as object detection, pixel classification etc.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         path                    Required string. Path to data directory.
         ---------------------   -------------------------------------------
@@ -101,7 +101,7 @@ class ArcgisData(object):
         **Keyword Arguments**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         imagery_type            Optional string. Type of imagery used to export
                                 the training data, valid values are:

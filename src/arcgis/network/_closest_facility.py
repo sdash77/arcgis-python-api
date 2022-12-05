@@ -608,7 +608,7 @@ def find_closest_facilities(
     that take longer than 15 minutes to reach based on the traffic conditions will not be included in the results.
 
     ======================================  ==========================================================================================================================================
-    **Argument**                            **Description**
+    **Parameter**                            **Description**
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     incidents                               Required :class:`~arcgis.features.FeatureSet` . Specify one or more incidents (up to 1,000). These are the locations from which the
                                             tool searches for the nearby locations.
