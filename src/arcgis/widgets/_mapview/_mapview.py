@@ -556,25 +556,25 @@ class MapView(widgets.DOMWidget):
         Get/Set the map widget's extent.
 
 
-            ==================     ====================================================================
-            **Parameter**           **Description**
-            ------------------     --------------------------------------------------------------------
-            value                  Required dict.
-                                   A `[[xmin, ymin], [xmax, ymax]]` list, Spatially Enabled Data Frame ``full_extent``,
-                                   or a dict that represents the JSON of the map widget's extent.
+        ==================     ====================================================================
+        **Parameter**           **Description**
+        ------------------     --------------------------------------------------------------------
+        value                  Required dict.
+                                A `[[xmin, ymin], [xmax, ymax]]` list, Spatially Enabled Data Frame ``full_extent``,
+                                or a dict that represents the JSON of the map widget's extent.
 
-                                    Examples for each:
-                                    web_map.extent = [[-124.35, 32.54], [-114.31, 41.95]]
-                                    web_map.extent = data_frame.spatial.full_extent
-                                    web_map.extent = {
-                                            "xmin": -124.35,
-                                            "ymin": 32.54,
-                                            "xmax": -114.31,
-                                            "ymax": 41.95
-                                        }
-            ==================     ====================================================================
+                                Examples for each:
+                                web_map.extent = [[-124.35, 32.54], [-114.31, 41.95]]
+                                web_map.extent = data_frame.spatial.full_extent
+                                web_map.extent = {
+                                        "xmin": -124.35,
+                                        "ymin": 32.54,
+                                        "xmax": -114.31,
+                                        "ymax": 41.95
+                                    }
+        ==================     ====================================================================
 
-            .. code-block:: python
+        .. code-block:: python
 
                 #Usage Example
 
@@ -1864,7 +1864,7 @@ class MapView(widgets.DOMWidget):
         folder              Optional string. Name of the folder where placing item.
         ===============     ====================================================================
 
-        *Key:Value Dictionary Options for Argument item_properties*
+        *Key:Value Dictionary Options for Parameter item_properties*
 
         =================  =====================================================================
         **Key**            **Value**
@@ -2096,7 +2096,7 @@ class MapView(widgets.DOMWidget):
         metadata            Optional string. Either a path or URL to the metadata.
         ===============     ====================================================================
 
-        *Key:Value Dictionary Options for Argument item_properties*
+        *Key:Value Dictionary Options for Parameter item_properties*
 
         =================  =====================================================================
         **Key**            **Value**

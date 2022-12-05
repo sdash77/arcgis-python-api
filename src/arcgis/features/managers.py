@@ -1393,7 +1393,7 @@ class WebHook(object):
         -------------------------------------    ---------------------------------------------------------------------------
         hook_url                                 Optional String.  The URL to which the payloads will be delivered.
         -------------------------------------    ---------------------------------------------------------------------------
-        change_types                             Optional :class:`~arcgis.features.managers.WebHookEvents` or String.  
+        change_types                             Optional :class:`~arcgis.features.managers.WebHookEvents` or String.
                                                  The default is "*", which means all events.  This is a
                                                  comma separated list of values that will fire off the web hook.  The list
                                                  each supported type is below.
@@ -1404,7 +1404,7 @@ class WebHook(object):
         -------------------------------------    ---------------------------------------------------------------------------
         active                                   Optional bool. Enable or disable call backs when the webhook is triggered.
         -------------------------------------    ---------------------------------------------------------------------------
-        schedule_info                            Optional :class:`~arcgis.features.managers.WebHookScheduleInfo` or Dict. 
+        schedule_info                            Optional :class:`~arcgis.features.managers.WebHookScheduleInfo` or Dict.
                                                  Allows the trigger to be used as a given schedule.
 
                                                  Example Dictionary:
