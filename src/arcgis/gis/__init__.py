@@ -2750,8 +2750,8 @@ class UserManager(object):
                           delete from the organization.
         ================  ====================================================
 
-        :return: 
-           list containing the :class:`users <arcgis.gis.User>` 
+        :return:
+           list containing the :class:`users <arcgis.gis.User>`
            who could not be removed.
         """
         from arcgis._impl.common._utils import chunks as _chunks
@@ -13942,7 +13942,7 @@ class Item(dict):
 
             # Usage Example
 
-            >>> item.update(description ="aggregated US hurricane data", 
+            >>> item.update(description ="aggregated US hurricane data",
                             title = "US Hurricane Data",
                             tags = "Hurricanes, USA, Natural Disasters")
         """
