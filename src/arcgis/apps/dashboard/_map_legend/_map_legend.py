@@ -8,7 +8,7 @@ class MapLegend(_BaseWidget):
     Create a MapLegend widget for Dashboard
 
     =========================   ===========================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -------------------------   -------------------------------------------
     map_widget                  Required web map widget. Legend for this
                                 Map widget is displayed.

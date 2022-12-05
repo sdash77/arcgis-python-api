@@ -19,6 +19,8 @@ from arcgis.gis import GIS
 from typing import Optional
 
 ########################################################################
+
+
 class Server(BaseServer):
     """
     An ArcGIS Server site used for hosting GIS web services.
@@ -52,7 +54,7 @@ class Server(BaseServer):
 
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Required string. The URL to the ArcGIS Server administration
                            end point for the ArcGIS Server site.
@@ -145,6 +147,7 @@ class Server(BaseServer):
     _catalog = None
     _sitemanager = None
     # ----------------------------------------------------------------------
+
     def __init__(self, url: str, gis: GIS = None, **kwargs):
         """Constructor"""
         if gis is None and len(kwargs) > 0:
@@ -199,7 +202,7 @@ class Server(BaseServer):
         Publishes a service definition file to ArcGIS Server.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         sd_file                Required string. The service definition file to be uploaded and published.
         ------------------     --------------------------------------------------------------------
@@ -287,7 +290,7 @@ class Server(BaseServer):
         machines.
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
         connection
         ----------------------     --------------------------------------------------------------------
@@ -390,7 +393,7 @@ class Server(BaseServer):
 
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
         admin_url                  Required string. The site URL of the currently live site. This is
                                    typically the Administrator Directory URL of one of the server
@@ -445,7 +448,7 @@ class Server(BaseServer):
         to this operation.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         location               Optional string. A path to a folder accessible to the server where
                                the exported site configuration will be written. If a location is
@@ -482,7 +485,7 @@ class Server(BaseServer):
         that you created using the exportSite operation.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         location               Required string. A file path to an exported configuration or an ID
                                referencing the stored configuration on the server.
@@ -517,7 +520,7 @@ class Server(BaseServer):
             successful upgrade of a server machine.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         run_async              Optional boolean. A flag to indicate if the operation needs to be run
                                asynchronously. The default value is False.
@@ -868,7 +871,7 @@ class SiteManager(object):
     the resources to be cleaned up.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     server                 Required string. The arcgis.gis.server object.
     ==================     ====================================================================
@@ -878,6 +881,7 @@ class SiteManager(object):
 
     _sm = None
     # ----------------------------------------------------------------------
+
     def __init__(self, server: Server, initialize: bool = False):
         """Constructor"""
         self._sm = server
@@ -928,7 +932,7 @@ class SiteManager(object):
         machines.
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
 
         url                        Required string. URI string to the site.
@@ -1026,7 +1030,7 @@ class SiteManager(object):
         Site operation instead.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         admin_url              Required string. The site URL of the currently live site. This is
                                typically the Administrator Directory URL of one of the server
@@ -1078,7 +1082,7 @@ class SiteManager(object):
         to this operation.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         location               Optional string. A path to a folder accessible to the server
                                where the exported site configuration will be written. If a location
@@ -1113,7 +1117,7 @@ class SiteManager(object):
         that you created using the exportSite operation.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         location               Required string. A file path to an exported configuration or an ID
                                referencing the stored configuration on the server.
@@ -1147,10 +1151,16 @@ class SiteManager(object):
             of a server machine.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         run_async              Required string. A flag to indicate if the operation needs to be run
                                asynchronously. The default value is False.
+        ------------------     --------------------------------------------------------------------
+        debug                  Optional Boolean. Introduced at 11.0. This parameter sets the log
+                               level for the upgrade process. If true, the log level is set to
+                               DEBUG during the upgrade, which can aid in troubleshooting issues
+                               related to the upgrade process. If false, the log level is set to
+                               VERBOSE during the upgrade process. The default value is false.
         ==================     ====================================================================
 
 

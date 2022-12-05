@@ -55,7 +55,7 @@ def _from_iob_tags(tokens_collection, tags_collection):
     Converts training data from ``IOB`` format to spacy offsets.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     tokens_collection       Required [list]. List of token lists
                             Example: [[This,is,a,test],[This,is,a,test1]]
@@ -93,7 +93,7 @@ def _from_json(path, text_key="text", offset_key="labels", encoding="UTF-8"):
     Converts training data from JSON format to spacy offsets.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     text_key                Optional:str='text. Json key under which text is available
     ---------------------   -------------------------------------------
@@ -159,7 +159,7 @@ class _NERData:
     #     Prepares a data object
     #
     #     =====================   ===========================================
-    #     **Argument**            **Description**
+    #     **Parameter**            **Description**
     #     ---------------------   -------------------------------------------
     #     dataset_type            Required string. ['ner_json', 'IOB', 'BILUO']
     #     ---------------------   -------------------------------------------
@@ -371,7 +371,7 @@ class _spaCyNERItemlist:
     Creates a dataset to store data within ``ner_databunch`` object.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     batch_size              Batch size.
     ---------------------   -------------------------------------------
@@ -450,7 +450,7 @@ class spaCyNERDatabunch:
     Creates a databunch object.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     ds                      Required data list returned from _ner_prepare_data().
     ---------------------   -------------------------------------------

@@ -92,7 +92,7 @@ class SchematicLayers(Layer):
         for full details.
 
         =======================      =======================================================================
-        **Argument**                 **Description**
+        **Parameter**                 **Description**
         -----------------------      -----------------------------------------------------------------------
         whereClause                  A where clause for the query filter. Any legal SQL where clause
                                      operating on the fields in the schematic diagram class table is allowed.

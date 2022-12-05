@@ -66,6 +66,8 @@ class PointRendROIHeads(RoIHeads):
             image_shapes (List[Tuple[H, W]])
             targets (List[Dict])
         """
+        train_val = getattr(self, "train_val", False)
+
         if targets is not None:
             for t in targets:
 
@@ -78,6 +80,8 @@ class PointRendROIHeads(RoIHeads):
                 ), "target labels must of int64 type"
 
         if self.training:
+            if train_val:
+                original_prpsl = [p.clone() for p in proposals]
             (
                 proposals,
                 matched_idxs,
@@ -101,10 +105,19 @@ class PointRendROIHeads(RoIHeads):
                 class_logits, box_regression, labels, regression_targets
             )
             losses = {"loss_classifier": loss_classifier, "loss_box_reg": loss_box_reg}
-        else:
-            boxes, scores, labels = self.postprocess_detections(
-                class_logits, box_regression, proposals, image_shapes
-            )
+        if not self.training or train_val:
+
+            if train_val:
+                box_features = self.box_roi_pool(features, original_prpsl, image_shapes)
+                box_features = self.box_head(box_features)
+                class_logits, box_regression = self.box_predictor(box_features)
+                boxes, scores, labels = self.postprocess_detections(
+                    class_logits, box_regression, original_prpsl, image_shapes
+                )
+            else:
+                boxes, scores, labels = self.postprocess_detections(
+                    class_logits, box_regression, proposals, image_shapes
+                )
             num_images = len(boxes)
             for i in range(num_images):
                 result.append(
@@ -166,7 +179,21 @@ class PointRendROIHeads(RoIHeads):
                 )
                 loss_mask = {"loss_mask": rcnn_loss_mask}
                 loss_mask_point = {"loss_mask_point": mask_logits}
-            else:
+            if not self.training or train_val:
+                if train_val:
+                    mask_pred_gt = []
+                    for res in result:
+                        mask_pred_gt.append(
+                            {
+                                "pred_boxes": res["boxes"],
+                                "pred_classes": res["labels"],
+                            }
+                        )
+                    mask_features = self.mask_roi_pool.eval()(features, mask_pred_gt)
+                    mask_features = self.mask_head.eval()(mask_features)
+                    mask_logits = self.mask_predictor.eval()(
+                        features, mask_features, mask_pred_gt
+                    )
                 labels = [r["labels"] for r in result]
                 masks_probs = maskrcnn_inference(mask_logits, labels)
                 for mask_prob, r in zip(masks_probs, result):

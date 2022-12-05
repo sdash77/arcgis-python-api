@@ -48,7 +48,7 @@ class StoryMap(object):
     unpublished changes on the GUI will be overwritten with your work from the API.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     item                Optional String or Item. The string for an item id or an item of type
                         'Story Map'. If no item is passed, a new story is created and saved to
@@ -244,7 +244,7 @@ class StoryMap(object):
         Show a preview of the story. The default is a width of 700 and height of 300.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         width               Optional integer. The desired width to show the preview.
         ---------------     --------------------------------------------------------------------
@@ -277,7 +277,7 @@ class StoryMap(object):
         Get/Set the date type shown on the story cover.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         date_type           Optional String. Set the desired date type for the story cover.
 
@@ -394,7 +394,7 @@ class StoryMap(object):
         made on the node in the story.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         node_id             Optional string. The node id for the node that should be returned.
                             This will return the class of the node if of type story content.
@@ -481,7 +481,7 @@ class StoryMap(object):
             To change the date seen on the story cover, use the ``cover_date`` property.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         title               Optional string. The title of the StoryMap cover.
         ---------------     --------------------------------------------------------------------
@@ -560,7 +560,7 @@ class StoryMap(object):
         text nodes to assign them to the navigation.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         nodes               Optional list of nodes to include in the navigation. These nodes can
                             only be of style heading ("h2").
@@ -619,7 +619,7 @@ class StoryMap(object):
         To add a custom theme to your story, pass in the item_id for the item of type Story Map Theme.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         theme               Required Themes Style or custom theme item id.
                             The theme to set the story to.
@@ -670,7 +670,7 @@ class StoryMap(object):
         Adding ``heading`` and ``description`` will change what is currently in place.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         content             Optional String. The content to be added. (Seen on the left side of
                             the credits.)
@@ -785,7 +785,7 @@ class StoryMap(object):
             to the documentation for each.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         content             Optional content of type:
                             :class:`~arcgis.apps.storymap.story_content.Image`,
@@ -879,7 +879,7 @@ class StoryMap(object):
         instead of moved if `delete_current` is set to True.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         node_id             Required String. The node id for the content that will be moved. Find a
                             list of node order by using the ``nodes`` property.
@@ -947,7 +947,7 @@ class StoryMap(object):
             other optimizations, such as updating the story's social/SEO metadata.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         title               Optional string. The title of the StoryMap.
         ---------------     --------------------------------------------------------------------
@@ -1143,7 +1143,7 @@ class StoryMap(object):
             Can be used with ArcGIS Online or with ArcGIS Enterprise starting 10.8.1
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         title               Optional string. The title of the duplicated story. Only available for
                             ArcGISOnline.
@@ -1195,7 +1195,7 @@ class StoryMap(object):
             consuming.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         target_story        Required StoryMap instance. The target story that the content will be
                             copied to.

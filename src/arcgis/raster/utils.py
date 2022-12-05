@@ -10,7 +10,7 @@ def generate_direct_access_url(
     Function to get the direct access url for user's rasterStore on ArcGIS Online.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     expiration                               Optional integer. Direct access URL expiration time in minutes.
                                              (The default is 1440 ie. 24 hours)
@@ -44,7 +44,7 @@ def upload_imagery_to_agol_userstore(
     needs to be pre-installed. Refer https://docs.microsoft.com/en-us/azure/storage/blobs/storage-quickstart-blobs-python#install-the-package
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     files                                    Required. It can be a folder, list of files or single file that needs to be uploaded.
     ------------------------------------     --------------------------------------------------------------------
@@ -136,7 +136,7 @@ def publish_hosted_imagery_layer(
     A collection can also be created from multiple input rasters.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_data                               Required list. The list of input raster paths(s) to be added to 
                                              the imagery layer being created. 
@@ -174,14 +174,15 @@ def publish_hosted_imagery_layer(
 
                                              Choice list:
 
-                                                 | [
-                                                 | "ASTER", "DMCII", "DubaiSat-2", "GeoEye-1", "GF-1 PMS", "GF-1 WFV"
-                                                 | "GF-2 PMS", "GRIB", "HDF","IKONOS", "KOMPSAT-2", "KOMPSAT-3", "Landsat 1-5 MSS"
-                                                 | "Landsat 4-5 TM", "Landsat 7 ETM+", "Landsat 8", "NetCDF", "Pleiades-1"
-                                                 | "QuickBird", "RapidEye", "Raster Dataset", "Sentinel-2"," SkySat"
-                                                 | "SPOT 5", "SPOT 6", "SPOT 7", "Tiled Imagery Layer", "UAV/UAS", "WordView-1"
-                                                 | "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", "Aerial", "ScannedAerial",
-                                                 | "ZY3-CRESDA"]
+                                                | [
+                                                | "Aerial", "ASTER", "DMCII", "DubaiSat-2", "GeoEye-1", "GF-1 PMS", "GF-1 WFV",
+                                                | "GF-2 PMS", "GRIB", "HDF", "IKONOS", "Jilin-1", "KOMPSAT-2", "KOMPSAT-3",
+                                                | "Landsat 1-5 MSS", "Landsat 4-5 TM", "Landsat 7 ETM+", "Landsat 8", "Landsat 9",
+                                                | "NetCDF", "PlanetScope", "Pleiades-1", "Pleiades NEO", "QuickBird", "RapidEye",
+                                                | "Raster Dataset", "ScannedAerial", "Sentinel-2", "SkySat", "SPOT 5", "SPOT 6",
+                                                | "SPOT 7", "Superview-1", "Tiled Imagery Layer", "UAV/UAS", "WordView-1",
+                                                | "WordView-2", "WordView-3", "WordView-4", "ZY3-SASMAC", "ZY3-CRESDA"
+                                                | ]
 
                                              If an existing mosaic dataset is being published as a 
                                              dynamic imagery layer using the ``source_mosaic_dataset`` parameter, the

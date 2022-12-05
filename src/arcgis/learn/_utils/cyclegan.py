@@ -757,11 +757,8 @@ def show_results(self, rows, **kwargs):
     axs[0, 1].title.set_text("Prediction")
     # axs[0, 2].title.set_text("Prediction")
     for r in range(rows):
-        if self._data._is_multispectral:
-            display_row(
-                axs[r],
-                (ArcGISMSImage(x_A_B[r]), ArcGISMSImage(activ_A_B[r])),
-                kwargs.get("rgb_bands", None),
-            )
-        else:
-            display_row(axs[r], (image2np(x_A_B[r]), image2np(activ_A_B[r])))
+        display_row(
+            axs[r],
+            (ArcGISMSImage(x_A_B[r]), ArcGISMSImage(activ_A_B[r])),
+            kwargs.get("rgb_bands", None),
+        )

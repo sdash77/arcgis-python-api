@@ -79,7 +79,7 @@ class PortalDataStore(object):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The data store :class:`~arcgis.gis.Item` to describe.
         ------------------     --------------------------------------------------------------------
@@ -275,7 +275,7 @@ class PortalDataStore(object):
             the server.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required data store :class:`~arcgis.gis.Item` or Item Id
                                string.
@@ -387,7 +387,7 @@ class PortalDataStore(object):
             from a server, all of its bulk-published layers must be deleted.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The database data store
                                :class:`~arcgis.gis.Item` from which to delete all
@@ -441,7 +441,7 @@ class PortalDataStore(object):
             layer created during publishing.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The data store :class:`~arcgis.gis.Item` to list all
                                published layers and registered datasets.
@@ -518,7 +518,7 @@ class PortalDataStore(object):
         specific datasets in a data store.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         config                 Required Dictionary.  This is the service configuration property
                                and it must contain the reference to the data in the data store. It
@@ -621,7 +621,7 @@ class PortalDataStore(object):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The data store :class:`~arcgis.gis.Item` to
                                for which to list all registered servers.
@@ -689,7 +689,7 @@ class PortalDataStore(object):
             longer found in the data store.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The data store :class:`~arcgis.gis.Item` holding
                                the content to publish.
@@ -856,7 +856,7 @@ class PortalDataStore(object):
             store information has been updated.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required data store :class:`~arcgis.gis.Item` or item id (as string).
                                The data store to register with the server. Note that a data store
@@ -910,7 +910,7 @@ class PortalDataStore(object):
             registration on the server.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         server_id              Required String. The unique id of the server with which you want to
                                register the data store.

@@ -15,6 +15,7 @@ try:
     import threading
     import functools
     import time
+    import importlib
 
     HAS_FASTAI = True
 except Exception as e:
@@ -23,6 +24,10 @@ except Exception as e:
         traceback.format_exception(type(e), e, e.__traceback__)
     )
     HAS_FASTAI = False
+
+
+class ToolIsCancelled(Exception):
+    pass
 
 
 class train_callback(LearnerCallback):
@@ -34,6 +39,12 @@ class train_callback(LearnerCallback):
     def on_batch_end(self, **kwargs):
         # print(self.counter)
         self.counter += 1
+        is_present = importlib.util.find_spec("arcpy")
+        if is_present is not None:
+            import arcpy
+
+            if arcpy.env.isCancelled:
+                raise ToolIsCancelled("Function aborted by User.")
         if self.counter > self.stop_var:
             self.counter = 0
             return {"stop_epoch": True}
@@ -76,6 +87,12 @@ class EvaluateBatchSize:
             while self.command["stop_thread"] is False:
                 model, lr_val, data = None, None, None
                 try:
+                    is_present = importlib.util.find_spec("arcpy")
+                    if is_present is not None:
+                        import arcpy
+
+                        if arcpy.env.isCancelled:
+                            raise ToolIsCancelled("Function aborted by User.")
                     if self.is_executing == False:
                         self.is_executing = True
                         self.data = prepare_data(
@@ -113,7 +130,6 @@ class EvaluateBatchSize:
                         print("Out of memory with batch size:", self.batch_size)
                         self.is_completed = False
                         del model
-                        del self.data
                         model = None
                         gc.collect()
                         torch.cuda.empty_cache()
@@ -123,8 +139,8 @@ class EvaluateBatchSize:
                         clear_output(wait=True)
                         continue
                     else:
-                        raise Exception(str(E))
-                        return None, None
+                        self.wait = False
+                        return None, None, None
                 finally:
                     gc.collect()
                     torch.cuda.empty_cache()
@@ -134,17 +150,17 @@ class EvaluateBatchSize:
                 if (not self.is_completed) and (self.is_executing == False):
                     self.command["stop_thread"] = False
                     self.batch_size = int(self.batch_size // 2)
-                    if self.batch_size > 2:
+                    if self.batch_size >= 2:
                         self.start_thread(
                             "New thread initiated for batch size: "
                             + str(self.batch_size)
                         )
                     else:
-                        self.batch_size = 2
                         self.wait = False
-                        return
+                        return None, None, None
                 return
         except Exception as e:
+            self.wait = False
             print("Error: ")
             print(e)
             return None, None
@@ -155,7 +171,6 @@ class EvaluateBatchSize:
         threading.Thread(target=self.get_batch_size, args=(name,), daemon=True).start()
 
     def wait_until(self):
-        i = 1
         while self.wait:
             sleep(10)
         else:

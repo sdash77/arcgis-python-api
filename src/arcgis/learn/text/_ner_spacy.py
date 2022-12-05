@@ -29,7 +29,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
     Based on Spacy's `EntityRecognizer <https://spacy.io/api/entityrecognizer>`_
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Requires data object returned from
                             :meth:`~arcgis.learn.prepare_data`  function.
@@ -181,7 +181,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
         Trains an EntityRecognition model for 'n' number of epochs..
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         epoch                   Optional integer. Number of times the model will train
                                 on the complete dataset.
@@ -411,7 +411,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
         specified learning rates.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Name of the model to save. It
                                 stores it at the pre-defined location. If path
@@ -509,7 +509,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
         Loads a saved EntityRecognition model from disk.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Path of the emd file.
         =====================   ===========================================
@@ -540,7 +540,6 @@ class _SpacyEntityRecognizer(ArcGISModel):
         if emd.get("metrics"):
             self.recorder.metrics = json.loads(emd.get("metrics"))
         self.saved_model_dir = deepcopy(self.model_dir)
-        print(self.model)
 
     @classmethod
     def from_model(cls, emd_path, data=None):
@@ -548,7 +547,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
         Creates an :class:`~arcgis.learn.text.EntityRecognizer` from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Esri Model Definition
                                 file.
@@ -659,7 +658,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
         for each location in the resulting dataframe.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         text_list               Required string(path) or list(documents).
                                 List of documents for entity extraction OR
@@ -759,7 +758,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
         Runs entity extraction on a random batch from the mentioned ds_type.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         ds_type                 Optional string, defaults to valid.
         =====================   ===========================================
@@ -834,7 +833,7 @@ class _SpacyEntityRecognizer(ArcGISModel):
         Plot training and validation losses.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         show                    Optional bool. Defaults to True
                                 If set to False, figure will not be plotted

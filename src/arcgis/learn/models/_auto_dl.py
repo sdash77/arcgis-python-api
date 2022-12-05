@@ -7,14 +7,15 @@ from IPython.display import clear_output
 
 try:
     import arcgis as ag
-    import torch
+    import torch, sys
     from . import MMSegmentation, MMDetection
     import matplotlib.pyplot as plt
-    from ._autodl_utils import train_callback
+    from ._autodl_utils import train_callback, ToolIsCancelled
     from ._arcgis_model import ArcGISModel
     from .._data import prepare_data
     import numpy as np
     import cv2, os
+    from io import StringIO
 
     HAS_FASTAI = True
 except Exception as e:
@@ -22,6 +23,23 @@ except Exception as e:
         traceback.format_exception(type(e), e, e.__traceback__)
     )
     HAS_FASTAI = False
+
+
+class RedirectedStdout:
+    def __init__(self):
+        self._stdout = None
+        self._string_io = None
+
+    def __enter__(self):
+        self._stdout = sys.stdout
+        sys.stdout = self._string_io = StringIO()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        sys.stdout = self._stdout
+
+    def __str__(self):
+        return self._string_io.getvalue()
 
 
 class ImageryModel(ArcGISModel):
@@ -39,7 +57,7 @@ class ImageryModel(ArcGISModel):
         which can be used to further fine tune the models saved using AutoDL.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         path                    Required string. Path to
                                 Esri Model Definition(EMD) file.
@@ -96,7 +114,7 @@ class ImageryModel(ArcGISModel):
         specified learning rates
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         epochs                  Optional integer. Number of cycles of training
                                 on the data. Increase it if the model is underfitting.
@@ -187,7 +205,7 @@ class ImageryModel(ArcGISModel):
         Learning Package zip for deployment to Image Server or ArcGIS Pro.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Name of the model to save. It
                                 stores it at the pre-defined location. If path
@@ -255,7 +273,7 @@ class ImageryModel(ArcGISModel):
         optimum learning rate for training the model.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         allow_plot              Optional boolean. Display the plot of losses
                                 against the learning rates and mark the optimal
@@ -306,7 +324,7 @@ class ImageryModel(ArcGISModel):
         Computes mean IOU on the validation set for each class.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         mean                    Optional bool. If False returns class-wise
                                 mean IOU, otherwise returns mean iou of all
@@ -336,7 +354,7 @@ class ImageryModel(ArcGISModel):
         Computes average precision on the validation set for each class.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         detect_thresh           Optional float. The probability above which
                                 a detection will be considered for computing
@@ -374,7 +392,7 @@ class AutoDL:
     arcgis.learn supported deep learning models within a specified time limit.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required ImageryDataObject. Returned data object from
                             :meth:`~arcgis.learn.prepare_data`  function.
@@ -397,8 +415,12 @@ class AutoDL:
                             Supported Object Detection models:
 
                             ["SingleShotDetector", "RetinaNet", "FasterRCNN", "YOLOv3", "MMDetection"]
+                            ["SingleShotDetector", "RetinaNet", "FasterRCNN", "YOLOv3", "ATSS",
+                            "CARAFE", "CascadeRCNN", "CascadeRPN", "DCN"]
                             Supported Pixel Classification models:
-                            ["DeepLab", "UnetClassifier", "PSPNetClassifier", "MMSegmentation"]
+                            ["DeepLab", "UnetClassifier", "PSPNetClassifier",
+                                 "ANN", "APCNet", "CCNet", "CGNet", "HRNet"]
+
     ---------------------   -------------------------------------------
     verbose                 Optional Boolean.
                             To be used to display logs while training the models.
@@ -454,7 +476,7 @@ class AutoDL:
             "APCNet",
             "CCNet",
             "CGNet",
-            "DeepLabV3",
+            "HRNet",
             "SingleShotDetector",
             "RetinaNet",
             "FasterRCNN",
@@ -470,7 +492,7 @@ class AutoDL:
             "APCNet",
             "CCNet",
             "CGNet",
-            "DeepLabV3",
+            "HRNet",
             "ATSS",
             "CARAFE",
             "CascadeRCNN",
@@ -536,7 +558,6 @@ class AutoDL:
                     self._algos.append(algo)
         else:
             raise Exception("Data must be in ESRI defined format")
-
         model_stats = self._model_stats()
         for algo in self._algos:
             if algo in self._all_algorithms:
@@ -566,7 +587,8 @@ class AutoDL:
             self._max_epochs = self._get_max_epochs(total_time_limit, required_time)
 
         ## Max time edit ends
-
+        if self._tiles_required <= self.batch_size:
+            self.batch_size = int(self._tiles_required // 2)
         if round(total_time_limit / 60, 2) == 1:
             unit = "hour"
         else:
@@ -632,24 +654,32 @@ class AutoDL:
         find_lr = False
         from ._autodl_utils import EvaluateBatchSize
 
-        if not self._model_stats()[model]["is_mm"]:
-            evaluate_batchsize = EvaluateBatchSize(
-                model,
-                self._data.path,
-                self.batch_size,
-                dataset_type=self._data.dataset_type,
+        data_path = self._data.path
+        dataset_type_temp = dataset_type = self._data.dataset_type
+
+        try:
+
+            if not self._model_stats()[model]["is_mm"]:
+                evaluate_batchsize = EvaluateBatchSize(
+                    model,
+                    self._data.path,
+                    self.batch_size,
+                    dataset_type=self._data.dataset_type,
+                )
+            else:
+                evaluate_batchsize = EvaluateBatchSize(
+                    mm_model,
+                    self._data.path,
+                    self.batch_size,
+                    dataset_type=self._data.dataset_type,
+                    model_name=model,
+                )
+            evaluate_batchsize.start_thread(
+                "Thread Initiated for batch size: " + str(self.batch_size)
             )
-        else:
-            evaluate_batchsize = EvaluateBatchSize(
-                mm_model,
-                self._data.path,
-                self.batch_size,
-                dataset_type=self._data.dataset_type,
-                model_name=model,
-            )
-        evaluate_batchsize.start_thread(
-            "Thread Initiated for batch size: " + str(self.batch_size)
-        )
+        except ToolIsCancelled as e:
+            raise Exception("Tool is cancelled")
+            exit()
         batch_size, lr_val, self._data = evaluate_batchsize.wait_until()
         del evaluate_batchsize
 
@@ -659,16 +689,9 @@ class AutoDL:
             )
             find_lr = True
             batch_size = 2
-        self._data = prepare_data(
-            self._data.path, batch_size=2, dataset_type=self._data.dataset_type
-        )
-
-        # if self.verbose:
-        #     log_msg = "{date}: ===> {batch_size} ====> {lr_val}".format(
-        #         date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),batch_size=batch_size, lr_val=lr_val
-        #     )
-        #     print(log_msg)
-        #     self._logger_dict.append(log_msg)
+            self._data = prepare_data(
+                data_path, batch_size=2, dataset_type=dataset_type_temp
+            )
 
         if backbone is None:
             if not self._model_stats()[model]["is_mm"]:
@@ -776,15 +799,26 @@ class AutoDL:
         try:
             _training_time_ = 0
             while model_time > _training_time_:
-                clear_output(wait=True)
+                # clear_output(wait=True)
                 _start_time = time.time()
-                getattr(self, model).fit(
-                    int(epochs),
-                    lr=lr_val,
-                    early_stopping=True,
-                    callbacks=callbacks,
-                    checkpoint=False,
-                )
+                with RedirectedStdout() as out:
+                    getattr(self, model).fit(
+                        int(epochs),
+                        lr=lr_val,
+                        early_stopping=True,
+                        callbacks=callbacks,
+                        checkpoint=False,
+                    )
+                    init_log = str(out)
+                if "early stopping" in init_log:
+                    if self.verbose:
+                        log_msg = "{date}: Early stopping the {model} ".format(
+                            date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
+                            model=model,
+                        )
+                        print(log_msg)
+                        self._logger_dict.append(log_msg)
+                    break
                 _end_time = time.time()
                 _training_time_ = _end_time - _start_time
                 model_time -= _training_time_
@@ -797,6 +831,7 @@ class AutoDL:
                             model=model,
                         )
                         print(log_msg)
+
                 else:
                     break
 
@@ -804,11 +839,11 @@ class AutoDL:
                 clear_output(wait=True)
                 all_logs = "\n".join(self._logger_dict)
                 print(all_logs)
+        except ToolIsCancelled as e:
+            raise Exception("Tool is cancelled")
+            exit()
         except Exception as e:
-            if self.verbose:
-                print("Error: ", e)
-            else:
-                print("Error: ", e)
+            print("Error: ", e)
             end_time = time.time()
             tot_sec = int(end_time - start_time)
             delattr(self, model)
@@ -850,6 +885,7 @@ class AutoDL:
                     pd.DataFrame({key: [val] for key, val in miou.items()}),
                 ]
             )
+
             if accuracy >= self._max_accuracy:
                 self._is_best = True
                 self._max_accuracy = accuracy
@@ -1293,7 +1329,7 @@ class AutoDL:
         Shows sample results for the model.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional number of rows. By default, 5 rows
                                 are displayed.
@@ -1375,8 +1411,8 @@ class AutoDL:
         """
         details = {
             "DeepLab": {"time": 1600, "is_mm": False, "executed": False},
-            "UnetClassifier": {"time": 6550, "is_mm": False, "executed": False},
-            "PSPNetClassifier": {"time": 6550, "is_mm": False, "executed": False},
+            "UnetClassifier": {"time": 1600, "is_mm": False, "executed": False},
+            "PSPNetClassifier": {"time": 1600, "is_mm": False, "executed": False},
             "ANN": {
                 "time": 1550,
                 "is_mm": True,
@@ -1393,7 +1429,7 @@ class AutoDL:
                 "time": 700,
                 "is_mm": True,
             },
-            "DeepLabV3": {
+            "HRNet": {
                 "time": 4200,
                 "is_mm": True,
             },
@@ -1447,10 +1483,10 @@ class AutoDL:
             "UnetClassifier",
             "PSPNetClassifier",
             "ANN",
-            "APCNeT",
-            "CCNeT",
-            "CGNeT",
-            "DeepLabV3",
+            "APCNet",
+            "CCNet",
+            "CGNet",
+            "HRNet",
         ]
 
     def supported_detection_models(self):

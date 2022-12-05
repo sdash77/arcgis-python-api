@@ -168,49 +168,73 @@ StatusJob
     :undoc-members:
     :show-inheritance:
     
-Dataclasses and Enumerations
----------------------------
+MarketPlaceManager
+------------------
+.. autoclass:: arcgis.gis.sharing.MarketPlaceManager
+    :members:
+    :undoc-members:
+    :show-inheritance:
 
+Enumerations
+------------
+ItemTypeEnum
+^^^^^^^^^^^^
 .. autoclass:: arcgis.gis._impl._dataclasses.ItemTypeEnum
     :members:
     :undoc-members:
     :show-inheritance:
 
-.. autoclass:: arcgis.gis._impl._dataclasses.ItemProperties
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-.. autoclass:: arcgis.gis._impl._dataclasses.CreateServiceParameters
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
+MetadataFormatEnum
+^^^^^^^^^^^^^^^^^^
 .. autoclass:: arcgis.gis._impl._dataclasses.MetadataFormatEnum
     :members:
     :undoc-members:
     :show-inheritance:
 
+ServiceTypeEnum
+^^^^^^^^^^^^^^^
 .. autoclass:: arcgis.gis._impl._dataclasses.ServiceTypeEnum
     :members:
     :undoc-members:
     :show-inheritance:
-	
+    
+SpatialRelationship
+^^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis._impl._dataclasses.SpatialRelationship
+    :members:
+    :undoc-members:
+    :show-inheritance:    
+    
+Dataclasses
+-----------
+ItemProperties
+^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis._impl._dataclasses.ItemProperties
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+CreateServiceParameter
+^^^^^^^^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.gis._impl._dataclasses.CreateServiceParameter
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+ViewLayerDefParameter
+^^^^^^^^^^^^^^^^^^^^^	
 .. autoclass:: arcgis.gis._impl._dataclasses.ViewLayerDefParameter
     :members:
     :undoc-members:
     :show-inheritance:
 
+SpatialFilter
+^^^^^^^^^^^^^
 .. autoclass:: arcgis.gis._impl._dataclasses.SpatialFilter
     :members:
     :undoc-members:
     :show-inheritance:
-
-.. autoclass:: arcgis.gis._impl._dataclasses.SpatialRelationship
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
+    
 Submodules
 --------------
 .. toctree::
@@ -226,3 +250,4 @@ Submodules
    arcgis.gis.tasks
    arcgis.gis.sharing
 
+    

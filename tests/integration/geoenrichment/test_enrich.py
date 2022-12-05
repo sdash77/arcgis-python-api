@@ -70,10 +70,18 @@ def enrich_check(
         if enrich_src == "local":
             # if input is data frame (except for std geo), also check that all source fields are still there
             if isinstance(geom, pd.DataFrame) and not std_geo_lvl:
-                input_columns = [c.lower() for c in geom.columns if c != geom.spatial.name]
+                input_columns = [
+                    c.lower() for c in geom.columns if c != geom.spatial.name
+                ]
                 assert all(
                     [(input_col in enrich_res_cols) for input_col in input_columns]
                 ), ("Missing some of the " + " columns of input data frame")
+
+                # check if input and output data frames have the same length
+                assert len(geom) == len(enrich_res), (
+                    f"Input and output are expected to be of the same length."
+                    f" Input length: {len(geom)}, output length: {len(enrich_res)}"
+                )
 
         if output_spatial_reference:
             assert enrich_res.spatial.sr.wkid == output_spatial_reference
@@ -457,7 +465,6 @@ class TestEnrichOnline(unittest.TestCase):
             self.point_df_inst.spatial.set_geometry(shape_column)
 
             self.stdgeo_srs_inst = self.stdgeo_srs_inst.head(10)
-
 
     # ArcGIS Online
     @skip_if_no_agol

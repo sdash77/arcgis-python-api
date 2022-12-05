@@ -38,7 +38,7 @@ class ServicesDirectory(BaseServer):
 
 
     =====================     ====================================================================
-    **Arguments**             **Description**
+    **Parameter**             **Description**
     ---------------------     --------------------------------------------------------------------
     url                       string required. The web address to the ArcGIS Server administration
                               end point.
@@ -335,7 +335,7 @@ class ServicesDirectory(BaseServer):
         Returns the Services' extents for all services in a given folder.
 
         =====================     ====================================================================
-        **Arguments**             **Description**
+        **Parameter**             **Description**
         ---------------------     --------------------------------------------------------------------
         folder                    Optional String. The name of the folder to examine for the footprints.
         ---------------------     --------------------------------------------------------------------

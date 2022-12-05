@@ -10,6 +10,13 @@ Country
     :members:
     :undoc-members:
 
+BufferStudyArea
+---------------
+.. autoclass:: arcgis.geoenrichment.BufferStudyArea
+    :inherited-members:
+    :members:
+    :undoc-members:
+
 get_countries
 ---------------
 .. autofunction:: arcgis.geoenrichment.get_countries

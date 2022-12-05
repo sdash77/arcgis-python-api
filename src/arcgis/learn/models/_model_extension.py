@@ -72,7 +72,7 @@ class ModelExtension(ArcGISModel):
     Creates a ModelExtension object, to train the model for object detection, semantic segmentation, and edge detection.
 
     =====================   ============================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   ------------------------------------------------------------
     data                    Required fastai Databunch. Returned data object from
                             :meth:`~arcgis.learn.prepare_data`  function.
@@ -269,7 +269,7 @@ class ModelExtension(ArcGISModel):
         Creates a :class:`~arcgis.learn.ModelExtension` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -478,7 +478,7 @@ class ModelExtension(ArcGISModel):
         """
         Computes mean IOU on the validation set for each class.
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         mean                    Optional bool. If False returns class-wise
                                 mean IOU, otherwise returns mean iou of all
@@ -514,7 +514,7 @@ class ModelExtension(ArcGISModel):
         """
         Displays the results of a trained model on a part of the validation set.
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
@@ -540,7 +540,7 @@ class ModelExtension(ArcGISModel):
         """
         Displays the results of a trained model on a part of the validation set.
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional Integer. Number of rows of results
                                 to be displayed.
@@ -560,7 +560,7 @@ class ModelExtension(ArcGISModel):
         """
         Displays the results of a trained model on a part of the validation set.
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional Integer. Number of rows of results
                                 to be displayed.
@@ -570,7 +570,7 @@ class ModelExtension(ArcGISModel):
         =====================   ===========================================
         **kwargs**
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         alpha                   Optional Float. Default value is 0.5.
                                 Opacity of the lables for the corresponding
@@ -611,7 +611,7 @@ class ModelExtension(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
@@ -649,7 +649,7 @@ class ModelExtension(ArcGISModel):
         """
         Displays the results of a trained model on a part of the validation set.
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional Integer. Number of rows of results
                                 to be displayed.
@@ -754,7 +754,7 @@ class ModelExtension(ArcGISModel):
         """
         Computes average precision on the validation set for each class.
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         detect_thresh           Optional float. The probability above which
                                 a detection will be considered for computing
@@ -794,7 +794,7 @@ class ModelExtension(ArcGISModel):
         """
         Computes precision, recall and f1 score on validation set.
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         thresh                  Optional float. The probability above which
                                 a detection will be considered edge pixel.
@@ -818,7 +818,7 @@ class ModelExtension(ArcGISModel):
         """
         Computes the Panoptic Quality metric for panoptic segmentation.
          =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         show_progress           Optional bool. Displays the progress bar if
                                 True.
@@ -895,7 +895,7 @@ class ModelExtension(ArcGISModel):
         """
         Runs prediction on an Image.
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         image_path              Required. Path to the image file to make the
                                 predictions on.
@@ -1117,7 +1117,7 @@ class ModelExtension(ArcGISModel):
         """
         Runs prediction on a video and appends the output VMTI predictions in the metadata file.
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         input_video_path        Required. Path to the video file to make the
                                 predictions on.

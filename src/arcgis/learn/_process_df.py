@@ -25,7 +25,7 @@ def _raise_dep_error():
 def add_datepart(df, col_name, drop=True, errors="raise"):
     """
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     df                  Required DataFrame.
     col_name            Required String.
@@ -70,7 +70,7 @@ def add_datepart(df, col_name, drop=True, errors="raise"):
 def _scale(df, mapper=None):
     """
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     df                  DataFrame to be scaled.
     mapper              Parameters used for scaling.
@@ -98,7 +98,7 @@ def process_df(
     f. train-test split,
     and returns the preprocessed dataframe, target variable, and mapper.
     ==============   ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     --------------   --------------------------------------------------------------------
     df               DataFrame to be preprocessed.
     --------------   --------------------------------------------------------------------

@@ -5,6 +5,7 @@ from typing import Optional
 from .._impl._con import Connection
 from .. import GIS
 from ._base import BasePortalAdmin
+from arcgis._impl.common._deprecate import deprecated
 
 ########################################################################
 class PasswordPolicy(BasePortalAdmin):
@@ -155,7 +156,7 @@ class Security(BasePortalAdmin):
         configuration properties of the token service.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         value                           Required string. A shared key value
         ===========================     ====================================================================
@@ -287,7 +288,7 @@ class Security(BasePortalAdmin):
         See: https://developers.arcgis.com/rest/enterprise-administration/portal/update-identity-store.htm
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         user_config                     Optional dict. The user store configuration
         ---------------------------     --------------------------------------------------------------------
@@ -325,7 +326,7 @@ class Security(BasePortalAdmin):
         group store.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         user_config                     Optional dict. The user store configuration
         ---------------------------     --------------------------------------------------------------------
@@ -357,8 +358,13 @@ class Security(BasePortalAdmin):
 
     # ----------------------------------------------------------------------
     @property
+    @deprecated(deprecated_in="2.1.0", removed_in="3.0.0", current_version="2.1.0")
     def ssl(self):
         """
+        .. note::
+            It is best practice and highly recommended to use the `ssl_certificates`
+            property on the Machine class.
+
         Provides access to managing and updating SSL Certificates on a
         Portal site.
 
@@ -410,7 +416,7 @@ class OAuth(BasePortalAdmin):
         developer.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         current_id                      Required string. The current client ID of an existing application.
         ---------------------------     --------------------------------------------------------------------
@@ -494,7 +500,7 @@ class SSLCertificates(BasePortalAdmin):
         protocols, and cipher suites used by the portal.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         alias                           Required string. The name of the certificate. This is a required
                                         parameter. The certificate must be already present in the portal.
@@ -557,7 +563,7 @@ class SSLCertificates(BasePortalAdmin):
         store it in its keystore.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         alias                           Required string. The name of the certificate. This is a required
                                         parameter.
@@ -642,7 +648,7 @@ class SSLCertificates(BasePortalAdmin):
         have a custom CA or specific intermediate certificates.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         certificate                     Required string. The file location of the certificate file
         ---------------------------     --------------------------------------------------------------------
@@ -709,7 +715,7 @@ class SSLCertificates(BasePortalAdmin):
         Intermediate Certificate operation.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         alias                           Required string. The name of the certificate
         ---------------------------     --------------------------------------------------------------------
@@ -735,7 +741,7 @@ class SSLCertificates(BasePortalAdmin):
         List of SSL Certificates as represented in the Portal Admin API
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         force                           Optional Boolean. If True, the certificate list will be refreshed,
                                         else, if a set of values is in memory, it will use those values.
@@ -784,7 +790,7 @@ class SSLCertificates(BasePortalAdmin):
         gets a single SSLCertificate object by the alias name
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         alias_name                      Required string. The common name of the certificate.
         ===========================     ====================================================================
@@ -881,7 +887,7 @@ class SSLCertificate(BasePortalAdmin):
         be imported into a client that is making HTTP requests.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         out_path                        Required string. Save location of the certificate
         ===========================     ====================================================================
@@ -924,7 +930,7 @@ class SSLCertificate(BasePortalAdmin):
         the key store.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         file_path                       Required string. The location of the certificate
         ===========================     ====================================================================
@@ -970,7 +976,7 @@ class EnterpriseGroups(BasePortalAdmin):
         store. You can narrow down the search using the filter parameter.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         query                           Optional string. Where clause into parse down results
         ---------------------------     --------------------------------------------------------------------
@@ -997,7 +1003,7 @@ class EnterpriseGroups(BasePortalAdmin):
         force a refresh.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         groups                          Required string. The comma seperated list of group names to be
                                         refreshed
@@ -1018,7 +1024,7 @@ class EnterpriseGroups(BasePortalAdmin):
         use the filter parameter to narrow down the user search.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         name                            Optional string. The name of the enterprise group
         ---------------------------     --------------------------------------------------------------------
@@ -1046,7 +1052,7 @@ class EnterpriseGroups(BasePortalAdmin):
         configured enterprise group store.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         username                        Optional string. The name of the user account
         ---------------------------     --------------------------------------------------------------------
@@ -1115,7 +1121,7 @@ class EnterpriseUsers(BasePortalAdmin):
         indicate the type of user account.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         username                        Required string. The name of the user account
         ---------------------------     --------------------------------------------------------------------
@@ -1207,7 +1213,7 @@ class EnterpriseUsers(BasePortalAdmin):
         error is returned.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         username                        Required string. Username of the enterprise account. For Windows
                                         Active Directory users, this can be either domain\\username or just
@@ -1230,7 +1236,7 @@ class EnterpriseUsers(BasePortalAdmin):
         authentication.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         username                        Required string. Username of the enterprise account. For Windows
                                         Active Directory users, this can be either domain\\username or just
@@ -1256,7 +1262,7 @@ class EnterpriseUsers(BasePortalAdmin):
         store. You can narrow down the search using the filter parameter.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         query                           Optional string. Where clause into parse down results
         ---------------------------     --------------------------------------------------------------------
@@ -1283,7 +1289,7 @@ class EnterpriseUsers(BasePortalAdmin):
         an administrator to force a refresh.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         users                           Required string. A comma seperated list of users.
         ===========================     ====================================================================

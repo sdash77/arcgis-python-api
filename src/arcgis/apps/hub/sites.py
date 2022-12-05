@@ -178,7 +178,7 @@ class Site(OrderedDict):
         Adds a batch of items to the site content library.
 
         =====================     ====================================================================
-        **Argument**              **Description**
+        **Parameter**              **Description**
         ---------------------     --------------------------------------------------------------------
         items_list                Required list. A list of Item or item ids to add to the initiative
         =====================     ====================================================================
@@ -196,7 +196,7 @@ class Site(OrderedDict):
         """
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         group_id            Group id to be added to site catalog
         ===============     ====================================================================
@@ -210,7 +210,7 @@ class Site(OrderedDict):
         """
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         group_id            Group id to be added to site catalog
         ===============     ====================================================================
@@ -311,7 +311,7 @@ class Site(OrderedDict):
             This will transfer ownership of all items (site, pages, content) and groups to the new target_owner.
 
         =====================     ====================================================================
-        **Argument**              **Description**
+        **Parameter**              **Description**
         ---------------------     --------------------------------------------------------------------
         target_owner              Required string. The new desired owner of the site.
         =====================     ====================================================================
@@ -391,7 +391,7 @@ class Site(OrderedDict):
         Search and filter content for a site.
 
         =====================     ====================================================================
-        **Argument**              **Description**
+        **Parameter**              **Description**
         ---------------------     --------------------------------------------------------------------
         query                     Optional string. Filters items by presence of search query in title.
         ---------------------     --------------------------------------------------------------------
@@ -437,7 +437,7 @@ class Site(OrderedDict):
             site's description, then only provide the description argument in site_properties.
 
         =====================     ====================================================================
-        **Argument**              **Description**
+        **Parameter**              **Description**
         ---------------------     --------------------------------------------------------------------
         site_properties           Required dictionary. See URL below for the keys and values.
         ---------------------     --------------------------------------------------------------------
@@ -580,7 +580,7 @@ class Site(OrderedDict):
             This operation can only be performed by the owner of the site or by an org administrator.
 
         =====================     ====================================================================
-        **Argument**              **Description**
+        **Parameter**              **Description**
         ---------------------     --------------------------------------------------------------------
         layout                    Required dictionary. The new layout dictionary to update to the site.
         =====================     ====================================================================
@@ -624,7 +624,7 @@ class Site(OrderedDict):
             This operation can only be performed by the owner of the site or by an org administrator.
 
         =====================     ====================================================================
-        **Argument**              **Description**
+        **Parameter**              **Description**
         ---------------------     --------------------------------------------------------------------
         theme                     Required dictionary. The new theme dictionary to update to the site.
         =====================     ====================================================================
@@ -803,7 +803,7 @@ class SiteManager(object):
             Unicode characters are not allowed in the title of the site.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         title               Required string.
         ---------------     --------------------------------------------------------------------
@@ -1072,7 +1072,7 @@ class SiteManager(object):
             To clone from Hub Premium environments, please use the `initiatives.clone` method.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         site                Required Site object of site to be cloned.
         ---------------     --------------------------------------------------------------------
@@ -1250,7 +1250,7 @@ class SiteManager(object):
         """Returns the site object for the specified site_id.
 
         =======================    =============================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         -----------------------    -------------------------------------------------------------
         site_id                    Required string. The site itemid.
         =======================    =============================================================
@@ -1275,7 +1275,7 @@ class SiteManager(object):
         """Returns the site object for the specified domain url.
 
         =======================    =============================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         -----------------------    -------------------------------------------------------------
         domain_url                 Required string. The site url.
         =======================    =============================================================
@@ -1339,7 +1339,7 @@ class SiteManager(object):
         Searches for sites.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         title               Optional string. Return sites with provided string in title.
         ---------------     --------------------------------------------------------------------

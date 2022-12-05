@@ -752,7 +752,7 @@ def prepare_textdata(
     Prepares a text data object from the files present at data folder
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     path                    Required directory path.
                             The directory path where the training and
@@ -842,7 +842,7 @@ def prepare_textdata(
     **Keyword Arguments**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     stratify                Optional boolean.
                             If True, prepare_textdata
@@ -1001,7 +1001,7 @@ def prepare_tabulardata(
     Prepares a tabular data object from input_features and optionally rasters.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     input_features          Optional :class:`~arcgis.features.FeatureLayer` Object or spatially enabled dataframe.
                             This contains features denoting the value of the dependent variable.
@@ -1126,7 +1126,7 @@ def prepare_tabulardata(
     **Keyword Arguments**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     stratify                Optional boolean.
                             If True, prepare_tabulardata
@@ -1254,7 +1254,7 @@ def prepare_data(
     -For panoptic segmentation, use Panoptic_Segmentation format.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     path                    Required string. Path to data directory or a list of paths.
     ---------------------   -------------------------------------------
@@ -1320,13 +1320,14 @@ def prepare_data(
     **Keyword Arguments**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     n_masks                 Optional int. Default value is 30.
-                            Required for MaXDeepLab panoptic segmentation model.
-                            It represents the max number of class labels and
-                            instances any image can contain. To compute the exact
-                            value for your dataset, use the :meth:`~arcgis.learn.MaXDeepLab.compute_n_masks`
+                            Required for MaXDeepLab panoptic segmentation
+                            model. It represents the max number of class
+                            labels and instances any image can contain.
+                            To compute the exact value for your dataset,
+                            use the :meth:`~arcgis.learn.MaXDeepLab.compute_n_masks`
                             method available with MaXDeepLab model.
     ---------------------   -------------------------------------------
     downsample_factor       Optional float. Factor to downsample the images
@@ -1336,10 +1337,12 @@ def prepare_data(
                             Default is 4
     ---------------------   -------------------------------------------
     min_points              Optional int. Filtering based on minimum number
-                            of points in a block.
-                            Set `min_points=1000` to filter out blocks with less
-                            than 1000 points. Applicable only for
-                            dataset_type='PointCloud'
+                            of points in a block. Set `min_points=1000` to
+                            filter out blocks with less than 1000 points.
+                            Optional int. Number of pixels equal to or multiples
+                            of 64 to sample from the each masked region of training
+                            data i.e. 64, 128 etc. Applicable only for
+                            dataset_type='PointCloud' and 'PSETAE'
     ---------------------   -------------------------------------------
     classes_of_interest     Optional string. List of classes of interest.
                             This will filter blocks based on `classes_of_interest`.
@@ -1391,7 +1394,44 @@ def prepare_data(
                             .. note::
                                 Applies to single label feature classification,
                                 object detection and pixel classification.
-    =====================   ===========================================
+    ---------------------   -------------------------------------------
+    bands_of_interest       Optional list. List of spectral bands of interest.
+                            This will filter bands based on `bands_of_interest`.
+                            If we have bands [1, 2, 3, 4] in our dataset,
+                            but we are mainly interested in 2 and 3,
+                            Set `bands_of_interest=[2,3]`. Only those spectral bands
+                            will be considered for training, rest of the bands will
+                            be filtered out. Applicable only for
+                            dataset_type='PSETAE'.
+    ---------------------   -------------------------------------------
+    timesteps_of_interest   Optional list. List of time steps of interest.
+                            This will filter multi-temporal timesereis based
+                            on `timesteps_of_interest`. If the dataset have
+                            time-steps [0, 1, 2, 3], but we are mainly interested
+                            in 0, 1 and 2, Set `timesteps_of_interest=[0,1,2]`.
+                            Only those time-steps will be considered for training,
+                            rest of the time-steps will be filtered out.
+                            Applicable only for dataset_type='PSETAE'.
+    ---------------------   -------------------------------------------
+    channels_of_interest    Optional list. List of bands/channels of interest.
+                            This will filter out bands from rasters of
+                            multi-temporal timesereis based on
+                            `channels_of_interest` list. If we have bands
+                            [0,1,2,3,4] in our dataset, but we are mainly
+                            interested in 0, 1 and 2, Set
+                            `channels_of_interest=[0,1,2]`.
+                            Only those spectral bands will be considered for training.
+                            Applicable only for dataset_type='PSETAE'.
+    ---------------------   -------------------------------------------
+    n_temporal              Required int. Number of temporal observations or time steps.
+                            Applicable only for dataset_type='PSETAE'.
+    ---------------------   -------------------------------------------
+    n_temporal_dates        Required list of strings. The dates of that observations
+                            will be used for the positional encoding and should be
+                            stored as a list of dates strings in YYYY-MM-DD format.
+                            For example, If we have stacked imagery of n bands each
+                            from two dates then, ['YYYY-MM-DD','YYYY-MM-DD'].
+                            Applicable only for dataset_type='PSETAE'.
 
     :return: data object
 
@@ -1616,6 +1656,7 @@ def prepare_data(
             "Pix2Pix",
             "ChangeDetection",
             "ObjectTracking",
+            "PSETAE",
         ]
         and has_esri_files
     ):
@@ -2746,6 +2787,21 @@ def prepare_data(
             data._do_normalize = False
         data.arcgis_init_kwargs = arcgis_init_kwargs
         return data
+
+    elif dataset_type == "PSETAE":
+        from ._data_utils.psetae_data import prepare_psetae_data
+
+        data = prepare_psetae_data(
+            path=path,
+            batch_size=batch_size,
+            val_split_pct=val_split_pct,
+            working_dir=working_dir,
+            class_mapping=class_mapping,
+            **kwargs,
+        )
+
+        return data
+
     elif dataset_type == "WNet_cGAN":
         from osgeo import gdal
         from ._utils.cyclegan import get_files, image_extensions

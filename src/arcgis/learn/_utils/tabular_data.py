@@ -516,7 +516,10 @@ class TabularDataObject(object):
         labels = None
 
         if self._dependent_variable:
-            labels = np.array(dataframe[self._dependent_variable])
+            labels = np.array(
+                dataframe[self._dependent_variable],
+                dtype=dataframe[self._dependent_variable].dtype.type,
+            )
             dataframe = dataframe.drop(self._dependent_variable, axis=1)
 
         if not self._procs:
@@ -1014,7 +1017,7 @@ class TabularDataObject(object):
         """
         Shows a chunk of data prepared without applying transforms.
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional integer. Number of rows of dataframe
                                 or graph to plot. This parameter is not used

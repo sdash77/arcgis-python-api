@@ -88,7 +88,7 @@ class Feature(object):
         Sets an attribute value for a given field name.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         field_name          Required String. The name of the field to update.
         ---------------     --------------------------------------------------------------------
@@ -151,7 +151,7 @@ class Feature(object):
         Retrieves the value for a specified field name.
 
         =============       ===========================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         -------------       -----------------------------------------------------------
         field_name          Required String. The name for each attribute field.
 
@@ -220,7 +220,7 @@ class Feature(object):
         Get/Set the geometry of the feature, if any.
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         value                   Required string.
                                 Values: 'Polyline' | 'Polygon' | 'Point'
@@ -266,7 +266,7 @@ class Feature(object):
         Get/Set the attribute values for a feature
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         value                   Required dict.
         ==================      ====================================================================
@@ -614,7 +614,7 @@ class FeatureSet(object):
         Converts a dataset to a list of feature objects, if ArcPy is available
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         dataset             Required string. Path to the featureclass.
         ===============     ====================================================================
@@ -855,7 +855,7 @@ class FeatureSet(object):
         Converts an `arcpy` FeatureSet to an `arcgis` FeatureSet
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         fs                  Required arcpy.FeatureSet. The featureset objec to consume.
         ===============     ====================================================================
@@ -875,7 +875,7 @@ class FeatureSet(object):
         Creates a Feature Set objects from a JSON string.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         json_str            Required json style string.
         ===============     ====================================================================
@@ -892,7 +892,7 @@ class FeatureSet(object):
         Pandas' DataFrame
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         df                  Required DataFrame.
         ===============     ====================================================================
@@ -986,7 +986,7 @@ class FeatureSet(object):
         Creates a Feature Set objects from a GEO JSON  :class:`~arcgis.features.FeatureCollection` object
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         geojson             Required GEOJSON object
         ===============     ====================================================================
@@ -1149,7 +1149,7 @@ class FeatureSet(object):
         Creates a Feature Set objects from a dictionary.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         featureset_dict     Required dict.
                             Keys can include:
@@ -1199,7 +1199,7 @@ class FeatureSet(object):
         Get/Set the Feature Set's spatial reference
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         value                   Required dict.
                                 (e.g. {"wkid" : 4326})
@@ -1233,7 +1233,7 @@ class FeatureSet(object):
          Get/Set the Z-property of the Feature Set object
 
          ==================      ====================================================================
-         **Argument**            **Description**
+         **Parameter**            **Description**
          ------------------      --------------------------------------------------------------------
          value                   Required bool.
                                  Values: True | False
@@ -1260,7 +1260,7 @@ class FeatureSet(object):
         Get/Set the M-property of the Feature Set object.
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         value                   Required bool.
                                 Values: True | False
@@ -1287,7 +1287,7 @@ class FeatureSet(object):
         Get/Set the ``Type`` of the Feature Set object.
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         value                   Required string.
                                 Values: 'Polygon' | 'Polyline' | 'Point'
@@ -1314,7 +1314,7 @@ class FeatureSet(object):
         Get/Set the object id field of the Feature Set object
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         value                   Required string.
         ==================      ====================================================================
@@ -1339,7 +1339,7 @@ class FeatureSet(object):
         Get/Set the ``global ID`` field  for the Feature Set object.
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         value                   Required string.
         ==================      ====================================================================
@@ -1365,7 +1365,7 @@ class FeatureSet(object):
         Get/Set the ``display`` field for the Feature Set object.
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         value                   Required string.
         ==================      ====================================================================
@@ -1390,7 +1390,7 @@ class FeatureSet(object):
         :class:`~arcgis.features.Feature` class on disk.
 
         =================    ====================================================================
-        **Argument**         **Description**
+        **Parameter**         **Description**
         -----------------    --------------------------------------------------------------------
         save_location        Required string. Path to export the Feature Set to.
         -----------------    --------------------------------------------------------------------
@@ -1487,7 +1487,7 @@ class FeatureSet(object):
         Get/Set the fields in the FeatureSet
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         value                   Required dict.
         ==================      ====================================================================
@@ -1604,7 +1604,7 @@ class FeatureCollection(Layer):
         Creates a :class:`~arcgis.features.FeatureCollection` object from a :class:`~arcgis.features.FeatureSet` object.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         fset                   Required :class:`~arcgis.features.FeatureSet` object.
         ------------------     --------------------------------------------------------------------

@@ -40,7 +40,7 @@ class UX(object):
         Get/Set the site's name.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         name              required string. Name of the site.
         ================  ===============================================================
@@ -83,7 +83,7 @@ class UX(object):
         associated with its custom apps and sites. This summary has a maximum of 310 characters.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         text              Required string. The brief description of the organization.
         ================  ===============================================================
@@ -126,7 +126,7 @@ class UX(object):
         this choice on their settings page.
 
         ================        ========================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ----------------        --------------------------------------------------------
         language                Required string. To see all available languages, use
                                 the `languages` property in the GIS class.
@@ -271,7 +271,7 @@ class UX(object):
         For more information, refer to http://server.arcgis.com/en/portal/latest/administer/windows/configure-general.htm
 
         ================    ===============================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
         logo_file           Optional string. Specify path to image file. If None, existing thumbnail is removed.
         ----------------    ---------------------------------------------------------------
@@ -288,7 +288,7 @@ class UX(object):
         Get your organization's logo/thumbnail. You can use the `set_logo()` method to set an image as your logo.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         download_path     required string. Folder path to download the logo file.
         ================  ===============================================================
@@ -305,7 +305,7 @@ class UX(object):
         Get/Set the site's description visibility
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         visiblity         Required boolean. If True, the desciptive text will show on the
                           home page. If False, the descriptive text will not be displayed
@@ -334,7 +334,7 @@ class UX(object):
         Get/Set the site's description.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         description       Required string. Descriptive text of the site. If None, the
                           value is reset to default.
@@ -361,7 +361,7 @@ class UX(object):
         Gets/Sets the featured content group information.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         content           Required dictionary, defines the group and count of the feature
                           content area on an organizational site.  A value of None will
@@ -451,7 +451,7 @@ class UX(object):
             Member roles determine Organization link visibility.
 
         ================    ===============================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
         gallery             Optional string.
                             Values: "all" | "members" | "noOne"
@@ -514,7 +514,7 @@ class UX(object):
         no parameters passed in.
 
         ================    ===============================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
         header              Optional dict. Composed of two keys: "background" and "text" that
                             determine the shared theme color for each of these keys. Color
@@ -666,7 +666,7 @@ class UX(object):
         Get/Set item commenting and comments.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         enable            Optional boolean. If True, the comments for the site are turned
                           on.  False will disable comments (default)
@@ -700,7 +700,7 @@ class UX(object):
         For more information, refer to http://server.arcgis.com/en/portal/latest/administer/windows/configure-home.htm
 
         ================    ===============================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
         background_file     Optional string. If using a custom background, specify path to image file.
                             To remove an existing background, specify None for this argument and
@@ -726,7 +726,7 @@ class UX(object):
         For more information, refer to http://server.arcgis.com/en/portal/latest/administer/windows/configure-home.htm
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         download_path     required string. Folder path to download the background file.
         ================  ===============================================================
@@ -753,7 +753,7 @@ class UX(object):
             This has now been replaced by the `set_informational_banner` method
 
         ================    ===============================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
         banner_file         Optional string. If uploading a custom banner, then path to the
                             banner file. If using a built-in banner, valid values are
@@ -868,7 +868,7 @@ class UX(object):
             This method has been replaced with the `get_informational_banner` method.
 
         ================    =================================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------------------------
         download_path       required string. Folder path to download the banner file.
         ================    =================================================================================
@@ -903,7 +903,7 @@ class UX(object):
         Get/Set the site's default extent
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         extent            Required dictionary. The default extent defines where a webmap
                           will open.
@@ -940,7 +940,7 @@ class UX(object):
         open at the default extent you set.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         basemap           Required string. The new default basemap to set. If None, the
                           default value will be set.
@@ -968,7 +968,7 @@ class UX(object):
         Get/Set the default vector basemap
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         basemap           required dictionary. The new default vector basemap to set for
                           a given site.
@@ -1027,7 +1027,7 @@ class HomePageSettings(object):
         For more information, refer to http://server.arcgis.com/en/portal/latest/administer/windows/configure-home.htm
 
         ================    ===============================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
         background_file     Optional string. If using a custom background, specify path to image file.
                             To remove an existing background, specify None for this argument and
@@ -1116,7 +1116,7 @@ class HomePageSettings(object):
         For more information, refer to http://server.arcgis.com/en/portal/latest/administer/windows/configure-home.htm
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         download_path     required string. Folder path to download the background file.
         ================  ===============================================================
@@ -1167,7 +1167,7 @@ class HomePageSettings(object):
         For more information, refer to http://server.arcgis.com/en/portal/latest/administer/windows/configure-general.htm
 
         ================    ===============================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
         logo_file           Optional string. Specify path to image file. If None, existing thumbnail is removed.
         ----------------    ---------------------------------------------------------------
@@ -1252,7 +1252,7 @@ class HomePageSettings(object):
         Get your organization's logo/thumbnail. You can use the `set_logo()` method to set an image as your logo.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         download_path     required string. Folder path to download the logo file.
         ================  ===============================================================
@@ -1287,7 +1287,7 @@ class HomePageSettings(object):
         Set the homepage title and it's visibility
 
         ================    ===============================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
         title               Optional string. The title to show on the homepage.
         ----------------    ---------------------------------------------------------------
@@ -1398,7 +1398,7 @@ class MapSettings(object):
         Get/Set the site's default extent
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         extent            Required dictionary. The default extent defines where a webmap
                           will open.
@@ -1442,7 +1442,7 @@ class MapSettings(object):
         open at the default extent you set.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         basemap           Required string. The new default basemap to set. If None, the
                           default value will be set.
@@ -1493,7 +1493,7 @@ class MapSettings(object):
         Get/Set the default vector basemap
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         basemap           required dictionary. The new default vector basemap to set for
                           a given site.
@@ -1603,7 +1603,7 @@ class MapSettings(object):
         Bing Map Key: https://www.bingmapsportal.com/
 
         ======================      ==============================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ----------------------      ----------------------------------------------
         bing_key                    Optional str. The bing key to pass in. To remove
                                     pass in "".
@@ -1685,7 +1685,7 @@ class MapSettings(object):
         Select a group to be used in symbol galleries.
 
         ======================      ==============================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         ----------------------      ----------------------------------------------
         group                       Optional str or Group. either an instance of Group class,
                                     a group id, or None to reset to default.
@@ -1782,7 +1782,7 @@ class ItemSettings(object):
         Get/Set item commenting and comments.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         enable            Optional boolean. If True, the comments for the site are turned
                           on.  False will disable comments (default)
@@ -1807,7 +1807,7 @@ class ItemSettings(object):
         Get/Set item metadata editable ability.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         enable            Optional boolean. If True, the editing of metadata on items is turned
                           on (default). False will disable metadata editing on items.
@@ -1871,7 +1871,7 @@ class SecuritySettings(object):
         The informational banner that is shown at the top of your organization's page.
 
         ================    ===============================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
         text                Optional string. The text that the informational banner will display.
                             To set an empty text use: ""
@@ -2038,7 +2038,7 @@ class SecuritySettings(object):
         where requested.
 
         =====================       ===============================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         ---------------------       ---------------------------------------------------------------
         min_length                  Optional int. Password must contain at least the following
                                     number of characters. Cannot set this under 8 characters.
@@ -2224,7 +2224,7 @@ class SecuritySettings(object):
         next time they sign in.
 
         ======================      ====================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         ----------------------      ----------------------------------------------------
         title                       Optional string. The title to set the for the notice.
                                     If None then notice will be disabled.
@@ -2286,7 +2286,7 @@ class SecuritySettings(object):
         organization member will see two notices.
 
         ======================      ====================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         ----------------------      ----------------------------------------------------
         title                       Optional string. The title to set the for the notice.
                                     If None then notice will be disabled.
@@ -2344,7 +2344,7 @@ class SecuritySettings(object):
         an additional verification code at the time of login.
 
         =========================       ==================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         -------------------------       --------------------------------------------------
         admins                          Optional list of strings. Designate at least two
                                         administrators who will receive email requests
@@ -2418,7 +2418,7 @@ class SecuritySettings(object):
             Not for ArcGIS Online.
 
         =========================       ==================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         -------------------------       --------------------------------------------------
         smtp_host                       Requried string. The IP address, or the fully
                                         qualified domain name (FDQN), of the SMTP Server.
@@ -2523,7 +2523,7 @@ class SecuritySettings(object):
         will be sent out to the specified email address (mail_to).
 
         =========================       ==================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         -------------------------       --------------------------------------------------
         mail_to                         Requried string. The email the test message will
                                         be sent to.
@@ -2560,7 +2560,7 @@ class SecuritySettings(object):
             Only available in ArcGIS Online
 
         =========================       ==================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         -------------------------       --------------------------------------------------
         block_unapproved                Optional bool. Determine whether members can only
                                         sign in to external apps that are approved. Default
@@ -2587,7 +2587,7 @@ class SecuritySettings(object):
             Only available in ArcGIS Online
 
         =========================       ==================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         -------------------------       --------------------------------------------------
         block_beta_apps                 Optional bool. Block Esri apps while they are in beta.
                                         Default is False.
@@ -2619,7 +2619,7 @@ class SecuritySettings(object):
         they appear in the sign in page.
 
         =========================       ==================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         -------------------------       --------------------------------------------------
         social_login                    Required bool. Allow members to sign up and sign in
                                         to your organization using their login from the
@@ -2721,7 +2721,7 @@ class SecuritySettings(object):
         using either a single IDP or a federation, but not both.
 
         =========================       ==================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         -------------------------       --------------------------------------------------
         name                            Required string. The identity provider name.
         -------------------------       --------------------------------------------------
@@ -2810,7 +2810,7 @@ class SecuritySettings(object):
         administrator to remove the enterprise login set up with a single identity provider.
 
         ==================      =======================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      ---------------------------------------
         idp                     The idp id to unregister.
         ==================      =======================================
@@ -2831,7 +2831,7 @@ class SecuritySettings(object):
         ArcGIS Online Only.
 
         ==================      =======================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      ---------------------------------------
         idp                     The idp to get. If none provided, all
                                 available are returned.

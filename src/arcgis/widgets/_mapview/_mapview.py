@@ -175,7 +175,7 @@ def _reproject_extent(extents, target_sr={"wkid": 102100, "latestWkid": 3857}):
     """Reproject Extent
 
     ==================     ====================================================================
-    **Argument**              **Description**
+    **Parameter**              **Description**
     ------------------     --------------------------------------------------------------------
     extents                   extent or list of extents you want to project.
     ------------------     --------------------------------------------------------------------
@@ -233,7 +233,7 @@ class MapView(widgets.DOMWidget):
     The ``MapView`` class creates a mapping widget for Jupyter Notebook and JupyterLab.
 
     ==================     ====================================================================
-    **Argument**              **Description**
+    **Parameter**              **Description**
     ------------------     --------------------------------------------------------------------
     gis                    The active :class:`~arcgis.gis.GIS` instance you want this map widget to use.
     ------------------     --------------------------------------------------------------------
@@ -282,7 +282,7 @@ class MapView(widgets.DOMWidget):
         Get/Set the level of zoom applied to the Map Widget.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required int.
                             .. note::
@@ -320,7 +320,7 @@ class MapView(widgets.DOMWidget):
         of the map would be 1:X.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required int.
         ===============     ====================================================================
@@ -347,11 +347,11 @@ class MapView(widgets.DOMWidget):
     @property
     def snap_to_zoom(self):
         """
-        The `snap_to_zoom` property is used to determine how the zoom is enabled when the map widget is created.
+        The ``snap_to_zoom`` property is used to determine how the zoom is enabled when the map widget is created.
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required bool.
                             Values:
@@ -379,7 +379,7 @@ class MapView(widgets.DOMWidget):
         of the view in degrees in 2D mode.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required float.
         ===============     ====================================================================
@@ -462,7 +462,7 @@ class MapView(widgets.DOMWidget):
         Get/Set the basemap you would like to apply to the widget.
 
          ===============     ====================================================================
-         **Argument**        **Description**
+         **Parameter**        **Description**
          ---------------     --------------------------------------------------------------------
          value               Required string. Ex: ('topo', 'national-geographic', etc.).
                              .. note::
@@ -555,8 +555,9 @@ class MapView(widgets.DOMWidget):
         """
         Get/Set the map widget's extent.
 
+
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         value                  Required dict.
                                 A `[[xmin, ymin], [xmax, ymax]]` list, Spatially Enabled Data Frame ``full_extent``,
@@ -575,16 +576,16 @@ class MapView(widgets.DOMWidget):
 
         .. code-block:: python
 
-            #Usage Example
+                #Usage Example
 
-            >>> from arcgis.gis import GIS, Item
-            >>> from arcgis.widgets import MapView
-            >>> map2 = gis.map("California")
-            >>> map2.extent
-            {
-            'xmin': -124.20822999999997, 'ymin': 31.436105693000048,
-            'xmax': -114.33222999999997, 'ymax': 41.31210569300005
-            }
+                >>> from arcgis.gis import GIS, Item
+                >>> from arcgis.widgets import MapView
+                >>> map2 = gis.map("California")
+                >>> map2.extent
+                {
+                'xmin': -124.20822999999997, 'ymin': 31.436105693000048,
+                'xmax': -114.33222999999997, 'ymax': 41.31210569300005
+                }
 
         """
         if self._readonly_extent:
@@ -644,7 +645,7 @@ class MapView(widgets.DOMWidget):
         Get/Set the center of the ``Map Widget``.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         setter                 A `[lat, long]` list, or a dict that represents the JSON of the map
                                widget's center.
@@ -712,8 +713,7 @@ class MapView(widgets.DOMWidget):
     _trigger_interactive_draw_mode_for = Dict({}).tag(sync=True)
     _trigger_new_jlab_window_with_args = Dict({}).tag(sync=True)
     hide_mode_switch = Bool(False).tag(sync=True)
-    """
-    When the hide_mode_switch property is set to True, the 2D/3D switch button will be hidden from the widget.
+    """When ``hide_mode_switch`` is set to ``True`` the 2D/3D switch button will be hidden from the widget.
    
     .. note::
         Once the button is hidden, it cannot be made visible again: a new MapView instance must be created to see the 
@@ -721,15 +721,15 @@ class MapView(widgets.DOMWidget):
     """
     jupyter_target = Unicode("").tag(sync=True)
     """
-    The jupyter_target property is a read-only string that is either "lab" or "notebook". This represents if
-    the widget is drawn in a Jupyter Notebook environment or a JupyterLab
+    ``jupyter_target`` is a readonly string that is either ``lab`` or ``notebook``: ``jupyter_target`` represents if
+    this widget is drawn in a Jupyter Notebook environment or a JupyterLab
     environment.
     """
     tab_mode = Unicode("auto").tag(sync=True)
     """
     .. raw:: html
 
-        <p>The tab_mode property is a string property that specifies the 'default' behavior of toggling a
+        <p>The ``tab_mode`` property is a string property that specifies the 'default' behavior of toggling a
         new window in a JupyterLab environment, whether that is called by
         pressing the <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAC
         AAAAAgCAYAAABzenr0AAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAAsTAAALEwEAmpwYA
@@ -773,16 +773,18 @@ class MapView(widgets.DOMWidget):
 
     ready = Bool(False).tag(sync=True)
     """
-    The ready property is a read-only bool that represents if the map widget has been drawn
+    ``ready`` is a readonly bool that represents if the map widget has been drawn
     in the notebook.
     """
     _js_cdn_override = Unicode().tag(sync=True)
 
     legend = Bool(False).tag(sync=True)
     """
-    If legend property is set to True, a legend will display in the widget that
-    describes all layers added to the map. If set to False,the legend will be hidden.
-    The default is False .
+    If ``legend`` is set to ``True``, a legend will display in the widget that
+    describes all layers added to the map. If set to ``False``,the legend will be hidden.
+    
+    .. note::
+        The default is ``False`` .
     """
 
     _gallery_basemaps = Dict({}).tag(sync=True)
@@ -897,7 +899,7 @@ class MapView(widgets.DOMWidget):
     """
     The ``basemaps`` layers are a list of possible basemaps to set :attr:`~arcgis.widgets.MapView.basemap` with:
     
-    1. Dark Gray Vector
+    1. Dark Grey Vector
     2. Gray Vector
     3. Hybrid
     4. Oceans
@@ -1087,6 +1089,16 @@ class MapView(widgets.DOMWidget):
         class_id = class_id_root + self._uuid
         return f'<div class="{class_id}">{iframe_html}</div>'
 
+    print_service_url = Unicode("").tag(sync=True)
+    """
+    .. warning::
+        This property is obselete as of >v1.6 of the Python API, since
+        the underlying JavaScript code ran during a `take_screenshot()` Python
+        call has been has been changed to `MapView.takeScreenshot()` instead
+        of calling a Print Service URL. Any value you set to this property
+        will be ignored (2D screenshots will still be taken successfully).
+    """
+
     _trigger_screenshot_with_args = Dict({}).tag(sync=True)
 
     def take_screenshot(self, output_in_cell=True, set_as_preview=True, file_path=""):
@@ -1097,7 +1109,7 @@ class MapView(widgets.DOMWidget):
             Only works in a Jupyter Notebook environment.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         output_in_cell         Optional bool, default ``True``. Will display the screenshot in the
                                output area of the cell where this function is called.
@@ -1183,7 +1195,7 @@ class MapView(widgets.DOMWidget):
             this 'snapshot' state of the map, regardless of any future Python code ran.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         output_in_cell         Optional bool, default ``True``. Will display the embedded HTML
                                interactive map in the output area of the cell where this function
@@ -1431,7 +1443,7 @@ class MapView(widgets.DOMWidget):
         map widget.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required object. You can specify :class:`~arcgis.gis.Item` objects, ``Layer`` objects
                                such as :class:`~arcgis.features.FeatureLayer` , ImageryLayer, MapImageLayer,
@@ -1619,7 +1631,7 @@ class MapView(widgets.DOMWidget):
         and have it by dynamically changed on the mapview.
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         layer                   Required Feature Layer or Feature Layer dictionary.
                                 The existing mapview layer with updated properties.
@@ -1659,10 +1671,10 @@ class MapView(widgets.DOMWidget):
 
         .. note::
             A list of layers added to the widget can be retrieved by querying the
-            :attr:`~arcgis.widgets.MapView.layers` property.
+        :attr:`~arcgis.widgets.MapView.layers` property.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         layers                 Optional list. Specify the list of layers to be removed from the map widget. You can get
                                the list of layers on the map by querying the 'layers' property.
@@ -1670,7 +1682,7 @@ class MapView(widgets.DOMWidget):
         ==================     ====================================================================
 
         :return:
-            True if layer is successfully removed, otherwise False.
+            True if layer is successfully removed. Else, False.
         """
         # Developer notes: infer all the layer types the user passed in.
         # Remove everything if the user didn't specify. Then, look up the hash
@@ -1797,7 +1809,7 @@ class MapView(widgets.DOMWidget):
         The ``display_message`` method displays a message on the upper-right corner of the ``map widget``.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         msg                    A required String. The message to be displayed.
         ==================     ====================================================================
@@ -1834,7 +1846,7 @@ class MapView(widgets.DOMWidget):
             calling this method.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         item_properties     Required dictionary. See table below for the keys and values.
         ---------------     --------------------------------------------------------------------
@@ -1852,7 +1864,7 @@ class MapView(widgets.DOMWidget):
         folder              Optional string. Name of the folder where placing item.
         ===============     ====================================================================
 
-        *Key:Value Dictionary Options for Argument item_properties*
+        *Key:Value Dictionary Options for Parameter item_properties*
 
         =================  =====================================================================
         **Key**            **Value**
@@ -2071,7 +2083,7 @@ class MapView(widgets.DOMWidget):
             method.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         item_properties     Optional dictionary. See table below for the keys and values.
         ---------------     --------------------------------------------------------------------
@@ -2084,7 +2096,7 @@ class MapView(widgets.DOMWidget):
         metadata            Optional string. Either a path or URL to the metadata.
         ===============     ====================================================================
 
-        *Key:Value Dictionary Options for Argument item_properties*
+        *Key:Value Dictionary Options for Parameter item_properties*
 
         =================  =====================================================================
         **Key**            **Value**
@@ -2203,7 +2215,7 @@ class MapView(widgets.DOMWidget):
             server.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         path_to_file           Required string. The path to save the HTML file on disk.
         ------------------     --------------------------------------------------------------------
@@ -2241,12 +2253,14 @@ class MapView(widgets.DOMWidget):
 
     def draw(self, shape, popup=None, symbol=None, attributes=None):
         """
-        The draw method draws a shape on the map widget.
-        Anything can be drawn from known :class:`~arcgis.geometry.Geometry` objects, coordinate pairs, and
-        :class:`~arcgis.features.FeatureSet` objects.
+        The ``draw`` method draws a shape on the map widget.
+
+        .. note::
+            Anything can be drawn from known :class:`~arcgis.geometry.Geometry` objects, coordinate pairs, and
+            :class:`~arcgis.features.FeatureSet` objects.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         shape                  Required object.
                                Known :class:`~arcgis.geometry.Geometry` objects:
@@ -2431,8 +2445,10 @@ class MapView(widgets.DOMWidget):
 
     def clear_graphics(self):
         """
-        The clear_graphics method clears the graphics drawn on the map widget.
-        Graphics are shapes drawn using the :attr:`~arcgis.widgets.MapView.draw` method.
+        The ``clear_graphics`` method clear the graphics drawn on the map widget.
+
+        .. note::
+            Graphics are shapes drawn using the :attr:`~arcgis.widgets.MapView.draw` method.
 
         .. code-block:: python
 
@@ -2468,7 +2484,7 @@ class MapView(widgets.DOMWidget):
         2. The drawn geometry
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         remove                 Optional boolean. Set to true to remove the callback from the list
                                of callbacks.
@@ -2485,7 +2501,7 @@ class MapView(widgets.DOMWidget):
             The callback will be called with one argument, the clicked widget instance.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         remove                 Optional boolean. Set to true to remove the callback from the list
                                of callbacks.
@@ -2522,7 +2538,7 @@ class MapView(widgets.DOMWidget):
             gG9knfWwKBGcvAAAAAElFTkSuQmCC"> icon in the widget UI.</p>
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         title                  What text will display as the widget tab. Default: "ArcGIS Map".
         ------------------     --------------------------------------------------------------------
@@ -2560,7 +2576,7 @@ class MapView(widgets.DOMWidget):
         The ``zoom_to_layer`` method snaps the map to the extent of the provided :class:`~arcgis.gis.Item` object(s).
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   The item at which you want to zoom your map to.
                                This can be a single or a list of :class:`~arcgis.gis.Item`, ``Layer`` , ``DataFrame`` ,
@@ -2593,7 +2609,7 @@ class MapView(widgets.DOMWidget):
 
     time_slider = Bool(False).tag(sync=True)
     """
-    The time_slider property determines whether a time slider exists for a map widget.
+    ``time_slider`` is a string property that determines whether a time slider exists for a map widget.
     If set to `True`, will display a time slider in the widget that will
     allow you to visualize temporal data for an applicable layer added to
     the map. Default: `False`.
@@ -2604,11 +2620,12 @@ class MapView(widgets.DOMWidget):
 
     time_mode = Unicode("time-window").tag(sync=True)
     """
-    The time_mode property is the string used for defining if the temporal data will be displayed
+    ``time_mode`` is the string used for defining if the temporal data will be displayed
     cumulatively up to a point in time, a single instant in time, or
     within a time range.
 
-    `Possible values: "instant", "time-window", "cumulative-from-start", "cumulative-from-end". Default: "time-window"`
+    Possible values: "instant", "time-window", "cumulative-from-start",
+    "cumulative-from-end". Default: "time-window"
 
     See the `TimeSlider <https://developers.arcgis.com/javascript/latest/api-reference/esri-widgets-TimeSlider.html#mode>`_
     page in the ArcGIS REST API page for more info.
@@ -2706,7 +2723,7 @@ class MapView(widgets.DOMWidget):
         slider.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         start_time             Required ``datetime.datetime``. The lower bound of the time extent to
                                display on the time slider.
@@ -2780,7 +2797,7 @@ class MapView(widgets.DOMWidget):
             sync. Thus, driving one of these ``MapView`` objects will make the other ``MapView`` objects follow.
 
         ==================     ===================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     -------------------------------------------------------------------
         mapview                Either a single :class:`~arcgis.widgets.MapView` instance, or a list of ``MapView``
                                instances to synchronize to.
@@ -2891,7 +2908,7 @@ class MapView(widgets.DOMWidget):
         instances made via `my_mapview.sync_navigation(other_mapview)`.
 
         ==================     ===================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     -------------------------------------------------------------------
         mapview                (Optional) Either a single `MapView` instance, or a list of
                                `MapView` instances to unsynchronize. If not specified, will

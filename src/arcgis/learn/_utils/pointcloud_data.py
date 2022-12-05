@@ -681,7 +681,7 @@ def show_point_cloud_batch(self, rows=2, figsize=(6, 12), color_mapping=None, **
     is not yet supported.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     rows                    Optional rows. Number of rows to show. Default
                             value is 2 and maximum value is the `batch_size`
@@ -695,7 +695,7 @@ def show_point_cloud_batch(self, rows=2, figsize=(6, 12), color_mapping=None, **
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     mask_class              Optional list of integers. Array containing
                             class values to mask. Use this parameter to
@@ -853,7 +853,7 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
     is not yet supported.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     rows                    Optional rows. Number of rows to show. Default
                             value is 2 and maximum value is the `batch_size`
@@ -867,7 +867,7 @@ def show_point_cloud_batch_TF(self, rows=2, color_mapping=None, **kwargs):
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     mask_class              Optional list of integers. Array containing
                             class values to mask. Use this parameter to
@@ -2468,7 +2468,7 @@ def show_results(self, rows, color_mapping=None, **kwargs):
     is not yet supported.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     rows                    Optional rows. Number of rows to show. Deafults
                             value is 2.
@@ -2481,7 +2481,7 @@ def show_results(self, rows, color_mapping=None, **kwargs):
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     mask_class              Optional array of integers. Array containing
                             class values to mask. Default value is [].
@@ -2860,7 +2860,7 @@ class Transform3d(object):
     Applicable only for dataset_type=’PointCloud’.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     rotation_range          Optional tuple of length 4. It contains a list
                             of angles(in radians) for X, Z and Y coordinates
@@ -3196,7 +3196,7 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
     is not yet supported.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     rows                    Optional rows. Number of rows to show. Deafults
                             value is 2.
@@ -3209,7 +3209,7 @@ def show_results_tool(self, rows, color_mapping=None, **kwargs):
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     mask_class              Optional array of integers. Array containing
                             class values to mask. Default value is [].

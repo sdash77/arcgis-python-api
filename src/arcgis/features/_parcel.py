@@ -15,7 +15,7 @@ class ParcelFabricManager(object):
     and systems.
 
     ====================     ====================================================================
-    **Argument**             **Description**
+    **Parameter**             **Description**
     --------------------     --------------------------------------------------------------------
     url                      Required String. The URI to the service endpoint.
     --------------------     --------------------------------------------------------------------
@@ -112,7 +112,7 @@ class ParcelFabricManager(object):
         record.
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         features                 Required List. The parcel features to assign to the specified record.
                                  Can be parcels, parcel polygons, parcel points, and parcel lines.
@@ -200,7 +200,7 @@ class ParcelFabricManager(object):
         movement in the case of an adjustment.
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         extent                   Optional :class:`~arcgis.geometry.Envelope` . The extent to build.
 
@@ -289,7 +289,7 @@ class ParcelFabricManager(object):
         metes and bounds` record driven workflow.
 
         =======================     ====================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     --------------------------------------------------------------------
         parent_parcels              parent parcels that will be clipped into.
 
@@ -407,7 +407,7 @@ class ParcelFabricManager(object):
         child parcel.
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         parent_parcels           Required String. It is the parcel(guid)+layer(name) identifiers to
                                  merge.
@@ -525,7 +525,7 @@ class ParcelFabricManager(object):
         parcel lineage is created.
 
         =======================     ====================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     --------------------------------------------------------------------
         parent_parcels              Required String. Parcel parcels from which lines are copied.
         -----------------------     --------------------------------------------------------------------
@@ -631,7 +631,7 @@ class ParcelFabricManager(object):
         road parcel is moved to the encumbrance (easement) parcel type.
 
         =======================     ====================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     --------------------------------------------------------------------
         parcels                     Required List. Parcels list that will change type
         -----------------------     --------------------------------------------------------------------
@@ -698,7 +698,7 @@ class ParcelFabricManager(object):
         connected points.
 
         =======================     ====================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     --------------------------------------------------------------------
         parcels                     Required List. The parcels to erase.
         -----------------------     --------------------------------------------------------------------
@@ -763,7 +763,7 @@ class ParcelFabricManager(object):
         Global ID of the specified record.
 
         =======================     ====================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     --------------------------------------------------------------------
         features                    Required List. The parcel features to be set as historic or current.
                                     Can be parcels, parcel polygons, parcel points, and parcel lines.
@@ -853,7 +853,7 @@ class ParcelFabricManager(object):
         parcel type polygon feature class.
 
         =======================     ====================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     --------------------------------------------------------------------
         record                      Required String. A **GUID** representing the record that will be
                                     assigned to the features set as current or historic.
@@ -929,7 +929,7 @@ class ParcelFabricManager(object):
         Similarly, parcel seeds can be duplicated to subtypes and different parcel types.
 
         =======================     ====================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     --------------------------------------------------------------------
         parcels                     Required List. A list of parcels to duplicate.
 
@@ -1020,7 +1020,7 @@ class ParcelFabricManager(object):
         to apply the results of a least squares adjustment to parcel fabric feature classes.
 
         ============================    ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ----------------------------    --------------------------------------------------------------------
         analysis_type                   Optional string. Represents the type of least squares analysis that will be run on the input parcels.
 
@@ -1104,7 +1104,7 @@ class ParcelFabricManager(object):
         to run a least-squares analysis on parcels and store the results in adjustment feature classes.
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         movement_tolerance        Optional float. Represents the minimum allowable coordinate shift when updating parcel fabric points. If the distance between
                                   the adjustment point and the parcel fabric point is greater than the specified tolerance, the parcel fabric
@@ -1173,7 +1173,7 @@ class ParcelFabricManager(object):
         Divide a polygon feature into multiple features that have proportional or equal areas, or equal widths.
 
         =========================== ====================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         --------------------------- --------------------------------------------------------------------
         divide_parcel_guid          Required String. Parameter for the unique identifier `guid` of the
                                     parcel being divided.
@@ -1296,7 +1296,7 @@ class ParcelFabricManager(object):
         record.
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         source_record            Required String. GlobalID representing the record containing the
                                  parcel features to be reassigned.
@@ -1319,7 +1319,7 @@ class ParcelFabricManager(object):
         delete_source_record     Required Bool. Parameter indicating whether to delete the original
                                  source record.
 
-        -----------------------     --------------------------------------------------------------------
+        --------------------     --------------------------------------------------------------------
         future                      Optional boolean. If `True`, the request is processed as an asynchronous
                                     job and a URL is returned that points a location displaying the status
                                     of the job.
@@ -1363,7 +1363,7 @@ class ParcelFabricManager(object):
         lines associations with records.
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         extent                   Parameter representing the envelope of the extent to reconstruct seeds.
                                  Seeds that lie within the specified extent will be reconstructed into
@@ -1382,7 +1382,7 @@ class ParcelFabricManager(object):
                                                  "spatialReference": {"wkid": <wkid_value>}
                                                 }
 
-        -----------------------     --------------------------------------------------------------------
+        --------------------     --------------------------------------------------------------------
         future                      Optional boolean. If `True`, the request is processed as an asynchronous
                                     job and a URL is returned that points a location displaying the status
                                     of the job.
@@ -1427,17 +1427,17 @@ class ParcelFabricManager(object):
         future: bool = False,
     ):
         """
-        The :meth:`~transfer_parcel` supports workflows for transferring a piece of land between parcels.
+        The :meth:`~transfer_parcel` method supports workflows for transferring
+        a piece of land between parcels.
 
         =======================     =======================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     -----------------------------------------------------------------------
         transfer_parcel_feature     Required Dict. Parameter representing the parcel to be transferred.
                                     Only one parcel can be specified as the transfer parcel.
 
-                                    :Syntax:
-
                                     .. code-block:: python
+                                        # Example Usage:
 
                                         >>> transfer_parcel_feature={"id":"<guid>","layerId":"<layerID>"}
         -----------------------     -----------------------------------------------------------------------
@@ -1445,9 +1445,8 @@ class ParcelFabricManager(object):
                                     will be transferred. These parcels will be merged with the transfer
                                     parcel and will become larger.
 
-                                    :Syntax:
-
                                     .. code-block:: python
+                                        # Example Usage:
 
                                         >>> target_parcel_features=[{"id":"<guid>","layerId":"<layerID>"},{...}]
 
@@ -1460,7 +1459,6 @@ class ParcelFabricManager(object):
                                     domain.
 
                                     .. code-block:: python
-
                                         #Example Usage:
 
                                         #Square feet
@@ -1473,13 +1471,12 @@ class ParcelFabricManager(object):
                                     land will be transferred. These parcels will be clipped and will
                                     become smaller.
 
-                                    :Syntax:
-
                                     .. code-block:: python
+                                        # Example Usage:
 
                                         >>> source_parcel_features=[{"id":"<guid>","layerId":"<layerID>"},{...}]
 
-        -----------------------     --------------------------------------------------------------------
+        -----------------------     -----------------------------------------------------------------------
         future                      Optional boolean. If `True`, the request is processed as an asynchronous
                                     job and a URL is returned that points a location displaying the status
                                     of the job.
@@ -1525,18 +1522,18 @@ class ParcelFabricManager(object):
         left of the parcel line, to the right of the parcel line, or centered over the parcel line.
 
         =======================     =======================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     -----------------------------------------------------------------------
         parcel_line_features        Required List. Parameter representing the input parcel line layers with
                                     label positions that will be updated.
 
-                                    :Syntax:
-
                                     .. code-block:: python
 
-                                        >>> parcel_line_features=[{"id":"<guid>","layerId":"<layerID>"},{...}]
+                                        >>> parcel_line_features=[{"id":"<guid>",
+                                                                   "layerId":"<layerID>"},
+                                                                   {...}]
 
-        --------------------        --------------------------------------------------------------------
+        -----------------------     -----------------------------------------------------------------------
         future                      Optional boolean. If `True`, the request is processed as an asynchronous
                                     job and a URL is returned that points a location displaying the status
                                     of the job.

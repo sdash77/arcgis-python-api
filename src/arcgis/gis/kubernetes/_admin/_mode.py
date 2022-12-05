@@ -24,7 +24,7 @@ class Mode(_BaseKube):
         Updates the site's mode to set it in read only
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         read_only              Required Boolean.  If True, the organization will be in read only mode.  False it is in write mode.
         ------------------     --------------------------------------------------------------------

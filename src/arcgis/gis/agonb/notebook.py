@@ -108,7 +108,7 @@ class NotebookManager(object):
         parameters to a cell.
 
         ====================    ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         --------------------    --------------------------------------------------------------------
         item                    Required :class:`~arcgis.gis.Item`. Opens an existing portal item.
         --------------------    --------------------------------------------------------------------
@@ -215,7 +215,7 @@ class NotebookManager(object):
         Opens a notebook on the notebook server
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         itemid                  Required String. Opens an existing portal item.
         ------------------      --------------------------------------------------------------------

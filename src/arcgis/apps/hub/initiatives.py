@@ -184,7 +184,7 @@ class Initiative(OrderedDict):
         Adds a batch of items to the initiative content library.
 
         =====================    ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         ---------------------    --------------------------------------------------------------------
         items_list               Required list. A list of Item or item ids to add to the initiative.
         =====================    ====================================================================
@@ -254,7 +254,7 @@ class Initiative(OrderedDict):
             belong to this initiative to the new target_owner.
 
         =====================     ====================================================================
-        **Argument**              **Description**
+        **Parameter**              **Description**
         ---------------------     --------------------------------------------------------------------
         target_owner              Required string. The new desired owner of the initiative.
         =====================     ====================================================================
@@ -343,7 +343,7 @@ class Initiative(OrderedDict):
         Shares an initiative and associated site with the specified list of groups.
 
         ======================  ========================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ----------------------  --------------------------------------------------------
         everyone                Optional boolean. Default is False, don't share with
                                 everyone.
@@ -383,7 +383,7 @@ class Initiative(OrderedDict):
         Stops sharing of the initiative and its associated site with the specified list of groups.
 
         ================  =========================================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  -----------------------------------------------------------------------------------------
         groups            Required list of group names as strings, or a list of arcgis.gis.Group objects,
                           or a comma-separated list of group IDs.
@@ -409,7 +409,7 @@ class Initiative(OrderedDict):
 
 
         =====================     ====================================================================
-        **Argument**              **Description**
+        **Parameter**              **Description**
         ---------------------     --------------------------------------------------------------------
         initiative_properties     Required dictionary. See URL below for the keys and values.
         =====================     ====================================================================
@@ -471,7 +471,7 @@ class InitiativeManager(object):
         Adds a new initiative to the Hub.
 
         =================       ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         -----------------       --------------------------------------------------------------------
         title                   Required string.
         -----------------       --------------------------------------------------------------------
@@ -659,7 +659,7 @@ class InitiativeManager(object):
             `clone` method supported under the `~arcgis.apps.sites.SiteManager` class.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         initiative          Required :class:`~arcgis.apps.hub.Initiative` object of initiative to be cloned.
         ---------------     --------------------------------------------------------------------
@@ -733,7 +733,7 @@ class InitiativeManager(object):
         Returns the initiative object for the specified initiative_id.
 
         =======================    =============================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         -----------------------    -------------------------------------------------------------
         initiative_id              Required string. The initiative itemid.
         =======================    =============================================================
@@ -760,7 +760,7 @@ class InitiativeManager(object):
         Searches for initiatives.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         title               Optional string. Return initiatives with provided string in title.
         ---------------     --------------------------------------------------------------------

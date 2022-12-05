@@ -94,7 +94,7 @@ class NetworkDiagramManager(object):
         utility network features or diagram features.
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         moment                              Optional integer. The session moment.
         ------------------------------      -----------------------------------------------------
@@ -182,7 +182,7 @@ class NetworkDiagramManager(object):
         It is used to create a new temporary network diagram.
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         template                            Required string. The name of the diagram template the
                                             new network diagram will be based on.
@@ -213,7 +213,7 @@ class NetworkDiagramManager(object):
         resource. The result of this operation is an array of Diagram Information JSON objects.
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         diagram_names                       Required list of strings. Each string corresponds to a
                                             diagram name for which you want to get diagram information.
@@ -242,7 +242,7 @@ class NetworkDiagramManager(object):
         The query_consistency_state operation is performed on a Network Diagram Service resource.
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         diagram_names                       Required list of strings. Each string corresponds to a
                                             diagram name for which you want to get diagram information.
@@ -269,7 +269,7 @@ class NetworkDiagramManager(object):
         resource.
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         name                                Required string. The name of the network diagram to delete.
         ==============================      =====================================================
@@ -313,7 +313,7 @@ class NetworkDiagramManager(object):
         The Template resource doesn't support any operation nor any child resource.
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         name                                Required string. The name of the template.
         ==============================      =====================================================
@@ -336,7 +336,7 @@ class NetworkDiagramManager(object):
         By default, only the diagrams in Default are returned.
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         moment                              Optional int. The session moment.
         ==============================      =====================================================
@@ -360,7 +360,7 @@ class NetworkDiagramManager(object):
         a Network Diagram service.
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         name                                Required string. The name of the network diagram.
         ==============================      =====================================================
@@ -455,7 +455,7 @@ class Diagram(object):
         It is used to append a set of utility network feature to the diagram resource.
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         added_features                      Required list of strings. The strings are utility network
                                             feature Global IDs, the features being appended to the
@@ -491,7 +491,7 @@ class Diagram(object):
         the resource diagram content.
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         layout_name                         Required string. The name of the algorithm layout to
                                             execute.
@@ -585,7 +585,7 @@ class Diagram(object):
         on the template the resource diagram is based on.
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         junction_ids                        Optional list. For the case you want the layout algorithm
                                             to execute on a diagram part. A list of junction object Ids
@@ -622,7 +622,7 @@ class Diagram(object):
         junction and barrier flags on the resource diagram.
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         flag_type                           Required string. The type of flag you want to clear in
                                             the diagram.
@@ -652,7 +652,7 @@ class Diagram(object):
         optionally regarding to the traversability over the network.
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         extend_type                         Optional string. The type of extend you want to process.
 
@@ -694,7 +694,7 @@ class Diagram(object):
         associated with a set of diagram features that are referenced in the diagram resource.
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         from_features                       Required list of strings. Depending on whether you
                                             want to retrieve diagram features associated with
@@ -782,7 +782,7 @@ class Diagram(object):
         features used as input for the diagram build.
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         moment                              Optional integer. A session moment.
         ==============================      =====================================================
@@ -813,7 +813,7 @@ class Diagram(object):
         represented in another network diagram.
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         from_features                       Required list of strings. A list of diagram network
                                             feature global IDs.
@@ -854,7 +854,7 @@ class Diagram(object):
         It returns all the diagram aggregations in the diagram resource.
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         moment                              Optional integer. A session moment.
         ==============================      =====================================================
@@ -885,7 +885,7 @@ class Diagram(object):
         and barrier flag on a particular diagram feature.
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         flag_type                           Required string. The type of flag you want to search
                                             for on the diagram resource.
@@ -923,7 +923,7 @@ class Diagram(object):
 
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         flag_type                           Required string. The type of flag you want to search
                                             for on the diagram resource.
@@ -964,7 +964,7 @@ class Diagram(object):
         utility network feature Global IDs.
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         initial_features                    Required list of strings. A list of utility network
                                             feature Global IDs, those features being the ones used
@@ -1000,7 +1000,7 @@ class Diagram(object):
         elements, and diagram properties.
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         moment                              Optional int. The session moment.
         ------------------------------      -----------------------------------------------------
@@ -1084,7 +1084,7 @@ class Diagram(object):
         containers that may be partially within it.
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         extent                              Optional dictionary. Represent the extent you want the
                                             resulting diagram features to intersect.
@@ -1177,7 +1177,7 @@ class Diagram(object):
         or container diagram elements they contain.
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         junction_ids                        Optional list. For the case you want the layout algorithm
                                             to execute on a diagram part. A list of junction object Ids
@@ -1239,7 +1239,7 @@ class Diagram(object):
         set of diagram features represented in the diagram resource.
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         junctions                           Optional list of dictionaries. Provide the new geometry
                                             for each edited junction, those diagram junctions being
@@ -1284,7 +1284,7 @@ class Diagram(object):
         It is used to store the temporary network diagram resource in the database.
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         name                                Required string. The name of the network diagram to
                                             be stored.
@@ -1341,7 +1341,7 @@ class Diagram(object):
         The Dynamic Layers resource describes the sublayers under the diagram layer.
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         all_layers                          Optional bool. If True, all layers are cached whether
                                             they contain diagram features or not.
@@ -1376,7 +1376,7 @@ class Diagram(object):
         properties that define each sublayer under the diagram layer.
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         all_layers                          Optional bool. If True, all layers are cached whether
                                             they contain diagram features or not.
@@ -1431,7 +1431,7 @@ class Diagram(object):
         The result of this operation is a map image that represents the diagram specified in the URL.
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         size                                Required string. The size ("width, height") of the
                                             exported image in pixels.
@@ -1532,7 +1532,7 @@ class Diagram(object):
         The result of this operation is an identify results resource.
 
         ==============================      =====================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------      -----------------------------------------------------
         geometry                            Required string or dictionary.
                                             The geometry to identify on. The type of the geometry is specified by the geometryType parameter. The structure of the geometries is the same as the structure of the JSON geometry objects returned by the ArcGIS REST API. In addition to the JSON structures, for points and envelopes, you can specify the geometries with a simpler comma-separated syntax.

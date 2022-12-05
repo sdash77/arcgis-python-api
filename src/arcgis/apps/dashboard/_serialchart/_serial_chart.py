@@ -9,7 +9,7 @@ class SerialChart(_BaseWidget):
     Creates a dashboard Serial Chart widget.
 
     =========================   ===========================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -------------------------   -------------------------------------------
     item                        Required Portal :class:`~arcgis.gis.Item` object. Item object can
                                 be a :class:`~arcgis.features.FeatureLayer`  or a MapWidget.
@@ -1177,7 +1177,7 @@ class SerialChartData(object):
          Add value field to serial chart.
 
         =========================   ===========================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -------------------------   -------------------------------------------
         value_field                 Required field or list of fields from input item.
                                     For groupByValues only one field is accepted.
@@ -1367,7 +1367,7 @@ class Events(object):
         Synchronize a mapWidget with SerialChart for triggered events.
 
         =========================   ===========================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -------------------------   -------------------------------------------
         action_type                 Required string. Actions can be one of
                                     "zoom", "flash", "show_popup", "pan".
@@ -1407,7 +1407,7 @@ class Events(object):
         Synchronize non-mapWidget type widgets with SerialChart for triggered events.
 
         =========================   ===========================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -------------------------   -------------------------------------------
         widget                      Required widget item or list of widget items
                                     .Name of the widgets to be synced.

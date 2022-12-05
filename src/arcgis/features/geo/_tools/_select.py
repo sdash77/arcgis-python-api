@@ -8,7 +8,7 @@ def select(sdf, other):
     Performs a select by location operation
 
     =========================    =========================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     -------------------------    ---------------------------------------------------------
     sdf                          Required Spatially Enabled DataFrame. The dataframe to have the operation performed on.
     -------------------------    ---------------------------------------------------------

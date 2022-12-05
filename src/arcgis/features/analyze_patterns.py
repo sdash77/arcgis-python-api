@@ -65,7 +65,7 @@ def calculate_density(
     identify areas that are hospitable to grazing animals.
 
     =========================    =========================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     -------------------------    ---------------------------------------------------------
     input_layer                  Required layer. The point or line features from which to calculate density. See :ref:`Feature Input<FeatureInput>`.
     -------------------------    ---------------------------------------------------------
@@ -200,7 +200,7 @@ def summarize_center_and_dispersion(
     The Summarize Center and Dispersion task finds central features and directional distributions.
 
     ====================    =========================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     --------------------    ---------------------------------------------------------
     analysis_layer          The point, line, or polygon features to be analyzed. This
                             parameter can be a URL to a feature service layer with an
@@ -333,7 +333,7 @@ def find_point_clusters(
     of varying densities from sparser noise resulting in more data-driven clusters.
 
     ====================    =========================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     --------------------    ---------------------------------------------------------
     analysis_layer          Required layer. The point feature layer for which
                             density-based clustering will be calculated.
@@ -483,7 +483,7 @@ def find_hot_spots(
     be the result of random processes and random chance.
 
     ===================================================================     =========================================================
-    **Argument**                                                            **Description**
+    **Parameter**                                                            **Description**
     -------------------------------------------------------------------     ---------------------------------------------------------
     analysis_layer (Required if the analysis_layer contains polygons)       Required layer. The point or polygon feature layer for which hot spots will be calculated. See :ref:`Feature Input<FeatureInput>`.
     -------------------------------------------------------------------     ---------------------------------------------------------
@@ -654,7 +654,7 @@ def find_outliers(
     spatial pattern associated with these features could very likely be the result of random processes and random chance.
 
     ==================================================================  ===============================================================
-    **Argument**                                                        **Description**
+    **Parameter**                                                        **Description**
     ------------------------------------------------------------------  ---------------------------------------------------------------
     analysis_layer                                                      Required feature layer. The point or polygon feature layer for which outliers will be calculated. See :ref:`Feature Input<FeatureInput>`.
     ------------------------------------------------------------------  ---------------------------------------------------------------
@@ -878,7 +878,7 @@ def interpolate_points(
 
 
     ===========================     ===========================================================================================
-    **Argument**                    **Description**
+    **Parameter**                    **Description**
     ---------------------------     -------------------------------------------------------------------------------------------
     input_layer                     Required layer. The point layer whose features will be interpolated. See :ref:`Feature Input<FeatureInput>`.
     ---------------------------     -------------------------------------------------------------------------------------------

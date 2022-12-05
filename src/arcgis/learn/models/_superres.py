@@ -42,7 +42,7 @@ class SuperResolution(ArcGISModel):
     Based on Fast.ai MOOC Lesson 7.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
                             :meth:`~arcgis.learn.prepare_data` function.
@@ -106,7 +106,7 @@ class SuperResolution(ArcGISModel):
         Creates a :class:`~arcgis.learn.SuperResolution` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -126,7 +126,7 @@ class SuperResolution(ArcGISModel):
         Creates a SuperResolution object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
                                 object from :meth:`~arcgis.learn.prepare_data` function or None for
@@ -210,7 +210,7 @@ class SuperResolution(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
@@ -232,7 +232,7 @@ class SuperResolution(ArcGISModel):
         Predicts and display the image.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         img_path                Required path of an image.
         ---------------------   -------------------------------------------

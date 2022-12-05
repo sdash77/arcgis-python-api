@@ -51,7 +51,7 @@ class BackupStore(_BaseKube):
         Update only supports setting the backup store as the default store for your deployment {"default": true}.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         settings               Required dict[str, Any]. A JSON object of backup store settings.
                                At 10.9.1, the only supported setting is the default property.
@@ -181,7 +181,7 @@ class Backup(_BaseKube):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         store_name             Required String. The name of the store the backup was copied to.
         ------------------     --------------------------------------------------------------------
@@ -230,7 +230,7 @@ class RecoveryManager(_BaseKube):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         name                   Required String. The unique name of the backup store.
         ------------------     --------------------------------------------------------------------
@@ -277,7 +277,7 @@ class RecoveryManager(_BaseKube):
         designated backup store.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         name                   Required String. The unique name of the backup.
         ------------------     --------------------------------------------------------------------
@@ -373,7 +373,7 @@ class RecoveryManager(_BaseKube):
         Gets/Sets the currently configured disaster recovery settings.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         value                  Required Dict[str, Any]. Dictionary describing disaster recovery
                                settings.

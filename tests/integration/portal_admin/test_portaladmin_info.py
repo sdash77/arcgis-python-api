@@ -21,7 +21,7 @@ def enable_verbose_logging(root):
     root.addHandler(handler)
 
 
-profiles = ['your_enterprise_profile']
+profiles = ['your_ent_admin_profile']
 PROXIES = detect_proxy(True)  # Handles Fiddler when True
 enable_verbose_logging(__logger__)
 
@@ -31,7 +31,34 @@ class Test_PortalAdmin(unittest.TestCase):
         username = "PAPIadmin"
         password = "PAPIletmein01"
         gis = GIS(
-            url="https://rpubs22101.ags.esri.com/portal",
+            url="https://1110pubbi-1110pubbi.apps.openshift48release.esri.com/web",
+            username=username,
+            password=password,
+            proxy=PROXIES,
+            verify_cert=False,
+            use_gen_token=True,
+        )
+        gis.users.me.update(security_question=1, security_answer="Redlands")
+        gis = GIS(
+            url="https://1110pubbi-1110pubbi.apps.openshift48release.esri.com/web",
+            username=username,
+            password=password,
+            proxy=PROXIES,
+            verify_cert=False,
+        )
+        assert gis.admin.info
+        url = "https://rqawinbi01pt.ags.esri.com/gis"
+        gis = GIS(
+            url=url,
+            username=username,
+            password=password,
+            proxy=PROXIES,
+            verify_cert=False,
+            use_gen_token=True,
+        )
+        gis.users.me.update(security_question=1, security_answer="Redlands")
+        gis = GIS(
+            url=url,
             username=username,
             password=password,
             proxy=PROXIES,

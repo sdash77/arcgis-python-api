@@ -37,3 +37,4 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
     from ._detreg_detector import DETReg
     from ._RandLANet import RandLANet
     from ._SQNSeg import SQNSeg
+    from ._psetae import PSETAE

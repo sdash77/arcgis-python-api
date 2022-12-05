@@ -64,7 +64,7 @@ def geocode_locations(
     for geocoding with GeoAnalytics Server <https://enterprise.arcgis.com/en/portal/latest/use/geoanalytics-geocoding-best-practices.htm>`_.
 
     ==========================   ===============================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     --------------------------   ---------------------------------------------------------------
     input_layer                  Required layer. The tabular input that will be geocoded. See :ref:`Feature Input<gaxFeatureInput>`.
     --------------------------   ---------------------------------------------------------------
@@ -332,7 +332,7 @@ def snap_tracks(
     The `snap_tracks` method matches track points to polylines.
 
     ============================   ===============================================================
-    **Argument**                   **Description**
+    **Parameter**                   **Description**
     ----------------------------   ---------------------------------------------------------------
     point_layer                    Required layer. The track point features that will be matched
                                    to polylines. See :ref:`Feature Input<gaxFeatureInput>`.
@@ -579,7 +579,7 @@ def detect_incidents(
     values exceed 0.03mg/L until they return to a value less than 0.01.
 
     ==========================   ===============================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     --------------------------   ---------------------------------------------------------------
     input_layer                  Required layer. The table, point, line or polygon features
                                  containing potential incidents. See :ref:`Feature Input<gaxFeatureInput>`.
@@ -805,7 +805,7 @@ def find_dwell_locations(
 
 
     ==========================   ===============================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     --------------------------   ---------------------------------------------------------------
     input_layer                  Required layer. A time-enabled layer with point
                                  features from which dwell locations will be found.
@@ -1077,7 +1077,7 @@ def find_similar_locations(
           closely they match your reference locations across all of the fields you have selected.
 
     ==========================   ===============================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     --------------------------   ---------------------------------------------------------------
     input_layer                  Required layer. The ``input_layer`` contains one or more reference locations
                                  against which features in the ``search_layer`` will be evaluated for similarity.

@@ -47,7 +47,7 @@ class ServiceManager(BaseServer):
         """Constructor
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         url                 Required string. The administration url endpoint.
         ---------------     --------------------------------------------------------------------
@@ -127,7 +127,7 @@ class ServiceManager(BaseServer):
         returns a list of services in the specified folder
 
         ===============     ===========================================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     -------------------------------------------------------------------------------------------
         folder              Required string. The name of the folder to list services from.
         ---------------     -------------------------------------------------------------------------------------------
@@ -154,7 +154,7 @@ class ServiceManager(BaseServer):
         Export services allows for the backup and storage of non-hosted services.
 
         =================   ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         -----------------   ----------------------------------------------------
         folder              required string.  This is the path to the save folder.
                             The ArcGIS Account must have access to the location
@@ -183,7 +183,7 @@ class ServiceManager(BaseServer):
         Import services allows for the backup and storage of non-hosted services.
 
         =================   ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         -----------------   ----------------------------------------------------
         file_path           required string.  File path with extension
                             .agssiteservices.
@@ -253,7 +253,7 @@ class ServiceManager(BaseServer):
         publishes a service definition file to arcgis server
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         sd_file             Required string. File path to the .sd file
         ---------------     --------------------------------------------------------------------
@@ -273,7 +273,7 @@ class ServiceManager(BaseServer):
             returns a list of a particular service type on AGS
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         service_type        Required string. Type of service to find.  The allowed types
                              are: ("GPSERVER", "GLOBESERVER", "MAPSERVER",
@@ -337,7 +337,7 @@ class ServiceManager(BaseServer):
         change those permissions at a later time.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         folder              Required string. name of folder to examine.
         ===============     ====================================================================
@@ -366,7 +366,7 @@ class ServiceManager(BaseServer):
         created on the ArcGIS Server site.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         service             Required dict. The service configuration in JSON format. For more
                             information about the service configuration options, see
@@ -412,7 +412,7 @@ class ServiceManager(BaseServer):
            resources
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         principal           Required string. Name of role to assign/disassign accesss.
         ---------------     --------------------------------------------------------------------
@@ -445,7 +445,7 @@ class ServiceManager(BaseServer):
         Lists principals which have permissions for the folder.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         folder_name              Optional string. Name of folder to examine permissions.
         ===============     ====================================================================
@@ -467,7 +467,7 @@ class ServiceManager(BaseServer):
         (principal). This is typically used when a role is deleted.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         principal           Required string. Name of role to dis-assign all accesss.
         ===============     ====================================================================
@@ -488,7 +488,7 @@ class ServiceManager(BaseServer):
         Creates a unique folder name on AGS
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         folder_name         Required string. Name of the new folder.
         ---------------     --------------------------------------------------------------------
@@ -515,7 +515,7 @@ class ServiceManager(BaseServer):
         Removes a folder on ArcGIS Server
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         folder_name         Required string. Name of the folder.
         ===============     ====================================================================
@@ -541,7 +541,7 @@ class ServiceManager(BaseServer):
         Deletes a service from ArcGIS Server
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         name                Required string. Name of the service
         ---------------     --------------------------------------------------------------------
@@ -573,7 +573,7 @@ class ServiceManager(BaseServer):
         Provides a report on all items in a given folder.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         folder              Optional string. Location of the service on ArcGIS Server.
         ===============     ====================================================================
@@ -656,7 +656,7 @@ class ServiceManager(BaseServer):
         object extension (.SOE) file.
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
         extension_filename         Required string. Name of the previously registered .SOE file.
         ======================     ====================================================================
@@ -681,7 +681,7 @@ class ServiceManager(BaseServer):
         configuration properties.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         item_id             Required string. Id of the uploaded .SOE file
         ===============     ====================================================================
@@ -709,7 +709,7 @@ class ServiceManager(BaseServer):
         Renames a published AGS Service
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         name                Required string.  Old service name.
         ---------------     --------------------------------------------------------------------
@@ -763,7 +763,7 @@ class ServiceManager(BaseServer):
            the supported out-of-the-box extensions for each service type.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         service             Required dict. The service is the properties to create a service.
         ===============     ====================================================================
@@ -788,7 +788,7 @@ class ServiceManager(BaseServer):
         Stops serveral services on a single server.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         services            Required list.  A list of dictionary objects. Each dictionary object
                             is defined as:
@@ -830,7 +830,7 @@ class ServiceManager(BaseServer):
         starts serveral services on a single server
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         services            Required list.  A list of dictionary objects. Each dictionary object
                             is defined as:
@@ -876,7 +876,7 @@ class ServiceManager(BaseServer):
         directory security in the security configuration.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         description         Required string. A description of the folder.
         ---------------     --------------------------------------------------------------------
@@ -913,7 +913,7 @@ class ServiceManager(BaseServer):
         in a folder, supply all three parameters.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         folder_name         Required string. The folder name to check for.
         ---------------     --------------------------------------------------------------------
@@ -999,7 +999,7 @@ class Service(BaseServer):
         Constructor
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         url                 Required string. The administration URL.
         ---------------     --------------------------------------------------------------------
@@ -1112,7 +1112,7 @@ class Service(BaseServer):
         enables/disables a service extension type based on the name
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         extension_objects      Required list. A list of new extensions.
         ==================     ====================================================================
@@ -1147,7 +1147,7 @@ class Service(BaseServer):
         operation takes the same parameters as the Add Permission operation.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         principal           Required string. Name of the role for whom the permission is being
                             assigned.
@@ -1205,7 +1205,7 @@ class Service(BaseServer):
         Renames this service to the new name
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         new_name            Required string. New name of the current service.
         ===============     ====================================================================
@@ -1286,7 +1286,7 @@ class Service(BaseServer):
         in the .SOE file.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         item_id             Required string. unique ID of the item
         ===============     ====================================================================
@@ -1314,7 +1314,7 @@ class Service(BaseServer):
         Allows for the upload of new itemInfo files such as metadata.xml
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         folder              Required string. Folder on ArcGIS Server.
         ---------------     --------------------------------------------------------------------
@@ -1341,7 +1341,7 @@ class Service(BaseServer):
         this object back into the editItemInfo() as a dictionary.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         json_dict           Required dict.  Item information dictionary.
         ===============     ====================================================================
@@ -1363,7 +1363,7 @@ class Service(BaseServer):
         along with other supplementary files that make up the service.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         file_type           Required string.  This value can be json or xml.  json return the
                             manifest.json file.  xml returns the manifest.xml file.
@@ -1392,7 +1392,7 @@ class Service(BaseServer):
         on a parent resource is automatically inherited by all child resources.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         principal           Required string. The role to be assigned.
         ---------------     --------------------------------------------------------------------
@@ -1423,7 +1423,7 @@ class Service(BaseServer):
         restarted with updated properties.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         service             Required dict. The service JSON as a dictionary.
         ===============     ====================================================================
@@ -1513,7 +1513,7 @@ class JobManager(BaseServer):
         meet specific conditions.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         start_time          Optional Datetime. The start date/time of the geoprocessing job.
         ---------------     --------------------------------------------------------------------
@@ -1682,7 +1682,7 @@ class ItemInformationManager(BaseServer):
         """Uploads a file associated with the item information to the server.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         info_file           Required String. The file to upload to the server.
         ---------------     --------------------------------------------------------------------

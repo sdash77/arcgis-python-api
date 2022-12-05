@@ -110,7 +110,7 @@ class NBServicesManager:
         deleted, the associated web tool is also deleted.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The notebook Item to create a service from.
         ------------------     --------------------------------------------------------------------

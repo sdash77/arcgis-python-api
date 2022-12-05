@@ -332,7 +332,7 @@ class WebAdaptorManager(object):
         Registers a new web adapter.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         name                   Required String. The name of the web adapter
         ------------------     --------------------------------------------------------------------
@@ -390,7 +390,7 @@ class WebAdaptorManager(object):
         in the request.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         config                 Required dict. The configuration items to be updated for this web
                                adaptor. Always include the web adaptor's sharedkey attribute.
