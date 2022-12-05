@@ -301,10 +301,18 @@ def find_existing_locations(
     """
 
     if input_layers is None:
-        input_layers = []
+        raise TypeError(
+            "find_existing_locations missing 1 required positional argument: 'input_layers'"
+        )
     if expressions is None:
-        expressions = []
+        raise TypeError(
+            "find_existing_locations missing 1 required positional argument: 'expressions'"
+        )
     gis = _arcgis.env.active_gis if gis is None else gis
+    if gis is None:
+        raise TypeError(
+            "Please make sure you are logged into an instance of ArcGIS Online or ArcGIS Enterprise"
+        )
     kwargs = {
         "input_layers": input_layers,
         "expressions": expressions,
@@ -592,8 +600,20 @@ def derive_new_locations(
 
 
     """
+    if input_layers is None:
+        raise TypeError(
+            "derive_new_locations missing 1 required positional argument: 'input_layers'"
+        )
+    if expressions is None:
+        raise TypeError(
+            "derive_new_locations missing 1 required positional argument: 'input_layer'"
+        )
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    if gis is None:
+        raise TypeError(
+            "Please make sure you are logged into an instance of ArcGIS Online or ArcGIS Enterprise"
+        )
     kwargs = {
         "input_layers": input_layers,
         "expressions": expressions,
@@ -748,6 +768,10 @@ def find_similar_locations(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    if gis is None:
+        raise TypeError(
+            "Please make sure you are logged into an instance of ArcGIS Online or ArcGIS Enterprise"
+        )
     kwargs = {
         "input_layer": input_layer,
         "search_layer": search_layer,
@@ -843,6 +867,10 @@ def find_centroids(
                                   output_name='find centroids')
     """
     gis = _arcgis.env.active_gis if gis is None else gis
+    if gis is None:
+        raise TypeError(
+            "Please make sure you are logged into an instance of ArcGIS Online or ArcGIS Enterprise"
+        )
     if gis._portal.is_arcgisonline == False and gis.version < [7, 3]:
         raise Exception(
             "find_centroids is only available on ArcGIS Online and ArcGIS Enterprise 10.8.0+"
@@ -1204,7 +1232,16 @@ def choose_best_facilities(
                                     candidate_count=1,
                                     output_name="choose best facilities")
     """
+    if demand_locations_layer is None:
+        raise TypeError(
+            "choose_best_facilities missing 1 required positional argument: 'demand_locations_layer'"
+        )
+
     gis = _arcgis.env.active_gis if gis is None else gis
+    if gis is None:
+        raise TypeError(
+            "Please make sure you are logged into an instance of ArcGIS Online or ArcGIS Enterprise"
+        )
     kwargs = {
         "goal": goal,
         "demand_locations_layer": demand_locations_layer,
@@ -1406,6 +1443,10 @@ def create_viewshed(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    if gis is None:
+        raise TypeError(
+            "Please make sure you are logged into an instance of ArcGIS Online or ArcGIS Enterprise"
+        )
     kwargs = {
         "input_layer": input_layer,
         "dem_resolution": dem_resolution,
@@ -1547,6 +1588,10 @@ def create_watersheds(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    if gis is None:
+        raise TypeError(
+            "Please make sure you are logged into an instance of ArcGIS Online or ArcGIS Enterprise"
+        )
     kwargs = {
         "input_layer": input_layer,
         "search_distance": search_distance,
@@ -1699,6 +1744,10 @@ def trace_downstream(
     """
 
     gis = _arcgis.env.active_gis if gis is None else gis
+    if gis is None:
+        raise TypeError(
+            "Please make sure you are logged into an instance of ArcGIS Online or ArcGIS Enterprise"
+        )
     kwargs = {
         "input_layer": input_layer,
         "split_distance": split_distance,

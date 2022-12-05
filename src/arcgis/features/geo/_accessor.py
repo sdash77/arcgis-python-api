@@ -34,6 +34,8 @@ _pa = LazyLoader("pyarrow")
 
 _LOGGER = logging.getLogger(__name__)
 ############################################################################
+
+
 def _is_geoenabled(df):
     """
     Checks if a Panda's DataFrame is 'geo-enabled'.
@@ -65,6 +67,7 @@ class GeoSeriesAccessor:
     _index = None
     _name = None
     # ----------------------------------------------------------------------
+
     def __init__(self, obj):
         """initializer"""
         self._validate(obj)
@@ -1155,6 +1158,7 @@ class GeoAccessor(object):
     _HASARCPY = None
     _HASSHAPELY = None
     # ----------------------------------------------------------------------
+
     def __init__(self, obj):
         self._data = obj
         self._index = obj.index
@@ -1309,7 +1313,10 @@ class GeoAccessor(object):
         """draws the dataframe as SVG features"""
 
         if self.name:
-            fn = lambda g, n: getattr(g, n, None)() if g is not None else None
+
+            def fn(g, n):
+                return getattr(g, n, None)() if g is not None else None
+
             vals = np.vectorize(fn, otypes="O")(self._data["SHAPE"], "svg")
             svg = "\n".join(vals.tolist())
             svg_top = (
@@ -2465,25 +2472,25 @@ class GeoAccessor(object):
         service_name: str = None,
     ):
         """
-                This method creates a feature layer from the spatially enabled dataframe and adds (inserts)
-                it to an existing feature service.
+        This method creates a feature layer from the spatially enabled dataframe and adds (inserts)
+        it to an existing feature service.
 
-                ============================    ====================================================================
-                **Parameter**                    **Description**
-        l        ---------------------------    --------------------------------------------------------------------
-                feature_service                 Required Item or Feature Service Id. Depicts the feature service to
-                                                which the layer will be added.
-                ----------------------------    --------------------------------------------------------------------
-                gis                             Optional GIS. The GIS connection object
-                ----------------------------    --------------------------------------------------------------------
-                sanitize_columns                Optional Boolean. If True, column names will be converted to string,
-                                                invalid characters removed and other checks will be performed. The
-                                                default is False.
-                ----------------------------    --------------------------------------------------------------------
-                service_name                    Optional String. The name for the service that will be added to the Item.
-                                                Name cannot be used already and cannot contain special characters, spaces,
-                                                or a numerical value as the first letter.
-                ============================    ====================================================================
+        ============================    ====================================================================
+        **Parameter**                   **Description**
+        ----------------------------    --------------------------------------------------------------------
+        feature_service                 Required :class:`~arcgis.gis.Item` or Feature Service Id. Depicts
+                                        the feature service to which the layer will be added.
+        ----------------------------    --------------------------------------------------------------------
+        gis                             Optional :class:`~arcgis.gis.GIS`. The GIS object.
+        ----------------------------    --------------------------------------------------------------------
+        sanitize_columns                Optional Boolean. If ``True``, column names will be converted to
+                                        string, invalid characters removed and other performed. The
+                                        default is ``False``.
+        ----------------------------    --------------------------------------------------------------------
+        service_name                    Optional String. The name for the service that will be added to the
+                                        :class:`~arcgis.gis.Item` The name cannot be used already or contain
+                                        special characters, spaces, or a number as the first character.
+        ============================    ====================================================================
         """
         from arcgis import env
         import copy
@@ -3605,7 +3612,8 @@ class GeoAccessor(object):
             A :class:`~arcgis.features.FeatureCollection` object
         """
         from arcgis.features import FeatureCollection
-        import string, copy
+        import string
+        import copy
         import random
 
         old_columns, old_index = None, None

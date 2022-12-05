@@ -123,14 +123,14 @@ class DataFile(object):
                     out_folder=save_path,
                     try_json=False,
                     add_token=False,
-                    token=gis._token,
+                    token=gis._con.token,
                 )
             else:
                 return gis._con.get(
                     path=data_path,
                     out_folder=save_path,
                     try_json=False,
-                    token=gis._token,
+                    token=gis._con.token,
                 )
 
 

@@ -856,17 +856,18 @@ class VoxelLayer(Layer):
     The ``VoxelLayer`` class represents a Web Scene Voxel layer.
 
     .. note::
-        Web scene layers are cached web layers that are optimized for displaying a large amount of 2D and 3D features.
-        See the :class:`~arcgis.mapping.SceneLayer` class for more information.
+        Web scene layers are cached web layers that are optimized for displaying
+        a large amount of 2D and 3D features. See the
+        :class:`~arcgis.mapping.SceneLayer` class for more information.
 
-    ==================     ====================================================================
+    ==================     =============================================================
     **Parameter**           **Description**
-    ------------------     --------------------------------------------------------------------
-    url                    Required string, specify the url ending in /SceneServer/
-    ------------------     --------------------------------------------------------------------
-    gis                    Optional GIS object. If not specified, the active GIS connection is
-                           used.
-    ==================     ====================================================================
+    ------------------     -------------------------------------------------------------
+    url                    Required string, specify the url ending in ``/SceneServer/``
+    ------------------     -------------------------------------------------------------
+    gis                    Optional :class:`~arcgis.gis.GIS` object. If not specified,
+                           the active GIS connection is used.
+    ==================     =============================================================
 
     .. code-block:: python
 
@@ -921,12 +922,13 @@ class VoxelLayer(Layer):
     # ----------------------------------------------------------------------
     @property
     def manager(self):
+        """
+        The ``manager`` property returns an instance of
+        :class:`~arcgis.mapping.SceneLayerManager` class
+        or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
+        which provides methods and properties for administering this service.
+        """
         if self._admin is None:
-            """
-            The ``manager`` property returns an instance of :class:`~arcgis.mapping.SceneLayerManager` class
-            or :class:`~arcgis.mapping.EnterpriseSceneLayerManager` class
-            which provides methods and properties for administering this service.
-            """
             if self._gis._portal.is_arcgisonline:
                 rd = {"/rest/services/": "/rest/admin/services/"}
                 adminURL = self._str_replace(self._url, rd)

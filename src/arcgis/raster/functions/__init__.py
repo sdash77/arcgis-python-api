@@ -3683,15 +3683,15 @@ def bitwise_xor(
     astype: Optional[str] = None,
 ):
     """
-    The bitwise_xor function performs a Bitwise Xor operation on the binary values of two input rasters.
+    Performs a Bitwise Xor operation on the binary values of two input rasters.
 
     The arguments for this function are as follows:
 
     ================================     ====================================================================
     **Parameter**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
-                                         operation, the scalar can be a float.
+    rasters                              Required list of :class:`~arcgis.raster.Raster` or :class:`~arcgis.raster.ImageryLayer`
+                                         objects. If a scalar is needed for the operation, the scalar can be a ``float``.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
 
@@ -3931,58 +3931,56 @@ def boolean_xor(
     astype: Optional[str] = None,
 ):
     """
-       The boolean_xor function performs a Boolean Xor operation on the pixels of two input rasters.
+    Performs a Boolean Xor operation on the pixels of two input rasters.
 
-       The arguments for this function are as follows:
+    The arguments for this function are as follows:
 
-       ================================     ====================================================================
-       **Parameter**                         **Description**
-       --------------------------------     --------------------------------------------------------------------
-       rasters                              Required list of :class:`Raster <arcgis.raster.Raster>` /  :class:`ImageryLayer <arcgis.raster.ImageryLayer>` objects. If a scalar is needed for the
-                                            operation, the scalar can be a float.
-       --------------------------------     --------------------------------------------------------------------
-       extent_type                          Optional string. Specifies the extent to be used for the function.
+    ================================     ====================================================================
+    **Parameter**                         **Description**
+    --------------------------------     --------------------------------------------------------------------
+    rasters                              Required list of :class:`~arcgis.raster.Raster` or
+                                         :class:`~arcgis.raster.ImageryLayer` objects. If a scalar is needed
+                                         for the operation, the scalar can be a ``float``.
+    --------------------------------     --------------------------------------------------------------------
+    extent_type                          Optional string. Specifies the extent to be used for the function.
 
-                                            - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
+                                         - "FirstOf" - Use the extent of the first input raster to determine the processing extent. This is the default.
 
-                                            - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
+                                         - "IntersectionOf" - Use the extent of the overlapping pixels to determine the processing extent.
 
-                                            - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
+                                         - "UnionOf" - Use the extent of all the rasters to determine the processing extent.
 
-                                            - "LastOf" - Use the extent of the last input raster to determine the processing extent.
-       --------------------------------     --------------------------------------------------------------------
-       cellsize_type                        Optional string. Specifies the cell size to be used for the function.
+                                         - "LastOf" - Use the extent of the last input raster to determine the processing extent.
+    --------------------------------     --------------------------------------------------------------------
+    cellsize_type                        Optional string. Specifies the cell size to be used for the function.
 
-                                            - "FirstOf" - Use the first cell size of the input rasters. This is the default.
+                                         - "FirstOf" - Use the first cell size of the input rasters. This is the default.
 
-                                            - "MinOf" - Use the smallest cell size of all the input rasters.
+                                         - "MinOf" - Use the smallest cell size of all the input rasters.
 
-                                            - "MaxOf" - Use the largest cell size of all the input rasters.
+                                         - "MaxOf" - Use the largest cell size of all the input rasters.
 
-                                            - "MeanOf" - Use the mean cell size of all the input rasters.
+                                         - "MeanOf" - Use the mean cell size of all the input rasters.
 
-                                            - "LastOf" - Use the last cell size of the input rasters.
-       --------------------------------     --------------------------------------------------------------------
-       astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
-       ================================     ====================================================================
+                                         - "LastOf" - Use the last cell size of the input rasters.
+    --------------------------------     --------------------------------------------------------------------
+    astype                               Optional string. Specifies the output pixel type. Available options are - "C128" | "C64" | "F32" | "F64" | "S16" | "S32" | "S8" | "U1" | "U16" | "U2" | "U32" | "U4" | "U8". Default is None.
+    ================================     ====================================================================
 
-       :return: The output raster with the function applied.
+    :return: The output raster with the function applied.
 
-       .. tip::
-           This raster operation can also be performed by invoking the ^ operator between the two input rasters.
+    .. tip::
+        This raster operation can also be performed by invoking the ^ operator between the two input rasters.
 
-           Example:
-    To perform Boolean Xor between raster1 and raster2:
+        .. code-block:: python
 
-           op_raster = raster2 ^ raster1
+            >>> op_raster = raster2 ^ raster1
 
-       .. code-block:: python
+    .. code-block:: python
 
-           # Usage Example 1: Executes the boolean_xor function on two rasters.
-
-           raster_list = [raster1, raster2]
-           boolean_xor_op = boolean_xor(raster_list)
-
+        # Usage Example 1: Executes boolean_xor function on two rasters:
+        >>> raster_list = [raster1, raster2]
+        >>> boolean_xor_op = boolean_xor(raster_list)
     """
     return local(
         rasters, 20, extent_type=extent_type, cellsize_type=cellsize_type, astype=astype
