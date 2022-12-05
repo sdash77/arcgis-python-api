@@ -3501,7 +3501,7 @@ class GeoAccessor(object):
         data = [
             getattr(g, "spatialReference", None) or g["spatialReference"]
             for g in self._data[self.name]
-            if g not in [None, np.NaN, np.nan, ""] and isinstance(g, dict)
+            if g not in [None, np.NaN, np.nan, "", {}] and isinstance(g, dict)
         ]
         srs = [
             _geometry.SpatialReference(sr)
