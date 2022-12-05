@@ -84,13 +84,9 @@ class DataFile(object):
             datafile["url"] = self.url
         if self.item_id is not None:
             datafile["itemID"] = self.item_id
-        if self.portal_item is not None and isinstance(
-            self.portal_item, str
-        ):
+        if self.portal_item is not None and isinstance(self.portal_item, str):
             datafile["portalItemID"] = self.portal_item
-        elif self.portal_item is not None and hasattr(
-            self.portal_item, "itemid"
-        ):
+        elif self.portal_item is not None and hasattr(self.portal_item, "itemid"):
             datafile["portalItemID"] = self.portal_item.itemid
 
         return datafile

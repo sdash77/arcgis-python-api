@@ -3690,7 +3690,7 @@ def bitwise_xor(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of :class:`~arcgis.raster.Raster` or :class:`~arcgis.raster.ImageryLayer` 
+    rasters                              Required list of :class:`~arcgis.raster.Raster` or :class:`~arcgis.raster.ImageryLayer`
                                          objects. If a scalar is needed for the operation, the scalar can be a ``float``.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -3938,8 +3938,8 @@ def boolean_xor(
     ================================     ====================================================================
     **Argument**                         **Description**
     --------------------------------     --------------------------------------------------------------------
-    rasters                              Required list of :class:`~arcgis.raster.Raster` or 
-                                         :class:`~arcgis.raster.ImageryLayer` objects. If a scalar is needed 
+    rasters                              Required list of :class:`~arcgis.raster.Raster` or
+                                         :class:`~arcgis.raster.ImageryLayer` objects. If a scalar is needed
                                          for the operation, the scalar can be a ``float``.
     --------------------------------     --------------------------------------------------------------------
     extent_type                          Optional string. Specifies the extent to be used for the function.
@@ -3971,11 +3971,11 @@ def boolean_xor(
 
     .. tip::
         This raster operation can also be performed by invoking the ^ operator between the two input rasters.
-        
+
         .. code-block:: python
-            
-            >>> op_raster = raster2 ^ raster1 
-    
+
+            >>> op_raster = raster2 ^ raster1
+
     .. code-block:: python
 
         # Usage Example 1: Executes boolean_xor function on two rasters:
