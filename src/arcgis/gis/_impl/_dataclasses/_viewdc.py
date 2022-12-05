@@ -20,7 +20,8 @@ class ViewLayerDefParameter:
     ------------------  -------------------------------------------------------------------------------
     query_definition    Optional String.  The where clause to limit the layer with.
     ------------------  -------------------------------------------------------------------------------
-    spatial_filter      Optional SpatialFilter. A spatial filter that can limit the data a user sees.
+    spatial_filter      Optional :class:`~arcgis.gis._impl._dataclasses.SpatialFilter`. A spatial 
+                        filter that can limit the data a user sees.
     ------------------  -------------------------------------------------------------------------------
     fields              Optional list[dict].  An array of field/visible fields that shows or hides a
                         field.  If this parameter is not given, all the fields are shown.
@@ -68,7 +69,7 @@ class ViewLayerDefParameter:
         layer: arcgis.features.managers.FeatureLayerManager
         | arcgis.features.FeatureLayer,
     ) -> "ViewLayerDefParameter":
-        """"""
+        """Creates a view layer definition parameter object from a layer."""
         from arcgis.features.managers import FeatureLayerManager
         from arcgis.features import FeatureLayer, Table
 
@@ -110,5 +111,5 @@ class ViewLayerDefParameter:
         )
 
     def as_json(self) -> dict:
-        """returns the filter as a dictionary"""
+        """returns the view as a dictionary"""
         return self._create_dict()
