@@ -93,7 +93,7 @@ class TraceNetworkManager(object):
             Network user type extention to use this operation.
 
         ====================    ==================================================
-        **Arguments**           **Description**
+        **Parameter**           **Description**
         --------------------    --------------------------------------------------
         locations               Required list of dictionaries. The locations for
                                 starting points and barriers. An empty array must
@@ -186,7 +186,7 @@ class TraceNetworkManager(object):
         and when the definition of the trace network was last modified.
 
         ====================================        ====================================================================
-        **Argument**                                **Description**
+        **Parameter**                                **Description**
         ------------------------------------        --------------------------------------------------------------------
         moments_to_return                           Optional List of Strings. Represents the collection of validate moments to
                                                     return. Default is all.
@@ -224,7 +224,7 @@ class TraceNetworkManager(object):
         is supported synchronously and asynchronously.
 
         ====================================        ====================================================================
-        **Argument**                                **Description**
+        **Parameter**                                **Description**
         ------------------------------------        --------------------------------------------------------------------
         envelope                                    Required Dictionary or Envelope. The envelope of the area to validate.
 

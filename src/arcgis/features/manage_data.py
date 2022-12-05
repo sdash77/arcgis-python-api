@@ -39,7 +39,7 @@ def generate_tessellation(
     Generates a tessellated grid of regular polygons.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     extent_layer                             Optional layer. A layer defining the processing extent.
     ------------------------------------     --------------------------------------------------------------------
@@ -151,7 +151,7 @@ def dissolve_boundaries(
     if they have the same value for State_Name. The end result is a layer of state boundaries.
 
     ====================================     =====================================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     -------------------------------------------------------------------------------------
     input_layer                              Required layer. The layer containing polygon features that will be dissolved. See :ref:`Feature Input<FeatureInput>`.
     ------------------------------------     -------------------------------------------------------------------------------------
@@ -305,7 +305,7 @@ def extract_data(
     File geodatabases and shapefiles are added to a zip file that can be downloaded.
 
     ===================================    =========================================================
-    **Argument**                           **Description**
+    **Parameter**                           **Description**
     -----------------------------------    ---------------------------------------------------------
     input_layers                           Required list of strings. A list of input layers to be extracted. See :ref:`Feature Input<FeatureInput>`.
     -----------------------------------    ---------------------------------------------------------
@@ -424,7 +424,7 @@ def merge_layers(
     * I have two layers containing parcel information for contiguous townships. I want to join them together into a single layer, keeping only the fields that have the same name and type on the two layers.
 
     ================    ===============================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ----------------    ---------------------------------------------------------------
     input_layer         Required feature layer. The point, line or polygon features with the ``merge_layer``. See :ref:`Feature Input<FeatureInput>`.
     ----------------    ---------------------------------------------------------------
@@ -561,7 +561,7 @@ def overlay_layers(
     + What wells are within abandoned military bases?
 
     ================    ===============================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ----------------    ---------------------------------------------------------------
     input_layer         Required layer. The point, line, or polygon features that will be
                         overlayed with the ``overlay_layer``. See :ref:`Feature Input<FeatureInput>`.
@@ -692,7 +692,7 @@ def create_route_layers(
 
 
     =========================    =========================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     -------------------------    ---------------------------------------------------------
     route_data                   Required item. The item id for the route data item that is used to create route layer items.
                                  Before running this task, the route data must be added to your portal as an item.

@@ -26,7 +26,7 @@ class RabbitMQ(_FeedTemplate, _HasTime, _HasGeometry):
     to create the feed.
 
     ==================      ====================================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ------------------      --------------------------------------------------------------------
     label                   String. Unique label for the feed instance.
     ------------------      --------------------------------------------------------------------

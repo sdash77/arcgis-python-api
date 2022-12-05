@@ -9,7 +9,7 @@ class RunInterval:
     Set the run interval for the feed.
 
     ===============     ================================================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     ------------------------------------------------------------------------------------------------
     cron_expression     String. Cron expression that specifies the run interval. You can use the cron generator at the
                         following link to generate a cron expression: `Cron Expression Generator & Explainer

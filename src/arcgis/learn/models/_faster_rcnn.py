@@ -486,7 +486,7 @@ class FasterRCNN(ModelExtension):
     based on https://github.com/pytorch/vision/blob/master/torchvision/models/detection/faster_rcnn.py.
 
     =============================   =============================================
-    **Argument**                    **Description**
+    **Parameter**                    **Description**
     -----------------------------   ---------------------------------------------
     data                            Required fastai Databunch. Returned data object from
                                     :meth:`~arcgis.learn.prepare_data`  function.
@@ -504,7 +504,7 @@ class FasterRCNN(ModelExtension):
     **kwargs**
 
     =============================   =============================================
-    **Argument**                    **Description**
+    **Parameter**                    **Description**
     -----------------------------   ---------------------------------------------
     rpn_pre_nms_top_n_train         Optional int. Number of proposals to keep before
                                     applying NMS during training.
@@ -663,7 +663,7 @@ class FasterRCNN(ModelExtension):
         Creates a ``FasterRCNN`` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -757,7 +757,7 @@ class FasterRCNN(ModelExtension):
         Runs prediction on an Image. This method is only supported for RGB images.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         image_path              Required. Path to the image file to make the
                                 predictions on.
@@ -829,7 +829,7 @@ class FasterRCNN(ModelExtension):
         This method is only supported for RGB images.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         input_video_path        Required. Path to the video file to make the
                                 predictions on.
@@ -904,7 +904,7 @@ class FasterRCNN(ModelExtension):
         Computes average precision on the validation set for each class.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         detect_thresh           Optional float. The probability above which
                                 a detection will be considered for computing
@@ -929,7 +929,7 @@ class FasterRCNN(ModelExtension):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.

@@ -604,7 +604,7 @@ def show_batch(self, rows=5, spectral_view=False, **kwargs):
     Show pixels temporal or spectral view of data in `ds_type`.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     rows                    Optional int. number of pixels to be sampled
                             for each class.

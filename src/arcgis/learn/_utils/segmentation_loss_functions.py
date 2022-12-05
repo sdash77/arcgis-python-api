@@ -241,7 +241,7 @@ def dice(
     """
     Calculates dice coefficient over a batch.
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     preds                   Required torch.tensor.
                             Predictions form a segmentation model.

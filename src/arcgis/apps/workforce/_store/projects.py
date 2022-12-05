@@ -25,7 +25,7 @@ def create_project(title, summary=None, major_version=None, gis=None):
     Creates a new Workforce Project
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     title                  :class:`String`.
                            The title of the Project to create (must be unique to the organization)

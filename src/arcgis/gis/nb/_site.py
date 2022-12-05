@@ -77,7 +77,7 @@ class SiteManager(object):
         If desired, you can create your own file system backups for these items.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         location               Required String. The folder to save the site to.
         ==================     ====================================================================
@@ -107,7 +107,7 @@ class SiteManager(object):
         operation completes, as a report will be delivered to the page.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         location               Required String. Path to the backup site file.
         ==================     ====================================================================

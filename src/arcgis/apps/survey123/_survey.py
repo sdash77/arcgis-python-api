@@ -228,7 +228,7 @@ class Survey:
         Exports the Survey's data to other format
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         export_format     Required String. This is the acceptable export format that a
                           user can export the survey data to. The following formats are
@@ -280,7 +280,7 @@ class Survey:
         For additional information on parameters, see `Create Report <https://developers.arcgis.com/survey123/api-reference/rest/report/#create-report>`_.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         report_template   Required :class:`~arcgis.gis.Item` .  The report template Item.
         ----------------  ---------------------------------------------------------------
@@ -434,7 +434,7 @@ class Survey:
         template.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         template_type     Optional String. Specify which sections to include in the template.
                           Acceptable types are `individual`, `summary`, and `summaryIndividual`.
@@ -496,7 +496,7 @@ class Survey:
         when generating reports in the given feature.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         template_file     Required String. The report template file which syntax to be checked.
         ================  ===============================================================
@@ -541,7 +541,7 @@ class Survey:
         and associates it with the survey.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         template_file     Required String. The report template file which syntax to be checked, and uploaded.
         ----------------  ---------------------------------------------------------------
@@ -593,7 +593,7 @@ class Survey:
         when generating reports in the given feature and updates existing Report template Org item.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         template_file     Required String. The report template file which syntax to be checked, and uploaded.
                           The updated template name must match the name of the existing template item.
@@ -624,7 +624,7 @@ class Survey:
         with the given parameters.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         report_template   Required :class:`~arcgis.gis.Item` .  The report template Item.
         ----------------  ---------------------------------------------------------------
@@ -690,7 +690,7 @@ class Survey:
         a report template before generating any formal report.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         report_template   Required :class:`~arcgis.gis.Item`  .  The report template Item.
         ----------------  ---------------------------------------------------------------

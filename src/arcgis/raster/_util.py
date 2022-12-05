@@ -1225,7 +1225,7 @@ def _upload(path, description=None, gis=None):
         Once the operation is completed successfully, item id of the uploaded item is returned.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     path                Optional string. Filepath of the file to upload.
     ---------------     --------------------------------------------------------------------

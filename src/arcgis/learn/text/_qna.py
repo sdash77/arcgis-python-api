@@ -35,7 +35,7 @@ class QuestionAnswering(InferenceOnlyModel):
     Based on the Hugging Face transformers library
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     backbone                Optional string. Specify the HuggingFace
                             transformer model name which will be used to
@@ -49,7 +49,7 @@ class QuestionAnswering(InferenceOnlyModel):
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     pretrained_path         Option str. Path to a directory, where pretrained
                             model files are saved.
@@ -78,7 +78,7 @@ class QuestionAnswering(InferenceOnlyModel):
         Find answers for the asked questions from the given passage/context
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         text_or_list            Required string or list. Questions or a list
                                 of questions one wishes to seek an answer for.
@@ -93,7 +93,7 @@ class QuestionAnswering(InferenceOnlyModel):
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         num_answers             Optional integer. The number of answers to
                                 return. The answers will be chosen by order

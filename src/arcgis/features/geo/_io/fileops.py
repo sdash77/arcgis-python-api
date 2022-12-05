@@ -260,7 +260,7 @@ def from_url(url: str) -> list:
     Loads a `shapefile` from a URL endpoint into a spatially enabled dataframe.
 
     ===========================     ====================================================================
-    **Argument**                    **Description**
+    **Parameter**                    **Description**
     ---------------------------     --------------------------------------------------------------------
     url                             Required String. The web location of the compressed shapefile.
     ===========================     ====================================================================
@@ -376,7 +376,7 @@ def from_table(filename, **kwargs):
     **Note: ArcPy is Required for this method**
 
     ===============     ====================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     ----------------------------------------------------
     filename            Required string or pathlib.Path. The path to the
                         table.
@@ -385,7 +385,7 @@ def from_table(filename, **kwargs):
     **Keyword Arguments**
 
     ===============     ====================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     ----------------------------------------------------
     fields              Optional List/Tuple. A list (or tuple) of field
                         names. For a single field, you can use a string
@@ -471,7 +471,7 @@ def to_table(geo, location, overwrite=True, sanitize_columns=False):
         With ArcPy null integer values will remain null.
 
     ===========================     ====================================================================
-    **Argument**                    **Description**
+    **Parameter**                    **Description**
     ---------------------------     --------------------------------------------------------------------
     location                        Required string. The output of the table.
     ---------------------------     --------------------------------------------------------------------
@@ -611,7 +611,7 @@ def from_featureclass(filename, **kwargs):
     Returns a GeoDataFrame (Spatially Enabled Pandas DataFrame) from a feature class.
 
     ===========================     ====================================================================
-    **Argument**                    **Description**
+    **Parameter**                    **Description**
     ---------------------------     --------------------------------------------------------------------
     filename                        Required string or pathlib.Path. Full path to the feature class or URL (shapefiles only).
     ===========================     ====================================================================
@@ -881,7 +881,7 @@ def to_featureclass(
         With ArcPy null integer values will remain null.
 
     ===============     ====================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     ----------------------------------------------------
     location            Required string. This is the output location for the
                         feature class. This should be the path and feature

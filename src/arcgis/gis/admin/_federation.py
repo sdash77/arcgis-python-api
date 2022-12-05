@@ -38,7 +38,7 @@ class Federation(BasePortalAdmin):
         for ArcGIS.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         url:                            Required string. The URL of the GIS server used by external users
                                         when accessing the ArcGIS Server site. If the site includes the Web
@@ -98,7 +98,7 @@ class Federation(BasePortalAdmin):
         This operation unfederates an ArcGIS Server from Portal for ArcGIS.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         server_id                       Required string. The unique ID of the server
         ===========================     ====================================================================
@@ -125,7 +125,7 @@ class Federation(BasePortalAdmin):
         with the ArcGIS Server.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         server_id                       Required string. The unique ID of the server
         ---------------------------     --------------------------------------------------------------------
@@ -177,7 +177,7 @@ class Federation(BasePortalAdmin):
         Server federated with Portal for ArcGIS.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         server_id                       Required string. The unique ID of the server
         ===========================     ====================================================================

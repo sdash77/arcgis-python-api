@@ -100,7 +100,7 @@ class KubeSecurityCert(object):
         """Deletes an Identity Certificate by ID
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         cert_id                Required String. The unique identifier of the certificate.
         ==================     ====================================================================
@@ -163,7 +163,7 @@ class KubeSecurityCert(object):
         Obtains a single certificate for a given type and ID
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         cert_type              Required String. The type of certificate to search for. This can be 'trust' or 'identity'.
         ------------------     --------------------------------------------------------------------
@@ -189,7 +189,7 @@ class KubeSecurityCert(object):
         """Deletes an Identity Certificate by ID
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         cert_id                Required String. The unique identifier of the certificate.
         ==================     ====================================================================
@@ -503,7 +503,7 @@ class KubeSecurityConfig(object):
         Users can test the connection to a user or role (group) store.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         user_store             Optional dict. Specifies the user store properties. This parameter
                                accepts as input all the properties as defined in the
@@ -534,7 +534,7 @@ class KubeSecurityConfig(object):
         Users can modify the user or role (group) identity stores.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         user_store             Optional dict. Specifies the user store properties. This parameter accepts as input all the properties as defined in the userStoreConfig and roleStoreConfig section of the Kubernetes help doctumentation.
         ------------------     --------------------------------------------------------------------

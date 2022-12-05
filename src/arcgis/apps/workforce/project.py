@@ -17,7 +17,7 @@ class Project:
     A Workforce Project
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     item                   Required :class:`~arcgis.gis.Item`. The item that
                            the contains the project.
@@ -156,7 +156,7 @@ class Project:
         Updates the project on the server
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         summary                  Optional :class:`String`. The summary of the project.
         ==================     ====================================================================

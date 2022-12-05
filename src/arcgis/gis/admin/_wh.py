@@ -63,7 +63,7 @@ class WebhookManager(object):
         ** Dictionary Key/Values **
 
         =================================  ===============================================================================
-        **Argument**                       **Description**
+        **Parameter**                       **Description**
         ---------------------------------  -------------------------------------------------------------------------------
         notificationAttempts               Required Integer. This will determine how many attempts will be made to deliver
                                            a payload.
@@ -126,7 +126,7 @@ class WebhookManager(object):
         Creates a WebHook to monitor REST endpoints and report activities
 
         =================================  ===============================================================================
-        **Argument**                       **Description**
+        **Parameter**                       **Description**
         ---------------------------------  -------------------------------------------------------------------------------
         name                               Required String. The name of the webhook.
         ---------------------------------  -------------------------------------------------------------------------------
@@ -435,7 +435,7 @@ class Webhook(object):
         the parameters of their webhook.
 
         =================================  ===============================================================================
-        **Argument**                       **Description**
+        **Parameter**                       **Description**
         ---------------------------------  -------------------------------------------------------------------------------
         name                               Required String. The name of the webhook.
         ---------------------------------  -------------------------------------------------------------------------------

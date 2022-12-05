@@ -54,7 +54,7 @@ def group_by_proximity(
     proximity or spatiotemporal proximity of each other.
 
     ===================================================================    =============================================================================
-    **Argument**                                                           **Description**
+    **Parameter**                                                           **Description**
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     input_layer                                                            Required layer. The point, line, or polygon features to be grouped.
                                                                            See :ref:`Feature Input<gaxFeatureInput>`.
@@ -245,7 +245,7 @@ def trace_proximity_events(
 
 
     ===================================================================    =============================================================================
-    **Argument**                                                                                    **Description**
+    **Parameter**                                                                                    **Description**
     -------------------------------------------------------------------    -----------------------------------------------------------------------------
     input_points                                                           Required Layer. A layer that will be used in analysis.
                                                                            See :ref:`Feature Input<gaxFeatureInput>`.

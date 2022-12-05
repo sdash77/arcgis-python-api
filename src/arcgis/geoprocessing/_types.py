@@ -9,7 +9,7 @@ class LinearUnit(object):
     A data object containing a linear distance, used as input to some Geoprocessing tools
 
     ================  ========================================================
-    **Argument**      **Description**
+    **Parameter**      **Description**
     ----------------  --------------------------------------------------------
     distance          required number, the value of the linear distance.
 
@@ -59,7 +59,7 @@ class DataFile(object):
     A data object containing a data source, used as input/output by some Geoprocessing tools
 
     ================  ========================================================
-    **Argument**      **Description**
+    **Parameter**      **Description**
     ----------------  --------------------------------------------------------
     url               optional string, URL to the location of the data file.
 
@@ -140,7 +140,7 @@ class RasterData(object):
     used as input/output by some Geoprocessing tools
 
     ================  ========================================================
-    **Argument**      **Description**
+    **Parameter**      **Description**
     ----------------  --------------------------------------------------------
     url               optional string, URL to the location of the raster data
                       file.

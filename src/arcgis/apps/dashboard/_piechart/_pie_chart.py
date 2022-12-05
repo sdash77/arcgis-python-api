@@ -10,7 +10,7 @@ class PieChart(_BaseWidget):
     Creates a dashboard Pie Chart widget.
 
     =========================   ===========================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -------------------------   -------------------------------------------
     item                        Required Portal :class:`~arcgis.gis.Item` object. Item object can
                                 be a Table Layer or a MapWidget.
@@ -933,7 +933,7 @@ class Events(object):
         Synchronize a mapWidget with PieChart for triggered events.
 
         =========================   ===========================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -------------------------   -------------------------------------------
         action_type                 Required string. Actions can be one of
                                     "zoom", "flash", "show_popup", "pan".
@@ -973,7 +973,7 @@ class Events(object):
         Synchronize non-mapWidget type widgets with PieChart for triggered events.
 
         =========================   ===========================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -------------------------   -------------------------------------------
         widget                      Required widget item or list of widget items
                                     .Name of the widgets to be synced.

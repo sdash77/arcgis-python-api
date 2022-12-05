@@ -11,7 +11,7 @@ class SocialProviders(object):
 
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     value               Required GIS.  This is an administrator connection to a GIS site.
     ===============     ====================================================================
@@ -60,7 +60,7 @@ class SocialProviders(object):
         Gets/Sets for the Social Providers on the GIS
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Optional dict or None.  If the value is None, the social provider
                             configuration is deleted.  If the value is a dictionary, a social

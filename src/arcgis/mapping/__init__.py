@@ -29,7 +29,7 @@ from arcgis.mapping._scenelyrs import (
     Object3DLayer,
     IntegratedMeshLayer,
     Point3DLayer,
-    VoxelLayer
+    VoxelLayer,
 )
 from arcgis.mapping._scenelyrs import PointCloudLayer, BuildingLayer, SceneLayer
 from arcgis.mapping._scenelyrs import (

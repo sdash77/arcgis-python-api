@@ -59,7 +59,7 @@ def find_existing_locations(
     An example of a spatial expression is that the parcel must also be within a certain distance of a river (Parcels within a distance of 0.75 Miles from Rivers).
 
     ====================================    ======================================================================================================
-    **Argument**                            **Description**
+    **Parameter**                            **Description**
     ------------------------------------    ------------------------------------------------------------------------------------------------------
     input_layers                            Required list of feature layers. A list of layers that will be used in the expressions parameter. Each layer in the list can be:
 
@@ -367,7 +367,7 @@ def derive_new_locations(
       the parcel that is within the flood zone.
 
     =====================================    ======================================================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     -------------------------------------    ------------------------------------------------------------------------------------------------------
     input_layers                             Required list of feature layers. A list of layers that will be used in the expressions parameter.
                                              Each layer in the list can be:
@@ -675,7 +675,7 @@ def find_similar_locations(
     candidate locations by how closely they match your reference locations across all of the fields you have selected.
 
     =======================     ===========================================================================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -----------------------     -------------------------------------------------------------------------------------------
     input_layer                 Required feature layer. The ``input_layer`` contains one or more
                                 reference locations against which features in the ``search_layer``
@@ -818,7 +818,7 @@ def find_centroids(
     For example, polygon features that contain demographic data can be converted to centroids that can be used in network analysis.
 
     ================    ===============================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ----------------    ---------------------------------------------------------------
     input_layer         Required feature layer. The multipoint, line, or polygon features that will be used to generate centroid point features. See :ref:`Feature Input<FeatureInput>`.
     ----------------    ---------------------------------------------------------------
@@ -990,7 +990,7 @@ def choose_best_facilities(
     with each location representing a given amount of demand.
 
     =====================================    =========================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     -------------------------------------    ---------------------------------------------------------
     goal                                     Optional string. Specify the goal that must be satisfied when allocating
                                              demand locations to facilities.
@@ -1322,7 +1322,7 @@ def create_viewshed(
     The results are areas where the observers can see the observed objects (and the observed objects can see the observers).
 
     =========================    =========================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     -------------------------    ---------------------------------------------------------
     input_layer                  Required point feature layer. The features to use as the observer locations. See :ref:`Feature Input<FeatureInput>`.
     -------------------------    ---------------------------------------------------------
@@ -1500,7 +1500,7 @@ def create_watersheds(
 
 
     =========================    =========================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     -------------------------    ---------------------------------------------------------
     input_layer                  Required point feature layer. The point features used for calculating watersheds.
                                  These are referred to as pour points, because it is the location at which water pours out of the watershed.
@@ -1655,7 +1655,7 @@ def trace_downstream(
     cases, if the total length of the trace path is returned, it will be from the source all the way to the ocean.
 
     =====================================   =========================================================
-    **Argument**                            **Description**
+    **Parameter**                            **Description**
     -------------------------------------   ---------------------------------------------------------
     input_layer                             Required feature layer. The point features used for the starting location of a downstream trace.
                                             See :ref:`Feature Input<FeatureInput>`.

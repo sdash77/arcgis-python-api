@@ -37,7 +37,7 @@ class TrackProcessor:
     Creates TrackProcessor Object.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     processor_options       Optional dictionary. A dictionary with
                             keys as parameter names and values as
@@ -149,7 +149,7 @@ class TrackProcessor:
         manually fed to the function.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         frame                   Required numpy array. frame is used to initialize
                                 the objects to track.
@@ -180,7 +180,7 @@ class TrackProcessor:
         lost objects if possible.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         frame                   Required numpy array. frame is the current
                                 frame to be used to track the objects.
@@ -200,7 +200,7 @@ class TrackProcessor:
         Removes the tracks corresponding to track_ids parameter
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         tracks_ids              Required list. List of track ids to be
                                 removed.

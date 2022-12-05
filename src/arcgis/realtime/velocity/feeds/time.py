@@ -8,7 +8,7 @@ class TimeInstant:
     Data class that holds the Instant Time configuration
 
     =====================      ====================================================================
-    **Argument**               **Description**
+    **Parameter**               **Description**
     ---------------------      --------------------------------------------------------------------
     time_field                 String. Time field name.
     =====================      ====================================================================
@@ -40,7 +40,7 @@ class TimeInterval:
     Data class that holds the Interval Time configuration
 
     =====================     ====================================================================
-    **Argument**              **Description**
+    **Parameter**              **Description**
     ---------------------     --------------------------------------------------------------------
     interval_start_field      String. Start-time field name for the time interval.
     ---------------------     --------------------------------------------------------------------
@@ -89,7 +89,7 @@ class _HasTime:
         Configures the time property for a feed
 
         ==============          ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------         --------------------------------------------------------------------
         time                    [:class:`~arcgis.realtime.velocity.feeds.TimeInstant`, :class:`~arcgis.realtime.velocity.feeds.TimeInterval`].
                                 Time object used to configure the feed.

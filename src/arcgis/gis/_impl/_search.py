@@ -26,7 +26,7 @@ def _search(
     method where a user can control and define how all information is returned.
 
     ================    ===============================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ----------------    ---------------------------------------------------------------
     gis                 Required GIS. The connection object.
     ----------------    ---------------------------------------------------------------
@@ -170,7 +170,7 @@ def _handle_response(res, stype, gis, as_dict):
     Handles returning the data in the proper format
 
     ================    ===============================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ----------------    ---------------------------------------------------------------
     res                 Required Dict.  The response dictionary from the query call.
     ----------------    ---------------------------------------------------------------

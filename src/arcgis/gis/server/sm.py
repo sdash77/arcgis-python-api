@@ -134,7 +134,7 @@ class ServerManager(object):
         at least one argument must be set with an allowed value other than None.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         role                   Optional string. Limits the returned ArcGIS Servers based on the
                                server's role as either a hosting server for the portal, a federated server,
@@ -190,7 +190,7 @@ class ServerManager(object):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         url                    Required string. The URL of the GIS server used by external users when
                                accessing the ArcGIS Server site.  See note above.
@@ -218,7 +218,7 @@ class ServerManager(object):
         This operation unfederates an ArcGIS Server from Portal for ArcGIS.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         server_id              Required string. The unique ID of the server.
         ==================     ====================================================================
@@ -242,7 +242,7 @@ class ServerManager(object):
         with the ArcGIS Server.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         server                 Required string. The arcgis.gis.Server object.
         ------------------     --------------------------------------------------------------------

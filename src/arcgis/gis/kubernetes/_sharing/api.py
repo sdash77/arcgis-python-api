@@ -309,7 +309,7 @@ class KbertnetesPy(object):
             Portal or the owner of the group.
 
         ============  ======================================
-        **Argument**  **Description**
+        **Parameter**  **Description**
         ------------  --------------------------------------
         user_names    list of usernames
         ------------  --------------------------------------
@@ -345,7 +345,7 @@ class KbertnetesPy(object):
         Removes the group's thumbnail
 
         ============  ======================================
-        **Argument**  **Description**
+        **Parameter**  **Description**
         ------------  --------------------------------------
         group_id      required string, The group id to remove the thumbnail for.
         ============  ======================================
@@ -388,7 +388,7 @@ class KbertnetesPy(object):
         Only title and tags are required.
 
         ====================  =========================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         --------------------  ---------------------------------------------------------
         title                 Required string. The name of the group.
         --------------------  ---------------------------------------------------------
@@ -521,7 +521,7 @@ class KbertnetesPy(object):
            dict returned from another PortalPy call and copying it.
 
         ============  ======================================
-        **Argument**  **Description**
+        **Parameter**  **Description**
         ------------  --------------------------------------
         group         dict object
         ------------  --------------------------------------
@@ -564,7 +564,7 @@ class KbertnetesPy(object):
         """Deletes a group.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         group_id          string containing the id for the group to be deleted.
         ================  ========================================================
@@ -755,7 +755,7 @@ class KbertnetesPy(object):
             The user executing the command must be group owner
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         user_names:       a required string list of users to invite
         ----------------  --------------------------------------------------------
@@ -809,7 +809,7 @@ class KbertnetesPy(object):
 
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         group_id          required string, unique identifier for the group
         ----------------  --------------------------------------------------------
@@ -831,7 +831,7 @@ class KbertnetesPy(object):
         """Remove users from a group.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         user_names        required string, comma-separated list of users
         ----------------  --------------------------------------------------------
@@ -879,7 +879,7 @@ class KbertnetesPy(object):
                set outside_org to True.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         q                 required string, query string.  See notes.
         ----------------  --------------------------------------------------------
@@ -968,7 +968,7 @@ class KbertnetesPy(object):
         """Shares public item with the specified list of groups belonging to caller
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         item_id           required string, unique identifier for the item
         ----------------  --------------------------------------------------------
@@ -998,7 +998,7 @@ class KbertnetesPy(object):
         """Stops sharing public item with the specified list of groups belonging to caller
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         item_id           required string, unique identifier for the item
         ----------------  --------------------------------------------------------
@@ -1046,7 +1046,7 @@ class KbertnetesPy(object):
             Only provide the values for the arguments you wish to update.
 
         ==================      ========================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------
         group_id                Required string, the group to modify
         ------------------      --------------------------------------------------------
@@ -1379,7 +1379,7 @@ class KbertnetesPy(object):
 
 
         ================    ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ----------------    ----------------------------------------------------
         item_properties     Required dictionary, see below for the keys and values
         ----------------    ----------------------------------------------------
@@ -1661,7 +1661,7 @@ class KbertnetesPy(object):
         """Creates a folder for the given user with the given title.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         owner             required string, the name of the user
         ----------------  --------------------------------------------------------
@@ -1683,7 +1683,7 @@ class KbertnetesPy(object):
         """Deletes folder owned by owner with the given folder name.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         owner             required string, the name of the user
         ----------------  --------------------------------------------------------
@@ -1716,7 +1716,7 @@ class KbertnetesPy(object):
         """Deletes an item.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         item_id           Required string, unique identifier for the item
         ----------------  --------------------------------------------------------
@@ -1765,7 +1765,7 @@ class KbertnetesPy(object):
         """Finds the folder for a particular owner and returns its id.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         owner             required string, the name of the user
         ----------------  --------------------------------------------------------
@@ -1790,7 +1790,7 @@ class KbertnetesPy(object):
         """checks if you can delete the item.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         item_id           required string, unique identifier for the item
         ----------------  --------------------------------------------------------
@@ -1825,7 +1825,7 @@ class KbertnetesPy(object):
         """Enable or disable delete protection on the item
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         item_id           required string, unique identifier for the item
         ----------------  --------------------------------------------------------
@@ -1884,7 +1884,7 @@ class KbertnetesPy(object):
 
 
         ==================     ====================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     ----------------------------------------------------
         item_properties        Optional dictionary, see below for the keys and values
         ------------------     ----------------------------------------------------
@@ -2021,7 +2021,7 @@ class KbertnetesPy(object):
             can not be undone.  The changes are immediately made and permanent.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         username          Required string, user who will have items/groups transferred
         ----------------  --------------------------------------------------------
@@ -2141,7 +2141,7 @@ class KbertnetesPy(object):
 
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         username          Required string, the name of the user
         ----------------  --------------------------------------------------------
@@ -2177,7 +2177,7 @@ class KbertnetesPy(object):
         """Shares an item with the specified list of groups
 
         =====================   ========================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   --------------------------------------------------------
         item_id                 Required string, unique identifier for the item
         ---------------------   --------------------------------------------------------
@@ -2240,7 +2240,7 @@ class KbertnetesPy(object):
             be provided.
 
         =====================   ========================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   --------------------------------------------------------
         username                Required string, account being reset
         ---------------------   --------------------------------------------------------
@@ -2278,7 +2278,7 @@ class KbertnetesPy(object):
         """Stops sharing the item with the specified list of groups
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         item_id           Required string, unique identifier for the item
         ----------------  --------------------------------------------------------
@@ -2344,7 +2344,7 @@ class KbertnetesPy(object):
                into parenthesis when using outside_org.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         q                 required string, query string.  See notes.
         ----------------  --------------------------------------------------------
@@ -2552,7 +2552,7 @@ class KbertnetesPy(object):
             the description argument.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         username          Required string, name of the user to be updated.
         ----------------  --------------------------------------------------------
@@ -2638,7 +2638,7 @@ class KbertnetesPy(object):
                 reassign_user method.  This method only moves one item at a time.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         item_id           required string, unique identifier for the item
         ----------------  --------------------------------------------------------
@@ -2730,7 +2730,7 @@ class KbertnetesPy(object):
             do everything that is possible in Portal.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         username          required string, the name of the user whose role will change
         ----------------  --------------------------------------------------------
@@ -2834,7 +2834,7 @@ class KbertnetesPy(object):
             enterprise accounts.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         username          required string, must be unique in the Portal, >4 characters
         ----------------  --------------------------------------------------------
@@ -2871,7 +2871,7 @@ class KbertnetesPy(object):
              for the situation when you need to log in later.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         username          required string
         ----------------  --------------------------------------------------------
@@ -3024,7 +3024,7 @@ class KbertnetesPy(object):
             require a token and this can be appended to those requests.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         username          required string, name of the user
         ----------------  --------------------------------------------------------

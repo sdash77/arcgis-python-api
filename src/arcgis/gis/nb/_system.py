@@ -293,7 +293,7 @@ class WebAdaptorManager(object):
         Registers a new :class:`web adapter <arcgis.gis.nb.WebAdaptor>`.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         name                   Required String. The name of the web adapter
         ------------------     --------------------------------------------------------------------
@@ -337,7 +337,7 @@ class WebAdaptorManager(object):
         in the request.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         config                 Required dict. The configuration items to be updated for this web
                                adaptor. Always include the web adaptor's sharedkey attribute.
@@ -587,7 +587,7 @@ class SystemManager(object):
         objects and extensions through the server environment interface.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required property.
         ===============     ====================================================================
@@ -746,7 +746,7 @@ class SystemManager(object):
         and messages. This is used for Notebook Server 10.9+
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         details                Optional Bool.  For 10.9+ Notebook Servers, to get the expanded
                                details of a Job, set the details to `True`. `False` will provide
@@ -786,7 +786,7 @@ class SystemManager(object):
         periodically querying the job.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         job_id                 Required String. The unique identifier of the job.
         ==================     ====================================================================

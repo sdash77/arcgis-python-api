@@ -25,7 +25,7 @@ class WorkflowManagerAdmin:
     Represents a series of CRUD functions for Workflow Manager Items
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     gis                 Optional GIS. The connection to the Enterprise.
     ===============     ====================================================================
@@ -86,7 +86,7 @@ class WorkflowManagerAdmin:
         following privileges are required to run Create Workflow Item:
 
         ==================  =========================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  ---------------------------------------------------------
         name                Required String. The name of the new schema.
         ==================  =========================================================
@@ -117,7 +117,7 @@ class WorkflowManagerAdmin:
         Advanced Administrator privilege or the Portal Admin Update Content privilege.
 
         ==================  =========================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ------------------  ---------------------------------------------------------
         item                Required Item. The Workflow Manager Item to be upgraded
         ==================  =========================================================
@@ -144,7 +144,7 @@ class WorkflowManagerAdmin:
         the user must also be the owner of the item to delete.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         id                  Required Item. The Workflow Manager Item to be deleted
         ===============     ====================================================================
@@ -214,7 +214,7 @@ class JobManager:
     :class:`~arcgis.gis.workflowmanager.WorkflowManager`.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     item                The Workflow Manager Item
     ===============     ====================================================================
@@ -275,7 +275,7 @@ class JobManager:
         Closes a single or multiple jobs with specific Job IDs
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         job_ids             Required list of job ID strings
         ===============     ====================================================================
@@ -295,7 +295,7 @@ class JobManager:
         Reopens a single or multiple jobs with specific Job IDs
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         job_ids             Required list of job ID strings
         ===============     ====================================================================
@@ -334,7 +334,7 @@ class JobManager:
         Adds a job to the Workflow Manager instance given a user-defined template
 
         ===================         ====================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -------------------         --------------------------------------------------------------------
         template                    Required object. Workflow Manager Job Template ID
         -------------------         --------------------------------------------------------------------
@@ -448,7 +448,7 @@ class JobManager:
         Deletes a job attachment given a job ID and attachment ID
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         job_id              Required string. Job ID
         ---------------     --------------------------------------------------------------------
@@ -478,7 +478,7 @@ class JobManager:
         Returns the job diagram for the user-defined job
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         id                  Required string. Job ID
         ===============     ====================================================================
@@ -501,7 +501,7 @@ class JobManager:
         Returns an active job with the given ID
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         id                  Required string. Job ID
         ---------------     --------------------------------------------------------------------
@@ -537,7 +537,7 @@ class JobManager:
         Runs a search against the jobs stored inside the Workflow Manager instance
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         query               Required string. SQL query to search against (e.g. "priority='High'")
         ---------------     --------------------------------------------------------------------
@@ -578,7 +578,7 @@ class JobManager:
         Updates a job object by ID
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         job_id              Required string. ID for the job to update
         ---------------     --------------------------------------------------------------------
@@ -638,7 +638,7 @@ class JobManager:
         Upgrades a single or multiple jobs with specific JobIDs
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         job_ids             Required list. A list of job ID strings
         ===============     ====================================================================
@@ -658,7 +658,7 @@ class JobManager:
         Set a location of work for an existing job. jobUpdateLocation privilege is required to set a location on a job.
 
         ===============     ====================================================================
-        **Arguments**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         job_id              Required string. ID for the job to update
         ---------------     --------------------------------------------------------------------
@@ -727,7 +727,7 @@ class JobManager:
         Deletes a single or multiple jobs with specific JobIDs
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         job_ids             Required list. A list of job ID strings
         ===============     ====================================================================
@@ -751,7 +751,7 @@ class WorkflowManager:
     or the various other properties with a workflow item.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     item                Required string. The Workflow Manager Item
     ===============     ====================================================================
@@ -852,7 +852,7 @@ class WorkflowManager:
         Evaluates an arcade expression
 
         ======================  ===============================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ----------------------  ---------------------------------------------------------------
         expression              Required String.
         ----------------------  ---------------------------------------------------------------
@@ -990,7 +990,7 @@ class WorkflowManager:
         Returns a list of all saved searches.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         search_type         Optional string. The search type for returned saved searches.
                             The accepted values are `Standard`, `Chart`, and `All`. If not
@@ -1058,7 +1058,7 @@ class WorkflowManager:
         Returns an active job with the given ID
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         props               Required list. A list of Props objects to update
                             (Prop object example: {'propName': 'string', 'value': 'string'})
@@ -1090,7 +1090,7 @@ class WorkflowManager:
         Returns an active role with the given name
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         name                Required string. Role Name
         ===============     ====================================================================
@@ -1115,7 +1115,7 @@ class WorkflowManager:
         Returns a job template with the given ID
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         id                  Required string. Job Template ID
         ===============     ====================================================================
@@ -1140,7 +1140,7 @@ class WorkflowManager:
         Deletes a job template with the given ID
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         id                  Required string. Job Template ID
         ===============     ====================================================================
@@ -1165,7 +1165,7 @@ class WorkflowManager:
         Returns a user profile with the given username
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         username            Required string. Workflow Manager Username
         ===============     ====================================================================
@@ -1184,7 +1184,7 @@ class WorkflowManager:
         Returns group information with the given group ID
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         group_id            Required string. Workflow Manager Group ID
         ===============     ====================================================================
@@ -1213,7 +1213,7 @@ class WorkflowManager:
         New roles can be added to the portal group. Existing roles can be deleted from the portal group.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         group_id            Required string. :class:`Workflow Manager Group <arcgis.gis.workflowmanager.Group>` ID
         ---------------     --------------------------------------------------------------------
@@ -1250,7 +1250,7 @@ class WorkflowManager:
         Returns the :class:`diagram <arcgis.gis.workflowmanager.JobDiagram>` with the given ID
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         id                  Required string. Diagram ID
         ===============     ====================================================================
@@ -1273,7 +1273,7 @@ class WorkflowManager:
         Returns the :class:`diagram <arcgis.gis.workflowmanager.JobDiagram>` with the given version ID
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         diagram_id          Required string. Diagram ID
         ---------------     --------------------------------------------------------------------
@@ -1300,7 +1300,7 @@ class WorkflowManager:
         Adds a role to the Workflow Manager instance given a user-defined name
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         name                Required string. Role Name (required)
         ---------------     --------------------------------------------------------------------
@@ -1347,7 +1347,7 @@ class WorkflowManager:
         Adds a job template to the Workflow Manager instance given a user-defined name and default priority level
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         name                                     Required string. Job Template Name
         ------------------------------------     --------------------------------------------------------------------
@@ -1437,7 +1437,7 @@ class WorkflowManager:
         Updates a job template object by ID
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         body                Required object. :class:`Job Template <arcgis.gis.workflowmanger.JobTemplate>`
                             body. Existing Job Template object that inherits required/optional fields.
@@ -1474,7 +1474,7 @@ class WorkflowManager:
         Adds a diagram to the Workflow Manager instance given a user-defined name and array of steps
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         name                Required string. Diagram Name
         ---------------     --------------------------------------------------------------------
@@ -1523,7 +1523,7 @@ class WorkflowManager:
         Updates a diagram object by ID
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         body                Required object. Diagram body - existing Diagram object that inherits required/optional
                             fields.
@@ -1574,7 +1574,7 @@ class WorkflowManager:
         Deletes a diagram object by ID
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         id                  Required string. Diagram id
         ===============     ====================================================================
@@ -1594,7 +1594,7 @@ class WorkflowManager:
         Deletes a diagram version by ID
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         diagram_id          Required string. Diagram ID
         ---------------     --------------------------------------------------------------------
@@ -1653,7 +1653,7 @@ class WorkflowManager:
         Returns LookUp Tables by given type
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         lookup_type         Required string. The type of lookup table stored in the workflow item.
         ===============     ====================================================================
@@ -1678,7 +1678,7 @@ class WorkflowManager:
         Deletes a job template with the given ID
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         lookup_type         Required string. The type of lookup table stored in the workflow item.
         ===============     ====================================================================
@@ -1703,7 +1703,7 @@ class WorkflowManager:
         Adds a diagram to the Workflow Manager instance given a user-defined name and array of steps
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         lookup_type         Required string. The type of lookup table stored in the workflow item.
         ---------------     --------------------------------------------------------------------
@@ -1747,7 +1747,7 @@ class LookUpTable(object):
     Represents a Workflow Manager Look Up object with accompanying GET, POST, and DELETE methods.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     init_data           data object containing the relevant properties for a LookUpTable to complete REST calls
     ===============     ====================================================================
@@ -1823,7 +1823,7 @@ class SavedSearchesManager:
     :attr:`~arcgis.gis.workflowmanager.WorkflowManager.saved_searches` property.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     item                The Workflow Manager Item
     ===============     ====================================================================
@@ -1895,7 +1895,7 @@ class SavedSearchesManager:
         The adminAdvanced or adminBasic privilege is required.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         name                Required string. The display name for the saved search or chart.
         ---------------     --------------------------------------------------------------------
@@ -1952,7 +1952,7 @@ class SavedSearchesManager:
         Deletes a saved search by ID
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         id                  Required string. Saved Search id
         ===============     ====================================================================
@@ -1980,7 +1980,7 @@ class SavedSearchesManager:
         The adminAdvanced or adminBasic privilege is required.
 
         ===============     ====================================================================
-        **Arguments**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         search              Required object. An object defining the properties of the search to be updated.
         ===============     ====================================================================
@@ -2042,7 +2042,7 @@ class SavedSearchesManager:
         Shares a saved search with the list of groups
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         search_id           Required string. Saved Search id
         ---------------     --------------------------------------------------------------------
@@ -2080,7 +2080,7 @@ class SavedSearchesManager:
         Returns the list of groups that the saved search is shared with by searchId.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         search_id           Search ID
         ===============     ====================================================================
@@ -2218,7 +2218,7 @@ class Job(object):
         Returns an embedded job attachment given an attachment ID
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         attachment_id       Attachment ID
         ===============     ====================================================================
@@ -2245,7 +2245,7 @@ class Job(object):
         Adds an attachment to the job
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         attachment          Filepath to attachment
         ---------------     --------------------------------------------------------------------
@@ -2281,7 +2281,7 @@ class Job(object):
         jobUpdateAttachments privilege is required to add an attachment to a job.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         attachments         List of linked attachments to associate with the job.
                             Each attachment should define the url, alias and folder
@@ -2314,7 +2314,7 @@ class Job(object):
         Updates an attachment alias given a Job ID and attachment ID
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         attachment_id       Attachment ID
         ---------------     --------------------------------------------------------------------
@@ -2363,7 +2363,7 @@ class Job(object):
         Update the assignment of the current step in a job based on the current user's Workflow Manager assignment privileges
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         step_id             Required String. Active Step ID
         ---------------     --------------------------------------------------------------------
@@ -2411,7 +2411,7 @@ class Job(object):
         Sets a single step to be the active step on the job. The ability to set a step as current is controlled by the **workflowSetStepCurrent** privilege.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         step_id             Active Step ID
         ===============     ====================================================================
@@ -2528,7 +2528,7 @@ class Job(object):
         Adds a comment to the job
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         comment             Required string. Comment to add to job
         ===============     ====================================================================
@@ -2573,7 +2573,7 @@ class WMRole(object):
     Represents a Workflow Manager Role object with accompanying GET, POST, and DELETE methods
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     init_data           data object representing relevant parameters for GET or POST calls
     ===============     ====================================================================
@@ -2618,7 +2618,7 @@ class JobTemplate(object):
     Represents a Workflow Manager Job Template object with accompanying GET, POST, and DELETE methods
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     init_data           data object representing relevant parameters for GET or POST calls
     ===============     ====================================================================
@@ -2737,7 +2737,7 @@ class JobTemplate(object):
         Shares a job template with the list of groups
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         group_ids           Required list. List of Workflow Group Ids
         ===============     ====================================================================
@@ -2813,7 +2813,7 @@ class JobTemplate(object):
         Returns the specified automated creation
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         automation_id       Required string. Automation Creation Id
         ===============     ====================================================================
@@ -2840,7 +2840,7 @@ class JobTemplate(object):
         Creates an automated creation
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         adds                Optional List. The list of automated creations to create.
         ---------------     --------------------------------------------------------------------
@@ -2911,7 +2911,7 @@ class Group(object):
     Represents a Workflow Manager Group object with accompanying GET, POST, and DELETE methods
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     init_data           data object representing relevant parameters for GET or POST calls
     ===============     ====================================================================
@@ -3052,7 +3052,7 @@ class JobLocation(object):
     Represents a Workflow Manager Job Location object with accompanying GET, POST, and DELETE methods
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     init_data           Required object. Represents. relevant parameters for GET or POST calls
     ===============     ====================================================================

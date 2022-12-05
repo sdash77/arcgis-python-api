@@ -525,7 +525,7 @@ def import_toolbox(url_or_item, gis=None, verbose=False):
 
 
     ================  ========================================================
-    **Argument**      **Description**
+    **Parameter**      **Description**
     ----------------  --------------------------------------------------------
     url_or_item       location of toolbox, can be a geoprocessing server url
                       or Item of type: Geoprocessing Service

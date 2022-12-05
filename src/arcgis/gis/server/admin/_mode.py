@@ -57,7 +57,7 @@ class Mode(BaseServer):
         services.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         siteMode:           Required string. The mode you will set your site to. Values:
                             READ_ONLY or EDITABLE.
@@ -90,7 +90,7 @@ class Mode(BaseServer):
         services.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         site_mode           Required string. The mode you will set your site to. Values:
                             READ_ONLY or EDITABLE.

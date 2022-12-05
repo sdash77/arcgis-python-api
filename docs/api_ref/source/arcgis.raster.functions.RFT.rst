@@ -56,7 +56,7 @@ arcgis.raster.functions.RFT
 ..  class:: arcgis.raster.functions.RFT(raster_function_template,gis=None)
 
     ========================  ====================================================================
-    **Arguments**             **Description**	
+    **Parameter**             **Description**	
     ------------------------  --------------------------------------------------------------------
     raster_function_template  required, input portal raster function template item.
     ------------------------  --------------------------------------------------------------------
@@ -68,7 +68,7 @@ arcgis.raster.functions.RFT
         Converts the raster function template into a dictionary.
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         gis                   optional, GIS on which the RFT object is based on. 
         =================     ====================================================================
@@ -83,7 +83,7 @@ arcgis.raster.functions.RFT
         box, attributes in green rectangular box and the raster function names in yellow.
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         show_attributes       optional boolean. If True, the graph displayed includes all the
                               attributes of the function and not only it's function name and raster

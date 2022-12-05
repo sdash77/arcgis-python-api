@@ -160,7 +160,7 @@ class Indexer(_BaseKube):
         The operation allows you to generate or update the indexes for content, such as users, groups, and items stored in the database store.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         mode                Required String. The mode in which the indexer should run.
                             Values: USER_MODE, GROUP_MODE, SEARCH_MODE, or FULL_MODE
@@ -205,7 +205,7 @@ class Container:
         Allows certain container registry properties to be updated after your organization has been configured.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required dict. A dictionary of registry properties.
         ===============     ====================================================================
@@ -239,7 +239,7 @@ class SystemManager(_BaseKube):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         url                    Required string. The machine URL.
         ------------------     --------------------------------------------------------------------

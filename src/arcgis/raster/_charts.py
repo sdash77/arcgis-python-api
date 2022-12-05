@@ -60,7 +60,7 @@ def temporal_profile(
 
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     raster                                   Required Imagery Layer object.
     ------------------------------------     --------------------------------------------------------------------
@@ -517,7 +517,7 @@ def plot_histograms(
     ``plot_histograms()`` can be used for plotting the band-wise image histogram charts of any Raster object.
 
     ============================    ====================================================================
-    **Arguments**                   **Description**
+    **Parameter**                   **Description**
     ----------------------------    --------------------------------------------------------------------
     geometry                        Optional Polygon or Extent. A geometry that defines the geometry
                                     within which the histogram is computed. The geometry can be an
@@ -781,7 +781,7 @@ def spectral_profile(
 
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     raster                                   Required Imagery Layer object.
     ------------------------------------     --------------------------------------------------------------------

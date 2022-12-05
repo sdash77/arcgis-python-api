@@ -14,7 +14,7 @@ class BigDataAnalyticsManager:
     Used to manage big data analytic items.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    URL of the ArcGIS Velocity organization.
     ------------------     --------------------------------------------------------------------
@@ -68,7 +68,7 @@ class BigDataAnalyticsManager:
         Get big data analytic items by ID.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         id                  Unique ID of a big data analytic task.
         ===============     ====================================================================

@@ -9,7 +9,7 @@ class Indicator(_BaseWidget):
     Creates a dashboard Indicator widget.
 
     =========================   ===========================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -------------------------   -------------------------------------------
     item                        Required Portal :class:`~arcgis.gis.Item` object. Item object can
                                 be a :class:`~arcgis.features.FeatureLayer`  or a MapWidget.
@@ -356,7 +356,7 @@ class IndicatorData(object):
         for detailed description of how filtering works with dashboard elements.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         field               The layer's attribute field name that will be used
                             to limit the features visualized in the widget.

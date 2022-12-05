@@ -30,7 +30,7 @@ class PSETAE(ArcGISModel):
     Creates a Pixel-Set encoder + Temporal Attention Encoder sequence classifier.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
                             `prepare_data` function.
@@ -41,7 +41,7 @@ class PSETAE(ArcGISModel):
     **Keyword Arguments**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     mlp1                    Optional list. Dimensions of the
                             successive feature spaces of MLP1.
@@ -147,7 +147,7 @@ class PSETAE(ArcGISModel):
         Creates a PSETAE object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -208,7 +208,7 @@ class PSETAE(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.

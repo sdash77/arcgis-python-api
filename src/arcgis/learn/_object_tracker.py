@@ -14,7 +14,7 @@ class ObjectTracker:
     Creates :class:`~arcgis.learn.ObjectTracker` Object.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     tracker                 Required. Returned tracker object from
                             from_model API of object tracking models.
@@ -173,7 +173,7 @@ class ObjectTracker:
         manually fed to the function.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         frame                   Required numpy array. frame is used to
                                 initialize the objects to track.
@@ -230,7 +230,7 @@ class ObjectTracker:
         Tracks the position of the object in the frame/Image.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         frame                   Required numpy array. frame is the current
                                 frame to be used to track the objects.
@@ -267,7 +267,7 @@ class ObjectTracker:
         Removes the tracks corresponding to track_ids parameter.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         tracks_ids              Required list. List of track ids to be
                                 removed.
@@ -286,7 +286,7 @@ class ObjectTracker:
         TrackProcessor.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         predictions             Required list. Predictions which satisfy
                                 selection criteria are used.
@@ -331,7 +331,7 @@ class ObjectTracker:
         TrackProcessor.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         tracks                  Required list. List of tracks to be used by
                                 TrackProcessor.
@@ -368,7 +368,7 @@ class ObjectTracker:
         Uses 1D list returned by TrackProcessor to update list of tracks.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         tracks_list             Required list. 1D list with values of track
                                 members.
@@ -403,7 +403,7 @@ class ObjectTracker:
         Filters the active tracks using the argument tracks.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         tracks                  Required list. List of tracks to be
                                 filtered.

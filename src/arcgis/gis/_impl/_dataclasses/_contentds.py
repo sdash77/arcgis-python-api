@@ -186,7 +186,7 @@ class ServiceTypeEnum(Enum):
 class ItemProperties:
     """
     Item parameters correspond to properties of an item that are available
-    to update on the :meth:`~arcgis.gis.ContentManager.add` and 
+    to update on the :meth:`~arcgis.gis.ContentManager.add` and
     :meth:`~arcgis.gis.Item.update` operations.
     """
 
@@ -312,11 +312,11 @@ class CreateServiceParameter:
     The create service parameter description.
 
     =======================    =============================================================
-    **Argument**               **Description**
+    **Parameter**               **Description**
     -----------------------    -------------------------------------------------------------
     name                       Required String. Name of the Service
     -----------------------    -------------------------------------------------------------
-    output_type                Required :class:`~arcgis.gis._impl._dataclasses.ServiceTypeEnum` 
+    output_type                Required :class:`~arcgis.gis._impl._dataclasses.ServiceTypeEnum`
                                or string. The type of service to create.
     -----------------------    -------------------------------------------------------------
     service_description        Optional String. Description given to the service.
@@ -339,10 +339,10 @@ class CreateServiceParameter:
     -----------------------    -------------------------------------------------------------
     copyright_text             Optional String. Copyright information associated with the dataset.
     -----------------------    -------------------------------------------------------------
-    spatial_reference          Optional Dictionary. All layers added to a hosted feature service need to have the same 
-                               spatial reference defined for the feature service. When creating a new 
-                               empty service without specifying its spatial reference, the spatial 
-                               reference of the hosted feature service is set to the first layer added 
+    spatial_reference          Optional Dictionary. All layers added to a hosted feature service need to have the same
+                               spatial reference defined for the feature service. When creating a new
+                               empty service without specifying its spatial reference, the spatial
+                               reference of the hosted feature service is set to the first layer added
                                to that feature service.
     -----------------------    -------------------------------------------------------------
     initial_extent             Optional Dictionary. The initial extent set for the service.
@@ -406,8 +406,8 @@ class CreateServiceParameter:
             "xssInputRule": "rejectInvalid",
         }
         if (
-            _parse_enum(self.output_type) == "imageService" and
-            self.capabilities is None
+            _parse_enum(self.output_type) == "imageService"
+            and self.capabilities is None
         ):
             self.capabilities = "Image,Catalog,Mensuration"
         self._dict_data = {

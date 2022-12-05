@@ -1037,7 +1037,7 @@ class Connection(object):
         sends a MultiPart Form POST request.
 
         ===========================   =====================================================
-        **Parameters**                **Description**
+        **Parameter**                **Description**
         ---------------------------   -----------------------------------------------------
         path                          optional string.  URL or part of the url resource
                                       to call.
@@ -1283,7 +1283,7 @@ class Connection(object):
         sends a POST request.
 
         ===========================   =====================================================
-        **Parameters**                **Description**
+        **Parameter**                **Description**
         ---------------------------   -----------------------------------------------------
         path                          optional string.  URL or part of the url resource
                                       to call.
@@ -1710,7 +1710,7 @@ class Connection(object):
         sends a PUT request
 
         ===========================   =====================================================
-        **Parameters**                **Description**
+        **Parameter**                **Description**
         ---------------------------   -----------------------------------------------------
         url                           Optional String. The web endpoint.
         ---------------------------   -----------------------------------------------------
@@ -1797,7 +1797,7 @@ class Connection(object):
         Performs streaming web requests.
 
         =======================     ===========================================================
-        **Parameters**              **Description**
+        **Parameter**              **Description**
         -----------------------     -----------------------------------------------------------
         url                         Required String. The web resource location.
         -----------------------     -----------------------------------------------------------

@@ -14,13 +14,13 @@ class ViewLayerDefParameter:
     of the view can see with the service view.
 
     ==================  ===============================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ------------------  -------------------------------------------------------------------------------
     layer               Required FeatureLayer.  The layer to apply the layer definition to.
     ------------------  -------------------------------------------------------------------------------
     query_definition    Optional String.  The where clause to limit the layer with.
     ------------------  -------------------------------------------------------------------------------
-    spatial_filter      Optional :class:`~arcgis.gis._impl._dataclasses.SpatialFilter`. A spatial 
+    spatial_filter      Optional :class:`~arcgis.gis._impl._dataclasses.SpatialFilter`. A spatial
                         filter that can limit the data a user sees.
     ------------------  -------------------------------------------------------------------------------
     fields              Optional list[dict].  An array of field/visible fields that shows or hides a
