@@ -84,9 +84,13 @@ class DataFile(object):
             datafile["url"] = self.url
         if self.item_id is not None:
             datafile["itemID"] = self.item_id
-        if self.portal_item is not None and isinstance(self.portal_item, str):
+        if self.portal_item is not None and isinstance(
+            self.portal_item, str
+        ):
             datafile["portalItemID"] = self.portal_item
-        elif self.portal_item is not None and hasattr(self.portal_item, "itemid"):
+        elif self.portal_item is not None and hasattr(
+            self.portal_item, "itemid"
+        ):
             datafile["portalItemID"] = self.portal_item.itemid
 
         return datafile
@@ -123,14 +127,14 @@ class DataFile(object):
                     out_folder=save_path,
                     try_json=False,
                     add_token=False,
-                    token=gis._token,
+                    token=gis._con.token,
                 )
             else:
                 return gis._con.get(
                     path=data_path,
                     out_folder=save_path,
                     try_json=False,
-                    token=gis._token,
+                    token=gis._con.token,
                 )
 
 
