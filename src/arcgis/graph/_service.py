@@ -89,6 +89,10 @@ class KnowledgeGraph:
                             The allowed values are: both, entities, relationships
         ================    ===============================================================
 
+        .. note::
+            Check the `service definition for the Knowledge Graph service <https://developers.arcgis.com/rest/services-reference/enterprise/kgs-hosted-server.htm>`_  
+            for valid values of category. Not all services support both.
+
         .. code-block:: python
 
             #Perform a search on the knowledge graph
