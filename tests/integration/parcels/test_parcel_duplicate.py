@@ -125,8 +125,5 @@ class TestDuplicateParcels(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-<<<<<<< HEAD
         pfutils.clean_up_versions(cls.vms)
-=======
-        pfutils.clean_up_versions(cls.vms, "api-")
->>>>>>> d6728ca42d3f7375a975c552ee3c809a8ebbe873
+
