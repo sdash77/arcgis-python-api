@@ -22,10 +22,10 @@ class TestDuplicateParcels(unittest.TestCase):
     def setUpClass(cls):
         # Create Python API GIS object and prepare REST service URL strings
         cls.base_server_url = (
-            "https://krennic.esri.com/server/rest/services/WashingtonCountyLSA/"
+            "https://dev0016752.esri.com/server/rest/services/WashingtonCountyLSA/"
         )
         cls.gis = GIS(
-            "https://krennic.esri.com/portal/", "admin", "esri.agp", verify_cert=False
+            "https://dev0016752.esri.com/portal/", "admin", "esri.agp", verify_cert=False
         )
         endpoints = ["FeatureServer", "ParcelFabricServer", "VersionManagementServer"]
         cls.service_urls = {url: cls.base_server_url + url for url in endpoints}
@@ -125,4 +125,4 @@ class TestDuplicateParcels(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        versioning_utils.clean_up_versions(cls.vms, "api-")
+        pfutils.clean_up_versions(cls.vms)

@@ -914,10 +914,10 @@ class ParcelFabricManager(object):
         parcel_type: int | str,
         record: str,
         parcel_subtype: int | str | None = None,
-        repeat_count: Union[int, str] = None,
+        repeat_count: int | str | None = None,
         update_field: str = None,
-        start_value: Union[int, str] = None,
-        increment_value: Union[int, str] = None,
+        start_value: int | str | None = None,
+        increment_value: int | str | None = None,
         moment: int | str | None = None,
         future: bool = False,
     ):
