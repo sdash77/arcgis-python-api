@@ -127,3 +127,5 @@ class TestDuplicateParcels(unittest.TestCase):
     def tearDownClass(cls):
         pfutils.clean_up_versions(cls.vms)
 
+if __name__ == "__main__": 
+    unittest.main( exit=False, failfast=True, buffer=False, catchbreak=False, verbosity=1 )
