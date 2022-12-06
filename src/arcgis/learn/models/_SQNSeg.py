@@ -81,15 +81,16 @@ class SQNSeg(PointCNN):
         self._backbone = None
         self.sample_point_num = data.max_point
 
-        self.encoder_params = kwargs.get("encoder_params", None)
-        if self.encoder_params is None:
-            self.encoder_params = {
-                "out_channels": [16, 64, 128, 256],
-                "sub_sampling_ratio": [4, 4, 4, 4],
-                "k_n": 16,
-            }
-        self.encoder_params["num_classes"] = data.c
+        self.encoder_params = kwargs.get("encoder_params", {})
+        self.encoder_params["out_channels"] = self.encoder_params.get(
+            "out_channels", [16, 64, 128, 256]
+        )
         self.encoder_params["num_layers"] = len(self.encoder_params["out_channels"])
+        self.encoder_params["sub_sampling_ratio"] = self.encoder_params.get(
+            "sub_sampling_ratio", [4]*self.encoder_params["num_layers"]
+        )
+        self.encoder_params["k_n"] = self.encoder_params.get("k_n", 16)
+        self.encoder_params["num_classes"] = data.c
         if not isinstance(data, _EmptyData):
             data = prepare_data_dict(
                 data, self.sample_point_num, self.encoder_params, is_sqn=True
