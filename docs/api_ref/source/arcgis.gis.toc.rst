@@ -174,6 +174,13 @@ MarketPlaceManager
     :members:
     :undoc-members:
     :show-inheritance:
+    
+ViewManager
+------------------
+.. autoclass:: arcgis.gis.ViewManager
+    :members:
+    :undoc-members:
+    :show-inheritance:    
 
 Enumerations
 ------------
