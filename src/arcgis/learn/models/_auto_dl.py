@@ -24,6 +24,7 @@ except Exception as e:
     )
     HAS_FASTAI = False
 
+
 class RedirectedStdout:
     def __init__(self):
         self._stdout = None
@@ -414,7 +415,7 @@ class AutoDL:
                             Supported Object Detection models:
 
                             ["SingleShotDetector", "RetinaNet", "FasterRCNN", "YOLOv3", "MMDetection"]
-                            ["SingleShotDetector", "RetinaNet", "FasterRCNN", "YOLOv3", "ATSS", 
+                            ["SingleShotDetector", "RetinaNet", "FasterRCNN", "YOLOv3", "ATSS",
                             "CARAFE", "CascadeRCNN", "CascadeRPN", "DCN"]
                             Supported Pixel Classification models:
                             ["DeepLab", "UnetClassifier", "PSPNetClassifier",
@@ -661,7 +662,7 @@ class AutoDL:
         from ._autodl_utils import EvaluateBatchSize
 
         data_path = self._data.path
-        dataset_type_temp =self._data.dataset_type
+        dataset_type_temp = self._data.dataset_type
 
         try:
 
@@ -698,7 +699,6 @@ class AutoDL:
             self._data = prepare_data(
                 data_path, batch_size=2, dataset_type=dataset_type_temp
             )
-
 
         if backbone is None:
             if not self._model_stats()[model]["is_mm"]:
@@ -892,7 +892,7 @@ class AutoDL:
                     pd.DataFrame({key: [val] for key, val in miou.items()}),
                 ]
             )
-            
+
             if accuracy >= self._max_accuracy:
                 self._is_best = True
                 self._max_accuracy = accuracy

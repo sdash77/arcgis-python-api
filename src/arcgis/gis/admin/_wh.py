@@ -35,9 +35,7 @@ class WebhookManager(object):
     def __str__(self):
         from urllib.parse import urlparse
 
-        return "<WebhookManager @ {id}>".format(
-            id=urlparse(self._url).netloc
-        )
+        return "<WebhookManager @ {id}>".format(id=urlparse(self._url).netloc)
 
     # ----------------------------------------------------------------------
     def __repr__(self):
@@ -297,8 +295,7 @@ class WebhookManager(object):
                 [
                     Webhook(url, self._gis)
                     for url in [
-                        "%s/%s" % (self._url, wh["id"])
-                        for wh in res["webhooks"]
+                        "%s/%s" % (self._url, wh["id"]) for wh in res["webhooks"]
                     ]
                 ]
             )
@@ -309,8 +306,7 @@ class WebhookManager(object):
                     [
                         Webhook(url, self._gis)
                         for url in [
-                            "%s/%s" % (self._url, wh["id"])
-                            for wh in res["webhooks"]
+                            "%s/%s" % (self._url, wh["id"]) for wh in res["webhooks"]
                         ]
                     ]
                 )
@@ -344,9 +340,7 @@ class Webhook(object):
     def _init(self):
         """Constructor"""
         if self._properties is None:
-            self._properties = PropertyMap(
-                self._con.get(self._url, {"f": "json"})
-            )
+            self._properties = PropertyMap(self._con.get(self._url, {"f": "json"}))
 
     # ----------------------------------------------------------------------
     @property
@@ -544,7 +538,7 @@ class Webhook(object):
         """
 
         if name is None:
-            name = self.properties['name']
+            name = self.properties["name"]
         if "secret" in self.properties:
             if secret is None:
                 secret = self.properties.secret
@@ -560,9 +554,7 @@ class Webhook(object):
                 self.properties.config.deactivationPolicy.numberOfFailures
             )
         if days_in_past is None:
-            days_in_past = (
-                self.properties.config.deactivationPolicy.daysInPast
-            )
+            days_in_past = self.properties.config.deactivationPolicy.daysInPast
         if events is None:
             events = ",".join(list(self.properties.events))
         params = {
@@ -570,20 +562,16 @@ class Webhook(object):
             "name": name,
             "url": url,
             "secret": secret,
-            "config": dict(self.properties['config']),
+            "config": dict(self.properties["config"]),
         }
         if number_of_failures:
-            params['config']["deactivationPolicy"][
+            params["config"]["deactivationPolicy"][
                 "numberOfFailures"
             ] = number_of_failures
         if days_in_past:
-            params['config']["deactivationPolicy"][
-                "daysInPast"
-            ] = days_in_past
+            params["config"]["deactivationPolicy"]["daysInPast"] = days_in_past
         if properties:
-            params['config']["deactivationPolicy"]["properties"].update(
-                properties
-            )
+            params["config"]["deactivationPolicy"]["properties"].update(properties)
         params["events"] = events
         purl = self._url + "/update"
 

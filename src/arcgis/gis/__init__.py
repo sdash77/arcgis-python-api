@@ -16380,8 +16380,8 @@ class ViewManager:
     A helper class to work with hosted feature layer views created from
     :class:`items <arcgis.gis.Item>` whose `type` property value is ``feature
     service.``
-    
-    This class is not meant to be created directly, but instead returned 
+
+    This class is not meant to be created directly, but instead returned
     from the :attr:`~arcgis.gis.Item.view_manager` property on an
     :class:`~arcgis.gis.Item`.
     """
@@ -16398,7 +16398,7 @@ class ViewManager:
         """
         Returns all views for a given item
 
-        :returns: 
+        :returns:
             List of feature layer view :class:`items <arcgis.gis.Item>`
         """
         return [
@@ -16430,7 +16430,7 @@ class ViewManager:
         Creates a view of an existing feature service Item. You can create a view if you need a different view of the data
         represented by a hosted feature layer. For example, you want to apply different editor settings,
         styles or filters or define which features or fields are available, or share the data to different groups than
-        the hosted feature layer. 
+        the hosted feature layer.
 
         When you create a feature layer view, a new hosted feature layer :class:`~arcgis.gis.Item` is added to your content. This new layer is a
         view of the data in the :class:`hosted feature layer <arcgis.features.FeatureLayerCollection>`, which means updates made to the data appear in the hosted feature layer and all of its hosted feature layer views. However, since the view is a separate layer, you can change
@@ -16439,7 +16439,7 @@ class ViewManager:
         For example, you can allow members of your organization to edit the hosted feature layer but share a read-only
         feature layer view with the public.
 
-        See `Create hosted feature layer views <https://doc.arcgis.com/en/arcgis-online/manage-data/create-hosted-views.htm>`_ 
+        See `Create hosted feature layer views <https://doc.arcgis.com/en/arcgis-online/manage-data/create-hosted-views.htm>`_
         to learn more details.
 
         ====================     ====================================================================
@@ -16459,10 +16459,10 @@ class ViewManager:
         capabilities             Optional string. Specify capabilities as a comma separated string.
                                  For example "Query, Update, Delete". Default is 'Query'.
         --------------------     --------------------------------------------------------------------
-        view_layers              Optional list. Specify list of layers present in the 
+        view_layers              Optional list. Specify list of layers present in the
                                  :class:`~arcgis.features.FeatureLayerCollection` you want in the view.
         --------------------     --------------------------------------------------------------------
-        view_tables              Optional list. Specify list of tables present in the 
+        view_tables              Optional list. Specify list of tables present in the
                                  :class:`~arcgis.features.FeatureLayerCollection` you want in the view
         --------------------     --------------------------------------------------------------------
         description              Optional String. A user-friendly description for the published dataset.
@@ -16475,12 +16475,12 @@ class ViewManager:
         --------------------     --------------------------------------------------------------------
         set_item_id              Optional String. If set, the ItemId is defined by the user, not the system.
         --------------------     --------------------------------------------------------------------
-        preserve_layer_ids       Optional Boolean. Preserves the layer's `id` on it's definition when `True`.  
+        preserve_layer_ids       Optional Boolean. Preserves the layer's `id` on it's definition when `True`.
                                  The default is `False`.
         ====================     ====================================================================
 
         .. code-block:: python
-            
+
             # USAGE EXAMPLE: Create a veiw from a hosted feature layer
 
             >>> crime_fl_item = gis.content.search("2012 crime")[0]
@@ -16514,15 +16514,15 @@ class ViewManager:
     # ----------------------------------------------------------------------
     def get_definitions(self, item: Item) -> list[ViewLayerDefParameter]:
         """Gets the View Definition Parameters for a Given Item
-        
+
         =============     =====================================================
         **Argument**      **Description**
         -------------     -----------------------------------------------------
-        item              The :class:`~arcgis.gis.Item` to return the 
+        item              The :class:`~arcgis.gis.Item` to return the
                           view layer definitions for.
         =============     =====================================================
-        
-        
+
+
         :return:
             List of :class:`~arcgis.gis._impl._dataclasses.ViewLayerDefParameter`
             objects or None.
@@ -16542,7 +16542,7 @@ class ViewManager:
         =============     =====================================================
         **Argument**      **Description**
         -------------     -----------------------------------------------------
-        layer_def         List of 
+        layer_def         List of
                           :class:`~arcgis.gis._impl._dataclasses.ViewLayerDefParameter`
                           objects for modifying the layers.
         =============     =====================================================
