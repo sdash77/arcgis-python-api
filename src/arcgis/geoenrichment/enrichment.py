@@ -1624,8 +1624,12 @@ def enrich(
                 else:
                     sa_to_country[cntry] = [value]
             elif isinstance(value, dict):
-                if "address" in value and "sourceCountry" in value["address"]:
-                    cntry = Country(value["address"]["sourceCountry"])
+                if "address" in value:
+                    if "sourceCountry" in value["address"]:
+                        cntry = Country(value["address"]["sourceCountry"])
+                    else:
+                        geocoded_area = geocode(value["address"])[0]
+                        cntry = Country(geocoded_area["attributes"]["Country"])
                 elif "sourceCountry" in value:
                     cntry = Country(value["sourceCountry"])
                 elif isinstance(value, Geometry) or "geometry" in value:

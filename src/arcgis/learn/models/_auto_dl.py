@@ -564,6 +564,8 @@ class AutoDL:
                 self._total_training_time += int(model_stats[algo]["time"])
 
         self._total_training_time //= 60
+        if self._total_training_time == 0:
+            self._total_training_time = 1
         self._algos = self._sort_algos(self._algos)
 
         if total_time_limit is None:
@@ -574,6 +576,9 @@ class AutoDL:
         required_time = (
             self._total_training_time * number_of_images
         ) // self._max_image_set
+
+        if required_time == 0:
+            required_time = 1
 
         self._tiles_required = (
             self._max_image_set * total_time_limit
@@ -619,6 +624,8 @@ class AutoDL:
             model_time_required = (
                 (mt // 60) * self._tiles_required
             ) // self._max_image_set
+            if model_time_required == 0:
+                model_time_required = 1
             time_ratio = (model_time_required / required_time) * 100
             model_remaining_time = (time_ratio / 100) * self._remaining_time
             model_epochs = int((20 * model_remaining_time) // model_time_required)
@@ -655,7 +662,7 @@ class AutoDL:
         from ._autodl_utils import EvaluateBatchSize
 
         data_path = self._data.path
-        dataset_type_temp = dataset_type = self._data.dataset_type
+        dataset_type_temp = self._data.dataset_type
 
         try:
 
@@ -1283,15 +1290,12 @@ class AutoDL:
                     "AutoDL_" + str(self.best_model) + "_" + self._best_backbone
                 )
                 if self.verbose:
-                    log_msg = "{date}: Saving best performing model at {path}".format(
+                    log_msg = "{date}: model saved at {path}".format(
                         date=dt.now().strftime("%d-%m-%Y %H:%M:%S"),
                         path=os.path.join(
-                            self._output_path,
+                            self._data.path,
                             "models",
-                            "AutoDL_"
-                            + str(self.best_model)
-                            + "_"
-                            + self._best_backbone,
+                            "AutoDL_" + str(model) + "_" + self._best_backbone,
                         ),
                     )
                     print(log_msg)
