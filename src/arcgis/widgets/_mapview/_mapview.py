@@ -467,7 +467,7 @@ class MapView(widgets.DOMWidget):
         value               Required string. Ex: ('topo', 'national-geographic', etc.).
 
                             .. note::
-                                See :attr:`~arcgis.widgets.MapView.basemaps` for a full list 
+                                See :attr:`~arcgis.widgets.MapView.basemaps` for a full list
                                 of options.
         ===============     ====================================================================
 
