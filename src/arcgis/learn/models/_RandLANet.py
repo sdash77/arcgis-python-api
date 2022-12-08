@@ -87,7 +87,7 @@ class RandLANet(PointCNN):
         )
         self.encoder_params["num_layers"] = len(self.encoder_params["out_channels"])
         self.encoder_params["sub_sampling_ratio"] = self.encoder_params.get(
-            "sub_sampling_ratio", [4]*self.encoder_params["num_layers"]
+            "sub_sampling_ratio", [4] * self.encoder_params["num_layers"]
         )
         self.encoder_params["k_n"] = self.encoder_params.get("k_n", 16)
         self.encoder_params["num_classes"] = data.c
