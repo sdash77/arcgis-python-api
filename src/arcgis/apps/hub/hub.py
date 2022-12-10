@@ -169,8 +169,10 @@ class Hub(object):
         if self._hub_enabled:
             return InitiativeManager(self)
         else:
-            raise Exception("Initiatives are only available with Hub Premium. Please upgrade to Hub Premium to use this feature.")
-    
+            raise Exception(
+                "Initiatives are only available with Hub Premium. Please upgrade to Hub Premium to use this feature."
+            )
+
     @_lazy_property
     def events(self):
         """
