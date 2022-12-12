@@ -37,6 +37,7 @@ class PSETAE(ArcGISModel):
     ---------------------   -------------------------------------------
     pretrained_path         Optional string. Path where pre-trained model is
                             saved.
+    =====================   ===========================================
 
     **Keyword Arguments**
 
