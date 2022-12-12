@@ -1247,14 +1247,14 @@ def prepare_data(
     training and validation data sets with the specified transformations,
     chip size, batch size, split percentage, etc.
 
-    -For object detection, use Pascal_VOC_rectangles or KITTI_rectangles format.
-    -For feature categorization use Labelled Tiles or Imagenet format.
-    -For pixel classification, use Classified Tiles format.
-    -For DeepSort, use Imagenet format.
-    -For panoptic segmentation, use Panoptic_Segmentation format.
+    - For object detection, use Pascal_VOC_rectangles or KITTI_rectangles format.
+    - For feature categorization use Labelled Tiles or Imagenet format.
+    - For pixel classification, use Classified Tiles format.
+    - For DeepSort, use Imagenet format.
+    - For panoptic segmentation, use Panoptic_Segmentation format.
 
     =====================   ===========================================
-    **Parameter**            **Description**
+    **Parameter**           **Description**
     ---------------------   -------------------------------------------
     path                    Required string. Path to data directory or a list of paths.
     ---------------------   -------------------------------------------
@@ -1320,14 +1320,15 @@ def prepare_data(
     **Keyword Arguments**
 
     =====================   ===========================================
-    **Parameter**            **Description**
+    **Parameter**           **Description**
     ---------------------   -------------------------------------------
     n_masks                 Optional int. Default value is 30.
                             Required for MaXDeepLab panoptic segmentation
                             model. It represents the max number of class
                             labels and instances any image can contain.
                             To compute the exact value for your dataset,
-                            use the :meth:`~arcgis.learn.MaXDeepLab.compute_n_masks`
+                            use the
+                            :meth:`~arcgis.learn.MaXDeepLab.compute_n_masks`
                             method available with MaXDeepLab model.
     ---------------------   -------------------------------------------
     downsample_factor       Optional float. Factor to downsample the images
@@ -1432,11 +1433,13 @@ def prepare_data(
                             For example, If we have stacked imagery of n bands each
                             from two dates then, ['YYYY-MM-DD','YYYY-MM-DD'].
                             Applicable only for dataset_type='PSETAE'.
+    =====================   ===========================================
 
-    :return: data object
+    :return:
+        data object
 
     """
-    #
+
     arcgis_init_kwargs = {
         "path": path,
         "class_mapping": class_mapping,
