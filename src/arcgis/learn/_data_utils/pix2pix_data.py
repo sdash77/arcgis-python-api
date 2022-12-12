@@ -625,7 +625,7 @@ def prepare_pix2pix_data(
     data.chip_size = data.resize_to
     if working_dir is not None:
         data.path = Path(os.path.abspath(working_dir))
-    data._temp_folder = _prepare_working_dir(path)
+    data._temp_folder = _prepare_working_dir(data.path)
     data.show_batch = types.MethodType(show_batch, data)
     data._dataset_type = "Pix2Pix"
     data._extract_bands = None
