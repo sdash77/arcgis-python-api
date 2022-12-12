@@ -1,11 +1,25 @@
 #!/bin/bash
+DEPENDENCY_HOST=http://geosaurus.esri.com
+DEPENDENCY_PATH=build/geosaurus2/linux/py${PY_VER}
+DEPENDENCY_ROOT_URL=$DEPENDENCY_HOST/$DEPENDENCY_PATH
 
-wget http://zion:8002/build_files/tracking-engine/py${PY_VER}_linux/_track_processor.so -q && wget http://zion:8002/build_files/tracking-engine/py${PY_VER}_linux/_track_processor.so -O arcgis/learn/_tracking/_track_processor.so
-wget http://zion:8002/build_files/tracking-engine/py${PY_VER}_linux/libTrackingEngine.so -q && wget http://zion:8002/build_files/tracking-engine/py${PY_VER}_linux/libTrackingEngine.so -O arcgis/learn/_tracking/libTrackingEngine.so
+TRACKING_ENGINE_URL=$DEPENDENCY_ROOT_URL/tracking-engine
+wget -e robots=off -l1 -r -np -nH -R "index.html" $TRACKING_ENGINE_URL -q
+mkdir -p arcgis/learn/_tracking
+cp $DEPENDENCY_PATH/tracking-engine/* arcgis/learn/_tracking/
 
-INSTALL_DIR=build_files/knn/py${PY_VER}_linux/
-wget -e robots=off -l1 -r -np -nH -R "index.html" http://zion:8002/build_files/knn/py${PY_VER}_linux/ -q
-mv ${INSTALL_DIR}*.so ${INSTALL_DIR}*.py -t arcgis/learn/_utils/
-rm -rf build_files
+KNN_URL=$DEPENDENCY_ROOT_URL/knn
+wget -e robots=off -l1 -r -np -nH -R "index.html" $KNN_URL -q
+cp $DEPENDENCY_PATH/knn/* arcgis/learn/_utils/
+
+NBAUTH_URL=$DEPENDENCY_ROOT_URL/nbauth
+wget -e robots=off -l1 -r -np -nH -R "index.html" $NBAUTH_URL -q
+cp $DEPENDENCY_PATH/nbauth/* arcgis/gis/_impl/
+
+GRAPH_URL=$DEPENDENCY_ROOT_URL/graph
+wget -e robots=off -l1 -r -np -nH -R "index.html" $GRAPH_URL -q
+cp $DEPENDENCY_PATH/graph/* arcgis/graph/
+
+rm -rf $DEPENDENCY_PATH
 
 $PYTHON setup.py install --conda-install-mode
