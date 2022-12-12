@@ -914,6 +914,10 @@ class ParcelFabricManager(object):
         parcel_type: int | str,
         record: str,
         parcel_subtype: int | str | None = None,
+        repeat_count: int | str | None = None,
+        update_field: str = None,
+        start_value: int | str | None = None,
+        increment_value: int | str | None = None,
         moment: int | str | None = None,
         future: bool = False,
     ):
@@ -953,6 +957,14 @@ class ParcelFabricManager(object):
         -----------------------     --------------------------------------------------------------------
         parcel_subtype              Optional Integer. The target parcel subtype.  The default is 0.
         -----------------------     --------------------------------------------------------------------
+        repeat_count                Optional Integer. How many times to duplicate the target parcels
+        -----------------------     --------------------------------------------------------------------
+        update_field                Optional String. Which incrementable field to update on the target
+        -----------------------     --------------------------------------------------------------------
+        start_value                 Optional Integer. What value to start on when incrementing
+        -----------------------     --------------------------------------------------------------------
+        increment_value             Optional Integer. How many steps to increment
+        -----------------------     --------------------------------------------------------------------
         moment                      Optional String. This parameter represents the session moment (the
                                     default is the version current moment). This should only be
                                     specified by the client when they do not want to use the current
@@ -984,6 +996,10 @@ class ParcelFabricManager(object):
             "parcels": parcels,
             "targetParcelType": parcel_type,
             "targetParcelSubtype": parcel_subtype,
+            "repeatCount": repeat_count,
+            "updateField": update_field,
+            "startValue": start_value,
+            "incrementValue": increment_value,
             "async": future,
             "f": "json",
         }
