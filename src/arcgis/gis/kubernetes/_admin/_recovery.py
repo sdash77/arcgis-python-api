@@ -259,7 +259,7 @@ class RecoveryManager(_BaseKube):
                 "isDefault": is_default,
             }
             res = self._con.post(url, params)
-            url = "{self._url}/stores/%s" % res["name"]
+            url = f"{self._url}/stores/{res['name']}"
             return BackupStore(url=url, gis=self._gis)
         except Exception as e:
             raise e
@@ -326,7 +326,7 @@ class RecoveryManager(_BaseKube):
 
         :returns: BackupStoresManager
         """
-        url = "{self._url}/stores"
+        url = f"{self._url}/stores"
         return BackupStoresManager(url, self._gis)
 
     @property
