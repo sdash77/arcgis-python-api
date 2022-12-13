@@ -74,7 +74,7 @@ class TimeSeriesModel(ArcGISModel):
     Based on the Fast.ai's https://github.com/timeseriesAI/timeseriesAI
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required TabularDataObject. Returned data object from
                             :class:`~arcgis.learn.prepare_tabulardata` function.
@@ -154,7 +154,7 @@ class TimeSeriesModel(ArcGISModel):
         Creates a :class:`~arcgis.learn.TimeSeriesModel` Object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -185,6 +185,7 @@ class TimeSeriesModel(ArcGISModel):
         model_arch = emd["model_arch"]
         seq_len = emd["seq_len"]
         index_field = emd.get("index_field", None)
+        test_size = emd.get("test_size", None)
         # encoder_path = os.path.join(os.path.dirname(emd_path),
         #                             os.path.basename(emd_path).split('.')[0] + '_encoders.pkl')
 
@@ -216,6 +217,7 @@ class TimeSeriesModel(ArcGISModel):
 
             # if index_field is not None:
             data._index_field = index_field
+            data._test_size = test_size
 
             class_object = cls(
                 data,
@@ -250,7 +252,7 @@ class TimeSeriesModel(ArcGISModel):
         Learning Package zip for deployment to Image Server or ArcGIS Pro.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Folder path to save the model.
         ---------------------   -------------------------------------------
@@ -345,6 +347,8 @@ class TimeSeriesModel(ArcGISModel):
         _emd_template["_is_classification"] = (
             "classification" if self._data._is_classification else "regression"
         )
+        if hasattr(self._data, "_test_size"):
+            _emd_template["test_size"] = self._data._test_size
 
         return _emd_template
 
@@ -382,7 +386,7 @@ class TimeSeriesModel(ArcGISModel):
         Predict on data from feature layer and or raster data.
 
         =================================   =========================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         ---------------------------------   -------------------------------------------------------------------------
         input_features                      Optional :class:`~arcgis.features.FeatureLayer` or spatially enabled dataframe.
                                             Contains features with location of the input data.
@@ -945,7 +949,7 @@ class TimeSeriesModel(ArcGISModel):
         Prints the graph with predictions.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional Integer.
                                 Number of rows to print.

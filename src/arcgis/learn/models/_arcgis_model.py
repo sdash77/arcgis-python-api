@@ -717,7 +717,7 @@ class ArcGISModel(object):
         optimum learning rate for training the model.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         allow_plot              Optional boolean. Display the plot of losses
                                 against the learning rates and mark the optimal
@@ -864,7 +864,7 @@ class ArcGISModel(object):
         specified learning rates
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         epochs                  Required integer. Number of cycles of training
                                 on the data. Increase it if underfitting.
@@ -1783,7 +1783,7 @@ class ArcGISModel(object):
             except:
                 plt.close()
 
-        if self.__str__() in ["<PointCNN>", "<RandLANet>"]:
+        if self.__str__() in ["<PointCNN>", "<RandLANet>", "<SQNSeg>"]:
             self.show_results(save_html=True, save_path=model_characteristics_dir)
         elif self.__str__() in [
             "<TextClassifier>",
@@ -1915,7 +1915,7 @@ class ArcGISModel(object):
         Learning Package zip for deployment to Image Server or ArcGIS Pro.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Name of the model to save. It
                                 stores it at the pre-defined location. If path
@@ -1985,7 +1985,7 @@ class ArcGISModel(object):
         Loads a compatible saved model for inferencing or fine tuning from the disk.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Name or Path to
                                 Deep Learning Package (DLPK) or

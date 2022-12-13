@@ -117,7 +117,7 @@ class ImageryLayerCacheManager(_GISResource):
         code and description.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         job_id              Required string, the job id to cancel.
         ===============     ====================================================
@@ -138,7 +138,7 @@ class ImageryLayerCacheManager(_GISResource):
             The ``swap`` operation is for ArcGIS Online only.
 
         ====================        ====================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         --------------------        ----------------------------------------------------
         target_service_name         Required string. Name of service you want to swap with.
         ====================        ====================================================
@@ -172,7 +172,7 @@ class ImageryLayerCacheManager(_GISResource):
         The ``job_status`` method retrieves the current Job Status.
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         job_id                required String. The unique identifier of the job in question.
         =================     ====================================================================
@@ -191,7 +191,7 @@ class ImageryLayerCacheManager(_GISResource):
         The ``job_statistics`` method retrieves the job statistics for the given ``job_id``.
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         job_id                required String. The unique identifier of the job in question.
         =================     ====================================================================
@@ -217,7 +217,7 @@ class ImageryLayerCacheManager(_GISResource):
         The ``import_tiles`` method imports cache from a new ``ImageLayer Tile Package``.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         item                Required ItemId or :class:`~arcgis.gis.Item`. The TPK file's item id.
                             This TPK file contains to-be-extracted bundle files
@@ -299,7 +299,7 @@ class ImageryLayerCacheManager(_GISResource):
             The ``update_tiles`` operation is for ArcGIS Online only.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         levels              Optional String / List of integers, The level of details
                             to update. Example: "1,2,10,20" or [1,2,10,20]
@@ -367,7 +367,7 @@ class ImageryLayerCacheManager(_GISResource):
         indicating success or failure with error code and description.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         code                Required string, parameter used to re-run a given
                             jobs with a specific error
@@ -397,7 +397,7 @@ class ImageryLayerCacheManager(_GISResource):
         The ``edit_tile_service`` operation updates a Tile Service's properties.
 
         =====================     ====================================================
-        **Argument**              **Description**
+        **Parameter**              **Description**
         ---------------------     ----------------------------------------------------
         service_definition        Optional String.
                                   Updates a service definition
@@ -450,7 +450,7 @@ class ImageryLayerCacheManager(_GISResource):
         The ``delete_tiles`` method deletes tiles for the current cache.
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         levels              Required string, The level to delete.
                             Example, 0-5,10,11-20 or 1,2,3 or 0-5
@@ -575,7 +575,7 @@ class ImageryLayer(Layer):
     Usage: ``arcgis.raster.ImageryLayer(url, gis=gis)``
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     url                                      Required string. The input raster path
 
@@ -781,7 +781,7 @@ class ImageryLayer(Layer):
         The ``catalog_item`` method returns a single raster catalog item associated with the specified ID
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         id                    Required integer. The 'raster ID'.
         =================     ====================================================================
@@ -1051,7 +1051,7 @@ class ImageryLayer(Layer):
         values (for example, a ``class``, ``group``, ``category``, or ``membership``).
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         rendering_rule        Specifies the rendering rule for how the requested image should be
                               processed.
@@ -1171,7 +1171,7 @@ class ImageryLayer(Layer):
         order of geometries is in the same order as they were requested.
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         geometries            Required list. The list of geometries to be projected.
         -----------------     --------------------------------------------------------------------
@@ -1260,7 +1260,7 @@ class ImageryLayer(Layer):
         overall mosaic.
 
         ============================    ====================================================================
-        **Arguments**                   **Description**
+        **Parameter**                   **Description**
         ----------------------------    --------------------------------------------------------------------
         geometry                        Required dictionary/Point/Polygon/MultiPoint/Envelope. A :class:`~arcgis.geometry.Geometry` that
                                         defines the location to be identified.
@@ -1480,7 +1480,7 @@ class ImageryLayer(Layer):
             include DEM to perform 3D measure.
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         from_geometry         Required :class:`~arcgis.geometry.Geometry` or dictionary.
                               A geometry that defines the ``from`` location of the measurement.
@@ -1650,7 +1650,7 @@ class ImageryLayer(Layer):
         unless overridden.
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         where                 Optional string. A where clause on this layer to filter the imagery
                               layer by the selection sql statement. Any legal SQL where clause
@@ -1730,7 +1730,7 @@ class ImageryLayer(Layer):
         The ``filter_by`` method filters the layer by where clause, geometry and temporal filters.
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         where                 Optional string. A where clause on this layer to filter the imagery
                               layer by the selection sql statement. Any legal SQL where clause
@@ -1889,7 +1889,7 @@ class ImageryLayer(Layer):
             exported image other than the image itself.
 
         ======================  ====================================================================
-        **Arguments**           **Description**
+        **Parameter**           **Description**
         ----------------------  --------------------------------------------------------------------
         bbox                    Optional dict or string. The extent (bounding box) of the exported
                                 image. Unless the bbox_sr parameter has been specified, the bbox is
@@ -2324,7 +2324,7 @@ class ImageryLayer(Layer):
         count (if return_count_only is set to True), or a set of field statistics (if out_statistics is used).
 
         ==============================  ====================================================================
-        **Arguments**                   **Description**
+        **Parameter**                   **Description**
         ------------------------------  --------------------------------------------------------------------
         where                           Optional string. A where clause on this layer to filter the imagery
                                         layer by the selection sql statement. Any legal SQL where clause
@@ -2624,7 +2624,7 @@ class ImageryLayer(Layer):
         associated with a specified set of rasters in the raster catalog.
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         raster_ids            Required string. A comma-separated list of raster IDs whose files
                               are to be downloaded.
@@ -2685,7 +2685,7 @@ class ImageryLayer(Layer):
 
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         download_info         Required dictionary. This is derived from the
                               :attr:`~arcgis.raster.ImageryLayer.get_download_info` method.
@@ -2754,7 +2754,7 @@ class ImageryLayer(Layer):
             A prerequisite is that the raster catalog item has valid ``icsToPixel`` resource.
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         raster_id             Required integer. Specifies the objectId of image service's raster
                               catalog. This integer rasterId number will determine which raster's
@@ -2808,7 +2808,7 @@ class ImageryLayer(Layer):
             The ``slices`` operation is available in ArcGIS Image Server 10.8.1 and higher.
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         muldidef              Optional list. Multidimensional definition used for querying
                               dimensional slices of the input image service.
@@ -2851,7 +2851,7 @@ class ImageryLayer(Layer):
             The ``statistics`` method is available in ArcGIS Image Server 10.8.1 and higher.
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         variable              Optional string. For an image service that has multidimensional
                               information, this parameter can be used to request statistics for
@@ -2915,7 +2915,7 @@ class ImageryLayer(Layer):
             * ``get_histograms`` is an enhanced version of the :attr:`~arcgis.raster.ImageryLayer.histograms` property on the ``ImageryLayer`` class with additional variable parameter.
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         variable              Optional string. For an image service that has multidimensional
                               information, this parameter can be used to request histograms for
@@ -2976,7 +2976,7 @@ class ImageryLayer(Layer):
         The ``thumbnail`` method downloads the image service's thumbnail image to local disk.
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         out_path              Optional string. Represents the path to which the image needs to be downloaded.
         =================     ====================================================================
@@ -3140,7 +3140,7 @@ class ImageryLayer(Layer):
         The Delete Rasters operation deletes one or more rasters in an image layer.
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         raster_ids            Required string. The object IDs of a raster catalog items to be
                               removed. This is a comma seperated string.
@@ -3185,7 +3185,7 @@ class ImageryLayer(Layer):
         services using the serviceUrl parameter.
 
         =========================       ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         -------------------------       --------------------------------------------------------------------
         raster_ids                      Required integer. The object IDs of a raster catalog items to be
                                         updated.
@@ -3311,7 +3311,7 @@ class ImageryLayer(Layer):
         :class:`~arcgis.raster.ImageryLayer` object from the given extent.
 
         ============================    ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ----------------------------    --------------------------------------------------------------------
         geometry                        Required :class:`~arcgis.geometry.Geometry` (:class:`~arcgis.geometry.Polygon`
                                         or :class:`~arcgis.geometry.Envelope`).
@@ -3469,7 +3469,7 @@ class ImageryLayer(Layer):
             For more information, see `Fundamentals for georeferencing` a raster dataset.
 
         ==================    ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         ------------------    --------------------------------------------------------------------
         raster_id             Required integer. Source raster ID.
         ------------------    --------------------------------------------------------------------
@@ -3523,7 +3523,7 @@ class ImageryLayer(Layer):
         defined by the rendering rule and band Ids.
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         band_ids              Optional string. If there are multiple bands, you can specify a
                               single band, or you can change the band combination (red, green,
@@ -3624,7 +3624,7 @@ class ImageryLayer(Layer):
             This method is supported if the ``hasColormap`` property of the layer is ``True``.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         rendering_rule      Optional dictionary. Specifies the rendering rule for how the
                             requested image should be rendered.
@@ -3678,7 +3678,7 @@ class ImageryLayer(Layer):
         classifier)
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         descriptions        Required dict. Class descriptions are training site polygons and
                             their class descriptions. The structure of the geometry is the same
@@ -3803,7 +3803,7 @@ class ImageryLayer(Layer):
         :class:`~arcgis.raster.ImageryLayer` from the given extent.
 
         ============================    ====================================================================
-        **Arguments**                   **Description**
+        **Parameter**                   **Description**
         ----------------------------    --------------------------------------------------------------------
         geometry                        Required :class:`~arcgis.geometry.Geometry` (:class:`~arcgis.geometry.Polygon`
                                         or :class:`~arcgis.geometry.Envelope`).
@@ -4008,7 +4008,7 @@ class ImageryLayer(Layer):
             the image layer (the default is 1000, which is an approximate limit).
 
         =======================  =======================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         -----------------------  -----------------------------------------------------------------------
         geometry                 Required :class:`~arcgis.geometry.Geometry` object that defines the location(s)
                                  to be sampled. The structure of the geometry is the same as the structure of 
@@ -4167,7 +4167,7 @@ class ImageryLayer(Layer):
         such as band properties.
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         rendering_rule        Optional dictionary. Specifies the rendering rule for how the
                               requested image should be rendered.
@@ -4228,7 +4228,7 @@ class ImageryLayer(Layer):
             more information on mosaic rules.
 
         =======================  =======================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         -----------------------  -----------------------------------------------------------------------
         method                   Optional string. Determines how the selected rasters are ordered.
                                  str, can be none,center,nadir,northwest,seamline,viewpoint,
@@ -4344,7 +4344,7 @@ class ImageryLayer(Layer):
         The ``validate`` method validates rendering rule and/or mosaic rule of an image service.
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         rendering_rule        Optional dictionary. Specifies the rendering rule to be validated
         -----------------     --------------------------------------------------------------------
@@ -4385,7 +4385,7 @@ class ImageryLayer(Layer):
             This applies to image services that have dynamic service caching capability enabled.
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         out_sr                Optional integer. The spatial reference of the boundary's geometry.
                               The spatial reference can be specified as a well-known ID.
@@ -4427,7 +4427,7 @@ class ImageryLayer(Layer):
         spatial reference.
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         raster_id             Required integer. Specifies the object ID of the raster catalog which
                               will determine the raster and image coordinate system to use in a
@@ -4511,7 +4511,7 @@ class ImageryLayer(Layer):
             * The ``calculate_volume`` method is only available in 10.7+.
 
         =================       ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         -----------------       --------------------------------------------------------------------
         geometries              A required list of :class:`~arcgis.geometry.Polygon` geometry objects or a
                                 list of :class:`~arcgis.geometry.Envelope` geometry objects.
@@ -4606,7 +4606,7 @@ class ImageryLayer(Layer):
             The ``query_boundary`` method was added at 10.6.
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         out_sr                The spatial reference of the boundary's geometry.
 
@@ -4660,7 +4660,7 @@ class ImageryLayer(Layer):
         """
         Opertion to get the multidimensional info.
         ==============================  ====================================================================
-        **Arguments**                   **Description**
+        **Parameter**                   **Description**
         ------------------------------  --------------------------------------------------------------------
         where                           optional string. A where clause on this layer to filter the imagery
                                         layer by the selection sql statement. Any legal SQL where clause
@@ -4885,7 +4885,7 @@ class ImageryLayer(Layer):
         applying raster functions at source resolution across the extent of the output imagery layer.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         output_name                              Optional string. If not provided, an Imagery Layer item is created
                                                  by the method and used as the output.
@@ -5121,7 +5121,7 @@ class ImageryLayer(Layer):
             and performing a raster to features conversion.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         field                                    Optional string - field that specifies which value will be used for the conversion.
                                                  It can be any integer or a string field.
@@ -5229,7 +5229,7 @@ class ImageryLayer(Layer):
         box, attributes in green rectangular box and the raster function names in yellow.
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         show_attributes       Optional boolean. If ``True``, the graph displayed includes all the
                               attributes of the function and not only it's function name and raster
@@ -6370,7 +6370,7 @@ class ImageryLayer(Layer):
 
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         points                                   Required list of :class:`~arcgis.geometry.Point` objects.
         ------------------------------------     --------------------------------------------------------------------
@@ -6454,7 +6454,7 @@ class ImageryLayer(Layer):
         level.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         level                                    Optional integer. Level to be used for rendering.
                                                  Default value is 0.
@@ -6733,7 +6733,7 @@ class ImageryLayer(Layer):
         :class:`~arcgis.raster.ImageryLayer` published with mosaic datasets or a raster dataset.
 
         ============================    ====================================================================
-        **Arguments**                   **Description**
+        **Parameter**                   **Description**
         ----------------------------    --------------------------------------------------------------------
         geometry                        Optional :class:`~arcgis.geometry.Geometry` (:class:`~arcgis.geometry.Polygon`
                                         or :class:`~arcgis.geometry.Envelope`).
@@ -6869,7 +6869,7 @@ class ImageryLayer(Layer):
         The y-axis of the spectral profile displays the spectral values.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         points                                   Required list of :class:`~arcgis.geometry.Point` objects.
         ------------------------------------     --------------------------------------------------------------------
@@ -7206,7 +7206,7 @@ def _get_engine(engine):
     Function to get the engine that will be used to process the Raster object.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     engine                                   Required string.
                                                 Possible options:
@@ -7233,7 +7233,7 @@ class Raster:
     else it will use ``image_server`` engine.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     path                                     Required string. The input raster.
 
@@ -7912,7 +7912,7 @@ class Raster:
         `SpatioTemporal Asset Catalog (STAC) Item <https://github.com/radiantearth/stac-spec/blob/master/item-spec/item-spec.md>`__.
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         stac_item             Required string or `pystac.Item <https://pystac.readthedocs.io/en/latest/api.html#item>`__ object. If string, then it should be
                               the URL of the STAC item. It can be a Static STAC item URL or a STAC
@@ -8013,7 +8013,7 @@ class Raster:
         multiband raster.
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         band_ids_or_names     Required list. The index number or names of the bands to return as
                               Raster objects. If not specified, all bands will be extracted.
@@ -8038,7 +8038,7 @@ class Raster:
         description, unit, etc.
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         variable_name         Required string. the name of the variable
         =================     ====================================================================
@@ -8060,7 +8060,7 @@ class Raster:
         The ``get_dimension_names`` method retrieves a list of the dimension names that the variable contains.
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         variable_name         Required string. the name of the variable
         =================     ====================================================================
@@ -8088,7 +8088,7 @@ class Raster:
         given variable.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         variable_name                            Required string. the name of the variable
         ------------------------------------     --------------------------------------------------------------------
@@ -8119,7 +8119,7 @@ class Raster:
          such as min value, max value, unit, etc.
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         variable_name         Required string. the name of the variable
         -----------------     --------------------------------------------------------------------
@@ -8147,7 +8147,7 @@ class Raster:
             The ``rename_variable`` operation is not supported on image services.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         current_variable_name                    Required string. the name of the variable to be renamed
         ------------------------------------     --------------------------------------------------------------------
@@ -8178,7 +8178,7 @@ class Raster:
             The ``set_property`` operation is not supported on image services
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         property_name         Required string. The property name of the raster
         -----------------     --------------------------------------------------------------------
@@ -8202,7 +8202,7 @@ class Raster:
         The ``get_property`` method returns the value of the given property.
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         property_name         Required string. the name of the property
         =================     ====================================================================
@@ -8231,7 +8231,7 @@ class Raster:
         The ``read`` method reads a numpy array from the calling :class:`~arcgis.raster.Raster` object.
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         upper_left_corner     2-D tuple. a tuple with 2 values representing the number of pixels along x and y
                               direction relative to the origin_coordinate. E.g., (2, 0), means that
@@ -8294,7 +8294,7 @@ class Raster:
             The ``write`` operation is not supported on image services.
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         array                 Required numpy.ndarray. the array must be in the shape of (slices,
                               height, width, bands) for writing a multidimensional raster and
@@ -8341,7 +8341,7 @@ class Raster:
             The ``remove_variables`` operation is not supported on image services.
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         variable_names        Required list. the list of variables to be removed
         =================     ====================================================================
@@ -8370,7 +8370,7 @@ class Raster:
             The ``add_dimension`` operation is not supported on image services
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         variable                                 Required string. variable to which the new dimension is to be added
         ------------------------------------     --------------------------------------------------------------------
@@ -8406,7 +8406,7 @@ class Raster:
             If the raster is multidimensional, returns the color map of a variable.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         variable_name                            Optional string. The variable name of the multidimensional raster.
                                                  If a variable is not specified and the raster is multidimensional,
@@ -8440,7 +8440,7 @@ class Raster:
             * The ``set_colormap`` operation is not supported on image services
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         color_map                                Optional (string, dict): The color map to apply to the raster. This
                                                  can be a string indicating the name of the color map or color ramp
@@ -8482,7 +8482,7 @@ class Raster:
             If the raster is multidimensional, returns the statistics of a variable.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         variable_name                            Optional string. The variable name of the multidimensional raster dataset.
                                                  If a variable is not specified and the raster is multidimensional,
@@ -8516,7 +8516,7 @@ class Raster:
             The ``set_statistics`` operation is not supported on image services.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         statistics_obj                           Optional list of statistics objects. A list of Python dictionaries containing statistics and corresponding
                                                  values to set. For example, [{'min': 10, 'max': 20}] sets the minimum
@@ -8571,7 +8571,7 @@ class Raster:
             If the raster is multiband, it returns the histogram of each band.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         variable_name                            Optional string. The variable name of the multidimensional raster dataset.
                                                  If a variable is not specified and the raster is multidimensional,
@@ -8602,7 +8602,7 @@ class Raster:
             The ``set_histograms`` operation is not supported on image services
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         histogram_obj                            Optional list of histogram objects(dict),
 
@@ -8650,7 +8650,7 @@ class Raster:
             The ``add_dimension`` operation is not supported on image services
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         md_raster             Required multidimensional raster. The multidimensional raster containing
                               the slices to be appended.
@@ -8695,7 +8695,7 @@ class Raster:
             The ``set_variable_attributes`` operation is not supported on image services
 
         ====================================     ====================================================================
-        **Arguments**                            **Description**
+        **Parameter**                            **Description**
         ------------------------------------     --------------------------------------------------------------------
         variable_name                            Required string. The variable name of the multidimensional raster dataset.
         ------------------------------------     --------------------------------------------------------------------
@@ -8732,7 +8732,7 @@ class Raster:
         The ``summarize`` method retrieves the statistics of a :class:`~arcgis.raster.Raster` for a given geometry.
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         geometry              Required :class:`~arcgis.geometry.Geometry` (:class:`~arcgis.geometry.Polygon`
                               or :class:`~arcgis.geometry.Envelope`).
@@ -8803,7 +8803,7 @@ class Raster:
             When run using arcpy engine, ``save`` persists this raster to location specified in ``output_name``.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         output_name                              Optional string.
 
@@ -8922,7 +8922,7 @@ class Raster:
         :class:`~arcgis.raster.Raster` object.
     
         ============================    ====================================================================
-        **Arguments**                   **Description**
+        **Parameter**                   **Description**
         ----------------------------    --------------------------------------------------------------------
         geometry                        Optional :class:`~arcgis.geometry.Geometry` (:class:`~arcgis.geometry.Polygon`
                                         or :class:`~arcgis.geometry.Envelope`).
@@ -9060,7 +9060,7 @@ class Raster:
         The ``export_image`` operation is performed on a raster layer to visualise it.
 
         ======================  ====================================================================
-        **Arguments**           **Description**
+        **Parameter**           **Description**
         ----------------------  --------------------------------------------------------------------
         bbox                    Optional dict or string. The extent (bounding box) of the exported
                                 image. Unless the bbox_sr parameter has been specified, the bbox is
@@ -9246,7 +9246,7 @@ class Raster:
         box, attributes in green rectangular box and the raster function names in yellow.
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         show_attributes       Optional boolean. If True, the graph displayed includes all the
                               attributes of the function and not only it's function name and raster
@@ -9481,7 +9481,7 @@ class Raster:
         * The mosaic method, e.g. how the selected rasters are ordered.
         * The mosaic operation, e.g. how overlapping pixels at the same location are resolved.
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         method                optional string. Determines how the selected rasters are ordered.
                               str, can be none,center,nadir,northwest,seamline,viewpoint,
@@ -10318,7 +10318,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
         """
         Persists this imagery layer to location specified in outpath as an Imagery Layer item.
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         outpath               Required string.
         -----------------     --------------------------------------------------------------------
@@ -10388,7 +10388,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
         ``plot_histograms()`` can be used for plotting the band-wise image histogram charts of any Raster object.
     
         ============================    ====================================================================
-        **Arguments**                   **Description**
+        **Parameter**                   **Description**
         ----------------------------    --------------------------------------------------------------------
         geometry                        Optional Polygon or Extent. A geometry that defines the geometry
                                         within which the histogram is computed. The geometry can be an
@@ -10515,7 +10515,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
         """
         The export_image operation is performed on a raster layer to visualise it.
         ======================  ====================================================================
-        **Arguments**           **Description**
+        **Parameter**           **Description**
         ----------------------  --------------------------------------------------------------------
         bbox                    Optional dict or string. The extent (bounding box) of the exported
                                 image. Unless the bbox_sr parameter has been specified, the bbox is
@@ -10594,7 +10594,7 @@ class _ImageServerRaster(ImageryLayer, Raster):
         box, attributes in green rectangular box and the raster function names in yellow.
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         show_attributes       Optional boolean. If True, the graph displayed includes all the
                               attributes of the function and not only it's function name and raster
@@ -11196,7 +11196,7 @@ class _ArcpyRaster(Raster, ImageryLayer):
         """
         Persists this imagery layer to location specified in outpath as an Imagery Layer item.
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         outpath               Required string.
         -----------------     --------------------------------------------------------------------
@@ -11305,7 +11305,7 @@ class _ArcpyRaster(Raster, ImageryLayer):
         ``plot_histograms()`` can be used for plotting the band-wise image histogram charts of any Raster object.
     
         ============================    ====================================================================
-        **Arguments**                   **Description**
+        **Parameter**                   **Description**
         ----------------------------    --------------------------------------------------------------------
         geometry                        optional Polygon or Extent. A geometry that defines the geometry
                                         within which the histogram is computed. The geometry can be an
@@ -11435,7 +11435,7 @@ class _ArcpyRaster(Raster, ImageryLayer):
         """
         The export_image operation is performed on a raster layer to visualise it.
         ======================  ====================================================================
-        **Arguments**           **Description**
+        **Parameter**           **Description**
         ----------------------  --------------------------------------------------------------------
         bbox                    Optional dict or string. The extent (bounding box) of the exported
                                 image. Unless the bbox_sr parameter has been specified, the bbox is
@@ -11679,7 +11679,7 @@ class _ArcpyRaster(Raster, ImageryLayer):
         box, attributes in green rectangular box and the raster function names in yellow.
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         show_attributes       optional boolean. If True, the graph displayed includes all the
                               attributes of the function and not only it's function name and raster
@@ -11886,7 +11886,7 @@ def _get_raster_collection_engine(engine):
     Function to get the engine that will be used to process the Raster object.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     engine                                   Required string.
                                                 Possible options:
@@ -11922,7 +11922,7 @@ class RasterCollection:
     filtered easily, and prepares a collection for additional processing and analysis.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     rasters                                  The input raster datasets. Supported inputs include a list of
                                              local or datastore rasters, a mosaic dataset, a multidimensional
@@ -12188,7 +12188,7 @@ class RasterCollection:
         `search <https://github.com/radiantearth/stac-api-spec/tree/master/item-search>`__ query.
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         stac_api              Required string. URL of the STAC API root endpoint. The STAC API where
                               the search needs to be performed.
@@ -12448,7 +12448,7 @@ class RasterCollection:
         `Static SpatioTemporal Asset Catalog (STAC) <https://github.com/radiantearth/stac-spec/blob/master/catalog-spec/catalog-spec.md>`__.
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         stac_catalog          Required string or `pystac.Catalog <https://pystac.readthedocs.io/en/latest/api.html#catalog>`__ object. If string, then it should
                               be the URL of the Static STAC (Catalog).
@@ -12633,7 +12633,7 @@ class RasterCollection:
         The ``filter_by`` method filters a :class:`~arcgis.raster.RasterCollection` based on attribute and/or spatial queries.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         where_clause                             Optional String. An SQL expression used to select a subset of rasters
         ------------------------------------     --------------------------------------------------------------------
@@ -12695,7 +12695,7 @@ class RasterCollection:
         The ``filter_by_time`` method filters a :class:`~arcgis.raster.RasterCollection` by time.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         start_time                               Optional String representation of the start time.
         ------------------------------------     --------------------------------------------------------------------
@@ -12767,7 +12767,7 @@ class RasterCollection:
         Monday, specify ``calendar_field`` as 'DAY_OF_WEEK' and put start and end to 1.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         calendar_field                           Required String, one of 'YEAR', 'MONTH', 'QUARTER', 'WEEK_OF_YEAR',
                                                  'DAY_OF_YEAR', 'DAY_OF_MONTH', 'DAY_OF_WEEK', 'HOUR'
@@ -12849,7 +12849,7 @@ class RasterCollection:
         intersect with the geometry will be returned.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         query_geometry_or_extent                 Required object that filters the items such that only those that
                                                  intersect with the object will be returned. This can be specified
@@ -12912,7 +12912,7 @@ class RasterCollection:
         raster collection containing only the items that satisfy the query.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         field_name                               Required string. The field name to use in the filter.
         ------------------------------------     --------------------------------------------------------------------
@@ -13008,7 +13008,7 @@ class RasterCollection:
         items that satisfy the query.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         property_name                            Required string. The name of the property to use in the filter.
         ------------------------------------     --------------------------------------------------------------------
@@ -13096,7 +13096,7 @@ class RasterCollection:
         a :class:`~arcgis.raster.RasterCollection` that is in the order specified.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         field_name                               Required string. The name of the field to use for sorting.
         ------------------------------------     --------------------------------------------------------------------
@@ -13137,7 +13137,7 @@ class RasterCollection:
         :class:`~arcgis.raster.RasterCollection`.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         field_name                               Required string. The name of the field from which to extract values.
         ------------------------------------     --------------------------------------------------------------------
@@ -13163,7 +13163,7 @@ class RasterCollection:
         :class:`~arcgis.raster.RasterCollection` is a slice in the multidimensional raster.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         variable_field_name                      Required string. The name of the field that contains the variable names.
         ------------------------------------     --------------------------------------------------------------------
@@ -13210,7 +13210,7 @@ class RasterCollection:
         in the raster collection must follow the same band order.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored.
 
@@ -13266,7 +13266,7 @@ class RasterCollection:
         in the raster collection must follow the same band order.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored.
 
@@ -13322,7 +13322,7 @@ class RasterCollection:
         collection must follow the same band order.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored.
 
@@ -13378,7 +13378,7 @@ class RasterCollection:
         collection must follow the same band order.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored.
 
@@ -13436,7 +13436,7 @@ class RasterCollection:
         in the raster collection must follow the same band order.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored.
 
@@ -13493,7 +13493,7 @@ class RasterCollection:
         so the items in the raster collection must follow the same band order.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored.
 
@@ -13549,7 +13549,7 @@ class RasterCollection:
         so the items in the raster collection must follow the same band order.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         ignore_nodata                            Optional Boolean. Specifies whether NoData values are ignored.
 
@@ -13593,7 +13593,7 @@ class RasterCollection:
         :class:`~arcgis.raster.RasterCollection` have been mosaicked into a single raster.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         mosaic_method                            Optional string. The method used to handle overlapping areas
                                                  between adjacent raster items. Mosaic method options include the following:
@@ -13631,7 +13631,7 @@ class RasterCollection:
 
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         quality_rc_or_list                       Required. The :class:`~arcgis.raster.RasterCollection`
                                                  or list of rasters to be used as quality indicators.
@@ -13683,7 +13683,7 @@ class RasterCollection:
         the selected bands.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         band_ids_or_names                        Required. The names or index numbers of bands to be included in
                                                  the returned raster items. This can be specified with a single string,
@@ -13724,7 +13724,7 @@ class RasterCollection:
         The ``map`` method maps a Python function over a raster collection.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         func                                     Required. The Python function to map over the raster collection.
                                                  The return value of the function must be a dictionary in which one
@@ -13931,6 +13931,100 @@ class RasterCollection:
 
         return summary_dict
 
+    # def add_field(
+    #    self,
+    #    field_name: str,
+    #    field_values: list,
+    #    context: Optional[dict[str, Any]] = None,
+    # ):
+    #    """
+    #    Adds a new field to the raster collection and populate it with values.
+
+    #    ====================================     ====================================================================
+    #    **Parameter**                             **Description**
+    #    ------------------------------------     --------------------------------------------------------------------
+    #    field_name                               Required string. The name of the field to be added.
+    #    ------------------------------------     --------------------------------------------------------------------
+    #    field_values                             Required list. The list of values associated with the field name.
+    #                                             The length of the list should match the number of items in the raster collection
+    #                                             Providing only one value will set the same value for all rows.
+    #    ------------------------------------     --------------------------------------------------------------------
+    #    context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
+    #                                             The default value for the context parameter would be the same as that of the
+    #                                             context settings applied to the parent collection.
+
+    #                                             Currently available:
+
+    #                                                 -  query_boundary:
+    #                                                    This boolean value set to this option determines whether to add SHAPE field
+    #                                                    to the RasterCollection. The value in the SHAPE field represents the
+    #                                                    boundary/geometry of the raster. The query_boundary parameter is honoured
+    #                                                    only when the RasterCollection is created from a list of Rasters.
+
+    #                                                    - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+
+    #                                                    - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
+
+    #                                                    Example:
+
+    #                                                    {"query_boundary":True}
+    #    ====================================     ====================================================================
+
+    #    :return:
+    #        A new :class:`~arcgis.raster.RasterCollection` that has the new field added.
+    #    """
+
+    #    return self._ras_coll_engine_obj.add_field(
+    #        field_name, field_values, context=context
+    #    )
+
+    # def group_by(self, field_name: str, context: Optional[dict[str, Any]] = None):
+    #    """
+    #    group_by method can be used to group the raster collection based on a field.
+
+    #    ====================================     ====================================================================
+    #    **Parameter**                             **Description**
+    #    ------------------------------------     --------------------------------------------------------------------
+    #    field_name                               Required string.The name of the field that is used to group the raster collection.
+    #                                             Items with the same field values will be grouped together.
+    #    ------------------------------------     --------------------------------------------------------------------
+    #    context                                  Optional dictionary. Additional properties to control the creation of RasterCollection.
+    #                                             The default value for the context parameter would be the same as that of the
+    #                                             context settings applied to the parent collection.
+
+    #                                             Currently available:
+
+    #                                                 -  query_boundary:
+    #                                                    This boolean value set to this option determines whether to add SHAPE field
+    #                                                    to the RasterCollection. The value in the SHAPE field represents the
+    #                                                    boundary/geometry of the raster. The query_boundary parameter is honoured
+    #                                                    only when the RasterCollection is created from a list of Rasters.
+
+    #                                                    - True: Set query_boundary to True to add the SHAPE field to the RasterCollection.
+
+    #                                                    - False: Set query_boundary to False to not add the SHAPE field to the RasterCollection. (Creation of RasterCollection would be faster)
+
+    #                                                    Example:
+
+    #                                                    {"query_boundary":True}
+    #    ====================================     ====================================================================
+
+    #    :return:
+    #        A Dictionary. The dictionary that contains the grouped raster collections. The key of the dictionary is a
+    #        field value of the field name that the grouping is based on. The value of the dictionary is a raster
+    #        collection whose field name contains the same field value.
+
+    #    .. code-block:: python
+
+    #        # Usage Example 1: This example groups the raster collection into yearly data and creates a new raster collection using data from 1990.
+
+    #        group_by_year = rc.group_by(field_name="Year", context=None)
+    #        rc_1990 = group_by_year[1990]
+
+    #    """
+
+    #    return self._ras_coll_engine_obj.group_by(field_name, context=context)
+
     def _as_df(
         self, result_offset=None, result_record_count=None, return_all_records=False
     ):
@@ -13938,7 +14032,7 @@ class RasterCollection:
         Returns the RasterCollection object as a dataframe
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         result_offset                            optional integer. This option fetches query results by skipping a
                                                  specified number of records. The query results start from the next
@@ -14429,6 +14523,59 @@ class _ArcpyRasterCollection(RasterCollection, ImageryLayer):
             newcollection._ras_coll_engine_obj._as_df()
         )
         return newcollection
+
+    def add_field(self, field_name, field_values, context=None):
+        """
+         Adds a new field to the raster collection and populate it with values.
+        :param field_name: Required string. The name of the field to be added.
+        :param field_values: Required list. The list of values associated with the field name.
+                             The length of the list should match the number of items in the raster collection
+                             Providing only one value will set the same value for all rows.
+        :return: Collection that has the new field added.
+        """
+        if context is None:
+            context = self._context
+
+        if field_name in self.fields:
+            raise RuntimeError("Cannot add the field. The field name already exists.")
+
+        newcollection = self._clone_raster_collection(context=context)
+        newcollection._ras_coll_engine_obj._raster_collection = (
+            self._raster_collection.addField(
+                field_name=field_name, field_values=field_values
+            )
+        )
+        newcollection._ras_coll_engine_obj._df = (
+            newcollection._ras_coll_engine_obj._as_df()
+        )
+        return newcollection
+
+    def group_by(self, field_name, context=None):
+        """
+         group_by method can be used to group the raster collection based on a field.
+        :param field_name: Required string.The name of the field that is used to group the raster collection. Items with the same field values will be grouped together.
+        :return: Dictionary.The dictionary that contains the grouped raster collections. The key of the dictionary is a field value of the field name that the grouping is based on.
+                 The value of the dictionary is a raster collection whose field name contains the same field value.
+        """
+        if context is None:
+            context = self._context
+
+        try:
+            grouped_output_arcpy = self._raster_collection.groupBy(
+                field_name=field_name
+            )
+            new_grouped_output = {}
+            for item, value in grouped_output_arcpy.items():
+                newcollection = self._clone_raster_collection(context=context)
+                newcollection._ras_coll_engine_obj._raster_collection = value
+                newcollection._ras_coll_engine_obj._df = (
+                    newcollection._ras_coll_engine_obj._as_df()
+                )
+                new_grouped_output.update({item: newcollection})
+            return new_grouped_output
+
+        except:
+            raise RuntimeError("group_by failed with the field_name - " + field_name)
 
     def _as_df(
         self, result_offset=None, result_record_count=None, return_all_records=False
@@ -15147,6 +15294,69 @@ class _ImageServerRasterCollection(ImageryLayer, RasterCollection):
         merged_collection.reset_index(drop=True, inplace=True)
 
         return RasterCollection(merged_collection)
+
+    def add_field(self, field_name, field_values, context=None):
+        """
+         Adds a new field to the raster collection and populate it with values.
+        :param field_name: Required string. The name of the field to be added.
+        :param field_values: Required list. The list of values associated with the field name.
+                             The length of the list should match the number of items in the raster collection
+                             Providing only one value will set the same value for all rows.
+        :return: Collection that has the new field added.
+        """
+        if context is None:
+            context = self._context
+
+        if field_name in self.fields:
+            raise RuntimeError("Cannot add the field. The field name already exists.")
+
+        df = self._as_df()
+        new_df = df.copy()
+
+        if not isinstance(field_values, list):
+            field_values = [field_values]
+
+        if self.count != len(field_values):
+            if len(field_values) == 1:
+                field_values = field_values * self.count
+            else:
+                raise RuntimeError(
+                    "Length of field_values does not match the raster collection count"
+                )
+
+        try:
+            new_df[field_name] = field_values
+        except:
+            raise RuntimeError("Failed to add the field to the raster collection")
+
+        return RasterCollection(new_df, context=context)
+
+    def group_by(self, field_name, context=None):
+        """
+         group_by method can be used to group the raster collection based on a field.
+        :param field_name: Required string.The name of the field that is used to group the raster collection. Items with the same field values will be grouped together.
+        :return: Dictionary.The dictionary that contains the grouped raster collections. The key of the dictionary is a field value of the field name that the grouping is based on.
+                 The value of the dictionary is a raster collection whose field name contains the same field value.
+        """
+        if context is None:
+            context = self._context
+
+        df = self._as_df()
+        try:
+            group_by_obj = df.groupby(field_name)
+            groups = {}
+
+            for key, val in group_by_obj.groups.items():
+                groups.update(
+                    {
+                        key: RasterCollection(
+                            group_by_obj.get_group(key), context=context
+                        )
+                    }
+                )
+            return groups
+        except:
+            raise RuntimeError("groupBy failed with the field_name - " + field_name)
 
     def _generate_raster_item_rft(self, raster_id):
         template_dict = {"rasterFunction": "RasterItem", "rasterFunctionArguments": {}}
@@ -16104,6 +16314,70 @@ class _LocalRasterCollection(ImageryLayer, RasterCollection):
 
         return RasterCollection(merged_collection)
 
+    def add_field(self, field_name, field_values, context=None):
+        """
+         Adds a new field to the raster collection and populate it with values.
+        :param field_name: Required string. The name of the field to be added.
+        :param field_values: Required list. The list of values associated with the field name.
+                             The length of the list should match the number of items in the raster collection
+                             Providing only one value will set the same value for all rows.
+        :return: Collection that has the new field added.
+        """
+
+        if context is None:
+            context = self._context
+
+        if field_name in self.fields:
+            raise RuntimeError("Cannot add the field. The field name already exists.")
+
+        df = self._as_df()
+        new_df = df.copy()
+
+        if not isinstance(field_values, list):
+            field_values = [field_values]
+
+        if self.count != len(field_values):
+            if len(field_values) == 1:
+                field_values = field_values * self.count
+            else:
+                raise RuntimeError(
+                    "Length of field_values does not match the raster collection count"
+                )
+
+        try:
+            new_df[field_name] = field_values
+        except:
+            raise RuntimeError("Failed to add the field to the raster collection")
+
+        return RasterCollection(new_df, context=context)
+
+    def group_by(self, field_name, context=None):
+        """
+         group_by method can be used to group the raster collection based on a field.
+        :param field_name: Required string.The name of the field that is used to group the raster collection. Items with the same field values will be grouped together.
+        :return: Dictionary.The dictionary that contains the grouped raster collections. The key of the dictionary is a field value of the field name that the grouping is based on.
+                 The value of the dictionary is a raster collection whose field name contains the same field value.
+        """
+        if context is None:
+            context = self._context
+
+        df = self._as_df()
+        try:
+            group_by_obj = df.groupby(field_name)
+            groups = {}
+
+            for key, val in group_by_obj.groups.items():
+                groups.update(
+                    {
+                        key: RasterCollection(
+                            group_by_obj.get_group(key), context=context
+                        )
+                    }
+                )
+            return groups
+        except:
+            raise RuntimeError("groupBy failed with the field_name - " + field_name)
+
     def _as_df(
         self, result_offset=None, result_record_count=None, return_all_records=False
     ):
@@ -16155,7 +16429,7 @@ class ImageryTileManager(object):
 
 
     =================     ====================================================================
-    **Argument**          **Description**
+    **Parameter**          **Description**
     -----------------     --------------------------------------------------------------------
     imglyr                required ImageLayer. The imagery layer object that is cached.
     =================     ====================================================================
@@ -16228,7 +16502,7 @@ class ImageryTileManager(object):
             ``maxExportTilesCount=100000``.
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         tile_package          Optional boolean.   Allows exporting either a tile package or a
                               cache raster data set. If the value is true output will be in tile
@@ -16369,7 +16643,7 @@ class ImageryTileManager(object):
         that will be exported.
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         tile_package          Optional boolean.  If the value is true output will be in tile
                               package format and if the value is false Cache Raster data set is
@@ -16476,7 +16750,7 @@ class ImageryTileManager(object):
         This is useful for checking jobs that have been launched manually.
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         job_id                required string.  Unique ID of a job.
         =================     ====================================================================
@@ -16496,7 +16770,7 @@ class ImageryTileManager(object):
         most important piece of information provided by this method.
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         job_id                required string.  Unique ID of a job.
         -----------------     --------------------------------------------------------------------
@@ -16523,7 +16797,7 @@ class ImageryTileManager(object):
         most important piece of information provided by this method.
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         job_id                required string.  Unique ID of a job.
         -----------------     --------------------------------------------------------------------
@@ -16552,7 +16826,7 @@ class ImageryTileManager(object):
             If the tile is not found, an HTTP status code of 404 is thrown.
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         level                 Required integer. The level of detail ID.
         -----------------     --------------------------------------------------------------------
@@ -16595,7 +16869,7 @@ class RasterCatalogItem(object):
 
 
     =================     ====================================================================
-    **Argument**          **Description**
+    **Parameter**          **Description**
     -----------------     --------------------------------------------------------------------
     url                   required string. Web address to the catalog item.
     -----------------     --------------------------------------------------------------------
@@ -16776,7 +17050,7 @@ class RasterCatalogItem(object):
             information associated with the image other than the actual image.
 
         =================     ====================================================================
-        **Arguments**         **Description**
+        **Parameter**         **Description**
         -----------------     --------------------------------------------------------------------
         bbox                  Required string. The extent (bounding box) of the exported image.
                               Unless the bbox_sr parameter has been specified, the bbox is assumed
@@ -16974,7 +17248,7 @@ class RasterManager(object):
         to  update, add and delete rasters from an :class:`~arcgis.raster.ImageryLayer`.
 
     =================     ====================================================================
-    **Argument**          **Description**
+    **Parameter**          **Description**
     -----------------     --------------------------------------------------------------------
     imglyr                required :class:`~arcgis.raster.ImageryLayer` object.
                           The imagery layer object where 'Edit' is in the capabilities.
@@ -17017,7 +17291,7 @@ class RasterManager(object):
             The ``add`` operation is supported at 10.1 and later.
 
         ===============================     ====================================================================
-        **Arguments**                       **Description**
+        **Parameter**                       **Description**
         -------------------------------     --------------------------------------------------------------------
         item_ids                            The upload items (raster files) to be added. Either item_ids or
                                             service_url is needed to perform this operation.
@@ -17178,7 +17452,7 @@ class RasterManager(object):
         The ``delete`` operation deletes one or more rasters in an imagery layer.
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         raster_ids            Required string. The object IDs of a raster catalog items to be
                               removed. This is a comma seperated string.
@@ -17220,7 +17494,7 @@ class RasterManager(object):
             services using the serviceUrl parameter.
 
         ========================  ====================================================================
-        **Argument**              **Description**
+        **Parameter**              **Description**
         ------------------------  --------------------------------------------------------------------
         raster_id                 Required integer. The object IDs of a raster catalog items to be
                                   updated.

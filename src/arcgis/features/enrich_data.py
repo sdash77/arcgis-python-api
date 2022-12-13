@@ -47,7 +47,7 @@ def enrich_layer(
     The result will be a new layer of input features that includes all demographic and geographic information from given data collections.
 
     =====================================================================     ====================================================================
-    **Argument**                                                              **Description**
+    **Parameter**                                                              **Description**
     ---------------------------------------------------------------------     --------------------------------------------------------------------
     input_layer                                                               Required layer. The features to enrich with new data. See :ref:`Feature Input<FeatureInput>`.
     ---------------------------------------------------------------------     --------------------------------------------------------------------

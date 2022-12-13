@@ -20,7 +20,7 @@ class PortalAdminManager(BasePortalAdmin):
     portal environment is available through System and Security resources.
 
     ================    =================================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ----------------    ---------------------------------------------------------------------------------
     url                 web address to portaladmin rest API (ends with: portal//sharing/rest/)
     ----------------    ---------------------------------------------------------------------------------
@@ -233,7 +233,7 @@ class PortalAdminManager(BasePortalAdmin):
         This property allows `org_admins` to be able to see all scheduled tasks on the enterprise
 
         ================  ===============================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  -------------------------------------------------------------------------------
         item              Optional Item. The item to query tasks about.
         ----------------  -------------------------------------------------------------------------------
@@ -506,7 +506,7 @@ class PortalAdminManager(BasePortalAdmin):
         Returns a CSV file containing the login history from a start_date to the present.
 
         ================  ===============================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  -------------------------------------------------------------------------------
         start_date        Required datetime.datetime object. The beginning date.
         ----------------  -------------------------------------------------------------------------------

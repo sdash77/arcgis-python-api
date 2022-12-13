@@ -13,7 +13,7 @@ class Dispatcher(FeatureModel):
     Represents a dispatcher in a project.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     project                Required :class:`~arcgis.apps.workforce.Project`. The project that
                            the dispatcher belongs to.
@@ -65,7 +65,7 @@ class Dispatcher(FeatureModel):
         Updates the dispatcher on the server
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         contact_number         Optional :class:`String`. The contact number of the dispatcher
         ------------------     --------------------------------------------------------------------

@@ -644,7 +644,7 @@ class TextDataObject:
         """
         Shows a batch of dataframe prepared without applying transforms.
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional integer. Number of rows in the
                                 dataframe to be shown on the function call.

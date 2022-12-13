@@ -11,7 +11,7 @@ def show_batch_labeled_tiles(self, rows=3, **kwargs):  # parameters adjusted in 
     This function randomly picks a few training chips and visualizes them.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     rows                    Optional Integer.
                             Number of rows to display.

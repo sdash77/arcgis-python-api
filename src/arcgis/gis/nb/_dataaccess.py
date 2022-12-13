@@ -71,7 +71,7 @@ class NotebookDataAccess:
         Uploads a file to the Notebook Server
 
         ===================  ==========================================================================
-        **Argument**         **Description**
+        **Parameter**         **Description**
         -------------------  --------------------------------------------------------------------------
         fp                   Required String. The path of the file to upload
         ===================  ==========================================================================
@@ -102,7 +102,12 @@ class NotebookDataAccess:
         :return: List[Dict[str, Any]]
         """
         url = f"{self._url}/notebookworkspace"
-        params = {"f": "json", "restype": "container", "comp": "list"}
+        params = {
+            "f": "json",
+            "restype": "container",
+            "comp": "list",
+            "token": self._gis._con.token,
+        }
         return [
             NotebookFile(f, self)
             for f in self._gis._con.get(url, params).pop("Blobs", [])

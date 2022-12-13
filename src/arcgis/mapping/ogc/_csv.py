@@ -16,7 +16,7 @@ class CSVLayer(BaseOpenData):
 
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     url_or_item         Required String or Item. The web address or :class:`~arcgis.gis.Item` to the CSV resource.
     ---------------     --------------------------------------------------------------------
@@ -234,7 +234,7 @@ class CSVLayer(BaseOpenData):
                     col_val = self._data[col].loc[idx]
                 except:
                     col_val = ""
-                if isinstance(col_val, (str, np.str)):
+                if isinstance(col_val, (str, str)):
                     fields.append({"name": col, "type": "string", "alias": col})
                 elif isinstance(
                     col_val,

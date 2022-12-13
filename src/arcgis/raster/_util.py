@@ -12,7 +12,7 @@ from arcgis.geometry import Geometry as _Geometry
 import numbers
 import time
 import os
-from urllib.parse import urljoin
+from urllib.parse import urljoin, quote, unquote
 import sys
 
 
@@ -759,10 +759,60 @@ def _ra_upload_allowed_extensions():
     )
 
 
+def _is_primary_file(file):
+    """Returns the file path if it is a primary file, otherwise return None."""
+
+    # CRF folder check
+    if file.endswith(".bundle") and "/_alllayers" in file:
+        return file[: file.rfind("/_alllayers")]
+
+    # Common raster dataset formats check
+    if file.lower().endswith(
+        (
+            ".tiff",
+            ".tif",
+            ".mrf",
+            ".img",
+            ".jp2",
+            ".jpx",
+            ".j2k",
+            ".sid",
+            ".ntf",
+            ".nsf",
+            ".hdf",
+            ".hdf4",
+            ".hdf5",
+            ".h4",
+            ".h5",
+            ".he4",
+            ".he5",
+            ".grib",
+            ".grb",
+            ".grib2",
+            ".grb2",
+            ".bin",
+            ".dat",
+            ".nc",
+            ".nc4",
+        )
+    ):
+        return file
+    return
+
+
 class _ImageryUploaderAGOL:
     """helper class for concurrently uploading multiple files to user's rasterstore on AGOL"""
 
-    def __init__(self, file_list, container, auto_renew, upload_properties, task, gis):
+    def __init__(
+        self,
+        file_list,
+        container,
+        auto_renew,
+        upload_properties,
+        task,
+        raster_type,
+        gis,
+    ):
 
         from azure.storage.blob import ContainerClient
         from azure.core.exceptions import (
@@ -782,9 +832,20 @@ class _ImageryUploaderAGOL:
         self.container = container
         self.auto_renew = auto_renew
         self.task = task
+        self.raster_type = raster_type
         self.gis = gis
         self.all_files = []
         self.mosaic_data_info = []
+        self.primary_files = []
+        self.single_primary_file = (
+            False
+            if self.raster_type != "Raster Dataset"
+            or (
+                len(self.file_list) > 1
+                and any(item["is_dir"] for item in self.file_list)
+            )
+            else True
+        )
         for i, d in enumerate(file_list):
             self.all_files.extend([(f, i) for f in d["files_list"]])
         self.url_list = []
@@ -876,22 +937,31 @@ class _ImageryUploaderAGOL:
                                 if self.task == "CreateImageCollection":
                                     target = os.path.basename(source)
                                 else:
-                                    folder_match = prefix + os.path.basename(source)
+                                    folder_match = quote(
+                                        prefix + os.path.basename(source)
+                                    )
                                     folder_url = url[
                                         0 : url.find(folder_match) + len(folder_match)
                                     ]
-                                    target = folder_url.replace(
-                                        folder_url[
-                                            0 : folder_url.find(url_suffix)
-                                            + len(url_suffix)
-                                        ],
-                                        "/vsiaz",
+                                    target = unquote(
+                                        folder_url.replace(
+                                            folder_url[
+                                                0 : folder_url.find(url_suffix)
+                                                + len(url_suffix)
+                                            ],
+                                            "/vsiaz",
+                                        )
                                     )
 
                                 data_path = {"source": source, "target": target}
                                 if data_path not in self.mosaic_data_info:
                                     self.mosaic_data_info.append(data_path)
 
+                            if self.single_primary_file:
+                                primary_file = _is_primary_file(url)
+                                if primary_file:
+                                    if primary_file not in self.primary_files:
+                                        self.primary_files.append(primary_file)
                             url = url[
                                 0 : url.find(current_time_str) + len(current_time_str)
                             ]
@@ -914,11 +984,18 @@ class _ImageryUploaderAGOL:
                         if data_path not in self.mosaic_data_info:
                             self.mosaic_data_info.append(data_path)
 
+                    if self.single_primary_file:
+                        primary_file = _is_primary_file(url)
+                        if primary_file:
+                            if primary_file not in self.primary_files:
+                                self.primary_files.append(primary_file)
+
                     if (
                         url not in self.url_list
                         and os.path.dirname(url) not in self.url_list
                     ):
                         self.url_list.append(url)
+
                 break
             except (
                 self.ClientAuthenticationError,
@@ -970,6 +1047,8 @@ class _ImageryUploaderAGOL:
                         unit="files",
                     )
 
+        if len(self.primary_files) == 1:
+            self.url_list[:] = self.primary_files
         return self.url_list, self.mosaic_data_info
 
 
@@ -1016,6 +1095,7 @@ def _upload_imagery_agol(
         is_data_for_md = True
         current_time = int(time.time())
 
+    all_files = True
     for file in files:
         to_upload = True
         file_dict = {}
@@ -1033,6 +1113,7 @@ def _upload_imagery_agol(
             file_dict["data_for_md"] = False
         if os.path.exists(file):
             if os.path.isdir(file):
+                all_files = False
                 file_dict["is_dir"] = True
                 file_dict["basename_len"] = len(os.path.dirname(file))
                 if not ".gdb" in file:
@@ -1062,9 +1143,12 @@ def _upload_imagery_agol(
                 file_list.append(file_dict)
     if len(file_list) == 0:
         raise RuntimeError("No supported files to upload")
+    if all_files:
+        for file in file_list:
+            file["prefix"] = file_list[0]["prefix"]
 
     uploader = _ImageryUploaderAGOL(
-        file_list, container, auto_renew, upload_properties, task, gis
+        file_list, container, auto_renew, upload_properties, task, raster_type, gis
     )
     mosaic_data_info = []
     url_list, mosaic_data_info = uploader.upload_all_files()
@@ -1141,7 +1225,7 @@ def _upload(path, description=None, gis=None):
         Once the operation is completed successfully, item id of the uploaded item is returned.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     path                Optional string. Filepath of the file to upload.
     ---------------     --------------------------------------------------------------------

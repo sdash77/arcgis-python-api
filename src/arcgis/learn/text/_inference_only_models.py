@@ -69,7 +69,7 @@ class InferenceOnlyModel:
         Saves the translator model files on a specified path on the local disk.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Path to save
                                 model files on the local disk.
@@ -93,7 +93,7 @@ class InferenceOnlyModel:
         Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to
                                 Esri Model Definition(EMD) file or the folder

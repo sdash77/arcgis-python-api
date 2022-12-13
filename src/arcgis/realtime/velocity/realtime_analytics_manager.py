@@ -13,7 +13,7 @@ class RealTimeAnalyticsManager:
     Used to manage real-time analytic items.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
       url                    URL of the ArcGIS Velocity organization.
     ------------------     --------------------------------------------------------------------
@@ -69,7 +69,7 @@ class RealTimeAnalyticsManager:
         Get real-time analytic item by ID.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
           id                     Unique ID of a real-time analytic.
         ==================     ====================================================================

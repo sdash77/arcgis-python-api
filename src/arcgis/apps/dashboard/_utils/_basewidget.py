@@ -346,7 +346,7 @@ def add_row(elements, height=1):
     Creates a Row Layout.
 
     =========================   ===========================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -------------------------   -------------------------------------------
     elements                    Required List. Widgets that will be added
                                 to the row in the dashboard layout.
@@ -389,7 +389,7 @@ def add_column(elements, width=1):
     Creates a Column Layout.
 
     =========================   ===========================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -------------------------   -------------------------------------------
     elements                    Required List. Widgets that will be added to
                                 the column in the dashboard layout.

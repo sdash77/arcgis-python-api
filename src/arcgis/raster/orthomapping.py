@@ -133,7 +133,7 @@ def compute_sensor_model(
     These tables will not be published as Portal items.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     image_collection       Required, the input image collection on which to compute
                            the sensor model.
@@ -248,7 +248,7 @@ def alter_processing_states(
     done on the image collection.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     image_collection       Required, This is the image collection that will be adjusted.
 
@@ -322,7 +322,7 @@ def get_processing_states(
     Retrieve the processing states of the image collection
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     image_collection       Required, This is the image collection that will be adjusted.
 
@@ -452,7 +452,7 @@ def match_control_points(
     The function will compute the remaining matching tie points for all control point sets.
     
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     image_collection       Required, the input image collection that will be adjusted.
 
@@ -627,7 +627,7 @@ def color_correction(
 
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     image_collection                         Required. This is the image collection that will be adjusted.
 
@@ -794,7 +794,7 @@ def compute_control_points(
     `Compute Control Points <https://pro.arcgis.com/en/pro-app/tool-reference/data-management/compute-control-points.htm>`_
     
     ====================================    ====================================================================
-    **Argument**                            **Description**
+    **Parameter**                            **Description**
     ------------------------------------    --------------------------------------------------------------------
     image_collection                        Required. This is the image collection that will be adjusted.
 
@@ -938,7 +938,7 @@ def compute_seamlines(
     `Build Seamlines <https://pro.arcgis.com/en/pro-app/tool-reference/data-management/build-seamlines.htm>`_
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     image_collection       Required, the input image collection that will be adjusted.
                            The image_collection can be a portal Item or an image service URL or a URI
@@ -1046,7 +1046,7 @@ def edit_control_points(
     table if the point IDs already exist.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     image_collection       Required.
                            The image_collection can be a portal Item or an image service URL or a URI
@@ -1176,7 +1176,7 @@ def generate_dem(
 
     
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     image_collection       Required. The input image collection that will be used
                            to generate the DEM from.
@@ -1374,7 +1374,7 @@ def generate_orthomosaic(
     the block adjustment.
 
     ===================================    ====================================================================
-    **Argument**                           **Description**
+    **Parameter**                           **Description**
     -----------------------------------    --------------------------------------------------------------------
     image_collection                       Required. The input image collection that will be used
                                            to generate the ortho-mosaic from.
@@ -1555,7 +1555,7 @@ def generate_report(
     The output of this service tool is a downloadable html page.
 
     ===================    ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     -------------------    --------------------------------------------------------------------
     image_collection       Required. The input image collection that should be
                            used to generate a report from.
@@ -1616,7 +1616,7 @@ def query_camera_info(
     of digital camera sensors that were used to capture drone images.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     camera_query           Required String. This is a SQL query statement that can
                            be used to filter a portion of the digital camera
@@ -1680,7 +1680,7 @@ def query_control_points(
     among certain control point sets that has ground control points inside.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     image_collection       Required, the input image collection on which to query
                            the the control points.
@@ -1749,7 +1749,7 @@ def reset_image_collection(
     un-adjusted state
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     image_collection       Required, the input image collection to reset
                            The image_collection can be a portal Item or an image service URL or a URI.
@@ -1786,7 +1786,7 @@ def compute_spatial_reference_factory_code(latitude: float, longitude: float):
     Computes spatial reference factory code. This value may be used as out_sr value in create image collection function
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     latitude               latitude value in decimal degrees that will be used to compute UTM zone
     ------------------     --------------------------------------------------------------------

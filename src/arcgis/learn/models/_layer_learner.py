@@ -81,7 +81,7 @@ class FullyConnectedNetwork(ArcGISModel):
     Based on the Fast.ai's Tabular Learner
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required TabularDataObject. Returned data object from
                             :class:`~arcgis.learn.prepare_tabulardata` function.
@@ -137,7 +137,7 @@ class FullyConnectedNetwork(ArcGISModel):
         Creates a :class:`~arcgis.learn.FullyConnectedNetwork` Object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -193,7 +193,7 @@ class FullyConnectedNetwork(ArcGISModel):
         Learning Package zip for deployment to Image Server or ArcGIS Pro.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Folder path to save the model.
         ---------------------   -------------------------------------------
@@ -336,7 +336,7 @@ class FullyConnectedNetwork(ArcGISModel):
         Predict on data from feature layer, dataframe and or raster data.
 
         =================================   =========================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         ---------------------------------   -------------------------------------------------------------------------
         input_features                      Optional :class:`~arcgis.features.FeatureLayer` or spatially enabled dataframe.
                                             Required if prediction_type='features'.
@@ -776,7 +776,7 @@ class FullyConnectedNetwork(ArcGISModel):
         Prints the rows of the dataframe with target and prediction columns.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional Integer.
                                 Number of rows to print.

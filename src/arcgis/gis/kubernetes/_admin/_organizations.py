@@ -49,7 +49,7 @@ class KubeEnterpriseGroups:
         Searches users in the configured enterprise user store.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         query                           Optional String. Text to narrow down the user search.
         ---------------------------     --------------------------------------------------------------------
@@ -67,7 +67,7 @@ class KubeEnterpriseGroups:
         This operation returns a list of users that are currently assigned to the enterprise group within the enterprise user and group stores.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         name                            Required String. The name of the group.
         ---------------------------     --------------------------------------------------------------------
@@ -96,7 +96,7 @@ class KubeEnterpriseGroups:
 
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         username                        Required String. The username to examine.
         ---------------------------     --------------------------------------------------------------------
@@ -129,7 +129,7 @@ class KubeEnterpriseGroups:
         membership, the database and indexes are updated for each group.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         groups                          Required List[str]. The name of the groups to refresh.
         ===========================     ====================================================================
@@ -210,7 +210,7 @@ class KubeEnterpriseUser:
         Searches users in the configured enterprise user store.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         query                           Optional String. Text to narrow down the user search.
         ---------------------------     --------------------------------------------------------------------
@@ -241,7 +241,7 @@ class KubeEnterpriseUser:
         indicate the type of user account.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         username                        Required string. The name of the user account
         ---------------------------     --------------------------------------------------------------------
@@ -334,7 +334,7 @@ class KubeEnterpriseUser:
         operation allows an administrator to force a refresh.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         users                           Optional list[str]. The comma-separated list of usernames for
                                         whom the memberships need to be refreshed.
@@ -568,7 +568,7 @@ class KubeOrgFederations:
         on the portal and are owned by the user who publishes them.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         url                             Required string. The URL of the GIS or image server used by external
                                         users when accessing the server site. If you've added the server to
@@ -612,7 +612,7 @@ class KubeOrgFederations:
         messages from failed validation checks.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         server_id                       Optional String. When present the validation will occur on that
                                         single server.  If no `server_id` is given, then all servers are
@@ -687,7 +687,7 @@ class KubeOrgLicense:
         and no JSON Response is returned for this operation.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         out_folder                      Optional string. The folder where the license file will be saved.
         ===========================     ====================================================================
@@ -707,7 +707,7 @@ class KubeOrgLicense:
         changes and set up connections with the backup license manager.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         config                          Required Dict. The JSON representation of the license server
                                         connection information.
@@ -732,7 +732,7 @@ class KubeOrgLicense:
         Applies a new license file to a specific organization, which contains the portal's user type and add-on licenses.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         license_file                    Required String. The kubernetes license file. For deployments using
                                         ArcGIS Enterprise on Kubernetes 10.9.1 or earlier, this file is an
@@ -764,7 +764,7 @@ class KubeOrgLicense:
 
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         file                            Required String. The kubernetes license file. For deployments using
                                         ArcGIS Enterprise on Kubernetes 10.9.1 or earlier, this file is an

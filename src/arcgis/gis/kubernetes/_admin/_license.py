@@ -24,7 +24,7 @@ class LicenseManager(_BaseKube):
         authorizations with those from the imported license file.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         license_file           Required string. The ArcGIS Server authorization file (either in
                                .epc or .prvc file format).

@@ -2,6 +2,9 @@
 # Name:        Workforce Assignments tests
 # Purpose:     Sanity tests for ArcGIS Python API
 # -------------------------------------------------------------------------------
+import sys
+sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
+sys.path.insert(1, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
 from integration.dino_utils.dino_configs import DinoConfigs
@@ -816,7 +819,5 @@ class Test_Workforce_Assignments_No_Assignments(unittest.TestCase):
         except Exception as testException:
             self.fail("Error during test: " + testException.__str__())
 
-
-# TestModule
-def tearDownModule():
-    print("**End Workforce AssignmentManager Tests**")
+if __name__ == "__main__":
+    unittest.main()

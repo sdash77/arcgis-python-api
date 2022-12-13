@@ -516,7 +516,10 @@ class TabularDataObject(object):
         labels = None
 
         if self._dependent_variable:
-            labels = np.array(dataframe[self._dependent_variable])
+            labels = np.array(
+                dataframe[self._dependent_variable],
+                dtype=dataframe[self._dependent_variable].dtype.type,
+            )
             dataframe = dataframe.drop(self._dependent_variable, axis=1)
 
         if not self._procs:
@@ -613,16 +616,27 @@ class TabularDataObject(object):
 
             self._index_seq = np.array(bunched)
 
+        if location_var:
+            location_var_data = self._dataframe[location_var]
+            self._dataframe = self._dataframe.drop(location_var, axis=1)
+            if location_var in self._continuous_variables:
+                self._continuous_variables.remove(location_var)
+            elif location_var in self._categorical_variables:
+                self._categorical_variables.remove(location_var)
+            else:
+                location_var_data = None
+        else:
+            location_var_data = None
+
         if self._is_raster_only:
             return self._raster_timeseries_bunch(normalize, bunch)
 
-        col_list = list(self._dataframe.columns.values)
-        if location_var:
-            col_list.remove(location_var)
-        if len(col_list) == 1:
-            return self._univariate_bunch(seq_len, normalize, bunch, location_var)
+        if len(list(self._dataframe.columns.values)) == 1:
+            return self._univariate_bunch(seq_len, normalize, bunch, location_var_data)
         else:
-            return self._multivariate_bunch(seq_len, normalize, bunch)
+            return self._multivariate_bunch(
+                seq_len, normalize, bunch, location_var_data
+            )
 
     def _raster_timeseries_bunch(self, normalize=True, bunched=True):
         kwargs_variables = {"num_workers": 0} if sys.platform == "win32" else {}
@@ -715,7 +729,9 @@ class TabularDataObject(object):
 
         return data
 
-    def _multivariate_bunch(self, seq_len, normalize=True, bunched=True):
+    def _multivariate_bunch(
+        self, seq_len, normalize=True, bunched=True, location_var=None
+    ):
         kwargs_variables = {"num_workers": 0} if sys.platform == "win32" else {}
 
         kwargs_variables["bs"] = self._bs
@@ -763,12 +779,26 @@ class TabularDataObject(object):
 
         big_bunch = []
 
-        for i in range(len(processed_dataframe) - seq_len - 1):
-            bunch = []
-            for col in list(processed_dataframe.columns.values):
-                bunch.append(list(processed_dataframe[col][i : i + seq_len]))
+        if location_var is not None:
+            big_loc_processed_dataframe = pd.DataFrame()
+            big_loc_processed_dataframe["temp_location"] = location_var
+            unq_locations = location_var.unique()
+        else:
+            unq_locations = [None]
+        for k in range(len(unq_locations)):
+            if unq_locations[0] is not None:
+                loc_processed_dataframe = processed_dataframe[
+                    big_loc_processed_dataframe["temp_location"] == unq_locations[k]
+                ]
+                loc_processed_dataframe.reset_index(inplace=True, drop=True)
+            else:
+                loc_processed_dataframe = processed_dataframe
+            for i in range(len(loc_processed_dataframe) - seq_len - 1):
+                bunch = []
+                for col in list(loc_processed_dataframe.columns.values):
+                    bunch.append(list(loc_processed_dataframe[col][i : i + seq_len]))
 
-            big_bunch.append(bunch)
+                big_bunch.append(bunch)
 
         big_bunch = np.array(big_bunch)
 
@@ -858,11 +888,23 @@ class TabularDataObject(object):
         else:
             processed_dataframe = self._dataframe.copy()
 
-        for k in processed_dataframe[location_var].unique():
-            loc_processed_dataframe = processed_dataframe[
-                processed_dataframe[location_var] == k
-            ]
-            loc_processed_dataframe.reset_index(inplace=True)
+        import pandas as pd
+
+        if location_var is not None:
+            big_loc_processed_dataframe = pd.DataFrame()
+            big_loc_processed_dataframe["temp_location"] = location_var
+            unq_locations = location_var.unique()
+        else:
+            unq_locations = [None]
+
+        for k in range(len(unq_locations)):
+            if unq_locations[0] is not None:
+                loc_processed_dataframe = processed_dataframe[
+                    big_loc_processed_dataframe["temp_location"] == unq_locations[k]
+                ]
+                loc_processed_dataframe.reset_index(inplace=True, drop=True)
+            else:
+                loc_processed_dataframe = processed_dataframe
             for i in range(
                 len(loc_processed_dataframe[self._dependent_variable]) - seq_len
             ):
@@ -880,8 +922,6 @@ class TabularDataObject(object):
                 df_columns["target"].append(
                     loc_processed_dataframe[self._dependent_variable][i + seq_len]
                 )
-
-        import pandas as pd
 
         df = pd.DataFrame(df_columns)
 
@@ -977,7 +1017,7 @@ class TabularDataObject(object):
         """
         Shows a chunk of data prepared without applying transforms.
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional integer. Number of rows of dataframe
                                 or graph to plot. This parameter is not used
@@ -1454,11 +1494,17 @@ class TabularDataObject(object):
                         data_source, fields, spatial_reference=sr
                     ) as cursor:
                         for row in cursor:
+                            loc = "{locx} {locy}".format(locx=row[0], locy=row[1])
                             # print(u'{0}, {1}'.format(row[0], row[1]))
                             # if arcpy.Describe(data_source).shapeType == "Point":
                             try:
+                                new_coordinate = _adjust_origin_coordinate(
+                                    (row[0], row[1]),
+                                    raster,
+                                    (raster.mean_cell_width, raster.mean_cell_height),
+                                )
                                 raster_value = raster.read(
-                                    origin_coordinate=(row[0], row[1]), ncols=1, nrows=1
+                                    origin_coordinate=(new_coordinate), ncols=1, nrows=1
                                 )
                                 value = raster_value[0][0]
                             except:
@@ -2190,6 +2236,22 @@ def show_local_interpretation(
         shap.force_plot(
             explainer.expected_value, shap_values[0], processed_df, matplotlib=True
         )
+
+
+def _adjust_origin_coordinate(coordinate, raster, cell_size):
+    import math
+
+    x = coordinate[0]
+    y = coordinate[1]
+    xmin = raster.extent["xmin"]
+    ymax = raster.extent["ymax"]
+    dx = cell_size[0]
+    dy = cell_size[1]
+    x = math.floor((x - xmin) / dx)
+    y = math.floor((ymax - y) / dy)
+    xmin_new = xmin + x * dx
+    ymax_new = ymax - y * dy
+    return xmin_new, ymax_new
 
 
 def global_interpretation(model, plot_type="bar", method="KernelRegressor"):

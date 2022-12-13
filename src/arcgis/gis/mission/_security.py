@@ -50,7 +50,7 @@ class SecurityManager(object):
         Allows for the modification of the server role from federated to standalone.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         role                   Required String. The value that determines if the server is federated
                                or standalone.  This allowed values are: "FEDERATED_SERVER" or

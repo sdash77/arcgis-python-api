@@ -28,7 +28,7 @@ class LogManager(BaseServer):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         url                    Required string. The machine URL.
         ------------------     --------------------------------------------------------------------
@@ -58,7 +58,7 @@ class LogManager(BaseServer):
         on each machine.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         machine                Optional string. The name of the machine on which to count the
                                reports. The default will return the count for all machines in a site.
@@ -118,7 +118,7 @@ class LogManager(BaseServer):
         Provides log editing capabilities for the entire site.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         level                  Optional string. The log level.  Can be one of (in severity order):
                                OFF, DEBUG, VERBOSE, FINE, INFO, WARNING, SEVERE. The default is WARNING.
@@ -186,7 +186,7 @@ class LogManager(BaseServer):
         aggregate, filter, and page through logs across the entire site.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         start_time             Optional Integer or datetime. The most recent time to query.  Default is now.
                                Time can be specified in milliseconds since UNIX epoch.

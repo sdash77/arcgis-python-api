@@ -11,7 +11,7 @@ class InstancePreference:
     Provides information about the available instances for notebook containers.
 
     ================  ===============================================================================
-    **Argument**      **Description**
+    **Parameter**      **Description**
     ----------------  -------------------------------------------------------------------------------
     url               Required String. The base url for the InstancePreference endpoints.
     ----------------  -------------------------------------------------------------------------------

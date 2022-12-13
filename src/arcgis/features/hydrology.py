@@ -73,7 +73,7 @@ def trace_downstream(
     spatial scales.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     input_points           Required FeatureSet or Spatially Enabled DataFrame
                            Points delineating the starting location to calculate the downstream
@@ -199,7 +199,7 @@ def watershed(
 
 
     ========================     ====================================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     ------------------------     --------------------------------------------------------------------
     input_points                 Required FeatureSet or Spatially Enabled DataFrame. Points delineating the starting location to calculate the downstream
                                  location from. See :ref:`Feature Input<FeatureInput>`.

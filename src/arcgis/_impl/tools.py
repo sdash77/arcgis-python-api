@@ -1082,7 +1082,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         with each location representing a given amount of demand.
 
         =====================================    =========================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         -------------------------------------    ---------------------------------------------------------
         goal                                     Required string. Specify the goal that must be satisfied when allocating
                                                 demand locations to facilities.
@@ -1171,8 +1171,8 @@ class _FeatureAnalysisTools(BaseAnalytics):
                                                 To use live traffic when and where it is available,
                                                 choose a time and date and convert to datetime.
 
-                                                Esri saves live traffic data for 12 hours and references
-                                                predictive data extending 12 hours into the future. If the
+                                                Esri saves live traffic data for 4 hours and references
+                                                predictive data extending 4 hours into the future. If the
                                                 time and date you specify for this parameter is outside the
                                                 24-hour time window, or the travel time in the analysis
                                                 continues past the predictive data window, the task falls
@@ -1466,7 +1466,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         paired origins and destinations.
 
         ===================================     ===============================================================
-        **Argument**                            **Description**
+        **Parameter**                            **Description**
         -----------------------------------     ---------------------------------------------------------------
         origins_layer                           Required layer. The starting point or points of the
                                                 routes to be generated. See :ref:`Feature Input<FeatureInput>`.
@@ -1547,7 +1547,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                                 To use live traffic when and where it is available, choose a time and date and convert to datetime.
 
-                                                Esri saves live traffic data for 12 hours and references predictive data extending 12 hours into the future. If the time and date you
+                                                Esri saves live traffic data for 4 hours and references predictive data extending 4 hours into the future. If the time and date you
                                                 specify for this parameter is outside the 24-hour time window, or the travel time in the analysis continues past the predictive data window, the task falls back to typical traffic speeds.
 
                                                 # Examples:
@@ -1871,7 +1871,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                     To use live traffic when and where it is available, choose a time and date and convert to datetime.
 
-                                    Esri saves live traffic data for 12 hours and references predictive data extending 12 hours into the future. If the time and date you
+                                    Esri saves live traffic data for 4 hours and references predictive data extending 4 hours into the future. If the time and date you
                                     specify for this parameter is outside the 24-hour time window, or the travel time in the analysis continues past the predictive data window, the task falls back to typical traffic speeds.
 
                                     Examples:
@@ -2366,7 +2366,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         identify areas that are hospitable to grazing animals.
 
         =========================    =========================================================
-        **Argument**                 **Description**
+        **Parameter**                 **Description**
         -------------------------    ---------------------------------------------------------
         input_layer                  Required layer. The point or line features from which to calculate density. See :ref:`Feature Input<FeatureInput>`.
         -------------------------    ---------------------------------------------------------
@@ -2870,7 +2870,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         the parcel that is within the flood zone.
 
         =====================================    ======================================================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         -------------------------------------    ------------------------------------------------------------------------------------------------------
         input_layers                             Required list of feature layers. A list of layers that will be used in the expressions parameter.
                                                 Each layer in the list can be:
@@ -3457,7 +3457,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         File geodatabases and shapefiles are added to a zip file that can be downloaded.
 
         ===================================     =========================================================
-        **Argument**                            **Description**
+        **Parameter**                            **Description**
         -----------------------------------     ---------------------------------------------------------
         input_layers                            Required list of strings. A list of input layers to be extracted. See :ref:`Feature Input<FeatureInput>`.
         -----------------------------------     ---------------------------------------------------------
@@ -3664,7 +3664,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         For example, polygon features that contain demographic data can be converted to centroids that can be used in network analysis.
 
         ================    ===============================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
         input_layer         Required feature layer. The multipoint, line, or polygon features that will be used to generate centroid point features. See :ref:`Feature Input<FeatureInput>`.
         ----------------    ---------------------------------------------------------------
@@ -3765,7 +3765,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         An example of a spatial expression is that the parcel must also be within a certain distance of a river (Parcels within a distance of 0.75 Miles from Rivers).
 
         =====================================    ======================================================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         -------------------------------------    ------------------------------------------------------------------------------------------------------
         input_layers                             Required list of feature layers. A list of layers that will be used in the expressions parameter.
                                                     Each layer in the list can be:
@@ -4067,7 +4067,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         be the result of random processes and random chance.
 
         ===================================================================     =========================================================
-        **Argument**                                                            **Description**
+        **Parameter**                                                            **Description**
         -------------------------------------------------------------------     ---------------------------------------------------------
         analysis_layer (Required if the analysis_layer contains polygons)       Required layer. The point or polygon feature layer for which hot spots will be calculated. See :ref:`Feature Input<FeatureInput>`.
         -------------------------------------------------------------------     ---------------------------------------------------------
@@ -4303,7 +4303,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                     To use live traffic when and where it is available, choose a time and date and convert to datetime.
 
-                                    Esri saves live traffic data for 12 hours and references predictive data extending 12 hours into the future. If the time and date you specify for this parameter is outside the 24-hour time window, or the travel time in the analysis continues past the predictive data window, the task falls back to typical traffic speeds.
+                                    Esri saves live traffic data for 4 hours and references predictive data extending 4 hours into the future. If the time and date you specify for this parameter is outside the 24-hour time window, or the travel time in the analysis continues past the predictive data window, the task falls back to typical traffic speeds.
 
                                     Examples:
                                     from datetime import datetime
@@ -4489,7 +4489,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         spatial pattern associated with these features could very likely be the result of random processes and random chance.
 
         ==================================================================  ===============================================================
-        **Argument**                                                        **Description**
+        **Parameter**                                                        **Description**
         ------------------------------------------------------------------  ---------------------------------------------------------------
         analysis_layer                                                      Required feature layer. The point or polygon feature layer for which outliers will be calculated. See :ref:`Feature Input<FeatureInput>`.
         ------------------------------------------------------------------  ---------------------------------------------------------------
@@ -4681,7 +4681,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         of varying densities from sparser noise resulting in more data-driven clusters.
 
         ====================    =========================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         --------------------    ---------------------------------------------------------
         analysis_layer          Required layer. The point feature layer for which
                                 density-based clustering will be calculated.
@@ -4811,7 +4811,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         candidate locations by how closely they match your reference locations across all of the fields you have selected.
 
         =======================     ===========================================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     -------------------------------------------------------------------------------------------
         input_layer                 Required feature layer. The ``input_layer`` contains one or more
                                     reference locations against which features in the ``search_layer``
@@ -5128,7 +5128,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         * nbrMax - 15
 
         ===========================  ===========================================================================================
-        **Argument**                 **Description**
+        **Parameter**                 **Description**
         ---------------------------  -------------------------------------------------------------------------------------------
         input_layer                  Required layer. The point layer whose features will be interpolated. See :ref:`Feature Input<FeatureInput>`.
         ---------------------------  -------------------------------------------------------------------------------------------
@@ -5489,7 +5489,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         * I have two layers containing parcel information for contiguous townships. I want to join them together into a single layer, keeping only the fields that have the same name and type on the two layers.
 
         ================    ===============================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
         input_layer         Required feature layer. The point, line or polygon features with the ``merge_layer``. See :ref:`Feature Input<FeatureInput>`.
         ----------------    ---------------------------------------------------------------
@@ -5623,7 +5623,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         + What wells are within abandoned military bases?
 
         ================    ===============================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ----------------    ---------------------------------------------------------------
         input_layer         Required layer. The point, line, or polygon features that will be
                             overlayed with the ``overlay_layer``. See :ref:`Feature Input<FeatureInput>`.
@@ -6127,7 +6127,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         * Are there directional trends?
 
         ====================    =========================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         --------------------    ---------------------------------------------------------
         analysis_layer          Required feature layer. The point, line, or polygon features to be analyzed. See :ref:`Feature Input<FeatureInput>`.
         --------------------    ---------------------------------------------------------
@@ -6266,7 +6266,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         simple statistics about the attributes of the features in the ``summary_layer``, such as sum, mean, minimum, maximum, and so on.
 
         =====================================   =========================================================
-        **Argument**                            **Description**
+        **Parameter**                            **Description**
         -------------------------------------   ---------------------------------------------------------
         sum_within_layer                        Required feature layer. The polygon features. Features, or
                                                 portions of features, in the ``summary_layer`` (below) that fall within
@@ -6453,7 +6453,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
         cases, if the total length of the trace path is returned, it will be from the source all the way to the ocean.
 
         =====================================   =========================================================
-        **Argument**                            **Description**
+        **Parameter**                            **Description**
         -------------------------------------   ---------------------------------------------------------
         input_layer                             Required feature layer. The point features used for the starting location of a downstream trace.
                                                 See :ref:`Feature Input<FeatureInput>`.
@@ -6692,7 +6692,7 @@ class _FeatureAnalysisTools(BaseAnalytics):
 
                                     To use live traffic when and where it is available, choose a time and date and convert to datetime.
 
-                                    Esri saves live traffic data for 12 hours and references predictive data extending 12 hours into the future. If the time and date you
+                                    Esri saves live traffic data for 4 hours and references predictive data extending 4 hours into the future. If the time and date you
                                     specify for this parameter is outside the 24-hour time window, or the travel time in the analysis continues past the predictive data window,
                                     the task falls back to typical traffic speeds.
 
@@ -6974,7 +6974,7 @@ class _PackagingTools(object):
         organization administrators.
 
         ========================   ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ------------------------   --------------------------------------------------------------------
         map_item_id                    Required Item. The ID/Item of the web map item.
         ------------------------   --------------------------------------------------------------------
@@ -7084,7 +7084,7 @@ class _PackagingTools(object):
         The Refresh Map Area Package task refreshes existing map area packages to update them with changes made on the source data since the last time those packages were created or refreshed.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         packages                                                                    List Items.  A JSON array consisting of packages that need to be refreshed, specified with the ID of each package item. Packages can belong to different map areas. A package item should only be listed if you are the owner of the package item or organization administrators.
         =========================================================================   ===========================================================================
@@ -7129,7 +7129,7 @@ class _PackagingTools(object):
         This task is available for the map area item owner and organization administrators in ArcGIS Online and ArcGIS Enterprise.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         map_area_item_id                                                            Required String. Map area item ID, created by the Create Map Area tool.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -7309,7 +7309,7 @@ class _HydrologyTool:
         """
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         input_points                                                                Required FeatureSet. The point features used for calculating watersheds. These are referred to as pour points, because it is the location at which water pours out of the watershed.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -7387,7 +7387,7 @@ class _HydrologyTool:
 
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         input_points                                                                Required FeatureSet. The point features used for calculating watersheds. These are referred to as pour points, because it is the location at which water pours out of the watershed.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -7678,7 +7678,7 @@ class _OrthoMappingTools:
         processes run on the image collection.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -7741,7 +7741,7 @@ class _OrthoMappingTools:
         used for generating orthoimage mosaics typically have color correction computed.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -7857,7 +7857,7 @@ class _OrthoMappingTools:
         The `compute_control_points` operation is a service tool that's used to compute matching control points between images in an image collection, and for matching control points between the image collection's images and the reference image.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -7954,7 +7954,7 @@ class _OrthoMappingTools:
         resulting mosaicked orthoimage.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -8044,7 +8044,7 @@ class _OrthoMappingTools:
         The `compute_sensor_model` operation is a service that computes the bundle block adjustment for the image collection and applies the frame transformation to the images. It also generates the control point, solution, solution points, and flight path tables, though these tables are not published as portal items.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -8144,7 +8144,7 @@ class _OrthoMappingTools:
         the point Id already exists.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -8218,7 +8218,7 @@ class _OrthoMappingTools:
         to create DEM surface products using the designated method.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -8360,7 +8360,7 @@ class _OrthoMappingTools:
         The `generate_orthomosaic` is a service tool that's used to generate a single orthorectified, mosaicked image from an image collection after the block adjustment.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -8472,7 +8472,7 @@ class _OrthoMappingTools:
         output of this service tool is a downloadable file.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -8530,7 +8530,7 @@ class _OrthoMappingTools:
 
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -8570,7 +8570,7 @@ class _OrthoMappingTools:
         The `match_control_points` is a tool that takes a collection of ground control points in JSON as input, and at least on of the ground control points has matching tie points. The service will compute the remaining matching tie points.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -8642,7 +8642,7 @@ class _OrthoMappingTools:
         that are used to capture drone images.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         query                                                                       Optional String. This is a SQL query statement that can be used to filter a portion of the digital camera database.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -8674,7 +8674,7 @@ class _OrthoMappingTools:
         points from the image collection's control point table.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -8716,7 +8716,7 @@ class _OrthoMappingTools:
         adjustment settings and return the images to an unadjusted state.
 
         =========================================================================   ===========================================================================
-        **Argument**                                                                **Description**
+        **Parameter**                                                                **Description**
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
         image_collection                                                            Required String/Item.  The image collection Item or URL to the service endpoint.
         -------------------------------------------------------------------------   ---------------------------------------------------------------------------
@@ -9163,7 +9163,10 @@ class _RasterAnalysisTools(BaseAnalytics):
                     item_id_list.append(item.itemid)
                 elif isinstance(item, str):
                     if "http:" in item or "https:" in item:
-                        if "blob.core" in item:
+                        if "blob.core" in item or all(
+                            blob_string in item
+                            for blob_string in ["stg-arcgisazure", "arcgis.com"]
+                        ):
                             uri_list.append(item)
                         else:
                             url_list.append(item)
@@ -9228,7 +9231,10 @@ class _RasterAnalysisTools(BaseAnalytics):
             folderId = gis._portal.get_folder_id(owner, input_rasters)
             if folderId is None:
                 if "http:" in input_rasters or "https:" in input_rasters:
-                    if "blob.core" in input_rasters:
+                    if "blob.core" in input_rasters or all(
+                        blob_string in input_rasters
+                        for blob_string in ["stg-arcgisazure", "arcgis.com"]
+                    ):
                         input_rasters_dict = {"uri": input_rasters}
                     elif raster_type_name.lower() == "tiled imagery layer":
                         input_rasters_dict = {"tiled_url": input_rasters}
@@ -9409,7 +9415,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         the entire image collection must be reset to the original state.
 
         ==================                   ====================================================================
-        **Argument**                         **Description**
+        **Parameter**                         **Description**
         ------------------                   --------------------------------------------------------------------
         input_rasters                        Required, the list of input rasters to be added to
                                              the image collection being created. This parameter can
@@ -10058,7 +10064,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         in addition to the server's built in Python 3.x library.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         input_raster                             Required. raster layer that needs to be classified
         ------------------------------------     --------------------------------------------------------------------
@@ -10400,7 +10406,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         and to specify image collection properties through context parameter.
 
         ==================                   ====================================================================
-        **Argument**                         **Description**
+        **Parameter**                         **Description**
         ------------------                   --------------------------------------------------------------------
         image_collection                     Required, the name of the image collection to create.
 
@@ -10691,7 +10697,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         source image.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         image_collection       Required, the input image collection from which to delete images
                                This can be the 'itemID' of an exisiting portal item or a url
@@ -10728,7 +10734,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         the source images that the image collection references.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         image_collection       Required, the input image collection to delete.
 
@@ -10779,7 +10785,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         library needs to be installed separately, in addition to the server's built in Python 3.x library.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         input_raster                             Required. raster layer that contains objects that needs to be detected.
         ------------------------------------     --------------------------------------------------------------------
@@ -11184,7 +11190,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         Calculates the least cost polyline path between sources and known destinations.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         input_source_raster_or_features                        The layer that identifies the cells to determine the least
                                                  costly path from. This parameter can have either a raster input or
@@ -11395,7 +11401,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         where the output image chips, labels and metadata files are going to be stored.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         input_raster                             Required. Raster layer that needs to be exported for training
         ------------------------------------     --------------------------------------------------------------------
@@ -12041,7 +12047,7 @@ class _RasterAnalysisTools(BaseAnalytics):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         model_package           item id in the form {"itemId":"<id>"}
         ------------------     --------------------------------------------------------------------
@@ -12203,7 +12209,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         List the contents of the datastore registered with the server (fileShares, cloudStores, rasterStores).
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         datastore              Required. fileshare, rasterstore or cloudstore datastore from which the contents are to be listed.
                                It can be a string specifying the datastore path eg "/fileShares/SensorData", "/cloudStores/testcloud",
@@ -12308,7 +12314,7 @@ class _RasterAnalysisTools(BaseAnalytics):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         model           item id in the form {"itemId":"<id>"}
         ------------------     --------------------------------------------------------------------
@@ -12350,7 +12356,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         segments, known as objects.
 
         ================================     ====================================================================
-        **Argument**                         **Description**
+        **Parameter**                         **Description**
         --------------------------------     --------------------------------------------------------------------
         input_raster                         Required ImageryLayer object
         --------------------------------     --------------------------------------------------------------------
@@ -12816,7 +12822,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         This function will delete the named deep learning model from the server but not the portal item.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         model_item_id          item id in the form {"itemId":"<id>"}
         ------------------     --------------------------------------------------------------------
@@ -14366,7 +14372,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         information from overlapped imagery data using the designated deep learning model.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         input_raster                             Required. raster layer that contains objects that needs to be classified.
         ------------------------------------     --------------------------------------------------------------------
@@ -16199,7 +16205,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         Calculates  the values of a raster within the zones of another dataset and reports the results to a table.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         input_zone_raster_or_features            Required. The input that defines the zones. Both raster and feature
                                                  can be used for the zone input.
@@ -16630,7 +16636,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         train_model function performs the training using the Raster Analytics server.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         in_folder                                Required string. This is the input location for the training sample data.
                                                  It can be the path of output location on the file share raster data store or a
@@ -16847,7 +16853,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         Function available in ArcGIS Image Server 10.9.1 and higher.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         input_from_raster                        Required ImageryLayer object. The multidimensional, categorical raster to be summarized.
         ------------------------------------     --------------------------------------------------------------------
@@ -17005,7 +17011,7 @@ class _RasterAnalysisTools(BaseAnalytics):
         Function available in ArcGIS Image Server 10.9.1 and higher.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         input_rasters                            Required ImageryLayer object. The single-band, multidimensional, or
                                                  multiband raster datasets, or mosaic datasets, containing explanatory variables.
@@ -17242,6 +17248,94 @@ class _RasterAnalysisTools(BaseAnalytics):
         if future:
             return RAJob(gpjob)
 
+        return RAJob(gpjob).result()
+
+    def mosaic_image(
+        self,
+        input_rasters,
+        target_raster,
+        mosaic_operator="LAST",
+        mosaic_colormap_mode="FIRST",
+        no_data_value=None,
+        context=None,
+        gis=None,
+        future=False,
+    ):
+
+        """
+        input_rasters: inputRasters (str). Required parameter.
+
+        target_raster: targetRaster (str). Required parameter.
+
+        mosaic_operator: mosaicOperator (str). Optional parameter.
+        Choice list:FIRST,LAST,BLEND,MEAN,MININUM,MAXIMUM,SUM
+
+        mosaic_colormap_mode: mosaicColormapMode (str). Optional parameter.
+        Choice list:FIRST,LAST,MATCH,REJECT
+
+        no_data_value: noDataValue (float). Optional parameter.
+
+        context: context (str). Optional parameter.
+
+        gis: Optional, the GIS on which this tool runs. If not specified, the active GIS is used.
+
+
+        future: Optional, If True, a future object will be returns and the process will not wait for the task to complete. The default is False, which means wait for results.
+
+        """
+
+        gis = self._gis
+
+        context_param = {}
+        _set_raster_context(context_param, context)
+        if "context" in context_param.keys():
+            context = context_param["context"]
+
+        input_rasters = self._set_multiple_raster_inputs(input_rasters)
+
+        target_raster = self._layer_input(input_layer=target_raster)
+
+        mosaic_operator_allowed_values = self._tbx.choice_list.mosaic_image[
+            "mosaic_operator"
+        ]
+        mosaic_operator = (
+            mosaic_operator.upper()
+            if isinstance(mosaic_operator, str)
+            else mosaic_operator
+        )
+        if mosaic_operator not in mosaic_operator_allowed_values:
+            raise RuntimeError(
+                f"mosaic_operator can only be one of the following: {mosaic_operator_allowed_values}"
+            )
+
+        mosaic_colormap_mode_allowed_values = self._tbx.choice_list.mosaic_image[
+            "mosaic_colormap_mode"
+        ]
+        mosaic_colormap_mode = (
+            mosaic_colormap_mode.upper()
+            if isinstance(mosaic_colormap_mode, str)
+            else mosaic_colormap_mode
+        )
+        if mosaic_colormap_mode not in mosaic_colormap_mode_allowed_values:
+            raise RuntimeError(
+                f"mosaic_colormap_mode can only be one of the following: {mosaic_colormap_mode_allowed_values}"
+            )
+
+        gpjob = self._tbx.mosaic_image(
+            input_rasters=input_rasters,
+            target_raster=target_raster,
+            mosaic_operator=mosaic_operator,
+            mosaic_colormap_mode=mosaic_colormap_mode,
+            no_data_value=no_data_value,
+            context=context,
+            gis=gis,
+            future=True,
+        )
+
+        gpjob._is_ra = True
+        gpjob._item_properties = True
+        if future:
+            return RAJob(gpjob)
         return RAJob(gpjob).result()
 
 

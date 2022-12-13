@@ -66,7 +66,7 @@ class AutoML(object):
     Refer https://supervised.mljar.com/
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required TabularDataObject. Returned data object from
                             :meth:`~arcgis.learn.prepare_tabulardata` function.
@@ -287,7 +287,7 @@ class AutoML(object):
         Shows sample results for the model.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional number of rows. By default, 5 rows
                                 are displayed.
@@ -408,7 +408,7 @@ class AutoML(object):
         Uses pickle to save the model and transforms.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         path                    Path of the directory where the model should be saved.
         =====================   ===========================================
@@ -565,7 +565,7 @@ class AutoML(object):
         and cannot be retrained.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Esri Model Definition
                                 file.
@@ -699,7 +699,7 @@ class AutoML(object):
         Predict on data from feature layer, dataframe and or raster data.
 
         =================================   =========================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         ---------------------------------   -------------------------------------------------------------------------
         input_features                      Optional :class:`~arcgis.features.FeatureLayer` or spatial dataframe. Required if prediction_type='features'.
                                             Contains features with location and
@@ -1006,7 +1006,11 @@ class AutoML(object):
                     shap_df = pd.DataFrame(
                         list_for_df,
                         columns=[
-                            i + "_imp" for i in processed_dataframe.columns.to_list()
+                            i + "_imp"
+                            for i in (
+                                self._data._continuous_variables
+                                + self._data._categorical_variables
+                            )
                         ],
                     )
                 except:
@@ -1018,7 +1022,11 @@ class AutoML(object):
                     shap_df = pd.DataFrame(
                         shap_values_normalised,
                         columns=[
-                            i + "_imp" for i in processed_dataframe.columns.to_list()
+                            i + "_imp"
+                            for i in (
+                                self._data._continuous_variables
+                                + self._data._categorical_variables
+                            )
                         ],
                     )
                 except:

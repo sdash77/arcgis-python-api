@@ -204,7 +204,7 @@ def generate_origin_destination_cost_matrix(
     distance along the street network, not straight-line distance.
 
     ======================================  ==========================================================================================================================================
-    **Argument**                            **Description**
+    **Parameter**                            **Description**
     --------------------------------------  ------------------------------------------------------------------------------------------------------------------------------------------
     origins                                 Required :class:`~arcgis.features.FeatureSet` . Specify locations that function as starting points in generating the paths to destinations.
                                             You can add up to 200 origins.

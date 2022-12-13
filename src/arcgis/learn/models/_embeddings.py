@@ -131,7 +131,7 @@ class Embeddings:
     currently supported for RGB images only
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     dataset_type            Required string. The type of data for which
                             we would like to get the embedding vectors.
@@ -155,7 +155,7 @@ class Embeddings:
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     working_dir             Option str. Path to a directory on local filesystem.
                             If directory is not present, it will be created.
@@ -207,7 +207,7 @@ class Embeddings:
         Get available backbones/model-name for the given `dataset-type`
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         dataset_type            Required string. The type of data for which
                                 we would like to get the embedding vectors.
@@ -318,7 +318,7 @@ class Embeddings:
         Method to get the embedding vectors for the image/text items.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         text_or_list            Required string or List. String containing
                                 directory path or list of directory paths where
@@ -336,7 +336,7 @@ class Embeddings:
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         normalize               Optional boolean. If set to `true`, will normalize
                                 the image with `imagenet-stats` (mean and
@@ -438,7 +438,7 @@ class Embeddings:
         Load the extracted embeddings from the H5 file
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         file_path               Required string. The path to the H5 file which
                                 gets auto generated after the call to the `get`
@@ -809,7 +809,7 @@ class Embeddings:
         caution for large H5 files.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         file_path               Required string. The path to the H5 file which
                                 gets auto generated after the call to the `get`

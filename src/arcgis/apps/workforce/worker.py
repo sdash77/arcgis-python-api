@@ -13,7 +13,7 @@ class Worker(FeatureModel):
     Represents a worker in a Workforce Project
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     project                Required :class:`~arcgis.apps.workforce.Project`. The project that
                            the worker belongs to.
@@ -96,7 +96,7 @@ class Worker(FeatureModel):
         Updates the worker on the server
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         geometry               Optional :class:`Dict`. The geometry of the worker.
         ------------------     --------------------------------------------------------------------

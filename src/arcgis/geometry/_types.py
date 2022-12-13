@@ -702,7 +702,7 @@ class Geometry(BaseGeometry):
         Creates a skew transform along one or both axes.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         x_angle             optional Float. Angle to skew in the x coordinate
         ---------------     --------------------------------------------------------------------
@@ -730,7 +730,7 @@ class Geometry(BaseGeometry):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         theta               Required Float. The rotation angle.
         ---------------     --------------------------------------------------------------------
@@ -756,7 +756,7 @@ class Geometry(BaseGeometry):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         x_scale             Optional Float. The x-scale factor.
         ---------------     --------------------------------------------------------------------
@@ -800,7 +800,7 @@ class Geometry(BaseGeometry):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         x_offset            Optional Float. Translation x offset
         ---------------     --------------------------------------------------------------------
@@ -905,7 +905,7 @@ class Geometry(BaseGeometry):
             Must have shapely installed
 
         =================   ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         -----------------   --------------------------------------------------------------------
         shapely_geometry    Required Shapely Geometry
                             Single instance of Shapely Geometry to be converted to ArcGIS
@@ -1726,7 +1726,7 @@ class Geometry(BaseGeometry):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required Geometry. An :class:`~arcgis.geometry.Geometry` object.
         ---------------     --------------------------------------------------------------------
@@ -1790,7 +1790,7 @@ class Geometry(BaseGeometry):
             The ``buffer`` method requires ArcPy
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         distance            Required float. The buffer distance. The buffer distance is in the
                             same units as the geometry that is being buffered.
@@ -1819,7 +1819,7 @@ class Geometry(BaseGeometry):
             The ``clip`` method requires `ArcPy`. If `ArcPy` is not installed, none is returned.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         envelope            Required tuple. The tuple must have (XMin, YMin, XMax, YMax) each value
                             represents the lower left bound and upper right bound of the extent.
@@ -1858,7 +1858,7 @@ class Geometry(BaseGeometry):
             The ``contain`` method requires ArcPy/Shapely
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ---------------     --------------------------------------------------------------------
@@ -1982,7 +1982,7 @@ class Geometry(BaseGeometry):
             The ``crosses`` method requires ArcPy/Shapely
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
@@ -2012,7 +2012,7 @@ class Geometry(BaseGeometry):
             The ``cut`` method requires ArcPy
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         cutter              Required :class:`~arcgis.geometry.Polyline`. The cutting polyline geometry
         ===============     ====================================================================
@@ -2036,7 +2036,7 @@ class Geometry(BaseGeometry):
             The ``densify`` method requires ArcPy
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         method              Required String. The type of densification: ``DISTANCE``, ``ANGLE``, or ``GEODESIC``
         ---------------     --------------------------------------------------------------------
@@ -2090,7 +2090,7 @@ class Geometry(BaseGeometry):
             The ``difference`` method requires ArcPy/Shapely
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
@@ -2123,7 +2123,7 @@ class Geometry(BaseGeometry):
             The ``disjoint`` method requires ArcPy/Shapely
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
@@ -2157,7 +2157,7 @@ class Geometry(BaseGeometry):
             The ``distance_to`` method requires ArcPy/Shapely
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
@@ -2189,7 +2189,7 @@ class Geometry(BaseGeometry):
             The ``equals`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry`. A second geometry
         ===============     ====================================================================
@@ -2219,7 +2219,7 @@ class Geometry(BaseGeometry):
             The ``generalize`` method requires ArcPy or Shapely**
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         max_offset          Required float. The maximum offset tolerance.
         ===============     ====================================================================
@@ -2244,7 +2244,7 @@ class Geometry(BaseGeometry):
             The ``get_area`` method requires ArcPy or Shapely**
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         method              Required String. `PLANAR` measurements reflect the projection of
                             geographic data onto the 2D surface (in other words, they will not
@@ -2277,7 +2277,7 @@ class Geometry(BaseGeometry):
             The ``get_length`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         method              Required String. `PLANAR` measurements reflect the projection of
                             geographic data onto the 2D surface (in other words, they will not
@@ -2311,7 +2311,7 @@ class Geometry(BaseGeometry):
             The ``get_part`` method requires ArcPy
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         index               Required Integer. The index position of the :class:`~arcgis.geometry.Geometry` object.
         ===============     ====================================================================
@@ -2338,7 +2338,7 @@ class Geometry(BaseGeometry):
             The ``intersect`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ---------------     --------------------------------------------------------------------
@@ -2405,7 +2405,7 @@ class Geometry(BaseGeometry):
             The ``measure_on_line`` method requires ArcPy
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ---------------     --------------------------------------------------------------------
@@ -2449,7 +2449,7 @@ class Geometry(BaseGeometry):
             The ``overlaps`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
@@ -2481,7 +2481,7 @@ class Geometry(BaseGeometry):
             The ``point_from_angle_and_distance`` method requires ArcPy
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         angle               Required Float. The angle in degrees to the returned point.
         ---------------     --------------------------------------------------------------------
@@ -2530,7 +2530,7 @@ class Geometry(BaseGeometry):
             The ``position_along_line`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required Float. The distance along the line.
         ---------------     --------------------------------------------------------------------
@@ -2577,7 +2577,7 @@ class Geometry(BaseGeometry):
             The ``project_as`` method requires ArcPy or pyproj>=1.9 and PROJ.4
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         spatial_reference        Required SpatialReference. The new spatial reference. This can be a
                                  :class:`~arcgis.geometry.SpatialReference` object or the coordinate system name.
@@ -2705,7 +2705,7 @@ class Geometry(BaseGeometry):
             The ``query_point_and_distance`` method only is valid for Polyline geometries.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Point` object. A second geometry
         ---------------     --------------------------------------------------------------------
@@ -2744,7 +2744,7 @@ class Geometry(BaseGeometry):
             The ``segment_along_line`` method requires ArcPy
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         start_measure       Required Float. The starting distance from the beginning of the line.
         ---------------     --------------------------------------------------------------------
@@ -2797,7 +2797,7 @@ class Geometry(BaseGeometry):
             The ``snap_to_line`` method requires ArcPy
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry` - A second geometry
         ===============     ====================================================================
@@ -2826,7 +2826,7 @@ class Geometry(BaseGeometry):
             The ``symmetric_difference`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
@@ -2862,7 +2862,7 @@ class Geometry(BaseGeometry):
             The ``touches`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
@@ -2893,7 +2893,7 @@ class Geometry(BaseGeometry):
             The ``union`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ===============     ====================================================================
@@ -2924,7 +2924,7 @@ class Geometry(BaseGeometry):
             The ``within`` method requires ArcPy or Shapely
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required :class:`~arcgis.geometry.Geometry` object. A second geometry
         ---------------     --------------------------------------------------------------------

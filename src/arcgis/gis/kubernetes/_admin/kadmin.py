@@ -204,7 +204,7 @@ class KubernetesAdmin(_BaseKube):
         This property allows `org_admins` to be able to see all scheduled tasks on the enterprise
 
         ================  ===============================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  -------------------------------------------------------------------------------
         item              Optional Item. The item to query tasks about.
         ----------------  -------------------------------------------------------------------------------

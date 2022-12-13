@@ -245,6 +245,13 @@ RandLANet
     :inherited-members:
     :undoc-members:
 
+SQNSeg
+^^^^^^^^
+.. autoclass:: arcgis.learn.SQNSeg
+    :members:
+    :inherited-members:
+    :undoc-members:
+
 Object Tracking Models
 ------------------------
 SiamMask
@@ -280,7 +287,7 @@ ScannedMapDigitizer
     :members:
 
 Feature, Tabular and Timeseries models
--------------------------------
+--------------------------------------
 FullyConnectedNetwork
 ^^^^^^^^^^^^^^^^^^^^^
 .. autoclass:: arcgis.learn.FullyConnectedNetwork
@@ -298,6 +305,13 @@ MLModel
 TimeSeriesModel
 ^^^^^^^^^^^^^^^
 .. autoclass:: arcgis.learn.TimeSeriesModel
+    :members:
+    :inherited-members:
+    :undoc-members:
+
+PSETAE
+^^^^^^^^^^^^^^^
+.. autoclass:: arcgis.learn.PSETAE
     :members:
     :inherited-members:
     :undoc-members:

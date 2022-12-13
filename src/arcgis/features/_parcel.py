@@ -1,10 +1,9 @@
 from __future__ import annotations
 import time
-from typing import Any, Optional
-from arcgis.geometry import Polygon
+from typing import Any
+from arcgis.geometry import Polygon, Envelope
 from arcgis._impl.common._mixins import PropertyMap
-from arcgis.features import FeatureLayer, FeatureLayerCollection
-from arcgis.features._version import Version, VersionManager
+from arcgis.features import FeatureLayer
 
 ########################################################################
 
@@ -16,7 +15,7 @@ class ParcelFabricManager(object):
     and systems.
 
     ====================     ====================================================================
-    **Argument**             **Description**
+    **Parameter**             **Description**
     --------------------     --------------------------------------------------------------------
     url                      Required String. The URI to the service endpoint.
     --------------------     --------------------------------------------------------------------
@@ -101,7 +100,7 @@ class ParcelFabricManager(object):
         features: list[dict[str, Any]],
         record: str,
         write_attribute: str,
-        moment: Union[int, str] = None,
+        moment: int | str | None = None,
         future: bool = False,
     ):
         """
@@ -113,7 +112,7 @@ class ParcelFabricManager(object):
         record.
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         features                 Required List. The parcel features to assign to the specified record.
                                  Can be parcels, parcel polygons, parcel points, and parcel lines.
@@ -180,10 +179,10 @@ class ParcelFabricManager(object):
 
     def build(
         self,
-        extent: Optional[Union[dict, Envelope]] = None,
-        moment: Union[int, str] = None,
+        extent: dict | Envelope | None = None,
+        moment: int | str | None = None,
         return_errors: bool = False,
-        record: str = None,
+        record: str | None = None,
         future: bool = False,
     ):
         """
@@ -201,7 +200,7 @@ class ParcelFabricManager(object):
         movement in the case of an adjustment.
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         extent                   Optional :class:`~arcgis.geometry.Envelope` . The extent to build.
 
@@ -274,12 +273,12 @@ class ParcelFabricManager(object):
     def clip(
         self,
         parent_parcels: list[dict[str, Any]],
-        clip_record: str = None,
-        clipping_parcels: Optional[list[dict[str, Any]]] = None,
-        geometry: Polygon = None,
-        moment: Union[int, str] = None,
-        option: str = None,
-        area_unit: str = None,
+        clip_record: str | None = None,
+        clipping_parcels: list[dict[str, Any]] | None = None,
+        geometry: Polygon | None = None,
+        moment: int | str | None = None,
+        option: str | None = None,
+        area_unit: str | None = None,
         future: bool = False,
     ):
         """
@@ -290,7 +289,7 @@ class ParcelFabricManager(object):
         metes and bounds` record driven workflow.
 
         =======================     ====================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     --------------------------------------------------------------------
         parent_parcels              parent parcels that will be clipped into.
 
@@ -390,12 +389,12 @@ class ParcelFabricManager(object):
         self,
         parent_parcels: list[dict[str, Any]],
         target_parcel_type: str,
-        attribute_overrides: Optional[dict[str, Any]] = None,
-        child_name: str = None,
-        default_area_unit: int = None,
-        merge_record: str = None,
-        merge_into: str = None,
-        moment: Union[int, str] = None,
+        attribute_overrides: dict[str, Any] | None = None,
+        child_name: str | None = None,
+        default_area_unit: int | None = None,
+        merge_record: str | None = None,
+        merge_into: str | None = None,
+        moment: int | str | None = None,
         future: bool = False,
     ):
         """
@@ -408,7 +407,7 @@ class ParcelFabricManager(object):
         child parcel.
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         parent_parcels           Required String. It is the parcel(guid)+layer(name) identifiers to
                                  merge.
@@ -507,13 +506,13 @@ class ParcelFabricManager(object):
         self,
         parent_parcels: list[dict[str, Any]],
         record: str,
-        target_type: Union[int, str],
-        moment: Union[int, str] = None,
+        target_type: int | str,
+        moment: int | str | None = None,
         mark_historic: bool = False,
         use_source_attributes: bool = False,
-        attribute_overrides: Optional[dict[str, Any]] = None,
+        attribute_overrides: dict[str, Any] | None = None,
         use_polygon_attributes: bool = False,
-        parcel_subtype: int = None,
+        parcel_subtype: int | None = None,
         future: bool = False,
     ):
         """
@@ -526,7 +525,7 @@ class ParcelFabricManager(object):
         parcel lineage is created.
 
         =======================     ====================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     --------------------------------------------------------------------
         parent_parcels              Required String. Parcel parcels from which lines are copied.
         -----------------------     --------------------------------------------------------------------
@@ -618,8 +617,8 @@ class ParcelFabricManager(object):
         self,
         parcels: list[dict[str, Any]],
         target_type: str,
-        parcel_subtype: Union[int, str] = 0,
-        moment: Union[int, str] = None,
+        parcel_subtype: int | str = 0,
+        moment: int | str | None = None,
         future: bool = False,
     ):
         """
@@ -632,7 +631,7 @@ class ParcelFabricManager(object):
         road parcel is moved to the encumbrance (easement) parcel type.
 
         =======================     ====================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     --------------------------------------------------------------------
         parcels                     Required List. Parcels list that will change type
         -----------------------     --------------------------------------------------------------------
@@ -690,7 +689,7 @@ class ParcelFabricManager(object):
     def delete(
         self,
         parcels: list[dict[str, Any]],
-        moment: Union[int, str] = None,
+        moment: int | str | None = None,
         future: bool = False,
     ):
         """
@@ -699,7 +698,7 @@ class ParcelFabricManager(object):
         connected points.
 
         =======================     ====================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     --------------------------------------------------------------------
         parcels                     Required List. The parcels to erase.
         -----------------------     --------------------------------------------------------------------
@@ -751,7 +750,7 @@ class ParcelFabricManager(object):
         self,
         features: list[dict[str, Any]],
         record: str,
-        moment: Union[int, str] = None,
+        moment: int | str | None = None,
         set_as_historic: bool = False,
         future: bool = False,
     ):
@@ -764,7 +763,7 @@ class ParcelFabricManager(object):
         Global ID of the specified record.
 
         =======================     ====================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     --------------------------------------------------------------------
         features                    Required List. The parcel features to be set as historic or current.
                                     Can be parcels, parcel polygons, parcel points, and parcel lines.
@@ -836,8 +835,8 @@ class ParcelFabricManager(object):
     def create_seeds(
         self,
         record: str,
-        moment: Union[int, str] = None,
-        extent: Union[dict, Envelope] = None,
+        moment: int | str | None = None,
+        extent: dict | Envelope | None = None,
         future: bool = False,
     ):
         """
@@ -854,7 +853,7 @@ class ParcelFabricManager(object):
         parcel type polygon feature class.
 
         =======================     ====================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     --------------------------------------------------------------------
         record                      Required String. A **GUID** representing the record that will be
                                     assigned to the features set as current or historic.
@@ -912,10 +911,14 @@ class ParcelFabricManager(object):
     def duplicate(
         self,
         parcels: list[dict[str, Any]],
-        parcel_type: Union[int, str],
+        parcel_type: int | str,
         record: str,
-        parcel_subtype: Union[int, str] = None,
-        moment: Union[int, str] = None,
+        parcel_subtype: int | str | None = None,
+        repeat_count: int | str | None = None,
+        update_field: str = None,
+        start_value: int | str | None = None,
+        increment_value: int | str | None = None,
+        moment: int | str | None = None,
         future: bool = False,
     ):
         """
@@ -930,7 +933,7 @@ class ParcelFabricManager(object):
         Similarly, parcel seeds can be duplicated to subtypes and different parcel types.
 
         =======================     ====================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     --------------------------------------------------------------------
         parcels                     Required List. A list of parcels to duplicate.
 
@@ -953,6 +956,14 @@ class ParcelFabricManager(object):
                                     assigned to the features set as current or historic.
         -----------------------     --------------------------------------------------------------------
         parcel_subtype              Optional Integer. The target parcel subtype.  The default is 0.
+        -----------------------     --------------------------------------------------------------------
+        repeat_count                Optional Integer. How many times to duplicate the target parcels
+        -----------------------     --------------------------------------------------------------------
+        update_field                Optional String. Which incrementable field to update on the target
+        -----------------------     --------------------------------------------------------------------
+        start_value                 Optional Integer. What value to start on when incrementing
+        -----------------------     --------------------------------------------------------------------
+        increment_value             Optional Integer. How many steps to increment
         -----------------------     --------------------------------------------------------------------
         moment                      Optional String. This parameter represents the session moment (the
                                     default is the version current moment). This should only be
@@ -985,6 +996,10 @@ class ParcelFabricManager(object):
             "parcels": parcels,
             "targetParcelType": parcel_type,
             "targetParcelSubtype": parcel_subtype,
+            "repeatCount": repeat_count,
+            "updateField": update_field,
+            "startValue": start_value,
+            "incrementValue": increment_value,
             "async": future,
             "f": "json",
         }
@@ -1006,7 +1021,7 @@ class ParcelFabricManager(object):
         self,
         analysis_type: str = "CONSISTENCY_CHECK",
         convergence_tolerance: float = 0.05,
-        parcel_features: Optional[dict[str, Any]] = None,
+        parcel_features: dict[str, Any] | None = None,
         future: bool = False,
     ):
         """
@@ -1021,7 +1036,7 @@ class ParcelFabricManager(object):
         to apply the results of a least squares adjustment to parcel fabric feature classes.
 
         ============================    ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ----------------------------    --------------------------------------------------------------------
         analysis_type                   Optional string. Represents the type of least squares analysis that will be run on the input parcels.
 
@@ -1105,7 +1120,7 @@ class ParcelFabricManager(object):
         to run a least-squares analysis on parcels and store the results in adjustment feature classes.
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         movement_tolerance        Optional float. Represents the minimum allowable coordinate shift when updating parcel fabric points. If the distance between
                                   the adjustment point and the parcel fabric point is greater than the specified tolerance, the parcel fabric
@@ -1156,15 +1171,15 @@ class ParcelFabricManager(object):
     def divide(
         self,
         divide_parcel_guid: str,
-        divide_parcel_type: Union[int, str],
+        divide_parcel_type: int | str | None,
         divide_record: str,
         divide_option: str,
-        divide_number_of_parts: Union[int, str, None],
-        divide_part_area: Union[float, int, None],
+        divide_number_of_parts: int | str,
+        divide_part_area: float | int,
         divide_line_bearing: float,
-        divide_left_side: Union[bool, None],
-        divide_distribute_remainder: Union[bool, None],
-        default_area_unit: Union[int, str],
+        divide_left_side: bool,
+        divide_distribute_remainder: bool,
+        default_area_unit: int | str | None = None,
         divide_cogo_line_bearing: float = None,
     ):
         """
@@ -1174,7 +1189,7 @@ class ParcelFabricManager(object):
         Divide a polygon feature into multiple features that have proportional or equal areas, or equal widths.
 
         =========================== ====================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         --------------------------- --------------------------------------------------------------------
         divide_parcel_guid          Required String. Parameter for the unique identifier `guid` of the
                                     parcel being divided.
@@ -1297,7 +1312,7 @@ class ParcelFabricManager(object):
         record.
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         source_record            Required String. GlobalID representing the record containing the
                                  parcel features to be reassigned.
@@ -1320,7 +1335,7 @@ class ParcelFabricManager(object):
         delete_source_record     Required Bool. Parameter indicating whether to delete the original
                                  source record.
 
-        -----------------------     --------------------------------------------------------------------
+        --------------------     --------------------------------------------------------------------
         future                      Optional boolean. If `True`, the request is processed as an asynchronous
                                     job and a URL is returned that points a location displaying the status
                                     of the job.
@@ -1356,7 +1371,7 @@ class ParcelFabricManager(object):
     # ----------------------------------------------------------------------
     def reconstruct_from_seeds(
         self,
-        extent: Union[dict, Envelope],
+        extent: dict | Envelope,
         future: bool = False,
     ):
         """
@@ -1364,7 +1379,7 @@ class ParcelFabricManager(object):
         lines associations with records.
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         extent                   Parameter representing the envelope of the extent to reconstruct seeds.
                                  Seeds that lie within the specified extent will be reconstructed into
@@ -1383,7 +1398,7 @@ class ParcelFabricManager(object):
                                                  "spatialReference": {"wkid": <wkid_value>}
                                                 }
 
-        -----------------------     --------------------------------------------------------------------
+        --------------------     --------------------------------------------------------------------
         future                      Optional boolean. If `True`, the request is processed as an asynchronous
                                     job and a URL is returned that points a location displaying the status
                                     of the job.
@@ -1424,21 +1439,21 @@ class ParcelFabricManager(object):
         target_parcel_features: list[dict[str, Any]],
         record: str,
         default_area_unit: int,
-        source_parcel_features: Optional[list[dict[str, Any]]] = None,
+        source_parcel_features: list[dict[str, Any]] | None = None,
         future: bool = False,
     ):
         """
-        The :meth:`~transfer_parcel` supports workflows for transferring a piece of land between parcels.
+        The :meth:`~transfer_parcel` method supports workflows for transferring
+        a piece of land between parcels.
 
         =======================     =======================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     -----------------------------------------------------------------------
         transfer_parcel_feature     Required Dict. Parameter representing the parcel to be transferred.
                                     Only one parcel can be specified as the transfer parcel.
 
-                                    :Syntax:
-
                                     .. code-block:: python
+                                        # Example Usage:
 
                                         >>> transfer_parcel_feature={"id":"<guid>","layerId":"<layerID>"}
         -----------------------     -----------------------------------------------------------------------
@@ -1446,9 +1461,8 @@ class ParcelFabricManager(object):
                                     will be transferred. These parcels will be merged with the transfer
                                     parcel and will become larger.
 
-                                    :Syntax:
-
                                     .. code-block:: python
+                                        # Example Usage:
 
                                         >>> target_parcel_features=[{"id":"<guid>","layerId":"<layerID>"},{...}]
 
@@ -1461,7 +1475,6 @@ class ParcelFabricManager(object):
                                     domain.
 
                                     .. code-block:: python
-
                                         #Example Usage:
 
                                         #Square feet
@@ -1474,13 +1487,12 @@ class ParcelFabricManager(object):
                                     land will be transferred. These parcels will be clipped and will
                                     become smaller.
 
-                                    :Syntax:
-
                                     .. code-block:: python
+                                        # Example Usage:
 
                                         >>> source_parcel_features=[{"id":"<guid>","layerId":"<layerID>"},{...}]
 
-        -----------------------     --------------------------------------------------------------------
+        -----------------------     -----------------------------------------------------------------------
         future                      Optional boolean. If `True`, the request is processed as an asynchronous
                                     job and a URL is returned that points a location displaying the status
                                     of the job.
@@ -1526,18 +1538,18 @@ class ParcelFabricManager(object):
         left of the parcel line, to the right of the parcel line, or centered over the parcel line.
 
         =======================     =======================================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -----------------------     -----------------------------------------------------------------------
         parcel_line_features        Required List. Parameter representing the input parcel line layers with
                                     label positions that will be updated.
 
-                                    :Syntax:
-
                                     .. code-block:: python
 
-                                        >>> parcel_line_features=[{"id":"<guid>","layerId":"<layerID>"},{...}]
+                                        >>> parcel_line_features=[{"id":"<guid>",
+                                                                   "layerId":"<layerID>"},
+                                                                   {...}]
 
-        --------------------        --------------------------------------------------------------------
+        -----------------------     -----------------------------------------------------------------------
         future                      Optional boolean. If `True`, the request is processed as an asynchronous
                                     job and a URL is returned that points a location displaying the status
                                     of the job.
@@ -1571,7 +1583,7 @@ class ParcelFabricManager(object):
 
     # ----------------------------------------------------------------------
 
-    def _validate_extent(self, extent: Union[dict, Envelope]):
+    def _validate_extent(self, extent: dict | Envelope):
         """Check for valid Extent object or None"""
         from arcgis.geometry import Envelope
 

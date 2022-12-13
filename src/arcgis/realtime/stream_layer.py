@@ -63,7 +63,7 @@ class StreamLayer(Layer):
         analysis of real-time data as it is received.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         on_features         callback function that is called every time features are streamed
                             to the client.

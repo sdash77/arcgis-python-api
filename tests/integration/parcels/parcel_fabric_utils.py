@@ -14,9 +14,9 @@ def clean_up_versions(vms):
     """
     try:
         for version in vms.all:
-            if version.properties.versionName.startswith(
-                "ADMIN1.1pdsVersion"
-            ) or version.properties.versionName.lower().startswith("admin.api-"):
+            if version.properties.versionName.lower().startswith("admin.api-"):
+                # Purge any locks on these test versions
+                vms.purge(version.properties.versionName)
                 version.delete()
                 print(f"deleted version: {version.properties.versionName}")
     except Exception as ex:

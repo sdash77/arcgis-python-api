@@ -114,7 +114,7 @@ class HEDEdgeDetector(ModelExtension):
     Creates a :class:`~arcgis.learn.HEDEdgeDetector` model
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
                             :meth:`~arcgis.learn.prepare_data`  function.
@@ -224,7 +224,7 @@ class HEDEdgeDetector(ModelExtension):
         Creates a :class:`~arcgis.learn.HEDEdgeDetector` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -281,7 +281,7 @@ class HEDEdgeDetector(ModelExtension):
         Computes precision, recall and f1 score on validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         thresh                  Optional float. The probability on which
                                 the detection will be considered edge pixel.

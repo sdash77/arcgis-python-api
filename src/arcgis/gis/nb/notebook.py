@@ -227,6 +227,8 @@ class NotebookServer(object):
         """The URL of the notebook server."""
         return self._url
 
+    # ----------------------------------------------------------------------
+    @property
     def services(self):
         """
         Provices access to managing notebook created geoprocessing tools
@@ -240,5 +242,5 @@ class NotebookServer(object):
             from arcgis.gis.nb._services import NBServicesManager
 
             url = self._url + "/services"
-            self._services = NBServicesManager(url, self._gis)
+            self._services = NBServicesManager(url, self._gis, nbs=self)
         return self._services

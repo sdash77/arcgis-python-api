@@ -66,7 +66,7 @@ class AOI(object):
         Source being used.
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         in_source               Optional either the 'local' keyword or an instantiated ``GIS`` object
                                 instance.
@@ -122,7 +122,7 @@ class AOI(object):
         data as a template.
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         enrich_variables        Required Iterable (normally a list) of enrich_variables correlating to
                                 enrichment enrich_variables. These variable names can be simply the name, the
@@ -244,7 +244,7 @@ class AOI(object):
             Online, and very well may also the be the case if using an instance of ArcGIS Enterprise.
 
         =============================       ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -----------------------------       --------------------------------------------------------------------
         geographies                         Required geographic areas or points to be enriched.
                                             enrich_variables: Enrichment enrich_variables to be used,
@@ -314,7 +314,7 @@ class Country(AOI):
     Analyst extension and local data) and ``GIS`` sources.
 
     =============================       ====================================================================
-    **Argument**                        **Description**
+    **Parameter**                        **Description**
     -----------------------------       --------------------------------------------------------------------
     iso3                                The country's ISO3 identifier.
     -----------------------------       --------------------------------------------------------------------
@@ -686,7 +686,7 @@ class BusinessAnalyst(object):
         introspection does *not* cost any credits.
 
     =============================       ====================================================================
-    **Argument**                        **Description**
+    **Parameter**                        **Description**
     -----------------------------       --------------------------------------------------------------------
     source                              Optional ``GIS`` object or ``local`` keyword specifying the Business
                                         Analyst data and analysis source. If ``local``, the Python
@@ -969,7 +969,7 @@ class BusinessAnalyst(object):
         """
         Get a Country object instance.
         =============================       ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -----------------------------       --------------------------------------------------------------------
         iso3                                Required String. The country's ISO3 identifier.
         -----------------------------       --------------------------------------------------------------------
@@ -1113,7 +1113,7 @@ class BusinessAnalyst(object):
         var_df.insert(3, "enrich_name", var_df.data_collection + "." + var_df.name)
 
         # create column for matching to previously enriched column names
-        regex = re.compile(r"(^\d+)")
+        regex = re.compile(r"(^[0-9]+)")
         fld_vals = var_df.enrich_name.apply(
             lambda val: regex.sub(r"F\1", val.replace(".", "_"))
         )
@@ -1134,7 +1134,7 @@ class BusinessAnalyst(object):
         data as a template.
 
         =============================       ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -----------------------------       --------------------------------------------------------------------
         enrich_variables                    Iterable (normally a list) of enrich_variables correlating to
                                             enrichment enrich_variables. These variable names can be simply the name, the
@@ -1248,7 +1248,7 @@ class BusinessAnalyst(object):
         DataFrame as output.
 
         =============================       ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -----------------------------       --------------------------------------------------------------------
         enrich_variables                    Iterable (normally a list) or pd.DataFrame
                                             of enrich_variables correlating to
@@ -1408,8 +1408,10 @@ class BusinessAnalyst(object):
         df_input.spatial.set_geometry(in_sedf.spatial.name)
 
         # come up with index field that doesn't exist yet
-        oid_field_name = str(uuid.uuid4())
-        df_input[oid_field_name] = range(1, len(in_sedf) + 1)
+        orig_index_field = str(uuid.uuid4())
+        # enrichArrowTable returns records in arbitrary order, ORIG_INDEX is in the original order
+        # ORIG_INDEX starts with 0
+        df_input[orig_index_field] = range(0, len(in_sedf))
 
         geo_accessor = GeoAccessor(df_input)
         arrow_table = geo_accessor.to_arrow()
@@ -1421,18 +1423,17 @@ class BusinessAnalyst(object):
         enrich_result_df = output_table.to_pandas()
 
         input_copy_df = in_sedf.copy()
-        input_copy_df[oid_field_name] = range(1, len(in_sedf) + 1)
+        input_copy_df[orig_index_field] = range(0, len(in_sedf))
 
-        # enrichArrowTable always outputs "OBJECTID" which represents the order of record in source
         # we need to rename that field to avoid clashes
-        enrich_result_df.rename(columns={"OBJECTID": oid_field_name}, inplace=True)
+        enrich_result_df.rename(columns={"ORIG_INDEX": orig_index_field}, inplace=True)
 
         if "ORIG_OID" in enrich_result_df:
             enrich_result_df.drop(["ORIG_OID"], axis=1, inplace=True)
 
         # join based on objectid
-        merged_df = input_copy_df.merge(enrich_result_df, on=oid_field_name)
-        merged_df.drop([oid_field_name], axis=1, inplace=True)
+        merged_df = input_copy_df.merge(enrich_result_df, on=orig_index_field)
+        merged_df.drop([orig_index_field], axis=1, inplace=True)
 
         # rearrange columns to move SHAPE to the last one
         orig_cols = merged_df.columns.tolist()
@@ -1461,7 +1462,7 @@ class BusinessAnalyst(object):
         Enrich enables retrieving apportioned demographic factors for input geographies.
 
         =============================       ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -----------------------------       --------------------------------------------------------------------
         geographies                         Input geographies desired to get demographic variables for. Normally
                                             these will be geometries included as part of a spatially enabled Pandas

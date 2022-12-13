@@ -32,7 +32,7 @@ class SingleFieldGeometry:
     Dataclass that holds the Single Field Geometry configuration.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ===============     ====================================================================
     geometry_field      String. Geometry field name.
 
@@ -100,7 +100,7 @@ class XYZGeometry:
     Dataclass that holds the XYZ Geometry configuration.
 
     =====================   ====================================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   --------------------------------------------------------------------
     x_field                 String. Longitude field name.
     ---------------------   --------------------------------------------------------------------
@@ -158,7 +158,7 @@ class _HasGeometry:
         Configures the geometry for a feed.
 
         ==============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         geometry            [:class:`~arcgis.realtime.velocity.feeds.XYZGeometry`, :class:`~arcgis.realtime.velocity.feeds.SingleFieldGeometry`].
                             Geometry object used to configure the feed.

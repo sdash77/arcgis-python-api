@@ -907,7 +907,7 @@ def edit_vehicle_routing_problem(
     analysis of only two routes.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     orders                                   Required FeatureSet. Specify one or more orders (up to 2,000).
                                              These are the locations that the routes of the vehicle routing
@@ -1096,14 +1096,6 @@ def edit_vehicle_routing_problem(
     url = gis.properties.helperServices.syncVRP.url[
         : -len("/EditVehicleRoutingProblem")
     ]
-    if isinstance(travel_mode, str):
-        travel_mode = _utils.find_travel_mode(gis=gis, travel_mode=travel_mode)
-    elif isinstance(travel_mode, dict):
-        params["travel_mode"] = travel_mode
-    else:
-        travel_mode = _utils.find_travel_mode(
-            gis=gis, travel_mode=_utils.default_travel_mode(gis=gis)
-        )
     url = _validate_url(url, gis)
     tbx = _create_toolbox(url, gis=gis)
     defaults = dict(
@@ -1112,6 +1104,14 @@ def edit_vehicle_routing_problem(
             tbx.edit_vehicle_routing_problem.__defaults__,
         )
     )
+    if isinstance(travel_mode, str):
+        travel_mode = _utils.find_travel_mode(gis=gis, travel_mode=travel_mode)
+    elif isinstance(travel_mode, dict):
+        defaults["travel_mode"] = travel_mode
+    else:
+        travel_mode = _utils.find_travel_mode(
+            gis=gis, travel_mode=_utils.default_travel_mode(gis=gis)
+        )
     if breaks is None:
         breaks = defaults["breaks"]
     if time_units is None:
@@ -1300,7 +1300,7 @@ def solve_vehicle_routing_problem(
     route by the driver.
 
     ======================================    ==========================================================================================================================================
-    **Argument**                              **Description**
+    **Parameter**                              **Description**
     --------------------------------------    ------------------------------------------------------------------------------------------------------------------------------------------
     orders                                    Required :class:`~arcgis.features.FeatureSet`. Specify one or more orders (up to 2,000). These are the locations
                                               that the routes of the vehicle routing problem (VRP) analysis

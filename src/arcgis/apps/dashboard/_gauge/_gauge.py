@@ -9,7 +9,7 @@ class Gauge(_BaseWidget):
     Creates a dashboard Gauge widget.
 
     =========================   ===========================================
-    **Argument**                **Description**
+    **Parameter**                **Description**
     -------------------------   -------------------------------------------
     item                        Required Portal :class:`~arcgis.gis.Item` object. Item object can
                                 be a :class:`~arcgis.features.FeatureLayer` or a MapWidget.

@@ -12,7 +12,7 @@ class LocationTrackingManager:
     Additional information can be found `here <https://doc.arcgis.com/en/tracker/help/configure-location-tracking.htm>`_
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     gis                    Required :class:`~arcgis.gis.GIS`. The GIS to configure location
                            sharing for.
@@ -64,7 +64,7 @@ class LocationTrackingManager:
         Enables location sharing for the organization.
 
         ===================================       ===============================================================
-        **Argument**                              **Description**
+        **Parameter**                              **Description**
         -----------------------------------       ---------------------------------------------------------------
         tracks_layer_shards                       The number of shards to use for the tracks layer. This only
                                                   applies for ArcGIS Enterprise.
@@ -257,7 +257,7 @@ class LocationTrackingManager:
         This creates a :class:`~arcgis.apps.tracker.TrackView`.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         title                  Required String. The title of the Track View to create.
         ==================     ====================================================================

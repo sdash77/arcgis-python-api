@@ -34,7 +34,7 @@ class WNet_cGAN(ArcGISModel):
     Creates a model object which generates images of type C from type A and type B.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
                             :meth:`~arcgis.learn.prepare_data` function.
@@ -80,7 +80,7 @@ class WNet_cGAN(ArcGISModel):
         Creates a :class:`~arcgis.learn.WNet_cGAN` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -182,7 +182,7 @@ class WNet_cGAN(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
@@ -199,7 +199,7 @@ class WNet_cGAN(ArcGISModel):
         Predicts and display the image.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         img_path1                Required path of an image 1.
         img_path2                Required path of an image 2.

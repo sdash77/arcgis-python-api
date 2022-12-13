@@ -4,8 +4,10 @@
 # -------------------------------------------------------------------------------
 
 # Code to import test package for relative imports when running locally
-#import sys
-#sys.path.insert(0, r"local_path_to_repo\geosaurus\tests")
+import sys
+
+sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
+sys.path.insert(1, r"C:\ipython_workfolder\geosaurus\src")
 
 import unittest
 from integration.dino_utils.dino_precondition_checks import PreconditionChecks
@@ -384,30 +386,28 @@ class Test_ContentManager_ago_builtin(unittest.TestCase):
             # read input data
             import pandas as pd
             from pathlib import Path
-            
+
             # Returns SSL certificate expired error as of 4.25.22
-            #df = pd.read_html(
-                 #"https://en.wikipedia.org/wiki/Estimated_number_of_civilian_guns_per_capita_by_country"
-            #)[0]
-            
+            # df = pd.read_html(
+            # "https://en.wikipedia.org/wiki/Estimated_number_of_civilian_guns_per_capita_by_country"
+            # )[0]
+
             # pd.read_html() failed when reading directly from string as path, succeeds using Path
             qa_path = Path(self.qalab_cls_path)
             qa_file = qa_path / "estimated_guns_by_country.html"
-            
+
             df = pd.read_html(qa_file)[0]
-  
+
             # data engineering to clean/restructure dataframe
             df.columns = df.columns.str.replace(" ", "_")
-            df.rename(columns={"Unnamed:_0":"id_number"}, inplace=True) 
+            df.rename(columns={"Unnamed:_0": "id_number"}, inplace=True)
             df.drop(labels=0, axis=0, inplace=True)
             df.reset_index(drop=True, inplace=True)
 
             # geocode and publish
             publish_output = self.gis.content.import_data(
                 df,
-                {
-                    "CountryCode": "Country_or_subnational_area"
-                },
+                {"CountryCode": "Country_or_subnational_area"},
             )
 
             # validate
@@ -488,6 +488,7 @@ class Test_ContentManager_ago_builtin(unittest.TestCase):
 # TestModule
 def tearDownModule():
     print("**End GIS module Tests**")
+
 
 if __name__ == "__main__":
     unittest.main()

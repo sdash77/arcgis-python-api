@@ -1,13 +1,15 @@
 import json
 import tempfile
 
+import arcgis
+
 
 class LinearUnit(object):
     """
     A data object containing a linear distance, used as input to some Geoprocessing tools
 
     ================  ========================================================
-    **Argument**      **Description**
+    **Parameter**      **Description**
     ----------------  --------------------------------------------------------
     distance          required number, the value of the linear distance.
 
@@ -57,7 +59,7 @@ class DataFile(object):
     A data object containing a data source, used as input/output by some Geoprocessing tools
 
     ================  ========================================================
-    **Argument**      **Description**
+    **Parameter**      **Description**
     ----------------  --------------------------------------------------------
     url               optional string, URL to the location of the data file.
 
@@ -114,20 +116,21 @@ class DataFile(object):
         if not save_path:
             save_path = tempfile.gettempdir()
         if data_path:
-            if self._con.product == "AGOL":
-                return self._con.get(
+            gis = arcgis.env.active_gis
+            if gis._con.product == "AGOL":
+                return gis._con.get(
                     path=data_path,
                     out_folder=save_path,
                     try_json=False,
                     add_token=False,
-                    token=self._token,
+                    token=gis._con.token,
                 )
             else:
-                return self._con.get(
+                return gis._con.get(
                     path=data_path,
                     out_folder=save_path,
                     try_json=False,
-                    token=self._token,
+                    token=gis._con.token,
                 )
 
 
@@ -137,7 +140,7 @@ class RasterData(object):
     used as input/output by some Geoprocessing tools
 
     ================  ========================================================
-    **Argument**      **Description**
+    **Parameter**      **Description**
     ----------------  --------------------------------------------------------
     url               optional string, URL to the location of the raster data
                       file.

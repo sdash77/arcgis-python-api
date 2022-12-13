@@ -16,7 +16,7 @@ class FeatureLayer(_FeedTemplate, _HasTime):
     The data format is a feature layer. ArcGIS Velocity will automatically handle the location for you.
 
     =====================           ====================================================================
-    **Argument**                    **Description**
+    **Parameter**                    **Description**
     ---------------------           --------------------------------------------------------------------
     label                           String. Unique label for this feed instance.
     ---------------------           --------------------------------------------------------------------

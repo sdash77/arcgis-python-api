@@ -5,6 +5,8 @@ from arcgis import GIS, env
 from arcgis._impl.common._mixins import PropertyMap
 
 ########################################################################
+
+
 class TopographicProductionManager(object):
     """
     The Topographic Production Service resource represents a topographic
@@ -37,6 +39,7 @@ class TopographicProductionManager(object):
     _url = None
     _property = None
     # ----------------------------------------------------------------------
+
     def __init__(self, url, gis=None):
         """Constructor"""
         if gis is None:
@@ -81,7 +84,7 @@ class TopographicProductionManager(object):
         the Topographic Production Service resource that can be used to generate a map
 
         ======================      =====================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         ----------------------      -----------------------------------------------------
         product_definition          Required dictionary. The definition of the map product.
 
@@ -141,7 +144,7 @@ class TopographicProductionManager(object):
         for a given product and version. The result can be specified as the value for the customAoi parameter of the generateProduct operation.
 
         ======================      =====================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         ----------------------      -----------------------------------------------------
         name                        Required string. The name of the product.
         ----------------------      -----------------------------------------------------
@@ -188,7 +191,7 @@ class TopographicProductionManager(object):
 
 
         ========================        =====================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ------------------------        -----------------------------------------------------
         name                            Required string. The name of the product.
         ------------------------        -----------------------------------------------------
@@ -270,7 +273,7 @@ class TopographicProductionManager(object):
         Production service and returns a standard REST success or error message.
 
         ========================        =====================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ------------------------        -----------------------------------------------------
         name                            Required string. The name of the product.
         ========================        =====================================================
@@ -299,7 +302,7 @@ class TopographicProductionManager(object):
         The update_product operation updates properties of a product.
 
         ========================        =====================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ------------------------        -----------------------------------------------------
         name                            Required string. The name of the product.
         ------------------------        -----------------------------------------------------
@@ -394,7 +397,7 @@ class TopographicProductionManager(object):
         Production Service resource supports.
 
         ====================    ==========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         --------------------    ------------------------------------------
         include_def             Optional bool. Specifies whether the full
                                 json definition of the map product is
@@ -414,7 +417,7 @@ class TopographicProductionManager(object):
         a Topographic Production Service resource supports.
 
         ====================    ==========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         --------------------    ------------------------------------------
         name                    Required string. The name of the product.
         --------------------    ------------------------------------------
@@ -432,6 +435,9 @@ class TopographicProductionManager(object):
         """
         Retrieve the Topographic Production Job Manager class. With this manager
         you can retrieve all jobs, a single job, query or cancel a job.
+
+        :return:
+           :class:`~arcgis.features._topographic.TopographicProductionJobManager`
         """
         url = "%s/jobs" % self._url
         return TopographicProductionJobManager(url, self._gis)
@@ -462,7 +468,7 @@ class TopographicProductionJobManager(object):
         last modified date, and messages of the job.
 
         ====================    ==========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         --------------------    ------------------------------------------
         job_id                  Required string. The unique job id to see.
         --------------------    ------------------------------------------
@@ -513,7 +519,7 @@ class TopographicProductionJobManager(object):
         REST operation. It returns a standard REST success or error message.
 
         ====================    ==========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         --------------------    ------------------------------------------
         job_id                  Required string. The unique job id to cancel.
         ====================    ==========================================
@@ -538,7 +544,7 @@ class TopographicProductionJobManager(object):
         last modified date, and messages for a set of jobs.
 
         ====================    ==========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         --------------------    ------------------------------------------
         status                  Optional int. Retrieves all the jobs with
                                 a particular status.
