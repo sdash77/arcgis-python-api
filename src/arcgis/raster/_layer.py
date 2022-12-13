@@ -13946,7 +13946,7 @@ class RasterCollection:
         field_name: str,
         field_values: list,
         context: Optional[dict[str, Any]] = None,
-     ):
+    ):
         """
         Adds a new field to the raster collection and populate it with values.
 
