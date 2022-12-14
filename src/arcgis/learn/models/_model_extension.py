@@ -946,6 +946,9 @@ class ModelExtension(ArcGISModel):
         else:
             image = image_path
 
+        if image is None:
+            raise Exception(str("No such file or directory: %s" % (image_path)))
+
         orig_height, orig_width, _ = image.shape
         orig_frame = image.copy()
 
