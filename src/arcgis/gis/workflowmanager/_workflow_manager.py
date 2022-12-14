@@ -286,7 +286,7 @@ class JobManager:
         """
         try:
             url = "{base}/jobs/manage".format(base=self._url)
-            return Job.manage_jobs(self._gis, url, job_ids, "Close")
+            return Job.manage_jobs(self, self._gis, url, job_ids, "Close")
         except:
             self._handle_error(sys.exc_info())
 
@@ -306,7 +306,7 @@ class JobManager:
         """
         try:
             url = "{base}/jobs/manage".format(base=self._url)
-            return Job.manage_jobs(self._gis, url, job_ids, "Reopen")
+            return Job.manage_jobs(self, self._gis, url, job_ids, "Reopen")
         except:
             self._handle_error(sys.exc_info())
 
@@ -461,6 +461,7 @@ class JobManager:
         """
         try:
             res = Job.delete_attachment(
+                self,
                 self._gis,
                 "{base}/jobs/{jobId}/attachments/{attachmentId}".format(
                     base=self._url,
@@ -489,6 +490,7 @@ class JobManager:
         """
         try:
             return JobDiagram.get(
+                self,
                 self._gis,
                 "{base}/jobs/{job}/diagram".format(base=self._url, job=id),
                 {},
@@ -569,7 +571,7 @@ class JobManager:
                 "fields": fields,
             }
             url = "{base}/jobs/search".format(base=self._url)
-            return Job.search(self._gis, url, search_object)
+            return Job.search(self, self._gis, url, search_object)
         except:
             self._handle_error(sys.exc_info())
 
@@ -649,7 +651,7 @@ class JobManager:
         """
         try:
             url = "{base}/jobs/manage".format(base=self._url)
-            return Job.manage_jobs(self._gis, url, job_ids, "Upgrade")
+            return Job.manage_jobs(self, self._gis, url, job_ids, "Upgrade")
         except:
             self._handle_error(sys.exc_info())
 
@@ -738,7 +740,7 @@ class JobManager:
         """
         try:
             url = "{base}/jobs/manage".format(base=self._url)
-            return Job.manage_jobs(self._gis, url, job_ids, "Delete")
+            return Job.manage_jobs(self, self._gis, url, job_ids, "Delete")
         except:
             self._handle_error(sys.exc_info())
 
@@ -1101,6 +1103,7 @@ class WorkflowManager:
         """
         try:
             return WMRole.get(
+                self,
                 self._gis,
                 "{base}/community/roles/{role}".format(
                     base=self._url, role=urllib.parse.quote(name), item=self._item.id
@@ -1126,6 +1129,7 @@ class WorkflowManager:
         """
         try:
             return JobTemplate.get(
+                self,
                 self._gis,
                 "{base}/jobTemplates/{jobTemplate}".format(
                     base=self._url, jobTemplate=id
@@ -1151,6 +1155,7 @@ class WorkflowManager:
         """
         try:
             res = JobTemplate.delete(
+                self,
                 self._gis,
                 "{base}/jobTemplates/{jobTemplate}".format(
                     base=self._url, jobTemplate=id, item=self._item.id
@@ -1195,6 +1200,7 @@ class WorkflowManager:
         """
         try:
             wmx_group = Group.get(
+                self,
                 self._gis,
                 "{base}/community/groups/{groupid}".format(
                     base=self._url, groupid=group_id, item=self._item.id
@@ -1261,6 +1267,7 @@ class WorkflowManager:
         """
         try:
             return JobDiagram.get(
+                self,
                 self._gis,
                 "{base}/diagrams/{diagram}".format(base=self._url, diagram=id),
                 params={},
@@ -1286,6 +1293,7 @@ class WorkflowManager:
         """
         try:
             return JobDiagram.get(
+                self,
                 self._gis,
                 "{base}/diagrams/{diagram}/{diagramVersion}".format(
                     base=self._url, diagram=diagram_id, diagramVersion=version_id
@@ -1585,7 +1593,7 @@ class WorkflowManager:
         """
         try:
             url = "{base}/diagrams/{diagramid}".format(base=self._url, diagramid=id)
-            return JobDiagram.delete(self._gis, url)
+            return JobDiagram.delete(self, self._gis, url)
         except:
             self._handle_error(sys.exc_info())
 
@@ -1609,7 +1617,7 @@ class WorkflowManager:
             url = "{base}/diagrams/{diagramid}/{diagramVersion}".format(
                 base=self._url, diagramid=diagram_id, diagramVersion=version_id
             )
-            return JobDiagram.delete(self._gis, url)
+            return JobDiagram.delete(self, self._gis, url)
         except:
             self._handle_error(sys.exc_info())
 
@@ -1664,6 +1672,7 @@ class WorkflowManager:
         """
         try:
             return LookUpTable.get(
+                self,
                 self._gis,
                 "{base}/lookups/{lookupType}".format(
                     base=self._url, lookupType=lookup_type
@@ -1689,6 +1698,7 @@ class WorkflowManager:
         """
         try:
             res = LookUpTable.delete(
+                self,
                 self._gis,
                 "{base}/lookups/{lookupType}".format(
                     base=self._url, lookupType=lookup_type, item=self._item.id
@@ -2491,6 +2501,7 @@ class Job(object):
 
         if self._location is None:
             self._location = JobLocation.get(
+                self,
                 self._gis,
                 "{base}/jobs/{job}/location".format(base=self._url, job=self.job_id),
                 {},
