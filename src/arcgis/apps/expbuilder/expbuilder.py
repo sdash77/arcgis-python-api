@@ -1,0 +1,224 @@
+from __future__ import annotations
+import os
+from typing import Optional, Union
+import uuid
+from enum import Enum
+from arcgis.auth.tools import LazyLoader
+import re
+import copy
+import json
+
+arcgis = LazyLoader("arcgis")
+json = LazyLoader("json")
+time = LazyLoader("time")
+
+
+class WebExperience(object):
+
+    _properties = None
+    _gis = None
+    _itemid = None
+    _item = None
+    _resources = None
+    _expdict = {}
+    _draft = {}
+
+    def __init__(
+        self,
+        item: Optional[Union[arcgis.gis.Item, str]] = None,
+        gis: Optional[arcgis.gis.GIS] = None,
+        template: Optional[str] = None,
+        name: Optional[str] = None,
+    ):
+
+        if gis is None:
+            gis = arcgis.env.active_gis
+            self._gis = gis
+        else:
+            self._gis = gis
+        if gis is None or gis._portal.is_logged_in is False:
+            # check to see if user is authenticated
+            raise Exception("Must be logged into a Portal Account")
+        if item and isinstance(item, str):
+            # get item using the item id
+            item = gis.content.get(item)
+        if item and isinstance(item, arcgis.gis.Item) and item.type == "Web Experience":
+            # set item properties
+            self._item = item
+            self._itemid = self._item.itemid
+            self._resources = self._item.resources.list()
+            self._expdict = self._item.resources.get("config/config.json")
+            self._draft = self._item.resources.get("config/config.json")
+        elif (
+            item and isinstance(item, arcgis.gis.Item) and item.type != "Web Experience"
+        ):
+            # Throw error if item is not of type Story Map
+            raise ValueError("Item is not a Web Experience")
+        else:
+            self._create_new_experience(template=template, name=name)
+
+    # -----------------------------------------------------------------------------------
+    def _create_new_experience(self, template="blank fullscreen", name=None):
+
+        # retrieve template for experience
+        if template is None:
+            template = "blank fullscreen"
+
+        temp_low = template.lower()
+        if temp_low in arcgis.apps.expbuilder._ref.templates:
+            temp_dict = copy.deepcopy(arcgis.apps.expbuilder._ref.templates[temp_low])
+        else:
+            temp_dict = copy.deepcopy(
+                arcgis.apps.expbuilder._ref.templates["blank fullscreen"]
+            )
+
+        temp_dict["attributes"]["portalUrl"] = self._gis.url
+        # temp_dict["timestamp"]
+        # create item and generate basic properties
+        if name is None:
+            title = "Experience via Python %s" % uuid.uuid4().hex[:10]
+        else:
+            title = name
+        tags = ",".join(
+            [
+                "Web Experience",
+                "arcgis-experience",
+                "Web Application",
+                "python-api",
+                "expbuilderapp:python-api-" + arcgis.__version__,
+            ]
+        )
+        item_properties = {
+            "type": "Web Experience",
+            "title": title,
+            "tags": tags,
+        }
+
+        # add to active gis and set properties
+        item = self._gis.content.add(item_properties=item_properties)
+
+        # assign to experience properties
+        self._item = item
+        self._itemid = item.itemid
+        self._item.resources.add(
+            folder_name="config", file_name="config.json", text=temp_dict
+        )
+        self._expdict = temp_dict
+        self._draft = temp_dict
+
+    # ----------------------------------------------------------------------
+    def save(
+        self,
+        title: Optional[str] = None,
+        tags: Optional[list] = None,
+        access: str = None,
+        publish: bool = False,
+    ):
+
+        item_properties = {}
+        if title:
+            item_properties["title"] = title
+        if tags:
+            item_properties["tags"] = tags
+
+        self._expdict = self._draft
+        self._item.resources.update(
+            folder_name="config", file_name="config.json", text=self._expdict
+        )
+        if publish:
+            if access:
+                item_properties["access"] = access
+            self._item.update(item_properties=item_properties, data=self._expdict)
+            # self.publish(item_properties = item_properties, data = self._expdict)
+        else:
+            return self._item.update(item_properties=item_properties)
+
+    # ----------------------------------------------------------------------
+    def reset_save(self):
+        self._draft = self._expdict
+        return self._item.resources.update(
+            folder_name="config", file_name="config.json", text=self._expdict
+        )
+
+    # ----------------------------------------------------------------------
+    def preview_changes(self):
+        return self._item.resources.update(
+            folder_name="config", file_name="config.json", text=self._draft
+        )
+
+    # ----------------------------------------------------------------------
+    def delete_experience(self):
+        item = self._gis.content.get(self._itemid)
+        return item.delete()
+
+    # ----------------------------------------------------------------------
+    def _add_resource(self, file=None, resource_name=None, text=None, access="inherit"):
+        """
+        See :class:`~arcgis.gis.ResourceManager`
+        """
+        resource_manager = arcgis.gis.ResourceManager(self._item, self._gis)
+        is_present = False
+        if file:
+            for resource in self._resources:
+                if resource["resource"] in file:
+                    is_present = True
+                    resp = True
+        properties = {
+            "editInfo": {
+                "editor": self._gis._username,
+                "modified": str(int(time.time() * 1000)),
+                "id": uuid.uuid4().hex[0:21],
+                "app": "python-api",
+            }
+        }
+
+        # access is inherited from item upon add, except for json where always private
+        if is_present is False:
+            resp = resource_manager.add(
+                file=file,
+                file_name=resource_name,
+                text=text,
+                access=access,
+                properties=properties,
+            )
+
+        self._resources = self._item.resources.list()
+        return resp
+
+    # ----------------------------------------------------------------------
+    def publish(self):
+
+        draft = self._item.resources.get("config/config.json")
+        self._item.update(data=draft)
+
+    # ----------------------------------------------------------------------
+    def show(self, width: Optional[int] = None, height: Optional[int] = None):
+        """
+        Show a preview of the experience. The default is a width of 700 and height of 300.
+
+        ===============     ====================================================================
+        **Argument**        **Description**
+        ---------------     --------------------------------------------------------------------
+        width               Optional integer. The desired width to show the preview.
+        ---------------     --------------------------------------------------------------------
+        height              Optional integer. The desired height to show the preview.
+        ===============     ====================================================================
+
+        :return:
+            An Iframe display of the story map if possible, else the item url is returned to be
+            clicked on.
+        """
+        try:
+            if self._item:
+                width = 700 if width is None else width
+                height = 350 if height is None else height
+                from IPython.display import IFrame
+
+                return IFrame(
+                    src=self._item.url,
+                    width=width,
+                    height=height,
+                    params="title=" + self._item.title,
+                )
+        except:
+            return self._item.url
