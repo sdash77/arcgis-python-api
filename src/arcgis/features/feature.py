@@ -5,6 +5,7 @@ to represent features and collection of features.
 from __future__ import annotations
 from arcgis.auth.tools import LazyLoader
 from typing import Any, Optional, Union
+import geomet.esri
 
 copy = LazyLoader("copy")
 json = LazyLoader("json")
@@ -82,7 +83,9 @@ class Feature(object):
     def set_value(
         self,
         field_name: str,
-        value: Union[dict, BaseGeometry, Point, MultiPoint, Polyline, Polygon],
+        value: Union[
+            dict, BaseGeometry, Point, MultiPoint, Polyline, Polygon
+        ],
     ):
         """
         Sets an attribute value for a given field name.
@@ -131,7 +134,10 @@ class Feature(object):
         elif field_name.upper() in ["SHAPE", "SHAPE@", "GEOMETRY"]:
             if isinstance(value, BaseGeometry):
                 if isinstance(value, Point):
-                    self._dict["geometry"] = {"x": value["x"], "y": value["y"]}
+                    self._dict["geometry"] = {
+                        "x": value["x"],
+                        "y": value["y"],
+                    }
                 elif isinstance(value, MultiPoint):
                     self._dict["geometry"] = {"points": value["points"]}
                 elif isinstance(value, Polyline):
@@ -356,7 +362,12 @@ class Feature(object):
             A :class:`~arcgis.features.Feature`
         """
         geom = feature["geometry"] if "geometry" in feature else None
-        if geom and sr and isinstance(geom, dict) and not "spatialReference" in geom:
+        if (
+            geom
+            and sr
+            and isinstance(geom, dict)
+            and not "spatialReference" in geom
+        ):
             geom["spatialReference"] = sr
 
         attribs = feature["attributes"] if "attributes" in feature else None
@@ -460,10 +471,13 @@ class FeatureSet(object):
                         ]
                     else:
                         features = [
-                            Feature(None, feat["attributes"]) for feat in features
+                            Feature(None, feat["attributes"])
+                            for feat in features
                         ]
                 elif "geometry" in feature:
-                    features = [Feature(feat["geometry"], None) for feat in features]
+                    features = [
+                        Feature(feat["geometry"], None) for feat in features
+                    ]
             else:
                 raise AttributeError(
                     "FeatureSet requires a list of features (as dicts or Feature objects)"
@@ -485,7 +499,9 @@ class FeatureSet(object):
             if feat_geom is not None:
                 if spatial_reference is None:
                     if "spatialReference" in feat_geom:
-                        self._spatial_reference = feat_geom["spatialReference"]
+                        self._spatial_reference = feat_geom[
+                            "spatialReference"
+                        ]
 
                 if isinstance(feat_geom, Geometry):
                     geometry = feat_geom
@@ -543,20 +559,28 @@ class FeatureSet(object):
                             feature.fields
                         )  # get fields from first feature if not set
                     for field in feature.fields:
-                        if re.search("^{0}$".format("OBJECTID"), field, re.IGNORECASE):
+                        if re.search(
+                            "^{0}$".format("OBJECTID"), field, re.IGNORECASE
+                        ):
                             self._object_id_field_name = field
                             break
                     for field in feature.fields:
-                        if re.search("^{0}$".format("FID"), field, re.IGNORECASE):
+                        if re.search(
+                            "^{0}$".format("FID"), field, re.IGNORECASE
+                        ):
                             self._object_id_field_name = field
                             break
                 else:
                     for field, _ in feature.items():
-                        if re.search("^{0}$".format("OBJECTID"), field, re.IGNORECASE):
+                        if re.search(
+                            "^{0}$".format("OBJECTID"), field, re.IGNORECASE
+                        ):
                             self._object_id_field_name = field
                             break
                     for field, _ in feature.items():
-                        if re.search("^{0}$".format("FID"), field, re.IGNORECASE):
+                        if re.search(
+                            "^{0}$".format("FID"), field, re.IGNORECASE
+                        ):
                             self._object_id_field_name = field
                             break
 
@@ -605,7 +629,9 @@ class FeatureSet(object):
         return json.dumps(self.value, default=_date_handler)
 
     def __repr__(self):
-        return "<{}> {} features".format(self.__class__.__name__, len(self.features))
+        return "<{}> {} features".format(
+            self.__class__.__name__, len(self.features)
+        )
 
     # noinspection PyUnresolvedReferences
     @staticmethod
@@ -634,7 +660,9 @@ class FeatureSet(object):
         if arcpy_found:
             if not arcpy.Exists(dataset=dataset):
                 raise AttributeError(
-                    "Error creating FeatureSet: {0} does not exist".format(dataset)
+                    "Error creating FeatureSet: {0} does not exist".format(
+                        dataset
+                    )
                 )
 
             desc = arcpy.da.Describe(dataset)
@@ -676,7 +704,9 @@ class FeatureSet(object):
                         if date_value is not None:
                             date_value = int(_date_handler(date_value))
 
-                    template = {"attributes": dict(zip(non_geom_fields, row))}
+                    template = {
+                        "attributes": dict(zip(non_geom_fields, row))
+                    }
                     if "SHAPE@JSON" in fields:
                         template["geometry"] = _ujson.loads(
                             row[fields.index("SHAPE@JSON")]
@@ -748,7 +778,9 @@ class FeatureSet(object):
                 geom = feature["geometry"]
                 geometry = {}
                 geometry["type"] = get_geom_type(esri_geom_type)
-                geometry["coordinates"] = get_coordinates(geom, geometry["type"])
+                geometry["coordinates"] = get_coordinates(
+                    geom, geometry["type"]
+                )
                 item["geometry"] = geometry
                 item["properties"] = feature["attributes"]
 
@@ -921,7 +953,8 @@ class FeatureSet(object):
                 if isinstance(val, (str, pd.StringDtype)):
                     return "esriFieldTypeString"
                 elif isinstance(
-                    val, tuple([int] + [np.int32, pd.Int32Dtype, pd.Int16Dtype])
+                    val,
+                    tuple([int] + [np.int32, pd.Int32Dtype, pd.Int16Dtype]),
                 ):
                     return "esriFieldTypeInteger"
                 elif isinstance(val, (float, np.int64, pd.Int64Dtype)):
@@ -936,7 +969,11 @@ class FeatureSet(object):
         index = 0
         sr = None
         try:
-            date_cols = [col for col in df.columns if df[col].dtype == "datetime64[ns]"]
+            date_cols = [
+                col
+                for col in df.columns
+                if df[col].dtype == "datetime64[ns]"
+            ]
             cols = [
                 col
                 for col in df.columns
@@ -972,7 +1009,9 @@ class FeatureSet(object):
         fields = []
         for col in df_rows.columns:
             # if col not in df_rows.geometry.name:
-            fields.append({"name": col, "type": _infer_type(df=df_rows, col=col)})
+            fields.append(
+                {"name": col, "type": _infer_type(df=df_rows, col=col)}
+            )
         fs._fields = fields
         if sr is not None:
             fs.spatial_reference = sr
@@ -1074,70 +1113,14 @@ class FeatureSet(object):
         def get_geometry(feature):
             # match how geometry is represented
             # based on the geojson geometry type
-            geometry = {}
-            geom = feature["geometry"]
-            geo_type = geom["type"]
-            if geo_type == "Point":
-                geometry["x"] = geom["coordinates"][0]
-                geometry["y"] = geom["coordinates"][1]
-            elif geo_type == "Polygon":
-                geometry["rings"] = [
-                    [pt for pt in reversed(g)] for g in geom["coordinates"]
-                ]
-            elif geo_type == "MultiPolygon":
-                rings = []
-                if HASARCPY:
-                    if isinstance(geom, dict):
-                        geometry = Geometry(geom)
-                    else:
-                        geom = arcpy.AsShape(geom)
-                        geometry = Geometry(_ujson.loads(geom))
-                else:
-                    coordkey = (
-                        [d for d in geom if d.lower() == "coordinates"]
-                        or ["coordinates"]
-                    ).pop()
-                    coordinates = geom[coordkey]
-                    typekey = (
-                        [d for d in geom if d.lower() == "type"] or ["type"]
-                    ).pop()
-                    if geom[typekey].lower() == "polygon":
-                        coordinates = [coordinates]
-                    part_list = []
-                    for part in coordinates:
-                        part_item = []
-                        for idx, ring in enumerate(part):
-                            if idx:
-                                part_item.append(None)
-                            for coord in reversed(ring):
-                                part_item.append(coord)
-                        if part_item:
-                            part_list.append(part_item)
-                    geometry["rings"] = part_list  # [0]
-            elif geo_type == "MultiPoint":
-                geometry["points"] = [c[:] for c in geom["coordinates"]]
-            elif geo_type == "LineString":
-                geometry["paths"] = [[c[:] for c in geom["coordinates"]]]
-            elif geo_type == "MultiLineString":
-                if HASARCPY == "rem":
-                    geom = arcpy.AsShape(geom)
-                    geom["spatialReference"] = {"wkid": 4326}
-                    geometry = Geometry(_ujson.loads(geom))
-                else:
-                    coordkey = (
-                        [d for d in geom if d.lower() == "coordinates"]
-                        or ["coordinates"]
-                    ).pop()
-                    coordinates = geom[coordkey]
-                    typekey = (
-                        [d for d in geom if d.lower() == "type"] or ["type"]
-                    ).pop()
-                    if geom[typekey].lower() == "linestring":
-                        coordinates = [coordinates]
-                    geometry["paths"] = coordinates
-            if not "spatialReference" in geometry:
-                geometry["spatialReference"] = {"wkid": 4326}
 
+            geom = feature["geometry"]
+            if HASARCPY:
+                geom = arcpy.AsShape(geom)
+                geometry = Geometry(geom)
+            else:
+
+                geometry = Geometry(geomet.esri.dumps(geom))
             return geometry
 
         return FeatureSet.from_dict(geo_to_esri(geojson))
@@ -1173,8 +1156,12 @@ class FeatureSet(object):
         return FeatureSet(
             features=features,
             fields=fields,
-            has_z=featureset_dict["hasZ"] if "hasZ" in featureset_dict else False,
-            has_m=featureset_dict["hasM"] if "hasM" in featureset_dict else False,
+            has_z=featureset_dict["hasZ"]
+            if "hasZ" in featureset_dict
+            else False,
+            has_m=featureset_dict["hasM"]
+            if "hasM" in featureset_dict
+            else False,
             geometry_type=featureset_dict["geometryType"]
             if "geometryType" in featureset_dict
             else None,
@@ -1384,7 +1371,12 @@ class FeatureSet(object):
         self._display_field_name = value
 
     # ----------------------------------------------------------------------
-    def save(self, save_location: str, out_name: str, encoding: Optional[str] = None):
+    def save(
+        self,
+        save_location: str,
+        out_name: str,
+        encoding: Optional[str] = None,
+    ):
         """
         The ``save`` method saves a Feature Set object to a
         :class:`~arcgis.features.Feature` class on disk.
@@ -1414,7 +1406,10 @@ class FeatureSet(object):
 
         """
         _, file_extension = os.path.splitext(out_name)
-        if file_extension.lower() not in [".csv", ".json"] and HASARCPY == False:
+        if (
+            file_extension.lower() not in [".csv", ".json"]
+            and HASARCPY == False
+        ):
             raise ImportError("ArcPy is required to export a feature class.")
         import sys
 
@@ -1454,7 +1449,11 @@ class FeatureSet(object):
             res = os.path.join(save_location, out_name)
             with open(res, access, **kwargs) as writer:
                 json.dump(
-                    self.value, writer, sort_keys=True, indent=4, ensure_ascii=False
+                    self.value,
+                    writer,
+                    sort_keys=True,
+                    indent=4,
+                    ensure_ascii=False,
                 )
             del writer
         else:
@@ -1464,7 +1463,8 @@ class FeatureSet(object):
                 json.dump(self.value, writer, default=_date_handler)
             del writer
             res = json_to_featureclass(
-                json_file=temp_file, out_fc=os.path.join(save_location, out_name)
+                json_file=temp_file,
+                out_fc=os.path.join(save_location, out_name),
             )
             os.remove(temp_file)
         return res
@@ -1579,9 +1579,9 @@ class FeatureCollection(Layer):
         """
         if "layers" in self.properties:
             if "fields" in self.properties["layers"][0]["layerDefinition"]:
-                self.properties["layers"][0]["featureSet"]["fields"] = self.properties[
-                    "layers"
-                ][0]["layerDefinition"]["fields"]
+                self.properties["layers"][0]["featureSet"][
+                    "fields"
+                ] = self.properties["layers"][0]["layerDefinition"]["fields"]
 
             return FeatureSet.from_dict(
                 self.properties["layers"][0]["featureSet"],
