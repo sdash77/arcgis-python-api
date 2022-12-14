@@ -83,9 +83,7 @@ class Feature(object):
     def set_value(
         self,
         field_name: str,
-        value: Union[
-            dict, BaseGeometry, Point, MultiPoint, Polyline, Polygon
-        ],
+        value: Union[dict, BaseGeometry, Point, MultiPoint, Polyline, Polygon],
     ):
         """
         Sets an attribute value for a given field name.
@@ -362,12 +360,7 @@ class Feature(object):
             A :class:`~arcgis.features.Feature`
         """
         geom = feature["geometry"] if "geometry" in feature else None
-        if (
-            geom
-            and sr
-            and isinstance(geom, dict)
-            and not "spatialReference" in geom
-        ):
+        if geom and sr and isinstance(geom, dict) and not "spatialReference" in geom:
             geom["spatialReference"] = sr
 
         attribs = feature["attributes"] if "attributes" in feature else None
@@ -471,13 +464,10 @@ class FeatureSet(object):
                         ]
                     else:
                         features = [
-                            Feature(None, feat["attributes"])
-                            for feat in features
+                            Feature(None, feat["attributes"]) for feat in features
                         ]
                 elif "geometry" in feature:
-                    features = [
-                        Feature(feat["geometry"], None) for feat in features
-                    ]
+                    features = [Feature(feat["geometry"], None) for feat in features]
             else:
                 raise AttributeError(
                     "FeatureSet requires a list of features (as dicts or Feature objects)"
@@ -499,9 +489,7 @@ class FeatureSet(object):
             if feat_geom is not None:
                 if spatial_reference is None:
                     if "spatialReference" in feat_geom:
-                        self._spatial_reference = feat_geom[
-                            "spatialReference"
-                        ]
+                        self._spatial_reference = feat_geom["spatialReference"]
 
                 if isinstance(feat_geom, Geometry):
                     geometry = feat_geom
@@ -559,28 +547,20 @@ class FeatureSet(object):
                             feature.fields
                         )  # get fields from first feature if not set
                     for field in feature.fields:
-                        if re.search(
-                            "^{0}$".format("OBJECTID"), field, re.IGNORECASE
-                        ):
+                        if re.search("^{0}$".format("OBJECTID"), field, re.IGNORECASE):
                             self._object_id_field_name = field
                             break
                     for field in feature.fields:
-                        if re.search(
-                            "^{0}$".format("FID"), field, re.IGNORECASE
-                        ):
+                        if re.search("^{0}$".format("FID"), field, re.IGNORECASE):
                             self._object_id_field_name = field
                             break
                 else:
                     for field, _ in feature.items():
-                        if re.search(
-                            "^{0}$".format("OBJECTID"), field, re.IGNORECASE
-                        ):
+                        if re.search("^{0}$".format("OBJECTID"), field, re.IGNORECASE):
                             self._object_id_field_name = field
                             break
                     for field, _ in feature.items():
-                        if re.search(
-                            "^{0}$".format("FID"), field, re.IGNORECASE
-                        ):
+                        if re.search("^{0}$".format("FID"), field, re.IGNORECASE):
                             self._object_id_field_name = field
                             break
 
@@ -629,9 +609,7 @@ class FeatureSet(object):
         return json.dumps(self.value, default=_date_handler)
 
     def __repr__(self):
-        return "<{}> {} features".format(
-            self.__class__.__name__, len(self.features)
-        )
+        return "<{}> {} features".format(self.__class__.__name__, len(self.features))
 
     # noinspection PyUnresolvedReferences
     @staticmethod
@@ -660,9 +638,7 @@ class FeatureSet(object):
         if arcpy_found:
             if not arcpy.Exists(dataset=dataset):
                 raise AttributeError(
-                    "Error creating FeatureSet: {0} does not exist".format(
-                        dataset
-                    )
+                    "Error creating FeatureSet: {0} does not exist".format(dataset)
                 )
 
             desc = arcpy.da.Describe(dataset)
@@ -704,9 +680,7 @@ class FeatureSet(object):
                         if date_value is not None:
                             date_value = int(_date_handler(date_value))
 
-                    template = {
-                        "attributes": dict(zip(non_geom_fields, row))
-                    }
+                    template = {"attributes": dict(zip(non_geom_fields, row))}
                     if "SHAPE@JSON" in fields:
                         template["geometry"] = _ujson.loads(
                             row[fields.index("SHAPE@JSON")]
@@ -778,9 +752,7 @@ class FeatureSet(object):
                 geom = feature["geometry"]
                 geometry = {}
                 geometry["type"] = get_geom_type(esri_geom_type)
-                geometry["coordinates"] = get_coordinates(
-                    geom, geometry["type"]
-                )
+                geometry["coordinates"] = get_coordinates(geom, geometry["type"])
                 item["geometry"] = geometry
                 item["properties"] = feature["attributes"]
 
@@ -969,11 +941,7 @@ class FeatureSet(object):
         index = 0
         sr = None
         try:
-            date_cols = [
-                col
-                for col in df.columns
-                if df[col].dtype == "datetime64[ns]"
-            ]
+            date_cols = [col for col in df.columns if df[col].dtype == "datetime64[ns]"]
             cols = [
                 col
                 for col in df.columns
@@ -1009,9 +977,7 @@ class FeatureSet(object):
         fields = []
         for col in df_rows.columns:
             # if col not in df_rows.geometry.name:
-            fields.append(
-                {"name": col, "type": _infer_type(df=df_rows, col=col)}
-            )
+            fields.append({"name": col, "type": _infer_type(df=df_rows, col=col)})
         fs._fields = fields
         if sr is not None:
             fs.spatial_reference = sr
@@ -1156,12 +1122,8 @@ class FeatureSet(object):
         return FeatureSet(
             features=features,
             fields=fields,
-            has_z=featureset_dict["hasZ"]
-            if "hasZ" in featureset_dict
-            else False,
-            has_m=featureset_dict["hasM"]
-            if "hasM" in featureset_dict
-            else False,
+            has_z=featureset_dict["hasZ"] if "hasZ" in featureset_dict else False,
+            has_m=featureset_dict["hasM"] if "hasM" in featureset_dict else False,
             geometry_type=featureset_dict["geometryType"]
             if "geometryType" in featureset_dict
             else None,
@@ -1406,10 +1368,7 @@ class FeatureSet(object):
 
         """
         _, file_extension = os.path.splitext(out_name)
-        if (
-            file_extension.lower() not in [".csv", ".json"]
-            and HASARCPY == False
-        ):
+        if file_extension.lower() not in [".csv", ".json"] and HASARCPY == False:
             raise ImportError("ArcPy is required to export a feature class.")
         import sys
 
@@ -1579,9 +1538,9 @@ class FeatureCollection(Layer):
         """
         if "layers" in self.properties:
             if "fields" in self.properties["layers"][0]["layerDefinition"]:
-                self.properties["layers"][0]["featureSet"][
-                    "fields"
-                ] = self.properties["layers"][0]["layerDefinition"]["fields"]
+                self.properties["layers"][0]["featureSet"]["fields"] = self.properties[
+                    "layers"
+                ][0]["layerDefinition"]["fields"]
 
             return FeatureSet.from_dict(
                 self.properties["layers"][0]["featureSet"],
