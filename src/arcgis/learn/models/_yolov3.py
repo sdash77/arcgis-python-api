@@ -635,8 +635,11 @@ class YOLOv3(ArcGISModel):
                 figsize = (20, 20)
             else:
                 figsize = (4, 4)
-            fig, ax = plt.subplots(1, 1, figsize=figsize)
-            ax.imshow(image)
+
+            plt.figure(figsize=figsize)
+            plt.xticks([])
+            plt.yticks([])
+            plt.imshow(image)
 
         if return_scores:
             return predictions, labels, scores
