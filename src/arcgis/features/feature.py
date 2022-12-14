@@ -5,6 +5,7 @@ to represent features and collection of features.
 from __future__ import annotations
 from arcgis.auth.tools import LazyLoader
 from typing import Any, Optional, Union
+import geomet.esri
 
 copy = LazyLoader("copy")
 json = LazyLoader("json")
@@ -131,7 +132,10 @@ class Feature(object):
         elif field_name.upper() in ["SHAPE", "SHAPE@", "GEOMETRY"]:
             if isinstance(value, BaseGeometry):
                 if isinstance(value, Point):
-                    self._dict["geometry"] = {"x": value["x"], "y": value["y"]}
+                    self._dict["geometry"] = {
+                        "x": value["x"],
+                        "y": value["y"],
+                    }
                 elif isinstance(value, MultiPoint):
                     self._dict["geometry"] = {"points": value["points"]}
                 elif isinstance(value, Polyline):
@@ -921,7 +925,8 @@ class FeatureSet(object):
                 if isinstance(val, (str, pd.StringDtype)):
                     return "esriFieldTypeString"
                 elif isinstance(
-                    val, tuple([int] + [np.int32, pd.Int32Dtype, pd.Int16Dtype])
+                    val,
+                    tuple([int] + [np.int32, pd.Int32Dtype, pd.Int16Dtype]),
                 ):
                     return "esriFieldTypeInteger"
                 elif isinstance(val, (float, np.int64, pd.Int64Dtype)):
@@ -1074,70 +1079,14 @@ class FeatureSet(object):
         def get_geometry(feature):
             # match how geometry is represented
             # based on the geojson geometry type
-            geometry = {}
-            geom = feature["geometry"]
-            geo_type = geom["type"]
-            if geo_type == "Point":
-                geometry["x"] = geom["coordinates"][0]
-                geometry["y"] = geom["coordinates"][1]
-            elif geo_type == "Polygon":
-                geometry["rings"] = [
-                    [pt for pt in reversed(g)] for g in geom["coordinates"]
-                ]
-            elif geo_type == "MultiPolygon":
-                rings = []
-                if HASARCPY:
-                    if isinstance(geom, dict):
-                        geometry = Geometry(geom)
-                    else:
-                        geom = arcpy.AsShape(geom)
-                        geometry = Geometry(_ujson.loads(geom))
-                else:
-                    coordkey = (
-                        [d for d in geom if d.lower() == "coordinates"]
-                        or ["coordinates"]
-                    ).pop()
-                    coordinates = geom[coordkey]
-                    typekey = (
-                        [d for d in geom if d.lower() == "type"] or ["type"]
-                    ).pop()
-                    if geom[typekey].lower() == "polygon":
-                        coordinates = [coordinates]
-                    part_list = []
-                    for part in coordinates:
-                        part_item = []
-                        for idx, ring in enumerate(part):
-                            if idx:
-                                part_item.append(None)
-                            for coord in reversed(ring):
-                                part_item.append(coord)
-                        if part_item:
-                            part_list.append(part_item)
-                    geometry["rings"] = part_list  # [0]
-            elif geo_type == "MultiPoint":
-                geometry["points"] = [c[:] for c in geom["coordinates"]]
-            elif geo_type == "LineString":
-                geometry["paths"] = [[c[:] for c in geom["coordinates"]]]
-            elif geo_type == "MultiLineString":
-                if HASARCPY == "rem":
-                    geom = arcpy.AsShape(geom)
-                    geom["spatialReference"] = {"wkid": 4326}
-                    geometry = Geometry(_ujson.loads(geom))
-                else:
-                    coordkey = (
-                        [d for d in geom if d.lower() == "coordinates"]
-                        or ["coordinates"]
-                    ).pop()
-                    coordinates = geom[coordkey]
-                    typekey = (
-                        [d for d in geom if d.lower() == "type"] or ["type"]
-                    ).pop()
-                    if geom[typekey].lower() == "linestring":
-                        coordinates = [coordinates]
-                    geometry["paths"] = coordinates
-            if not "spatialReference" in geometry:
-                geometry["spatialReference"] = {"wkid": 4326}
 
+            geom = feature["geometry"]
+            if HASARCPY:
+                geom = arcpy.AsShape(geom)
+                geometry = Geometry(geom)
+            else:
+
+                geometry = Geometry(geomet.esri.dumps(geom))
             return geometry
 
         return FeatureSet.from_dict(geo_to_esri(geojson))
@@ -1384,7 +1333,12 @@ class FeatureSet(object):
         self._display_field_name = value
 
     # ----------------------------------------------------------------------
-    def save(self, save_location: str, out_name: str, encoding: Optional[str] = None):
+    def save(
+        self,
+        save_location: str,
+        out_name: str,
+        encoding: Optional[str] = None,
+    ):
         """
         The ``save`` method saves a Feature Set object to a
         :class:`~arcgis.features.Feature` class on disk.
@@ -1454,7 +1408,11 @@ class FeatureSet(object):
             res = os.path.join(save_location, out_name)
             with open(res, access, **kwargs) as writer:
                 json.dump(
-                    self.value, writer, sort_keys=True, indent=4, ensure_ascii=False
+                    self.value,
+                    writer,
+                    sort_keys=True,
+                    indent=4,
+                    ensure_ascii=False,
                 )
             del writer
         else:
@@ -1464,7 +1422,8 @@ class FeatureSet(object):
                 json.dump(self.value, writer, default=_date_handler)
             del writer
             res = json_to_featureclass(
-                json_file=temp_file, out_fc=os.path.join(save_location, out_name)
+                json_file=temp_file,
+                out_fc=os.path.join(save_location, out_name),
             )
             os.remove(temp_file)
         return res
