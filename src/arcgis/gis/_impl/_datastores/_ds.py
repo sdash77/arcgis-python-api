@@ -790,9 +790,9 @@ class PortalDataStore(object):
 
             isinstance(self._gis, GIS)
             cm = self._gis.content
-            folder = cm.create_folder(
-                folder=f"srvc_folder_{uuid.uuid4().hex[:5]}"
-            )["id"]
+            folder = cm.create_folder(folder=f"srvc_folder_{uuid.uuid4().hex[:5]}")[
+                "id"
+            ]
         if isinstance(item, Item):
             item_id = item.id
         else:
@@ -986,9 +986,7 @@ class PortalDataStore(object):
 
             params["datastore"] = json.dumps(config)
         else:
-            raise ValueError(
-                "Invalid parameters, an item or config is required."
-            )
+            raise ValueError("Invalid parameters, an item or config is required.")
         res = self._con.post(url, params)
         if "status" in res:
             if res["status"] == "success":
