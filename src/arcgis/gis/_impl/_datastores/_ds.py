@@ -1,6 +1,6 @@
 from __future__ import annotations
 import time as _time
-from typing import Union
+from typing import Union, Any
 import uuid
 from arcgis.gis import GIS
 from .._con import Connection
