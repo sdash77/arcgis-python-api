@@ -79,19 +79,23 @@ class WebExperience(object):
             title = "Experience via Python %s" % uuid.uuid4().hex[:10]
         else:
             title = name
-        tags = ",".join(
+        keywords = ",".join(
             [
-                "Web Experience",
-                "arcgis-experience",
+                "EXB Experience",
+                "JavaScript",
+                "Ready To Use",
+                "status: Draft",
                 "Web Application",
-                "python-api",
+                "Web Experience",
+                "Web Page",
+                "Web Site",
                 "expbuilderapp:python-api-" + arcgis.__version__,
             ]
         )
         item_properties = {
             "type": "Web Experience",
             "title": title,
-            "tags": tags,
+            "typeKeywords": keywords,
         }
 
         # add to active gis and set properties
@@ -114,7 +118,10 @@ class WebExperience(object):
         access: str = None,
         publish: bool = False,
     ):
-
+        keywords = self._item.typeKeywords
+        for i in range(len(keywords)):
+            if keywords[i] == "status: Published":
+                keywords[i] = "status: Changed"
         item_properties = {}
         if title:
             item_properties["title"] = title
@@ -126,11 +133,16 @@ class WebExperience(object):
             folder_name="config", file_name="config.json", text=self._expdict
         )
         if publish:
+            for i in range(len(keywords)):
+                if "status" in keywords[i]:
+                    keywords[i] = "status: Published"
             if access:
                 item_properties["access"] = access
+            item_properties["typeKeywords"] = keywords
             self._item.update(item_properties=item_properties, data=self._expdict)
             # self.publish(item_properties = item_properties, data = self._expdict)
         else:
+            item_properties["typeKeywords"] = keywords
             return self._item.update(item_properties=item_properties)
 
     # ----------------------------------------------------------------------
