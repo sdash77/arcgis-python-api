@@ -244,18 +244,20 @@ class TabularDataObject(object):
                 )
 
             tabular_data._validation_indexes = validation_indexes
-
-        if tabular_data._is_classification():
-            tabular_data._training_indexes = list(
-                set([i for i in tabular_data._dataframe.index])
-                - set(validation_indexes)
-            )
-        else:
-            tabular_data._training_indexes = list(
-                set([i for i in range(len(tabular_data._dataframe))])
-                - set(validation_indexes)
-            )
+        if tabular_data._dependent_variable:
+            if tabular_data._is_classification():
+                tabular_data._training_indexes = list(
+                    set([i for i in tabular_data._dataframe.index])
+                    - set(validation_indexes)
+                )
+            else:
+                tabular_data._training_indexes = list(
+                    set([i for i in range(len(tabular_data._dataframe))])
+                    - set(validation_indexes)
+                )
         if not tabular_data._dependent_variable:
+            tabular_data._training_indexes = list(
+                set([i for i in range(len(tabular_data._dataframe))]) - set(validation_indexes))
             tabular_data._validation_indexes = list(
                 set([i for i in range(len(tabular_data._dataframe))])
             )
