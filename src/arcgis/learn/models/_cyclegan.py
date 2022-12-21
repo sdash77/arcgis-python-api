@@ -174,8 +174,6 @@ class CycleGAN(ArcGISModel):
             ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageTranslation.py"
         _emd_template["ModelType"] = "CycleGAN"
         _emd_template["n_intput_channel"] = self._data.n_channel
-        _emd_template["SupportsVariableTileSize"] = True
-        # if self._data._is_multispectral:
         _emd_template["NormalizationStats_b"] = {
             "band_min_values": self._data._band_min_values_b,
             "band_max_values": self._data._band_max_values_b,
