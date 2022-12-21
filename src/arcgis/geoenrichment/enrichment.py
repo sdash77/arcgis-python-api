@@ -131,7 +131,10 @@ overlap                  Boolean. Uses overlapping rings when ``True``,
 travel_mode              None or string, one of the supported travel modes when 
                          using network service areas.
                          
-                         Example: Driving, Trucking, Walking.
+                         To see a list of travel modes use the `travel_modes` property
+                         in the Country or Business Analyst class.
+
+                         Example: Country.travel_modes["alias"]
 ===================      ======================================================
 """
 
@@ -705,8 +708,8 @@ class Country(object):
         ============================     ====================================================================
         **Parameter**                     **Description**
         ----------------------------     --------------------------------------------------------------------
-        study_areas                      Required list, :class:`~arcgis.features.FeatureSet` or SpatiallyEnabledDataFrame containing
-                                         the input areas to be enriched.
+        study_areas                      Required list, dictionary, :class:`~arcgis.features.FeatureSet`
+                                         or SpatiallyEnabledDataFrame containing the input areas to be enriched.
         ----------------------------     --------------------------------------------------------------------
         enrich_variables                 Enrich variables can be specified using either a list of strings or
                                          the Pandas DataFrame returned from the :func:`~arcgis.geoenrichment.Country.enrich_variables`
@@ -886,6 +889,8 @@ class Country(object):
         if isinstance(study_areas, Iterable) and not isinstance(
             study_areas, pd.DataFrame
         ):
+            if isinstance(study_areas, dict):
+                study_areas = list(study_areas.values())
             first_geo = study_areas[0]
             if isinstance(first_geo, NamedArea):
                 study_areas = [na._areaid for na in study_areas]
@@ -1493,8 +1498,8 @@ def enrich(
     =========================     ====================================================================
     **Parameter**                  **Description**
     -------------------------     --------------------------------------------------------------------
-    study_areas                   Required list, :class:`~arcgis.features.FeatureSet` or SpatiallyEnabledDataFrame containing
-                                  the input areas to be enriched.
+    study_areas                   Required list, dictionary, :class:`~arcgis.features.FeatureSet`
+                                  or SpatiallyEnabledDataFrame containing the input areas to be enriched.
 
                                   study_areas can be a SpatiallyEnabledDataFrame, :class:`~arcgis.features.FeatureSet` or a
                                   lists of the following types:
@@ -1517,7 +1522,19 @@ def enrich(
                                   obtained using Country.subgeographies()/search(). When
                                   the NamedArea instances should be combined together (union), a list
                                   of such NamedArea instances should constitute a study area in the
-                                  list of requested study areas.
+                                  list of requested study areas. Otherwise, pass in the result of subgeographies
+                                  as a dictionary.
+
+                                    .. code-block:: python
+                                        usa = Country("USA")
+                                        ca_counties = usa.subgeographies.states['California'].counties
+
+                                        # Pass as a dictionary
+                                        counties_df = enrich(study_areas=ca_counties, data_collections=['Age'])
+                                        counties_df
+
+                                        # Pass as a list
+                                        counties_df = enrich(study_areas=list(ca_counties.values()), data_collections=['Age'])
     -------------------------     --------------------------------------------------------------------
     data_collections              Optional list. A Data Collection is a preassembled list of
                                   attributes that will be used to enrich the input features.
@@ -1528,6 +1545,9 @@ def enrich(
                                   If none are specified then 'KeyGlobalFacts' is used. To see a list of
                                   the data collections available for a country you can use the Country class:
                                   `Country.enrich_variables.data_collection.unique()`
+
+                                  .. note::
+                                        Data Collections are case sensitive.
     -------------------------     --------------------------------------------------------------------
     analysis_variables            Optional list. A Data Collection is a preassembled list of
                                   attributes that will be used to enrich the input features. With the
@@ -1540,9 +1560,11 @@ def enrich(
                                   values that describe what derivative variables to include in the
                                   output. The list of accepted values includes:
                                   ['percent','index','average','all','*']
+                                  * Deprecated *
     -------------------------     --------------------------------------------------------------------
     comparison_levels             Optional list of layer IDs for which the intersecting
                                   study_areas should be geoenriched.
+                                  * Deprecated *
     -------------------------     --------------------------------------------------------------------
     intersecting_geographies      Optional parameter to explicitly define the geographic layers used
                                   to provide geographic context during the enrichment process. For
@@ -1555,6 +1577,7 @@ def enrich(
 
                                   See `intersecting_geographies <https://developers.arcgis.com/rest/geoenrichment/api-reference/enrich.htm#ESRI_SECTION2_6A987CF67F914FA39B61BE14BE115F27>`_
                                   for more details on formatting of this parameter.
+                                  * Deprecated *
     -------------------------     --------------------------------------------------------------------
     return_geometry               Optional boolean. A parameter to request the output geometries in
                                   the response.
@@ -1596,6 +1619,9 @@ def enrich(
     # If dictionary was passed, turn to list
     if isinstance(study_areas, dict):
         study_areas = list(study_areas.values())
+
+    if isinstance(study_areas, BufferStudyArea):
+        study_areas = list(study_areas)
 
     # keep list of countries for data_collection check
     sa_to_country = {}
@@ -1640,10 +1666,6 @@ def enrich(
                     # geocode the geom and extract the country
                     geocoded_area = reverse_geocode(value)
                     cntry = Country(geocoded_area["address"]["CountryCode"])
-                if cntry in sa_to_country:
-                    sa_to_country[cntry].append(value)
-                else:
-                    sa_to_country[cntry] = [value]
             if index == 0:
                 # if the first instance is a geocoded area, assign enrich_src
                 enrich_src = cntry
@@ -1667,8 +1689,9 @@ def enrich(
     if isinstance(first_geo, NamedArea):
         standard_geography_level = first_geo._currlvl
     elif isinstance(first_geo, BufferStudyArea):
-        proximity_metric = first_geo.units
+        proximity_metric = first_geo.units.lower() if first_geo.units else None
         proximity_value = first_geo.radii
+        proximity_type = first_geo.travel_mode
 
     if data_collections is None:
         # if no data collection and there is more than one Country, run enrich and append data for each country
@@ -1774,7 +1797,7 @@ def enrich(
                     'only data\ncollection available globally is "KeyGlobalFacts". For '
                     "working with data specific to a country, you\ncan discover available "
                     "data collections using "
-                    "Country.enrich_variables.data_collection.unique()."
+                    "Country.enrich_variables.data_collection.unique(). Data collections are case sensitive."
                 )
 
             # get all possible requested enrich variables

@@ -257,7 +257,9 @@ class TabularDataObject(object):
                 )
         if not tabular_data._dependent_variable:
             tabular_data._training_indexes = list(
-                set([i for i in range(len(tabular_data._dataframe))]) - set(validation_indexes))
+                set([i for i in range(len(tabular_data._dataframe))])
+                - set(validation_indexes)
+            )
             tabular_data._validation_indexes = list(
                 set([i for i in range(len(tabular_data._dataframe))])
             )

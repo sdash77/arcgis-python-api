@@ -661,6 +661,15 @@ def validate_network_travel_mode(source, travel_mode: str):
         # switch to all lowercase to mitigate case discrepancies
         travel_mode = travel_mode.lower()
 
+        # if generic given, change to correct generic [Take care of old code for Buffer Study Area]
+        if travel_mode in ["driving", "walking", "trucking"]:
+            if travel_mode == "driving":
+                travel_mode = "driving time"
+            elif travel_mode == "walking":
+                travel_mode = "walking time"
+            else:
+                travel_mode = "trucking time"
+
         # if the proximity type is straight line, just make sure in correct format (used for enrich method)
         if travel_mode == "straight_line" or travel_mode == "Straight Line":
             travel_mode = "Straight Line"
