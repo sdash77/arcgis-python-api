@@ -28,13 +28,14 @@ try:
     from ._tsmodel_archs._LSTM import _TSLSTM
     from .._utils.TSData import To3dTensor, ToTensor
     from .._utils.common import _get_emd_path
-
+    from arcgis.learn.models._tsmodel_archs._TST import TST
     _model_arch = {
         "inceptiontime": _TSInceptionTime,
         "resnet": _TSResNet,
         "rescnn": _TSResCNN,
         "fcn": _TSFCN,
         "lstm": _TSLSTM,
+        "timeseriestransformer": TST,
     }
 except Exception as e:
     import_exception = "\n".join(
@@ -85,7 +86,7 @@ class TimeSeriesModel(ArcGISModel):
     ---------------------   -------------------------------------------
     model_arch              Optional string. Model Architecture.
                             Allowed "InceptionTime", "ResCNN",
-                            "Resnet", "FCN"
+                            "Resnet", "FCN", "TimeSeriesTransformer"
     ---------------------   -------------------------------------------
     location_var            Optional string. Location variable in case of
                             NetCDF dataset.
@@ -119,6 +120,10 @@ class TimeSeriesModel(ArcGISModel):
             if model_arch.lower() == "lstm":
                 model = model_arch_ob(
                     data_bunch.features, data_bunch.c, self._device, **kwargs
+                ).to(self._device)
+            elif model_arch.lower() == "timeseriestransformer":
+                model = model_arch_ob(
+                    data_bunch.features, data_bunch.c, seq_len, **kwargs
                 ).to(self._device)
             else:
                 if model_arch.lower() in ["resnet", "fcn"]:
@@ -794,14 +799,13 @@ class TimeSeriesModel(ArcGISModel):
             for transform in self._data._column_transforms_mapping.get(col, []):
                 transformed_data = transform.fit_transform(
                     np.array(
-                        transformed_data, dtype=processed_dataframe[col].dtype
+                        transformed_data[:-number_of_predictions], dtype=type(processed_dataframe[col][0])
                     ).reshape(-1, 1)
                 )
                 transformed_data = transformed_data.squeeze(1)
-            processed_dataframe_transform[col] = np.array(
-                transformed_data, dtype=processed_dataframe[col].dtype
+            processed_dataframe_transform[col][:-number_of_predictions] = np.array(
+                transformed_data, dtype=type(processed_dataframe[col][0])
             )
-
         big_bunch = []
         prediction_sequence_list = None
         processed_dataframe_transform = processed_dataframe_transform.values
@@ -825,7 +829,7 @@ class TimeSeriesModel(ArcGISModel):
             raise Exception("Basic Sequence not found!")
 
         while index < len(prediction_sequence_list):
-            if prediction_sequence_list[index] in [
+            if pd.isna(prediction_sequence_list[index]) or prediction_sequence_list[index] in [
                 "",
                 None,
                 "null",
