@@ -959,8 +959,8 @@ class ArcGISModel(object):
                         learn=self.learn, monitor=monitor, min_delta=0.001, patience=5
                     )
                 )
+            self._is_checkpointed = checkpoint
             if checkpoint:
-                self._is_checkpointed = checkpoint
                 from datetime import datetime
 
                 now = datetime.now()
