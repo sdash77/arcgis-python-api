@@ -1557,6 +1557,20 @@ class MapSettings(object):
         )
 
     # ----------------------------------------------------------------------
+    def update_basemap_gallery(self):
+        """
+        Update the basemap gallery group by getting rid of deprecated maps.
+        Returns the updated group.
+        """
+        if self.use_vector_basemap:
+            return self.basemap_gallery_group
+        basemap_group = self.basemap_gallery_group
+        for item in basemap_group.content():
+            if item.content_status == "deprecated" and item.type == "Web Map":
+                item.unshare([basemap_group])
+        return basemap_group
+
+    # ----------------------------------------------------------------------
     @property
     def default_mapviewer(self):
         """
