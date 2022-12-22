@@ -53,7 +53,7 @@ class ConvSP1d(nn.Module):
     "Conv1d padding='same'"
 
     def __init__(
-            self, c_in, c_out, ks, stride=1, padding="same", dilation=1, bias=True
+        self, c_in, c_out, ks, stride=1, padding="same", dilation=1, bias=True
     ):
         super().__init__()
         self.ks, self.stride, self.dilation = ks, stride, dilation
@@ -72,17 +72,17 @@ class ConvSP1d(nn.Module):
 
 
 def convlayer(
-        c_in,
-        c_out,
-        ks=3,
-        padding="same",
-        bias=True,
-        stride=1,
-        bn_init=False,
-        zero_bn=False,
-        bn_before=True,
-        act_fn="relu",
-        **kwargs
+    c_in,
+    c_out,
+    ks=3,
+    padding="same",
+    bias=True,
+    stride=1,
+    bn_init=False,
+    zero_bn=False,
+    bn_before=True,
+    act_fn="relu",
+    **kwargs,
 ):
     """conv layer (padding="same") + bn + act"""
     if ks % 2 == 1 and padding == "same":
@@ -159,7 +159,7 @@ class Exp(nn.Module):
         )
 
     def forward(self, x):
-        return x ** self.weight
+        return x**self.weight
 
 
 class GeneralRelu(nn.Module):
@@ -203,19 +203,27 @@ class AFN(nn.Module):
 
 
 class Permute(Module):
-    def __init__(self, *dims): self.dims = dims
+    def __init__(self, *dims):
+        self.dims = dims
 
-    def forward(self, x): return x.permute(self.dims)
+    def forward(self, x):
+        return x.permute(self.dims)
 
-    def __repr__(self): return f"{self.__class__.__name__}(dims={', '.join([str(d) for d in self.dims])})"
+    def __repr__(self):
+        return (
+            f"{self.__class__.__name__}(dims={', '.join([str(d) for d in self.dims])})"
+        )
 
 
 class Max(Module):
-    def __init__(self, dim=None, keepdim=False): self.dim, self.keepdim = dim, keepdim
+    def __init__(self, dim=None, keepdim=False):
+        self.dim, self.keepdim = dim, keepdim
 
-    def forward(self, x): return x.max(self.dim, keepdim=self.keepdim)[0]
+    def forward(self, x):
+        return x.max(self.dim, keepdim=self.keepdim)[0]
 
-    def __repr__(self): return f'{self.__class__.__name__}(dim={self.dim}, keepdim={self.keepdim})'
+    def __repr__(self):
+        return f"{self.__class__.__name__}(dim={self.dim}, keepdim={self.keepdim})"
 
 
 class Transpose(Module):
@@ -232,4 +240,6 @@ class Transpose(Module):
         if self.contiguous:
             return f"{self.__class__.__name__}(dims={', '.join([str(d) for d in self.dims])}).contiguous()"
         else:
-            return f"{self.__class__.__name__}({', '.join([str(d) for d in self.dims])})"
+            return (
+                f"{self.__class__.__name__}({', '.join([str(d) for d in self.dims])})"
+            )

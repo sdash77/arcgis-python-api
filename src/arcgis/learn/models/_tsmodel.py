@@ -29,6 +29,7 @@ try:
     from .._utils.TSData import To3dTensor, ToTensor
     from .._utils.common import _get_emd_path
     from arcgis.learn.models._tsmodel_archs._TST import TST
+
     _model_arch = {
         "inceptiontime": _TSInceptionTime,
         "resnet": _TSResNet,
@@ -799,7 +800,8 @@ class TimeSeriesModel(ArcGISModel):
             for transform in self._data._column_transforms_mapping.get(col, []):
                 transformed_data = transform.fit_transform(
                     np.array(
-                        transformed_data[:-number_of_predictions], dtype=type(processed_dataframe[col][0])
+                        transformed_data[:-number_of_predictions],
+                        dtype=type(processed_dataframe[col][0]),
                     ).reshape(-1, 1)
                 )
                 transformed_data = transformed_data.squeeze(1)
@@ -829,12 +831,17 @@ class TimeSeriesModel(ArcGISModel):
             raise Exception("Basic Sequence not found!")
 
         while index < len(prediction_sequence_list):
-            if pd.isna(prediction_sequence_list[index]) or prediction_sequence_list[index] in [
-                "",
-                None,
-                "null",
-                "None",
-            ] or np.isnan(prediction_sequence_list[index]):
+            if (
+                pd.isna(prediction_sequence_list[index])
+                or prediction_sequence_list[index]
+                in [
+                    "",
+                    None,
+                    "null",
+                    "None",
+                ]
+                or np.isnan(prediction_sequence_list[index])
+            ):
                 value = self._predict(np.array(big_bunch))
                 prediction_sequence_list[index] = value
 
