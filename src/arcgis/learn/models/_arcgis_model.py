@@ -1425,11 +1425,15 @@ class ArcGISModel(object):
         save_inference_file=True,
         **kwargs,
     ):
+        if (type(self).__name__) == "EfficientDet":
+            framework = "tflite"
+
         save_format = kwargs.get("save_format", "default")  # 'default', 'tflite'
         post_processed = kwargs.get("post_processed", True)  # True, False
         quantized = kwargs.get("quantized", False)  # True, False
         temp = self.learn.path
         temp1 = self.learn.model_dir
+        self._framework = framework
         if "\\" in name_or_path or "/" in name_or_path:
             path = Path(name_or_path)
             name = path.parts[-1]
