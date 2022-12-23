@@ -1489,27 +1489,27 @@ class Model:
 
     def from_json(self, model):
         """
-        Function is used to initialise Model object from model definition JSON
+        Function is used to initialize Model object from model definition JSON
 
         .. code-block:: python
 
-            # usage example
+            # Usage example
 
-            model = Model()
+            >>> model = Model()
 
-            model.from_json({"Framework" :"TensorFlow",
-                            "ModelConfiguration":"DeepLab",
-                            "InferenceFunction":"``[functions]System\\DeepLearning\\ImageClassifier.py``",
-                            "ModelFile":"``\\\\folder_path_of_pb_file\\frozen_inference_graph.pb``",
-                            "ExtractBands":[0,1,2],
-                            "ImageWidth":513,
-                            "ImageHeight":513,
-                            "Classes": [ { "Value":0, "Name":"Evergreen Forest", "Color":[0, 51, 0] },
-                                         { "Value":1, "Name":"Grassland/Herbaceous", "Color":[241, 185, 137] },
-                                         { "Value":2, "Name":"Bare Land", "Color":[236, 236, 0] },
-                                         { "Value":3, "Name":"Open Water", "Color":[0, 0, 117] },
-                                         { "Value":4, "Name":"Scrub/Shrub", "Color":[102, 102, 0] },
-                                         { "Value":5, "Name":"Impervious Surface", "Color":[236, 236, 236] } ] })
+            >>> model.from_json({"Framework" :"TensorFlow",
+                                 "ModelConfiguration":"DeepLab",
+                                 "InferenceFunction":"``[functions]System\\DeepLearning\\ImageClassifier.py``",
+                                 "ModelFile":"``\\\\folder_path_of_pb_file\\frozen_inference_graph.pb``",
+                                 "ExtractBands":[0,1,2],
+                                 "ImageWidth":513,
+                                 "ImageHeight":513,
+                                 "Classes": [ { "Value":0, "Name":"Evergreen Forest", "Color":[0, 51, 0] },
+                                              { "Value":1, "Name":"Grassland/Herbaceous", "Color":[241, 185, 137] },
+                                              { "Value":2, "Name":"Bare Land", "Color":[236, 236, 0] },
+                                              { "Value":3, "Name":"Open Water", "Color":[0, 0, 117] },
+                                              { "Value":4, "Name":"Scrub/Shrub", "Color":[102, 102, 0] },
+                                              { "Value":5, "Name":"Impervious Surface", "Color":[236, 236, 236] } ] })
 
         """
         if isinstance(model, dict):
@@ -1518,22 +1518,19 @@ class Model:
 
     def from_model_path(self, model):
         """
-        Function is used to initialise Model object from url of model package or path of model definition file
+        Function is used to initialize Model object from url of model package or path of model definition file
 
         .. code-block:: python
 
-                # usage example
+            # Usage Example #1:
 
-                model = Model()
+            >>> model = Model()
+            >>> model.from_model_path("https://xxxportal.esri.com/sharing/rest/content/items/<itemId>")
 
-                model.from_model_path("https://xxxportal.esri.com/sharing/rest/content/items/<itemId>")
-
-                or
-
-                model = Model()
-
-                model.from_model_path("\\\\sharedstorage\\sharefolder\\findtrees.emd")
-
+            # Usage Example #2:
+         
+            >>> model = Model()
+            >>> model.from_model_path("\\\\sharedstorage\\sharefolder\\findtrees.emd")
         """
         if "http:" in model or "https:" in model:
             self._model = _json.dumps({"url": model})
