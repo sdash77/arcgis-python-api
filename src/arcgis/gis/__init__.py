@@ -11843,7 +11843,27 @@ class User(dict):
         """
         if isinstance(target_username, User):
             target_username = target_username.username
-        return self._portal.reassign_user(self._user_id, target_username)
+        # currently issue with REST API method, so we try/except for it
+        try:
+            return self._portal.reassign_user(self._user_id, target_username)
+        except:
+            # variables to ensure that every item & group is assigned
+            # issue with dependencies for these methods too, so try/except/pass
+            items_success = True
+            group_success = True
+            for item in self.items():
+                try:
+                    if not item.reassign_to(target_username):
+                        items_success = False
+                except:
+                    pass
+            for group in self.groups:
+                try:
+                    if not group.reassign_to(target_username):
+                        group_success = False
+                except:
+                    pass
+            return items_success and group_success
 
     def get_thumbnail(self):
         """
