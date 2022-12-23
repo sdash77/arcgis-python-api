@@ -96,3 +96,10 @@ Scales
    :members:
    :undoc-members:
    :show-inheritance:
+   
+MapTour
+------------------------------------------
+.. autoclass:: arcgis.apps.storymap.story_content.MapTour
+   :members:
+   :undoc-members:
+   :show-inheritance:
