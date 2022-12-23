@@ -19,6 +19,9 @@ arcgis.raster module
 arcgis.network module
 -----------------
 
+arcgis.notebook module
+----------------------
+
 arcgis.schematics module
 -----------------
 

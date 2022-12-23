@@ -82,6 +82,7 @@ __all__ = [
     "geometry",
     "geoprocessing",
     "network",
+    "notebook",
     "raster",
     "apps",
     "realtime",

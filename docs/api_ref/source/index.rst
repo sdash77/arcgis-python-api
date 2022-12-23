@@ -17,6 +17,7 @@ Contents:
    arcgis.features.toc
    arcgis.raster.toc
    arcgis.network.toc
+   arcgis.notebook
    arcgis.geoanalytics.toc
    arcgis.geocoding
    arcgis.geoenrichment
