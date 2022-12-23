@@ -1835,7 +1835,7 @@ class GeoAccessor(object):
                                 needs to create.  Valid inputs are: simple, picture,
                                 text, or carto.  The default is simple.
         ----------------------  ---------------------------------------------------------
-        symbol_type             optional string. This is the symbology used by the
+        symbol_style            optional string. This is the symbology used by the
                                 geometry.  For example 's' for a Line geometry is a solid
                                 line. And '-' is a dash line.
 
@@ -1898,7 +1898,7 @@ class GeoAccessor(object):
                                 needs to create.  Valid inputs are: simple, picture, text,
                                 or carto.  The default is simple.
         ----------------------  ---------------------------------------------------------
-        symbol_type             optional string. This is the symbology used by the
+        symbol_style            optional string. This is the symbology used by the
                                 geometry.  For example 's' for a Line geometry is a solid
                                 line. And '-' is a dash line.
 
@@ -2137,7 +2137,7 @@ class GeoAccessor(object):
                                  needs to create.  Valid inputs are: simple, picture, text,
                                  or carto.  The default is simple.
         -----------------------  ---------------------------------------------------------
-        symbol_type              optional string. This is the symbology used by the
+        symbol_style             optional string. This is the symbology used by the
                                  geometry.  For example 's' for a Line geometry is a solid
                                  line. And '-' is a dash line.
 
