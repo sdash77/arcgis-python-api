@@ -14,6 +14,8 @@ src/arcgis.egg-info/
 src/.eggs/
 src/dist/
 src/build/
+src/**/*.so
+src/**/*.pyd
 .vs/
 *.pyproj
 *.sln
