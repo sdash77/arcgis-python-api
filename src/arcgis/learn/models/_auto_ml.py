@@ -548,7 +548,7 @@ class AutoML(object):
             emd_params["_feature_field_variables"] = self._data._feature_field_variables
         if self._data._raster_field_variables:
             emd_params["_raster_field_variables"] = self._data._raster_field_variables
-            
+
         emd_params["Framework"] = "arcgis.learn.models._inferencing"
         emd_params["ModelConfiguration"] = "_auto_ml"
         emd_params["InferenceFunction"] = "ArcGISImageClassifier.py"

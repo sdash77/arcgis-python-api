@@ -179,7 +179,7 @@ def masked_std(x, mask):
     d = mask.sum(dim=-1)
     d[d == 1] = 2
 
-    out = (out ** 2).sum(dim=-1) / (d - 1)
+    out = (out**2).sum(dim=-1) / (d - 1)
     out = torch.sqrt(out + 10e-32)  # To ensure differentiability
     out = out.permute(1, 0)
     return out
@@ -707,9 +707,9 @@ def model_eval(valid_dt, model, class_dict):
 
 def confusion_matrix_analysis(mat, cls_dict):
     """
-    This method computes all the performance metrics from the confusion matrix. 
-    In addition to overall accuracy, the precision, recall, f-score and IoU for 
-    each class is computed.The class-wise metrics are averaged to provide overall 
+    This method computes all the performance metrics from the confusion matrix.
+    In addition to overall accuracy, the precision, recall, f-score and IoU for
+    each class is computed.The class-wise metrics are averaged to provide overall
     indicators in two ways (MICRO and MACRO average).
     Args:
         mat (array): confusion matrix

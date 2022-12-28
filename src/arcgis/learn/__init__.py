@@ -1528,7 +1528,7 @@ class Model:
             >>> model.from_model_path("https://xxxportal.esri.com/sharing/rest/content/items/<itemId>")
 
             # Usage Example #2:
-         
+
             >>> model = Model()
             >>> model.from_model_path("\\\\sharedstorage\\sharefolder\\findtrees.emd")
         """

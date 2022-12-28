@@ -1691,7 +1691,7 @@ class GeoAccessor(object):
         if idxmatch.shape[0] > 0:
             # if output from join has overlapping geometries
             r_idx = np.concatenate(idxmatch.values)
-            l_idx = np.concatenate([[i] * len(v) for i, v in idxmatch.iteritems()])
+            l_idx = np.concatenate([[i] * len(v) for i, v in idxmatch.items()])
 
             # Vectorize predicate operations
             def find_intersects(a1, a2):

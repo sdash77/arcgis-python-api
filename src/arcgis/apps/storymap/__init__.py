@@ -17,7 +17,7 @@ from .story_content import (
     Swipe,
     TextStyles,
     Scales,
-    MapTour
+    MapTour,
 )
 
 __all__ = [
