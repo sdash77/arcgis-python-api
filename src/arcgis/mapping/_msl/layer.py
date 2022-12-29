@@ -208,7 +208,7 @@ class MapFeatureLayer(Layer):
 
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         item                                     Required :class:`~arcgis.gis.Item` object. The type of item should be
                                                  a :class:`~arcgis.mapping.MapServiceLayer` object.
@@ -260,7 +260,7 @@ class MapFeatureLayer(Layer):
         the ``output_label_field``.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         output_folder                            Required String. Output folder path where the attachments will be stored.
         ------------------------------------     --------------------------------------------------------------------
@@ -287,7 +287,7 @@ class MapFeatureLayer(Layer):
 
         dataframe_merged = pandas.merge(
             self.query().sdf,
-            self.attachments.search(as_df=True),
+            self._attachments.search(as_df=True),
             left_on=object_id_field,
             right_on="PARENTOBJECTID",
         )
@@ -360,7 +360,7 @@ class MapFeatureLayer(Layer):
             classes and no symbols.
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         definition            Required dict. The definition using the renderer that is generated.
                               Use either class breaks or unique value classification definitions.
@@ -393,7 +393,7 @@ class MapFeatureLayer(Layer):
         Adds an attachment to a feature service
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         oid                   Required string/integer. OBJECTID value to add attachment to.
         -----------------     --------------------------------------------------------------------
@@ -439,7 +439,7 @@ class MapFeatureLayer(Layer):
         Removes an attachment from a feature service feature
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         oid                   Required string/integer. OBJECTID value to add attachment to.
         -----------------     --------------------------------------------------------------------
@@ -462,7 +462,7 @@ class MapFeatureLayer(Layer):
         Updates an existing attachment with a new file
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         oid                   Required string/integer. OBJECTID value to add attachment to.
         -----------------     --------------------------------------------------------------------
@@ -502,7 +502,7 @@ class MapFeatureLayer(Layer):
         The ``get_unique_values`` method retrieves a list of unique values for a given attribute.
 
         ===============================     ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -------------------------------     --------------------------------------------------------------------
         attribute                           Required string. The map feature layer attribute to query.
         -------------------------------     --------------------------------------------------------------------
@@ -589,7 +589,7 @@ class MapFeatureLayer(Layer):
         The ``query`` method queries a map feature layer based on a sql statement.
 
         ===============================     ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -------------------------------     --------------------------------------------------------------------
         where                               Optional string. The default is 1=1. The selection sql statement.
         -------------------------------     --------------------------------------------------------------------
@@ -1281,7 +1281,7 @@ class MapFeatureLayer(Layer):
 
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
         object_ids                 Required string. The object IDs of the table/layer to be queried
         ----------------------     --------------------------------------------------------------------
@@ -1389,7 +1389,7 @@ class MapFeatureLayer(Layer):
         authored by the user using ArcGIS Pro or ArcGIS Desktop.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         oid                 Optional string. Object id of the feature to get the HTML popup.
         ===============     ====================================================================
@@ -1720,7 +1720,7 @@ class MapTable(MapFeatureLayer):
 
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         item                                     Required :class:`~arcgis.gis.Item` object. The type of item should be
                                                  a :class:`~arcgis.mapping.MapImageService` object.
@@ -1812,7 +1812,7 @@ class MapTable(MapFeatureLayer):
         The ``query`` method queries a Table Layer based on a set of criteria from a sql statement.
 
         ===============================     ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -------------------------------     --------------------------------------------------------------------
         where                               Optional string. The default is 1=1. The selection sql statement.
         -------------------------------     --------------------------------------------------------------------
@@ -2314,7 +2314,7 @@ class _MSILayerFactory(type):
     Factory that generates the Map Service Layers
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Required string, specify the url ending in /MapServer/<index>
     ------------------     --------------------------------------------------------------------
@@ -2369,7 +2369,7 @@ class MapServiceLayer(Layer, metaclass=_MSILayerFactory):
     The ``MapServiceLayer`` class is a factory that generates the Map Service Layers.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Required string, specify the url ending in /MapServer/<index>
     ------------------     --------------------------------------------------------------------

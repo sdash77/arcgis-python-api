@@ -5,6 +5,8 @@ import torch
 from fastai.vision.data import ObjectCategoryList, ObjectItemList
 from fastai.vision.image import ImageBBox
 from fastai.core import split_kwargs_by_func, has_arg
+from fastai.vision import imagenet_stats
+from torchvision.transforms import Normalize
 from .common import (
     ArcGISMSImage,
     get_nbatches,
@@ -176,7 +178,7 @@ def show_batch_object_detection(
     """
     This function randomly picks a few training chips and visualizes them.
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     rows                    Optional Integer.
                             Number of rows to display.
@@ -209,7 +211,7 @@ def show_batch_pascal_voc_rectangles(
     """
     This function randomly picks a few training chips and visualizes them.
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     rows                    Optional Integer.
                             Number of rows to display.
@@ -371,6 +373,7 @@ def show_results_multispectral(
     type_data_loader = kwargs.get(
         "data_loader", "validation"
     )  # options : traininig, validation, testing
+
     if type_data_loader == "training":
         data_loader = self._data.train_dl
     elif type_data_loader == "validation":
@@ -415,6 +418,15 @@ def show_results_multispectral(
     x_batch, y_batch = get_nbatches(
         data_loader, math.ceil(nrows / self._data.batch_size)
     )
+
+    if self._data.norm is None and not self._data._is_multispectral:
+        normalize = Normalize(mean=imagenet_stats[0], std=imagenet_stats[1])
+        modified_x_batch = []
+        for i in x_batch:
+            modified_x_batch.append(normalize(i))
+        x_batch = modified_x_batch
+        del modified_x_batch
+
     x_batch = torch.cat(x_batch)
     y_bboxes = []
     y_classes = []

@@ -63,7 +63,7 @@ class CollaborationManager(object):
         administrator user performing the operation will be used.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         name                            Required string. Name of the collaboration
         ---------------------------     --------------------------------------------------------------------
@@ -145,7 +145,7 @@ class CollaborationManager(object):
         be shared between the host and guest(s).
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         first_name                      Required string. The first name of the contact person for the guest
                                         portal.
@@ -265,7 +265,7 @@ class CollaborationManager(object):
         intended recipient.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         first_name                      Required string. The first name of the contact person for the guest
                                         portal.
@@ -341,7 +341,7 @@ class CollaborationManager(object):
         **Use the other methods if you need fine-grained control over how the collaboration is set up.**
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         guest_gis                       Required GIS. GIS object of the guest org or Enterprise.
         ---------------------------     --------------------------------------------------------------------
@@ -522,7 +522,7 @@ class Collaboration(dict):
         new workspaces.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         name                            Required string. The name of the workspace.
         ---------------------------     --------------------------------------------------------------------
@@ -615,7 +615,7 @@ class Collaboration(dict):
         portal and the collaboration participants.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         workspace_id                    Optional string. UID of the workspace to remove from the
                                         collaboration.
@@ -665,7 +665,7 @@ class Collaboration(dict):
         intercepted and tampered with by any unknown entity.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         out_folder                      Required string. Save location of the file.
         ===========================     ====================================================================
@@ -697,7 +697,7 @@ class Collaboration(dict):
         proceed from this point.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         response_file                   Required string. File path to the response file.
         ---------------------------     --------------------------------------------------------------------
@@ -775,7 +775,7 @@ class Collaboration(dict):
         establish trust between your portal and that of your participant.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         config_json                     Required dict. A dict containing a map of access modes for the
                                         participant in each of the collaboration workspaces.
@@ -854,7 +854,7 @@ class Collaboration(dict):
         participants in a portal-to-portal collaboration.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         participant_id                  Required String. The participant unique id to update.
         ---------------------------     --------------------------------------------------------------------
@@ -886,7 +886,7 @@ class Collaboration(dict):
 
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         portal_group                    Required Group of string. Group ID or object to add to the workspace.
         ===========================     ====================================================================
@@ -946,7 +946,7 @@ class Collaboration(dict):
         time.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         invitation_id                   Required string. ID of the invitation to refresh
         ===========================     ====================================================================
@@ -981,7 +981,7 @@ class Collaboration(dict):
         participant from a portal-to-portal collaboration.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         portal_id                       Required string. ID of the portal to remove.
         ===========================     ====================================================================
@@ -1003,7 +1003,7 @@ class Collaboration(dict):
         discontinues when the link is removed.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         workspace_id                    Required string. Workspace ID to remove from the link.
         ===========================     ====================================================================
@@ -1028,7 +1028,7 @@ class Collaboration(dict):
         response is a single JSON object that represents a job schedule.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         workspace_id                    Required string. Workspace ID to remove from the link.
         ===========================     ====================================================================
@@ -1048,7 +1048,7 @@ class Collaboration(dict):
         Suspends the scheduling job for synchronized items in a collaboration workspace.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         workspace_id                    Required string. Workspace ID to remove from the link.
         ===========================     ====================================================================
@@ -1070,7 +1070,7 @@ class Collaboration(dict):
         Removes the scheduling job for synchronized items in a collaboration workspace.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         workspace_id                    Required string. Workspace ID to remove from the link.
         ===========================     ====================================================================
@@ -1092,7 +1092,7 @@ class Collaboration(dict):
         Resumes a paused scheduled synchronization.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         workspace_id                    Required string. Workspace ID to remove from the link.
         ===========================     ====================================================================
@@ -1122,7 +1122,7 @@ class Collaboration(dict):
         response is a single JSON object that represents a job schedule.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         workspace_id                    Required string. Workspace ID to remove from the link.
         ---------------------------     --------------------------------------------------------------------
@@ -1172,7 +1172,7 @@ class Collaboration(dict):
         tasks.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         workspace_id                    Required string. Workspace ID to remove from the link.
         ---------------------------     --------------------------------------------------------------------
@@ -1194,7 +1194,7 @@ class Collaboration(dict):
         Provides a status summary of each scheduled sync for items in a collaboration workspace.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         workspace_id                    Required string. Workspace ID to examine `sync` jobs.
         ===========================     ====================================================================
@@ -1214,7 +1214,7 @@ class Collaboration(dict):
         Provides a detailed description of status for a selected sync ID.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         workspace_id                    Required string. Workspace ID to examine `sync` jobs.
         ---------------------------     --------------------------------------------------------------------
@@ -1249,7 +1249,7 @@ class Collaboration(dict):
         scheduled refresh of content occurs.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         name                            Optional string. Name of the collaboration
         ---------------------------     --------------------------------------------------------------------
@@ -1288,7 +1288,7 @@ class Collaboration(dict):
         properties.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         workspace_id                    Required string. UID of the workspace
         ---------------------------     --------------------------------------------------------------------
@@ -1336,7 +1336,7 @@ class Collaboration(dict):
         specific participant in a portal-to-portal collaboration.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         portal_id                       Required string. UID of the Portal
         ---------------------------     --------------------------------------------------------------------
@@ -1369,7 +1369,7 @@ class Collaboration(dict):
         in the collaboration.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         workspace_id                    Required string. UID of the workspace
         ---------------------------     --------------------------------------------------------------------
@@ -1420,7 +1420,7 @@ class Collaboration(dict):
         of the collaboration and validity of the invitation response file.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         response_file                   Required string. Path to the collaboration response file.
         ===========================     ====================================================================

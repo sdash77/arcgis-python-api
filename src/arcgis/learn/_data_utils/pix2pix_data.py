@@ -27,6 +27,7 @@ from .._utils.common import (
 import types
 from functools import partial
 from .._data import _prepare_working_dir
+from .._utils.cyclegan import image_extensions
 from .._data import _get_batch_stats, _tensor_scaler
 
 stats = [[0.5, 0.5, 0.5], [0.5, 0.5, 0.5]]
@@ -266,11 +267,6 @@ def multispectral_additions(data):
 
 def get_files(*args, **kwargs):
     return sorted(gf(*args, **kwargs))
-
-
-image_extensions = set(
-    k for k, v in mimetypes.types_map.items() if v.startswith("image/")
-)
 
 
 def apply_tfms(images, other_tfms, resize_to):
@@ -629,7 +625,7 @@ def prepare_pix2pix_data(
     data.chip_size = data.resize_to
     if working_dir is not None:
         data.path = Path(os.path.abspath(working_dir))
-    data._temp_folder = _prepare_working_dir(path)
+    data._temp_folder = _prepare_working_dir(data.path)
     data.show_batch = types.MethodType(show_batch, data)
     data._dataset_type = "Pix2Pix"
     data._extract_bands = None

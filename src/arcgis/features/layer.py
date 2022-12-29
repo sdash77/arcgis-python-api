@@ -133,7 +133,7 @@ class FeatureLayer(Layer):
         Get/Set the Renderer of the Feature Layer.
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         value                   Required dict.
         ==================      ====================================================================
@@ -175,7 +175,7 @@ class FeatureLayer(Layer):
         object.
 
         ===============================     ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -------------------------------     --------------------------------------------------------------------
         item                                Required :class:`~arcgis.gis.Item` object. The type of item should be a
                                             ``Feature Service`` that represents a :class:`~arcgis.features.FeatureLayerCollection`
@@ -256,7 +256,7 @@ class FeatureLayer(Layer):
         Downloads the metadata.xml to local disk
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         save_folder           Optional String. A save location to download the metadata XML file.
         =================     ====================================================================
@@ -280,7 +280,7 @@ class FeatureLayer(Layer):
         The ``update_metadata`` updates a :class:`~arcgis.features.FeatureLayer` metadata from an xml file.
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         file_path             Required String.  The path to the .xml file that contains the metadata.
         =================     ====================================================================
@@ -336,7 +336,7 @@ class FeatureLayer(Layer):
         layer belongs.
 
         ==================      ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ------------------      --------------------------------------------------------------------
         value                   Required :class:`~arcgis.features.FeatureLayerCollection`.
         ==================      ====================================================================
@@ -359,7 +359,7 @@ class FeatureLayer(Layer):
         format using the ``output_label_field``.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         output_folder                            Required string. Output folder where the attachments will be stored.
                                                  If None, a default folder is created
@@ -456,7 +456,7 @@ class FeatureLayer(Layer):
             classes and no symbols.
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         definition            Required dict. The definition using the renderer that is generated.
                               Use either class breaks or unique value classification definitions.
@@ -511,7 +511,7 @@ class FeatureLayer(Layer):
         Adds an attachment to a feature service
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         oid                   Required string/integer. OBJECTID value to add attachment to.
         -----------------     --------------------------------------------------------------------
@@ -582,7 +582,7 @@ class FeatureLayer(Layer):
         Removes an attachment from a feature service feature
 
         ===================     ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         -------------------     --------------------------------------------------------------------
         oid                     Required string/integer. OBJECTID value to add attachment to.
         -------------------     --------------------------------------------------------------------
@@ -623,7 +623,7 @@ class FeatureLayer(Layer):
         Updates an existing attachment with a new file
 
         =================     ====================================================================
-        **Argument**          **Description**
+        **Parameter**          **Description**
         -----------------     --------------------------------------------------------------------
         oid                   Required string. OBJECTID value to add attachment to.
         -----------------     --------------------------------------------------------------------
@@ -674,7 +674,7 @@ class FeatureLayer(Layer):
 
 
         ===============================     ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -------------------------------     --------------------------------------------------------------------
         attribute                           Required string. The feature layer attribute to query.
         -------------------------------     --------------------------------------------------------------------
@@ -764,7 +764,7 @@ class FeatureLayer(Layer):
         support pagination on aggregated queries.
 
         ==============================     ====================================================================
-        **Argument**                       **Description**
+        **Parameter**                       **Description**
         ------------------------------     --------------------------------------------------------------------
         bin_field                          Required String. The date field used to determine which bin each
                                            feature falls into.
@@ -1118,7 +1118,7 @@ class FeatureLayer(Layer):
             See the :attr:`~arcgis.features.FeatureLayer.query` method for a similar function.
 
         ================================     ====================================================================
-        **Argument**                         **Description**
+        **Parameter**                         **Description**
         --------------------------------     --------------------------------------------------------------------
         top_filter                           Required Dict. The `top_filter` define the aggregation of the data.
 
@@ -1559,7 +1559,7 @@ class FeatureLayer(Layer):
 
 
         ===============================     ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -------------------------------     --------------------------------------------------------------------
         out_analytics                       Required List. A set of analytics to calculate on the Feature Layer.
 
@@ -1777,13 +1777,17 @@ class FeatureLayer(Layer):
         The ``query`` method queries a :class:`~arcgis.features.FeatureLayer` based on a ``sql`` statement.
 
         ===============================     ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -------------------------------     --------------------------------------------------------------------
         where                               Optional string. The default is 1=1. The selection sql statement.
         -------------------------------     --------------------------------------------------------------------
         out_fields                          Optional List of field names to return. Field names can be specified
                                             either as a List of field names or as a comma separated string.
                                             The default is "*", which returns all the fields.
+
+                                            .. note::
+                                                If specifying `return_count_only`, `return_id_only`, or `return_extent_only`
+                                                as True, do not specify this parameter in order to avoid errors.
         -------------------------------     --------------------------------------------------------------------
         object_ids                          Optional string. The object IDs of this layer or table to be queried.
                                             The object ID values should be a comma-separated string.
@@ -1861,6 +1865,10 @@ class FeatureLayer(Layer):
                                             or descending, respectively, following every field to control the
                                             ordering.
                                             example: STATE_NAME ASC, RACE DESC, GENDER
+
+                                            .. note::
+                                                If specifying `return_count_only`, `return_id_only`, or `return_extent_only`
+                                                as True, do not specify this parameter in order to avoid errors.
         -------------------------------     --------------------------------------------------------------------
         group_by_fields_for_statistics      Optional string. One or more field names on which the values need to
                                             be grouped for calculating the statistics.
@@ -2185,11 +2193,16 @@ class FeatureLayer(Layer):
                 del key, val
 
         if not return_all_records or "outStatistics" in params:
+            if "orderByFields" in params:
+                del params["orderByFields"]
             if as_df:
                 return self._query_df(url, params)
             return self._query(url, params, raw=as_raw)
 
         params["returnCountOnly"] = True
+        # need to make edits to out fields if more than one to avoid server error. Split and use only first
+        out_fields = params["outFields"]
+        params["outFields"] = params["outFields"].split(",")[0]
         if where == "1=1":
             if "objectIdField" in self.properties:
                 params["where"] = f"{self.properties.objectIdField} > 0"
@@ -2201,7 +2214,8 @@ class FeatureLayer(Layer):
             max_records = self.properties["maxRecordCount"]
         else:
             max_records = 1000
-
+        # reassign to original
+        params["outFields"] = out_fields
         supports_pagination = True
         if (
             "advancedQueryCapabilities" not in self.properties
@@ -2396,7 +2410,7 @@ class FeatureLayer(Layer):
 
 
         ===============================     ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -------------------------------     --------------------------------------------------------------------
         sql                                 Required String. The SQL expression of WHERE clause to validate.
                                             Example: "Population > 300000"
@@ -2467,7 +2481,7 @@ class FeatureLayer(Layer):
             See the :attr:`~arcgis.features.FeatureLayer.query` method for a similar function.
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
         object_ids                 Required string. The object IDs of the table/layer to be queried
         ----------------------     --------------------------------------------------------------------
@@ -2599,7 +2613,7 @@ class FeatureLayer(Layer):
         authored by the :class:`~arcgis.gis.User` using ArcGIS Pro or ArcGIS Desktop.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         oid                 Optional string. Object id of the feature to get the HTML popup.
         ===============     ====================================================================
@@ -2646,7 +2660,7 @@ class FeatureLayer(Layer):
             The ``append`` method is only available in ArcGIS Online and ArcGIS Enterprise 10.8.1+
 
         ========================   ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ------------------------   --------------------------------------------------------------------
         item_id                    Optional string. The ID for the Portal item that contains the source
                                    file.
@@ -2854,7 +2868,7 @@ class FeatureLayer(Layer):
         :class:`~arcgis.features.Table`
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
         deletes                    Optional string. A comma separated string of OIDs to remove from the
                                    service.
@@ -3787,7 +3801,7 @@ class Table(FeatureLayer):
         The table_id is the id of the table in :class:`~arcgis.features.FeatureLayerCollection` (feature service).
 
         ===============================     ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -------------------------------     --------------------------------------------------------------------
         item                                Required :class:`~arcgis.gis.Item` object. The type of item should be a
                                             ``Feature Service`` that represents a
@@ -3831,7 +3845,7 @@ class Table(FeatureLayer):
         The ``query`` method queries a :class:`~arcgis.features.Table` Layer based on a set of criteria.
 
         ===============================     ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -------------------------------     --------------------------------------------------------------------
         where                               Optional string. The default is 1=1. The selection sql statement.
         -------------------------------     --------------------------------------------------------------------
@@ -4411,7 +4425,7 @@ class FeatureLayerCollection(_GISResource):
             See the :attr:`~arcgis.features.FeatureLayerCollection.query` method for a similar function.
 
         ================================     ====================================================================
-        **Argument**                         **Description**
+        **Parameter**                         **Description**
         --------------------------------     --------------------------------------------------------------------
         layers                               Required List.  An array of layers. The set of domains to return is
                                              based on the domains referenced by these layers. Example: [1,2,3,4]
@@ -4473,7 +4487,7 @@ class FeatureLayerCollection(_GISResource):
         ``extract_changes`` operation can be used to get changes.
 
         ================================     ====================================================================
-        **Argument**                         **Description**
+        **Parameter**                         **Description**
         --------------------------------     --------------------------------------------------------------------
         layers                               Required List.  The list of layers (by index value) and tables to include in the
                                              output.
@@ -4725,7 +4739,7 @@ class FeatureLayerCollection(_GISResource):
          statement.
 
         ===============================     ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -------------------------------     --------------------------------------------------------------------
         time_filter                         Optional list. The format is of `[<startTime>, <endTime>]` using
                                             datetime.date, datetime.datetime or timestamp in milliseconds.
@@ -4812,7 +4826,7 @@ class FeatureLayerCollection(_GISResource):
         dependent on the type of layer that is queried.
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
         layers                     Required list. Array of layerIds for which to get the data elements.
         ======================     ====================================================================
@@ -4858,7 +4872,7 @@ class FeatureLayerCollection(_GISResource):
             See the :attr:`~arcgis.features.FeatureLayerCollection.query` method for a similar function.
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
         object_ids                 Optional string. the object IDs of the table/layer to be queried.
         ----------------------     --------------------------------------------------------------------
@@ -4948,7 +4962,7 @@ class FeatureLayerCollection(_GISResource):
         Removes a replica from a feature service
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         replica_id          Optional string. The replica_id returned by the feature service when
                             the replica was created.
@@ -4969,7 +4983,7 @@ class FeatureLayerCollection(_GISResource):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         replica_id          Optional string. The replica_id returned by the feature service when
                             the replica was created.
@@ -5021,7 +5035,7 @@ class FeatureLayerCollection(_GISResource):
         for the layers in the replica.
 
         =============================   ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         -----------------------------   --------------------------------------------------------------------
         replicaName                     Optional string. The name of the replica
         -----------------------------   --------------------------------------------------------------------
@@ -5132,7 +5146,8 @@ class FeatureLayerCollection(_GISResource):
                                         transformation on each layer when the spatial reference used in
                                         geometry is different than the layer's spatial reference.
         -----------------------------   --------------------------------------------------------------------
-        time_reference_unknown_client   Setting timeReferenceUnknownClient as trueindicates that the client is                  capable of working with data values that are not in UTC. If its not set
+        time_reference_unknown_client   Setting timeReferenceUnknownClient as true indicates that the client is
+                                        capable of working with data values that are not in UTC. If its not set
                                         to true, and the service layer's datesInUnknownTimeZone property is true,
                                         then an error is returned. The default is false
 
@@ -5379,7 +5394,7 @@ class FeatureLayerCollection(_GISResource):
         table below.
 
         ===============                 ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------                 --------------------------------------------------------------------
         replica_id                      The ID of the replica you want to synchronize.
         ---------------                 --------------------------------------------------------------------
@@ -5575,7 +5590,7 @@ class FeatureLayerCollection(_GISResource):
             Once the operation is completed successfully, item id of the uploaded item is returned.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         path                Optional string. Filepath of the file to upload.
         ---------------     --------------------------------------------------------------------

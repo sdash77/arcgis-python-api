@@ -4,22 +4,12 @@ This collection of tests ensures that the functionality in the arcgis api works
 properly with the Spatially enabled DataFrame.
 
 """
-import os, sys
-
-# sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
-import shutil, datetime
-import tempfile
+import sys
+# sys.path.insert(0,r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 
 from arcgis.gis import GIS
-from arcgis.features.geo._array import GeoArray, GeoType
 import arcgis.features.geo
-from arcgis.geometry import Geometry
-import copy
-from arcgis.features.geo import _io
-import pandas as pd
-from pandas.core.internals import ExtensionBlock
-import pandas.util.testing as tm
 
 USERNAME = None
 PASSWORD = None
@@ -131,6 +121,23 @@ _fs_dict = {
     ],
 }
 
+gis = GIS(profile="your_online_profile")
+def portal_selector():
+    """ select available portal for import_toolbox """
+    from urllib.request import urlopen
+    from urllib.error import HTTPError, URLError
+    for server_num in range(1, 9):
+        url = "http://sampleserver" \
+              + str(server_num) \
+              + ".arcgisonline.com/ArcGIS/rest/services/Elevation/ESRI_Elevation_World/GPServer"
+        try:
+            urlopen(url)
+            return url
+        except HTTPError as e:
+            pass
+        except URLError as e:
+            pass
+
 
 class TestArcGISIntegrationTests(unittest.TestCase):
 
@@ -170,7 +177,7 @@ class TestArcGISIntegrationTests(unittest.TestCase):
         from arcgis.geoprocessing import import_toolbox
 
         vs = import_toolbox(
-            "http://sampleserver1.arcgisonline.com/ArcGIS/rest/services/Elevation/ESRI_Elevation_World/GPServer"
+            portal_selector()
         )
         import arcgis
 
@@ -204,3 +211,7 @@ if __name__ == "__main__":
     test_inst.test_gp()
     print("   Testing GP finished")
     print("################################################################")
+
+if __name__ == "__main__":
+
+    unittest.main()

@@ -374,10 +374,6 @@ class ArcGISSegmentationItemList(ImageList):
             imabalanced_class_list = []
 
             for sample in unique_sample:
-                print(
-                    (total_sample == sample).sum(),
-                    len(total_sample) * class_imbalance_pct,
-                )
                 if (total_sample == sample).sum() < len(
                     total_sample
                 ) * class_imbalance_pct:

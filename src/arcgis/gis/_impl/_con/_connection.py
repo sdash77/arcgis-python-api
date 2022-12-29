@@ -13,6 +13,12 @@ except ImportError:
 except:
     HASARCPY = False
 
+try:
+    requests_gssapi = LazyLoader("requests_gssapi", strict=True)
+    HAS_GSSAPI = True
+except:
+    HAS_GSSAPI = False
+
 import sys
 
 if sys.platform == "win32":
@@ -113,7 +119,11 @@ class Connection(object):
     _server_log = None
     # ----------------------------------------------------------------------
     def __init__(
-        self, baseurl: str = None, username: str = None, password: str = None, **kwargs
+        self,
+        baseurl: str = None,
+        username: str = None,
+        password: str = None,
+        **kwargs,
     ):
         """initializer
 
@@ -145,7 +155,7 @@ class Connection(object):
         from arcgis.gis import GIS
 
         self._ags_file = kwargs.pop("ags_file", None)
-        self._security_kwargs = kwargs.pop("security_kwargs", None)
+        self._security_kwargs = kwargs.pop("security_kwargs", {})
         self._use_gen_token = kwargs.pop("use_gen_token", False)
         self._is_hosted_nb_home = kwargs.pop("is_hosted_nb_home", False)
         self._proxy = kwargs.pop("proxy", None)
@@ -246,7 +256,13 @@ class Connection(object):
             and any(
                 [
                     a in auth_check
-                    for a in ["Negotiate", "NTLM", "Negotiate, NTLM", "Basic", "basic"]
+                    for a in [
+                        "Negotiate",
+                        "NTLM",
+                        "Negotiate, NTLM",
+                        "Basic",
+                        "basic",
+                    ]
                 ]
             )
             == False
@@ -379,7 +395,12 @@ class Connection(object):
             )
             params = {"f": "json"}
             results = []
-            for pt in ["/info", "/rest/info", "/sharing/rest/info", "/rest/services"]:
+            for pt in [
+                "/info",
+                "/rest/info",
+                "/sharing/rest/info",
+                "/rest/services",
+            ]:
                 try:
 
                     www_auth = s.get(
@@ -438,7 +459,10 @@ class Connection(object):
                     % (self._proxy_username, self._proxy_password, url),
                 }
             else:
-                proxies = {"http": "http://%s" % url, "https": "https://%s" % url}
+                proxies = {
+                    "http": "http://%s" % url,
+                    "https": "https://%s" % url,
+                }
             return proxies
         return
 
@@ -457,7 +481,10 @@ class Connection(object):
                     % (self._proxy_username, self._proxy_password, url),
                 }
             else:
-                proxies = {"http": "http://%s" % url, "https": "https://%s" % url}
+                proxies = {
+                    "http": "http://%s" % url,
+                    "https": "https://%s" % url,
+                }
             self._proxy = proxies
         else:
             proxies = None
@@ -495,7 +522,15 @@ class Connection(object):
                     total=2,
                     backoff_factor=1,
                     method_whitelist=frozenset(
-                        ["POST", "DELETE", "GET", "HEAD", "OPTIONS", "PUT", "TRACE"]
+                        [
+                            "POST",
+                            "DELETE",
+                            "GET",
+                            "HEAD",
+                            "OPTIONS",
+                            "PUT",
+                            "TRACE",
+                        ]
                     ),
                 )
             )
@@ -601,7 +636,9 @@ class Connection(object):
                     )
         elif self._auth.lower() == "user_token":
             self._session.auth = EsriUserTokenAuth(
-                token=self._token, referer=self._referer, verify_cert=self._verify_cert
+                token=self._token,
+                referer=self._referer,
+                verify_cert=self._verify_cert,
             )
         elif self._auth.lower() == "api_key":
             from arcgis.auth._auth._apikey import EsriAPIKeyAuth
@@ -628,6 +665,14 @@ class Connection(object):
                     verify_cert=self._verify_cert,
                     legacy=False,
                     **self._security_kwargs,
+                )
+            elif HAS_GSSAPI:
+                self._session.auth = EsriWindowsAuth(
+                    username=self._username,
+                    password=self._password,
+                    verify_cert=self._verify_cert,
+                    legacy=False,
+                    proxies=self._proxy,
                 )
             else:
                 self._session.auth = EsriKerberosAuth(
@@ -671,7 +716,9 @@ class Connection(object):
             elif HAS_KERBEROS:
                 try:
                     self._session.auth = EsriKerberosAuth(
-                        verify_cert=self._verify_cert, legacy=False, proxies=self._proxy
+                        verify_cert=self._verify_cert,
+                        legacy=False,
+                        proxies=self._proxy,
                     )
                 except:
                     ...
@@ -724,6 +771,7 @@ class Connection(object):
         allow_redirects = kwargs.pop("allow_redirects", True)
         return_raw_response = kwargs.pop("return_raw_response", False)
         json_encode = kwargs.pop("json_encode", True)
+        add_headers = kwargs.pop("add_headers", {})
         if self._baseurl.endswith("/") == False:
             self._baseurl += "/"
         url = path
@@ -758,7 +806,9 @@ class Connection(object):
                         params[k] = json.dumps(dict(v))
                     elif isinstance(v, InsensitiveDict):
                         params[k] = v.json
-
+        if add_headers:
+            original_headers = copy.deepcopy(self._session.headers)
+            self._session.headers.update(add_headers)
         try:
             if self._cert_file:
                 cert = (self._cert_file, self._key_file)
@@ -783,7 +833,6 @@ class Connection(object):
                     verify=self._verify_cert,
                     allow_redirects=allow_redirects,
                 )
-
         except requests.exceptions.SSLError as err:
             raise requests.exceptions.SSLError(
                 "Please set verify_cert=False due to encountered SSL error: %s" % err
@@ -814,6 +863,9 @@ class Connection(object):
             import traceback
 
             raise Exception("An unknown error occurred: %s" % traceback.format_exc())
+        if add_headers:
+            self._session.headers.clear()
+            self._session.headers.update(original_headers)
         if return_raw_response:
             return resp
         return self._handle_response(
@@ -985,7 +1037,7 @@ class Connection(object):
         sends a MultiPart Form POST request.
 
         ===========================   =====================================================
-        **Parameters**                **Description**
+        **Parameter**                **Description**
         ---------------------------   -----------------------------------------------------
         path                          optional string.  URL or part of the url resource
                                       to call.
@@ -1231,7 +1283,7 @@ class Connection(object):
         sends a POST request.
 
         ===========================   =====================================================
-        **Parameters**                **Description**
+        **Parameter**                **Description**
         ---------------------------   -----------------------------------------------------
         path                          optional string.  URL or part of the url resource
                                       to call.
@@ -1300,6 +1352,9 @@ class Connection(object):
         timeout = kwargs.pop("timeout", self._timeout)
         return_raw_response = kwargs.pop("return_raw_response", False)
         json_encode = kwargs.pop("json_encode", True)
+        add_headers = kwargs.pop("add_headers", {})
+        buffer_reader = None
+
         if self._baseurl.endswith("/") == False:
             self._baseurl += "/"
         url = path
@@ -1328,9 +1383,10 @@ class Connection(object):
                     if isinstance(v, (list, tuple)):
                         fields[k] = v
                     else:
+                        buffer_reader = open(v, "rb")
                         fields[k] = (
                             os.path.basename(v),
-                            open(v, "rb"),
+                            buffer_reader,
                             mimetypes.guess_type(v)[0],
                         )
             elif isinstance(files, (list, tuple)):
@@ -1341,9 +1397,10 @@ class Connection(object):
                         isinstance(fileName, str)
                         and isinstance(filePath, (io.StringIO, io.BytesIO)) == False
                     ):
+                        buffer_reader = open(filePath, "rb")
                         fields[key] = (
                             fileName,
-                            open(filePath, "rb"),
+                            buffer_reader,
                             mimetypes.guess_type(filePath)[0],
                         )
                     elif isinstance(fileName, str) and isinstance(
@@ -1364,6 +1421,9 @@ class Connection(object):
             or tempfile.gettempdir()
         )
         file_name = kwargs.pop("file_name", None)
+        if add_headers:
+            original_headers = copy.deepcopy(self._session.headers)
+            self._session.headers.update(add_headers)
         try:
             if self._cert_file:
                 cert = (self._cert_file, self._key_file)
@@ -1427,6 +1487,9 @@ class Connection(object):
                     )
             if auth:
                 self._session.auth = auth
+            if add_headers:
+                self._session.headers.clear()
+                self._session.headers.update(original_headers)
         except requests.exceptions.SSLError as err:
             raise requests.exceptions.SSLError(
                 "Please set verify_cert=False due to encountered SSL error: %s" % err
@@ -1458,6 +1521,8 @@ class Connection(object):
             import traceback
 
             raise Exception("An unknown error occurred: %s" % traceback.format_exc())
+        if buffer_reader:
+            buffer_reader.close()
         if return_raw_response:
             return resp
         return self._handle_response(
@@ -1486,9 +1551,15 @@ class Connection(object):
             self._session.headers.update({token_header: "Bearer %s" % token})
 
         resp = self._session.put(
-            url=url, data=data, verify=verify, headers=self._session.headers, **kwargs
+            url=url,
+            data=data,
+            verify=verify,
+            headers=self._session.headers,
+            **kwargs,
         )
-        self._session.headers = original_headers
+        self._session.headers.clear()
+        self._session.headers.update(original_headers)
+
         return resp
 
     # ----------------------------------------------------------------------
@@ -1639,7 +1710,7 @@ class Connection(object):
         sends a PUT request
 
         ===========================   =====================================================
-        **Parameters**                **Description**
+        **Parameter**                **Description**
         ---------------------------   -----------------------------------------------------
         url                           Optional String. The web endpoint.
         ---------------------------   -----------------------------------------------------
@@ -1726,7 +1797,7 @@ class Connection(object):
         Performs streaming web requests.
 
         =======================     ===========================================================
-        **Parameters**              **Description**
+        **Parameter**              **Description**
         -----------------------     -----------------------------------------------------------
         url                         Required String. The web resource location.
         -----------------------     -----------------------------------------------------------
@@ -1773,14 +1844,21 @@ class Connection(object):
         self._session.post(url=url, data=data, json_data=json, stream=True)
 
     # ----------------------------------------------------------------------
-    def login(self, username: str, password: str, expiration: Union[int, float] = None):
+    def login(
+        self,
+        username: str,
+        password: str,
+        expiration: Union[int, float] = None,
+    ):
         """allows a user to login to a site with different credentials"""
         if expiration is None:
             expiration = 1440
         try:
             if self._username != username and self._password != password:
                 c = Connection(
-                    baseurl=self._baseurl, username=username, password=password
+                    baseurl=self._baseurl,
+                    username=username,
+                    password=password,
                 )
                 self = c
         except:
@@ -1868,14 +1946,18 @@ class Connection(object):
             if baseurl.endswith("/"):
                 try:
                     res = self.get(
-                        baseurl + "info", params={"f": "json"}, add_token=False
+                        baseurl + "info",
+                        params={"f": "json"},
+                        add_token=False,
                     )
                 except:
                     res = self.get(baseurl + "info", params={"f": "json"})
             else:
                 try:
                     res = self.get(
-                        baseurl + "/info", params={"f": "json"}, add_token=False
+                        baseurl + "/info",
+                        params={"f": "json"},
+                        add_token=False,
                     )
                 except:
                     res = self.get(baseurl + "/info", params={"f": "json"})
@@ -1930,13 +2012,21 @@ class Connection(object):
             root = (
                 rf"{parsed.scheme}://{parsed.netloc}/{parsed.path[1:].split(r'/')[0]}"
             )
-            parts = ["/info", "/rest/services", "/rest/info", "/sharing/rest/info"]
+            parts = [
+                "/info",
+                "/rest/services",
+                "/rest/info",
+                "/sharing/rest/info",
+            ]
             params = {"f": "json"}
             for pt in parts:
                 try:
 
                     res = self.get(
-                        root + pt, params=params, add_token=False, allow_redirects=False
+                        root + pt,
+                        params=params,
+                        add_token=False,
+                        allow_redirects=False,
                     )
                     if "folders" in res:
                         self._product = "SERVER"

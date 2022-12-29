@@ -35,7 +35,7 @@ class FilterScopeEnum(Enum):
 class TraceConfiguration:
     """
     ========================================        ==========================================================
-    **Argument**                                    **Description**
+    **Parameter**                                    **Description**
     ----------------------------------------        ----------------------------------------------------------
     domain_network_name                             Required string. Specifies the name of the domain network
                                                     where the trace is starting. This is required for

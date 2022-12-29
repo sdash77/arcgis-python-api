@@ -18,7 +18,7 @@ class GeoRSSLayer(BaseOGC):
     simple strings or an array of JSON objects.
 
     ===============     ====================================================================
-    **Argument**        **Description**
+    **Parameter**        **Description**
     ---------------     --------------------------------------------------------------------
     url                 Required String. The URL of the GeoRSS sevice.
     ---------------     --------------------------------------------------------------------

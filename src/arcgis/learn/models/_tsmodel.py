@@ -27,6 +27,8 @@ try:
     from ._tsmodel_archs._FCN import _TSFCN
     from ._tsmodel_archs._LSTM import _TSLSTM
     from .._utils.TSData import To3dTensor, ToTensor
+    from .._utils.common import _get_emd_path
+    from arcgis.learn.models._tsmodel_archs._TST import TST
 
     _model_arch = {
         "inceptiontime": _TSInceptionTime,
@@ -34,6 +36,7 @@ try:
         "rescnn": _TSResCNN,
         "fcn": _TSFCN,
         "lstm": _TSLSTM,
+        "timeseriestransformer": TST,
     }
 except Exception as e:
     import_exception = "\n".join(
@@ -73,7 +76,7 @@ class TimeSeriesModel(ArcGISModel):
     Based on the Fast.ai's https://github.com/timeseriesAI/timeseriesAI
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required TabularDataObject. Returned data object from
                             :class:`~arcgis.learn.prepare_tabulardata` function.
@@ -84,7 +87,10 @@ class TimeSeriesModel(ArcGISModel):
     ---------------------   -------------------------------------------
     model_arch              Optional string. Model Architecture.
                             Allowed "InceptionTime", "ResCNN",
-                            "Resnet", "FCN"
+                            "Resnet", "FCN", "TimeSeriesTransformer"
+    ---------------------   -------------------------------------------
+    location_var            Optional string. Location variable in case of
+                            NetCDF dataset.
     ---------------------   -------------------------------------------
     ``**kwargs``            Optional kwargs.
     =====================   ===========================================
@@ -92,12 +98,13 @@ class TimeSeriesModel(ArcGISModel):
     :return: :class:`~arcgis.learn.TimeSeriesModel` Object
     """
 
-    def __init__(self, data, seq_len, model_arch="InceptionTime", **kwargs):
+    def __init__(
+        self, data, seq_len, model_arch="InceptionTime", location_var=None, **kwargs
+    ):
 
         data_bunch = None
-
         if not data._is_empty:
-            data_bunch = data._time_series_bunch(seq_len)
+            data_bunch = data._time_series_bunch(seq_len, location_var)
 
         super().__init__(data, None)
 
@@ -114,6 +121,10 @@ class TimeSeriesModel(ArcGISModel):
             if model_arch.lower() == "lstm":
                 model = model_arch_ob(
                     data_bunch.features, data_bunch.c, self._device, **kwargs
+                ).to(self._device)
+            elif model_arch.lower() == "timeseriestransformer":
+                model = model_arch_ob(
+                    data_bunch.features, data_bunch.c, seq_len, **kwargs
                 ).to(self._device)
             else:
                 if model_arch.lower() in ["resnet", "fcn"]:
@@ -149,7 +160,7 @@ class TimeSeriesModel(ArcGISModel):
         Creates a :class:`~arcgis.learn.TimeSeriesModel` Object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -164,7 +175,7 @@ class TimeSeriesModel(ArcGISModel):
         if not HAS_FASTAI:
             _raise_fastai_import_error(import_exception=import_exception)
 
-        emd_path = Path(emd_path)
+        emd_path = _get_emd_path(emd_path)
         with open(emd_path) as f:
             emd = json.load(f)
 
@@ -180,6 +191,7 @@ class TimeSeriesModel(ArcGISModel):
         model_arch = emd["model_arch"]
         seq_len = emd["seq_len"]
         index_field = emd.get("index_field", None)
+        test_size = emd.get("test_size", None)
         # encoder_path = os.path.join(os.path.dirname(emd_path),
         #                             os.path.basename(emd_path).split('.')[0] + '_encoders.pkl')
 
@@ -211,6 +223,7 @@ class TimeSeriesModel(ArcGISModel):
 
             # if index_field is not None:
             data._index_field = index_field
+            data._test_size = test_size
 
             class_object = cls(
                 data,
@@ -245,7 +258,7 @@ class TimeSeriesModel(ArcGISModel):
         Learning Package zip for deployment to Image Server or ArcGIS Pro.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         name_or_path            Required string. Folder path to save the model.
         ---------------------   -------------------------------------------
@@ -340,6 +353,8 @@ class TimeSeriesModel(ArcGISModel):
         _emd_template["_is_classification"] = (
             "classification" if self._data._is_classification else "regression"
         )
+        if hasattr(self._data, "_test_size"):
+            _emd_template["test_size"] = self._data._test_size
 
         return _emd_template
 
@@ -377,7 +392,7 @@ class TimeSeriesModel(ArcGISModel):
         Predict on data from feature layer and or raster data.
 
         =================================   =========================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         ---------------------------------   -------------------------------------------------------------------------
         input_features                      Optional :class:`~arcgis.features.FeatureLayer` or spatially enabled dataframe.
                                             Contains features with location of the input data.
@@ -785,14 +800,14 @@ class TimeSeriesModel(ArcGISModel):
             for transform in self._data._column_transforms_mapping.get(col, []):
                 transformed_data = transform.fit_transform(
                     np.array(
-                        transformed_data, dtype=processed_dataframe[col].dtype
+                        transformed_data[:-number_of_predictions],
+                        dtype=type(processed_dataframe[col][0]),
                     ).reshape(-1, 1)
                 )
                 transformed_data = transformed_data.squeeze(1)
-            processed_dataframe_transform[col] = np.array(
-                transformed_data, dtype=processed_dataframe[col].dtype
+            processed_dataframe_transform[col][:-number_of_predictions] = np.array(
+                transformed_data, dtype=type(processed_dataframe[col][0])
             )
-
         big_bunch = []
         prediction_sequence_list = None
         processed_dataframe_transform = processed_dataframe_transform.values
@@ -816,12 +831,17 @@ class TimeSeriesModel(ArcGISModel):
             raise Exception("Basic Sequence not found!")
 
         while index < len(prediction_sequence_list):
-            if prediction_sequence_list[index] in [
-                "",
-                None,
-                "null",
-                "None",
-            ] or np.isnan(prediction_sequence_list[index]):
+            if (
+                pd.isna(prediction_sequence_list[index])
+                or prediction_sequence_list[index]
+                in [
+                    "",
+                    None,
+                    "null",
+                    "None",
+                ]
+                or np.isnan(prediction_sequence_list[index])
+            ):
                 value = self._predict(np.array(big_bunch))
                 prediction_sequence_list[index] = value
 
@@ -940,7 +960,7 @@ class TimeSeriesModel(ArcGISModel):
         Prints the graph with predictions.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional Integer.
                                 Number of rows to print.

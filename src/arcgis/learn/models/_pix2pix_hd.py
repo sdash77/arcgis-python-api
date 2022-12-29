@@ -27,7 +27,7 @@ class Pix2PixHD(ArcGISModel):
     Creates a model object which generates fake images of type B from type A.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
                             :meth:`~arcgis.learn.prepare_data` function.
@@ -140,7 +140,7 @@ class Pix2PixHD(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
@@ -163,7 +163,7 @@ class Pix2PixHD(ArcGISModel):
         Creates a :class:`~arcgis.learn.Pix2PixHD` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Deep Learning Package
                                 (DLPK) or Esri Model Definition(EMD) file.
@@ -192,6 +192,7 @@ class Pix2PixHD(ArcGISModel):
         chip_size = emd["ImageHeight"]
         norm_stats = emd.get("norm_stats")
         kwargs = emd.get("Kwargs", {})
+        _ = [kwargs.pop(key) for key in ["backbone", "backend"] if key in kwargs.keys()]
         if emd.get("ArcGISLearnVersion") < "2.0.1":
             if "gen_network" not in kwargs:
                 kwargs["gen_network"] = "global"
@@ -275,7 +276,7 @@ class Pix2PixHD(ArcGISModel):
         Predicts and display the image.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         img_path                Required path of an image.
         =====================   ===========================================

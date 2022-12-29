@@ -51,7 +51,7 @@ class AGOLUsageReports(BasePortalAdmin):
 
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         focus               Required String. The level to perform the report on.
                             The allowed value is only `org`.
@@ -130,7 +130,7 @@ class AGOLUsageReports(BasePortalAdmin):
 
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         start_time          optional datetime, the time to step back from.  If
                             None, the current time is used.
@@ -226,7 +226,7 @@ class AGOLUsageReports(BasePortalAdmin):
 
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         start_time          optional datetime, the time to step back from.  If
                             None, the current time is used.
@@ -293,7 +293,7 @@ class AGOLUsageReports(BasePortalAdmin):
             Reports can contain users outside your orgnanization that used the application
 
         ===============     ====================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     ----------------------------------------------------
         start_time          optional datetime, the time to step back from.  If
                             None, the current time is used.

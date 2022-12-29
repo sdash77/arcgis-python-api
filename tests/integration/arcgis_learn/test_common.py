@@ -15,7 +15,16 @@ import random
 import string
 import glob
 from sys import platform
+import pandas as pd
+from integration.arcgis_learn.properties import (
+        data,
+        data_folder,
+        setuposenviron,
+        data_folder_ms,
+        data_inference_only
+    )
 from arcgis.learn import classify_pixels, detect_objects, classify_objects, ImageryModel
+from arcgis.learn import prepare_data, prepare_tabulardata, prepare_textdata
 
 import_exception = None
 
@@ -52,14 +61,6 @@ if not HAS_DEPS:
 else:
     from arcgis.gis import GIS
     from arcgis.features import FeatureLayerCollection
-    from integration.arcgis_learn.properties import (
-        data,
-        data_folder,
-        setuposenviron,
-        data_folder_ms,
-        data_inference_only
-    )
-    from arcgis.learn import prepare_data, prepare_tabulardata, prepare_textdata
     from datetime import datetime
 
 accuracy_values = {
@@ -78,7 +79,6 @@ accuracy_values = {
         "pointcnn": 0,
         "yolov3": 0,
         "fullyconnected": 0,
-        "machine_learning": 0,
         "pix2pix": 0,
         "cyclegan": 0,
         "hededgedetector": 0,
@@ -124,6 +124,9 @@ success_stat = {
     }
 }
 
+failure_models = []
+failure_score = []
+
 
 @unittest.skipIf(module_skip, "Precondition check failed. Skipping Common tests")
 def setUpModule():
@@ -159,6 +162,45 @@ def updateModelStats():
     data.edit_features(deletes=ind[:])
     data.edit_features(adds=[success_stat])
 
+def updateFailureModels():
+    gis = GIS(
+        "https://deldev.maps.arcgis.com",
+         "demos_deldev",
+        "DelDevs.1234",
+    )
+    item = gis.content.get("cd08c8edfb2f401bb0df1aafa6ce36af")
+    data = item.tables[0]
+    sdf = pd.DataFrame.spatial.from_layer(data)
+    global failure_models, failure_score
+    failed_models = list(sdf["ModelName"])
+
+    try:
+        ind = list(data.query().sdf["ObjectId"])
+        data.edit_features(deletes=ind[:])
+    except KeyError:
+        pass
+    if len(failure_models) > 0:
+        for model, accuracy in zip(failure_models, failure_score):
+            if model in failed_models:
+                failing_since = sdf.loc[sdf["ModelName"] ==model]["FailingSince"][0]
+            else:
+                failing_since = convertdate(datetime.today())
+            failed_model_data = {
+                    "attributes": {
+                        "ModelName": model,
+                        "Accuracy":accuracy,
+                        "FailingSince": failing_since
+                    }
+                }
+            data.edit_features(adds= [failed_model_data])
+    else:
+        data.edit_features(adds= [{
+                    "attributes": {
+                        "ModelName": "No Failure Case",
+                        "Accuracy":0,
+                        "FailingSince": convertdate(datetime.today())
+                    }
+                }])
 
 def CommonTestUsingDF(
     query,
@@ -170,6 +212,7 @@ def CommonTestUsingDF(
     data_path,
     model_test,
     data_folder_path,
+    self_obj
 ):
     from sklearn.preprocessing import MinMaxScaler
     import pandas as pd
@@ -246,9 +289,13 @@ def CommonTestUsingDF(
             result = 0.0
 
         accuracy_values["attributes"][model_name] = result
-        assert (
-            result >= regression_test_score
-        ), "Model accuracy is lower than the threshold value. Please check."
+        # self_obj.assertGreater(
+        #     result, regression_test_score, "Model accuracy is lower than the threshold value. Please check."
+        # )
+        global failure_score, failure_models
+        if result < regression_test_score:
+            failure_models.append(model_name)
+            failure_score.append(regression_test_score)
 
     if model_name == "mlmodel":
         model_object.load(f"{os.path.join(data_folder_path, data_path, model_test)}")
@@ -412,9 +459,11 @@ def commonTestCases(
     ms_flag,
     current_path,
     num_epochs,
+    self_obj
 ):
     global success_flag
     success_flag = False
+    from arcgis.learn import prepare_data
     if model_test == "sequencetosequence_test":
         data = prepare_textdata(**preparedata)
     elif model_test == "timeseriesmodel_test":
@@ -439,10 +488,7 @@ def commonTestCases(
         model_object = model_type(data, seq_len=12)
     elif model_test == "mmsegmentation_test" or model_test == "mmdetection_test":
         all_models = model_type.supported_models
-        import random
-
-        random_number = random.randint(0, len(all_models))
-        model_object = model_type(data, model=all_models[random_number])
+        model_object = model_type(data, model=all_models[0])
     else:
         model_object = model_type(data)
 
@@ -544,9 +590,13 @@ def commonTestCases(
 
             accuracy_values["attributes"][model_name] = result
 
-            assert (
-                result >= regression_test_score
-            ), "Model accuracy is lower than the threshold value. Please check."
+            # self_obj.assertGreater(
+            #     result,regression_test_score, "Model accuracy is lower than the threshold value. Please check."
+            # )
+            global failure_score, failure_models
+            if result < regression_test_score:
+                failure_models.append(model_name)
+                failure_score.append(regression_test_score)
 
     ## Inferencing function here.
     if os.environ.get("run_inference") == "1" and ms_flag == False:
@@ -719,6 +769,8 @@ def commonTestCases(
         str(model_save_path) + os.sep + f"{model_test}.emd", data
     )
 
+    del model_object
+
     success_flag = True
 
 
@@ -751,7 +803,7 @@ def CommonTestTextModels(model_name, model, data, labels):
         model = model()
         predictions = model.generate_text(data, num_return_sequences=2, max_length=25)
     elif model_name == "fillmask":
-        model = model(backbone="roberta-base")
+        model = model()
         predictions = model.predict_token(data, num_suggestions=2)
         result = predictions[0][0]["score"]
     else:
@@ -1012,6 +1064,7 @@ class TestTraining(unittest.TestCase):
             ms_flag,
             data_folder_path,
             num_epochs,
+            self
         )
 
     @unittest.skipIf(module_skip, "Preconditions not met, skipping test")
@@ -1072,6 +1125,7 @@ class TestTraining(unittest.TestCase):
                 data_path,
                 model_test,
                 data_folder_path,
+                self
             )
 
 
@@ -1100,6 +1154,7 @@ def tearDownModule():
         print("Updating feature layer for accuracy dashboard\n")
         updateAccuracyResults()
         updateModelStats()
+        updateFailureModels()
     for key, val in data.items():
         try:
             os.system(f'rm -rf "{os.path.join(data_folder,val["datapath"],"models")}"')

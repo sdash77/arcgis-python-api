@@ -263,7 +263,7 @@ def overlay_dask(sdf1, sdf2, op="union"):
     Enabled DataFrames.
 
     =========================    =========================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     -------------------------    ---------------------------------------------------------
     sdf1                         Required Spatially Enabled DataFrame. The dataframe to have the operation performed on.
     -------------------------    ---------------------------------------------------------

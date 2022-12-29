@@ -135,7 +135,7 @@ class DiscreteAffine:
     """
     Custom PyTorch Rotation transform.
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     angles                   Required List of int ranging from 0..360
     ---------------------   -------------------------------------------

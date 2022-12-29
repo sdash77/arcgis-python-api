@@ -12,7 +12,7 @@ class PortalResourceManager(object):
     Helper class to manage a GIS' resources
 
     ================  ===============================================================
-    **Argument**      **Description**
+    **Parameter**      **Description**
     ----------------  ---------------------------------------------------------------
     gis               required GIS, connection to ArcGIS Online or ArcGIS Enterprise
     ================  ===============================================================
@@ -45,7 +45,7 @@ class PortalResourceManager(object):
 
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         key               optional string, look up key for file
         ----------------  ---------------------------------------------------------------
@@ -104,7 +104,7 @@ class PortalResourceManager(object):
         a file resource.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         key               optional string, look up key for file to delete
         ================  ===============================================================
@@ -129,7 +129,7 @@ class PortalResourceManager(object):
         portal's appearance.
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         start             optional int, start location of the search. The default is
                           a value of 1
@@ -153,7 +153,7 @@ class PortalResourceManager(object):
         Download or get a portal resource item
 
         ================  ===============================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  ---------------------------------------------------------------
         resource_name     optional string, key/name of data
         ----------------  ---------------------------------------------------------------

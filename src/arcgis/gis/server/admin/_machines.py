@@ -51,7 +51,7 @@ class MachineManager(BaseServer):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         url                    Required string. The admin URL.
         ------------------     --------------------------------------------------------------------
@@ -119,7 +119,7 @@ class MachineManager(BaseServer):
         Provides the machine object for a given machine.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         machine_name           Required string. The name of the server. Example: machines_obj.get("SERVER.DOMAIN.COM")
         ==================     ====================================================================
@@ -144,7 +144,7 @@ class MachineManager(BaseServer):
         choose to join a site.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         name                   Required string. The name of the server machine.
         ------------------     --------------------------------------------------------------------
@@ -176,7 +176,7 @@ class MachineManager(BaseServer):
         machine name change.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         name                   Required string. The former name of the server machine that is
                                registered with the site.
@@ -266,7 +266,7 @@ class Machine(BaseServer):
         Constructor
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         url                    Required string. The machine URL.
         ------------------     --------------------------------------------------------------------
@@ -431,7 +431,7 @@ class Machine(BaseServer):
             or development servers.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         certificate            Required string. The name of the certificate in the key store to
                                grab information from.
@@ -451,7 +451,7 @@ class Machine(BaseServer):
         Deletes a SSL certificate using the certificate alias.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         certificate            Required string. The name of the certificate to delete
         ==================     ====================================================================
@@ -476,7 +476,7 @@ class Machine(BaseServer):
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         certificate            Required string. The name of the certificate in the key store.
         ==================     ====================================================================
@@ -498,7 +498,7 @@ class Machine(BaseServer):
         object that was created with method ssl_certificate.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         certificate            Required string. The name of the certificate in the key store.
         ==================     ====================================================================
@@ -519,7 +519,7 @@ class Machine(BaseServer):
 
 
         ======================     ====================================================================
-        **Argument**               **Description**
+        **Parameter**               **Description**
         ----------------------     --------------------------------------------------------------------
         certificate                Required string. The name of the certificate in the key store.
         ----------------------     --------------------------------------------------------------------
@@ -550,7 +550,7 @@ class Machine(BaseServer):
         importRootCertificate operation.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         alias                  Required string. A unique name for the certificate that easily
                                identifies it.
@@ -584,7 +584,7 @@ class Machine(BaseServer):
         CA or specific intermediate certificates.
 
         ===================     ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         -------------------     --------------------------------------------------------------------
         alias                   Required string. The name of the certificate.
         -------------------     --------------------------------------------------------------------

@@ -36,7 +36,7 @@ class MetadataManager(object):
         administrator to set the default metadata scheme.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         metadata_format                 Required string. Sets the default metadata format. The allowed
                                         values are: inspire,iso19139-3.2,fgdc,iso19139,arcgis, or iso19115
@@ -79,7 +79,7 @@ class MetadataManager(object):
         properties.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         metadata_format                 Required string. Sets the default metadata format. The allowed
                                         values are: inspire,iso19139-3.2,fgdc,iso19139,arcgis, or iso19115

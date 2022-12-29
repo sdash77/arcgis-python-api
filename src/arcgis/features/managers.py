@@ -25,6 +25,8 @@ _log = logging.getLogger()
 
 # pylint: disable=protected-access
 ###########################################################################
+
+
 class WebHookEvents(Enum):
     """
     Provides the allowed webhook enumerations for the captured events.
@@ -51,7 +53,7 @@ class WebHookScheduleInfo:
 
 
     =====================================    ===========================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     -------------------------------------    ---------------------------------------------------------------------------
     name                                     Required string.  The name of the scheduling task.
     -------------------------------------    ---------------------------------------------------------------------------
@@ -140,7 +142,7 @@ class AttachmentManager(object):
 
 
         =========================   ===============================================================
-        **Argument**                **Description**
+        **Parameter**                **Description**
         -------------------------   ---------------------------------------------------------------
         where                       Required string.  The definition expression to be applied to
                                     the related layer/table. From the list of records that are
@@ -498,7 +500,7 @@ class AttachmentManager(object):
         Get the list of attachements for a given OBJECT ID
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         oid                 Required string of the object id
         ===============     ====================================================================
@@ -623,7 +625,7 @@ class AttachmentManager(object):
         The add operation is performed on a feature service feature resource.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         oid                 Required string of the object ID.
         ---------------     --------------------------------------------------------------------
@@ -669,7 +671,7 @@ class AttachmentManager(object):
         A layer has attachments if its hasAttachments property is true.
 
         ===================     ====================================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         -------------------     --------------------------------------------------------------------
         oid                     Required string of the object ID
         -------------------     --------------------------------------------------------------------
@@ -708,7 +710,7 @@ class AttachmentManager(object):
         Updates an existing attachment with a new file
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         oid                 Required string of the object ID.
         ---------------     --------------------------------------------------------------------
@@ -758,7 +760,7 @@ class SyncManager(object):
         unregisters a replica from a feature layer collection
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         replica_id          The replicaID returned by the feature service when the replica was created.
         ===============     ====================================================================
@@ -770,7 +772,7 @@ class SyncManager(object):
     def get(self, replica_id: str):
         """
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         replica_id          Required string. replica_id returned by the feature service when
                             the replica was created.
@@ -818,7 +820,7 @@ class SyncManager(object):
 
 
         =============================       ====================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         -----------------------------       --------------------------------------------------------------------
         replica_name                        Required string. Name of the replica.
         -----------------------------       --------------------------------------------------------------------
@@ -1060,7 +1062,7 @@ class SyncManager(object):
         tracking information.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         layers                 Required list. A list of layers and tables to include in the replica.
         ------------------     --------------------------------------------------------------------
@@ -1154,7 +1156,7 @@ class SyncManager(object):
         Creates a replicated service from a parent to another GIS.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         replica_name        Optional string. Name for replicated item in other GIS
         ---------------     --------------------------------------------------------------------
@@ -1236,7 +1238,7 @@ class SyncManager(object):
         Synchronizes two replicated items between portals
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         parent              Required :class:`~arcgis.gis.Item` that points to the feature service
                             that is the parent dataset. (source)
@@ -1276,7 +1278,8 @@ class SyncManager(object):
                     parent_replica_id = replica["replicaID"]
                     break
             if child_replica_id and parent_replica_id:
-                import tempfile, os
+                import tempfile
+                import os
 
                 child_replica = child_replicas.get(replica_id=child_replica_id)
                 parent_replica = parent_replicas.get(replica_id=parent_replica_id)
@@ -1341,6 +1344,7 @@ class WebHook(object):
     _url = None
     _gis = None
     # ----------------------------------------------------------------------
+
     def __init__(self, url, gis):
         self._url = url
         self._gis = gis
@@ -1383,13 +1387,14 @@ class WebHook(object):
         Updates the existing WebHook's Properties.
 
         =====================================    ===========================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         -------------------------------------    ---------------------------------------------------------------------------
         name                                     Optional String. Use valid name for a webhook. This name needs to be unique per service.
         -------------------------------------    ---------------------------------------------------------------------------
         hook_url                                 Optional String.  The URL to which the payloads will be delivered.
         -------------------------------------    ---------------------------------------------------------------------------
-        change_types                             Optional WebHookEvents or String.  The default is "*", which means all events.  This is a
+        change_types                             Optional :class:`~arcgis.features.managers.WebHookEvents` or String.
+                                                 The default is "*", which means all events.  This is a
                                                  comma separated list of values that will fire off the web hook.  The list
                                                  each supported type is below.
         -------------------------------------    ---------------------------------------------------------------------------
@@ -1399,7 +1404,8 @@ class WebHook(object):
         -------------------------------------    ---------------------------------------------------------------------------
         active                                   Optional bool. Enable or disable call backs when the webhook is triggered.
         -------------------------------------    ---------------------------------------------------------------------------
-        schedule_info                            Optional WebHookScheduleInfo or Dict. Allows the trigger to be used as a given schedule.
+        schedule_info                            Optional :class:`~arcgis.features.managers.WebHookScheduleInfo` or Dict.
+                                                 Allows the trigger to be used as a given schedule.
 
                                                  Example Dictionary:
 
@@ -1512,6 +1518,7 @@ class WebHookServiceManager(object):
     _url = None
     _gis = None
     # ----------------------------------------------------------------------
+
     def __init__(self, url, fc, gis) -> None:
         self._url = url
         self._fc = fc
@@ -1568,7 +1575,7 @@ class WebHookServiceManager(object):
 
 
         =====================================    ===========================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         -------------------------------------    ---------------------------------------------------------------------------
         name                                     Required String. Use valid name for a webhook. This name needs to be unique per service.
         -------------------------------------    ---------------------------------------------------------------------------
@@ -1878,7 +1885,7 @@ class FeatureLayerCollectionManager(_GISResource):
         To learn more about views visit: https://doc.arcgis.com/en/arcgis-online/share-maps/create-hosted-views.htm
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         name                     Required string. Name of the new view item
         --------------------     --------------------------------------------------------------------
@@ -1957,12 +1964,14 @@ class FeatureLayerCollectionManager(_GISResource):
         else:
             url = gis._url
 
-        if "id" in gis.properties.user:
-            me = gis.users.me.username
-            # me = gis.properties.user.id
+        if "serviceItemId" in self.properties:
+            # get the owner of the service
+            user = gis.content.get(self.properties["serviceItemId"])["owner"]
         else:
-            me = gis.users.me.username
-        url = "%s/content/users/%s/createService" % (url, me)
+            # if no service item id then default to logged in user
+            user = gis.users.me.username
+
+        url = "%s/content/users/%s/createService" % (url, user)
         if spatial_reference is None:
             # handle for tables
             if "spatialReference" in fs.properties:
@@ -2229,7 +2238,7 @@ class FeatureLayerCollectionManager(_GISResource):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         url                 Required String. The URL endpoint to check the status
         ===============     ====================================================================
@@ -2290,7 +2299,7 @@ class FeatureLayerCollectionManager(_GISResource):
         to an already published service.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         json_dict           Required dict. The part to add to the hosted service. The format
                             can be derived from the `properties` property.
@@ -2338,7 +2347,7 @@ class FeatureLayerCollectionManager(_GISResource):
         code and description.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         json_dict           Required dict. The part to add to the hosted service. The format
                             can be derived from the `properties` property.
@@ -2442,7 +2451,7 @@ class FeatureLayerCollectionManager(_GISResource):
         for additional information on this function.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         json_dict           Required dict. The part to add to the hosted service. The format
                             can be derived from the `properties` property.
@@ -2497,7 +2506,7 @@ class FeatureLayerCollectionManager(_GISResource):
         layer.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         data                Required string. Path to the file used to overwrite the hosted
                             feature layer collection.
@@ -2620,9 +2629,6 @@ class FeatureLayerCollectionManager(_GISResource):
             # overwriting a SD case - no need for detailed publish parameters
             publish_parameters = None
 
-        # endregion
-
-        # region Perform overwriting
         if related_data_item.update(item_properties=params, data=data_file):
             published_item = related_data_item.publish(
                 publish_parameters, overwrite=True
@@ -2795,7 +2801,7 @@ class FeatureLayerManager(_GISResource):
         Creates a :class:`~arcgis.features.managers.FeatureLayerManager` object from a GIS Item.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         item                Required of type :class:`~arcgis.features.FeatureService` that represents
                             a :class:`~arcgis.features.FeatureLayerCollection` .
@@ -2835,7 +2841,7 @@ class FeatureLayerManager(_GISResource):
         to an already published service.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         json_dict           Required dict. The part to add to the hosted service. The format
                             can be derived from the `properties` property.
@@ -2882,7 +2888,7 @@ class FeatureLayerManager(_GISResource):
         code and description.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         json_dict           Required dict. The part to add to the hosted service. The format
                             can be derived from the `properties` property.
@@ -2933,7 +2939,7 @@ class FeatureLayerManager(_GISResource):
         for additional information on this function.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         json_dict           Required dict. The part to add to the hosted service. The format
                             can be derived from the `properties` property.
@@ -3001,7 +3007,7 @@ class FeatureLayerManager(_GISResource):
             - do not have `sync` enabled
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         attachment_only     Optional boolean. If True, deletes all the attachments for this layer.
                             None of the layer features will be deleted.
@@ -3055,7 +3061,7 @@ class FeatureLayerManager(_GISResource):
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         url                 Required String. The URL endpoint to check the status
         ===============     ====================================================================

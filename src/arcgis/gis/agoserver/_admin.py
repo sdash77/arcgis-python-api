@@ -21,7 +21,7 @@ class AGOLServerManager:
     Represents a Single AGO Server
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Required String. The url string to the ArcGIS Online Server
     ------------------     --------------------------------------------------------------------
@@ -82,7 +82,7 @@ class AGOLServerManager:
         Returns a single service manager.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         name                   Required String. The name of the service.
         ==================     ====================================================================
@@ -110,7 +110,7 @@ class AGOLServerManager:
         Returns the status of a given service by name.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         name                   Required String. The name of the service.
         ==================     ====================================================================
@@ -194,7 +194,7 @@ class AGOLServersManager:
     ArcGIS Online.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     gis                    Required GIS. The connection to ArcGIS Online.
     ==================     ====================================================================

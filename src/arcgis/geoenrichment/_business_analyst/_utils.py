@@ -609,16 +609,24 @@ def pro_at_least_version(version: str) -> bool:
 
     # variable to store status
     at_least = False
+    all_parts_equal = True  # until proven false
 
     # test all the parts of the input version against the current version
     for idx in range(0, max_len):
-
         # evaluate if the part and if greater, break and report status
-        if v_lst[idx] < in_lst[idx]:
-            at_least = True
+        if v_lst[idx] > in_lst[idx]:
+            all_parts_equal = False
+            at_least = True  # current Pro version is more recent
             break
 
-    return at_least
+        if v_lst[idx] < in_lst[idx]:
+            all_parts_equal = False
+            at_least = False  # current Pro version is too old
+            break
+
+    return (
+        at_least | all_parts_equal
+    )  # if versions are equal, return true. Otherwise return at_least
 
 
 def extract_from_kwargs(paramater_key: str, kwargs: dict) -> Tuple[Any, dict]:
@@ -652,6 +660,15 @@ def validate_network_travel_mode(source, travel_mode: str):
 
         # switch to all lowercase to mitigate case discrepancies
         travel_mode = travel_mode.lower()
+
+        # if generic given, change to correct generic [Take care of old code for Buffer Study Area]
+        if travel_mode in ["driving", "walking", "trucking"]:
+            if travel_mode == "driving":
+                travel_mode = "driving time"
+            elif travel_mode == "walking":
+                travel_mode = "walking time"
+            else:
+                travel_mode = "trucking time"
 
         # if the proximity type is straight line, just make sure in correct format (used for enrich method)
         if travel_mode == "straight_line" or travel_mode == "Straight Line":

@@ -1,12 +1,16 @@
+import sys
+# sys.path.insert(0, r"C:\ipython_workfolder\geosaurus\tests")
+# sys.path.insert(1, r"C:\ipython_workfolder\geosaurus\src")
 import unittest
 
 from arcgis.features import GeoAccessor
 from arcgis.geoenrichment import Country, enrich
 from arcgis.geoenrichment.enrichment import NamedArea
 from arcgis.gis import GIS
+from arcgis.geometry import Polygon
 import pandas as pd
 
-from .config_guide_tests import dir_data, source, usa_instance
+from integration.geoenrichment.guide_tests.config_guide_tests import dir_data, source, usa_instance
 
 
 def health_facility_df():
@@ -28,13 +32,13 @@ def analysis_variables():
 class IntroductionToGeoenrichmentTest(unittest.TestCase):
 
     def setUp(self):
-        self.source_inst = source()
+        self.source_inst = GIS(profile="your_online_profile")
         self.usa_instance_inst = usa_instance()
         self.analysis_variables_inst = analysis_variables()
         self.health_facility_df_inst = health_facility_df()
 
     def test_create_country(self):
-        cntry = Country.get("US", gis=self.source_inst)
+        cntry = Country.get("US", gis=GIS(profile="your_online_profile"))
         assert isinstance(cntry, Country)
 
     def test_get_subgeographies_zips(self):
@@ -57,7 +61,9 @@ class IntroductionToGeoenrichmentTest(unittest.TestCase):
         )
 
         assert isinstance(enrich_df, pd.DataFrame)
-        assert enrich_df.spatial.validate()
+        assert enrich_df.spatial.length
+        assert enrich_df.spatial.area
+        assert isinstance(enrich_df.spatial.bbox, Polygon)
 
     def test_merge_on_zip(self):
         zip1 = self.usa_instance_inst.subgeographies.states["California"].zip5["90018"]
@@ -69,7 +75,7 @@ class IntroductionToGeoenrichmentTest(unittest.TestCase):
 
         self.health_facility_df_inst["Zip Code"] = self.health_facility_df_inst["Zip Code"].apply("str")
         merged = pd.merge(
-            enrich_df, self.health_facility_df_inst, left_on="StdGeographyID", right_on="Zip Code"
+            enrich_df, self.health_facility_df_inst, left_on="std_geography_id", right_on="Zip Code"
         )
         assert isinstance(merged, pd.DataFrame)
 

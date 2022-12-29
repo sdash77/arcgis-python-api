@@ -63,7 +63,7 @@ class Uploads(_BaseKube):
         Deletes the uploaded item and its configuration.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         item_id             Required string. unique ID of the item
         ===============     ====================================================================
@@ -85,7 +85,7 @@ class Uploads(_BaseKube):
         Downloads a previously uploaded file.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         item_id             Required string. unique ID of the item
         ===============     ====================================================================
@@ -125,7 +125,7 @@ class Uploads(_BaseKube):
         successfully, the JSON structure of the uploaded item is returned.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         path                Required string. The file location to upload
         ---------------     --------------------------------------------------------------------
@@ -169,7 +169,7 @@ class Uploads(_BaseKube):
         successfully, the JSON structure of the uploaded item is returned.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         item_id             Required string. Item ID to upload to.
         ---------------     --------------------------------------------------------------------
@@ -196,7 +196,7 @@ class Uploads(_BaseKube):
         parts that make up the item.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         item_id             Required string. Item ID to commit.
         ---------------     --------------------------------------------------------------------

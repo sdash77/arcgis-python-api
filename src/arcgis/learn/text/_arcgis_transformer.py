@@ -159,7 +159,7 @@ class ArcGISTransformer(nn.Module, metaclass=abc.ABCMeta):
         Method to load the fine-tuned model which was saved on the disk
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         path                    Required string. The disk location from
                                 where the fine-tuned model has to be loaded
@@ -173,7 +173,7 @@ class ArcGISTransformer(nn.Module, metaclass=abc.ABCMeta):
         Method to save the fine-tuned model to the disk
 
         =====================   =================================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------------
         model_path              Required string. The disk location where the
                                 fine-tuned model has to be saved

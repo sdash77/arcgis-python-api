@@ -332,7 +332,12 @@ class GeoDaskSpatialAccessor:
             for pt in parts[1:]:
                 main_part["rings"][0].extend(pt["rings"][0])
             df = pd.DataFrame(main_part["rings"][0], columns=["x", "y"])
-        xmin, ymin, xmax, ymax = df.x.min(), df.y.min(), df.x.max(), df.y.max()
+        xmin, ymin, xmax, ymax = (
+            df.x.min(),
+            df.y.min(),
+            df.x.max(),
+            df.y.max(),
+        )
         if isinstance(sr, list) and len(sr) > 0:
             sr = sr[0]
         if xmin == xmax:
@@ -370,7 +375,8 @@ class GeoDaskSpatialAccessor:
         """
 
         df = pd.DataFrame(
-            self._data[self.name].geom.centroid.compute().tolist(), columns=["x", "y"]
+            self._data[self.name].geom.centroid.compute().tolist(),
+            columns=["x", "y"],
         )
         return df.x.mean(), df.y.mean()
 
@@ -422,7 +428,7 @@ class GeoDaskSpatialAccessor:
         operations' requirements.
 
         =========================    =========================================================
-        **Argument**                 **Description**
+        **Parameter**                 **Description**
         -------------------------    ---------------------------------------------------------
         other                        Required Spatially Enabled DataFrame. The geometry to
                                      perform the operation from.
@@ -491,7 +497,7 @@ class GeoDaskSpatialAccessor:
         **requires ArcPy or Shapely**
 
         =========================    =========================================================
-        **Argument**                 **Description**
+        **Parameter**                 **Description**
         -------------------------    ---------------------------------------------------------
         sdf                          Required Spatially Enabled DataFrame. The geometry to
                                      perform the operation from.
@@ -536,7 +542,12 @@ class GeoDaskSpatialAccessor:
 
     # ----------------------------------------------------------------------
     def join(
-        self, right_df, how="inner", op="intersects", left_tag="left", right_tag="right"
+        self,
+        right_df,
+        how="inner",
+        op="intersects",
+        left_tag="left",
+        right_tag="right",
     ):
         """
         Joins the current DataFrame to another spatially enabled dataframes based
@@ -547,7 +558,7 @@ class GeoDaskSpatialAccessor:
 
 
         ======================    =========================================================
-        **Argument**              **Description**
+        **Parameter**              **Description**
         ----------------------    ---------------------------------------------------------
         right_df                  Required pd.DataFrame. Spatially enabled dataframe to join.
         ----------------------    ---------------------------------------------------------
@@ -650,7 +661,7 @@ class GeoDaskSpatialAccessor:
         **This requires ArcPy or pyproj v4**
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         spatial_reference        Required SpatialReference. The new spatial reference. This can be a
                                  SpatialReference object or the coordinate system name.
@@ -782,7 +793,7 @@ class GeoDaskSpatialAccessor:
         """Assigns the geometry column by name or by list
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         col                    Required string, Pandas Series, GeoArray, list or tuple. If a string, this
                                is the name of the column containing the geometry. If a Pandas Series
@@ -827,7 +838,7 @@ class GeoDaskSpatialAccessor:
         Returns a Spatially enabled `pandas.DataFrame` from a feature class.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         location                        Required string or pathlib.Path. Full path to the feature class
         ---------------------------     --------------------------------------------------------------------
@@ -855,18 +866,24 @@ class GeoDaskSpatialAccessor:
         :returns: pandas.core.frame.DataFrame
         """
         return from_pandas(
-            data=from_featureclass(filename=location, **kwargs), npartitions=npartitions
+            data=from_featureclass(filename=location, **kwargs),
+            npartitions=npartitions,
         )
 
     # ----------------------------------------------------------------------
     def to_featureclass(
-        self, location, overwrite=True, has_z=None, has_m=None, sanitize_columns=True
+        self,
+        location,
+        overwrite=True,
+        has_z=None,
+        has_m=None,
+        sanitize_columns=True,
     ):
         """
         Exports a dask dataframe to a feature class.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         location                        Required string. The output of the table.
         ---------------------------     --------------------------------------------------------------------
@@ -910,7 +927,11 @@ class GeoDaskSpatialAccessor:
 
     # ----------------------------------------------------------------------
     def to_parquet(
-        self, folder: str, index: bool = None, compression: str = "gzip", **kwargs
+        self,
+        folder: str,
+        index: bool = None,
+        compression: str = "gzip",
+        **kwargs,
     ):
         """
         Exports Each Dask DataFrame partition to a parquet file
@@ -1028,7 +1049,8 @@ class GeoDaskSeriesAccessor:
         :returns: float in a series
         """
         return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "area"), meta=float
+            lambda part: self._fn_attr(part.geom, "area"),
+            meta=pd.Series(dtype=float),
         )
 
     # ----------------------------------------------------------------------
@@ -1040,7 +1062,8 @@ class GeoDaskSeriesAccessor:
         :returns: arcpy.Geometry in a series
         """
         return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "as_arcpy")
+            lambda part: self._fn_attr(part.geom, "as_arcpy"),
+            meta=pd.Series(dtype=object),
         )
 
     # ----------------------------------------------------------------------
@@ -1112,7 +1135,8 @@ class GeoDaskSeriesAccessor:
         :returns: Series of strings
         """
         return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "geometry_type"), meta=str
+            lambda part: self._fn_attr(part.geom, "geometry_type"),
+            meta=pd.Series(dtype=str),
         )
 
     # ----------------------------------------------------------------------
@@ -1136,7 +1160,8 @@ class GeoDaskSeriesAccessor:
         :returns: Series of Boolean
         """
         return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "has_z"), meta=bool
+            lambda part: self._fn_attr(part.geom, "has_z"),
+            meta=pd.Series(dtype=bool),
         )
 
     # ----------------------------------------------------------------------
@@ -1148,7 +1173,8 @@ class GeoDaskSeriesAccessor:
         :returns: Series of Boolean
         """
         return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "has_m"), meta=bool
+            lambda part: self._fn_attr(part.geom, "has_m"),
+            meta=pd.Series(dtype=bool),
         )
 
     # ----------------------------------------------------------------------
@@ -1160,7 +1186,8 @@ class GeoDaskSeriesAccessor:
         :returns: Series of Booleans
         """
         return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "is_empty"), meta=bool
+            lambda part: self._fn_attr(part.geom, "is_empty"),
+            meta=pd.Series(dtype=bool),
         )
 
     # ----------------------------------------------------------------------
@@ -1172,7 +1199,8 @@ class GeoDaskSeriesAccessor:
         :returns: Series of Booleans
         """
         return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "is_multipart"), meta=bool
+            lambda part: self._fn_attr(part.geom, "is_multipart"),
+            meta=pd.Series(dtype=bool),
         )
 
     # ----------------------------------------------------------------------
@@ -1184,7 +1212,8 @@ class GeoDaskSeriesAccessor:
         :returns: Series of Booleans
         """
         return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "is_valid"), meta=bool
+            lambda part: self._fn_attr(part.geom, "is_valid"),
+            meta=pd.Series(dtype=bool),
         )
 
     # ----------------------------------------------------------------------
@@ -1196,7 +1225,8 @@ class GeoDaskSeriesAccessor:
         :returns: Series of strings
         """
         return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "JSON"), meta=str
+            lambda part: self._fn_attr(part.geom, "JSON"),
+            meta=pd.Series(dtype=str),
         )
 
     # ----------------------------------------------------------------------
@@ -1232,7 +1262,8 @@ class GeoDaskSeriesAccessor:
         :returns: Series of float
         """
         return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "length"), meta=float
+            lambda part: self._fn_attr(part.geom, "length"),
+            meta=pd.Series(dtype=float),
         )
 
     # ----------------------------------------------------------------------
@@ -1244,7 +1275,8 @@ class GeoDaskSeriesAccessor:
         :returns: Series of float
         """
         return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "length3D"), meta=float
+            lambda part: self._fn_attr(part.geom, "length3D"),
+            meta=pd.Series(dtype=float),
         )
 
     # ----------------------------------------------------------------------
@@ -1256,7 +1288,8 @@ class GeoDaskSeriesAccessor:
         :returns: Series of Integer
         """
         return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "part_count"), meta=int
+            lambda part: self._fn_attr(part.geom, "part_count"),
+            meta=pd.Series(dtype=int),
         )
 
     # ----------------------------------------------------------------------
@@ -1268,7 +1301,8 @@ class GeoDaskSeriesAccessor:
         :returns: Series of Integer
         """
         return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "point_count"), meta=int
+            lambda part: self._fn_attr(part.geom, "point_count"),
+            meta=pd.Series(dtype=int),
         )
 
     # ----------------------------------------------------------------------
@@ -1314,7 +1348,8 @@ class GeoDaskSeriesAccessor:
         :returns: Series of String
         """
         return self._data.map_partitions(
-            lambda part: self._fn_attr(part.geom, "WKT"), meta=str
+            lambda part: self._fn_attr(part.geom, "WKT"),
+            meta=pd.Series(dtype=str),
         )
 
     ##---------------------------------------------------------------------
@@ -1325,7 +1360,7 @@ class GeoDaskSeriesAccessor:
         Converts the Geometry to `numpy array` where the following holds true:
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         normalize           Optional Boolean.  If **True**, the values are normalized using a Min/Max Scalar.
         ===============     ====================================================================
@@ -1369,7 +1404,7 @@ class GeoDaskSeriesAccessor:
         measurement type.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required Geometry.  A arcgis.Geometry object.
         ---------------     --------------------------------------------------------------------
@@ -1407,7 +1442,7 @@ class GeoDaskSeriesAccessor:
         Constructs a polygon at a specified distance from the geometry.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         distance            Required float. The buffer distance. The buffer distance is in the
                             same units as the geometry that is being buffered.
@@ -1426,7 +1461,7 @@ class GeoDaskSeriesAccessor:
         Constructs the intersection of the geometry and the specified extent.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         envelope            required tuple. The tuple must have (XMin, YMin, XMax, YMax) each value
                             represents the lower left bound and upper right bound of the extent.
@@ -1445,7 +1480,7 @@ class GeoDaskSeriesAccessor:
         Indicates if the base geometry contains the comparison geometry.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ---------------     --------------------------------------------------------------------
@@ -1483,7 +1518,7 @@ class GeoDaskSeriesAccessor:
         shape type.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -1504,7 +1539,7 @@ class GeoDaskSeriesAccessor:
         a part right of it.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         cutter              Required Polyline. The cuttin polyline geometry
         ===============     ====================================================================
@@ -1522,7 +1557,7 @@ class GeoDaskSeriesAccessor:
         Creates a new geometry with added vertices
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         method              Required String. The type of densification, DISTANCE, ANGLE, or GEODESIC
         ---------------     --------------------------------------------------------------------
@@ -1548,7 +1583,11 @@ class GeoDaskSeriesAccessor:
             lambda part: self._fn_method(
                 part.geom,
                 "densify",
-                **{"method": method, "distance": distance, "deviation": deviation},
+                **{
+                    "method": method,
+                    "distance": distance,
+                    "deviation": deviation,
+                },
             )
         )
 
@@ -1561,7 +1600,7 @@ class GeoDaskSeriesAccessor:
         source geometry.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -1571,7 +1610,9 @@ class GeoDaskSeriesAccessor:
         """
         return self._data.map_partitions(
             lambda part: self._fn_method(
-                part.geom, "difference", **{"second_geometry": second_geometry}
+                part.geom,
+                "difference",
+                **{"second_geometry": second_geometry},
             )
         )
 
@@ -1582,7 +1623,7 @@ class GeoDaskSeriesAccessor:
         common.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -1604,7 +1645,7 @@ class GeoDaskSeriesAccessor:
         Both geometries must have the same projection.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -1614,7 +1655,9 @@ class GeoDaskSeriesAccessor:
         """
         return self._data.map_partitions(
             lambda part: self._fn_method(
-                part.geom, "distance_to", **{"second_geometry": second_geometry}
+                part.geom,
+                "distance_to",
+                **{"second_geometry": second_geometry},
             )
         )
 
@@ -1626,7 +1669,7 @@ class GeoDaskSeriesAccessor:
         a 2D comparison only; M and Z values are ignored.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -1648,7 +1691,7 @@ class GeoDaskSeriesAccessor:
         tolerance.  This only works on Polylines and Polygons.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         max_offset          Required float. The maximum offset tolerance.
         ===============     ====================================================================
@@ -1668,7 +1711,7 @@ class GeoDaskSeriesAccessor:
         Returns the area of the feature using a measurement type.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         method              Required String. PLANAR measurements reflect the projection of
                             geographic data onto the 2D surface (in other words, they will not
@@ -1697,7 +1740,7 @@ class GeoDaskSeriesAccessor:
         Returns the length of the feature using a measurement type.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         method              Required String. PLANAR measurements reflect the projection of
                             geographic data onto the 2D surface (in other words, they will not
@@ -1728,7 +1771,7 @@ class GeoDaskSeriesAccessor:
         **requires arcpy**
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         index               Required Integer. The index position of the geometry.
         ===============     ====================================================================
@@ -1750,7 +1793,7 @@ class GeoDaskSeriesAccessor:
         between the original geometries.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ---------------     --------------------------------------------------------------------
@@ -1770,7 +1813,10 @@ class GeoDaskSeriesAccessor:
             lambda part: self._fn_method(
                 part.geom,
                 "intersect",
-                **{"second_geometry": second_geometry, "dimension": dimension},
+                **{
+                    "second_geometry": second_geometry,
+                    "dimension": dimension,
+                },
             )
         )
 
@@ -1780,7 +1826,7 @@ class GeoDaskSeriesAccessor:
         Returns a measure from the start point of this line to the in_point.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ---------------     --------------------------------------------------------------------
@@ -1795,7 +1841,10 @@ class GeoDaskSeriesAccessor:
             lambda part: self._fn_method(
                 part.geom,
                 "measure_on_line",
-                **{"second_geometry": second_geometry, "as_percentage": as_percentage},
+                **{
+                    "second_geometry": second_geometry,
+                    "as_percentage": as_percentage,
+                },
             )
         )
 
@@ -1807,7 +1856,7 @@ class GeoDaskSeriesAccessor:
         either of the input geometries.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -1830,7 +1879,7 @@ class GeoDaskSeriesAccessor:
         using the specified measurement type.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         angle               Required Float. The angle in degrees to the returned point.
         ---------------     --------------------------------------------------------------------
@@ -1862,7 +1911,7 @@ class GeoDaskSeriesAccessor:
         of the line.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required Float. The distance along the line.
         ---------------     --------------------------------------------------------------------
@@ -1886,13 +1935,15 @@ class GeoDaskSeriesAccessor:
 
     # ----------------------------------------------------------------------
     def project_as(
-        self, spatial_reference: "SpatialReference", transformation_name: str = None
+        self,
+        spatial_reference: "SpatialReference",
+        transformation_name: str = None,
     ):
         """
         Projects a geometry and optionally applies a geotransformation.
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         spatial_reference        Required SpatialReference. The new spatial reference. This can be a
                                  SpatialReference object or the coordinate system name.
@@ -1924,7 +1975,7 @@ class GeoDaskSeriesAccessor:
         the line where the nearest point occurs.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ---------------     --------------------------------------------------------------------
@@ -1948,7 +1999,10 @@ class GeoDaskSeriesAccessor:
 
     # ----------------------------------------------------------------------
     def segment_along_line(
-        self, start_measure: float, end_measure: float, use_percentage: bool = False
+        self,
+        start_measure: float,
+        end_measure: float,
+        use_percentage: bool = False,
     ):
         """
         Returns a Polyline between start and end measures. Similar to
@@ -1956,7 +2010,7 @@ class GeoDaskSeriesAccessor:
         two points on the polyline instead of a single point.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         start_measure       Required Float. The starting distance from the beginning of the line.
         ---------------     --------------------------------------------------------------------
@@ -1991,7 +2045,7 @@ class GeoDaskSeriesAccessor:
         Returns a new point based on in_point snapped to this geometry.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -2001,7 +2055,9 @@ class GeoDaskSeriesAccessor:
         """
         return self._data.map_partitions(
             lambda part: self._fn_method(
-                part.geom, "snap_to_line", **{"second_geometry": second_geometry}
+                part.geom,
+                "snap_to_line",
+                **{"second_geometry": second_geometry},
             )
         )
 
@@ -2014,7 +2070,7 @@ class GeoDaskSeriesAccessor:
         The two input geometries must be the same shape type.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -2036,7 +2092,7 @@ class GeoDaskSeriesAccessor:
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -2057,7 +2113,7 @@ class GeoDaskSeriesAccessor:
 
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ===============     ====================================================================
@@ -2076,7 +2132,7 @@ class GeoDaskSeriesAccessor:
         Indicates if the base geometry is within the comparison geometry.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         second_geometry     Required arcgis.geometry.Geometry. A second geometry
         ---------------     --------------------------------------------------------------------

@@ -3,7 +3,7 @@ This is 10.8.1+ Functionality Tests for Notebook Server
 """
 import sys
 
-sys.path.insert(0, r"C:\SVN\geosaurus_master_issue_7655\src")
+#  sys.path.insert(0, r"C:\SVN\geosaurus_master\src")
 import json
 import unittest
 import os, json
@@ -13,19 +13,34 @@ from arcgis.gis.nb import NotebookServer, NotebookManager
 from arcgis.gis.tasks._schedule import TaskManager, Task
 from arcgis.gis.tasks._schedule import Run
 
+from arcgis.auth.tools._util import detect_proxy
+
+proxy = detect_proxy(True)
 try:
-    url = "https://datasciencedev.esri.com/portal"
-    username = "portaladmin"
-    password = "esri.agp"
+    url = "https://rqalnxbi01pt.esri.com/gis"  # "https://datasciencedev.esri.com/portal"
+    username = "PAPIadmin"  # "portaladmin"
+    password = "PAPIletmein01"  # "esri.agp"
     gis = GIS(
-        url=url, username=username, password=password, verify_cert=False, trust_env=True
+        url=url,
+        username=username,
+        password=password,
+        verify_cert=False,
+        proxy=proxy,
+        use_gen_token=True,
+    ).users.me.update(security_question=1, security_answer="Redlands")
+    gis = GIS(
+        url=url,
+        username=username,
+        password=password,
+        verify_cert=False,
+        proxy=proxy,
     )
     SKIP_TESTS = False
 except:
     SKIP_TESTS = True
 
 
-json_data = '{"nbformat_minor":2,"metadata":{"language_info":{"pygments_lexer":"ipython3","nbconvert_exporter":"python","codemirror_mode":{"name":"ipython","version":3},"name":"python","mimetype":"text/x-python","file_extension":".py","version":"3.7.11"},"esriNotebookRuntime":{"notebookRuntimeName":"ArcGIS Notebook Python 3 Standard","notebookRuntimeVersion":"6.0"},"kernelspec":{"name":"python3","language":"python","display_name":"Python 3 (ipykernel)"}},"cells":[{"metadata":{},"source":"## Welcome to your notebook.\\n","cell_type":"markdown"},{"metadata":{},"source":"#### Run this cell to connect to your GIS and get started:","cell_type":"markdown"},{"outputs":[{"output_type":"stream","name":"stderr","text":"/opt/conda/lib/python3.7/site-packages/arcgis/gis/__init__.py:575: UserWarning:\\n\\nYou are logged on as andrew with an administrator role, proceed with caution.\\n\\n"}],"metadata":{"trusted":false},"execution_count":1,"source":"from arcgis.gis import GIS\\ngis = GIS(\\"home\\")","cell_type":"code"},{"metadata":{},"source":"#### Now you are ready to start!","cell_type":"markdown"},{"outputs":[{"output_type":"stream","name":"stdout","text":"<User username:andrew>\\n"}],"metadata":{"trusted":false},"execution_count":2,"source":"print(gis.users.me)","cell_type":"code"},{"outputs":[{"output_type":"stream","name":"stdout","text":"I\'m finished\\n"}],"metadata":{"trusted":true},"execution_count":1,"source":"output = \\"I\'m finished\\"\\nprint(output)","cell_type":"code"},{"outputs":[],"metadata":{"trusted":true},"execution_count":null,"source":"","cell_type":"code"}],"nbformat":4}'
+json_data = '{"cells":[{"metadata":{},"cell_type":"markdown","source":"## Welcome to your notebook.\\n"},{"metadata":{},"cell_type":"markdown","source":"#### Run this cell to connect to your GIS and get started:"},{"metadata":{"trusted":false},"cell_type":"code","source":"#from arcgis.gis import GIS\\n#gis = GIS(\\"home\\")\\nprint(\'hello\')","execution_count":1,"outputs":[{"output_type":"stream","text":"hello\\n","name":"stdout"}]},{"metadata":{},"cell_type":"markdown","source":"#### Now you are ready to start!"},{"metadata":{"trusted":false},"cell_type":"code","source":"","execution_count":null,"outputs":[]}],"metadata":{"language_info":{"name":"python","version":"3.9.11","mimetype":"text/x-python","codemirror_mode":{"name":"ipython","version":3},"pygments_lexer":"ipython3","nbconvert_exporter":"python","file_extension":".py"},"kernelspec":{"name":"python3","display_name":"Python 3 (ipykernel)","language":"python"}},"nbformat":4,"nbformat_minor":2}'
 
 
 class TestNotebookService(unittest.TestCase):
@@ -39,7 +54,7 @@ class TestNotebookService(unittest.TestCase):
         for s in servers:
             if type(s).__name__ == "NotebookServer":
                 nbs = s
-                mgr = nbs.notebooks.services
+                mgr = nbs.services
                 assert mgr
                 assert mgr.properties
                 assert isinstance(mgr.services, (tuple, list))
@@ -48,23 +63,35 @@ class TestNotebookService(unittest.TestCase):
 
     def test_services_add_ops(self):
         """tests the create notebook service tool"""
-        nb_item = gis.content.add(
-            item_properties={"type": "Notebook", "title": "nb_title", "text": json_data}
-        )
+        mgr = None
         servers = gis.admin.servers.list()
         for s in servers:
             if type(s).__name__ == "NotebookServer":
                 nbs = s
-                mgr = nbs.notebooks.services
-                item_tool = mgr.create(nb_item, "title", "description")
-                assert item_tool
-                assert mgr.services
-                if len(mgr.services) > 0:
-                    for s in mgr.services:
-                        assert s.properties
-                assert nb_item.delete()
-                assert item_tool.delete()
+                mgr = nbs.services
                 break
+        if mgr:
+            runtimes = nbs.notebooks.runtimes
+            runtimes[0].properties
+            nb_item = gis.content.add(
+                item_properties={
+                    "type": "Notebook",
+                    "title": "nb_title",
+                    "properties": {
+                        'notebookRuntimeName': 'ArcGIS Notebook Python 3 Standard',
+                        'notebookRuntimeVersion': '8.0',
+                    },
+                    "text": json_data,
+                }
+            )
+            item_tool = mgr.create(nb_item, "title", "description")
+            assert item_tool
+            assert mgr.services
+            if len(mgr.services) > 0:
+                for s in mgr.services:
+                    assert s.properties
+            assert nb_item.delete()
+            assert item_tool.delete()
 
 
 if __name__ == "__main__":

@@ -52,6 +52,9 @@ if not _LAMBDA_TEXT_CLASSIFICATION:
         WNet_cGAN,
         DETReg,
         RandLANet,
+        EfficientDet,
+        SQNSeg,
+        PSETAE,
     )
 
     from ._object_tracker import ObjectTracker
@@ -254,7 +257,7 @@ def detect_objects(
             This function is supported with ArcGIS Enterprise (Image Server) and ArcGIS Image for ArcGIS Online.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_raster                             Required. raster layer that contains objects that needs to be detected.
     ------------------------------------     --------------------------------------------------------------------
@@ -446,7 +449,7 @@ def classify_pixels(
             This function is supported with ArcGIS Enterprise (Image Server) and ArcGIS Image for ArcGIS Online.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_raster                             Required. raster layer that needs to be classified.
     ------------------------------------     --------------------------------------------------------------------
@@ -598,7 +601,7 @@ def export_training_data(
             This function is supported with ArcGIS Enterprise (Image Server)
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_raster                             Required :class:`~arcgis.raster.ImageryLayer`/:class:`~arcgis.raster.Raster`/:class:`~arcgis.gis.Item`/String (URL).
                                              Raster layer that needs to be exported for training.
@@ -918,7 +921,7 @@ def list_models(*, gis=None, future=False, **kwargs):
             This function is supported with ArcGIS Enterprise (Image Server)
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
     ------------------     --------------------------------------------------------------------
@@ -987,7 +990,7 @@ def classify_objects(
             This function is supported with ArcGIS Enterprise (Image Server) and ArcGIS Image for ArcGIS Online.
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_raster                             Required. raster layer that contains objects that needs to be classified.
     ------------------------------------     --------------------------------------------------------------------
@@ -1087,7 +1090,7 @@ def compute_accuracy_for_object_detection(
     Function available in ArcGIS Image Server 10.9 and higher (not available in ArcGIS Online).
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     detected_features                        Required. The input polygon feature layer containing the objects
                                              detected from the detect_objects function.
@@ -1240,7 +1243,7 @@ def train_model(
             This function is supported with ArcGIS Enterprise (Image Server)
 
     ====================================     ====================================================================
-    **Argument**                             **Description**
+    **Parameter**                             **Description**
     ------------------------------------     --------------------------------------------------------------------
     input_folder                             Required string or list. This is the input location for the training sample data.
                                              It can be the path of output location on the file share raster data store or a
@@ -1486,27 +1489,27 @@ class Model:
 
     def from_json(self, model):
         """
-        Function is used to initialise Model object from model definition JSON
+        Function is used to initialize Model object from model definition JSON
 
         .. code-block:: python
 
-            # usage example
+            # Usage example
 
-            model = Model()
+            >>> model = Model()
 
-            model.from_json({"Framework" :"TensorFlow",
-                            "ModelConfiguration":"DeepLab",
-                            "InferenceFunction":"``[functions]System\\DeepLearning\\ImageClassifier.py``",
-                            "ModelFile":"``\\\\folder_path_of_pb_file\\frozen_inference_graph.pb``",
-                            "ExtractBands":[0,1,2],
-                            "ImageWidth":513,
-                            "ImageHeight":513,
-                            "Classes": [ { "Value":0, "Name":"Evergreen Forest", "Color":[0, 51, 0] },
-                                         { "Value":1, "Name":"Grassland/Herbaceous", "Color":[241, 185, 137] },
-                                         { "Value":2, "Name":"Bare Land", "Color":[236, 236, 0] },
-                                         { "Value":3, "Name":"Open Water", "Color":[0, 0, 117] },
-                                         { "Value":4, "Name":"Scrub/Shrub", "Color":[102, 102, 0] },
-                                         { "Value":5, "Name":"Impervious Surface", "Color":[236, 236, 236] } ] })
+            >>> model.from_json({"Framework" :"TensorFlow",
+                                 "ModelConfiguration":"DeepLab",
+                                 "InferenceFunction":"``[functions]System\\DeepLearning\\ImageClassifier.py``",
+                                 "ModelFile":"``\\\\folder_path_of_pb_file\\frozen_inference_graph.pb``",
+                                 "ExtractBands":[0,1,2],
+                                 "ImageWidth":513,
+                                 "ImageHeight":513,
+                                 "Classes": [ { "Value":0, "Name":"Evergreen Forest", "Color":[0, 51, 0] },
+                                              { "Value":1, "Name":"Grassland/Herbaceous", "Color":[241, 185, 137] },
+                                              { "Value":2, "Name":"Bare Land", "Color":[236, 236, 0] },
+                                              { "Value":3, "Name":"Open Water", "Color":[0, 0, 117] },
+                                              { "Value":4, "Name":"Scrub/Shrub", "Color":[102, 102, 0] },
+                                              { "Value":5, "Name":"Impervious Surface", "Color":[236, 236, 236] } ] })
 
         """
         if isinstance(model, dict):
@@ -1515,22 +1518,19 @@ class Model:
 
     def from_model_path(self, model):
         """
-        Function is used to initialise Model object from url of model package or path of model definition file
+        Function is used to initialize Model object from url of model package or path of model definition file
 
         .. code-block:: python
 
-                # usage example
+            # Usage Example #1:
 
-                model = Model()
+            >>> model = Model()
+            >>> model.from_model_path("https://xxxportal.esri.com/sharing/rest/content/items/<itemId>")
 
-                model.from_model_path("https://xxxportal.esri.com/sharing/rest/content/items/<itemId>")
+            # Usage Example #2:
 
-                or
-
-                model = Model()
-
-                model.from_model_path("\\\\sharedstorage\\sharefolder\\findtrees.emd")
-
+            >>> model = Model()
+            >>> model.from_model_path("\\\\sharedstorage\\sharefolder\\findtrees.emd")
         """
         if "http:" in model or "https:" in model:
             self._model = _json.dumps({"url": model})
@@ -1547,7 +1547,7 @@ class Model:
 
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
         ------------------     --------------------------------------------------------------------
@@ -1612,7 +1612,7 @@ class Model:
         Function is used to extract the deep learning model specific settings from the model package item or model definition file.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
         ------------------     --------------------------------------------------------------------
@@ -1672,7 +1672,7 @@ class Model:
         This function will delete the named deep learning model from the server but not the portal item.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         gis                    Optional :class:`~arcgis.gis.GIS` . The GIS on which this tool runs. If not specified, the active GIS is used.
         ------------------     --------------------------------------------------------------------
@@ -1750,7 +1750,7 @@ def export_point_dataset(
 
 
     ==================     =======================================================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     -------------------------------------------------------------------------------------------------------
     data_path              Required string. Folder containing two folders with
                            las files.

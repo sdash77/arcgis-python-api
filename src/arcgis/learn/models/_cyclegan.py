@@ -45,7 +45,7 @@ class CycleGAN(ArcGISModel):
     Creates a model object which generates images of type A from type B or type B from type A.
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required fastai Databunch. Returned data object from
                             :meth:`~arcgis.learn.prepare_data`  function.
@@ -105,7 +105,7 @@ class CycleGAN(ArcGISModel):
         Creates a :class:`~arcgis.learn.CycleGAN` object from an Esri Model Definition (EMD) file.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         data                    Required fastai Databunch or None. Returned data
                                 object from :meth:`~arcgis.learn.prepare_data`  function or None for
@@ -174,8 +174,6 @@ class CycleGAN(ArcGISModel):
             ] = "[Functions]System\\DeepLearning\\ArcGISLearn\\ArcGISImageTranslation.py"
         _emd_template["ModelType"] = "CycleGAN"
         _emd_template["n_intput_channel"] = self._data.n_channel
-        _emd_template["SupportsVariableTileSize"] = True
-        # if self._data._is_multispectral:
         _emd_template["NormalizationStats_b"] = {
             "band_min_values": self._data._band_min_values_b,
             "band_max_values": self._data._band_max_values_b,
@@ -206,7 +204,7 @@ class CycleGAN(ArcGISModel):
         Displays the results of a trained model on a part of the validation set.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional int. Number of rows of results
                                 to be displayed.
@@ -233,7 +231,7 @@ class CycleGAN(ArcGISModel):
         Predicts and display the image.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         img_path                Required path of an image.
         ---------------------   -------------------------------------------

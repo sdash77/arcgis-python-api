@@ -1,7 +1,8 @@
 """
 These tools are used to identify areas that meet a number of different criteria you specify.
 
-find_similar_locations finds locations most similar to one or more reference locations based on criteria you specify.
+find_similar_locations finds locations most similar to one or more reference locations based on
+criteria you specify.
 """
 from __future__ import annotations
 import json as _json
@@ -63,7 +64,7 @@ def geocode_locations(
     for geocoding with GeoAnalytics Server <https://enterprise.arcgis.com/en/portal/latest/use/geoanalytics-geocoding-best-practices.htm>`_.
 
     ==========================   ===============================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     --------------------------   ---------------------------------------------------------------
     input_layer                  Required layer. The tabular input that will be geocoded. See :ref:`Feature Input<gaxFeatureInput>`.
     --------------------------   ---------------------------------------------------------------
@@ -319,12 +320,19 @@ def snap_tracks(
     context: Optional[dict[str, Any]] = None,
     gis: Optional[GIS] = None,
     future: bool = False,
+    time_split: Optional[Union[int, float]] = None,
+    time_split_unit: Optional[str] = None,
+    distance_split: Optional[Union[int, float]] = None,
+    distance_split_unit: Optional[str] = None,
+    time_boundary_split: Optional[int] = None,
+    time_boundary_unit: Optional[str] = None,
+    time_boundary_reference: Optional[int] = None,
 ):
     """
     The `snap_tracks` method matches track points to polylines.
 
     ============================   ===============================================================
-    **Argument**                   **Description**
+    **Parameter**                   **Description**
     ----------------------------   ---------------------------------------------------------------
     point_layer                    Required layer. The track point features that will be matched
                                    to polylines. See :ref:`Feature Input<gaxFeatureInput>`.
@@ -401,6 +409,38 @@ def snap_tracks(
                                    results. The GPJob can be queried on the status of the execution.
 
                                    The default value is ``False``.
+    ----------------------------   ---------------------------------------------------------------
+    time_split                     Optional[Union[int, float]]. A time duration used to split
+                                   tracks. Any features in the `point_layer` that are in the same
+                                   track and are farther apart than this time will be split into a
+                                   new track. The units of the distance values are supplied by the
+                                   `time_split_unit` parameter.
+    ----------------------------   ---------------------------------------------------------------
+    time_split_unit                Optional[str]. The temporal unit to be used with the temporal
+                                   distance value specified in `time_split`.
+
+                                   Values: Milliseconds | Seconds | Minutes | Hours | Days | Weeks| Months | Years
+    ----------------------------   ---------------------------------------------------------------
+    distance_split                 Optional[Union[int, float]]. A distance used to split tracks.
+    ----------------------------   ---------------------------------------------------------------
+    distance_split_unit            Optional[str]. The distance unit to be used with the distance
+                                   value specified in `distance_split`.
+
+                                   Values: Meters | Kilometers | Feet | Miles | NauticalMiles | Yards
+    ----------------------------   ---------------------------------------------------------------
+    time_boundary_split            Optional[int]. A time boundary allows you to analyze values
+                                   within a defined time span. For example, if you use a time
+                                   boundary of 1 day, starting on January 1, 1980, tracks will be
+                                   analyzed one day at a time.
+    ----------------------------   ---------------------------------------------------------------
+    time_boundary_unit             Optional[str]. The unit applied to the time boundary.
+
+                                   Values: Milliseconds | Seconds | Minutes | Hours | Days | Weeks| Months | Years
+    ----------------------------   ---------------------------------------------------------------
+    time_boundary_reference        Optional[int]. A date that specifies the reference time to
+                                   align the time boundary to, represented in milliseconds from
+                                   epoch. The default is January 1, 1970, at 12:00 a.m. (epoch
+                                   time stamp 0).
     ============================   ===============================================================
 
     """
@@ -440,7 +480,7 @@ def snap_tracks(
         )
     else:
         output_name = output_service_name
-        output_service = f"Results were written to: '{params['context']['dataStore']}' with the name: '{output_service_name}'"
+        output_service = f"Results were written to: '{output_datastore}' with the name: '{output_service_name}'"
 
     params = {
         "point_layer": point_layer,
@@ -457,7 +497,15 @@ def snap_tracks(
         "context": context,
         "gis": _gis,
         "future": True,
+        "time_split": time_split,
+        "time_split_unit": time_split_unit,
+        "distance_split": distance_split,
+        "distance_split_unit": distance_split_unit,
+        "time_boundary_split": time_boundary_split,
+        "time_boundary_split_unit": time_boundary_unit,
+        "time_boundary_reference": time_boundary_reference,
     }
+
     if context is None:
         context = {}
         _set_context(context)
@@ -531,7 +579,7 @@ def detect_incidents(
     values exceed 0.03mg/L until they return to a value less than 0.01.
 
     ==========================   ===============================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     --------------------------   ---------------------------------------------------------------
     input_layer                  Required layer. The table, point, line or polygon features
                                  containing potential incidents. See :ref:`Feature Input<gaxFeatureInput>`.
@@ -660,7 +708,7 @@ def detect_incidents(
         gis,
         output_name,
         output_service_name,
-        "Detect Incidents",
+        tool_name,
         output_datastore=output_datastore,
     )
 
@@ -757,7 +805,7 @@ def find_dwell_locations(
 
 
     ==========================   ===============================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     --------------------------   ---------------------------------------------------------------
     input_layer                  Required layer. A time-enabled layer with point
                                  features from which dwell locations will be found.
@@ -1029,7 +1077,7 @@ def find_similar_locations(
           closely they match your reference locations across all of the fields you have selected.
 
     ==========================   ===============================================================
-    **Argument**                 **Description**
+    **Parameter**                 **Description**
     --------------------------   ---------------------------------------------------------------
     input_layer                  Required layer. The ``input_layer`` contains one or more reference locations
                                  against which features in the ``search_layer`` will be evaluated for similarity.

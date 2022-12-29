@@ -29,7 +29,7 @@ class ReportManager(BaseServer):
         """Constructor
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         url                    Required string. The machine URL.
         ------------------     --------------------------------------------------------------------
@@ -107,7 +107,7 @@ class ReportManager(BaseServer):
         Edits the usage reports settings that are applied to the entire site.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         interval               Required string. Defines the duration (in minutes) for which the
                                usage statistics are aggregated or sampled, in-memory, before being
@@ -156,7 +156,7 @@ class ReportManager(BaseServer):
         for details on the REST request bundled by this method.
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         reportname               Required string. The unique name of the report.
         --------------------     --------------------------------------------------------------------
@@ -359,7 +359,7 @@ class ReportManager(BaseServer):
         Generates an on the fly usage report for a service, services, or folder.
 
         ====================     ====================================================================
-        **Argument**             **Description**
+        **Parameter**             **Description**
         --------------------     --------------------------------------------------------------------
         since                    Optional string. The time duration of the report. The supported
                                  values are: LAST_DAY, LAST_WEEK, LAST_MONTH, or LAST_YEAR.
@@ -488,7 +488,7 @@ class Report(BaseServer):
         Constructor
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         url                    Required string. The machine URL.
         ------------------     --------------------------------------------------------------------
@@ -566,7 +566,7 @@ class Report(BaseServer):
         were not logged for that metric in the corresponding time-slice.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         query_filter           Optional string. The report data can be filtered by the machine
                                where the data is generated. The filter accepts a comma-separated

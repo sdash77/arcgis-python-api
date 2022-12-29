@@ -14,6 +14,7 @@ from pathlib import Path
 import traceback
 import arcgis
 from arcgis.features import FeatureLayer
+from ._codetemplate import ml_raster_prf
 
 HAS_AUTO_ML_DEPS = True
 import_exception = None
@@ -66,7 +67,7 @@ class AutoML(object):
     Refer https://supervised.mljar.com/
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     data                    Required TabularDataObject. Returned data object from
                             :meth:`~arcgis.learn.prepare_tabulardata` function.
@@ -144,6 +145,7 @@ class AutoML(object):
                 )
                 return
 
+        self._code = ml_raster_prf
         if algorithms:
             algorithms = algorithms
         else:
@@ -287,7 +289,7 @@ class AutoML(object):
         Shows sample results for the model.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         rows                    Optional number of rows. By default, 5 rows
                                 are displayed.
@@ -408,7 +410,7 @@ class AutoML(object):
         Uses pickle to save the model and transforms.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         path                    Path of the directory where the model should be saved.
         =====================   ===========================================
@@ -437,6 +439,9 @@ class AutoML(object):
         save_model_path = os.path.abspath(path)
         if not os.path.exists(save_model_path):
             os.makedirs(save_model_path)
+
+        with open(Path(save_model_path) / "ArcGISImageClassifier.py", "w") as f:
+            f.write(self._code)
 
         MLModel._save_encoders(
             self._data._encoder_mapping, save_model_path, base_file_name
@@ -544,6 +549,10 @@ class AutoML(object):
         if self._data._raster_field_variables:
             emd_params["_raster_field_variables"] = self._data._raster_field_variables
 
+        emd_params["Framework"] = "arcgis.learn.models._inferencing"
+        emd_params["ModelConfiguration"] = "_auto_ml"
+        emd_params["InferenceFunction"] = "ArcGISImageClassifier.py"
+
         if self._model._get_ml_task() != "regression":
             try:
                 emd_params["dependent_variable_unique"] = (
@@ -565,7 +574,7 @@ class AutoML(object):
         and cannot be retrained.
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         emd_path                Required string. Path to Esri Model Definition
                                 file.
@@ -699,7 +708,7 @@ class AutoML(object):
         Predict on data from feature layer, dataframe and or raster data.
 
         =================================   =========================================================================
-        **Argument**                        **Description**
+        **Parameter**                        **Description**
         ---------------------------------   -------------------------------------------------------------------------
         input_features                      Optional :class:`~arcgis.features.FeatureLayer` or spatial dataframe. Required if prediction_type='features'.
                                             Contains features with location and
@@ -1006,7 +1015,11 @@ class AutoML(object):
                     shap_df = pd.DataFrame(
                         list_for_df,
                         columns=[
-                            i + "_imp" for i in processed_dataframe.columns.to_list()
+                            i + "_imp"
+                            for i in (
+                                self._data._continuous_variables
+                                + self._data._categorical_variables
+                            )
                         ],
                     )
                 except:
@@ -1018,7 +1031,11 @@ class AutoML(object):
                     shap_df = pd.DataFrame(
                         shap_values_normalised,
                         columns=[
-                            i + "_imp" for i in processed_dataframe.columns.to_list()
+                            i + "_imp"
+                            for i in (
+                                self._data._continuous_variables
+                                + self._data._categorical_variables
+                            )
                         ],
                     )
                 except:

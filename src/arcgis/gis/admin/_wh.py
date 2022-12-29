@@ -63,7 +63,7 @@ class WebhookManager(object):
         ** Dictionary Key/Values **
 
         =================================  ===============================================================================
-        **Argument**                       **Description**
+        **Parameter**                       **Description**
         ---------------------------------  -------------------------------------------------------------------------------
         notificationAttempts               Required Integer. This will determine how many attempts will be made to deliver
                                            a payload.
@@ -126,7 +126,7 @@ class WebhookManager(object):
         Creates a WebHook to monitor REST endpoints and report activities
 
         =================================  ===============================================================================
-        **Argument**                       **Description**
+        **Parameter**                       **Description**
         ---------------------------------  -------------------------------------------------------------------------------
         name                               Required String. The name of the webhook.
         ---------------------------------  -------------------------------------------------------------------------------
@@ -429,13 +429,14 @@ class Webhook(object):
         number_of_failures: Optional[int] = None,
         days_in_past: Optional[int] = None,
         secret: Optional[str] = None,
+        properties: Optional[dict] = None,
     ):
         """
         The Update Webhook operation allows administrators to update any of
         the parameters of their webhook.
 
         =================================  ===============================================================================
-        **Argument**                       **Description**
+        **Parameter**                       **Description**
         ---------------------------------  -------------------------------------------------------------------------------
         name                               Required String. The name of the webhook.
         ---------------------------------  -------------------------------------------------------------------------------
@@ -535,8 +536,9 @@ class Webhook(object):
         :returns Boolean
 
         """
+
         if name is None:
-            name = self.properties.name
+            name = self.properties["name"]
         if "secret" in self.properties:
             if secret is None:
                 secret = self.properties.secret
@@ -555,24 +557,26 @@ class Webhook(object):
             days_in_past = self.properties.config.deactivationPolicy.daysInPast
         if events is None:
             events = ",".join(list(self.properties.events))
-        purl = self._url + "/update"
-        self._properties = None
         params = {
             "f": "json",
             "name": name,
             "url": url,
             "secret": secret,
-            "config": {
-                "deactivationPolicy": {
-                    "numberOfFailures": number_of_failures,
-                    "daysInPast": days_in_past,
-                }
-            },
+            "config": dict(self.properties["config"]),
         }
-
+        if number_of_failures:
+            params["config"]["deactivationPolicy"][
+                "numberOfFailures"
+            ] = number_of_failures
+        if days_in_past:
+            params["config"]["deactivationPolicy"]["daysInPast"] = days_in_past
+        if properties:
+            params["config"]["deactivationPolicy"]["properties"].update(properties)
         params["events"] = events
-        res = self._con.post(purl, params)
+        purl = self._url + "/update"
 
+        res = self._con.post(purl, params)
+        self._properties = None
         if "success" in res:
             return res["success"]
         return False

@@ -155,7 +155,7 @@ class KubeServiceDirectory(_BaseKube):
         Publishes a service definition file to ArcGIS Server.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         sd_file                Required string. The service definition file to be uploaded and published.
         ------------------     --------------------------------------------------------------------

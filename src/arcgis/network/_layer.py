@@ -309,7 +309,7 @@ class RouteLayer(NetworkLayer):
 
 
         ===================================     ====================================================================
-        **Argument**                            **Description**
+        **Parameter**                            **Description**
         -----------------------------------     --------------------------------------------------------------------
         stops                                   Required Points/FeatureSet/a list of Features. The set of stops
                                                 loaded as network locations during analysis. Stops can be specified
@@ -694,7 +694,7 @@ class ServiceAreaLayer(NetworkLayer):
         query parameters.
 
         ===================================     ====================================================================
-        **Argument**                            **Description**
+        **Parameter**                            **Description**
         -----------------------------------     --------------------------------------------------------------------
         facilities                              The set of facilities loaded as network locations
                                                 during analysis. Facilities can be specified using
@@ -1068,7 +1068,7 @@ class ClosestFacilityLayer(NetworkLayer):
         parameters.
 
         ===================================     ====================================================================
-        **Argument**                            **Description**
+        **Parameter**                            **Description**
         -----------------------------------     --------------------------------------------------------------------
         facilities                              The set of facilities loaded as network locations
                                                 during analysis. Facilities can be specified using
@@ -1473,7 +1473,7 @@ class ODCostMatrixLayer(NetworkLayer):
         based on Euclidean distance.
 
         ====================================     ====================================================================
-        **Argument**                             **Description**
+        **Parameter**                             **Description**
         ------------------------------------     --------------------------------------------------------------------
         origins                                  Required FeatureLayer/SeDF/FeatureSet.
                                                  Specifies the starting points from which to travel to the destinations.

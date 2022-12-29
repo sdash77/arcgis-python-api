@@ -14,7 +14,7 @@ class Assignment(FeatureModel):
     Represents an assignment
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     project                Required :class:`~arcgis.apps.workforce.Project`. The project that
                            this assignment belongs to.
@@ -227,7 +227,7 @@ class Assignment(FeatureModel):
         Updates the assignment on the server
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         geometry               Optional :class:`Dict`.
                                A dictionary containing the assignment geometry

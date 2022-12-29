@@ -27,7 +27,7 @@ class TestVectorTileLayerClass_online(unittest.TestCase):
 
         info = self.tl.info
         assert info
-        assert isinstance(info, dict)
+        assert isinstance(info, list)
 
     def test_tile_fonts(self):
         fonts = self.tl.tile_fonts(fontstack="Arial Bold", stack_range="0-255")
@@ -52,7 +52,6 @@ class TestVectorTileLayerClass_online(unittest.TestCase):
                 "ymax": 49.94,
                 "spatialReference": {"wkid": 102100, "latestWkid": 3857},
             },
-            max_export_tile_count=500,
         )
         assert exported
         os.remove(exported[0])
@@ -83,7 +82,7 @@ class TestVectorTileLayerClass_enterprise(unittest.TestCase):
 
         info = self.tl.info
         assert info
-        assert isinstance(info, dict)
+        assert isinstance(info, list)
 
     def test_tile_fonts(self):
         fonts = self.tl.tile_fonts(fontstack="Arial Bold", stack_range="0-255")
@@ -108,7 +107,6 @@ class TestVectorTileLayerClass_enterprise(unittest.TestCase):
                 "ymax": 49.94,
                 "spatialReference": {"wkid": 102100, "latestWkid": 3857},
             },
-            max_export_tile_count=500,
         )
         assert exported
         os.remove(exported[0])

@@ -44,7 +44,7 @@ class Run(BaseTask):
     Represents a single run of a scheduled task.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Required string. The URL to the REST endpoint.
     ------------------     --------------------------------------------------------------------
@@ -89,7 +89,7 @@ class Run(BaseTask):
         Updates the Run's Status Message and Result Message.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         status                 Optional String. The status of the run.  The allowed values are:
                                `scheduled`, `executing`, `succeeded`, `failed`, or `skipped`.
@@ -130,7 +130,7 @@ class Task(BaseTask):
     Represents a scheduled task that can be modified for a user.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Required string. The URL to the REST endpoint.
     ------------------     --------------------------------------------------------------------
@@ -176,7 +176,7 @@ class Task(BaseTask):
         The `enable` method allows administrators to enable or disable the scheduled task..
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         enabled                Required Boolean.  If True, the status of the task is set to active.
                                If False, the task is set active to False.
@@ -235,7 +235,7 @@ class Task(BaseTask):
         Updates the current Task
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Optional Item. The item to update the schedule for.
         ------------------     --------------------------------------------------------------------
@@ -368,7 +368,7 @@ class TaskManager(object):
     This operation is for Enterprise configuration 10.8.1+.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     url                    Required string. The URL to the REST endpoint.
     ------------------     --------------------------------------------------------------------
@@ -407,7 +407,7 @@ class TaskManager(object):
         This property allows users to search for tasks based on criteria.
 
         ================  ===============================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  -------------------------------------------------------------------------------
         item              Optional Item. The item to query tasks about.
         ----------------  -------------------------------------------------------------------------------
@@ -464,7 +464,7 @@ class TaskManager(object):
         Creates a new scheduled task for a notebook `Item`.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         item                   Required Item. The item to schedule a task on.
         ------------------     --------------------------------------------------------------------

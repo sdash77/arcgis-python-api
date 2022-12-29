@@ -95,7 +95,7 @@ class _DotDensity(object):
         Get/Set the background color
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required string. Color to set the background to.
         ===============     ====================================================================
@@ -112,7 +112,7 @@ class _DotDensity(object):
         Get/Set the shape of the dots
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required string.
                             Values: "o" | "+" | "d" | "s" | "x"
@@ -171,7 +171,7 @@ class _DotDensity(object):
         Get/Set the reference scale
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         value               Required int or float.
         ===============     ====================================================================
@@ -261,7 +261,7 @@ class _DotDensity(object):
         Assigns an attribute to the dot density renderer
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         field               Required String.  Name of the dataset field
         ---------------     --------------------------------------------------------------------
@@ -295,7 +295,7 @@ class _DotDensity(object):
         Removes the attribute to the dot density renderer.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         field               Required String.  Name of the dataset field
         ===============     ====================================================================
@@ -575,7 +575,7 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
     proportionally between the provided min and max sizes.
 
     ======================  =========================================================
-    **Arguments**           **Description**
+    **Parameter**           **Description**
     ----------------------  ---------------------------------------------------------
     si_field                Attribute field used for size rendering if no
                             si_expression is provided.
@@ -615,7 +615,7 @@ def visual_variables(geometry_type, sdf_or_list, **kwargs):
     typically used to rotate symbols that indicate directionality.
 
     ======================  =========================================================
-    **Arguments**          **Description**
+    **Parameter**          **Description**
     ----------------------  ---------------------------------------------------------
     ri_field                Attribute field used for setting the rotation of a symbol
                             if no ``ri_expression`` is provided.
@@ -680,7 +680,7 @@ def generate_heatmap(
     Generates a heatmap renderer. Used in ``spatial.plot()`` and ``generate_renderer()``.
 
     ======================  =========================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ----------------------  ---------------------------------------------------------
     sdf_or_series           Optional Pandas Series. The spatial dataset to render.
     ----------------------  ---------------------------------------------------------
@@ -816,7 +816,7 @@ def generate_unique(
     Used in ``spatial.plot()`` and ``generate_renderer()``.
 
     ======================  =========================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ----------------------  ---------------------------------------------------------
     geometry_type           Required string. The allowed values are: ``Point``, ``Polyline``,
                             ``Polygon``, or ``Raster``. This required parameter is used to
@@ -1099,7 +1099,7 @@ def generate_classbreaks(
     Used in ``spatial.plot()`` and ``generate_renderer()``.
 
     ======================  =========================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ----------------------  ---------------------------------------------------------
     geometry_type           Required string. The allowed values are: ``Point``, ``Polyline``,
                             ``Polygon``, or ``Raster``. This required parameter is used to
@@ -1351,7 +1351,7 @@ def generate_simple(
     Used in ``spatial.plot()`` and ``generate_renderer()``.
 
     ======================  =========================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ----------------------  ---------------------------------------------------------
     geometry_type           Required string. The allowed values are: ``Point``, ``Polyline``,
                             ``Polygon``, or ``Raster``. This required parameter is used to
@@ -1829,7 +1829,7 @@ def generate_renderer(
                             following keys:
 
                             ===============     ====================================================================
-                            **Argument**        **Description**
+                            **Parameter**        **Description**
                             ---------------     --------------------------------------------------------------------
                             field               Required String.  Name of the dataset field
                             ---------------     --------------------------------------------------------------------

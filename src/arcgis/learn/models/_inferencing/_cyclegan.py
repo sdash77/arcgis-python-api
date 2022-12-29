@@ -6,7 +6,6 @@ try:
     import torch.nn as nn
     import math
     from . import util
-    from .util import variable_tile_size_check
 
     HAS_TORCH = True
 except Exception as e:
@@ -184,13 +183,9 @@ class ChildImageClassifier:
                 },
             ]
         )
-        required_parameters = variable_tile_size_check(
-            self.json_info, required_parameters
-        )
         return required_parameters
 
     def getConfiguration(self, **scalars):
-        self.tytx = int(scalars.get("tile_size", self.json_info["ImageHeight"]))
         self.padding = int(
             scalars.get("padding", self.json_info["ImageHeight"] // 4)
         )  ## Default padding Imageheight//4.

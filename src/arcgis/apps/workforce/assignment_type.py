@@ -13,7 +13,7 @@ class AssignmentType(FeatureModel):
     Defines the acceptable values for :class:`~arcgis.apps.workforce.AssignmentType` types.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     project                Required :class:`~arcgis.apps.workforce.Project`. The project that
                            this assignment belongs to.
@@ -69,7 +69,7 @@ class AssignmentType(FeatureModel):
         Updates the assignment type on the server
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         name                   Optional :class:`String`.
                                The name of the assignment type

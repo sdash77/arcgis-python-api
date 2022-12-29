@@ -13,7 +13,7 @@ class OGCCollection:
     Represents a single OGC dataset
 
     ================  ===============================================================================
-    **Argument**      **Description**
+    **Parameter**      **Description**
     ----------------  -------------------------------------------------------------------------------
     url               Required String. The web address endpoint.
     ----------------  -------------------------------------------------------------------------------
@@ -72,7 +72,7 @@ class OGCCollection:
         Queries the :class:`~arcgis.mapping.ogc.OGCFeatureService` Layer and returns back the information as a Spatially Enabled DataFrame.
 
         ================  ===============================================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  -------------------------------------------------------------------------------
         query             Optional String. A SQL based query applied to the service.
         ----------------  -------------------------------------------------------------------------------
@@ -178,7 +178,7 @@ class OGCFeatureService:
     Represents the Hosted OGC Feature Server
 
     ================  ===============================================================================
-    **Argument**      **Description**
+    **Parameter**      **Description**
     ----------------  -------------------------------------------------------------------------------
     url               Required String. The web address endpoint.
     ----------------  -------------------------------------------------------------------------------

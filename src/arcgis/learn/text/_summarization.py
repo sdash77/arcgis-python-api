@@ -35,7 +35,7 @@ class TextSummarizer(InferenceOnlyModel):
     Based on the Hugging Face transformers library
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     backbone                Optional string. Specify the HuggingFace
                             transformer model name which will be used to
@@ -49,7 +49,7 @@ class TextSummarizer(InferenceOnlyModel):
     **kwargs**
 
     =====================   ===========================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     ---------------------   -------------------------------------------
     pretrained_path         Option str. Path to a directory, where pretrained
                             model files are saved.
@@ -78,7 +78,7 @@ class TextSummarizer(InferenceOnlyModel):
         Summarize the given text or list of text
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         text_or_list            Required string or list. A text/passage
                                 or a list of texts/passages to generate the
@@ -91,7 +91,7 @@ class TextSummarizer(InferenceOnlyModel):
         **kwargs**
 
         =====================   ===========================================
-        **Argument**            **Description**
+        **Parameter**            **Description**
         ---------------------   -------------------------------------------
         min_length              Optional integer. The minimum length of the
                                 sequence to be generated.

@@ -93,7 +93,7 @@ def execute_notebook(
     parameters to a cell.
 
     ====================    ====================================================================
-    **Argument**            **Description**
+    **Parameter**            **Description**
     --------------------    --------------------------------------------------------------------
     item                    Required :class:`~arcgis.gis.Item`. Opens an existing portal item.
     --------------------    --------------------------------------------------------------------
@@ -126,6 +126,18 @@ def execute_notebook(
     :returns: Dict else If ``future = True``, then the result is
               a `concurrent.futures.Future <https://docs.python.org/3/library/concurrent.futures.html>`_ object.
               Call ``result()`` to get the response
+
+    .. code-block:: python
+
+        #Usage example
+
+        >>> from arcgis.gis import GIS
+        >>> from arcgis.notebook import execute_notebook
+
+        >>> gis = GIS(profile="your_org_profile")
+
+        >>> nb_item = gis.content.get("ac7b7792913b4b3c9b22da4e2c42f986")
+        >>> execute_notebook(nb_item)
 
     """
     if gis is None:

@@ -52,7 +52,7 @@ class Indexer(BasePortalAdmin):
         The operation allows you to generate or update the indexes for content, such as users, groups, and items stored in the database store.
 
         ===============     ====================================================================
-        **Argument**        **Description**
+        **Parameter**        **Description**
         ---------------     --------------------------------------------------------------------
         mode                Required String. The mode in which the indexer should run.
                             Values: USER_MODE, GROUP_MODE, SEARCH_MODE, or FULL_MODE
@@ -127,7 +127,7 @@ class EmailManager(BasePortalAdmin):
         configuration is correct.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         email                           Required String. The test email to send to.
         ===========================     ====================================================================
@@ -157,7 +157,7 @@ class EmailManager(BasePortalAdmin):
         Configures the Email Server for Portal
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         server                          Required String. The email address
         ---------------------------     --------------------------------------------------------------------
@@ -523,7 +523,7 @@ class System(BasePortalAdmin):
         using the status resource.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         mode                            Optional string. The mode in which the indexer should run.
                                         Values USER_MODE | GROUP_MODE | SEARCH_MODE | FULL
@@ -587,7 +587,7 @@ class System(BasePortalAdmin):
         When external content is disabled, System Languages are also disabled.
 
         ==================     ====================================================================
-        **Argument**           **Description**
+        **Parameter**           **Description**
         ------------------     --------------------------------------------------------------------
         value                  required Boolean. If true, external content is enabled, else it is
                                disabled.
@@ -706,7 +706,7 @@ class WebAdaptors(BasePortalAdmin):
         Adaptor configured with the portal.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         shared_key                      Required string. This property represents credentials that are shared
                                         with the Web Adaptor. The Web Adaptor uses these credentials to
@@ -906,7 +906,7 @@ class PortalLicense(BasePortalAdmin):
             sufficient user type, app, and app bundle licenses.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         file                            Required String. The portal license file.
         ===========================     ====================================================================
@@ -957,7 +957,7 @@ class PortalLicense(BasePortalAdmin):
         connected environment.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         username	                    Required String. The user name of the account.
         ===========================     ====================================================================
@@ -1008,7 +1008,7 @@ class PortalLicense(BasePortalAdmin):
 
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         info                  	        Required Dict. The JSON representation of the license server
                                         connection information.
@@ -1043,7 +1043,7 @@ class PortalLicense(BasePortalAdmin):
 
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         file                            Required String. The portal license file.
         ---------------------------     --------------------------------------------------------------------
@@ -1109,7 +1109,7 @@ class Licenses(BasePortalAdmin):
         queue. In this case, the operation returns an empty result.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         app                             Required string. The application lookup.
                                         Allowed values: appstudioweb,arcgisprodesktop,busanalystonline_2,
@@ -1143,7 +1143,7 @@ class Licenses(BasePortalAdmin):
         deletes an entitlement from a site
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         app                             Required string. The application lookup.
                                         Allowed values: appstudioweb,arcgisprodesktop,busanalystonline_2,
@@ -1191,7 +1191,7 @@ class Licenses(BasePortalAdmin):
         configured with the backup license server you specified.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         info                            Required string. The JSON representation of the license server
                                         connection information.
@@ -1225,7 +1225,7 @@ class Licenses(BasePortalAdmin):
         entitlements, even the ones that are in the queue.
 
         ===========================     ====================================================================
-        **Argument**                    **Description**
+        **Parameter**                    **Description**
         ---------------------------     --------------------------------------------------------------------
         file                            Required string. The entitlement file to load into Enterprise.
         ---------------------------     --------------------------------------------------------------------

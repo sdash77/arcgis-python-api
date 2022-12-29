@@ -7,9 +7,9 @@ from typing import Any, Union, Iterable, Optional
 from arcgis import __version__
 from arcgis import env
 from arcgis.features import FeatureSet, GeoAccessor, GeoSeriesAccessor
-from arcgis.geometry import Geometry, SpatialReference
+from arcgis.geometry import Geometry, SpatialReference, Polyline, Polygon, Point
 from arcgis.gis import GIS
-from arcgis.geocoding import geocode
+from arcgis.geocoding import geocode, reverse_geocode
 from arcgis._impl.common._deprecate import deprecated
 from arcgis._impl.common._utils import _lazy_property
 import pandas as pd
@@ -111,12 +111,31 @@ BufferStudyArea = collections.namedtuple(
 BufferStudyArea.__new__.__defaults__ = (None, None, None, True, None)
 BufferStudyArea.__doc__ = """BufferStudyArea allows you to buffer point and street address study areas.
 
-Parameters:
-area: the point geometry or street address (string) study area to be buffered
-radii: list of distances by which to buffer the study area, eg. [1, 2, 3]
-units: distance unit, eg. Miles, Kilometers, Minutes (when using drive times/travel_mode)
-overlap: boolean, uses overlapping rings when True, or non-overlapping disks when False
-travel_mode: None or string, one of the supported travel modes when using network service areas, eg. Driving, Trucking, Walking.
+===================      ======================================================
+**Parameter**             **Description**
+-------------------      ------------------------------------------------------
+area                     :class:`~arcgis.geometry.Point` object or street address 
+                         (string) study area to be buffered
+-------------------      ------------------------------------------------------
+radii                    List of distances by which to buffer the study area
+                         
+                         Example: [1, 2, 3]
+-------------------      ------------------------------------------------------
+units                    String, distance unit. 
+                         
+                         Example: Miles, Kilometers, Minutes (when using drive times/travel_mode)
+-------------------      ------------------------------------------------------
+overlap                  Boolean. Uses overlapping rings when ``True``, 
+                         or non-overlapping disks when ``False``
+-------------------      ------------------------------------------------------
+travel_mode              None or string, one of the supported travel modes when 
+                         using network service areas.
+                         
+                         To see a list of travel modes use the `travel_modes` property
+                         in the Country or Business Analyst class.
+
+                         Example: Country.travel_modes["alias"]
+===================      ======================================================
 """
 
 
@@ -288,7 +307,7 @@ class Country(object):
         two letter abbreviation or three letter ISO3 code.
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         name              Required string. The country name, two letter code or
                           three letter ISO3 code identifying the country.
@@ -634,7 +653,7 @@ class Country(object):
         data as a template.
 
         ============================     ====================================================================
-        **Argument**                     **Description**
+        **Parameter**                     **Description**
         ----------------------------     --------------------------------------------------------------------
         enrich_variables                 Iterable (normally a list) of enrich_variables correlating to
                                          enrichment enrich_variables. These variable names can be simply the
@@ -658,7 +677,7 @@ class Country(object):
         proximity_type: Optional[str] = None,
         proximity_value: Optional[Union[float, int]] = None,
         proximity_metric: Optional[str] = None,
-        output_spatial_reference: Union[int, dict, SpatialReference] = 4326,
+        output_spatial_reference: Union[int, dict, SpatialReference] = None,
         **kwargs,
     ):
         """
@@ -687,10 +706,10 @@ class Country(object):
         locations in your workflow before performing enrichment.
 
         ============================     ====================================================================
-        **Argument**                     **Description**
+        **Parameter**                     **Description**
         ----------------------------     --------------------------------------------------------------------
-        study_areas                      Required list, :class:`~arcgis.features.FeatureSet` or SpatiallyEnabledDataFrame containing
-                                         the input areas to be enriched.
+        study_areas                      Required list, dictionary, :class:`~arcgis.features.FeatureSet`
+                                         or SpatiallyEnabledDataFrame containing the input areas to be enriched.
         ----------------------------     --------------------------------------------------------------------
         enrich_variables                 Enrich variables can be specified using either a list of strings or
                                          the Pandas DataFrame returned from the :func:`~arcgis.geoenrichment.Country.enrich_variables`
@@ -870,6 +889,8 @@ class Country(object):
         if isinstance(study_areas, Iterable) and not isinstance(
             study_areas, pd.DataFrame
         ):
+            if isinstance(study_areas, dict):
+                study_areas = list(study_areas.values())
             first_geo = study_areas[0]
             if isinstance(first_geo, NamedArea):
                 study_areas = [na._areaid for na in study_areas]
@@ -946,7 +967,7 @@ class Country(object):
         Returns a list of named areas matching the specified query
 
         ================  ========================================================
-        **Argument**      **Description**
+        **Parameter**      **Description**
         ----------------  --------------------------------------------------------
         query             Required string. The query string to search for places
                           within this country.
@@ -1108,7 +1129,7 @@ def get_countries(gis: Optional[GIS] = None, as_df: bool = True):
     Retrieve available countries based on the GIS source being used.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     gis                    Optional :class:`~arcgis.gis.GIS` instance. This specifies what GIS
                            country sources are available based on the Web GIS source, whether
@@ -1145,9 +1166,7 @@ def get_countries(gis: Optional[GIS] = None, as_df: bool = True):
                 for cntry in out_res[["iso3", "vintage"]].iterrows()
             ]
         else:
-            out_res = [
-                Country(cntry[1], gis=gis) for cntry in out_res["iso3"].iteritems()
-            ]
+            out_res = [Country(cntry[1], gis=gis) for cntry in out_res["iso3"].items()]
 
     return out_res
 
@@ -1179,7 +1198,7 @@ def create_report(
 
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     study_areas            required list. Required parameter: Study areas may be defined by
                            input points, polygons, administrative boundaries or addresses.
@@ -1382,7 +1401,7 @@ def _data_collections(
     Return a list of data collections that can be run for any country.
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     country                optional string. lets the user supply and optional name of a country
                            in order to get information about the data collections in that given
@@ -1475,10 +1494,10 @@ def enrich(
     enrich is how to access data for human geography analysis.
 
     =========================     ====================================================================
-    **Argument**                  **Description**
+    **Parameter**                  **Description**
     -------------------------     --------------------------------------------------------------------
-    study_areas                   Required list, :class:`~arcgis.features.FeatureSet` or SpatiallyEnabledDataFrame containing
-                                  the input areas to be enriched.
+    study_areas                   Required list, dictionary, :class:`~arcgis.features.FeatureSet`
+                                  or SpatiallyEnabledDataFrame containing the input areas to be enriched.
 
                                   study_areas can be a SpatiallyEnabledDataFrame, :class:`~arcgis.features.FeatureSet` or a
                                   lists of the following types:
@@ -1501,7 +1520,19 @@ def enrich(
                                   obtained using Country.subgeographies()/search(). When
                                   the NamedArea instances should be combined together (union), a list
                                   of such NamedArea instances should constitute a study area in the
-                                  list of requested study areas.
+                                  list of requested study areas. Otherwise, pass in the result of subgeographies
+                                  as a dictionary.
+
+                                    .. code-block:: python
+                                        usa = Country("USA")
+                                        ca_counties = usa.subgeographies.states['California'].counties
+
+                                        # Pass as a dictionary
+                                        counties_df = enrich(study_areas=ca_counties, data_collections=['Age'])
+                                        counties_df
+
+                                        # Pass as a list
+                                        counties_df = enrich(study_areas=list(ca_counties.values()), data_collections=['Age'])
     -------------------------     --------------------------------------------------------------------
     data_collections              Optional list. A Data Collection is a preassembled list of
                                   attributes that will be used to enrich the input features.
@@ -1512,6 +1543,9 @@ def enrich(
                                   If none are specified then 'KeyGlobalFacts' is used. To see a list of
                                   the data collections available for a country you can use the Country class:
                                   `Country.enrich_variables.data_collection.unique()`
+
+                                  .. note::
+                                        Data Collections are case sensitive.
     -------------------------     --------------------------------------------------------------------
     analysis_variables            Optional list. A Data Collection is a preassembled list of
                                   attributes that will be used to enrich the input features. With the
@@ -1524,9 +1558,11 @@ def enrich(
                                   values that describe what derivative variables to include in the
                                   output. The list of accepted values includes:
                                   ['percent','index','average','all','*']
+                                  * Deprecated *
     -------------------------     --------------------------------------------------------------------
     comparison_levels             Optional list of layer IDs for which the intersecting
                                   study_areas should be geoenriched.
+                                  * Deprecated *
     -------------------------     --------------------------------------------------------------------
     intersecting_geographies      Optional parameter to explicitly define the geographic layers used
                                   to provide geographic context during the enrichment process. For
@@ -1539,6 +1575,7 @@ def enrich(
 
                                   See `intersecting_geographies <https://developers.arcgis.com/rest/geoenrichment/api-reference/enrich.htm#ESRI_SECTION2_6A987CF67F914FA39B61BE14BE115F27>`_
                                   for more details on formatting of this parameter.
+                                  * Deprecated *
     -------------------------     --------------------------------------------------------------------
     return_geometry               Optional boolean. A parameter to request the output geometries in
                                   the response.
@@ -1581,6 +1618,9 @@ def enrich(
     if isinstance(study_areas, dict):
         study_areas = list(study_areas.values())
 
+    if isinstance(study_areas, BufferStudyArea):
+        study_areas = list(study_areas)
+
     # keep list of countries for data_collection check
     sa_to_country = {}
 
@@ -1588,6 +1628,7 @@ def enrich(
     if isinstance(study_areas, list):
         first_geo = study_areas[0]
         for index, value in enumerate(study_areas):
+            cntry = None
             if isinstance(value, BufferStudyArea):
                 # returns a string
                 value = value.area
@@ -1606,16 +1647,49 @@ def enrich(
                     sa_to_country[cntry].append(value)
                 else:
                     sa_to_country[cntry] = [value]
+            elif isinstance(value, dict):
+                if "address" in value:
+                    if "sourceCountry" in value["address"]:
+                        cntry = Country(value["address"]["sourceCountry"])
+                    else:
+                        geocoded_area = geocode(value["address"])[0]
+                        cntry = Country(geocoded_area["attributes"]["Country"])
+                elif "sourceCountry" in value:
+                    cntry = Country(value["sourceCountry"])
+                elif isinstance(value, Geometry) or "geometry" in value:
+                    if isinstance(value, Polyline) or isinstance(value, Polygon):
+                        value = value.true_centroid
+                    elif "geometry" in value:
+                        value = value["geometry"]
+                    # geocode the geom and extract the country
+                    geocoded_area = reverse_geocode(value)
+                    cntry = Country(geocoded_area["address"]["CountryCode"])
             if index == 0:
                 # if the first instance is a geocoded area, assign enrich_src
                 enrich_src = cntry
+    if isinstance(study_areas, GeoAccessor) or isinstance(study_areas, pd.DataFrame):
+        if isinstance(study_areas, pd.DataFrame):
+            study_areas = study_areas.spatial
+        first_geo = Point(
+            {
+                "x": study_areas.true_centroid[0],
+                "y": study_areas.true_centroid[1],
+                "spatialReference": study_areas.sr,
+            }
+        )
+        geocoded_area = reverse_geocode(first_geo)
+        cntry = Country(geocoded_area["address"]["CountryCode"])
+        sa_to_country[cntry] = study_areas._data["SHAPE"].tolist()
+        enrich_src = cntry
+        study_areas = study_areas._data
 
     # assign further properties if found
     if isinstance(first_geo, NamedArea):
         standard_geography_level = first_geo._currlvl
     elif isinstance(first_geo, BufferStudyArea):
-        proximity_metric = first_geo.units
+        proximity_metric = first_geo.units.lower() if first_geo.units else None
         proximity_value = first_geo.radii
+        proximity_type = first_geo.travel_mode
 
     if data_collections is None:
         # if no data collection and there is more than one Country, run enrich and append data for each country
@@ -1669,6 +1743,7 @@ def enrich(
             enrich_res = pd.DataFrame()
             for country, sas in sa_to_country.items():
                 enrich_src = country
+                study_areas = sas
                 avail_data_coll = enrich_src.enrich_variables.data_collection.unique()
                 unavail_data_coll = [
                     dc for dc in data_collections if dc not in avail_data_coll
@@ -1720,7 +1795,7 @@ def enrich(
                     'only data\ncollection available globally is "KeyGlobalFacts". For '
                     "working with data specific to a country, you\ncan discover available "
                     "data collections using "
-                    "Country.enrich_variables.data_collection.unique()."
+                    "Country.enrich_variables.data_collection.unique(). Data collections are case sensitive."
                 )
 
             # get all possible requested enrich variables
@@ -1784,7 +1859,7 @@ def _find_report(country, gis=None):
     Returns a list of reports by a country code
 
     ==================     ====================================================================
-    **Argument**           **Description**
+    **Parameter**           **Description**
     ------------------     --------------------------------------------------------------------
     country                optional string. lets the user supply and optional name of a country
                            in order to get information about the data collections in that given
@@ -1844,7 +1919,7 @@ def standard_geography_query(
     in the enrichment pack and optionally return geometry for the feature.
 
     ======================     ====================================================================
-    **Argument**               **Description**
+    **Parameter**               **Description**
     ----------------------     --------------------------------------------------------------------
     source_country             Optional string. to specify the source country for the search. Use
                                this parameter to limit the search and query of standard geographic
